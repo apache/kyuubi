@@ -141,7 +141,12 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
     logThread.setDaemon(true);
     logThread.start();
 
-    kyuubiConnection.waitLaunchEngineToComplete();
+    try {
+      kyuubiConnection.waitLaunchEngineToComplete();
+    } catch (SQLException e) {
+      kyuubiConnection.closeOnLaunchEngineFailed(logThread);
+      throw e;
+    }
     logThread.interrupt();
     kyuubiConnection.executeInitSql();
 
