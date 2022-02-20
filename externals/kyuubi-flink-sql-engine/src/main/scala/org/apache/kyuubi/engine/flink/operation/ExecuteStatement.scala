@@ -41,7 +41,8 @@ class ExecuteStatement(
     session: Session,
     override val statement: String,
     override val shouldRunAsync: Boolean,
-    queryTimeout: Long)
+    queryTimeout: Long,
+    resultMaxRows: Int)
   extends FlinkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   private val operationLog: OperationLog =
@@ -126,18 +127,22 @@ class ExecuteStatement(
 
       resultId = resultDescriptor.getResultId
 
-      val rows = new ArrayBuffer[Row]()
+      val rows = new ArrayBuffer[Row](resultMaxRows)
       var loop = true
 
       while (loop) {
         Thread.sleep(50) // slow the processing down
 
-        val result = executor.snapshotResult(sessionId, resultId, 2)
+        val pageSize = Math.min(500, resultMaxRows)
+        val result = executor.snapshotResult(sessionId, resultId, pageSize)
         result.getType match {
           case TypedResult.ResultType.PAYLOAD =>
-            rows.clear()
             (1 to result.getPayload).foreach { page =>
-              rows ++= executor.retrieveResultPage(resultId, page).asScala
+              if (rows.size < resultMaxRows) {
+                rows ++= executor.retrieveResultPage(resultId, page).asScala
+              } else {
+                loop = false
+              }
             }
           case TypedResult.ResultType.EOS => loop = false
           case TypedResult.ResultType.EMPTY =>
@@ -147,7 +152,7 @@ class ExecuteStatement(
       resultSet = ResultSet.builder
         .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(resultDescriptor.getResultSchema.getColumns)
-        .data(rows.toArray[Row])
+        .data(rows.slice(0, resultMaxRows).toArray[Row])
         .build
     } finally {
       if (resultId != null) {
