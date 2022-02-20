@@ -288,6 +288,10 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
+  public void setEngineLogThread(Thread logThread) {
+    this.engineLogThread = logThread;
+  }
+
   public void executeInitSql() throws SQLException {
     if (initFileCompleted) return;
     if (initFile != null) {
@@ -939,7 +943,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  public void closeOnLaunchEngineFailed(Thread logThread) throws SQLException {
+  public void closeOnLaunchEngineFailure(Thread logThread) throws SQLException {
     if (logThread != null && logThread.isAlive()) {
       logThread.interrupt();
       try {
@@ -1684,13 +1688,11 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         }
       } catch (Exception e) {
         engineLogInflight = false;
-        if (!isBeeLineMode) {
-          closeOnLaunchEngineFailed(engineLogThread);
-        }
+        closeOnLaunchEngineFailure(engineLogThread);
         if (e instanceof SQLException) {
           throw e;
         } else {
-          throw new SQLException(e.toString(), "08S01", e);
+          throw new SQLException(e.getMessage(), "08S01", e);
         }
       }
     }

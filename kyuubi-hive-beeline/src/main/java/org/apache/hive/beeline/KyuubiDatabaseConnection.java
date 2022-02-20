@@ -140,13 +140,9 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
         new Thread(beeLine.commands.createLogRunnable(kyuubiConnection, eventNotifier));
     logThread.setDaemon(true);
     logThread.start();
+    kyuubiConnection.setEngineLogThread(logThread);
 
-    try {
-      kyuubiConnection.waitLaunchEngineToComplete();
-    } catch (SQLException e) {
-      kyuubiConnection.closeOnLaunchEngineFailed(logThread);
-      throw e;
-    }
+    kyuubiConnection.waitLaunchEngineToComplete();
     logThread.interrupt();
     kyuubiConnection.executeInitSql();
 
