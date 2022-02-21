@@ -30,7 +30,7 @@ on:
 jobs:
 
   build:
-    name: Build
+    name: Test
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -47,11 +47,11 @@ jobs:
         include:
           - java: 8
             spark: '3.2'
-            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark/spark-3.0.3/spark-3.0.3-bin-hadoop2.7.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz'
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.2'
-            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark/spark-3.1.2 -Dspark.archive.name=spark-3.1.2-bin-hadoop3.2.tgz'
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
     env:
       SPARK_LOCAL_IP: localhost
@@ -88,7 +88,7 @@ jobs:
           key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-io-
-      - name: Build with Maven
+      - name: Build and test with maven
         run: >-
           ./build/mvn clean install
           -Dmaven.javadoc.skip=true
