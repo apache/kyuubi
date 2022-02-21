@@ -28,8 +28,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-extension-spark-common_2.12</artifactId>
-    <packaging>jar</packaging>
     <name>Kyuubi Dev Spark Extensions Common (for Spark 3)</name>
+    <packaging>jar</packaging>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
