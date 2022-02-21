@@ -29,6 +29,14 @@ scala:
 jdk:
   - openjdk8
 
+matrix:
+  include:
+  - name: Build Kyuubi on Linux ARM64
+    dist: focal
+    arch: arm64-graviton2
+    group: edge
+    virt: vm
+
 cache:
   directories:
     - $HOME/.m2
@@ -37,7 +45,9 @@ install:
   - ./build/mvn --version
 
 script:
-  - ./build/mvn clean install -Dmaven.javadoc.skip=true -V
+  - export MVN_ARGS="-Dmaven.javadoc.skip=true -V -B -ntp -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
+  - ./build/mvn clean install -DskipTests $MVN_ARGS
+  - ./build/mvn test $MVN_ARGS -pl kyuubi-common -am
 
 after_success:
   - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
