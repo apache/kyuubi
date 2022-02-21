@@ -31,9 +31,7 @@ jdk:
 
 matrix:
   include:
-  - name: Linux x86_64
-    arch: amd64
-  - name: Linux aarch64
+  - name: Build Kyuubi on Linux ARM64
     dist: focal
     arch: arm64-graviton2
     group: edge
@@ -49,7 +47,7 @@ install:
 script:
   - export MVN_ARGS="-Dmaven.javadoc.skip=true -V -B -ntp -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
   - ./build/mvn clean install -DskipTests $MVN_ARGS
- - ./build/mvn test $MVN_ARGS -pl kyuubi-common -am
+  - ./build/mvn test $MVN_ARGS -pl kyuubi-common -am
 
 after_success:
   - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
