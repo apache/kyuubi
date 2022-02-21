@@ -33,6 +33,7 @@ jobs:
     name: Build
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         java:
           - 8
@@ -50,7 +51,7 @@ jobs:
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.2'
-            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark-3.1.2/spark-3.1.2/spark-3.1.2-bin-hadoop2.7.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark-3.1.2/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz'
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
     env:
       SPARK_LOCAL_IP: localhost
@@ -94,7 +95,7 @@ jobs:
           -Drat.skip=true
           -Dscalastyle.skip=true
           -Dspotless.check.skip
-          -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -V
+          -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
           -Pspark-${{ matrix.spark }}
           ${{ matrix.spark-archive }}
           -Dmaven.plugin.scalatest.exclude.tags=${{ matrix.exclude-tags }}
