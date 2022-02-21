@@ -26,6 +26,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection
 
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
@@ -154,6 +155,18 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val resultSet = stmt.getResultSet
       assert(resultSet.next())
       assert(resultSet.getString(1).nonEmpty)
+    }
+  }
+
+  test("close kyuubi connection on launch engine operation failure") {
+    withSessionConf(Map.empty)(Map.empty)(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true",
+      "spark.master" -> "invalid")) {
+      val prop = new Properties()
+      prop.setProperty(KyuubiConnection.BEELINE_MODE_PROPERTY, "true")
+      val kyuubiConnection = new KyuubiConnection(jdbcUrlWithConf, prop)
+      intercept[SQLException](kyuubiConnection.waitLaunchEngineToComplete())
+      assert(kyuubiConnection.isClosed)
     }
   }
 }
