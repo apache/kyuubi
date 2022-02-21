@@ -38,11 +38,11 @@ jobs:
         java:
           - 8
           - 11
-          - 17
         spark:
           - '3.0'
           - '3.1'
           - '3.2'
+          - 'master'
         spark-archive: [""]
         exclude-tags: [""]
         include:
