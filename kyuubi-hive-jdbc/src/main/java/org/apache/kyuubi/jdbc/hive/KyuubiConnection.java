@@ -78,7 +78,7 @@ import org.slf4j.LoggerFactory;
 public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
-  public static final int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
+  public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
 
   private String jdbcUriString;
   private String host;
@@ -950,8 +950,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         engineLogThread.join(DEFAULT_ENGINE_LOG_THREAD_TIMEOUT);
       } catch (Exception e) {
       }
-      engineLogThread = null;
     }
+    engineLogThread = null;
     close();
   }
 
