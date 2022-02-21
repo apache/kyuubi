@@ -21,7 +21,6 @@ on:
     branches:
       - master
       - branch-*
-      - ga
   pull_request:
     branches:
       - master
@@ -66,7 +65,7 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Build and test with maven w/o lints
+      - name: Build and test with maven w/o linters
         run: >-
           ./build/mvn clean install
           -Dmaven.javadoc.skip=true
