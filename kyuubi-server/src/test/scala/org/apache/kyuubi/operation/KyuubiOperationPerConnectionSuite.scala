@@ -30,6 +30,7 @@ import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection
 import org.apache.kyuubi.plugin.SessionConfAdvisor
 
 /**
@@ -201,6 +202,18 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         assert(r3.next())
         assert(r3.getString(2) == "v4")
       }
+    }
+  }
+
+  test("close kyuubi connection on launch engine operation failure") {
+    withSessionConf(Map.empty)(Map.empty)(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true",
+      "spark.master" -> "invalid")) {
+      val prop = new Properties()
+      prop.setProperty(KyuubiConnection.BEELINE_MODE_PROPERTY, "true")
+      val kyuubiConnection = new KyuubiConnection(jdbcUrlWithConf, prop)
+      intercept[SQLException](kyuubiConnection.waitLaunchEngineToComplete())
+      assert(kyuubiConnection.isClosed)
     }
   }
 }

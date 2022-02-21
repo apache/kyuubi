@@ -78,6 +78,7 @@ import org.slf4j.LoggerFactory;
 public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
+  public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
 
   private String jdbcUriString;
   private String host;
@@ -100,6 +101,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private boolean initFileCompleted = false;
 
   private TOperationHandle launchEngineOpHandle = null;
+  private Thread engineLogThread;
   private boolean engineLogInflight = true;
   private volatile boolean launchEngineOpCompleted = false;
 
@@ -263,7 +265,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private void showLaunchEngineLog() {
     if (launchEngineOpHandle != null) {
       LOG.info("Starting to get launch engine log.");
-      Thread logThread =
+      engineLogThread =
           new Thread("engine-launch-log") {
 
             @Override
@@ -282,8 +284,12 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
               LOG.info("Finished to get launch engine log.");
             }
           };
-      logThread.start();
+      engineLogThread.start();
     }
+  }
+
+  public void setEngineLogThread(Thread logThread) {
+    this.engineLogThread = logThread;
   }
 
   public void executeInitSql() throws SQLException {
@@ -935,6 +941,18 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         }
       }
     }
+  }
+
+  private void closeOnLaunchEngineFailure() throws SQLException {
+    if (engineLogThread != null && engineLogThread.isAlive()) {
+      engineLogThread.interrupt();
+      try {
+        engineLogThread.join(DEFAULT_ENGINE_LOG_THREAD_TIMEOUT);
+      } catch (Exception e) {
+      }
+    }
+    engineLogThread = null;
+    close();
   }
 
   /*
@@ -1669,12 +1687,14 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
               break;
           }
         }
-      } catch (SQLException e) {
-        engineLogInflight = false;
-        throw e;
       } catch (Exception e) {
         engineLogInflight = false;
-        throw new SQLException(e.toString(), "08S01", e);
+        closeOnLaunchEngineFailure();
+        if (e instanceof SQLException) {
+          throw e;
+        } else {
+          throw new SQLException(e.getMessage(), "08S01", e);
+        }
       }
     }
   }
