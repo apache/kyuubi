@@ -47,11 +47,11 @@ jobs:
         include:
           - java: 8
             spark: '3.2'
-            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark-3.0.3/spark-3.0.3/spark-3.0.3-bin-hadoop2.7.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark/spark-3.0.3/spark-3.0.3-bin-hadoop2.7.tgz'
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.2'
-            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark-3.1.2/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz'
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
     env:
       SPARK_LOCAL_IP: localhost
