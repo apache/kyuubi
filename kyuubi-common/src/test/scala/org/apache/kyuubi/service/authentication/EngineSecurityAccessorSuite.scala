@@ -27,7 +27,7 @@ class EngineSecurityAccessorSuite extends KyuubiFunSuite {
     classOf[UserDefinedEngineSecuritySecretProvider].getCanonicalName)
 
   test("test encrypt/decrypt, issue token/auth token") {
-    Seq("AES/CBC/PKCS5PADDING", "AES/CTR/PKCS5PADDING").foreach { cipher =>
+    Seq("AES/CBC/PKCS5PADDING", "AES/CTR/NoPadding").foreach { cipher =>
       val newConf = conf.clone
       newConf.set(KyuubiConf.ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION, cipher)
 
