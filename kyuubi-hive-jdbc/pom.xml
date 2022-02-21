@@ -29,6 +29,7 @@
     <artifactId>kyuubi-hive-jdbc</artifactId>
     <name>Kyuubi Project Hive JDBC Client</name>
     <packaging>jar</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <properties>
         <!-- only used in kyuubi-hive-jdbc module -->

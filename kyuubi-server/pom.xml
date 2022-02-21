@@ -29,6 +29,7 @@
     <artifactId>kyuubi-server_2.12</artifactId>
     <name>Kyuubi Project Server</name>
     <packaging>jar</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>

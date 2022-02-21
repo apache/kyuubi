@@ -29,6 +29,7 @@
 
     <artifactId>kyuubi-flink-it_2.12</artifactId>
     <name>Kyuubi Test Flink SQL IT</name>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
 

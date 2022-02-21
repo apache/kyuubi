@@ -30,6 +30,7 @@
     <artifactId>kyuubi-spark-sql-engine_2.12</artifactId>
     <name>Kyuubi Project Engine Spark SQL</name>
     <packaging>jar</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>

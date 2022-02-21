@@ -32,6 +32,7 @@
     <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
     <name>Kyuubi Project Hive JDBC Shaded Client</name>
     <packaging>jar</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>

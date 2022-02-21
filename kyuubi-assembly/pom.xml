@@ -29,8 +29,9 @@
     </parent>
 
     <artifactId>kyuubi-assembly_2.12</artifactId>
-    <packaging>pom</packaging>
     <name>Kyuubi Project Assembly</name>
+    <packaging>pom</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>
