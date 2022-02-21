@@ -269,8 +269,8 @@ done
 
 if [[ "$FLINK_PROVIDED" != "true" ]]; then
   # Copy flink binary dist
-  cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/flink-$FLINK_VERSION/" \
-        "$DISTDIR/externals/flink-$FLINK_VERSION/"
+  FLINK_BUILTIN="$(find "$KYUUBI_HOME/externals/kyuubi-download/target" -name 'flink-*' -type d)"
+  cp -r "$FLINK_BUILTIN" "$DISTDIR/externals/"
 fi
 
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
