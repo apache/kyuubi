@@ -47,11 +47,11 @@ jobs:
         include:
           - java: 8
             spark: '3.2'
-            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz'
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.2'
-            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark/spark-3.1.2 -Dspark.archive.name=spark-3.1.2-bin-hadoop3.2.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.2 -Dspark.archive.name=spark-3.1.2-bin-hadoop3.2.tgz'
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
     env:
       SPARK_LOCAL_IP: localhost
@@ -90,6 +90,7 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Build and test with maven
         run: >-
+<<<<<<< HEAD
           ./build/mvn clean install
           -Dmaven.javadoc.skip=true
           -Drat.skip=true
@@ -99,6 +100,10 @@ jobs:
           -Pspark-${{ matrix.spark }}
           ${{ matrix.spark-archive }}
           -Dmaven.plugin.scalatest.exclude.tags=${{ matrix.exclude-tags }}
+=======
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -V
+          -Pspark-${{ matrix.spark }} ${{ matrix.profiles }}
+>>>>>>> 354bf832850cc59fcc9f568cd62fe31569f6d96d
       - name: Code coverage
         if: ${{ matrix.java == 8 }} && ${{ matrix.spark == '3.2' }} && ${{ matrix.spark-archive == '' }}
         uses: codecov/codecov-action@v2
