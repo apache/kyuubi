@@ -98,7 +98,7 @@ jobs:
           -Pspark-${{ matrix.spark }}
           -Dspark.archive.mirror=https://dlcdn.apache.org/spark
           -Dspark.archive.name=${{ matrix.spark-archive }}
-          -Dmaven.plugin.scalatest.exclude.tags= ${{ matrix.exclude-tags }}
+          -Dmaven.plugin.scalatest.exclude.tags=${{ matrix.exclude-tags }}
       - name: Code coverage
         if: ${{ matrix.java == 8 }} && ${{ matrix.spark == '3.2' }} && ${{ matrix.spark-archive == '' }}
         uses: codecov/codecov-action@v2
