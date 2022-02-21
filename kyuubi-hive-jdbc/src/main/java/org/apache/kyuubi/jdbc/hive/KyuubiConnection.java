@@ -943,13 +943,14 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  public void closeOnLaunchEngineFailure(Thread logThread) throws SQLException {
-    if (logThread != null && logThread.isAlive()) {
-      logThread.interrupt();
+  private void closeOnLaunchEngineFailure() throws SQLException {
+    if (engineLogThread != null && engineLogThread.isAlive()) {
+      engineLogThread.interrupt();
       try {
-        logThread.join(DEFAULT_ENGINE_LOG_THREAD_TIMEOUT);
+        engineLogThread.join(DEFAULT_ENGINE_LOG_THREAD_TIMEOUT);
       } catch (Exception e) {
       }
+      engineLogThread = null;
     }
     close();
   }
@@ -1688,7 +1689,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         }
       } catch (Exception e) {
         engineLogInflight = false;
-        closeOnLaunchEngineFailure(engineLogThread);
+        closeOnLaunchEngineFailure();
         if (e instanceof SQLException) {
           throw e;
         } else {
