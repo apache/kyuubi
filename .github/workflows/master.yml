@@ -44,7 +44,8 @@ jobs:
         spark-archive: [""]
         exclude-tags: [""]
         include:
-          - spark:
+          - java: 8
+            spark:
               - '3.2'
             spark-archive:
               - 'spark-3.0.3/spark-3.0.3-bin-hadoop2.7.tgz'
