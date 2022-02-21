@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - branch-*
+      - ga
   pull_request:
     branches:
       - master
