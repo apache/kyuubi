@@ -127,7 +127,7 @@ class ExecuteStatement(
 
       resultId = resultDescriptor.getResultId
 
-      val rows = new ArrayBuffer[Row](resultMaxRows)
+      val rows = new ArrayBuffer[Row]()
       var loop = true
 
       while (loop) {
