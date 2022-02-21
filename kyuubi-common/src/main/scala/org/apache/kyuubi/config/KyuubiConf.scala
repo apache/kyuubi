@@ -703,6 +703,16 @@ object KyuubiConf {
       .checkValue(_ > 0, "the maximum must be positive integer.")
       .createWithDefault(10)
 
+  val SESSION_ENGINE_STARTUP_WAIT_COMPLETION: ConfigEntry[Boolean] =
+    buildConf("session.engine.startup.waitCompletion")
+      .doc("Whether to wait for completion after engine starts." +
+        " If false, the startup process will be destroyed after the engine is started." +
+        " Note that only use it when the driver is not running locally," +
+        " such as yarn-cluster mode; Otherwise, the engine will be killed.")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val SESSION_ENGINE_LAUNCH_ASYNC: ConfigEntry[Boolean] =
     buildConf("session.engine.launch.async")
       .doc("When opening kyuubi session, whether to launch backend engine asynchronously." +
@@ -1143,13 +1153,14 @@ object KyuubiConf {
 
   object OperationModes extends Enumeration {
     type OperationMode = Value
-    val PARSE, ANALYZE, OPTIMIZE, NONE = Value
+    val PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION, NONE = Value
   }
 
   val OPERATION_PLAN_ONLY: ConfigEntry[String] =
     buildConf("operation.plan.only.mode")
-      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE only way without " +
-        "executing the query. When it is NONE, the statement will be fully executed")
+      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION " +
+        "only way without executing the query. When it is NONE, the statement will be fully " +
+        "executed")
       .version("1.4.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
