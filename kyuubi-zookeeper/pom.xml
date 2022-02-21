@@ -29,6 +29,7 @@
     <artifactId>kyuubi-zookeeper_2.12</artifactId>
     <name>Kyuubi Project Embedded Zookeeper</name>
     <packaging>jar</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>

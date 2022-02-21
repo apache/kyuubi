@@ -28,8 +28,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-extension-spark-3-1_2.12</artifactId>
+    <name>Kyuubi Dev Spark Extensions (for Spark 3.1)</name>
     <packaging>jar</packaging>
-    <name>Kyuubi Project Dev Spark Extensions (for Spark 3.1)</name>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>

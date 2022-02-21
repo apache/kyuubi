@@ -30,6 +30,7 @@
   <artifactId>kyuubi-flink-sql-engine_2.12</artifactId>
   <name>Kyuubi Project Engine Flink SQL</name>
   <packaging>jar</packaging>
+  <url>https://kyuubi.apache.org/</url>
 
   <dependencies>
     <!-- kyuubi -->

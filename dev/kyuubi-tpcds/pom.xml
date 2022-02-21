@@ -28,8 +28,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-tpcds_2.12</artifactId>
+    <name>Kyuubi Dev TPCDS Generator</name>
     <packaging>jar</packaging>
-    <name>Kyuubi Project Dev TPCDS Generator</name>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>

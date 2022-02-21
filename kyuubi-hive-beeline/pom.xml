@@ -29,6 +29,7 @@
     <artifactId>kyuubi-hive-beeline</artifactId>
     <name>Kyuubi Project Hive Beeline</name>
     <packaging>jar</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <properties>
         <jars.target.dir>${project.build.directory}</jars.target.dir>

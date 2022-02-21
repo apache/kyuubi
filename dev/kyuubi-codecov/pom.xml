@@ -28,8 +28,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-codecov_2.12</artifactId>
+    <name>Kyuubi Dev Code Coverage</name>
     <packaging>pom</packaging>
-    <name>Kyuubi Project Dev Code Coverage</name>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>

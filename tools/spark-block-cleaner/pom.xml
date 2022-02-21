@@ -29,6 +29,7 @@
     <artifactId>spark-block-cleaner_2.12</artifactId>
     <name>Kyuubi Project Spark Block Cleaner</name>
     <packaging>jar</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>
