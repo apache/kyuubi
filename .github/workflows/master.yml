@@ -18,33 +18,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        profiles: [""]
-        include:
-          - java: 8
-            spark: ['3.0', '3.1']
-            spark-hadoop: '2.7'
-          - java: 8
-            spark: '3.1'
-            spark-hadoop: '3.2'
-          - java: 8
-            spark: '3.1'
-            spark-hadoop: '3.2'
-          - java: 8
-            spark: '3.2'
-            spark-hadoop: '3.2'
-            codecov: 'true'
-          - java: 8
-            spark: '3.2'
-            spark-hadoop: '3.2'
-            profiles:
-              - ''
-              - '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
-              - '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.1 -Dspark.archive.name=spark-3.2.1-bin-hadoop3.2.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
-          - java: 11
-            spark: '3.1'
-            spark-hadoop: '3.2'
-            profiles: '-DskipTests -Pflink-provided,spark-provided'
-
+        java: [8, 11]
+        spark: ['3.0', '3.1', '3.2']
+        profiles:
+          - ''
+          - '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
+          - '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.2 -Dspark.archive.name=spark-3.1.2-bin-hadoop3.2.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
+          - '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.1 -Dspark.archive.name=spark-3.2.1-bin-hadoop3.2.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
     env:
       SPARK_LOCAL_IP: localhost
     steps:
