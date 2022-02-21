@@ -46,11 +46,11 @@ jobs:
         include:
           - java: 8
             spark: '3.2'
-            spark-archive: 'spark-3.0.3/spark-3.0.3-bin-hadoop2.7.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark-3.0.3/spark-3.0.3/spark-3.0.3-bin-hadoop2.7.tgz'
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.2'
-            spark-archive: 'spark-3.1.2/spark-3.1.2-bin-hadoop2.7.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://dlcdn.apache.org/spark-3.1.2/spark-3.1.2/spark-3.1.2-bin-hadoop2.7.tgz'
             exclude-tags: 'org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
     env:
       SPARK_LOCAL_IP: localhost
@@ -96,8 +96,7 @@ jobs:
           -Dspotless.check.skip
           -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -V
           -Pspark-${{ matrix.spark }}
-          -Dspark.archive.mirror=https://dlcdn.apache.org/spark
-          -Dspark.archive.name=${{ matrix.spark-archive }}
+          ${{ matrix.spark-archive }}
           -Dmaven.plugin.scalatest.exclude.tags=${{ matrix.exclude-tags }}
       - name: Code coverage
         if: ${{ matrix.java == 8 }} && ${{ matrix.spark == '3.2' }} && ${{ matrix.spark-archive == '' }}
