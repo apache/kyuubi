@@ -33,6 +33,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
 
   private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY)
 
+  private lazy val resultMaxRowsDefault = getConf.get(ENGINE_FLINK_MAX_ROWS)
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
@@ -43,9 +45,13 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
     val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
       OPERATION_PLAN_ONLY.key,
       operationModeDefault)
+    val resultMaxRows =
+      flinkSession.normalizedConf.getOrElse(
+        ENGINE_FLINK_MAX_ROWS.key,
+        resultMaxRowsDefault.toString).toInt
     val op = OperationModes.withName(mode.toUpperCase(Locale.ROOT)) match {
       case NONE =>
-        new ExecuteStatement(session, statement, runAsync, queryTimeout)
+        new ExecuteStatement(session, statement, runAsync, queryTimeout, resultMaxRows)
       case mode =>
         new PlanOnlyStatement(session, statement, mode)
     }

@@ -594,6 +594,15 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_FLINK_MAX_ROWS: ConfigEntry[Int] =
+    buildConf("session.engine.flink.max.rows")
+      .doc("Max rows of Flink query results. For batch queries, rows that exceeds the limit " +
+        "would be ignored. For streaming queries, the query would be canceled if the limit " +
+        "is reached.")
+      .version("1.5.0")
+      .intConf
+      .createWithDefault(1000000)
+
   val ENGINE_TRINO_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("session.engine.trino.main.resource")
       .doc("The package used to create Trino engine remote job. If it is undefined," +

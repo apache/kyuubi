@@ -761,4 +761,18 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         .getStringVal.getValues.get(0) === "tmp.hello")
     }
   }
+
+  test("ensure result max rows") {
+    withSessionConf()(Map(KyuubiConf.ENGINE_FLINK_MAX_ROWS.key -> "200"))(Map.empty) {
+      withJdbcStatement() { statement =>
+        statement.execute("create table tbl_src (a bigint) with ('connector' = 'datagen')")
+        val resultSet = statement.executeQuery(s"select a from tbl_src")
+        var rows = 0
+        while (resultSet.next()) {
+          rows += 1
+        }
+        assert(rows === 200)
+      }
+    }
+  }
 }

@@ -116,7 +116,8 @@ class LegacyFlinkOperationSuite extends KyuubiFunSuite {
   }
 
   test("execute statement - select column name with dots") {
-    val executeStatementOp = new ExecuteStatement(flinkSession, "select 'tmp.hello'", false, -1)
+    val executeStatementOp =
+      new ExecuteStatement(flinkSession, "select 'tmp.hello'", false, -1, 500)
     val executor = createLocalExecutor
     executor.openSession("test-session")
     executeStatementOp.setExecutor(executor)
