@@ -90,7 +90,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
-  test("KYUUBI #1920: Plan only operations with CacheTableCommand skiped") {
+  test("KYUUBI #1920: Plan only operations with CacheTableStatement or CacheTableCommand skiped") {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> OPTIMIZE.toString))(Map.empty) {
       withJdbcStatement() { statement =>
         val result = statement.executeQuery("cache table cached_table as select 1")

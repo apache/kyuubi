@@ -52,6 +52,7 @@ class PlanOnlyStatement(
     className == "ResetCommand" ||
     className == "UseStatement" ||
     className == "SetNamespaceCommand" ||
+    className == "CacheTableStatement" ||
     className == "CacheTableCommand" ||
     className == "CreateViewStatement" ||
     className == "CreateViewCommand"
