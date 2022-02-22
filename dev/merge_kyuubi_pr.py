@@ -274,7 +274,7 @@ def main():
         continue_maybe(msg)
 
     print("\n=== Pull Request #%s ===" % pr_num)
-    print("title\t%s\nsource\t%s\ntarget\t%s\nurl\t%s\nbody\t%s" %
+    print("title\t%s\nsource\t%s\ntarget\t%s\nurl\t%s\nbody\t%s\n" %
           (title, pr_repo_desc, target_ref, url, body))
     continue_maybe("Proceed with merging pull request #%s?" % pr_num)
 
