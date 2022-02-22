@@ -78,7 +78,10 @@ jobs:
           ${{ matrix.spark-archive }}
           ${{ matrix.exclude-tags }}
       - name: Code coverage
-        if: ${{ matrix.java == 8 }} && ${{ matrix.spark == '3.2' }} && ${{ matrix.spark-archive == '' }}
+        if: |
+          matrix.java == 8 &&
+          matrix.spark == '3.2' && 
+          matrix.spark-archive == ''
         uses: codecov/codecov-action@v2
         with:
           verbose: true
