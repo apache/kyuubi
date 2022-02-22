@@ -243,7 +243,7 @@ def main():
     url = pr["url"]
     title = pr["title"]
     title = fix_title(title, pr_num)
-    body = pr["body"]
+    body = re.sub(re.compile(r"<!--[^>]*-->\n?", re.DOTALL), "", pr["body"]).lstrip()
     target_ref = pr["base"]["ref"]
     user_login = pr["user"]["login"]
     base_ref = pr["head"]["ref"]
@@ -274,8 +274,8 @@ def main():
         continue_maybe(msg)
 
     print("\n=== Pull Request #%s ===" % pr_num)
-    print("title\t%s\nsource\t%s\ntarget\t%s\nurl\t%s" %
-          (title, pr_repo_desc, target_ref, url))
+    print("title:\t%s\nsource:\t%s\ntarget:\t%s\nurl:\t%s\nbody:\n\n%s" %
+          (title, pr_repo_desc, target_ref, url, body))
     continue_maybe("Proceed with merging pull request #%s?" % pr_num)
 
     merged_refs = [target_ref]
