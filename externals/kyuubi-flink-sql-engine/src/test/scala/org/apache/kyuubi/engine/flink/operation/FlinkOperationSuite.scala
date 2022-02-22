@@ -771,7 +771,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         while (resultSet.next()) {
           rows += 1
         }
-        assert(rows == 200)
+        assert(rows === 200)
       }
     }
   }
