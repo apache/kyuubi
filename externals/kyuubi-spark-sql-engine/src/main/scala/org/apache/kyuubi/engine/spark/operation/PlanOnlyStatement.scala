@@ -38,23 +38,32 @@ class PlanOnlyStatement(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  override protected def resultSchema: StructType =
+  override protected def resultSchema: StructType = {
     if (result == null) {
       new StructType().add("plan", "string")
-    } else {
-      result.schema
-    }
+    } else if (result.isEmpty) {
+      new StructType().add("result", "string")
+    } else result.schema
+  }
 
-  private def isSetOrReset(plan: LogicalPlan): Boolean = {
+  private def shouldDirectRun(plan: LogicalPlan): Boolean = {
     val className = plan.getClass.getSimpleName
-    className == "SetCommand" || className == "ResetCommand"
+    className == "SetCommand" ||
+    className == "ResetCommand" ||
+    className == "UseStatement" ||
+    className == "SetNamespaceCommand" ||
+    className == "CacheTableStatement" ||
+    className == "CacheTableCommand" ||
+    className == "CacheTableAsSelect" ||
+    className == "CreateViewStatement" ||
+    className == "CreateViewCommand"
   }
 
   override protected def runInternal(): Unit = {
     try {
       val parsed = spark.sessionState.sqlParser.parsePlan(statement)
       parsed match {
-        case cmd if isSetOrReset(cmd) =>
+        case cmd if shouldDirectRun(cmd) =>
           result = spark.sql(statement)
           iter = new ArrayFetchIterator(result.collect())
         case plan => mode match {
