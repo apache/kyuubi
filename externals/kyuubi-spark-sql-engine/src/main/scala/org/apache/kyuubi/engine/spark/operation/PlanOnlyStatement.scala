@@ -42,7 +42,7 @@ class PlanOnlyStatement(
     if (result == null) {
       new StructType().add("plan", "string")
     } else if (result.isEmpty) {
-      new StructType().add("Result", "string")
+      new StructType().add("result", "string")
     } else result.schema
   }
 
@@ -51,7 +51,10 @@ class PlanOnlyStatement(
     className == "SetCommand" ||
     className == "ResetCommand" ||
     className == "UseStatement" ||
-    className == "SetNamespaceCommand"
+    className == "SetNamespaceCommand" ||
+    className == "CacheTableCommand" ||
+    className == "CreateViewStatement" ||
+    className == "CreateViewCommand"
   }
 
   override protected def runInternal(): Unit = {

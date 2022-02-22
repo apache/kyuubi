@@ -79,14 +79,30 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
-  test("KYUUBI #1920: Plan only operations with skip Usestatement or SetNamespaceCommand") {
-    val createDatabaseStatement = "create database test_database"
-    val useStatement = "use test_database"
+  test("KYUUBI #1920: Plan only operations with Usestatement or SetNamespaceCommand skiped") {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> NONE.toString))(Map.empty) {
       withDatabases("test_database") { statement =>
-        statement.execute(createDatabaseStatement)
+        statement.execute("create database test_database")
         statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY.key}=optimize")
-        val result = statement.executeQuery(useStatement)
+        val result = statement.executeQuery("use test_database")
+        assert(!result.next(), "In contrast to PlanOnly mode, it will returns an empty result")
+      }
+    }
+  }
+
+  test("KYUUBI #1920: Plan only operations with CacheTableCommand skiped") {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> OPTIMIZE.toString))(Map.empty) {
+      withJdbcStatement() { statement =>
+        val result = statement.executeQuery("cache table cached_table as select 1")
+        assert(!result.next(), "In contrast to PlanOnly mode, it will returns an empty result")
+      }
+    }
+  }
+
+  test("KYUUBI #1920: Plan only operations with CreateViewStatement or CreateViewCommand skiped") {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> OPTIMIZE.toString))(Map.empty) {
+      withJdbcStatement() { statement =>
+        val result = statement.executeQuery("create temp view temp_view as select 1")
         assert(!result.next(), "In contrast to PlanOnly mode, it will returns an empty result")
       }
     }
