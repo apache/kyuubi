@@ -153,11 +153,6 @@ SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
     | grep -v "WARNING"\
     | tail -n 1)
 
-SPARK_HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.binary.version $@ 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
-
 HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
@@ -175,7 +170,7 @@ if [[ "$NAME" == "none" ]]; then
   if [[ "$SPARK_PROVIDED" == "true" ]]; then
     SUFFIX=""
   else
-    SUFFIX="-spark-${SPARK_VERSION:0:3}-hadoop${SPARK_HADOOP_VERSION}"
+    SUFFIX="-spark-${SPARK_VERSION:0:3}"
   fi
 fi
 
@@ -219,7 +214,6 @@ echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Flink $FLINK_VERSION" >> "$DISTDIR/RELEASE"
 echo "Spark $SPARK_VERSION" >> "$DISTDIR/RELEASE"
-echo "Spark Hadoop $SPARK_HADOOP_VERSION" >> "$DISTDIR/RELEASE"
 echo "Kyuubi Hadoop $HADOOP_VERSION" >> "$DISTDIR/RELEASE"
 echo "Hive $HIVE_VERSION" >> "$DISTDIR/RELEASE"
 echo "Build flags: $@" >> "$DISTDIR/RELEASE"
@@ -275,14 +269,14 @@ done
 
 if [[ "$FLINK_PROVIDED" != "true" ]]; then
   # Copy flink binary dist
-  cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/flink-$FLINK_VERSION/" \
-        "$DISTDIR/externals/flink-$FLINK_VERSION/"
+  FLINK_BUILTIN="$(find "$KYUUBI_HOME/externals/kyuubi-download/target" -name 'flink-*' -type d)"
+  cp -r "$FLINK_BUILTIN" "$DISTDIR/externals/"
 fi
 
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
   # Copy spark binary dist
-  cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${SPARK_HADOOP_VERSION}$HIVE_VERSION_SUFFIX/" \
-        "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${SPARK_HADOOP_VERSION}$HIVE_VERSION_SUFFIX/"
+  SPARK_BUILTIN="$(find "$KYUUBI_HOME/externals/kyuubi-download/target" -name 'spark-*' -type d)"
+  cp -r "$SPARK_BUILTIN" "$DISTDIR/externals/"
 fi
 
 # Copy license files
