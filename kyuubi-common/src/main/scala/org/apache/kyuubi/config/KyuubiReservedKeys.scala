@@ -20,4 +20,5 @@ package org.apache.kyuubi.config
 object KyuubiReservedKeys {
   final val KYUUBI_SESSION_USER_KEY = "kyuubi.session.user"
   final val KYUUBI_STATEMENT_ID_KEY = "kyuubi.statement.id"
+  final val KYUUBI_ENGINE_SUBMIT_TIME_KEY = "kyuubi.engine.submitTime"
 }

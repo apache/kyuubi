@@ -32,6 +32,7 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, EventLoggingService}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -168,15 +169,23 @@ object SparkSQLEngine extends Logging {
 
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
-    var spark: SparkSession = null
-    try {
-      spark = createSpark()
+    val submitTime = kyuubiConf.getOption(KYUUBI_ENGINE_SUBMIT_TIME_KEY) match {
+      case Some(t) => t.toLong
+      case _ => 0L
+    }
+    val initTimeout = kyuubiConf.get(ENGINE_INIT_TIMEOUT)
+    if (System.currentTimeMillis() - submitTime > initTimeout) {
+      warn("The engine will exit immediately, due to exceeding the maximum initialization time.")
+    } else {
+      var spark: SparkSession = null
       try {
-        startEngine(spark)
-        // blocking main thread
-        countDownLatch.await()
-      } catch {
-        case e: KyuubiException => currentEngine match {
+        spark = createSpark()
+        try {
+          startEngine(spark)
+          // blocking main thread
+          countDownLatch.await()
+        } catch {
+          case e: KyuubiException => currentEngine match {
             case Some(engine) =>
               engine.stop()
               val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
@@ -185,12 +194,13 @@ object SparkSQLEngine extends Logging {
             case _ => error("Current SparkSQLEngine is not created.")
           }
 
-      }
-    } catch {
-      case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
-    } finally {
-      if (spark != null) {
-        spark.stop()
+        }
+      } catch {
+        case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
+      } finally {
+        if (spark != null) {
+          spark.stop()
+        }
       }
     }
   }
