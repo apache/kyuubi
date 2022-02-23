@@ -19,8 +19,8 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Release](https://img.shields.io/github/v/release/apache/incubator-kyuubi?label=release)](https://github.com/apache/incubator-kyuubi/releases)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/incubator-kyuubi/Kyuubi/master?style=plastic)
 [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/incubator-kyuubi/Kyuubi/master?style=plastic)
 [![Travis](https://api.travis-ci.com/apache/incubator-kyuubi.svg?branch=master)](https://travis-ci.com/apache/incubator-kyuubi)
 [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
 [![](https://tokei.rs/b1/github.com/apache/incubator-kyuubi)](https://github.com/apache/incubator-kyuubi)
