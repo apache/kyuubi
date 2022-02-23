@@ -15,7 +15,7 @@
  - limitations under the License.
  -->
 # Apache Kyuubi (Incubating)
-<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" height="170px" align="right" />
+<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" height="150px" align="right" />
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![](https://tokei.rs/b1/github.com/apache/incubator-kyuubi)](https://github.com/apache/incubator-kyuubi)
