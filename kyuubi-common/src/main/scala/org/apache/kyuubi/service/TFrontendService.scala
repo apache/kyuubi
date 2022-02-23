@@ -510,5 +510,9 @@ private[kyuubi] object TFrontendService {
     }
 
     def getSessionHandle: SessionHandle = sessionHandle
+
+    override def unwrap[T](aClass: Class[T]): T = null.asInstanceOf[T]
+
+    override def isWrapperFor(aClass: Class[_]): Boolean = false
   }
 }

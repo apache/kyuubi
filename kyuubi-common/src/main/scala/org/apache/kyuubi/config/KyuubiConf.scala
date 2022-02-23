@@ -364,34 +364,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_MAX_MESSAGE_SIZE)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_TIMEOUT.key} instead", "1.4.0")
-  val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
-    buildConf("frontend.login.timeout")
-      .doc("(deprecated) Timeout for Thrift clients during login to the thrift frontend service.")
-      .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(20).toMillis)
-
-  val FRONTEND_THRIFT_LOGIN_TIMEOUT: ConfigEntry[Long] =
-    buildConf("frontend.thrift.login.timeout")
-      .doc("Timeout for Thrift clients during login to the thrift frontend service.")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_LOGIN_TIMEOUT)
-
-  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH.key} instead", "1.4.0")
-  val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
-    buildConf("frontend.backoff.slot.length")
-      .doc("(deprecated) Time to back off during login to the thrift frontend service.")
-      .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofMillis(100).toMillis)
-
-  val FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
-    buildConf("frontend.thrift.backoff.slot.length")
-      .doc("Time to back off during login to the thrift frontend service.")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
-
   val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("authentication")
     .doc("A comma separated list of client authentication types.<ul>" +
       " <li>NOSASL: raw transport.</li>" +

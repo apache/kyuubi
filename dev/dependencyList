@@ -36,6 +36,8 @@ hk2-api/2.6.1//hk2-api-2.6.1.jar
 hk2-locator/2.6.1//hk2-locator-2.6.1.jar
 hk2-utils/2.6.1//hk2-utils-2.6.1.jar
 htrace-core4/4.1.0-incubating//htrace-core4-4.1.0-incubating.jar
+httpclient/4.5.13//httpclient-4.5.13.jar
+httpcore/4.4.15//httpcore-4.4.15.jar
 jackson-annotations/2.13.1//jackson-annotations-2.13.1.jar
 jackson-core/2.13.1//jackson-core-2.13.1.jar
 jackson-databind/2.13.1//jackson-databind-2.13.1.jar
@@ -70,7 +72,7 @@ jetty-util-ajax/9.4.41.v20210516//jetty-util-ajax-9.4.41.v20210516.jar
 jetty-util/9.4.41.v20210516//jetty-util-9.4.41.v20210516.jar
 jline/0.9.94//jline-0.9.94.jar
 libfb303/0.9.3//libfb303-0.9.3.jar
-libthrift/0.9.3//libthrift-0.9.3.jar
+libthrift/0.16.0//libthrift-0.16.0.jar
 log4j-1.2-api/2.17.1//log4j-1.2-api-2.17.1.jar
 log4j-api/2.17.1//log4j-api-2.17.1.jar
 log4j-core/2.17.1//log4j-core-2.17.1.jar
