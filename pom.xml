@@ -1812,7 +1812,7 @@
     <profiles>
         <profile>
             <id>mirror-cdn</id>
-            <!-- this profile works only for lastest apache releases -->
+            <!-- this profile works only for latest apache releases -->
             <properties>
                 <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
             </properties>
