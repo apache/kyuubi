@@ -111,7 +111,6 @@ abstract class RepartitionBeforeWritingHiveBase extends RepartitionBuilder {
 trait RepartitionBeforeWriteHelper {
   def canInsertRepartitionByExpression(plan: LogicalPlan): Boolean = plan match {
     case Project(_, child) => canInsertRepartitionByExpression(child)
-//    case Filter(_, child) => canInsertRepartitionByExpression(child)
     case SubqueryAlias(_, child) => canInsertRepartitionByExpression(child)
     case Limit(_, _) => false
     case _: Sort => false
