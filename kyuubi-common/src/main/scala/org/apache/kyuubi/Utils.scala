@@ -140,7 +140,54 @@ object Utils extends Logging {
     dir
   }
 
-  def currentUser: String = UserGroupInformation.getCurrentUser.getShortUserName
+  /**
+   * Get the ClassLoader which loaded Kyuubi.
+   */
+  def getKyuubiClassLoader: ClassLoader = getClass.getClassLoader
+
+  /**
+   * Get the Context ClassLoader on this thread or, if not present, the ClassLoader that
+   * loaded Kyuubi.
+   *
+   * This should be used whenever passing a ClassLoader to Class.ForName or finding the currently
+   * active loader when setting up ClassLoader delegation chains.
+   */
+  def getContextOrKyuubiClassLoader: ClassLoader =
+    Option(Thread.currentThread().getContextClassLoader).getOrElse(getKyuubiClassLoader)
+
+  /**
+   * Preferred alternative to Class.forName(className), as well as
+   * Class.forName(className, initialize, loader) with current thread's ContextClassLoader.
+   */
+  def classForName[C](
+      className: String,
+      initialize: Boolean = true,
+      fallbackKyuubiClassLoader: Boolean = true): Class[C] = {
+    if (fallbackKyuubiClassLoader) {
+      Class.forName(className, initialize, getContextOrKyuubiClassLoader).asInstanceOf[Class[C]]
+    } else {
+      Class.forName(
+        className,
+        initialize,
+        Thread.currentThread().getContextClassLoader).asInstanceOf[Class[C]]
+    }
+  }
+
+  /**
+   * Return whether the Hadoop classpath is present.
+   */
+  def hadoopClassPresent: Boolean = {
+    try {
+      classForName("org.apache.hadoop.security.UserGroupInformation")
+      true
+    } catch {
+      case _: ClassNotFoundException | _: NoClassDefFoundError => false
+    }
+  }
+
+  def currentUser: String =
+    if (hadoopClassPresent) UserGroupInformation.getCurrentUser.getShortUserName
+    else sys.props("user.name")
 
   private val majorMinorRegex = """^(\d+)\.(\d+)(\..*)?$""".r
   private val shortVersionRegex = """^(\d+\.\d+\.\d+)(.*)?$""".r
