@@ -29,7 +29,7 @@ class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper 
   override def withKyuubiConf: Map[String, String] =
     Map(
       KyuubiConf.ENGINE_SHARE_LEVEL.key -> "user",
-      KyuubiConf.OPERATION_PLAN_ONLY.key -> PARSE.toString,
+      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PARSE.toString,
       KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "plan-only")
 
   override protected def jdbcUrl: String =
@@ -42,7 +42,7 @@ class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper 
   }
 
   test("Plan only operation with session conf") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> ANALYZE.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ANALYZE.toString))(Map.empty) {
       withJdbcStatement() { statement =>
         val exceptionMsg = intercept[Exception](statement.executeQuery("select 1")).getMessage
         assert(exceptionMsg.contains(
@@ -52,16 +52,17 @@ class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper 
   }
 
   test("Plan only operation with set command") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> ANALYZE.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ANALYZE.toString))(Map.empty) {
       withJdbcStatement() { statement =>
-        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY.key}=parse")
+        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=$PARSE")
         testPlanOnlyStatementWithParseMode(statement)
       }
     }
   }
 
   test("Plan only operation with PHYSICAL mode") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> PHYSICAL.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PHYSICAL.toString))(
+      Map.empty) {
       withJdbcStatement() { statement =>
         val operationPlan = getOperationPlanWithStatement(statement)
         assert(operationPlan.startsWith("Calc(select=[1 AS EXPR$0])") &&
@@ -71,7 +72,8 @@ class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper 
   }
 
   test("Plan only operation with EXECUTION mode") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> EXECUTION.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> EXECUTION.toString))(
+      Map.empty) {
       withJdbcStatement() { statement =>
         val operationPlan = getOperationPlanWithStatement(statement)
         assert(operationPlan.startsWith("Calc(select=[1 AS EXPR$0])") &&

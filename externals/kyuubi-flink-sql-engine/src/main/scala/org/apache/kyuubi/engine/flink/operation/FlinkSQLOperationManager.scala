@@ -31,7 +31,7 @@ import org.apache.kyuubi.session.Session
 
 class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManager") {
 
-  private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY)
+  private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY_MODE)
 
   private lazy val resultMaxRowsDefault = getConf.get(ENGINE_FLINK_MAX_ROWS)
 
@@ -43,7 +43,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       queryTimeout: Long): Operation = {
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
     val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
-      OPERATION_PLAN_ONLY.key,
+      OPERATION_PLAN_ONLY_MODE.key,
       operationModeDefault)
     val resultMaxRows =
       flinkSession.normalizedConf.getOrElse(
