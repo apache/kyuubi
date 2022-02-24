@@ -59,6 +59,9 @@ abstract class RepartitionBeforeWritingDatasourceBase extends RepartitionBuilder
         query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
       c.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
+    case u @ Union(children, _, _) =>
+      u.copy(children = children.map(addRepartition))
+
     case _ => plan
   }
 }
@@ -98,6 +101,9 @@ abstract class RepartitionBeforeWritingHiveBase extends RepartitionBuilder {
         query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
       c.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
+    case u @ Union(children, _, _) =>
+      u.copy(children = children.map(addRepartition))
+
     case _ => plan
   }
 }
@@ -105,6 +111,8 @@ abstract class RepartitionBeforeWritingHiveBase extends RepartitionBuilder {
 trait RepartitionBeforeWriteHelper {
   def canInsertRepartitionByExpression(plan: LogicalPlan): Boolean = plan match {
     case Project(_, child) => canInsertRepartitionByExpression(child)
+//    case Filter(_, child) => canInsertRepartitionByExpression(child)
+    case SubqueryAlias(_, child) => canInsertRepartitionByExpression(child)
     case Limit(_, _) => false
     case _: Sort => false
     case _: RepartitionByExpression => false
