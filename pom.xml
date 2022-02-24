@@ -93,6 +93,7 @@
         <scala.binary.version>2.12</scala.binary.version>
 
         <antlr4.version>4.8</antlr4.version>
+        <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.2.8</codahale.metrics.version>
         <commons-codec.version>1.15</commons-codec.version>
@@ -104,7 +105,7 @@
         <delta.version>1.1.0</delta.version>
         <flink.version>1.14.3</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
-        <flink.archive.mirror>https://archive.apache.org/dist/flink/flink-${flink.version}</flink.archive.mirror>
+        <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <guava.version>30.1-jre</guava.version>
@@ -140,7 +141,7 @@
           -->
         <spark.version>3.2.1</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
-        <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
+        <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.1.11</swagger.version>
         <swagger-ui.version>4.1.3</swagger-ui.version>
@@ -1810,10 +1811,10 @@
 
     <profiles>
         <profile>
-            <id>mirror-cn</id>
+            <id>mirror-cdn</id>
+            <!-- this profile works only for latest apache releases -->
             <properties>
-                <spark.archive.mirror>https://mirrors.bfsu.edu.cn/apache/spark/spark-${spark.version}</spark.archive.mirror>
-                <flink.archive.mirror>https://mirrors.bfsu.edu.cn/apache/flink/flink-${flink.version}</flink.archive.mirror>
+                <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
             </properties>
         </profile>
 
