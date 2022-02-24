@@ -31,7 +31,7 @@ import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
  * {{{
  *   build/mvn clean install \
  *     -Dmaven.plugin.scalatest.exclude.tags="" \
-*      -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
+ *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
  * }}}
  *
  * To re-generate golden files for this suite:
