@@ -96,10 +96,9 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     withSessionConf()(
       Map(KyuubiConf.OPERATION_PLAN_ONLY_EXCLUDES.key -> "CreateViewStatement,CreateViewCommand"))(
       Map.empty) {
-      withJdbcStatement() { statement =>
+      withJdbcStatement("temp_view") { statement =>
         val result = statement.executeQuery("create temp view temp_view as select 1")
         assert(!result.next(), "In contrast to PlanOnly mode, it will returns an empty result")
-        statement.execute("drop view temp_view")
       }
     }
   }
