@@ -83,7 +83,7 @@ object SparkSQLEngine extends Logging {
 
   private val countDownLatch = new CountDownLatch(1)
 
-  private def setupConf(): Unit = {
+  def setupConf(): Unit = {
     val rootDir = sparkConf.getOption("spark.repl.classdir").getOrElse(getLocalDir(sparkConf))
     val outputDir = Utils.createTempDir(root = rootDir, namePrefix = "repl")
     sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
