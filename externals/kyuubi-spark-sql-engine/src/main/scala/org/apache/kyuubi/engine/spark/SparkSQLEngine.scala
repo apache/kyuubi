@@ -79,8 +79,6 @@ object SparkSQLEngine extends Logging {
 
   private val user = currentUser
 
-  val appName = s"kyuubi_${user}_spark_${Instant.now}"
-
   private val countDownLatch = new CountDownLatch(1)
 
   def setupConf(): Unit = {
@@ -97,6 +95,7 @@ object SparkSQLEngine extends Logging {
       "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
       "20")
 
+    val appName = s"kyuubi_${user}_spark_${Instant.now}"
     sparkConf.setIfMissing("spark.app.name", appName)
     val defaultCat = if (KyuubiSparkUtil.hiveClassesArePresent) "hive" else "in-memory"
     sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
@@ -121,7 +120,8 @@ object SparkSQLEngine extends Logging {
     val session = SparkSession.builder.config(sparkConf).getOrCreate
     (kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
       .foreach { sqlStr =>
-        session.sparkContext.setJobGroup(appName, sqlStr, interruptOnCancel = true)
+        session.sparkContext.setJobGroup("engine_initializing_queries",
+          sqlStr, interruptOnCancel = true)
         debug(s"Execute session initializing sql: $sqlStr")
         session.sql(sqlStr).isEmpty
       }
@@ -174,13 +174,17 @@ object SparkSQLEngine extends Logging {
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
     setupConf()
+    val startedTime = System.currentTimeMillis()
     val submitTime = kyuubiConf.getOption(KYUUBI_ENGINE_SUBMIT_TIME_KEY) match {
       case Some(t) => t.toLong
-      case _ => System.currentTimeMillis()
+      case _ => startedTime
     }
     val initTimeout = kyuubiConf.get(ENGINE_INIT_TIMEOUT)
-    if (System.currentTimeMillis() - submitTime > initTimeout) {
-      throw new KyuubiException(s"The maximum initialization time exceeded.")
+    val totalInitTime = startedTime - submitTime
+    if (totalInitTime > initTimeout) {
+      throw new KyuubiException(s"The total engine initialization time ($totalInitTime ms)" +
+        s" exceeds `kyuubi.session.engine.initialize.timeout` ($initTimeout ms)," +
+        s" and submitted at $submitTime.")
     } else {
       var spark: SparkSession = null
       try {
