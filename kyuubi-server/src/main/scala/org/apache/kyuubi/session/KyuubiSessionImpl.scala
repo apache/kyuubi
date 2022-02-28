@@ -21,8 +21,8 @@ import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
-import org.apache.kyuubi.KyuubiSQLException
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
