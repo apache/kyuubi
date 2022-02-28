@@ -154,7 +154,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
 
-  private val eventLoggingService: EventLoggingService = new EventLoggingService
+  private val eventLoggingService = new EventLoggingService()
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()
