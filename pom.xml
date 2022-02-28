@@ -516,12 +516,6 @@
             </dependency>
 
             <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-client</artifactId>
-                <version>${kubernetes-client.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.apache.thrift</groupId>
                 <artifactId>libfb303</artifactId>
                 <version>${fb303.version}</version>
@@ -532,6 +526,10 @@
                 <artifactId>libthrift</artifactId>
                 <version>${thrift.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
                     <exclusion>
                         <artifactId>commons-logging</artifactId>
                         <groupId>commons-logging</groupId>
