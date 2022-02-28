@@ -51,7 +51,7 @@ abstract class AbstractEventLoggingService
 
 object EventLogging {
 
-  private[events] var _service: Option[AbstractEventLoggingService] = None
+  @volatile private[events] var _service: Option[AbstractEventLoggingService] = None
 
   def onEvent(event: KyuubiEvent): Unit = {
     _service.foreach(_.onEvent(event))

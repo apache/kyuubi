@@ -66,12 +66,12 @@ abstract class TFrontendService(name: String)
   protected def stopServer(): Unit
 
   override def stop(): Unit = synchronized {
+    super.stop()
     if (started.getAndSet(false)) {
       serverThread.interrupt()
       stopServer()
       info(getName + " has stopped")
     }
-    super.stop()
   }
 
   override def connectionUrl: String = {
