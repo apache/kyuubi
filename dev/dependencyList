@@ -36,8 +36,6 @@ hk2-api/2.6.1//hk2-api-2.6.1.jar
 hk2-locator/2.6.1//hk2-locator-2.6.1.jar
 hk2-utils/2.6.1//hk2-utils-2.6.1.jar
 htrace-core4/4.1.0-incubating//htrace-core4-4.1.0-incubating.jar
-httpclient/4.5.13//httpclient-4.5.13.jar
-httpcore/4.4.15//httpcore-4.4.15.jar
 jackson-annotations/2.13.1//jackson-annotations-2.13.1.jar
 jackson-core/2.13.1//jackson-core-2.13.1.jar
 jackson-databind/2.13.1//jackson-databind-2.13.1.jar
