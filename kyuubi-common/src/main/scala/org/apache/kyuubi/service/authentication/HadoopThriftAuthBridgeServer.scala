@@ -20,10 +20,10 @@ package org.apache.kyuubi.service.authentication
 import java.io.IOException
 import java.net.InetAddress
 import java.security.PrivilegedAction
+import java.util.Base64
 import javax.security.auth.callback._
 import javax.security.sasl.{AuthorizeCallback, RealmCallback}
 
-import org.apache.commons.codec.binary.Base64
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.security.{SaslRpcServer, UserGroupInformation}
 import org.apache.hadoop.security.SaslRpcServer.AuthMethod
@@ -190,7 +190,7 @@ object HadoopThriftAuthBridgeServer {
 
     def getPasswd(identifier: KyuubiDelegationTokenIdentifier): Array[Char] = {
       val passwd = secretMgr.retrievePassword(identifier)
-      new String(Base64.encodeBase64(passwd)).toCharArray
+      Base64.getMimeEncoder.encodeToString(passwd).toCharArray
     }
 
     override def handle(callbacks: Array[Callback]): Unit = {

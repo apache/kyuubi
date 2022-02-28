@@ -23,12 +23,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.codec.binary.Base64;
+import java.util.*;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.rpc.thrift.TCLIService;
@@ -988,7 +983,7 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
       // Set on the server side.
       // @see org.apache.hive.service.cli.operation.SQLOperation#prepare
       String guid64 =
-          Base64.encodeBase64URLSafeString(stmtHandle.getOperationId().getGuid()).trim();
+          Base64.getUrlEncoder().encodeToString(stmtHandle.getOperationId().getGuid()).trim();
       return guid64;
     }
     return null;
