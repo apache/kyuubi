@@ -33,7 +33,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, EventLoggingService}
-import org.apache.kyuubi.events.EventLoggingService
+import org.apache.kyuubi.events.EventLogging
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
@@ -139,7 +139,7 @@ object SparkSQLEngine extends Logging {
 
       try {
         engine.initialize(kyuubiConf)
-        EventLoggingService.onEvent(EngineEvent(engine))
+        EventLogging.onEvent(EngineEvent(engine))
       } catch {
         case t: Throwable =>
           throw new KyuubiException(s"Failed to initialize SparkSQLEngine: ${t.getMessage}", t)
@@ -155,7 +155,7 @@ object SparkSQLEngine extends Logging {
           kyuubiConf)
         val event = EngineEvent(engine)
         info(event)
-        EventLoggingService.onEvent(event)
+        EventLogging.onEvent(event)
       } catch {
         case t: Throwable =>
           throw new KyuubiException(s"Failed to start SparkSQLEngine: ${t.getMessage}", t)
@@ -180,7 +180,7 @@ object SparkSQLEngine extends Logging {
             case Some(engine) =>
               engine.stop()
               val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
-              EventLoggingService.onEvent(event)
+              EventLogging.onEvent(event)
               error(event, e)
             case _ => error("Current SparkSQLEngine is not created.")
           }

@@ -31,7 +31,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
-import org.apache.kyuubi.events.{EventLoggingService, KyuubiServerInfoEvent}
+import org.apache.kyuubi.events.{EventLogging, KyuubiServerInfoEvent}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{ServiceDiscovery, ZooKeeperAuthTypes}
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
@@ -170,11 +170,11 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override def start(): Unit = {
     super.start()
     KyuubiServer.kyuubiServer = this
-    KyuubiServerInfoEvent(this, ServiceState.STARTED).foreach(EventLoggingService.onEvent)
+    KyuubiServerInfoEvent(this, ServiceState.STARTED).foreach(EventLogging.onEvent)
   }
 
   override def stop(): Unit = {
-    KyuubiServerInfoEvent(this, ServiceState.STOPPED).foreach(EventLoggingService.onEvent)
+    KyuubiServerInfoEvent(this, ServiceState.STOPPED).foreach(EventLogging.onEvent)
     super.stop()
   }
 

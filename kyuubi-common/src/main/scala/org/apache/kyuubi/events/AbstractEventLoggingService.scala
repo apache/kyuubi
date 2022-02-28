@@ -24,7 +24,7 @@ import org.apache.kyuubi.service.CompositeService
 abstract class AbstractEventLoggingService
   extends CompositeService("EventLogging") {
 
-  import EventLoggingService._
+  import EventLogging._
 
   private val eventLoggers = new ArrayBuffer[EventLogger]()
 
@@ -49,7 +49,7 @@ abstract class AbstractEventLoggingService
 
 }
 
-object EventLoggingService {
+object EventLogging {
 
   private[events] var _service: Option[AbstractEventLoggingService] = None
 
