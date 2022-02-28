@@ -51,7 +51,7 @@ case class KyuubiSessionEvent(
     var engineId: String = "",
     var openedTime: Long = -1L,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiServerEvent {
+    var totalOperations: Int = 0) extends KyuubiEvent {
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 }

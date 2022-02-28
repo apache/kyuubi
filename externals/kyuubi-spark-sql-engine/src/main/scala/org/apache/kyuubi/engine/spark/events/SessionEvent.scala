@@ -18,14 +18,14 @@
 package org.apache.kyuubi.engine.spark.events
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import org.apache.spark.sql.Encoders
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.KVIndexParam
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
+import org.apache.kyuubi.events.KyuubiEvent
 
 /**
  * Event Tracking for user sessions
@@ -45,9 +45,8 @@ case class SessionEvent(
     serverIp: String,
     startTime: Long,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiSparkEvent {
+    var totalOperations: Int = 0) extends KyuubiEvent with SparkListenerEvent {
 
-  override def schema: StructType = Encoders.product[SessionEvent].schema
   override lazy val partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 

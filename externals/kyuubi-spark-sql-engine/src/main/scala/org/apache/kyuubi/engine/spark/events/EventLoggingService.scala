@@ -22,11 +22,10 @@ import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
-import org.apache.kyuubi.engine.spark.events.EventLoggingService._service
 import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType, JsonEventLogger}
 
 class EventLoggingService(spark: SparkContext)
-  extends AbstractEventLoggingService[KyuubiSparkEvent] {
+  extends AbstractEventLoggingService {
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     conf.get(ENGINE_EVENT_LOGGERS)
@@ -35,7 +34,7 @@ class EventLoggingService(spark: SparkContext)
         case EventLoggerType.SPARK =>
           addEventLogger(SparkContextHelper.createSparkHistoryLogger(spark))
         case EventLoggerType.JSON =>
-          val jsonEventLogger = new JsonEventLogger[KyuubiSparkEvent](
+          val jsonEventLogger = new JsonEventLogger(
             spark.applicationAttemptId.getOrElse(spark.applicationId),
             ENGINE_EVENT_JSON_LOG_PATH,
             spark.hadoopConfiguration)
@@ -46,26 +45,5 @@ class EventLoggingService(spark: SparkContext)
           throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
       }
     super.initialize(conf)
-  }
-
-  override def start(): Unit = synchronized {
-    super.start()
-    // expose the event logging service only when the loggers successfully start
-    _service = Some(this)
-  }
-
-  override def stop(): Unit = synchronized {
-    _service = None
-    super.stop()
-  }
-
-}
-
-object EventLoggingService {
-
-  private var _service: Option[EventLoggingService] = None
-
-  def onEvent(event: KyuubiSparkEvent): Unit = {
-    _service.foreach(_.onEvent(event))
   }
 }

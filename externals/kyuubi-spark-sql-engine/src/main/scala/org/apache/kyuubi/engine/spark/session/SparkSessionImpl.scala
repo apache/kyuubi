@@ -20,9 +20,10 @@ package org.apache.kyuubi.engine.spark.session
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
-import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SessionEvent}
+import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
+import org.apache.kyuubi.events.EventLogging
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
@@ -56,7 +57,7 @@ class SparkSessionImpl(
       case (key, value) => setModifiableConfig(key, value)
     }
     KDFRegistry.registerAll(spark)
-    EventLoggingService.onEvent(sessionEvent)
+    EventLogging.onEvent(sessionEvent)
     super.open()
   }
 
@@ -67,7 +68,7 @@ class SparkSessionImpl(
 
   override def close(): Unit = {
     sessionEvent.endTime = System.currentTimeMillis()
-    EventLoggingService.onEvent(sessionEvent)
+    EventLogging.onEvent(sessionEvent)
     super.close()
     spark.sessionState.catalog.getTempViewNames().foreach(spark.catalog.uncacheTable(_))
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closeILoop(handle)
