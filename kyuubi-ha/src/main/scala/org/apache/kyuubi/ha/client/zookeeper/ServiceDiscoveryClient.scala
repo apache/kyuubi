@@ -127,7 +127,7 @@ class ServiceDiscoveryClient(serviceDiscovery: ServiceDiscovery) extends Logging
   def postDeregisterService(): Boolean = {
     if (namespace != null) {
       try {
-        zkClient.delete().guaranteed().deletingChildrenIfNeeded().forPath(namespace)
+        zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
         true
       } catch {
         case e: KeeperException =>
