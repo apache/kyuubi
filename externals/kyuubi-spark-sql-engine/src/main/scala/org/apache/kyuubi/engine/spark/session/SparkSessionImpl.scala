@@ -25,7 +25,7 @@ import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.events.EventLogging
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionManager}
 
 class SparkSessionImpl(
     protocol: TProtocolVersion,
@@ -37,7 +37,6 @@ class SparkSessionImpl(
     sessionManager: SessionManager,
     val spark: SparkSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-  override val handle: SessionHandle = SessionHandle(protocol)
 
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
@@ -73,5 +72,4 @@ class SparkSessionImpl(
     spark.sessionState.catalog.getTempViewNames().foreach(spark.catalog.uncacheTable(_))
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closeILoop(handle)
   }
-
 }

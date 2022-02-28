@@ -33,7 +33,7 @@ import org.apache.kyuubi.session.Session
 abstract class AbstractOperation(opType: OperationType, session: Session)
   extends Operation with Logging {
 
-  final private val createTime = System.currentTimeMillis()
+  final protected val createTime = System.currentTimeMillis()
   final private val handle = OperationHandle(opType, session.protocol)
   final private val operationTimeout: Long = {
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)

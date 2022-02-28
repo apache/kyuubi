@@ -30,7 +30,7 @@ class FlinkSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
-    val handle: SessionHandle,
+    override val handle: SessionHandle,
     val sessionContext: SessionContext)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 

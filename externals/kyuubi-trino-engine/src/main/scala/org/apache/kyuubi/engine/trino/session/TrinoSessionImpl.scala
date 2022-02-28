@@ -35,7 +35,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.trino.TrinoConf
 import org.apache.kyuubi.engine.trino.TrinoContext
 import org.apache.kyuubi.session.AbstractSession
-import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.session.SessionManager
 
 class TrinoSessionImpl(
@@ -49,8 +48,6 @@ class TrinoSessionImpl(
 
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
-
-  override val handle: SessionHandle = SessionHandle(protocol)
 
   override def open(): Unit = {
     normalizedConf.foreach {

@@ -15,13 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.hive.operation
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.engine.hive.HiveSQLEngine
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE = Value
+trait WithHiveSQLEngine extends KyuubiFunSuite {
+
+  override def beforeAll(): Unit = {
+
+    HiveSQLEngine.main(Array.empty)
+  }
+
 }

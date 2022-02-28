@@ -15,13 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.hive.operation
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+import scala.collection.JavaConverters._
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE = Value
+import org.apache.hive.service.cli.operation.Operation
+
+import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.session.Session
+
+class ExecuteStatement(
+    session: Session,
+    override val statement: String,
+    confOverlay: Map[String, String],
+    override val shouldRunAsync: Boolean,
+    queryTimeout: Long)
+  extends HiveOperation(OperationType.EXECUTE_STATEMENT, session) {
+  override val internalHiveOperation: Operation = {
+    delegatedOperationManager.newExecuteStatementOperation(
+      hive,
+      statement,
+      confOverlay.asJava,
+      shouldRunAsync,
+      queryTimeout)
+  }
 }

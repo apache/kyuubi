@@ -15,17 +15,39 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.engine.hive.session
 
+import scala.collection.JavaConverters._
+
+import org.apache.hive.service.cli.HiveSQLException
+import org.apache.hive.service.cli.session.HiveSession
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-class NoopSessionImpl(
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+
+class HiveSessionImpl(
     protocol: TProtocolVersion,
     user: String,
     password: String,
+    serverIpAddress: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: SessionManager)
+    sessionManager: SessionManager,
+    override val handle: SessionHandle,
+    val hive: HiveSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-  override def open(): Unit = {}
+
+  override def open(): Unit = {
+    hive.open(conf.asJava)
+  }
+
+  override def close(): Unit = {
+    super.close()
+    try {
+      hive.close()
+    } catch {
+      case e: HiveSQLException =>
+        error(s"Failed to close hive runtime session: ${e.getMessage}")
+    }
+  }
 }

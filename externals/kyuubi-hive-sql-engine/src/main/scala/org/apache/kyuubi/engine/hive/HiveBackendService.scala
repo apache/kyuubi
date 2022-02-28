@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.hive
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+import org.apache.kyuubi.engine.hive.session.HiveSessionManager
+import org.apache.kyuubi.service.{AbstractBackendService, Serverable}
+import org.apache.kyuubi.session.SessionManager
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE = Value
+class HiveBackendService(serv: Serverable)
+  extends AbstractBackendService("HiveBackendService") {
+  override val sessionManager: SessionManager = new HiveSessionManager(serv)
 }
