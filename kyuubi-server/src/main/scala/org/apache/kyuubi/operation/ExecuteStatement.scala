@@ -25,11 +25,10 @@ import org.apache.thrift.TException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.events.KyuubiOperationEvent
+import org.apache.kyuubi.events.{EventLoggingService, KyuubiOperationEvent}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Session}
 
 class ExecuteStatement(

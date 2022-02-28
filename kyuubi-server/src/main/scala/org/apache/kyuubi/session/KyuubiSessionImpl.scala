@@ -21,19 +21,18 @@ import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
-
 import org.apache.kyuubi.KyuubiSQLException
+
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
-import org.apache.kyuubi.events.{KyuubiEvent, KyuubiSessionEvent}
+import org.apache.kyuubi.events.{EventLoggingService, KyuubiEvent, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.EngineSecurityAccessor
 
 class KyuubiSessionImpl(
