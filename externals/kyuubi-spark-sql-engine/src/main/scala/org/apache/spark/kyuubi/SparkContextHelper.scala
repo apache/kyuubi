@@ -20,7 +20,7 @@ package org.apache.spark.kyuubi
 import org.apache.hadoop.security.Credentials
 import org.apache.spark.SparkContext
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.scheduler.SchedulerBackend
+import org.apache.spark.scheduler.{SchedulerBackend, SparkListenerEvent}
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.UpdateDelegationTokens
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.scheduler.local.LocalSchedulerBackend
@@ -29,8 +29,7 @@ import org.apache.spark.ui.SparkUI
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
-import org.apache.kyuubi.engine.spark.events.KyuubiSparkEvent
-import org.apache.kyuubi.events.EventLogger
+import org.apache.kyuubi.events.{EventLogger, KyuubiEvent}
 
 /**
  * A place to invoke non-public APIs of [[SparkContext]], anything to be added here need to
@@ -38,7 +37,7 @@ import org.apache.kyuubi.events.EventLogger
  */
 object SparkContextHelper extends Logging {
 
-  def createSparkHistoryLogger(sc: SparkContext): EventLogger[KyuubiSparkEvent] = {
+  def createSparkHistoryLogger(sc: SparkContext): EventLogger = {
     new SparkHistoryEventLogger(sc)
   }
 
@@ -87,8 +86,11 @@ object SparkContextHelper extends Logging {
  * A [[EventLogger]] that logs everything to SparkHistory
  * @param sc SparkContext
  */
-private class SparkHistoryEventLogger(sc: SparkContext) extends EventLogger[KyuubiSparkEvent] {
-  override def logEvent(kyuubiEvent: KyuubiSparkEvent): Unit = {
-    sc.listenerBus.post(kyuubiEvent)
+private class SparkHistoryEventLogger(sc: SparkContext) extends EventLogger {
+  override def logEvent(kyuubiEvent: KyuubiEvent): Unit = {
+    kyuubiEvent match {
+      case s: SparkListenerEvent => sc.listenerBus.post(s)
+      case _ => // ignore
+    }
   }
 }

@@ -41,11 +41,11 @@ import org.apache.kyuubi.service.AbstractService
  * The ${date} is based on the time of events, e.g. engine.startTime, statement.startTime
  * @param logName the engine id formed of appId + attemptId(if any)
  */
-class JsonEventLogger[T <: KyuubiEvent](
+class JsonEventLogger(
     logName: String,
     logPath: ConfigEntry[String],
     hadoopConf: Configuration)
-  extends AbstractService("JsonEventLogger") with EventLogger[T] with Logging {
+  extends AbstractService("JsonEventLogger") with EventLogger with Logging {
 
   type Logger = (PrintWriter, Option[FSDataOutputStream])
 
@@ -105,7 +105,7 @@ class JsonEventLogger[T <: KyuubiEvent](
     super.stop()
   }
 
-  override def logEvent(kyuubiEvent: T): Unit = {
+  override def logEvent(kyuubiEvent: KyuubiEvent): Unit = {
     val (writer, stream) = getOrUpdate(kyuubiEvent)
     // scalastyle:off println
     writer.println(kyuubiEvent.toJson)
@@ -119,7 +119,7 @@ class JsonEventLogger[T <: KyuubiEvent](
     val logRoot: URI = URI.create(conf.get(ENGINE_EVENT_JSON_LOG_PATH))
     val fs: FileSystem = FileSystem.get(logRoot, hadoopConf)
     val success: Boolean = FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
-    if (success == false) {
+    if (!success) {
       val fileStatus = fs.getFileStatus(new Path(logRoot))
       if (!fileStatus.isDirectory) {
         throw new IllegalArgumentException(s"Log directory $logRoot is not a directory.")

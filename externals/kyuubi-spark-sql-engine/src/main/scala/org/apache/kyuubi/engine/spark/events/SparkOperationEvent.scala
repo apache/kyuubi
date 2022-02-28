@@ -18,13 +18,13 @@
 package org.apache.kyuubi.engine.spark.events
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import org.apache.spark.sql.Encoders
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.KVIndexParam
 import org.apache.kyuubi.engine.spark.operation.SparkOperation
+import org.apache.kyuubi.events.KyuubiEvent
 
 /**
  * A [[SparkOperationEvent]] used to tracker the lifecycle of an operation at Spark SQL Engine side.
@@ -59,9 +59,8 @@ case class SparkOperationEvent(
     exception: Option[Throwable],
     sessionId: String,
     sessionUser: String,
-    executionId: Option[Long]) extends KyuubiSparkEvent {
+    executionId: Option[Long]) extends KyuubiEvent with SparkListenerEvent {
 
-  override def schema: StructType = Encoders.product[SparkOperationEvent].schema
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 

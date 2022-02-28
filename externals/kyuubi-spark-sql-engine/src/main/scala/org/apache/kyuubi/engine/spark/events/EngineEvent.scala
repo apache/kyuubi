@@ -19,12 +19,12 @@ package org.apache.kyuubi.engine.spark.events
 
 import java.util.Date
 
-import org.apache.spark.sql.Encoders
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.scheduler.SparkListenerEvent
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
+import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.service.ServiceState
 
 /**
@@ -56,9 +56,8 @@ case class EngineEvent(
     endTime: Long,
     state: Int,
     diagnostic: String,
-    settings: Map[String, String]) extends KyuubiSparkEvent {
+    settings: Map[String, String]) extends KyuubiEvent with SparkListenerEvent {
 
-  override def schema: StructType = Encoders.product[EngineEvent].schema
   override lazy val partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 

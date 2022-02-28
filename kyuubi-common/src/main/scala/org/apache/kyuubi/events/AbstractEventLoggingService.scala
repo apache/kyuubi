@@ -21,16 +21,39 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.service.CompositeService
 
-abstract class AbstractEventLoggingService[T <: KyuubiEvent]
+abstract class AbstractEventLoggingService
   extends CompositeService("EventLogging") {
 
-  private val eventLoggers = new ArrayBuffer[EventLogger[T]]()
+  import EventLoggingService._
 
-  def onEvent(event: T): Unit = {
+  private val eventLoggers = new ArrayBuffer[EventLogger]()
+
+  def onEvent(event: KyuubiEvent): Unit = {
     eventLoggers.foreach(_.logEvent(event))
   }
 
-  def addEventLogger(logger: EventLogger[T]): Unit = {
+  def addEventLogger(logger: EventLogger): Unit = {
     eventLoggers += logger
+  }
+
+  override def start(): Unit = synchronized {
+    super.start()
+    // expose the event logging service only when the loggers successfully start
+    _service = Some(this)
+  }
+
+  override def stop(): Unit = synchronized {
+    _service = None
+    super.stop()
+  }
+
+}
+
+object EventLoggingService {
+
+  private[events] var _service: Option[AbstractEventLoggingService] = None
+
+  def onEvent(event: KyuubiEvent): Unit = {
+    _service.foreach(_.onEvent(event))
   }
 }
