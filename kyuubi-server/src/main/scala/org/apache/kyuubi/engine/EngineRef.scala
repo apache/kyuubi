@@ -32,6 +32,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.EngineType.{EngineType, FLINK_SQL, SPARK_SQL, TRINO}
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
@@ -178,6 +179,8 @@ private[kyuubi] class EngineRef(
 
     conf.set(HA_ZK_NAMESPACE, engineSpace)
     conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
+    val started = System.currentTimeMillis()
+    conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
     val builder = engineType match {
       case SPARK_SQL =>
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
@@ -203,7 +206,6 @@ private[kyuubi] class EngineRef(
     try {
       info(s"Launching engine:\n$builder")
       val process = builder.start
-      val started = System.currentTimeMillis()
       var exitValue: Option[Int] = None
       while (engineRef.isEmpty) {
         if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {

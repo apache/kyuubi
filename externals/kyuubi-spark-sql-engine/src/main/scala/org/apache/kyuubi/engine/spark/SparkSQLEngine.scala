@@ -31,6 +31,7 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, EventLoggingService}
 import org.apache.kyuubi.events.EventLogging
@@ -70,6 +71,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
 object SparkSQLEngine extends Logging {
 
+  val sparkConf: SparkConf = new SparkConf()
+
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
   var currentEngine: Option[SparkSQLEngine] = None
@@ -78,8 +81,7 @@ object SparkSQLEngine extends Logging {
 
   private val countDownLatch = new CountDownLatch(1)
 
-  def createSpark(): SparkSession = {
-    val sparkConf = new SparkConf()
+  def setupConf(): Unit = {
     val rootDir = sparkConf.getOption("spark.repl.classdir").getOrElse(getLocalDir(sparkConf))
     val outputDir = Utils.createTempDir(root = rootDir, namePrefix = "repl")
     sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
@@ -112,11 +114,16 @@ object SparkSQLEngine extends Logging {
         debug(s"KyuubiConf: $k = $v")
       }
     }
+  }
 
+  def createSpark(): SparkSession = {
     val session = SparkSession.builder.config(sparkConf).getOrCreate
     (kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
       .foreach { sqlStr =>
-        session.sparkContext.setJobGroup(appName, sqlStr, interruptOnCancel = true)
+        session.sparkContext.setJobGroup(
+          "engine_initializing_queries",
+          sqlStr,
+          interruptOnCancel = true)
         debug(s"Execute session initializing sql: $sqlStr")
         session.sql(sqlStr).isEmpty
       }
@@ -168,29 +175,43 @@ object SparkSQLEngine extends Logging {
 
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
-    var spark: SparkSession = null
-    try {
-      spark = createSpark()
+    setupConf()
+    val startedTime = System.currentTimeMillis()
+    val submitTime = kyuubiConf.getOption(KYUUBI_ENGINE_SUBMIT_TIME_KEY) match {
+      case Some(t) => t.toLong
+      case _ => startedTime
+    }
+    val initTimeout = kyuubiConf.get(ENGINE_INIT_TIMEOUT)
+    val totalInitTime = startedTime - submitTime
+    if (totalInitTime > initTimeout) {
+      throw new KyuubiException(s"The total engine initialization time ($totalInitTime ms)" +
+        s" exceeds `kyuubi.session.engine.initialize.timeout` ($initTimeout ms)," +
+        s" and submitted at $submitTime.")
+    } else {
+      var spark: SparkSession = null
       try {
-        startEngine(spark)
-        // blocking main thread
-        countDownLatch.await()
-      } catch {
-        case e: KyuubiException => currentEngine match {
-            case Some(engine) =>
-              engine.stop()
-              val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
-              EventLogging.onEvent(event)
-              error(event, e)
-            case _ => error("Current SparkSQLEngine is not created.")
-          }
+        spark = createSpark()
+        try {
+          startEngine(spark)
+          // blocking main thread
+          countDownLatch.await()
+        } catch {
+          case e: KyuubiException => currentEngine match {
+              case Some(engine) =>
+                engine.stop()
+                val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
+                EventLogging.onEvent(event)
+                error(event, e)
+              case _ => error("Current SparkSQLEngine is not created.")
+            }
 
-      }
-    } catch {
-      case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
-    } finally {
-      if (spark != null) {
-        spark.stop()
+        }
+      } catch {
+        case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
+      } finally {
+        if (spark != null) {
+          spark.stop()
+        }
       }
     }
   }
