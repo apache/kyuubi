@@ -18,11 +18,10 @@
 package org.apache.kyuubi.util
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream}
-import java.util.{Map => JMap}
+import java.util.{Base64, Map => JMap}
 
 import scala.collection.JavaConverters._
 
-import org.apache.commons.codec.binary.Base64
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
 import org.apache.hadoop.io.Text
@@ -58,13 +57,11 @@ object KyuubiHadoopUtils {
     val byteStream = new ByteArrayOutputStream
     creds.writeTokenStorageToStream(new DataOutputStream(byteStream))
 
-    val encoder = new Base64(0, null, false)
-    encoder.encodeToString(byteStream.toByteArray)
+    Base64.getMimeEncoder.encodeToString(byteStream.toByteArray)
   }
 
   def decodeCredentials(newValue: String): Credentials = {
-    val decoder = new Base64(0, null, false)
-    val decoded = decoder.decode(newValue)
+    val decoded = Base64.getMimeDecoder.decode(newValue)
 
     val byteStream = new ByteArrayInputStream(decoded)
     val creds = new Credentials()

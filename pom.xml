@@ -151,7 +151,6 @@
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.commons-cli.version>1.2</hive.client.commons-cli.version>
-        <hive.client.commons-codec.version>1.15</hive.client.commons-codec.version>
         <hive.client.httpcomponents-client.version>4.5.13</hive.client.httpcomponents-client.version>
         <hive.client.httpcomponents-core.version>4.4.13</hive.client.httpcomponents-core.version>
         <hive.client.jline.version>2.12</hive.client.jline.version>
@@ -525,6 +524,12 @@
                 <groupId>org.apache.thrift</groupId>
                 <artifactId>libfb303</artifactId>
                 <version>${fb303.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.thrift</groupId>
+                        <artifactId>libthrift</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -533,12 +538,8 @@
                 <version>${thrift.version}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>commons-logging</artifactId>
-                        <groupId>commons-logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.annotation</groupId>
-                        <artifactId>javax.annotation-api</artifactId>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

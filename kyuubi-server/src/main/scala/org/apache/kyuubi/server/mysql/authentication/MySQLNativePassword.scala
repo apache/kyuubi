@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.server.mysql.authentication
 
-import java.util
-
-import org.apache.commons.codec.digest.DigestUtils
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.util.Arrays
 
 import org.apache.kyuubi.server.mysql.authentication.MySQLAuthentication.randomBytes
 import org.apache.kyuubi.server.mysql.authentication.MySQLNativePassword.PluginData
@@ -52,16 +52,17 @@ class MySQLNativePassword {
   }
 
   private[authentication] def isPasswordRight(password: String, authentication: Array[Byte]) =
-    util.Arrays.equals(getAuthCipherBytes(password), authentication)
+    Arrays.equals(getAuthCipherBytes(password), authentication)
 
   private def getAuthCipherBytes(password: String): Array[Byte] = {
     val salt = pluginData.full
-    val passwordSha1 = DigestUtils.sha1(password)
-    val passwordSha1Sha1 = DigestUtils.sha1(passwordSha1)
+    val sha1 = MessageDigest.getInstance("SHA-1")
+    val passwordSha1 = sha1.digest(password.getBytes(StandardCharsets.UTF_8))
+    val passwordSha1Sha1 = sha1.digest(passwordSha1)
     val secret = new Array[Byte](salt.length + passwordSha1Sha1.length)
     System.arraycopy(salt, 0, secret, 0, salt.length)
     System.arraycopy(passwordSha1Sha1, 0, secret, salt.length, passwordSha1Sha1.length)
-    val secretSha1 = DigestUtils.sha1(secret)
+    val secretSha1 = sha1.digest(secret)
     xor(passwordSha1, secretSha1)
   }
 
