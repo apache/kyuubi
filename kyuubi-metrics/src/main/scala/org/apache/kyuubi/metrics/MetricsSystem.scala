@@ -98,7 +98,7 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
 
 object MetricsSystem {
 
-  private var maybeSystem: Option[MetricsSystem] = None
+  @volatile private var maybeSystem: Option[MetricsSystem] = None
 
   def tracing[T](func: MetricsSystem => T): Unit = {
     maybeSystem.foreach(func(_))

@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hive.service.rpc.thrift.{TCancelDelegationTokenReq, TCancelDelegationTokenResp, TCancelOperationReq, TCancelOperationResp, TCLIService, TCloseOperationReq, TCloseOperationResp, TCloseSessionReq, TCloseSessionResp, TExecuteStatementReq, TExecuteStatementResp, TFetchResultsReq, TFetchResultsResp, TGetCatalogsReq, TGetCatalogsResp, TGetColumnsReq, TGetColumnsResp, TGetCrossReferenceReq, TGetCrossReferenceResp, TGetDelegationTokenReq, TGetDelegationTokenResp, TGetFunctionsReq, TGetFunctionsResp, TGetInfoReq, TGetInfoResp, TGetInfoValue, TGetOperationStatusReq, TGetOperationStatusResp, TGetPrimaryKeysReq, TGetPrimaryKeysResp, TGetResultSetMetadataReq, TGetResultSetMetadataResp, TGetSchemasReq, TGetSchemasResp, TGetTablesReq, TGetTablesResp, TGetTableTypesReq, TGetTableTypesResp, TGetTypeInfoReq, TGetTypeInfoResp, TOpenSessionReq, TOpenSessionResp, TProtocolVersion, TRenewDelegationTokenReq, TRenewDelegationTokenResp, TStatus, TStatusCode}
+import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.TProtocol
 import org.apache.thrift.server.{ServerContext, TServerEventHandler}
 import org.apache.thrift.transport.TTransport
@@ -56,22 +56,53 @@ abstract class TFrontendService(name: String)
   protected lazy val authFactory: KyuubiAuthenticationFactory =
     new KyuubiAuthenticationFactory(conf, isServer())
 
+  /**
+   * Start the service itself(FE) and its composited (Discovery service, DS) in the order of:
+   *   Start FE ->
+   *     if (success) -> Continue starting DS
+   *       if (success) -> finish
+   *       else -> Stop DS -> Raise Error -> Stop FE -> Raise Error
+   *     else
+   *       Raise Error -> Stop FE -> Raise Error
+   *    This makes sure that the FE has started and ready to serve before exposing through DS.
+   */
   override def start(): Unit = synchronized {
-    super.start()
-    if (!started.getAndSet(true)) {
-      serverThread.start()
+    try {
+      if (started.compareAndSet(false, true)) {
+        serverThread.start()
+      }
+      super.start()
+    } catch {
+      case e: Throwable =>
+        stopInternal()
+        throw e
     }
   }
 
   protected def stopServer(): Unit
 
-  override def stop(): Unit = synchronized {
-    if (started.getAndSet(false)) {
+  /**
+   * Inner stop progress that will not stop all services composited with this.
+   */
+  private def stopInternal(): Unit = {
+    if (started.compareAndSet(true, false)) {
       serverThread.interrupt()
       stopServer()
       info(getName + " has stopped")
     }
+  }
+
+  /**
+   * Stop the service itself(FE) and its composited (Discovery service, DS) in the order of:
+   *   Stop DS -> Stop FE
+   * This makes sure of
+   *   1. The service stop serving before terminating during stopping
+   *   2. For engines with group share level, the DS stopping is invoked by a pool in FE,
+   *   so we need to stop DS first in case of interrupting.
+   */
+  override def stop(): Unit = synchronized {
     super.stop()
+    stopInternal()
   }
 
   override def connectionUrl: String = {
