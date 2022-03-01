@@ -56,6 +56,16 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libfb303</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-service-rpc</artifactId>
         </dependency>
@@ -141,7 +151,6 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>${hive.client.commons-codec.version}</version>
         </dependency>
 
         <dependency>
@@ -278,6 +287,9 @@
                                 <include>**</include>
                             </includes>
                             <excludes>
+                                <exclude>org/apache/hadoop/hive/thrift/client/TUGIAssumingTransport.class</exclude>
+                                <exclude>org/apache/hadoop/hive/thrift/TFilterTransport.class</exclude>
+                                <exclude>org/apache/hadoop/hive/thrift/TUGIContainingTransport.class</exclude>
                                 <exclude>META-INF/MANIFEST.MF</exclude>
                             </excludes>
                         </filter>

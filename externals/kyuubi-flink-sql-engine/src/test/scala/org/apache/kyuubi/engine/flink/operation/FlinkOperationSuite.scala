@@ -36,7 +36,7 @@ import org.apache.kyuubi.service.ServiceState._
 
 class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] =
-    Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> NONE.toString)
+    Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> NONE.toString)
 
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"

@@ -28,7 +28,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
-      .set(KyuubiConf.OPERATION_PLAN_ONLY, OPTIMIZE.toString)
+      .set(KyuubiConf.OPERATION_PLAN_ONLY_MODE, OPTIMIZE.toString)
       .set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "plan-only")
   }
 
@@ -42,7 +42,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1059: Plan only operation with session conf") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> ANALYZE.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ANALYZE.toString))(Map.empty) {
       withJdbcStatement() { statement =>
         val operationPlan = getOperationPlanWithStatement(statement)
         assert(operationPlan.startsWith("Project") && operationPlan.contains("Filter"))
@@ -51,9 +51,9 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1059: Plan only operation with set command") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> ANALYZE.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ANALYZE.toString))(Map.empty) {
       withJdbcStatement() { statement =>
-        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY.key}=$PARSE")
+        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=$PARSE")
         val operationPlan = getOperationPlanWithStatement(statement)
         assert(operationPlan.startsWith("'Project"))
       }
@@ -61,7 +61,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1919: Plan only operation with PHYSICAL mode") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> PHYSICAL.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PHYSICAL.toString))(
+      Map.empty) {
       withJdbcStatement() { statement =>
         val operationPlan = getOperationPlanWithStatement(statement)
         assert(operationPlan.startsWith("Project") && operationPlan.contains("Scan OneRowRelation"))
@@ -70,7 +71,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1919: Plan only operation with EXECUTION mode") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> EXECUTION.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> EXECUTION.toString))(
+      Map.empty) {
       withJdbcStatement() { statement =>
         val operationPlan = getOperationPlanWithStatement(statement)
         assert(operationPlan.startsWith("*(1) Project") &&
@@ -79,29 +81,22 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
-  test("KYUUBI #1920: Plan only operations with Usestatement or SetNamespaceCommand skiped") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> NONE.toString))(Map.empty) {
+  test("KYUUBI #1920: Plan only operations with UseStatement or SetNamespaceCommand") {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> NONE.toString))(Map.empty) {
       withDatabases("test_database") { statement =>
         statement.execute("create database test_database")
-        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY.key}=optimize")
+        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=$OPTIMIZE")
         val result = statement.executeQuery("use test_database")
         assert(!result.next(), "In contrast to PlanOnly mode, it will returns an empty result")
       }
     }
   }
 
-  test("KYUUBI #1920: Plan only operations with CacheTable skiped") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> OPTIMIZE.toString))(Map.empty) {
-      withJdbcStatement() { statement =>
-        val result = statement.executeQuery("cache table cached_table as select 1")
-        assert(!result.next(), "In contrast to PlanOnly mode, it will returns an empty result")
-      }
-    }
-  }
-
-  test("KYUUBI #1920: Plan only operations with CreateViewStatement or CreateViewCommand skiped") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> OPTIMIZE.toString))(Map.empty) {
-      withJdbcStatement() { statement =>
+  test("KYUUBI #1920: Plan only operations with CreateViewStatement or CreateViewCommand") {
+    withSessionConf()(
+      Map(KyuubiConf.OPERATION_PLAN_ONLY_EXCLUDES.key -> "CreateViewStatement,CreateViewCommand"))(
+      Map.empty) {
+      withJdbcStatement("temp_view") { statement =>
         val result = statement.executeQuery("create temp view temp_view as select 1")
         assert(!result.next(), "In contrast to PlanOnly mode, it will returns an empty result")
       }

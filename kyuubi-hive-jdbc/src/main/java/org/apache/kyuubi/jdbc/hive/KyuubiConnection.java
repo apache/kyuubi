@@ -36,7 +36,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
 import org.apache.hive.service.auth.HiveAuthFactory;
@@ -656,7 +655,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         // Raw socket connection (non-sasl)
         transport = socketTransport;
       }
-    } catch (SaslException e) {
+    } catch (SaslException | TTransportException e) {
       throw new SQLException(
           "Could not create secure connection to " + jdbcUriString + ": " + e.getMessage(),
           " 08S01",
@@ -787,8 +786,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
       if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
         try {
-          byte[] guidBytes = Base64.decodeBase64(launchEngineOpHandleGuid);
-          byte[] secretBytes = Base64.decodeBase64(launchEngineOpHandleSecret);
+          byte[] guidBytes = Base64.getMimeDecoder().decode(launchEngineOpHandleGuid);
+          byte[] secretBytes = Base64.getMimeDecoder().decode(launchEngineOpHandleSecret);
           THandleIdentifier handleIdentifier =
               new THandleIdentifier(ByteBuffer.wrap(guidBytes), ByteBuffer.wrap(secretBytes));
           launchEngineOpHandle =

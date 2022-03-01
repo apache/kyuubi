@@ -26,14 +26,14 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 
 class RepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   test("check repartition exists") {
-    def check(df: DataFrame): Unit = {
+    def check(df: DataFrame, expectedRepartitionNum: Int = 1): Unit = {
       assert(
         df.queryExecution.analyzed.collect {
           case r: RepartitionByExpression =>
             assert(r.optNumPartitions ===
               spark.sessionState.conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM))
             r
-        }.size == 1)
+        }.size == expectedRepartitionNum)
     }
 
     // It's better to set config explicitly in case of we change the default value.
@@ -45,11 +45,42 @@ class RepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
             "SELECT * FROM VALUES(1),(2) AS t(c1)"))
         }
 
+        withTable("tmp1", "tmp2") {
+          sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
+          sql(s"CREATE TABLE tmp2 (c1 int) $storage PARTITIONED BY (c2 string)")
+          check(
+            sql(
+              """FROM VALUES(1),(2) AS t(c1)
+                |INSERT INTO TABLE tmp1 PARTITION(c2='a') SELECT *
+                |INSERT INTO TABLE tmp2 PARTITION(c2='a') SELECT *
+                |""".stripMargin),
+            2)
+        }
+
         withTable("tmp1") {
           sql(s"CREATE TABLE tmp1 (c1 int) $storage")
           check(sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
           check(sql("INSERT INTO TABLE tmp1 " +
             "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1"))
+        }
+
+        withTable("tmp1", "tmp2") {
+          sql(s"CREATE TABLE tmp1 (c1 int) $storage")
+          sql(s"CREATE TABLE tmp2 (c1 int) $storage")
+          check(
+            sql(
+              """FROM VALUES(1),(2),(3)
+                |INSERT INTO TABLE tmp1 SELECT *
+                |INSERT INTO TABLE tmp2 SELECT *
+                |""".stripMargin),
+            2)
+          check(
+            sql(
+              """FROM (SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1)
+                |INSERT INTO TABLE tmp1 SELECT *
+                |INSERT INTO TABLE tmp2 SELECT *
+                |""".stripMargin),
+            2)
         }
 
         withTable("tmp1") {

@@ -47,11 +47,6 @@
                         <configuration>
                             <skip>${spark.archive.download.skip}</skip>
                             <url>${spark.archive.mirror}/${spark.archive.name}</url>
-                            <!-- sha512>${spark.archive.sha512}</sha512 -->
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <readTimeOut>60000</readTimeOut>
-                            <retries>3</retries>
-                            <unpack>true</unpack>
                         </configuration>
                     </execution>
                     <execution>
@@ -63,13 +58,15 @@
                         <configuration>
                             <skip>${flink.archive.download.skip}</skip>
                             <url>${flink.archive.mirror}/${flink.archive.name}</url>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <readTimeOut>60000</readTimeOut>
-                            <retries>3</retries>
-                            <unpack>true</unpack>
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <readTimeOut>60000</readTimeOut>
+                    <retries>3</retries>
+                    <unpack>true</unpack>
+                </configuration>
             </plugin>
         </plugins>
     </build>

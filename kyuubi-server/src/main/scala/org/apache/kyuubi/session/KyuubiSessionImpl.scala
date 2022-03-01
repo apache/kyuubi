@@ -27,13 +27,12 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
-import org.apache.kyuubi.events.{KyuubiEvent, KyuubiSessionEvent}
+import org.apache.kyuubi.events.{EventLogging, KyuubiEvent, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.EngineSecurityAccessor
 
 class KyuubiSessionImpl(
@@ -71,7 +70,7 @@ class KyuubiSessionImpl(
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
   private val sessionEvent = KyuubiSessionEvent(this)
-  EventLoggingService.onEvent(sessionEvent)
+  EventLogging.onEvent(sessionEvent)
 
   override def getSessionEvent: Option[KyuubiEvent] = {
     Option(sessionEvent)
@@ -109,7 +108,7 @@ class KyuubiSessionImpl(
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
       _client.engineId.foreach(e => sessionEvent.engineId = e)
-      EventLoggingService.onEvent(sessionEvent)
+      EventLogging.onEvent(sessionEvent)
     }
   }
 
@@ -146,7 +145,7 @@ class KyuubiSessionImpl(
   }
 
   override def close(): Unit = {
-    if (!launchEngineOp.isTimedOut) {
+    if (!OperationState.isTerminal(launchEngineOp.getStatus.state)) {
       closeOperation(launchEngineOp.getHandle)
     }
     super.close()
@@ -155,7 +154,7 @@ class KyuubiSessionImpl(
       if (_client != null) _client.closeSession()
     } finally {
       sessionEvent.endTime = System.currentTimeMillis()
-      EventLoggingService.onEvent(sessionEvent)
+      EventLogging.onEvent(sessionEvent)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
     }
   }

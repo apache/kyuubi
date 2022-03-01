@@ -73,22 +73,18 @@ Profile | Default  | Since
 -Pspark-3.1 | No | 1.1.0
 
 
-## Defining the Apache Mirror for Spark or Flink
+## Building with Apache dlcdn site
 
-By default, we use `https://archive.apache.org/dist/spark/` to download the built-in Spark or 
-use `https://archive.apache.org/dist/flink/` to download the built-in Flink release package,
-but if you find it hard to reach, or the downloading speed is too slow, you can define the `spark.archive.mirror`
-or `flink.archive.mirror` property to a suitable Apache mirror site. For instance,
-
-```bash
-build/mvn clean package -Dspark.archive.mirror=https://mirrors.bfsu.edu.cn/apache/spark/spark-3.0.1
-```
-
-Visit [Apache Mirrors](http://www.apache.org/mirrors/) and choose a mirror based on your region.
-
-Specifically for developers in China mainland, you can use the pre-defined profile named `mirror-cn` 
- which use `mirrors.bfsu.edu.cn` to speed up Spark Binary downloading. For instance,
+By default, we use `https://archive.apache.org/dist/` to download the built-in release packages of engines,
+such as Spark or Flink.
+But sometimes, you may find it hard to reach, or the download speed is too slow,
+then you can define the `apache.archive.dist` by `-Pmirror-cdn` to accelerate to download speed.
+For example,
 
 ```bash
-build/mvn clean package -Pmirror-cn
+build/mvn clean package -Pmirror-cdn
 ```
+
+The profile migrates your download repo to the Apache offically suggested site - https://dlcdn.apache.org.
+Note that, this site only holds the latest versions of Apache releases. You may fail if the specific version
+defined by `spark.version` or `flink.version` is overdue.

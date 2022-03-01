@@ -39,7 +39,7 @@ case class KyuubiServerInfoEvent private (
     state: String,
     serverIP: String,
     serverConf: Map[String, String],
-    serverEnv: Map[String, String]) extends KyuubiServerEvent {
+    serverEnv: Map[String, String]) extends KyuubiEvent {
 
   val BUILD_USER: String = P_BUILD_USER
   val BUILD_DATE: String = P_BUILD_DATE

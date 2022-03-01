@@ -58,11 +58,6 @@ case class FlinkSQLEngine(engineContext: DefaultContext) extends Serverable("Fli
       currentEngine.get.stop()
     }
   }
-
-  override def stop(): Unit = {
-    super.stop()
-  }
-
 }
 
 object FlinkSQLEngine extends Logging {

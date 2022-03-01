@@ -93,6 +93,7 @@
         <scala.binary.version>2.12</scala.binary.version>
 
         <antlr4.version>4.8</antlr4.version>
+        <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.2.8</codahale.metrics.version>
         <commons-codec.version>1.15</commons-codec.version>
@@ -104,7 +105,7 @@
         <delta.version>1.1.0</delta.version>
         <flink.version>1.14.3</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
-        <flink.archive.mirror>https://archive.apache.org/dist/flink/flink-${flink.version}</flink.archive.mirror>
+        <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <guava.version>30.1-jre</guava.version>
@@ -132,13 +133,15 @@
         <scopt.version>4.0.1</scopt.version>
         <slf4j.version>1.7.35</slf4j.version>
         <log4j.version>2.17.1</log4j.version>
+        <fb303.version>0.9.3</fb303.version>
+        <thrift.version>0.16.0</thrift.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
-          `delta.version`, `iceberg.name`
+          `delta.version`, `iceberg.name`, `maven.plugin.scalatest.exclude.tags`
           -->
         <spark.version>3.2.1</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
-        <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
+        <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.1.11</swagger.version>
         <swagger-ui.version>4.1.3</swagger-ui.version>
@@ -148,7 +151,6 @@
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.commons-cli.version>1.2</hive.client.commons-cli.version>
-        <hive.client.commons-codec.version>1.15</hive.client.commons-codec.version>
         <hive.client.httpcomponents-client.version>4.5.13</hive.client.httpcomponents-client.version>
         <hive.client.httpcomponents-core.version>4.4.13</hive.client.httpcomponents-core.version>
         <hive.client.jline.version>2.12</hive.client.jline.version>
@@ -173,7 +175,7 @@
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
-        <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
+        <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.spotless.version>2.17.4</maven.plugin.spotless.version>
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
@@ -518,34 +520,37 @@
                 <version>${kubernetes-client.version}</version>
             </dependency>
 
-            <!--
-              because of THRIFT-4805, we don't upgrade to libthrift:0.12.0,
-              because of THRIFT-5274, we don't upgrade to libthrift:0.13.0,
-              so just keep hive-service-rpc:2.3.9 transitive dependency libthrift:0.9.3
-            -->
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libfb303</artifactId>
+                <version>${fb303.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.thrift</groupId>
+                        <artifactId>libthrift</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${thrift.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.hive</groupId>
                 <artifactId>hive-service-rpc</artifactId>
                 <version>${hive.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>commons-codec</groupId>
-                        <artifactId>commons-codec</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-cli</groupId>
-                        <artifactId>commons-cli</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>tomcat</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
+                        <groupId>*</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
@@ -1807,10 +1812,10 @@
 
     <profiles>
         <profile>
-            <id>mirror-cn</id>
+            <id>mirror-cdn</id>
+            <!-- this profile works only for latest apache releases -->
             <properties>
-                <spark.archive.mirror>https://mirrors.bfsu.edu.cn/apache/spark/spark-${spark.version}</spark.archive.mirror>
-                <flink.archive.mirror>https://mirrors.bfsu.edu.cn/apache/flink/flink-${flink.version}</flink.archive.mirror>
+                <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
             </properties>
         </profile>
 

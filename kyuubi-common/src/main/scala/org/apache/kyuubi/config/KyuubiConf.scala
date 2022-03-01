@@ -364,34 +364,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_MAX_MESSAGE_SIZE)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_TIMEOUT.key} instead", "1.4.0")
-  val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
-    buildConf("frontend.login.timeout")
-      .doc("(deprecated) Timeout for Thrift clients during login to the thrift frontend service.")
-      .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(20).toMillis)
-
-  val FRONTEND_THRIFT_LOGIN_TIMEOUT: ConfigEntry[Long] =
-    buildConf("frontend.thrift.login.timeout")
-      .doc("Timeout for Thrift clients during login to the thrift frontend service.")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_LOGIN_TIMEOUT)
-
-  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH.key} instead", "1.4.0")
-  val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
-    buildConf("frontend.backoff.slot.length")
-      .doc("(deprecated) Time to back off during login to the thrift frontend service.")
-      .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofMillis(100).toMillis)
-
-  val FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
-    buildConf("frontend.thrift.backoff.slot.length")
-      .doc("Time to back off during login to the thrift frontend service.")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
-
   val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("authentication")
     .doc("A comma separated list of client authentication types.<ul>" +
       " <li>NOSASL: raw transport.</li>" +
@@ -1165,7 +1137,7 @@ object KyuubiConf {
     val PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION, NONE = Value
   }
 
-  val OPERATION_PLAN_ONLY: ConfigEntry[String] =
+  val OPERATION_PLAN_ONLY_MODE: ConfigEntry[String] =
     buildConf("operation.plan.only.mode")
       .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION " +
         "only way without executing the query. When it is NONE, the statement will be fully " +
@@ -1175,6 +1147,19 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(OperationModes.values.map(_.toString))
       .createWithDefault(OperationModes.NONE.toString)
+
+  val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Seq[String]] =
+    buildConf("operation.plan.only.excludes")
+      .doc("Comma-separated list of query plan names, in the form of simple class names, i.e, " +
+        "for `set abc=xyz`, the value will be `SetCommand`. For those auxiliary plans, such as " +
+        "`switch databases`, `set properties`, or `create temporary view` e.t.c, " +
+        "which are used for setup evaluating environments for analyzing actual queries, " +
+        "we can use this config to exclude them and let them take effect. " +
+        s"See also ${OPERATION_PLAN_ONLY_MODE.key}.")
+      .version("1.5.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Seq("ResetCommand", "SetCommand", "SetNamespaceCommand", "UseStatement"))
 
   object OperationLanguages extends Enumeration {
     type OperationLanguage = Value

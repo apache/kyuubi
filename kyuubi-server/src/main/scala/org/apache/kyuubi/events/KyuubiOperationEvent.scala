@@ -53,7 +53,7 @@ case class KyuubiOperationEvent private (
     completeTime: Long,
     exception: Option[Throwable],
     sessionId: String,
-    sessionUser: String) extends KyuubiServerEvent {
+    sessionUser: String) extends KyuubiEvent {
 
   // operation events are partitioned by the date when the corresponding operations are
   // created.
