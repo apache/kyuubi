@@ -71,13 +71,13 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
 object SparkSQLEngine extends Logging {
 
-  val sparkConf: SparkConf = new SparkConf()
+  lazy val sparkConf: SparkConf = new SparkConf()
 
-  val kyuubiConf: KyuubiConf = KyuubiConf()
+  lazy val kyuubiConf: KyuubiConf = KyuubiConf()
 
   var currentEngine: Option[SparkSQLEngine] = None
 
-  private val user = currentUser
+  private lazy val user = currentUser
 
   private val countDownLatch = new CountDownLatch(1)
 
