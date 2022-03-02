@@ -24,6 +24,7 @@ Community
     :numbered: 4
     :glob:
 
+    CONTRIBUTING
     collaborators
     contributions
     improvement-proposals
