@@ -1470,6 +1470,7 @@
                     <version>${maven.plugin.surefire.version}</version>
                     <configuration>
                         <skipTests>true</skipTests>
+                        <failIfNoTests>false</failIfNoTests>
                     </configuration>
                 </plugin>
                 <!-- enable scalatest -->
