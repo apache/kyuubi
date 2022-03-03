@@ -26,7 +26,5 @@ Community
 
     CONTRIBUTING
     collaborators
-    contributions
-    improvement-proposals
     release
 
