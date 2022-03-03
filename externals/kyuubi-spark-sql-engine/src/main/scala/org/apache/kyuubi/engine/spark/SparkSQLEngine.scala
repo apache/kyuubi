@@ -20,6 +20,9 @@ package org.apache.kyuubi.engine.spark
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
+import scala.concurrent.{Await, Future, TimeoutException}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 import org.apache.spark.{ui, SparkConf}
@@ -196,7 +199,11 @@ object SparkSQLEngine extends Logging {
     } else {
       var spark: SparkSession = null
       try {
-        spark = createSpark()
+        val sparkFuture = Future {
+          createSpark()
+        }
+        val timeout = initTimeout - totalInitTime
+        spark = Await.result(sparkFuture, timeout.millisecond)
         try {
           startEngine(spark)
           // blocking main thread
@@ -213,6 +220,12 @@ object SparkSQLEngine extends Logging {
 
         }
       } catch {
+        case timeout: TimeoutException =>
+          error(
+            s"The engine initialization time exceeds" +
+              s" `kyuubi.session.engine.initialize.timeout` ($initTimeout ms)" +
+              s" and submitted at $submitTime.",
+            timeout)
         case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
       } finally {
         if (spark != null) {
