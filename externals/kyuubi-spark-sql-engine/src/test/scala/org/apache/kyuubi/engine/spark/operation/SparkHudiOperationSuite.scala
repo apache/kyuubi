@@ -27,11 +27,4 @@ class SparkHudiOperationSuite extends WithSparkSQLEngine with HudiMetadataTests 
   override protected def jdbcUrl: String = getJdbcUrl
 
   override def withKyuubiConf: Map[String, String] = extraConfigs
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    for ((k, _) <- withKyuubiConf) {
-      System.clearProperty(k)
-    }
-  }
 }
