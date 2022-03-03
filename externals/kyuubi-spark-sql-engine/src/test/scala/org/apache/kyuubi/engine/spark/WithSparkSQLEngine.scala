@@ -28,7 +28,7 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
   protected var engine: SparkSQLEngine = _
   // conf will be loaded until start spark engine
   def withKyuubiConf: Map[String, String]
-  val kyuubiConf: KyuubiConf = SparkSQLEngine.kyuubiConf
+  def kyuubiConf: KyuubiConf = SparkSQLEngine.kyuubiConf
 
   protected var connectionUrl: String = _
 
@@ -61,11 +61,11 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     System.setProperty("spark.ui.enabled", "false")
     withKyuubiConf.foreach { case (k, v) =>
       System.setProperty(k, v)
-      kyuubiConf.set(k, v)
     }
 
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
+    SparkSQLEngine.setupConf()
     spark = SparkSQLEngine.createSpark()
     SparkSQLEngine.startEngine(spark)
     engine = SparkSQLEngine.currentEngine.get
@@ -81,7 +81,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     // we need to clean up conf since it's the global config in same jvm.
     withKyuubiConf.foreach { case (k, _) =>
       System.clearProperty(k)
-      kyuubiConf.unset(k)
     }
 
     if (engine != null) {
