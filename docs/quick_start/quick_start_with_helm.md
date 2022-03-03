@@ -35,7 +35,7 @@ Please go to [Install Helm](https://helm.sh/docs/intro/install/) page to get and
 
 #### [Optional] Create namespace on kubernetes
 ```bash
-cretate ns kyuubi
+create ns kyuubi
 ```
 
 #### Get kyuubi started
