@@ -110,7 +110,7 @@
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <guava.version>30.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
-        <hadoop.version>3.3.1</hadoop.version>
+        <hadoop.version>3.3.2</hadoop.version>
         <hive.version>2.3.9</hive.version>
         <hudi.version>0.10.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
@@ -268,6 +268,12 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-api</artifactId>
                 <version>${hadoop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.xerial.snappy</groupId>
+                        <artifactId>snappy-java</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -278,6 +284,10 @@
                     <exclusion>
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.xerial.snappy</groupId>
+                        <artifactId>snappy-java</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
