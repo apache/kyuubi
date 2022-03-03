@@ -1,0 +1,62 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+
+# Contributing to Apache Kyuubi
+
+<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" width="50%" align="right" />
+
+Thanks for your interest in the Apache Kyuubi project.
+Contributions are welcome and are greatly appreciated!
+Every little bit helps, and a credit will always be given.
+
+This page provides some orientation and resources we have for you to get involved.
+It also offers recommendations on getting the best results when engaging with the community.
+We hope that this will be a pleasant first experience for you to return to continue contributing.
+
+## Get Involved
+
+In the process of using Apache Kyuubi, if you have any questions, suggestions, or improvement ideas, you can participate in the Kyuubi community building through the following suggested channels.
+
+- Join the [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html) - the best way to keep up-to-date with the community.
+- [Issue Tracker](https://kyuubi.apache.org/issue_tracking.html) - tracking bugs, ideas, plans, etc.
+- [Github Discussions](https://github.com/apache/incubator-kyuubi/discussions) - second to mailing list for anything else you want to share or ask
+
+## Contributing Guide
+
+As a community-driven project. All bits of help are welcome.
+
+Contributing code is excellent, but that’s probably not the first place to start.
+There are many ways to make valuable contributions to the project and community.
+
+You can make various types of contributions to Kyuubi, including the following but not limited to,
+
+- Answer questions in the  [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html)
+- [Share your success stories with us](https://github.com/apache/incubator-kyuubi/discussions/925) 
+- Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
+- Test latest releases - [![Latest tag](https://img.shields.io/github/v/tag/apache/incubator-kyuubi?label=tag)](https://github.com/apache/incubator-kyuubi/tags)
+- Improve test coverage - [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
+- Report bugs and better help developers to reproduce
+- Review changes
+- Make a pull request
+- Promote to others
+- Click the star button if you like this project
+
+Before you start, we recommend that you check the [Contribution Guidelines](https://kyuubi.apache.org/contributing.html) first.
+
+## Easter Eggs for Contributors
+
+TBD, please be patient for the surprise.
