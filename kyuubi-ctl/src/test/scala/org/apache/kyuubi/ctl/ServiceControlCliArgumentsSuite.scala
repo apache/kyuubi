@@ -375,6 +375,10 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
          |Command: get engine
          |${"\t"}Get Kyuubi engine info belong to a user.
          |  -u, --user <value>       The user name this engine belong to.
+         |  -et, --engine-type <value>
+         |                           The engine type this engine belong to.
+         |  -es, --engine-subdomain <value>
+         |                           The engine subdomain this engine belong to.
          |
          |Command: delete [server|engine] [options]
          |${"\t"}Delete the specified service/engine node, host and port needed.
@@ -383,6 +387,10 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
          |Command: delete engine
          |${"\t"}Delete the specified engine node for user.
          |  -u, --user <value>       The user name this engine belong to.
+         |  -et, --engine-type <value>
+         |                           The engine type this engine belong to.
+         |  -es, --engine-subdomain <value>
+         |                           The engine subdomain this engine belong to.
          |
          |Command: list [server|engine] [options]
          |${"\t"}List all the service/engine nodes for a particular domain.
@@ -391,6 +399,10 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
          |Command: list engine
          |${"\t"}List all the engine nodes for a user
          |  -u, --user <value>       The user name this engine belong to.
+         |  -et, --engine-type <value>
+         |                           The engine type this engine belong to.
+         |  -es, --engine-subdomain <value>
+         |                           The engine subdomain this engine belong to.
          |
          |  -h, --help               Show help message and exit.""".stripMargin
 
