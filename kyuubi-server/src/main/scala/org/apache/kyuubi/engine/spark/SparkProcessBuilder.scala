@@ -233,8 +233,8 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
 
-  final val CONF = "--conf"
-  final val CLASS = "--class"
+  final private val CONF = "--conf"
+  final private val CLASS = "--class"
   final private val PROXY_USER = "--proxy-user"
   final private val SPARK_FILES = "spark.files"
   final private val PRINCIPAL = "spark.kerberos.principal"
