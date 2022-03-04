@@ -60,17 +60,6 @@
                             <url>${flink.archive.mirror}/${flink.archive.name}</url>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>download-hive-release</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${hive.archive.download.skip}</skip>
-                            <url>${hive.archive.mirror}/${hive.archive.name}</url>
-                        </configuration>
-                    </execution>
                 </executions>
                 <configuration>
                     <outputDirectory>${project.build.directory}</outputDirectory>
