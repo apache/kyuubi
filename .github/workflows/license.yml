@@ -51,6 +51,7 @@ jobs:
         uses: actions/github-script@v6
         if: failure()
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -58,4 +59,3 @@ jobs:
               repo: context.repo.repo,
               body: '👋 Hello @${{ github.actor }}, thanks for the contribution! This PR contains new files missing Apache License, v2 header, please add licenses to them.'
             })
-          github-token: ${{ secrets.GITHUB_TOKEN }}
