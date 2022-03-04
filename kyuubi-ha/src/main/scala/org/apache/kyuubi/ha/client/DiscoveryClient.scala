@@ -174,13 +174,13 @@ object DiscoveryClient {
   private[client] def parseInstanceHostPort(instance: String): (String, Int) = {
     val maybeInfos = instance.split(";")
       .map(_.split("=", 2))
-      .filter(_.size == 2)
+      .filter(_.length == 2)
       .map(i => (i(0), i(1)))
       .toMap
-    if (maybeInfos.size > 0) {
+    if (maybeInfos.nonEmpty) {
       (
-        maybeInfos.get("hive.server2.thrift.bind.host").get,
-        maybeInfos.get("hive.server2.thrift.port").get.toInt)
+        maybeInfos("hive.server2.thrift.bind.host"),
+        maybeInfos("hive.server2.thrift.port").toInt)
     } else {
       val strings = instance.split(":")
       (strings(0), strings(1).toInt)

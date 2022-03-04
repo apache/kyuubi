@@ -36,6 +36,7 @@
         <module>kyuubi-hive-it</module>
         <module>kyuubi-trino-it</module>
         <module>kyuubi-jdbc-it</module>
+        <module>kyuubi-zookeeper-it</module>
     </modules>
 
     <profiles>

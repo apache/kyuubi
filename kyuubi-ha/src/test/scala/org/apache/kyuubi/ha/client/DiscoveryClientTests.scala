@@ -17,141 +17,137 @@
 
 package org.apache.kyuubi.ha.client
 
+import java.util.concurrent.{CountDownLatch, TimeUnit}
+
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.KYUUBI_VERSION
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ADDRESSES
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_AUTH_TYPE
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
-import org.apache.kyuubi.service.NoopTBinaryFrontendServer
-import org.apache.kyuubi.service.NoopTBinaryFrontendService
-import org.apache.kyuubi.service.Serverable
-import org.apache.kyuubi.service.Service
-import org.apache.kyuubi.service.ServiceState
+import org.apache.kyuubi.service._
 
 trait DiscoveryClientTests extends KyuubiFunSuite {
-  protected val conf: KyuubiConf
+
+  protected def conf: KyuubiConf
 
   protected def getConnectString: String
 
-  test("publish instance to embedded zookeeper server") {
+  test("publish instance to discovery service") {
     val namespace = "kyuubiserver"
 
     conf
-      .unset(KyuubiConf.SERVER_KEYTAB)
-      .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ADDRESSES, getConnectString)
       .set(HA_NAMESPACE, namespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
-    var serviceDiscovery: KyuubiServiceDiscovery = null
-    val server: Serverable = new NoopTBinaryFrontendServer() {
+    var discovery: ServiceDiscovery = null
+    val service: Serverable = new NoopTBinaryFrontendServer() {
       override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
         new NoopTBinaryFrontendService(this) {
           override val discoveryService: Option[Service] = {
-            serviceDiscovery = new KyuubiServiceDiscovery(this)
-            Some(serviceDiscovery)
+            discovery = new KyuubiServiceDiscovery(this)
+            Some(discovery)
           }
         })
     }
-    server.initialize(conf)
-    server.start()
-    val znodeRoot = s"/$namespace"
-    withDiscoveryClient(conf) { framework =>
-      try {
-        assert(framework.pathNonExists("/abc"))
-        assert(framework.pathExists(znodeRoot))
-        val children = framework.getChildren(znodeRoot)
+    service.initialize(conf)
+    service.start()
+    val basePath = s"/$namespace"
+    try {
+      withDiscoveryClient(conf) { discoveryClient =>
+        assert(discoveryClient.pathNonExists("/abc"))
+        assert(discoveryClient.pathExists(basePath))
+        val children = discoveryClient.getChildren(basePath)
         assert(children.head ===
-          s"serviceUri=${server.frontendServices.head.connectionUrl};" +
+          s"serviceUri=${service.frontendServices.head.connectionUrl};" +
           s"version=$KYUUBI_VERSION;sequence=0000000000")
 
         children.foreach { child =>
-          framework.delete(s"""$znodeRoot/$child""")
+          discoveryClient.delete(s"$basePath/$child")
         }
         eventually(timeout(5.seconds), interval(100.millis)) {
-          assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
-          assert(server.getServiceState === ServiceState.STOPPED)
+          assert(discovery.getServiceState === ServiceState.STOPPED)
+          assert(service.getServiceState === ServiceState.STOPPED)
         }
-      } finally {
-        server.stop()
       }
+    } finally {
+      service.stop()
+      discovery.stop()
     }
   }
 
-  test("KYUUBI-304: Stop engine service gracefully when related zk node is deleted") {
+  test("KYUUBI #304: Stop engine service gracefully when related node is deleted") {
     val logAppender = new LogAppender("test stop engine gracefully")
     withLogAppender(logAppender) {
       val namespace = "kyuubiengine"
 
       conf
-        .unset(KyuubiConf.SERVER_KEYTAB)
-        .unset(KyuubiConf.SERVER_PRINCIPAL)
         .set(HA_ADDRESSES, getConnectString)
         .set(HA_NAMESPACE, namespace)
         .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-        .set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
 
-      var serviceDiscovery: KyuubiServiceDiscovery = null
-      val server: Serverable = new NoopTBinaryFrontendServer() {
+      var discovery: ServiceDiscovery = null
+      val service: Serverable = new NoopTBinaryFrontendServer() {
         override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
           new NoopTBinaryFrontendService(this) {
             override val discoveryService: Option[Service] = {
-              serviceDiscovery = new KyuubiServiceDiscovery(this)
-              Some(serviceDiscovery)
+              discovery = new KyuubiServiceDiscovery(this)
+              Some(discovery)
             }
           })
       }
-      server.initialize(conf)
-      server.start()
+      service.initialize(conf)
+      service.start()
 
-      val znodeRoot = s"/$namespace"
-      withDiscoveryClient(conf) { framework =>
-        try {
-
-          assert(framework.pathNonExists("/abc"))
-          assert(framework.pathExists(znodeRoot))
-          val children = framework.getChildren(znodeRoot)
+      val basePath = s"/$namespace"
+      try {
+        withDiscoveryClient(conf) { discoveryClient =>
+          assert(discoveryClient.pathNonExists("/abc"))
+          assert(discoveryClient.pathExists(basePath))
+          val children = discoveryClient.getChildren(basePath)
           assert(children.head ===
-            s"serviceUri=${server.frontendServices.head.connectionUrl};" +
+            s"serviceUri=${service.frontendServices.head.connectionUrl};" +
             s"version=$KYUUBI_VERSION;sequence=0000000000")
 
           children.foreach { child =>
-            framework.delete(s"""$znodeRoot/$child""")
+            discoveryClient.delete(s"""$basePath/$child""")
           }
           eventually(timeout(5.seconds), interval(100.millis)) {
-            assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
-            assert(server.getServiceState === ServiceState.STOPPED)
-            val msg = s"This Kyuubi instance ${server.frontendServices.head.connectionUrl}" +
+            assert(discovery.getServiceState === ServiceState.STOPPED)
+            assert(service.getServiceState === ServiceState.STOPPED)
+            val msg = s"This Kyuubi instance ${service.frontendServices.head.connectionUrl}" +
               s" is now de-registered"
             assert(logAppender.loggingEvents.exists(
               _.getMessage.getFormattedMessage.contains(msg)))
           }
-        } finally {
-          server.stop()
-          serviceDiscovery.stop()
         }
+      } finally {
+        service.stop()
+        discovery.stop()
       }
     }
   }
 
-  test("parse host and port from instance string") {
-    val host = "127.0.0.1"
-    val port = 10009
-    val instance1 = s"$host:$port"
-    val (host1, port1) = DiscoveryClient.parseInstanceHostPort(instance1)
-    assert(host === host1)
-    assert(port === port1)
+  test("distribute lock") {
+    val lockPath = "/lock-test"
+    val lockLatch = new CountDownLatch(1)
 
-    val instance2 = s"hive.server2.thrift.sasl.qop=auth;hive.server2.thrift.bind.host=$host;" +
-      s"hive.server2.transport.mode=binary;hive.server2.authentication=KERBEROS;" +
-      s"hive.server2.thrift.port=$port;" +
-      s"hive.server2.authentication.kerberos.principal=test/_HOST@apache.org"
-    val (host2, port2) = DiscoveryClient.parseInstanceHostPort(instance2)
-    assert(host === host2)
-    assert(port === port2)
+    new Thread(() => {
+      withDiscoveryClient(conf) { discoveryClient =>
+        discoveryClient.tryWithLock(lockPath, 3000) {
+          lockLatch.countDown()
+          Thread.sleep(5000)
+        }
+      }
+    }).start()
+
+    withDiscoveryClient(conf) { discoveryClient =>
+      assert(lockLatch.await(5000, TimeUnit.MILLISECONDS))
+      val e = intercept[KyuubiSQLException] {
+        discoveryClient.tryWithLock(lockPath, 2000) {}
+      }
+      assert(e.getMessage contains s"Timeout to lock on path [$lockPath]")
+    }
   }
 }

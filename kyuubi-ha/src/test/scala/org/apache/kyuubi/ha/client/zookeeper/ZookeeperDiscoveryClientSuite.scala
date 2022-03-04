@@ -33,32 +33,48 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.KerberizedTestHelper
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.AuthTypes
-import org.apache.kyuubi.ha.client.DiscoveryClientTests
-import org.apache.kyuubi.ha.client.EngineServiceDiscovery
+import org.apache.kyuubi.ha.client._
 import org.apache.kyuubi.service._
-import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
+import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
+import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT
 
-class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests with KerberizedTestHelper {
+class EmbeddedZookeeperDiscoveryClientSuite extends ZookeeperDiscoveryClientSuite {
 
-  val zkServer = new EmbeddedZookeeper()
-  override val conf: KyuubiConf = KyuubiConf()
+  private var _zkServer: EmbeddedZookeeper = _
 
-  override def getConnectString: String = zkServer.getConnectString
+  override def getConnectString: String = _zkServer.getConnectString
 
-  override def beforeAll(): Unit = {
-    conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
-    zkServer.initialize(conf)
-    zkServer.start()
-    super.beforeAll()
+  override def startZk(): Unit = {
+    val embeddedZkConf = KyuubiConf()
+    embeddedZkConf.set(ZK_CLIENT_PORT, 0)
+    _zkServer = new EmbeddedZookeeper()
+    _zkServer.initialize(embeddedZkConf)
+    _zkServer.start()
   }
 
-  override def afterAll(): Unit = {
-    conf.unset(KyuubiConf.SERVER_KEYTAB)
-    conf.unset(KyuubiConf.SERVER_PRINCIPAL)
-    conf.unset(HA_ADDRESSES)
-    zkServer.stop()
-    super.afterAll()
+  override def stopZk(): Unit = {
+    _zkServer.stop()
+  }
+}
+
+abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
+  with KerberizedTestHelper {
+
+  var conf: KyuubiConf = KyuubiConf()
+
+  def startZk(): Unit
+
+  def stopZk(): Unit
+
+  override def beforeEach(): Unit = {
+    startZk()
+    conf = new KyuubiConf().set(HA_ADDRESSES, getConnectString)
+    super.beforeEach()
+  }
+
+  override def afterEach(): Unit = {
+    super.afterEach()
+    stopZk()
   }
 
   test("acl for zookeeper") {
@@ -116,43 +132,33 @@ class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests with Kerberized
   }
 
   test("stop engine in time while zk ensemble terminates") {
-    val zkServer = new EmbeddedZookeeper()
-    val conf = KyuubiConf()
-      .set(ZookeeperConf.ZK_CLIENT_PORT, 0)
-    try {
-      zkServer.initialize(conf)
-      zkServer.start()
-      var serviceDiscovery: EngineServiceDiscovery = null
-      val server = new NoopTBinaryFrontendServer() {
-        override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
-          new NoopTBinaryFrontendService(this) {
-            override val discoveryService: Option[Service] = {
-              serviceDiscovery = new EngineServiceDiscovery(this)
-              Some(serviceDiscovery)
-            }
-          })
-      }
-      conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
-        .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
-        .set(HA_ADDRESSES, zkServer.getConnectString)
-        .set(HA_ZK_SESSION_TIMEOUT, 2000)
-        .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-      server.initialize(conf)
-      server.start()
-      assert(server.getServiceState === ServiceState.STARTED)
+    var discovery: ServiceDiscovery = null
+    val service = new NoopTBinaryFrontendServer() {
+      override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
+        new NoopTBinaryFrontendService(this) {
+          override val discoveryService: Option[Service] = {
+            discovery = new EngineServiceDiscovery(this)
+            Some(discovery)
+          }
+        })
+    }
+    conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
+      .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
+      .set(HA_ZK_SESSION_TIMEOUT, 2000)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    service.initialize(conf)
+    service.start()
+    assert(service.getServiceState === ServiceState.STARTED)
 
-      zkServer.stop()
-      val isServerLostM = serviceDiscovery.getClass.getSuperclass.getDeclaredField("isServerLost")
-      isServerLostM.setAccessible(true)
-      val isServerLost = isServerLostM.get(serviceDiscovery)
+    stopZk()
+    val isServerLostM = discovery.getClass.getSuperclass.getDeclaredField("isServerLost")
+    isServerLostM.setAccessible(true)
+    val isServerLost = isServerLostM.get(discovery)
 
-      eventually(timeout(10.seconds), interval(100.millis)) {
-        assert(isServerLost.asInstanceOf[AtomicBoolean].get())
-        assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
-        assert(server.getServiceState === ServiceState.STOPPED)
-      }
-    } finally {
-      zkServer.stop()
+    eventually(timeout(10.seconds), interval(100.millis)) {
+      assert(isServerLost.asInstanceOf[AtomicBoolean].get())
+      assert(discovery.getServiceState === ServiceState.STOPPED)
+      assert(service.getServiceState === ServiceState.STOPPED)
     }
   }
 }
