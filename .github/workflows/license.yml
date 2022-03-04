@@ -25,6 +25,9 @@ on:
       - master
       - branch-*
 
+permissions:
+  pull-requests: write
+
 jobs:
   rat:
     name: License check
@@ -36,7 +39,8 @@ jobs:
         with:
           distribution: zulu
           java-version: 8
-      - run:  build/mvn org.apache.rat:apache-rat-plugin:check -Ptpcds -Pspark-block-cleaner -Pkubernetes-deployment-it -Pspark-3.1 -Pspark-3.2
+      - name: Run rat check
+        run:  build/mvn org.apache.rat:apache-rat-plugin:check -Ptpcds -Pspark-block-cleaner -Pkubernetes-deployment-it -Pspark-3.1 -Pspark-3.2
       - name: Upload rat report
         if: failure()
         uses: actions/upload-artifact@v2
