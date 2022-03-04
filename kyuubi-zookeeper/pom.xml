@@ -43,6 +43,18 @@
             <artifactId>zookeeper</artifactId>
         </dependency>
 
+        <!-- Required by org.apache.zookeeper.metrics.impl.DefaultMetricsProvider -->
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
+
+        <!-- Required by org.apache.zookeeper.server.persistence.SnapStream -->
+        <dependency>
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
