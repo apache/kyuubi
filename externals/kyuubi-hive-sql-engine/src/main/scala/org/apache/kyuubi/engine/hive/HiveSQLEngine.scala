@@ -51,14 +51,9 @@ object HiveSQLEngine extends Logging {
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
-//    for ((k, v) <- properties.asScala) {
-//      kyuubiConf.set(k, v)
-//    }
-
     for ((k, v) <- kyuubiConf.getAll) {
       hiveConf.set(k, v)
     }
-
 
     val isEmbeddedMetaStore = {
       val msUri = hiveConf.getVar(ConfVars.METASTOREURIS)
@@ -73,7 +68,6 @@ object HiveSQLEngine extends Logging {
         Utils.createTempDir(namePrefix = "kyuubi_hive_warehouse").toString)
     }
 
-
     val engine = new HiveSQLEngine()
     info(s"Starting ${engine.getName}")
     engine.initialize(kyuubiConf)
@@ -85,7 +79,6 @@ object HiveSQLEngine extends Logging {
 
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
-//    val properties = new HiveEngineOptionsProcessor().parse(args)
     try {
       startEngine()
     } catch {
@@ -94,22 +87,4 @@ object HiveSQLEngine extends Logging {
         currentEngine.foreach(_.stop())
     }
   }
-
-//  class HiveEngineOptionsProcessor {
-//    final private val options = {
-//      new Options().addOption(
-//        org.apache.commons.cli.Option.builder("c")
-//          .valueSeparator()
-//          .hasArgs
-//          .argName("property=value")
-//          .longOpt("hiveconf")
-//          .desc("Use value for given property")
-//          .build())
-//    }
-//
-//    def parse(args: Array[String]): Properties = {
-//      val commandLine = new DefaultParser().parse(options, args)
-//      commandLine.getOptionProperties("hiveconf")
-//    }
-//  }
 }
