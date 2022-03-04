@@ -15,29 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.server
 
-import org.apache.spark.SparkContext
-import org.apache.spark.kyuubi.SparkContextHelper
+import java.net.InetAddress
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
+import org.apache.kyuubi.config.KyuubiConf.{SERVER_EVENT_JSON_LOG_PATH, SERVER_EVENT_LOGGERS}
 import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType, JsonEventLogger}
+import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-class EventLoggingService(spark: SparkContext)
-  extends AbstractEventLoggingService {
+class KyuubiEventLoggingService extends AbstractEventLoggingService {
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
-    conf.get(ENGINE_EVENT_LOGGERS)
+  override def initialize(conf: KyuubiConf): Unit = {
+    val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+    conf.get(SERVER_EVENT_LOGGERS)
       .map(EventLoggerType.withName)
       .foreach {
-        case EventLoggerType.SPARK =>
-          addEventLogger(SparkContextHelper.createSparkHistoryLogger(spark))
         case EventLoggerType.JSON =>
+          val hostName = InetAddress.getLocalHost.getCanonicalHostName
           val jsonEventLogger = new JsonEventLogger(
-            spark.applicationAttemptId.getOrElse(spark.applicationId),
-            ENGINE_EVENT_JSON_LOG_PATH,
-            spark.hadoopConfiguration)
+            s"server-$hostName",
+            SERVER_EVENT_JSON_LOG_PATH,
+            hadoopConf)
+          // TODO: #1180 kyuubiServerEvent need create logRoot automatically
+          jsonEventLogger.createEventLogRootDir(conf, hadoopConf)
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)
         case logger =>

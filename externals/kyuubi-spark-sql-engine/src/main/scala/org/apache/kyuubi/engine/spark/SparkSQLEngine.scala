@@ -33,7 +33,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
-import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, EventLoggingService}
+import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventLoggingService}
 import org.apache.kyuubi.events.EventLogging
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
@@ -141,7 +141,7 @@ object SparkSQLEngine extends Logging {
     currentEngine = Some(new SparkSQLEngine(spark))
     currentEngine.foreach { engine =>
       // start event logging ahead so that we can capture all statuses
-      val eventLogging = new EventLoggingService(spark.sparkContext)
+      val eventLogging = new SparkEventLoggingService(spark.sparkContext)
       try {
         eventLogging.initialize(kyuubiConf)
         eventLogging.start()
