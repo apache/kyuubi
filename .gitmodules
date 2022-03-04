@@ -1,3 +1,0 @@
-[submodule ".github/actions/github-script"]
-	path = .github/actions/github-script
-	url = git@github.com:actions/github-script.git

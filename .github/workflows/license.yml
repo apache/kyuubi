@@ -48,9 +48,10 @@ jobs:
           name: rat-report
           path: "**/target/rat*.txt"
       - name: Comment PR
-        uses: ./.github/actions/github-script
+        uses: actions/github-script@v6
         if: failure()
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,
