@@ -89,6 +89,9 @@ private[kyuubi] object Tabulator {
     for (row <- data) {
       for ((cell, i) <- row.zipWithIndex) {
         colWidths(i) = math.max(colWidths(i), stringHalfWidth(cell))
+        if (!verbose) {
+          colWidths(i) += 1
+        }
       }
     }
 
