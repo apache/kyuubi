@@ -69,6 +69,14 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
       .action((v, c) => c.copy(user = v))
       .text("The user name this engine belong to.")
 
+    val engineTypeOps = opt[String]("engine-type").abbr("et")
+      .action((v, c) => c.copy(engineType = v))
+      .text("The engine type this engine belong to.")
+
+    val engineSubdomainOps = opt[String]("engine-subdomain").abbr("es")
+      .action((v, c) => c.copy(engineSubdomain = v))
+      .text("The engine subdomain this engine belong to.")
+
     val serverCmd =
       cmd("server").action((_, c) => c.copy(service = ServiceControlObject.SERVER))
     val engineCmd =
@@ -92,6 +100,8 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
             serverCmd.text("\tGet Kyuubi server info of domain"),
             engineCmd
               .children(userOps)
+              .children(engineTypeOps)
+              .children(engineSubdomainOps)
               .text("\tGet Kyuubi engine info belong to a user.")),
         note(""),
         cmd("delete")
@@ -101,6 +111,8 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
             serverCmd.text("\tDelete the specified service node for a domain"),
             engineCmd
               .children(userOps)
+              .children(engineTypeOps)
+              .children(engineSubdomainOps)
               .text("\tDelete the specified engine node for user.")),
         note(""),
         cmd("list")
@@ -110,6 +122,8 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
             serverCmd.text("\tList all the service nodes for a particular domain"),
             engineCmd
               .children(userOps)
+              .children(engineTypeOps)
+              .children(engineSubdomainOps)
               .text("\tList all the engine nodes for a user")),
         checkConfig(f => {
           if (f.action == null) failure("Must specify action command: [create|get|delete|list].")
