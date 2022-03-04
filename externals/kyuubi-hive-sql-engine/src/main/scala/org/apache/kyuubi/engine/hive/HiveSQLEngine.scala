@@ -59,12 +59,13 @@ object HiveSQLEngine extends Logging {
       val msUri = hiveConf.getVar(ConfVars.METASTOREURIS)
       val msConnUrl = hiveConf.getVar(ConfVars.METASTORECONNECTURLKEY)
       (msUri == null || msUri.trim().isEmpty) &&
-        (msConnUrl != null && msConnUrl.startsWith("jdbc:derby"))
+      (msConnUrl != null && msConnUrl.startsWith("jdbc:derby"))
     }
     if (isEmbeddedMetaStore) {
       hiveConf.setBoolean("hive.metastore.schema.verification", false)
       hiveConf.setBoolean("datanucleus.schema.autoCreateAll", true)
-      hiveConf.set("hive.metastore.warehouse.dir",
+      hiveConf.set(
+        "hive.metastore.warehouse.dir",
         Utils.createTempDir(namePrefix = "kyuubi_hive_warehouse").toString)
     }
 
