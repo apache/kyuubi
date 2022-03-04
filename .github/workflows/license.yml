@@ -51,7 +51,6 @@ jobs:
         uses: ./.github/actions/github-script
         if: failure()
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,
