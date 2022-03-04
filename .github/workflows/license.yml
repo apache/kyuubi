@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: License check
+name: License
 
 # This GitHub workflow checks Apache License v2.0 Header is added if needed
 
@@ -27,7 +27,7 @@ on:
 
 jobs:
   rat:
-    name: License
+    name: License check
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -52,7 +52,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: |
-                👋 Hello @${{ github.actor }}, thanks for the contribution!
-                This PR contains new files missing Apache License, v2 header, please add licenses to them.
+              body: '👋 Hello @${{ github.actor }}, thanks for the contribution! This PR contains new files missing Apache License, v2 header, please add licenses to them.'
             })
