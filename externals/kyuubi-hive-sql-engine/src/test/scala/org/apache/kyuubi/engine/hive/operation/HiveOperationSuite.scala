@@ -31,7 +31,7 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
     "jdbc:hive2://" + HiveSQLEngine.currentEngine.get.frontendServices.head.connectionUrl + "/;"
   }
 
-  test("execute statement - select null") {
+  test("basic execute statements, create, insert query") {
     withJdbcStatement("hive_engine_test") { statement =>
       statement.execute("CREATE TABLE hive_engine_test(id int, value string) stored as orc")
       statement.execute("INSERT INTO hive_engine_test SELECT 1, '2'")
