@@ -55,5 +55,4 @@ jobs:
               body: |
                 👋 Hello @${{ github.actor }}, thanks for the contribution!
                 This PR contains new files missing Apache License, v2 header, please add licenses to them.
-
             })
