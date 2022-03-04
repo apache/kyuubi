@@ -493,6 +493,19 @@ abstract class TFrontendService(name: String)
     resp
   }
 
+  override def GetQueryId(req: TGetQueryIdReq): TGetQueryIdResp = {
+    debug(req.toString)
+    val resp = new TGetQueryIdResp
+    resp
+  }
+
+  override def SetClientInfo(req: TSetClientInfoReq): TSetClientInfoResp = {
+    debug(req.toString)
+    val resp = new TSetClientInfoResp
+    resp.setStatus(KyuubiSQLException.featureNotSupported().toTStatus)
+    resp
+  }
+
   protected def isServer(): Boolean = false
 
   class FeTServerEventHandler extends TServerEventHandler {
