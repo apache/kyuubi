@@ -25,12 +25,11 @@ on:
       - master
       - branch-*
 
-permissions:
-  pull-requests: write
-
 jobs:
   rat:
     name: License check
+    permissions:
+      issues: write
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
