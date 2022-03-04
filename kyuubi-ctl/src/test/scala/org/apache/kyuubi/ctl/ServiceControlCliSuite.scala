@@ -429,8 +429,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--user",
       user,
       "--engine-type",
-      "FLINK_SQL"
-    )
+      "FLINK_SQL")
     assert(getZkNamespace(new ServiceControlCliArguments(arg2)) ==
       s"/${namespace}_USER_FLINK_SQL/$user/default")
 
@@ -444,8 +443,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--user",
       user,
       "--engine-type",
-      "TRINO"
-    )
+      "TRINO")
     assert(getZkNamespace(new ServiceControlCliArguments(arg3)) ==
       s"/${namespace}_USER_TRINO/$user/default")
 
@@ -461,8 +459,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-type",
       "SPARK_SQL",
       "--engine-subdomain",
-      "sub_1"
-    )
+      "sub_1")
     assert(getZkNamespace(new ServiceControlCliArguments(arg4)) ==
       s"/${namespace}_USER_SPARK_SQL/$user/sub_1")
   }

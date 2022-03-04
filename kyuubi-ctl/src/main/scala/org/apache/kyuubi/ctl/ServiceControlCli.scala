@@ -235,8 +235,10 @@ object ServiceControlCli extends CommandLineUtils with Logging {
         val engineSubdomain = Some(args.cliArgs.engineSubdomain)
           .filter(_ != null).filter(_.nonEmpty)
           .getOrElse(args.conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse("default"))
-        ZKPaths.makePath(s"${args.cliArgs.namespace}_${ShareLevel.USER}_${engineType}",
-          args.cliArgs.user, engineSubdomain)
+        ZKPaths.makePath(
+          s"${args.cliArgs.namespace}_${ShareLevel.USER}_${engineType}",
+          args.cliArgs.user,
+          engineSubdomain)
     }
   }
 
