@@ -463,7 +463,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-subdomain",
       "sub_1"
     )
-    assert(getZkNamespace(new ServiceControlCliArguments(arg1)) ==
-      s"/${namespace}_USER_SPARK_SQL/$user/default")
+    assert(getZkNamespace(new ServiceControlCliArguments(arg4)) ==
+      s"/${namespace}_USER_SPARK_SQL/$user/sub_1")
   }
 }
