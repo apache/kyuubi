@@ -48,10 +48,34 @@ jobs:
               -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Scalastyle with Maven
         run: build/mvn scalastyle:check ${{ matrix.profiles }}
+      - name: Comment PR for scala linter
+        uses: thollander/actions-comment-pull-request@v1
+        if: failure()
+        with:
+          message: |
+          Hello @${{ github.actor }}, thanks for the contribution!
+          This PR has scala style issues, please run the script `./dev/reformt` to fix them.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload scalastyle report
         if: failure()
         run: for log in `find * -name "scalastyle-output.xml"`;  do echo "=========$log========="; grep "error" $log; done
       - name: JavaStyle with Maven
         run: build/mvn spotless:check ${{ matrix.profiles }}
+      - name: Comment PR for java linter
+        uses: thollander/actions-comment-pull-request@v1
+        if: failure()
+        with:
+          message: |
+          Hello @${{ github.actor }}, thanks for the contribution!
+          This PR has java style issues, please run the script `./dev/reformt` to fix them.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check dependency list
         run: build/dependency.sh
+      - name: Comment PR for dependency check
+        uses: thollander/actions-comment-pull-request@v1
+        if: failure()
+        with:
+          message: |
+          Hello @${{ github.actor }}, thanks for the contribution!
+          This PR fails on dependency check, please run the script `./build/dependency.sh --replace` to fix them.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

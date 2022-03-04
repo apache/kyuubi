@@ -43,3 +43,12 @@ jobs:
         with:
           name: rat-report
           path: "**/target/rat*.txt"
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v1
+        if: failure()
+        with:
+          message: |
+            Hello @${{ github.actor }}, thanks for the contribution!
+            This PR contains new files missing Apache License, v2 header, please add licenses to them.
+            Please check ${{ github.action_path } for more information.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
