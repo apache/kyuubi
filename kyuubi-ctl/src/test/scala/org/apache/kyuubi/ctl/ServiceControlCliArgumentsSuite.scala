@@ -67,11 +67,6 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       }
       thread.start()
       thread.join()
-      // scalastyle:off println
-      println(logAppender.loggingEvents)
-      println("------")
-      println(searchString)
-      // scalastyle:on println
       assert(logAppender.loggingEvents.exists(
         _.getMessage.getFormattedMessage.contains(searchString)))
     }
