@@ -84,7 +84,7 @@ abstract class HiveOperation(opType: OperationType, session: Session)
       lastAccessTime,
       status.getOperationCompleted,
       status.getHasResultSet,
-      Option(KyuubiSQLException(status.getOperationException)))
+      Option(status.getOperationException).map(KyuubiSQLException(_)))
   }
 
   override def getResultSetSchema: TTableSchema = {

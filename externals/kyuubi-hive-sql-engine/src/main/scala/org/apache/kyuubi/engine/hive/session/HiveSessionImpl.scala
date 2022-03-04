@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.hive.session
 
+import java.util.HashMap
+
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.HiveSQLException
@@ -38,7 +40,9 @@ class HiveSessionImpl(
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override def open(): Unit = {
-    hive.open(conf.asJava)
+    val confClone = new HashMap[String, String]()
+    confClone.putAll(conf.asJava) // pass conf.asScala not support `put` method
+    hive.open(confClone)
   }
 
   override def close(): Unit = {

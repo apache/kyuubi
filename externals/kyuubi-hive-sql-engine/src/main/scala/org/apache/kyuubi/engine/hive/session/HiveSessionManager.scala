@@ -22,7 +22,7 @@ import java.util.concurrent.Future
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hive.service.cli.{SessionHandle => SH}
-import org.apache.hive.service.cli.session.{HiveSessionImpl => HSI, SessionManager => HiveSessionManagerImpl}
+import org.apache.hive.service.cli.session.{HiveSessionImpl => ImportedHiveSessionImpl, SessionManager => ImportedHiveSessionManager}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -40,7 +40,7 @@ class HiveSessionManager(
 
   override val operationManager: OperationManager = new HiveOperationManager()
 
-  private val internalSessionManager = new HiveSessionManagerImpl(null) {
+  private val internalSessionManager = new ImportedHiveSessionManager(null) {
 
     /**
      * Avoid unnecessary hive initialization
@@ -76,8 +76,8 @@ class HiveSessionManager(
     val sessionHandle = SessionHandle(protocol)
     val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
     info(s"Opening session for $user@$clientIp")
-    val hive = new HSI(
-      new SH(sessionHandle.toTSessionHandle),
+    val hive = new ImportedHiveSessionImpl(
+      new SH(sessionHandle.toTSessionHandle, protocol),
       protocol,
       user,
       password,

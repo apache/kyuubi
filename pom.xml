@@ -154,7 +154,7 @@
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
-        <hive.client.commons-cli.version>1.2</hive.client.commons-cli.version>
+        <hive.client.commons-cli.version>1.5.0</hive.client.commons-cli.version>
         <hive.client.httpcomponents-client.version>4.5.13</hive.client.httpcomponents-client.version>
         <hive.client.httpcomponents-core.version>4.4.13</hive.client.httpcomponents-core.version>
         <hive.client.jline.version>2.12</hive.client.jline.version>

@@ -17,17 +17,11 @@
 
 package org.apache.kyuubi.engine.hive
 
-import java.util.Properties
-import java.util.concurrent.CountDownLatch
-
-import scala.collection.JavaConverters._
-
-import org.apache.commons.cli.{DefaultParser, Options}
 import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.hive.HiveSQLEngine.countDownLatch
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable}
@@ -45,72 +39,77 @@ class HiveSQLEngine extends Serverable("HiveSQLEngine") {
     backendService.sessionManager.startTerminatingChecker(() => stop())
   }
 
-  override protected def stopServer(): Unit = {
-    countDownLatch.countDown()
-  }
+  override protected def stopServer(): Unit = {}
 }
 
 object HiveSQLEngine extends Logging {
-  private val countDownLatch = new CountDownLatch(1)
   var currentEngine: Option[HiveSQLEngine] = None
   val hiveConf = new HiveConf()
   val kyuubiConf = new KyuubiConf()
 
-  def main(args: Array[String]): Unit = {
-    info(System.getProperty("java.class.path"))
-    SignalRegister.registerLogger(logger)
-    val properties = new HiveEngineOptionsProcessor().parse(args)
-
+  def startEngine(): HiveSQLEngine = {
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
-    for ((k, v) <- properties.asScala) {
-      kyuubiConf.set(k, v)
-    }
+//    for ((k, v) <- properties.asScala) {
+//      kyuubiConf.set(k, v)
+//    }
 
     for ((k, v) <- kyuubiConf.getAll) {
       hiveConf.set(k, v)
     }
 
-    if (hiveConf.getBoolVar(HiveConf.ConfVars.METASTOREURIS)) {}
 
-    for (elem <- hiveConf.asScala) {
-      info(elem.getKey + ", " + elem.getValue)
+    val isEmbeddedMetaStore = {
+      val msUri = hiveConf.getVar(ConfVars.METASTOREURIS)
+      val msConnUrl = hiveConf.getVar(ConfVars.METASTORECONNECTURLKEY)
+      (msUri == null || msUri.trim().isEmpty) &&
+        (msConnUrl != null && msConnUrl.startsWith("jdbc:derby"))
+    }
+    if (isEmbeddedMetaStore) {
+      hiveConf.setBoolean("hive.metastore.schema.verification", false)
+      hiveConf.setBoolean("datanucleus.schema.autoCreateAll", true)
+      hiveConf.set("hive.metastore.warehouse.dir",
+        Utils.createTempDir(namePrefix = "kyuubi_hive_warehouse").toString)
     }
 
-    hiveConf.setIfUnset(
-      "javax.jdo.option.ConnectionURL",
-      "jdbc:derby:;databaseName=metastore_db;create=true")
 
-    currentEngine = Some(new HiveSQLEngine())
+    val engine = new HiveSQLEngine()
+    info(s"Starting ${engine.getName}")
+    engine.initialize(kyuubiConf)
+    engine.start()
+    Utils.addShutdownHook(() => engine.stop())
+    currentEngine = Some(engine)
+    engine
+  }
+
+  def main(args: Array[String]): Unit = {
+    SignalRegister.registerLogger(logger)
+//    val properties = new HiveEngineOptionsProcessor().parse(args)
     try {
-      info(s"Starting ${currentEngine.get.getName}")
-      currentEngine.get.initialize(kyuubiConf)
-      currentEngine.get.start()
-      Utils.addShutdownHook(() => currentEngine.foreach(_.stop()))
+      startEngine()
     } catch {
       case t: Throwable =>
         error(t)
-        currentEngine.get.stop()
-    }
-    countDownLatch.await()
-  }
-
-  class HiveEngineOptionsProcessor {
-    final private val options = {
-      new Options().addOption(
-        org.apache.commons.cli.Option.builder("c")
-          .valueSeparator()
-          .hasArgs
-          .argName("property=value")
-          .longOpt("hiveconf")
-          .desc("Use value for given property")
-          .build())
-    }
-
-    def parse(args: Array[String]): Properties = {
-      val commandLine = new DefaultParser().parse(options, args)
-      commandLine.getOptionProperties("hiveconf")
+        currentEngine.foreach(_.stop())
     }
   }
+
+//  class HiveEngineOptionsProcessor {
+//    final private val options = {
+//      new Options().addOption(
+//        org.apache.commons.cli.Option.builder("c")
+//          .valueSeparator()
+//          .hasArgs
+//          .argName("property=value")
+//          .longOpt("hiveconf")
+//          .desc("Use value for given property")
+//          .build())
+//    }
+//
+//    def parse(args: Array[String]): Properties = {
+//      val commandLine = new DefaultParser().parse(options, args)
+//      commandLine.getOptionProperties("hiveconf")
+//    }
+//  }
 }
