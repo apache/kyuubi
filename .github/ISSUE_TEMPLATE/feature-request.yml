@@ -18,7 +18,7 @@
 name: Kyuubi Feature Request
 title: "[FEATURE] "
 description: Suggest an idea for Apache Kyuubi
-labels: [ "feature" ]
+labels: [ "kind:feature,priority:major" ]
 body:
   - type: markdown
     attributes:
