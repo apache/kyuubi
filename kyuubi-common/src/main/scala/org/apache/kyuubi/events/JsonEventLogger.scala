@@ -29,7 +29,7 @@ import org.apache.hadoop.fs.permission.FsPermission
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
-import org.apache.kyuubi.config.KyuubiConf.{SERVER_EVENT_JSON_LOG_PATH}
+import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.events.JsonEventLogger._
 import org.apache.kyuubi.service.AbstractService
 
