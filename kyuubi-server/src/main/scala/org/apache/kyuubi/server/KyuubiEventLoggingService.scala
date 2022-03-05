@@ -37,7 +37,7 @@ class KyuubiEventLoggingService extends AbstractEventLoggingService {
             s"server-$hostName",
             SERVER_EVENT_JSON_LOG_PATH,
             hadoopConf)
-          // TODO: #1180 kyuubiServerEvent need create logRoot automatically
+
           jsonEventLogger.createEventLogRootDir(conf, hadoopConf)
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)

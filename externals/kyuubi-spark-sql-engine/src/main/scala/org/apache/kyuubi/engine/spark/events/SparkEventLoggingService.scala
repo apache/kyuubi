@@ -38,6 +38,7 @@ class SparkEventLoggingService(spark: SparkContext)
             spark.applicationAttemptId.getOrElse(spark.applicationId),
             ENGINE_EVENT_JSON_LOG_PATH,
             spark.hadoopConfiguration)
+          jsonEventLogger.createEventLogRootDir(conf, spark.hadoopConfiguration)
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)
         case logger =>
