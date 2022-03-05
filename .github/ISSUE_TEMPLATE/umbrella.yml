@@ -18,7 +18,7 @@
 name: Umbrella
 title: "[Umbrella] "
 description: An umbrella issue with multiple sub-tasks
-labels: [ "umbrella" ]
+labels: [ "kind:umbrella,priority:major" ]
 body:
 
   - type: checkboxes
