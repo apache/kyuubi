@@ -42,5 +42,5 @@ github:
     projects: false
 notifications:
   commits: commits@kyuubi.apache.org
-  issues: dev@kyuubi.apache.org
-  pullrequests: commits@kyuubi.apache.org
+  issues: notifications@kyuubi.apache.org
+  pullrequests: notifications@kyuubi.apache.org
