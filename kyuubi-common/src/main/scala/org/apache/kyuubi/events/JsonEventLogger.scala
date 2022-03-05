@@ -29,7 +29,6 @@ import org.apache.hadoop.fs.permission.FsPermission
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.events.JsonEventLogger._
 import org.apache.kyuubi.service.AbstractService
 
@@ -114,9 +113,8 @@ class JsonEventLogger(
     stream.foreach(_.hflush())
   }
 
-  // This method is only called by kyuubiServer
   def createEventLogRootDir(conf: KyuubiConf, hadoopConf: Configuration): Unit = {
-    val logRoot: URI = URI.create(conf.get(ENGINE_EVENT_JSON_LOG_PATH))
+    val logRoot: URI = URI.create(conf.get(logPath))
     val fs: FileSystem = FileSystem.get(logRoot, hadoopConf)
     val success: Boolean = FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
     if (!success) {

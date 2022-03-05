@@ -24,7 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
 import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType, JsonEventLogger}
 
-class EventLoggingService(spark: SparkContext)
+class SparkEventLoggingService(spark: SparkContext)
   extends AbstractEventLoggingService {
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
@@ -38,6 +38,7 @@ class EventLoggingService(spark: SparkContext)
             spark.applicationAttemptId.getOrElse(spark.applicationId),
             ENGINE_EVENT_JSON_LOG_PATH,
             spark.hadoopConfiguration)
+          jsonEventLogger.createEventLogRootDir(conf, spark.hadoopConfiguration)
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)
         case logger =>
