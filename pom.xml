@@ -133,7 +133,7 @@
         <scalatest.version>3.2.9</scalatest.version>
         <scopt.version>4.0.1</scopt.version>
         <slf4j.version>1.7.35</slf4j.version>
-        <log4j.version>2.17.1</log4j.version>
+        <log4j.version>2.17.2</log4j.version>
         <fb303.version>0.9.3</fb303.version>
         <thrift.version>0.16.0</thrift.version>
         <!--
