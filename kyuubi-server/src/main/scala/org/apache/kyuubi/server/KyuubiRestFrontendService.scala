@@ -24,6 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -35,11 +36,14 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private var server: JettyServer = _
 
   private val isStarted = new AtomicBoolean(false)
+  private lazy val authFactory: KyuubiAuthenticationFactory =
+    KyuubiAuthenticationFactory.getOrCreate(conf, true)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
       .getOrElse(Utils.findLocalInetAddress.getHostName)
     server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
+    authFactory.initHttpAuthenticationFilter()
     super.initialize(conf)
   }
 

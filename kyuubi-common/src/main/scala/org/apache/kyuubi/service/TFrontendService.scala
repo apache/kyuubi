@@ -54,7 +54,7 @@ abstract class TFrontendService(name: String)
     serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
   protected lazy val serverSocket = new ServerSocket(portNum, -1, serverAddr)
   protected lazy val authFactory: KyuubiAuthenticationFactory =
-    new KyuubiAuthenticationFactory(conf, isServer())
+    KyuubiAuthenticationFactory.getOrCreate(conf, isServer())
 
   /**
    * Start the service itself(FE) and its composited (Discovery service, DS) in the order of:

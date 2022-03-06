@@ -42,7 +42,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
   private val plainAuthTypeOpt = authTypes.filterNot(_.equals(KERBEROS))
     .filterNot(_.equals(NOSASL)).headOption
 
-  private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
+  private lazy val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
     if (kerberosEnabled) {
       val secretMgr = KyuubiDelegationTokenManager(conf)
       try {
@@ -104,22 +104,47 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     }
   }
 
+  def initHttpAuthenticationFilter(): Unit = {
+    if (noSasl) {
+      AuthenticationFilter.addAuthHandler(new BasicAuthenticationHandler(NOSASL), conf)
+    } else {
+      if (kerberosEnabled) {
+        AuthenticationFilter.addAuthHandler(new KerberosAuthenticationHandler, conf)
+      }
+      plainAuthTypeOpt.foreach { plainAuth =>
+        AuthenticationFilter.addAuthHandler(new BasicAuthenticationHandler(plainAuth), conf)
+      }
+    }
+  }
+
   def getTProcessorFactory(fe: Iface): TProcessorFactory = hadoopAuthServer match {
     case Some(server) => FEServiceProcessorFactory(server, fe)
     case _ => PlainSASLHelper.getProcessFactory(fe)
   }
 
   def getRemoteUser: Option[String] = {
-    hadoopAuthServer.map(_.getRemoteUser).orElse(Option(TSetIpAddressProcessor.getUserName))
+    hadoopAuthServer.map(_.getRemoteUser)
+      .orElse(Option(TSetIpAddressProcessor.getUserName))
+      .orElse(Option(AuthenticationFilter.getUserName))
   }
 
   def getIpAddress: Option[String] = {
     hadoopAuthServer.map(_.getRemoteAddress).map(_.getHostAddress)
       .orElse(Option(TSetIpAddressProcessor.getUserIpAddress))
+      .orElse(Option(AuthenticationFilter.getUserIpAddress))
   }
 }
 object KyuubiAuthenticationFactory {
   val HS2_PROXY_USER = "hive.server2.proxy.user"
+
+  @volatile private var _authenticationFactory: KyuubiAuthenticationFactory = _
+
+  def getOrCreate(conf: KyuubiConf, isServer: Boolean): KyuubiAuthenticationFactory = {
+    if (_authenticationFactory == null) {
+      _authenticationFactory = new KyuubiAuthenticationFactory(conf, isServer)
+    }
+    _authenticationFactory
+  }
 
   @throws[KyuubiSQLException]
   def verifyProxyAccess(
