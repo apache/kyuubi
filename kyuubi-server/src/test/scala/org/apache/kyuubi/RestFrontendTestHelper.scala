@@ -50,7 +50,7 @@ object RestFrontendTestHelper {
 
 trait RestFrontendTestHelper extends WithKyuubiServer {
 
-  override protected val conf: KyuubiConf = KyuubiConf()
+  override protected lazy val conf: KyuubiConf = KyuubiConf()
 
   override protected val frontendProtocols: Seq[FrontendProtocol] =
     FrontendProtocols.REST :: Nil

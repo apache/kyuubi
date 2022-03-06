@@ -197,6 +197,19 @@ object KyuubiConf {
     .stringConf
     .createOptional
 
+  val SERVER_SPNEGO_KEYTAB: ConfigEntry[Option[String]] = buildConf("spnego.keytab")
+    .doc("Keytab file for SPNego principal")
+    .version("1.5.0")
+    .fallbackConf(SERVER_KEYTAB)
+
+  val SERVER_SPNEGO_PRINCIPAL: OptionalConfigEntry[String] = buildConf("spnego.principal")
+    .doc("SPNego service principal, typical value would look like HTTP/_HOST@EXAMPLE.COM." +
+      " SPNego service principal would be used when restful Kerberos security is enabled." +
+      " This needs to be set only if SPNEGO is to be used in authentication.")
+    .version("1.5.0")
+    .stringConf
+    .createOptional
+
   val KINIT_INTERVAL: ConfigEntry[Long] = buildConf("kinit.interval")
     .doc("How often will Kyuubi server run `kinit -kt [keytab] [principal]` to renew the" +
       " local Kerberos credentials cache")

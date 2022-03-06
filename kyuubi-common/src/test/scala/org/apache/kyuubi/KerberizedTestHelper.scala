@@ -54,6 +54,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   private val keytabFile = new File(baseDir, "kyuubi-test.keytab")
   protected val testKeytab: String = keytabFile.getAbsolutePath
   protected var testPrincipal: String = _
+  protected var testSpnegoPrincipal: String = _
 
   override def beforeAll(): Unit = {
     eventually(timeout(60.seconds), interval(1.second)) {
@@ -71,10 +72,13 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
       }
     }
     val tempTestPrincipal = s"client/$hostName"
-    kdc.createPrincipal(keytabFile, tempTestPrincipal)
+    val tempSpnegoPrincipal = s"HTTP/$hostName"
+    kdc.createPrincipal(keytabFile, tempTestPrincipal, tempSpnegoPrincipal)
     rewriteKrb5Conf()
     testPrincipal = tempTestPrincipal + "@" + kdc.getRealm
+    testSpnegoPrincipal = tempSpnegoPrincipal + "@" + kdc.getRealm
     info(s"KerberizedTest Principal: $testPrincipal")
+    info(s"KerberizedTest SPNEGO Principal: $testSpnegoPrincipal")
     info(s"KerberizedTest Keytab: $testKeytab")
     super.beforeAll()
   }
