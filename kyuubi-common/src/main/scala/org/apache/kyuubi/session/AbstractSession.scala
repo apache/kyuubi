@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
@@ -57,6 +58,7 @@ abstract class AbstractSession(
     if (userAccess) {
       _lastAccessTime = System.currentTimeMillis
     }
+    _lastIdleTime = 0
   }
 
   private def release(userAccess: Boolean): Unit = {
@@ -65,8 +67,6 @@ abstract class AbstractSession(
     }
     if (opHandleSet.isEmpty) {
       _lastIdleTime = System.currentTimeMillis
-    } else {
-      _lastIdleTime = 0
     }
   }
 
@@ -114,10 +114,11 @@ abstract class AbstractSession(
 
   override def executeStatement(
       statement: String,
+      confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = withAcquireRelease() {
     val operation = sessionManager.operationManager
-      .newExecuteStatementOperation(this, statement, runAsync, queryTimeout)
+      .newExecuteStatementOperation(this, statement, confOverlay, runAsync, queryTimeout)
     runOperation(operation)
   }
 
@@ -216,4 +217,6 @@ abstract class AbstractSession(
   override def open(): Unit = {
     OperationLog.createOperationLogRootDirectory(this)
   }
+
+  override def getSessionEvent: Option[KyuubiEvent] = None
 }

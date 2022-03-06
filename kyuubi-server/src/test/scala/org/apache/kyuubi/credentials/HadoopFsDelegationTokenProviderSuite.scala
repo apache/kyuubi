@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.credentials
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
 import org.apache.hadoop.io.Text
@@ -57,4 +58,25 @@ class HadoopFsDelegationTokenProviderSuite extends WithSecuredDFSService {
     }
   }
 
+  test("FileSystem implementation class not found") {
+    tryWithSecurityEnabled {
+      UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
+
+      val hdfsConf = new Configuration(getHadoopConf)
+      val hdfsUri = hdfsConf.get("fs.defaultFS")
+      hdfsConf.set("fs.defaultFS", "unknown://kyuubi")
+      hdfsConf.set("fs.unknown.impl", "unknown.hadoop.FileSystem")
+
+      val kyuubiConf = new KyuubiConf(false)
+      kyuubiConf.set(
+        KyuubiConf.CREDENTIALS_HADOOP_FS_URIS,
+        Seq("unknown://kyuubi", hdfsUri))
+
+      val uris = HadoopFsDelegationTokenProvider.validatedFsUris(kyuubiConf, hdfsConf)
+      assert(uris.size == 1)
+      assert(uris.head.toString == hdfsUri)
+
+      new HadoopFsDelegationTokenProvider().initialize(hdfsConf, kyuubiConf)
+    }
+  }
 }

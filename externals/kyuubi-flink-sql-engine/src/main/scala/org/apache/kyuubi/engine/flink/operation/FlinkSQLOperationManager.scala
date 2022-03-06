@@ -18,22 +18,50 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.util
+import java.util.Locale
 
+import scala.collection.JavaConverters._
+
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.OperationModes._
+import org.apache.kyuubi.engine.flink.result.Constants
+import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
 class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManager") {
 
+  private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY_MODE)
+
+  private lazy val resultMaxRowsDefault = getConf.get(ENGINE_FLINK_MAX_ROWS)
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
+      confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val op = new ExecuteStatement(session, statement, runAsync, queryTimeout)
+    val flinkSession = session.asInstanceOf[FlinkSessionImpl]
+    val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
+      OPERATION_PLAN_ONLY_MODE.key,
+      operationModeDefault)
+    val resultMaxRows =
+      flinkSession.normalizedConf.getOrElse(
+        ENGINE_FLINK_MAX_ROWS.key,
+        resultMaxRowsDefault.toString).toInt
+    val op = OperationModes.withName(mode.toUpperCase(Locale.ROOT)) match {
+      case NONE =>
+        new ExecuteStatement(session, statement, runAsync, queryTimeout, resultMaxRows)
+      case mode =>
+        new PlanOnlyStatement(session, statement, mode)
+    }
     addOperation(op)
   }
 
-  override def newGetTypeInfoOperation(session: Session): Operation = null
+  override def newGetTypeInfoOperation(session: Session): Operation = {
+    val op = new GetTypeInfo(session)
+    addOperation(op)
+  }
 
   override def newGetCatalogsOperation(session: Session): Operation = {
     val op = new GetCatalogs(session)
@@ -43,16 +71,39 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
   override def newGetSchemasOperation(
       session: Session,
       catalog: String,
-      schema: String): Operation = null
+      schema: String): Operation = {
+    val op = new GetSchemas(session, catalog, schema)
+    addOperation(op)
+  }
 
   override def newGetTablesOperation(
       session: Session,
       catalogName: String,
       schemaName: String,
       tableName: String,
-      tableTypes: util.List[String]): Operation = null
+      tableTypes: util.List[String]): Operation = {
 
-  override def newGetTableTypesOperation(session: Session): Operation = null
+    val tTypes =
+      if (tableTypes == null || tableTypes.isEmpty) {
+        Constants.SUPPORTED_TABLE_TYPES.toSet
+      } else {
+        tableTypes.asScala.toSet
+      }
+
+    val op = new GetTables(
+      session = session,
+      catalog = catalogName,
+      schema = schemaName,
+      tableName = tableName,
+      tableTypes = tTypes)
+
+    addOperation(op)
+  }
+
+  override def newGetTableTypesOperation(session: Session): Operation = {
+    val op = new GetTableTypes(session)
+    addOperation(op)
+  }
 
   override def newGetColumnsOperation(
       session: Session,
@@ -65,6 +116,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       session: Session,
       catalogName: String,
       schemaName: String,
-      functionName: String): Operation = null
-
+      functionName: String): Operation = {
+    val op = new GetFunctions(session, catalogName, schemaName, functionName)
+    addOperation(op)
+  }
 }

@@ -22,6 +22,7 @@ import java.util.concurrent.locks.ReentrantLock
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
+import org.apache.thrift.TConfiguration
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.transport.TSocket
 
@@ -93,11 +94,13 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
 
   def executeStatement(
       statement: String,
+      confOverlay: Map[String, String],
       shouldRunAsync: Boolean,
       queryTimeout: Long): TOperationHandle = {
     val req = new TExecuteStatementReq()
     req.setSessionHandle(_remoteSessionHandle)
     req.setStatement(statement)
+    req.setConfOverlay(confOverlay.asJava)
     req.setRunAsync(shouldRunAsync)
     req.setQueryTimeout(queryTimeout)
     val resp = withLockAcquired(ExecuteStatement(req))
@@ -255,7 +258,7 @@ private[kyuubi] object KyuubiSyncThriftClient {
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = conf.get(ENGINE_LOGIN_TIMEOUT).toInt
     val requestTimeout = conf.get(ENGINE_REQUEST_TIMEOUT).toInt
-    val tSocket = new TSocket(host, port, requestTimeout, loginTimeout)
+    val tSocket = new TSocket(new TConfiguration, host, port, requestTimeout, loginTimeout)
     val tTransport = PlainSASLHelper.getPlainTransport(user, passwd, tSocket)
     tTransport.open()
     val tProtocol = new TBinaryProtocol(tTransport)

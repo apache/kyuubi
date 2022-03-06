@@ -46,3 +46,4 @@ build/scala-*/**
 **/icon.min.css
 **/org/apache/kyuubi/ui/static/assets/**
 **/org/apache/kyuubi/ui/swagger/**
+**/org.apache.spark.status.AppHistoryServerPlugin

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server
 
+import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
@@ -33,7 +34,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private var server: JettyServer = _
 
-  @volatile protected var isStarted = false
+  private val isStarted = new AtomicBoolean(false)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
@@ -45,6 +46,11 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     super.initialize(conf)
   }
 
+  override def connectionUrl: String = {
+    checkInitialized()
+    server.getServerUri
+  }
+
   private def startInternal(): Unit = {
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
     server.addRedirectHandler("/", "/static/")
@@ -54,9 +60,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   override def start(): Unit = synchronized {
-    if (!isStarted) {
+    if (!isStarted.get) {
       try {
         server.start()
+        isStarted.set(true)
         info(s"$getName has started at ${server.getServerUri}")
         startInternal()
       } catch {
@@ -67,16 +74,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   override def stop(): Unit = synchronized {
-    if (isStarted) {
+    if (isStarted.getAndSet(false)) {
       server.stop()
-      isStarted = false
     }
     super.stop()
-  }
-
-  override def connectionUrl: String = synchronized {
-    checkInitialized()
-    server.getServerUri
   }
 
   override val discoveryService: Option[Service] = None

@@ -14,17 +14,21 @@
  - See the License for the specific language governing permissions and
  - limitations under the License.
  -->
+# Apache Kyuubi (Incubating)
+<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" height="120px" align="right" />
 
-![](docs/imgs/kyuubi_logo.png)
-
-[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+[![Release](https://img.shields.io/github/v/release/apache/incubator-kyuubi?label=release)](https://github.com/apache/incubator-kyuubi/releases)
 [![](https://tokei.rs/b1/github.com/apache/incubator-kyuubi)](https://github.com/apache/incubator-kyuubi)
-![GitHub top language](https://img.shields.io/github/languages/top/apache/incubator-kyuubi)
-[![Latest tag](https://img.shields.io/github/v/tag/apache/incubator-kyuubi?label=tag)](https://github.com/apache/incubator-kyuubi/tags)
 [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
-[![Travis](https://api.travis-ci.com/apache/incubator-kyuubi.svg?branch=master)](https://travis-ci.com/apache/incubator-kyuubi)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/incubator-kyuubi/Kyuubi/master?style=plastic)
+[![Travis](https://api.travis-ci.com/apache/incubator-kyuubi.svg?branch=master)](https://travis-ci.com/apache/incubator-kyuubi)
 [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
+![GitHub top language](https://img.shields.io/github/languages/top/apache/incubator-kyuubi)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/apache/incubator-kyuubi)](https://github.com/apache/incubator-kyuubi/graphs/commit-activity)
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/apache/incubator-kyuubi.svg)](http://isitmaintained.com/project/apache/incubator-kyuubi "Average time to resolve an issue")
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/apache/incubator-kyuubi.svg)](http://isitmaintained.com/project/apache/incubator-kyuubi "Percentage of issues still open")
+
 
 ## What is Kyuubi?
 
@@ -93,13 +97,9 @@ The figure below shows our vision for the Kyuubi Ecosystem. Some of them have be
 
 ## Online Documentation
 
-Since Kyuubi 1.3.0-incubating, the Kyuubi online documentation is hosted by [https://kyuubi.apache.org/](https://kyuubi.apache.org/docs/latest/).
-You can find the specific version of Kyuubi documentation as listed below.
-
-- [1.3.0-incubating](https://kyuubi.apache.org/docs/r1.3.0-incubating/)
-- [stable](https://kyuubi.apache.org/docs/stable/)
-
-For 1.2 and earlier versions, please check the [Github Pages](https://kyuubi.readthedocs.io/en/v1.2.0/) directly.
+Since Kyuubi 1.3.0-incubating, the Kyuubi online documentation is hosted by [https://kyuubi.apache.org/](https://kyuubi.apache.org/).
+You can find the latest Kyuubi documentation on [this web page](https://kyuubi.apache.org/docs/latest/).
+For 1.2 and earlier versions, please check the [Readthedocs](https://kyuubi.readthedocs.io/en/v1.2.0/) directly.
 
 ## Quick Start
 

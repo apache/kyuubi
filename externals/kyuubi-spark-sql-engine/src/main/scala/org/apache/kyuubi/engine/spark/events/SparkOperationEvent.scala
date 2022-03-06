@@ -17,11 +17,14 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-import org.apache.spark.sql.{DataFrame, Encoders}
-import org.apache.spark.sql.types.StructType
+import com.fasterxml.jackson.annotation.JsonIgnore
+import org.apache.spark.scheduler.SparkListenerEvent
+import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.KVIndexParam
 import org.apache.kyuubi.engine.spark.operation.SparkOperation
+import org.apache.kyuubi.events.KyuubiEvent
 
 /**
  * A [[SparkOperationEvent]] used to tracker the lifecycle of an operation at Spark SQL Engine side.
@@ -42,10 +45,10 @@ import org.apache.kyuubi.engine.spark.operation.SparkOperation
  * @param exception: caught exception if have
  * @param sessionId the identifier of the parent session
  * @param sessionUser the authenticated client user
- * @param queryExecution the query execution of this operation
+ * @param executionId the query execution id of this operation
  */
 case class SparkOperationEvent(
-    statementId: String,
+    @KVIndexParam statementId: String,
     statement: String,
     shouldRunAsync: Boolean,
     state: String,
@@ -56,9 +59,8 @@ case class SparkOperationEvent(
     exception: Option[Throwable],
     sessionId: String,
     sessionUser: String,
-    queryExecution: String) extends KyuubiSparkEvent {
+    executionId: Option[Long]) extends KyuubiEvent with SparkListenerEvent {
 
-  override def schema: StructType = Encoders.product[SparkOperationEvent].schema
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 
@@ -69,10 +71,15 @@ case class SparkOperationEvent(
       completeTime - createTime
     }
   }
+
+  @JsonIgnore @KVIndex("completeTime")
+  private def completeTimeIndex: Long = if (completeTime > 0L) completeTime else -1L
 }
 
 object SparkOperationEvent {
-  def apply(operation: SparkOperation, result: Option[DataFrame] = None): SparkOperationEvent = {
+  def apply(
+      operation: SparkOperation,
+      executionId: Option[Long] = None): SparkOperationEvent = {
     val session = operation.getSession
     val status = operation.getStatus
     new SparkOperationEvent(
@@ -87,6 +94,6 @@ object SparkOperationEvent {
       status.exception,
       session.handle.identifier.toString,
       session.user,
-      result.map(_.queryExecution.toString).orNull)
+      executionId)
   }
 }

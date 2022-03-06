@@ -1,0 +1,166 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.kyuubi.engine.spark
+
+import org.apache.hadoop.io.Text
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.hadoop.security.token.{Token, TokenIdentifier}
+import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
+import org.apache.spark.kyuubi.SparkContextHelper
+
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
+import org.apache.kyuubi.service.TFrontendService._
+import org.apache.kyuubi.util.KyuubiHadoopUtils
+
+class SparkTBinaryFrontendService(
+    override val serverable: Serverable)
+  extends TBinaryFrontendService("SparkTBinaryFrontend") {
+  import SparkTBinaryFrontendService._
+
+  private lazy val sc = be.asInstanceOf[SparkSQLBackendService].sparkSession.sparkContext
+
+  override def RenewDelegationToken(req: TRenewDelegationTokenReq): TRenewDelegationTokenResp = {
+    debug(req.toString)
+
+    // We hacked `TCLIService.Iface.RenewDelegationToken` to transfer Credentials from Kyuubi
+    // Server to Spark SQL engine
+    val resp = new TRenewDelegationTokenResp()
+    try {
+      val newCreds = KyuubiHadoopUtils.decodeCredentials(req.getDelegationToken)
+      val (hiveTokens, otherTokens) =
+        KyuubiHadoopUtils.getTokenMap(newCreds).partition(_._2.getKind == HIVE_DELEGATION_TOKEN)
+
+      val updateCreds = new Credentials()
+      val oldCreds = UserGroupInformation.getCurrentUser.getCredentials
+      addHiveToken(hiveTokens, oldCreds, updateCreds)
+      addOtherTokens(otherTokens, oldCreds, updateCreds)
+      if (updateCreds.numberOfTokens() > 0) {
+        SparkContextHelper.updateDelegationTokens(sc, updateCreds)
+      }
+
+      resp.setStatus(OK_STATUS)
+    } catch {
+      case e: Exception =>
+        warn("Error renew delegation tokens: ", e)
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
+    }
+    resp
+  }
+
+  override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
+    debug(req.toString)
+    info("Client protocol version: " + req.getClient_protocol)
+    val resp = new TOpenSessionResp
+    try {
+      val respConfiguration = new java.util.HashMap[String, String]()
+      respConfiguration.put("kyuubi.engine.id", sc.applicationId)
+
+      val sessionHandle = getSessionHandle(req, resp)
+      resp.setSessionHandle(sessionHandle.toTSessionHandle)
+      resp.setConfiguration(respConfiguration)
+      resp.setStatus(OK_STATUS)
+      Option(CURRENT_SERVER_CONTEXT.get()).foreach(_.setSessionHandle(sessionHandle))
+    } catch {
+      case e: Exception =>
+        error("Error opening session: ", e)
+        resp.setStatus(KyuubiSQLException.toTStatus(e, verbose = true))
+    }
+    resp
+  }
+
+  private def addHiveToken(
+      newTokens: Map[Text, Token[_ <: TokenIdentifier]],
+      oldCreds: Credentials,
+      updateCreds: Credentials): Unit = {
+    val metastoreUris = sc.hadoopConfiguration.getTrimmed("hive.metastore.uris", "")
+
+    // `HiveMetaStoreClient` selects the first token whose service is "" and kind is
+    // "HIVE_DELEGATION_TOKEN" to authenticate.
+    val oldAliasAndToken = KyuubiHadoopUtils.getTokenMap(oldCreds)
+      .find { case (_, token) =>
+        token.getKind == HIVE_DELEGATION_TOKEN && token.getService == new Text()
+      }
+
+    if (metastoreUris.nonEmpty && oldAliasAndToken.isDefined) {
+      // Each entry of `newTokens` is a <uris, token> pair for a metastore cluster.
+      // If entry's uris and engine's metastore uris have at least 1 same uri, we presume they
+      // represent the same metastore cluster.
+      val uriSet = metastoreUris.split(",").filter(_.nonEmpty).toSet
+      val newToken = newTokens
+        .find { case (uris, token) =>
+          val matched = uris.toString.split(",").exists(uriSet.contains) &&
+            token.getService == new Text()
+          if (!matched) {
+            debug(s"Filter out Hive token $token")
+          }
+          matched
+        }
+        .map(_._2)
+      newToken.foreach { token =>
+        if (KyuubiHadoopUtils.getTokenIssueDate(token) >
+            KyuubiHadoopUtils.getTokenIssueDate(oldAliasAndToken.get._2)) {
+          updateCreds.addToken(oldAliasAndToken.get._1, token)
+        } else {
+          warn(s"Ignore Hive token with earlier issue date: $token")
+        }
+      }
+      if (newToken.isEmpty) {
+        warn(s"No matching Hive token found for engine metastore uris $metastoreUris")
+      }
+    } else if (metastoreUris.isEmpty) {
+      info(s"Ignore Hive token as hive.metastore.uris are empty")
+    } else {
+      // Either because Hive metastore is not secured or because engine is launched with keytab
+      info(s"Ignore Hive token as engine does not need it")
+    }
+  }
+
+  private def addOtherTokens(
+      tokens: Map[Text, Token[_ <: TokenIdentifier]],
+      oldCreds: Credentials,
+      updateCreds: Credentials): Unit = {
+    tokens.foreach { case (alias, newToken) =>
+      val oldToken = oldCreds.getToken(alias)
+      if (oldToken != null) {
+        if (KyuubiHadoopUtils.getTokenIssueDate(newToken) >
+            KyuubiHadoopUtils.getTokenIssueDate(oldToken)) {
+          updateCreds.addToken(alias, newToken)
+        } else {
+          warn(s"Ignore token with earlier issue date: $newToken")
+        }
+      } else {
+        info(s"Ignore unknown token $newToken")
+      }
+    }
+  }
+
+  override lazy val discoveryService: Option[Service] = {
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new EngineServiceDiscovery(this))
+    } else {
+      None
+    }
+  }
+}
+
+object SparkTBinaryFrontendService {
+
+  val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
+}

@@ -30,6 +30,7 @@
   <artifactId>kyuubi-flink-sql-engine_2.12</artifactId>
   <name>Kyuubi Project Engine Flink SQL</name>
   <packaging>jar</packaging>
+  <url>https://kyuubi.apache.org/</url>
 
   <dependencies>
     <!-- kyuubi -->
@@ -165,13 +166,13 @@
               <include>com.google.guava:failureaccess</include>
               <include>com.google.guava:guava</include>
               <include>commons-codec:commons-codec</include>
-              <include>io.netty:netty-all</include>
               <include>org.apache.commons:commons-lang3</include>
               <include>org.apache.curator:curator-client</include>
               <include>org.apache.curator:curator-framework</include>
               <include>org.apache.curator:curator-recipes</include>\
               <include>org.apache.hive:hive-service-rpc</include>
-              <include>org.apache.thrift:*</include>
+              <include>org.apache.thrift:libfb303</include>
+              <include>org.apache.thrift:libthrift</include>
               <include>org.apache.zookeeper:*</include>
             </includes>
           </artifactSet>
@@ -198,18 +199,12 @@
               </includes>
             </relocation>
             <relocation>
-              <pattern>org.apache.commons</pattern>
-              <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons</shadedPattern>
-              <includes>
-                <include>org.apache.commons.**</include>
-              </includes>
+              <pattern>org.apache.commons.codec</pattern>
+              <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.codec</shadedPattern>
             </relocation>
             <relocation>
-              <pattern>io.netty</pattern>
-              <shadedPattern>${kyuubi.shade.packageName}.io.netty</shadedPattern>
-              <includes>
-                <include>io.netty.**</include>
-              </includes>
+              <pattern>org.apache.commons.lang</pattern>
+              <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.lang</shadedPattern>
             </relocation>
             <relocation>
               <pattern>org.apache.hive.service.rpc.thrift</pattern>

@@ -27,6 +27,7 @@ import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.glassfish.jersey.server.{ResourceConfig, ServerProperties}
 import org.glassfish.jersey.servlet.ServletContainer
 
+import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, OpenAPIConfig}
 
@@ -40,7 +41,7 @@ private[v1] class ApiRootResource extends ApiRequestContext {
     description = "Get the version of Kyuubi server.")
   @GET
   @Path("version")
-  def version(): VersionInfo = new VersionInfo()
+  def version(): VersionInfo = new VersionInfo(KYUUBI_VERSION)
 
   @GET
   @Path("ping")

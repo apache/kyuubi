@@ -34,7 +34,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
 
   def this() = this(classOf[SparkSQLOperationManager].getSimpleName)
 
-  private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY)
+  private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY_MODE)
   private lazy val operationIncrementalCollectDefault = getConf.get(OPERATION_INCREMENTAL_COLLECT)
   private lazy val operationLanguageDefault = getConf.get(OPERATION_LANGUAGE)
 
@@ -48,14 +48,17 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
+      confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val spark = session.asInstanceOf[SparkSessionImpl].spark
-    val lang = spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault)
+    val lang = confOverlay.getOrElse(
+      OPERATION_LANGUAGE.key,
+      spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault))
     val operation =
       OperationLanguages.withName(lang.toUpperCase(Locale.ROOT)) match {
         case OperationLanguages.SQL =>
-          val mode = spark.conf.get(OPERATION_PLAN_ONLY.key, operationModeDefault)
+          val mode = spark.conf.get(OPERATION_PLAN_ONLY_MODE.key, operationModeDefault)
           OperationModes.withName(mode.toUpperCase(Locale.ROOT)) match {
             case NONE =>
               val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)

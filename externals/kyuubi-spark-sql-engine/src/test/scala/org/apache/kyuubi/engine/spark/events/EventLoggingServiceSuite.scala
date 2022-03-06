@@ -62,8 +62,8 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelpe
     val engineEventReader = new BufferedReader(new InputStreamReader(fs))
 
     val readEvent =
-      JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[KyuubiSparkEvent])
-    assert(readEvent.isInstanceOf[KyuubiSparkEvent])
+      JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[EngineEvent])
+    assert(readEvent.isInstanceOf[EngineEvent])
 
     withJdbcStatement() { statement =>
       val table = engineEventPath.getParent

@@ -17,19 +17,21 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.util
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.flink.table.client.gateway.{Executor, ResultDescriptor, TypedResult}
-import org.apache.flink.table.operations.QueryOperation
+import org.apache.calcite.rel.metadata.{DefaultRelMetadataProvider, JaninoRelMetadataProvider, RelMetadataQueryBase}
+import org.apache.flink.table.api.ResultKind
+import org.apache.flink.table.client.gateway.{Executor, TypedResult}
+import org.apache.flink.table.operations.{Operation, QueryOperation}
+import org.apache.flink.table.operations.command.{ResetOperation, SetOperation}
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.engine.flink.result.{ColumnInfo, ResultKind, ResultSet}
+import org.apache.kyuubi.engine.flink.result.{ResultSet, ResultSetUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -39,15 +41,12 @@ class ExecuteStatement(
     session: Session,
     override val statement: String,
     override val shouldRunAsync: Boolean,
-    queryTimeout: Long)
+    queryTimeout: Long,
+    resultMaxRows: Int)
   extends FlinkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session, getHandle)
-
-  private var resultDescriptor: ResultDescriptor = _
-
-  private var columnInfos: util.List[ColumnInfo] = _
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
@@ -76,11 +75,11 @@ class ExecuteStatement(
       val asyncOperation = new Runnable {
         override def run(): Unit = {
           OperationLog.setCurrentOperationLog(operationLog)
+          executeStatement()
         }
       }
 
       try {
-        executeStatement()
         val flinkSQLSessionManager = session.sessionManager
         val backgroundHandle = flinkSQLSessionManager.submitBackgroundOperation(asyncOperation)
         setBackgroundHandle(backgroundHandle)
@@ -101,27 +100,49 @@ class ExecuteStatement(
     try {
       setState(OperationState.RUNNING)
 
-      columnInfos = new util.ArrayList[ColumnInfo]
-
+      // set the thread variable THREAD_PROVIDERS
+      RelMetadataQueryBase.THREAD_PROVIDERS.set(
+        JaninoRelMetadataProvider.of(DefaultRelMetadataProvider.INSTANCE))
       val operation = executor.parseStatement(sessionId, statement)
-      resultDescriptor = executor.executeQuery(sessionId, operation.asInstanceOf[QueryOperation])
-      resultDescriptor.getResultSchema.getColumns.asScala.foreach { column =>
-        columnInfos.add(ColumnInfo.create(column.getName, column.getDataType.getLogicalType))
+      operation match {
+        case queryOperation: QueryOperation => runQueryOperation(queryOperation)
+        case setOperation: SetOperation =>
+          resultSet = ResultSetUtil.runSetOperation(setOperation, executor, sessionId)
+        case resetOperation: ResetOperation =>
+          resultSet = ResultSetUtil.runResetOperation(resetOperation, executor, sessionId)
+        case operation: Operation => runOperation(operation)
       }
+      setState(OperationState.FINISHED)
+    } catch {
+      onError(cancel = true)
+    } finally {
+      statementTimeoutCleaner.foreach(_.shutdown())
+    }
+  }
 
-      val resultID = resultDescriptor.getResultId
+  private def runQueryOperation(operation: QueryOperation): Unit = {
+    var resultId: String = null
+    try {
+      val resultDescriptor = executor.executeQuery(sessionId, operation)
+
+      resultId = resultDescriptor.getResultId
 
       val rows = new ArrayBuffer[Row]()
       var loop = true
+
       while (loop) {
         Thread.sleep(50) // slow the processing down
 
-        val result = executor.snapshotResult(sessionId, resultID, 2)
+        val pageSize = Math.min(500, resultMaxRows)
+        val result = executor.snapshotResult(sessionId, resultId, pageSize)
         result.getType match {
           case TypedResult.ResultType.PAYLOAD =>
-            rows.clear()
             (1 to result.getPayload).foreach { page =>
-              rows ++= executor.retrieveResultPage(resultID, page).asScala
+              if (rows.size < resultMaxRows) {
+                rows ++= executor.retrieveResultPage(resultId, page).asScala
+              } else {
+                loop = false
+              }
             }
           case TypedResult.ResultType.EOS => loop = false
           case TypedResult.ResultType.EMPTY =>
@@ -130,14 +151,28 @@ class ExecuteStatement(
 
       resultSet = ResultSet.builder
         .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(columnInfos)
-        .data(rows.toArray[Row])
+        .columns(resultDescriptor.getResultSchema.getColumns)
+        .data(rows.slice(0, resultMaxRows).toArray[Row])
         .build
-      setState(OperationState.FINISHED)
-    } catch {
-      onError(cancel = true)
     } finally {
-      statementTimeoutCleaner.foreach(_.shutdown())
+      if (resultId != null) {
+        cleanupQueryResult(resultId)
+      }
+    }
+  }
+
+  private def runOperation(operation: Operation): Unit = {
+    val result = executor.executeOperation(sessionId, operation)
+    result.await()
+    resultSet = ResultSet.fromTableResult(result)
+  }
+
+  private def cleanupQueryResult(resultId: String): Unit = {
+    try {
+      executor.cancelQuery(sessionId, resultId)
+    } catch {
+      case t: Throwable =>
+        warn(s"Failed to clean result set $resultId in session $sessionId", t)
     }
   }
 

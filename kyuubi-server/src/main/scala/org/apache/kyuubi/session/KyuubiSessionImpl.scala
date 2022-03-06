@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import scala.collection.JavaConverters._
+
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 
@@ -25,13 +27,13 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
-import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.events.{EventLogging, KyuubiEvent, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.EventLoggingService
+import org.apache.kyuubi.service.authentication.EngineSecurityAccessor
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -44,8 +46,20 @@ class KyuubiSessionImpl(
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
   override val handle: SessionHandle = SessionHandle(protocol)
 
+  private[kyuubi] val optimizedConf: Map[String, String] = {
+    val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
+      user,
+      normalizedConf.asJava)
+    if (confOverlay != null) {
+      normalizedConf ++ confOverlay.asScala
+    } else {
+      warn(s"the server plugin return null value for user: $user, ignore it")
+      normalizedConf
+    }
+  }
+
   // TODO: needs improve the hardcode
-  normalizedConf.foreach {
+  optimizedConf.foreach {
     case ("use:database", _) =>
     case ("kyuubi.engine.pool.size.threshold", _) =>
     case (key, value) => sessionConf.set(key, value)
@@ -56,7 +70,11 @@ class KyuubiSessionImpl(
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
   private val sessionEvent = KyuubiSessionEvent(this)
-  EventLoggingService.onEvent(sessionEvent)
+  EventLogging.onEvent(sessionEvent)
+
+  override def getSessionEvent: Option[KyuubiEvent] = {
+    Option(sessionEvent)
+  }
 
   private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client
@@ -78,14 +96,19 @@ class KyuubiSessionImpl(
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient, extraEngineLog)
-      val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+      val passwd =
+        if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
+          EngineSecurityAccessor.get().issueToken()
+        } else {
+          Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+        }
       _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
-      _engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
+      _engineSessionHandle = _client.openSession(protocol, user, passwd, optimizedConf)
       logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
       _client.engineId.foreach(e => sessionEvent.engineId = e)
-      EventLoggingService.onEvent(sessionEvent)
+      EventLogging.onEvent(sessionEvent)
     }
   }
 
@@ -122,14 +145,16 @@ class KyuubiSessionImpl(
   }
 
   override def close(): Unit = {
-    closeOperation(launchEngineOp.getHandle)
+    if (!OperationState.isTerminal(launchEngineOp.getStatus.state)) {
+      closeOperation(launchEngineOp.getHandle)
+    }
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
       if (_client != null) _client.closeSession()
     } finally {
       sessionEvent.endTime = System.currentTimeMillis()
-      EventLoggingService.onEvent(sessionEvent)
+      EventLogging.onEvent(sessionEvent)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
     }
   }

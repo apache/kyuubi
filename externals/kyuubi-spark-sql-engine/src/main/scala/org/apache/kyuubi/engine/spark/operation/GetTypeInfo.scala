@@ -77,7 +77,7 @@ class GetTypeInfo(session: Session)
 
   private def isNumericType(javaType: Int): Boolean = {
     javaType == TINYINT || javaType == SMALLINT || javaType == INTEGER || javaType == BIGINT ||
-    javaType == FLOAT || javaType == FLOAT || javaType == DOUBLE || javaType == DECIMAL
+    javaType == FLOAT || javaType == DOUBLE || javaType == DECIMAL
   }
 
   private def toRow(name: String, javaType: Int, precision: Integer = null): Row = {

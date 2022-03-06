@@ -27,7 +27,8 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SparkOperationEvent}
+import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
+import org.apache.kyuubi.events.EventLogging
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
@@ -49,7 +50,7 @@ class ExecuteStatement(
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
-  EventLoggingService.onEvent(SparkOperationEvent(this))
+  EventLogging.onEvent(SparkOperationEvent(this))
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -146,6 +147,7 @@ class ExecuteStatement(
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
-    EventLoggingService.onEvent(SparkOperationEvent(this, Option(result)))
+    EventLogging.onEvent(
+      SparkOperationEvent(this, operationListener.getExecutionId))
   }
 }

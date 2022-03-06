@@ -84,3 +84,9 @@ case class ColumnDesc(
     comment: String)
 
 case class OperationLog(logRowSet: Seq[String], rowCount: Int)
+
+case class ResultRowSet(rows: Seq[Row], rowCount: Int)
+
+case class Row(fields: Seq[Field])
+
+case class Field(dataType: String, value: Any)

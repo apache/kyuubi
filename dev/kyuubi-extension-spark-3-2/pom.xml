@@ -28,8 +28,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-extension-spark-3-2_2.12</artifactId>
+    <name>Kyuubi Dev Spark Extensions (for Spark 3.2)</name>
     <packaging>jar</packaging>
-    <name>Kyuubi Project Dev Spark Extensions (for Spark 3.2)</name>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>
@@ -99,12 +100,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-runtime</artifactId>
             <scope>test</scope>
@@ -128,8 +123,8 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

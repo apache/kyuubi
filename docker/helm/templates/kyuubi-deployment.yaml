@@ -46,7 +46,7 @@ spec:
           {{- if .Values.probe.liveness.enabled }}
           livenessProbe:
             tcpSocket:
-              port: {{ .Values.server.bind.port }
+              port: {{ .Values.server.bind.port }}
             initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
             failureThreshold: {{ .Values.probe.liveness.failureThreshold }}
@@ -54,7 +54,7 @@ spec:
           {{- if .Values.probe.readiness.enabled }}
           readinessProbe:
             tcpSocket:
-              port: {{ .Values.server.bind.port }
+              port: {{ .Values.server.bind.port }}
             initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
             failureThreshold: {{ .Values.probe.readiness.failureThreshold }}

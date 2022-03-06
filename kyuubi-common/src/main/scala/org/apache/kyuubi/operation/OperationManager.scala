@@ -46,6 +46,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   def newExecuteStatementOperation(
       session: Session,
       statement: String,
+      confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation
   def newGetTypeInfoOperation(session: Session): Operation

@@ -28,8 +28,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-download</artifactId>
-    <packaging>pom</packaging>
     <name>Kyuubi Project Download Externals</name>
+    <packaging>pom</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <build>
         <plugins>
@@ -46,11 +47,6 @@
                         <configuration>
                             <skip>${spark.archive.download.skip}</skip>
                             <url>${spark.archive.mirror}/${spark.archive.name}</url>
-                            <!-- sha512>${spark.archive.sha512}</sha512 -->
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <readTimeOut>60000</readTimeOut>
-                            <retries>3</retries>
-                            <unpack>true</unpack>
                         </configuration>
                     </execution>
                     <execution>
@@ -62,20 +58,14 @@
                         <configuration>
                             <skip>${flink.archive.download.skip}</skip>
                             <url>${flink.archive.mirror}/${flink.archive.name}</url>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <readTimeOut>60000</readTimeOut>
-                            <retries>3</retries>
-                            <unpack>true</unpack>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <readTimeOut>60000</readTimeOut>
+                    <retries>3</retries>
+                    <unpack>true</unpack>
                 </configuration>
             </plugin>
         </plugins>

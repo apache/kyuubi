@@ -27,7 +27,6 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
-import org.apache.kyuubi.util.NettyUtils.MAX_NETTY_THREADS
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   import KyuubiConf._
@@ -279,7 +278,7 @@ object KyuubiConf {
       .checkValue(
         _.forall(FrontendProtocols.values.map(_.toString).contains),
         s"the frontend protocol should be one or more of ${FrontendProtocols.values.mkString(",")}")
-      .createWithDefault(Seq(FrontendProtocols.THRIFT_BINARY.toString))
+      .createWithDefault(Seq(FrontendProtocols.REST.toString))
 
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.bind.host")
     .doc("(deprecated) Hostname or IP of the machine on which to run the thrift frontend service " +
@@ -364,34 +363,6 @@ object KyuubiConf {
       .doc("Maximum message size in bytes a Kyuubi server will accept.")
       .version("1.4.0")
       .fallbackConf(FRONTEND_MAX_MESSAGE_SIZE)
-
-  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_TIMEOUT.key} instead", "1.4.0")
-  val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
-    buildConf("frontend.login.timeout")
-      .doc("(deprecated) Timeout for Thrift clients during login to the thrift frontend service.")
-      .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(20).toMillis)
-
-  val FRONTEND_THRIFT_LOGIN_TIMEOUT: ConfigEntry[Long] =
-    buildConf("frontend.thrift.login.timeout")
-      .doc("Timeout for Thrift clients during login to the thrift frontend service.")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_LOGIN_TIMEOUT)
-
-  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH.key} instead", "1.4.0")
-  val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
-    buildConf("frontend.backoff.slot.length")
-      .doc("(deprecated) Time to back off during login to the thrift frontend service.")
-      .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofMillis(100).toMillis)
-
-  val FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
-    buildConf("frontend.thrift.backoff.slot.length")
-      .doc("Time to back off during login to the thrift frontend service.")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
 
   val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("authentication")
     .doc("A comma separated list of client authentication types.<ul>" +
@@ -516,6 +487,16 @@ object KyuubiConf {
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(3309)
 
+  /**
+   * Specifies an upper bound on the number of Netty threads that Kyuubi requires by default.
+   * In practice, only 2-4 cores should be required to transfer roughly 10 Gb/s, and each core
+   * that we use will have an initial overhead of roughly 32 MB of off-heap memory, which comes
+   * at a premium.
+   *
+   * Thus, this value should still retain maximum throughput and reduce wasted off-heap memory
+   * allocation.
+   */
+  val MAX_NETTY_THREADS: Int = 8
   val FRONTEND_MYSQL_NETTY_WORKER_THREADS: OptionalConfigEntry[Int] =
     buildConf("frontend.mysql.netty.worker.threads")
       .doc("Number of thread in the netty worker event loop of MySQL frontend service. " +
@@ -585,6 +566,37 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_FLINK_MAX_ROWS: ConfigEntry[Int] =
+    buildConf("session.engine.flink.max.rows")
+      .doc("Max rows of Flink query results. For batch queries, rows that exceeds the limit " +
+        "would be ignored. For streaming queries, the query would be canceled if the limit " +
+        "is reached.")
+      .version("1.5.0")
+      .intConf
+      .createWithDefault(1000000)
+
+  val ENGINE_TRINO_MAIN_RESOURCE: OptionalConfigEntry[String] =
+    buildConf("session.engine.trino.main.resource")
+      .doc("The package used to create Trino engine remote job. If it is undefined," +
+        " Kyuubi will use the default")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_URL: OptionalConfigEntry[String] =
+    buildConf("session.engine.trino.connection.url")
+      .doc("The server url that trino engine will connect to")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_CATALOG: OptionalConfigEntry[String] =
+    buildConf("session.engine.trino.connection.catalog")
+      .doc("The default catalog that trino engine will connect to")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_LOGIN_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.login.timeout")
     .doc("The timeout of creating the connection to remote sql query engine")
     .version("1.0.0")
@@ -627,7 +639,7 @@ object KyuubiConf {
     .doc("The check interval for engine timeout")
     .version("1.0.0")
     .timeConf
-    .checkValue(_ >= Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+    .checkValue(_ >= Duration.ofSeconds(1).toMillis, "Minimum 1 seconds")
     .createWithDefault(Duration.ofMinutes(1).toMillis)
 
   val ENGINE_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.idle.timeout")
@@ -671,6 +683,16 @@ object KyuubiConf {
       .intConf
       .checkValue(_ > 0, "the maximum must be positive integer.")
       .createWithDefault(10)
+
+  val SESSION_ENGINE_STARTUP_WAIT_COMPLETION: ConfigEntry[Boolean] =
+    buildConf("session.engine.startup.waitCompletion")
+      .doc("Whether to wait for completion after engine starts." +
+        " If false, the startup process will be destroyed after the engine is started." +
+        " Note that only use it when the driver is not running locally," +
+        " such as yarn-cluster mode; Otherwise, the engine will be killed.")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(true)
 
   val SESSION_ENGINE_LAUNCH_ASYNC: ConfigEntry[Boolean] =
     buildConf("session.engine.launch.async")
@@ -823,13 +845,21 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
 
+  @deprecated(s"using ${FRONTEND_CONNECTION_URL_USE_HOSTNAME.key} instead, 1.5.0")
   val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("engine.connection.url.use.hostname")
-      .doc("When true, engine register with hostname to zookeeper. When spark run on k8s" +
+      .doc("(deprecated) " +
+        "When true, engine register with hostname to zookeeper. When spark run on k8s" +
         " with cluster mode, set to false to ensure that server can connect to engine")
       .version("1.3.0")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
+
+  val FRONTEND_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
+    buildConf("frontend.connection.url.use.hostname")
+      .doc("When true, frontend services prefer hostname, otherwise, ip address")
+      .version("1.5.0")
+      .fallbackConf(ENGINE_CONNECTION_URL_USE_HOSTNAME)
 
   val ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("engine.share.level")
     .doc("Engines will be shared in different levels, available configs are: <ul>" +
@@ -1040,6 +1070,59 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("engine_operation_logs")
 
+  val ENGINE_SECURITY_ENABLED: ConfigEntry[Boolean] =
+    buildConf("engine.security.enabled")
+      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_SECURITY_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
+    buildConf("engine.security.token.max.lifetime")
+      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
+      .version("1.5.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(10).toMillis)
+
+  val ENGINE_SECURITY_SECRET_PROVIDER: ConfigEntry[String] =
+    buildConf("engine.security.secret.provider")
+      .doc("The class used to manage the engine security secret. This class must be a " +
+        "subclass of EngineSecuritySecretProvider.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault(
+        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecuritySecretProviderImpl")
+
+  val ENGINE_SECURITY_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
+    buildConf("engine.security.crypto.keyLength")
+      .doc("The length in bits of the encryption key to generate. " +
+        "Valid values are 128, 192 and 256")
+      .version("1.5.0")
+      .intConf
+      .checkValues(Set(128, 192, 256))
+      .createWithDefault(128)
+
+  val ENGINE_SECURITY_CRYPTO_IV_LENGTH: ConfigEntry[Int] =
+    buildConf("engine.security.crypto.ivLength")
+      .doc("Initial vector length, in bytes.")
+      .version("1.5.0")
+      .intConf
+      .createWithDefault(16)
+
+  val ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
+    buildConf("engine.security.crypto.keyAlgorithm")
+      .doc("The algorithm for generated secret keys.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("AES")
+
+  val ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
+    buildConf("engine.security.crypto.cipher")
+      .doc("The cipher transformation to use for encrypting engine access token.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("AES/CBC/PKCS5PADDING")
+
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")
       .doc("A human readable name of session and we use empty string by default. " +
@@ -1051,18 +1134,32 @@ object KyuubiConf {
 
   object OperationModes extends Enumeration {
     type OperationMode = Value
-    val PARSE, ANALYZE, OPTIMIZE, NONE = Value
+    val PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION, NONE = Value
   }
 
-  val OPERATION_PLAN_ONLY: ConfigEntry[String] =
+  val OPERATION_PLAN_ONLY_MODE: ConfigEntry[String] =
     buildConf("operation.plan.only.mode")
-      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE only way without " +
-        "executing the query. When it is NONE, the statement will be fully executed")
+      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION " +
+        "only way without executing the query. When it is NONE, the statement will be fully " +
+        "executed")
       .version("1.4.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(OperationModes.values.map(_.toString))
       .createWithDefault(OperationModes.NONE.toString)
+
+  val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Seq[String]] =
+    buildConf("operation.plan.only.excludes")
+      .doc("Comma-separated list of query plan names, in the form of simple class names, i.e, " +
+        "for `set abc=xyz`, the value will be `SetCommand`. For those auxiliary plans, such as " +
+        "`switch databases`, `set properties`, or `create temporary view` e.t.c, " +
+        "which are used for setup evaluating environments for analyzing actual queries, " +
+        "we can use this config to exclude them and let them take effect. " +
+        s"See also ${OPERATION_PLAN_ONLY_MODE.key}.")
+      .version("1.5.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Seq("ResetCommand", "SetCommand", "SetNamespaceCommand", "UseStatement"))
 
   object OperationLanguages extends Enumeration {
     type OperationLanguage = Value
@@ -1079,4 +1176,21 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(OperationLanguages.values.map(_.toString))
       .createWithDefault(OperationLanguages.SQL.toString)
+
+  val SESSION_CONF_ADVISOR: OptionalConfigEntry[String] =
+    buildConf("session.conf.advisor")
+      .doc("A config advisor plugin for Kyuubi Server. This plugin can provide some custom " +
+        "configs for different user or session configs and overwrite the session configs before " +
+        "open a new session. This config value should be a class which is a child of " +
+        "'org.apache.kyuubi.plugin.SessionConfAdvisor' which has zero-arg constructor.")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
+
+  val SERVER_NAME: OptionalConfigEntry[String] =
+    buildConf("server.name")
+      .doc("The name of Kyuubi Server.")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
 }

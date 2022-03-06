@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.tpcds.benchmark
 
-import java.io.File
 import java.net.InetAddress
 
 import org.apache.spark.SparkConf
@@ -28,15 +27,19 @@ case class RunConfig(
     db: String = null,
     benchmarkName: String = "tpcds-v2.4-benchmark",
     filter: Option[String] = None,
-    iterations: Int = 3)
+    iterations: Int = 3,
+    breakdown: Boolean = false,
+    resultsDir: String = "/spark/sql/performance")
 
 // scalastyle:off
 /**
  * Usage:
  * <p>
- * Run following command to benchmark tpcds sf10 with exists database `tpcds_sf10`.
+ * Run following command to benchmark TPC-DS sf10 with exists database `tpcds_sf10`.
  * {{{
- *   $SPARK_HOME/bin/spark-submit --class org.apache.kyuubi.tpcds.benchmark.RunBenchmark kyuubi-tpcds-*.jar --db tpcds_sf10
+ *   $SPARK_HOME/bin/spark-submit \
+ *      --class org.apache.kyuubi.tpcds.benchmark.RunBenchmark \
+ *      kyuubi-tpcds_*.jar --db tpcds_sf10
  * }}}
  */
 object RunBenchmark {
@@ -53,18 +56,22 @@ object RunBenchmark {
       opt[String]('f', "filter")
         .action((x, c) => c.copy(filter = Some(x)))
         .text("a filter on the name of the queries to run")
+      opt[Boolean]('B', "breakdown")
+        .action((x, c) => c.copy(breakdown = x))
+        .text("whether to record breakdown results of an execution")
       opt[Int]('i', "iterations")
         .action((x, c) => c.copy(iterations = x))
         .text("the number of iterations to run")
+      opt[String]('r', "results-dir")
+        .action((x, c) => c.copy(filter = Some(x)))
+        .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
       help("help")
         .text("prints this usage text")
     }
 
     parser.parse(args, RunConfig()) match {
-      case Some(config) =>
-        run(config)
-      case None =>
-        System.exit(1)
+      case Some(config) => run(config)
+      case None => sys.exit(1)
     }
   }
 
@@ -75,7 +82,7 @@ object RunBenchmark {
     val sparkSession = SparkSession.builder.config(conf).enableHiveSupport().getOrCreate()
     import sparkSession.implicits._
 
-    sparkSession.conf.set("spark.sql.perf.results", new File("performance").toURI.toString)
+    sparkSession.conf.set("spark.sql.perf.results", config.resultsDir)
 
     val benchmark = new TPCDS(sparkSession)
 
@@ -94,8 +101,9 @@ object RunBenchmark {
 
     val experiment = benchmark.runExperiment(
       executionsToRun = allQueries,
+      includeBreakdown = config.breakdown,
       iterations = config.iterations,
-      tags = Map("host" -> InetAddress.getLocalHost().getHostName()))
+      tags = Map("host" -> InetAddress.getLocalHost.getHostName))
 
     println("== STARTING EXPERIMENT ==")
     experiment.waitForFinish(1000 * 60 * 30)

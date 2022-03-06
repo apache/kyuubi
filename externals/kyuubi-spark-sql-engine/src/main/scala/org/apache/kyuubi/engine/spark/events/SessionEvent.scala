@@ -17,12 +17,15 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-import org.apache.spark.sql.Encoders
-import org.apache.spark.sql.types.StructType
+import com.fasterxml.jackson.annotation.JsonIgnore
+import org.apache.spark.scheduler.SparkListenerEvent
+import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.KVIndexParam
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
+import org.apache.kyuubi.events.KyuubiEvent
 
 /**
  * Event Tracking for user sessions
@@ -35,16 +38,15 @@ import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
  * @param totalOperations how many queries and meta calls
  */
 case class SessionEvent(
-    sessionId: String,
+    @KVIndexParam sessionId: String,
     engineId: String,
     username: String,
     ip: String,
     serverIp: String,
     startTime: Long,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiSparkEvent {
+    var totalOperations: Int = 0) extends KyuubiEvent with SparkListenerEvent {
 
-  override def schema: StructType = Encoders.product[SessionEvent].schema
   override lazy val partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 
@@ -55,6 +57,9 @@ case class SessionEvent(
       endTime - startTime
     }
   }
+
+  @JsonIgnore @KVIndex("endTime")
+  private def endTimeIndex: Long = if (endTime > 0L) endTime else -1L
 }
 
 object SessionEvent {

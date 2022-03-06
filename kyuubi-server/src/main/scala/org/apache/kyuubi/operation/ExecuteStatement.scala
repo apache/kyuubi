@@ -25,20 +25,20 @@ import org.apache.thrift.TException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.events.KyuubiOperationEvent
+import org.apache.kyuubi.events.{EventLogging, KyuubiOperationEvent}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Session}
 
 class ExecuteStatement(
     session: Session,
     override val statement: String,
+    confOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
   extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session) {
-  EventLoggingService.onEvent(KyuubiOperationEvent(this))
+  EventLogging.onEvent(KyuubiOperationEvent(this))
 
   final private val _operationLog: OperationLog =
     if (shouldRunAsync) {
@@ -68,7 +68,8 @@ class ExecuteStatement(
       // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
       // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
       // engine crash without response before socket read timeout.
-      _remoteOpHandle = client.executeStatement(statement, true, queryTimeout)
+      _remoteOpHandle = client.executeStatement(statement, confOverlay, true, queryTimeout)
+      setHasResultSet(_remoteOpHandle.isHasResultSet)
     } catch onError()
   }
 
@@ -173,7 +174,7 @@ class ExecuteStatement(
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
-    EventLoggingService.onEvent(KyuubiOperationEvent(this))
+    EventLogging.onEvent(KyuubiOperationEvent(this))
   }
 
   override def close(): Unit = {

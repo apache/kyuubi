@@ -17,47 +17,18 @@
 
 package org.apache.kyuubi.operation.log
 
-import java.io.CharArrayWriter
+import org.slf4j.impl.StaticLoggerBinder
 
-import scala.collection.JavaConverters._
+import org.apache.kyuubi.Logging
 
-import org.apache.log4j._
-import org.apache.log4j.spi.{Filter, LoggingEvent}
-
-class LogDivertAppender extends WriterAppender {
-
-  final private val writer = new CharArrayWriter
-
-  final private val lo = Logger.getRootLogger
-    .getAllAppenders.asScala
-    .find(_.isInstanceOf[ConsoleAppender])
-    .map(_.asInstanceOf[Appender].getLayout)
-    .getOrElse(new PatternLayout("%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n"))
-
-  setName("KyuubiSparkSQLEngineLogDivertAppender")
-  setWriter(writer)
-  setLayout(lo)
-
-  addFilter { _: LoggingEvent =>
-    if (OperationLog.getCurrentOperationLog == null) Filter.DENY else Filter.NEUTRAL
-  }
-
-  /**
-   * Overrides WriterAppender.subAppend(), which does the real logging. No need
-   * to worry about concurrency since log4j calls this synchronously.
-   */
-  override protected def subAppend(event: LoggingEvent): Unit = {
-    super.subAppend(event)
-    // That should've gone into our writer. Notify the LogContext.
-    val logOutput = writer.toString
-    writer.reset()
-    val log = OperationLog.getCurrentOperationLog
-    if (log != null) log.write(logOutput)
-  }
-}
-
-object LogDivertAppender {
+object LogDivertAppender extends Logging {
   def initialize(): Unit = {
-    org.apache.log4j.Logger.getRootLogger.addAppender(new LogDivertAppender())
+    if (Logging.isLog4j2) {
+      Log4j2DivertAppender.initialize()
+    } else if (Logging.isLog4j12) {
+      Log4j12DivertAppender.initialize()
+    } else {
+      warn(s"Unsupported SLF4J binding ${StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr}")
+    }
   }
 }

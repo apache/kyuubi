@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.events
 
-trait EventLogger[T <: KyuubiEvent] {
+trait EventLogger {
 
-  def logEvent(kyuubiEvent: T): Unit
+  def logEvent(kyuubiEvent: KyuubiEvent): Unit
 
 }

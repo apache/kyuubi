@@ -19,7 +19,7 @@ package org.apache.kyuubi
 
 import java.net.URI
 import javax.ws.rs.client.WebTarget
-import javax.ws.rs.core.{Application, UriBuilder}
+import javax.ws.rs.core.{Application, Response, UriBuilder}
 
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.server.ResourceConfig
@@ -72,4 +72,8 @@ trait RestFrontendTestHelper extends WithKyuubiServer {
   protected lazy val baseUri: URI = UriBuilder.fromUri(s"http://${fe.connectionUrl}/").build()
 
   protected lazy val webTarget: WebTarget = restApiBaseSuite.client.target(baseUri)
+
+  protected def v1Call(func: String): Response = {
+    webTarget.path("api/v1/" + func).request().get()
+  }
 }

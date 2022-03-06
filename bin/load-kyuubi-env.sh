@@ -71,27 +71,16 @@ fi
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 
 if [[ -f ${KYUUBI_HOME}/RELEASE ]]; then
-  KYUUBI_VERSION="$(grep "Kyuubi " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
-  SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}' | grep -v 'Hadoop')"
-  HADOOP_VERSION_BUILD="$(grep "Spark Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $3}')"
-  SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
+  FLINK_BUILTIN="$(find "$KYUUBI_HOME/externals" -name 'flink-*' -type d | head -n 1)"
+  SPARK_BUILTIN="$(find "$KYUUBI_HOME/externals" -name 'spark-*' -type d | head -n 1)"
 else
-  MVN="${MVN:-"${KYUUBI_HOME}/build/mvn"}"
-  KYUUBI_VERSION=$("$MVN" help:evaluate -Dexpression=project.version 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
-  SPARK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=spark.version 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
-  HADOOP_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=hadoop.binary.version 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
-  SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD}"
+  FLINK_BUILTIN="$(find "$KYUUBI_HOME/externals/kyuubi-download/target" -name 'flink-*' -type d | head -n 1)"
+  SPARK_BUILTIN="$(find "$KYUUBI_HOME/externals/kyuubi-download/target" -name 'spark-*' -type d | head -n 1)"
 fi
 
+export FLINK_HOME="${FLINK_HOME:-"${FLINK_BUILTIN}"}"
+export FLINK_ENGINE_HOME="${KYUUBI_HOME}/externals/engines/flink"
+export TRINO_ENGINE_HOME="${KYUUBI_HOME}/externals/engines/trino"
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
 
 # Print essential environment variables to console
@@ -99,14 +88,18 @@ if [ $silent -eq 0 ]; then
   echo "JAVA_HOME: ${JAVA_HOME}"
 
   echo "KYUUBI_HOME: ${KYUUBI_HOME}"
-  echo "KYUUBI_VERSION: ${KYUUBI_VERSION}"
   echo "KYUUBI_CONF_DIR: ${KYUUBI_CONF_DIR}"
   echo "KYUUBI_LOG_DIR: ${KYUUBI_LOG_DIR}"
   echo "KYUUBI_PID_DIR: ${KYUUBI_PID_DIR}"
   echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
 
+  echo "FLINK_HOME: ${FLINK_HOME}"
+  echo "FLINK_ENGINE_HOME: ${FLINK_ENGINE_HOME}"
+
   echo "SPARK_HOME: ${SPARK_HOME}"
   echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR:-"${SPARK_HOME}/conf"}"
+
+  echo "TRINO_ENGINE_HOME: ${TRINO_ENGINE_HOME}"
 
   echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
 fi

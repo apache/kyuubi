@@ -18,16 +18,19 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.{File, FilenameFilter, IOException}
+import java.lang.ProcessBuilder.Redirect
 import java.net.URI
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+import scala.util.matching.Regex
 
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_MAIN_RESOURCE, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
@@ -98,32 +101,6 @@ class SparkProcessBuilder(
     }
   }
 
-  override protected val workingDir: Path = {
-    env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
-      val workingRoot = Paths.get(root).toAbsolutePath
-      if (!Files.exists(workingRoot)) {
-        debug(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
-        Files.createDirectories(workingRoot)
-      }
-      if (Files.isDirectory(workingRoot)) {
-        workingRoot.toString
-      } else null
-    }.map { rootAbs =>
-      val working = Paths.get(rootAbs, proxyUser)
-      if (!Files.exists(working)) {
-        debug(s"Creating $proxyUser's working directory at $working")
-        Files.createDirectories(working)
-      }
-      if (Files.isDirectory(working)) {
-        working
-      } else {
-        Utils.createTempDir(rootAbs, proxyUser)
-      }
-    }.getOrElse {
-      Utils.createTempDir(namePrefix = proxyUser)
-    }
-  }
-
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
@@ -157,6 +134,20 @@ class SparkProcessBuilder(
       buffer += s"$newKey=$v"
     }
 
+    /**
+     * Kyuubi respect user setting config, if user set `spark.driver.host`, will pass it on.
+     * If user don't set this, will use thrift binary bind host to set.
+     * Kyuubi wants the Engine to bind hostName or IP with Kyuubi.
+     * Spark driver will pass this configuration as the driver-url to the executors
+     * to build RPC communication.
+     */
+    if (!allConf.contains("spark.driver.host")) {
+      conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST).foreach(host => {
+        buffer += CONF
+        buffer += s"spark.driver.host=${host}"
+      })
+    }
+
     // iff the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {
       buffer += PROXY_USER
@@ -174,6 +165,8 @@ class SparkProcessBuilder(
   }.mkString(" ")
 
   override protected def module: String = "kyuubi-spark-sql-engine"
+
+  val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
 
   private def useKeytab(): Boolean = {
     val principal = conf.getOption(PRINCIPAL)
@@ -212,6 +205,27 @@ class SparkProcessBuilder(
       Map()
     }
   }
+
+  override def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String =
+    YARN_APP_NAME_REGEX.findFirstIn(line) match {
+      case Some(appId) =>
+        env.get(KyuubiConf.KYUUBI_HOME) match {
+          case Some(kyuubiHome) =>
+            val pb = new ProcessBuilder("/bin/sh", s"$kyuubiHome/bin/stop-application.sh", appId)
+            pb.environment()
+              .putAll(childProcEnv.asJava)
+            pb.redirectError(Redirect.appendTo(engineLog))
+            pb.redirectOutput(Redirect.appendTo(engineLog))
+            val process = pb.start()
+            process.waitFor() match {
+              case id if id != 0 => s"Failed to kill Application $appId, please kill it manually. "
+              case _ => s"Killed Application $appId successfully. "
+            }
+          case None =>
+            s"KYUUBI_HOME is not set! Failed to kill Application $appId, please kill it manually."
+        }
+      case None => ""
+    }
 
 }
 

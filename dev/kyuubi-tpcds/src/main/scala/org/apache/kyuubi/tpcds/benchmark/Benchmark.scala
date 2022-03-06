@@ -36,24 +36,22 @@ abstract class Benchmark(
 
   import Benchmark._
 
-  val resultsLocation =
-    sparkSession.conf.get(
-      "spark.sql.perf.results",
-      "/spark/sql/performance")
+  val resultsLocation: String = sparkSession.conf.get("spark.sql.perf.results")
 
   protected def sparkContext = sparkSession.sparkContext
 
   implicit protected def toOption[A](a: A): Option[A] = Option(a)
 
-  val buildInfo = Try(getClass.getClassLoader.loadClass("org.apache.spark.BuildInfo")).map { cls =>
-    cls.getMethods
-      .filter(_.getReturnType == classOf[String])
-      .filterNot(_.getName == "toString")
-      .map(m => m.getName -> m.invoke(cls).asInstanceOf[String])
-      .toMap
-  }.getOrElse(Map.empty)
+  val buildInfo: Map[String, String] =
+    Try(getClass.getClassLoader.loadClass("org.apache.spark.BuildInfo")).map { cls =>
+      cls.getMethods
+        .filter(_.getReturnType == classOf[String])
+        .filterNot(_.getName == "toString")
+        .map(m => m.getName -> m.invoke(cls).asInstanceOf[String])
+        .toMap
+    }.getOrElse(Map.empty)
 
-  def currentConfiguration = BenchmarkConfiguration(
+  def currentConfiguration: BenchmarkConfiguration = BenchmarkConfiguration(
     sqlConf = sparkSession.conf.getAll,
     sparkConf = sparkContext.getConf.getAll.toMap,
     defaultParallelism = sparkContext.defaultParallelism,
@@ -81,8 +79,8 @@ abstract class Benchmark(
       variations: Seq[Variation[_]] = Seq(Variation("StandardRun", Seq("true")) { _ => {} }),
       tags: Map[String, String] = Map.empty,
       timeout: Long = 0L,
-      resultLocation: String = resultsLocation,
-      forkThread: Boolean = true) = {
+      resultsDir: String = resultsLocation,
+      forkThread: Boolean = true): ExperimentStatus = {
 
     new ExperimentStatus(
       executionsToRun,
@@ -91,7 +89,7 @@ abstract class Benchmark(
       variations,
       tags,
       timeout,
-      resultLocation,
+      resultsDir,
       sparkSession,
       currentConfiguration,
       forkThread = forkThread)
@@ -142,7 +140,7 @@ object Benchmark {
       variations: Seq[Variation[_]],
       tags: Map[String, String],
       timeout: Long,
-      resultsLocation: String,
+      resultsDir: String,
       sparkSession: SparkSession,
       currentConfiguration: BenchmarkConfiguration,
       forkThread: Boolean = true) {
@@ -150,7 +148,7 @@ object Benchmark {
     val currentRuns = new collection.mutable.ArrayBuffer[ExperimentRun]()
     val currentMessages = new collection.mutable.ArrayBuffer[String]()
 
-    def logMessage(msg: String) = {
+    def logMessage(msg: String): Unit = {
       println(msg)
       currentMessages += msg
     }
@@ -170,10 +168,11 @@ object Benchmark {
       case h :: t => for (xh <- h; xt <- cartesianProduct(t)) yield xh :: xt
     }
 
-    val timestamp = System.currentTimeMillis()
-    val resultPath = s"$resultsLocation/timestamp=$timestamp"
-    val combinations = cartesianProduct(variations.map(l => (0 until l.options.size).toList).toList)
-    val resultsFuture = Future {
+    val timestamp: Long = System.currentTimeMillis()
+    val resultPath = s"$resultsDir/timestamp=$timestamp"
+    val combinations: Seq[List[Int]] =
+      cartesianProduct(variations.map(l => l.options.indices.toList).toList)
+    val resultsFuture: Future[Unit] = Future {
       // Run the benchmarks!
       val results: Seq[ExperimentRun] = (1 to iterations).flatMap { i =>
         combinations.map { setup =>
@@ -260,7 +259,7 @@ object Benchmark {
     }
 
     /** Waits for the finish of the experiment. */
-    def waitForFinish(timeoutInSeconds: Int) = {
+    def waitForFinish(timeoutInSeconds: Int): Unit = {
       Await.result(resultsFuture, timeoutInSeconds.seconds)
     }
 

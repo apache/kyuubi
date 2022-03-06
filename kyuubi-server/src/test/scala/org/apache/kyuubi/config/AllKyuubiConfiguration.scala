@@ -146,23 +146,9 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         newOutput += "--- | --- | --- | --- | ---"
 
         entries.sortBy(_.key).foreach { c =>
-          val key = {
-            val sb = new StringBuilder()
-            var curLen = 0
-            c.key.split("\\.").foreach { str =>
-              if (curLen + str.length > 21) {
-                sb.append("<br>\\." + str)
-                curLen = str.length + 1
-              } else {
-                sb.append("\\." + str)
-                curLen += (str.length + 1)
-              }
-            }
-            sb.toString().stripPrefix("\\.")
-          }
           val dft = c.defaultValStr.replace("<", "&lt;").replace(">", "&gt;")
           val seq = Seq(
-            key,
+            s"<code>${c.key}</code>",
             s"<div style='width: 65pt;word-wrap: break-word;white-space: normal'>$dft</div>",
             s"<div style='width: 170pt;word-wrap: break-word;white-space: normal'>${c.doc}</div>",
             s"<div style='width: 30pt'>${c.typ}</div>",
@@ -222,9 +208,9 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ("## Logging")
     newOutput += ""
     newOutput += ("Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging." +
-      " You can configure it using `$KYUUBI_HOME/conf/log4j.properties`.")
+      " You can configure it using `$KYUUBI_HOME/conf/log4j2.properties`.")
 
-    rewriteToConf(Paths.get(kyuubiHome, "conf", "log4j.properties.template"), newOutput)
+    rewriteToConf(Paths.get(kyuubiHome, "conf", "log4j2.properties.template"), newOutput)
 
     newOutput += ""
     newOutput += ("## Other Configurations")

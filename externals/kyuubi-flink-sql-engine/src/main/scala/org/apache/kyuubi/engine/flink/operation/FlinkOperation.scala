@@ -114,9 +114,7 @@ abstract class FlinkOperation(
   protected def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
       setState(targetState)
-      if (shouldRunAsync) {
-        Option(getBackgroundHandle).foreach(_.cancel(true))
-      }
+      Option(getBackgroundHandle).foreach(_.cancel(true))
     }
   }
 
@@ -143,4 +141,7 @@ abstract class FlinkOperation(
       }
   }
 
+  implicit class RichOptional[A](val optional: java.util.Optional[A]) {
+    def asScala: Option[A] = if (optional.isPresent) Some(optional.get) else None
+  }
 }

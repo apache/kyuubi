@@ -26,7 +26,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.{OperationState, OperationType}
+import org.apache.kyuubi.operation.{ExecuteStatement, OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
 import org.apache.kyuubi.operation.OperationType.OperationType
 
@@ -48,8 +48,20 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("apply an action for an operation") {
-    val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
-
+    val sessionHandle = fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+    val sessionManager = fe.be.sessionManager
+    val session = sessionManager.getSession(sessionHandle)
+    val op = new ExecuteStatement(session, "show tables", Map.empty, true, 3000)
+    op.setState(OperationState.RUNNING)
+    sessionManager.operationManager.addOperation(op)
+    val opHandleStr = s"${op.getHandle.identifier.publicId}|" +
+      s"${op.getHandle.identifier.secretId}|${op.getHandle.protocol.getValue}|" +
+      s"${op.getHandle.typ.toString}"
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .put(Entity.entity(OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
@@ -88,7 +100,22 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(logRowSet.rowCount === 10)
   }
 
-  def getOpHandleStr(typ: OperationType): String = {
+  test("test get result row set") {
+    val opHandleStr =
+      getOpHandleStr(OperationType.EXECUTE_STATEMENT, "select \"test\", 1, 0.32d, true")
+    checkOpState(opHandleStr, FINISHED)
+    val response = webTarget.path(
+      s"api/v1/operations/$opHandleStr/rowset")
+      .queryParam("maxrows", "2")
+      .queryParam("fetchorientation", "FETCH_NEXT")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response.getStatus)
+    val logRowSet = response.readEntity(classOf[ResultRowSet])
+    assert("test".equals(logRowSet.rows.head.fields.head.value))
+    assert(logRowSet.rowCount == 1)
+  }
+
+  def getOpHandleStr(typ: OperationType, statement: String = "show tables"): String = {
     val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
       "admin",
@@ -98,7 +125,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
     val op = typ match {
       case OperationType.EXECUTE_STATEMENT =>
-        fe.be.executeStatement(sessionHandle, "show tables", runAsync = true, 3000)
+        fe.be.executeStatement(sessionHandle, statement, Map.empty, runAsync = true, 3000)
       case OperationType.GET_CATALOGS => fe.be.getCatalogs(sessionHandle)
     }
 

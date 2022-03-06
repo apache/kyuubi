@@ -27,17 +27,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
-import org.apache.kyuubi.Utils.error
-import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
+import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
-private[v1] class SessionsResource extends ApiRequestContext {
+private[v1] class SessionsResource extends ApiRequestContext with Logging {
 
   private def sessionManager = fe.be.sessionManager
 
@@ -67,11 +66,9 @@ private[v1] class SessionsResource extends ApiRequestContext {
     description = "get a session event via session handle identifier")
   @GET
   @Path("{sessionHandle}")
-  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiSessionEvent = {
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiEvent = {
     try {
-      // TODO: need to use KyuubiSessionEvent in session
-      KyuubiSessionEvent(fe.be.sessionManager.getSession(
-        parseSessionHandle(sessionHandleStr)).asInstanceOf[AbstractSession])
+      fe.be.sessionManager.getSession(parseSessionHandle(sessionHandleStr)).getSessionEvent.get
     } catch {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)
@@ -167,11 +164,14 @@ private[v1] class SessionsResource extends ApiRequestContext {
       fe.be.executeStatement(
         parseSessionHandle(sessionHandleStr),
         request.statement,
+        Map.empty,
         request.runAsync,
         request.queryTimeout)
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error executing statement")
+      case NonFatal(e) =>
+        val errorMsg = "Error executing statement"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -186,8 +186,10 @@ private[v1] class SessionsResource extends ApiRequestContext {
     try {
       fe.be.getTypeInfo(parseSessionHandle(sessionHandleStr))
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting type information")
+      case NonFatal(e) =>
+        val errorMsg = "Error getting type information"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -202,8 +204,10 @@ private[v1] class SessionsResource extends ApiRequestContext {
     try {
       fe.be.getCatalogs(parseSessionHandle(sessionHandleStr))
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting catalogs")
+      case NonFatal(e) =>
+        val errorMsg = "Error getting catalogs"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -226,7 +230,9 @@ private[v1] class SessionsResource extends ApiRequestContext {
       operationHandle
     } catch {
       case NonFatal(e) =>
-        throw new NotFoundException(s"Error getting schemas", e)
+        val errorMsg = "Error getting schemas"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -248,8 +254,10 @@ private[v1] class SessionsResource extends ApiRequestContext {
         request.tableName,
         request.tableTypes)
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting tables")
+      case NonFatal(e) =>
+        val errorMsg = "Error getting tables"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -264,8 +272,10 @@ private[v1] class SessionsResource extends ApiRequestContext {
     try {
       fe.be.getTableTypes(parseSessionHandle(sessionHandleStr))
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting table types")
+      case NonFatal(e) =>
+        val errorMsg = "Error getting table types"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -287,8 +297,10 @@ private[v1] class SessionsResource extends ApiRequestContext {
         request.tableName,
         request.columnName)
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting columns")
+      case NonFatal(e) =>
+        val errorMsg = "Error getting columns"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -309,30 +321,10 @@ private[v1] class SessionsResource extends ApiRequestContext {
         request.schemaName,
         request.functionName)
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting functions")
-    }
-  }
-
-  @ApiResponse(
-    responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
-    description = "Close an operation")
-  @DELETE
-  @Path("{sessionHandle}/operations/{operationHandle}")
-  def closeOperation(
-      @PathParam("sessionHandle") sessionHandleStr: String,
-      @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
-
-    try {
-      val operationHandle = parseOperationHandle(operationHandleStr)
-      fe.be.sessionManager.getSession(parseSessionHandle(sessionHandleStr))
-        .closeOperation(operationHandle)
-      operationHandle
-    } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error closing an operation")
+      case NonFatal(e) =>
+        val errorMsg = "Error getting functions"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 }

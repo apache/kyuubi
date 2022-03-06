@@ -32,13 +32,14 @@
     <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
     <name>Kyuubi Project Hive JDBC Shaded Client</name>
     <packaging>jar</packaging>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-hive-jdbc</artifactId>
             <version>${project.version}</version>
-            <optional>true</optional>
+<!--            <optional>true</optional>-->
         </dependency>
 
         <dependency>
@@ -55,22 +56,24 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libfb303</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-service-rpc</artifactId>
-            <version>${hive.client.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hive.shims</groupId>
             <artifactId>hive-shims-common</artifactId>
-            <version>${hive.client.version}</version>
+            <version>${hive.version}</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>
@@ -83,7 +86,7 @@
         <dependency>
             <groupId>org.apache.hive.shims</groupId>
             <artifactId>hive-shims-0.23</artifactId>
-            <version>${hive.client.version}</version>
+            <version>${hive.version}</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>
@@ -96,7 +99,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-common</artifactId>
-            <version>${hive.client.version}</version>
+            <version>${hive.version}</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>
@@ -109,7 +112,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
-            <version>${hive.client.version}</version>
+            <version>${hive.version}</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>
@@ -122,7 +125,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-serde</artifactId>
-            <version>${hive.client.version}</version>
+            <version>${hive.version}</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>
@@ -135,7 +138,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-service</artifactId>
-            <version>${hive.client.version}</version>
+            <version>${hive.version}</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>
@@ -148,48 +151,21 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>${hive.client.commons-codec.version}</version>
-            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <version>${hive.client.commons-lang.version}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${hive.client.guava.version}</version>
-            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
-            <version>${hive.client.curator.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-client</artifactId>
-            <version>${hive.client.curator.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -213,42 +189,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-            <version>${hive.client.thrift.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libfb303</artifactId>
-            <version>${hive.client.fb303.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>${hive.client.zookeeper.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -345,6 +287,9 @@
                                 <include>**</include>
                             </includes>
                             <excludes>
+                                <exclude>org/apache/hadoop/hive/thrift/client/TUGIAssumingTransport.class</exclude>
+                                <exclude>org/apache/hadoop/hive/thrift/TFilterTransport.class</exclude>
+                                <exclude>org/apache/hadoop/hive/thrift/TUGIContainingTransport.class</exclude>
                                 <exclude>META-INF/MANIFEST.MF</exclude>
                             </excludes>
                         </filter>

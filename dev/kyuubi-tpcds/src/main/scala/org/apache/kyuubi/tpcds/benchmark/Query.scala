@@ -22,6 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.catalyst.QueryPlanningTracker
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.execution.SparkPlan
 
@@ -53,7 +54,7 @@ class Query(
     }
   }
 
-  lazy val tablesInvolved = buildDataFrame.queryExecution.logical collect {
+  lazy val tablesInvolved: Seq[String] = buildDataFrame.queryExecution.logical collect {
     case r: UnresolvedRelation => r.tableName
   }
 
@@ -66,19 +67,12 @@ class Query(
     try {
       val dataFrame = buildDataFrame
       val queryExecution = dataFrame.queryExecution
-      // We are not counting the time of ScalaReflection.convertRowToScala.
-      val parsingTime = measureTimeMs {
-        queryExecution.logical
-      }
-      val analysisTime = measureTimeMs {
-        queryExecution.analyzed
-      }
-      val optimizationTime = measureTimeMs {
-        queryExecution.optimizedPlan
-      }
-      val planningTime = measureTimeMs {
-        queryExecution.executedPlan
-      }
+      queryExecution.executedPlan
+      val phases = queryExecution.tracker.phases
+      val parsingTime = phases(QueryPlanningTracker.PARSING).durationMs.toDouble
+      val analysisTime = phases(QueryPlanningTracker.ANALYSIS).durationMs.toDouble
+      val optimizationTime = phases(QueryPlanningTracker.OPTIMIZATION).durationMs.toDouble
+      val planningTime = phases(QueryPlanningTracker.PLANNING).durationMs.toDouble
 
       val breakdownResults =
         if (includeBreakdown) {

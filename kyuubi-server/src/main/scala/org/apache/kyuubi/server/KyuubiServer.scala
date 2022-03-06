@@ -31,7 +31,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
-import org.apache.kyuubi.events.KyuubiServerInfoEvent
+import org.apache.kyuubi.events.{EventLogging, KyuubiServerInfoEvent}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{ServiceDiscovery, ZooKeeperAuthTypes}
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
@@ -89,7 +89,10 @@ object KyuubiServer extends Logging {
       }
     }
 
-    val server = new KyuubiServer()
+    val server = conf.get(KyuubiConf.SERVER_NAME) match {
+      case Some(s) => new KyuubiServer(s)
+      case _ => new KyuubiServer()
+    }
     try {
       server.initialize(conf)
     } catch {
@@ -136,11 +139,11 @@ class KyuubiServer(name: String) extends Serverable(name) {
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override val backendService: AbstractBackendService =
-    new KyuubiBackendService() with BackendServiceTimeMetric
+    new KyuubiBackendService() with BackendServiceMetric
 
   override lazy val frontendServices: Seq[AbstractFrontendService] =
     conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName).map {
-      case THRIFT_BINARY => new KyuubiThriftBinaryFrontendService(this)
+      case THRIFT_BINARY => new KyuubiTBinaryFrontendService(this)
       case REST =>
         warn("REST frontend protocol is experimental, API may change in the future.")
         new KyuubiRestFrontendService(this)
@@ -151,7 +154,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
 
-  private val eventLoggingService: EventLoggingService = new EventLoggingService
+  private val eventLoggingService = new EventLoggingService()
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()
@@ -167,11 +170,11 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override def start(): Unit = {
     super.start()
     KyuubiServer.kyuubiServer = this
-    KyuubiServerInfoEvent(this, ServiceState.STARTED).foreach(EventLoggingService.onEvent)
+    KyuubiServerInfoEvent(this, ServiceState.STARTED).foreach(EventLogging.onEvent)
   }
 
   override def stop(): Unit = {
-    KyuubiServerInfoEvent(this, ServiceState.STOPPED).foreach(EventLoggingService.onEvent)
+    KyuubiServerInfoEvent(this, ServiceState.STOPPED).foreach(EventLogging.onEvent)
     super.stop()
   }
 

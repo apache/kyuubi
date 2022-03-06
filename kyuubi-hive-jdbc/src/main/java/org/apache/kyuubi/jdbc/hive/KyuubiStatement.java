@@ -23,11 +23,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.codec.binary.Base64;
+import java.util.*;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.rpc.thrift.TCLIService;
@@ -245,7 +241,12 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
 
   @Override
   public boolean execute(String sql) throws SQLException {
-    runAsyncOnServer(sql);
+    return executeWithConfOverlay(sql, null);
+  }
+
+  private boolean executeWithConfOverlay(String sql, Map<String, String> confOverlay)
+      throws SQLException {
+    runAsyncOnServer(sql, confOverlay);
     TGetOperationStatusResp status = waitForOperationToComplete();
 
     // The query should be completed by now
@@ -297,6 +298,10 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
   }
 
   private void runAsyncOnServer(String sql) throws SQLException {
+    runAsyncOnServer(sql, null);
+  }
+
+  private void runAsyncOnServer(String sql, Map<String, String> confOneTime) throws SQLException {
     checkConnection("execute");
 
     closeClientOperation();
@@ -309,7 +314,13 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
      * execution run asynchronously
      */
     execReq.setRunAsync(true);
-    execReq.setConfOverlay(sessConf);
+    if (confOneTime != null) {
+      Map<String, String> confOverlay = new HashMap<String, String>(sessConf);
+      confOverlay.putAll(confOneTime);
+      execReq.setConfOverlay(confOverlay);
+    } else {
+      execReq.setConfOverlay(sessConf);
+    }
     execReq.setQueryTimeout(queryTimeout);
     try {
       TExecuteStatementResp execResp = client.ExecuteStatement(execReq);
@@ -478,6 +489,14 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     if (!execute(sql)) {
+      throw new SQLException("The query did not generate a result set!");
+    }
+    return resultSet;
+  }
+
+  public ResultSet executeScala(String code) throws SQLException {
+    if (!executeWithConfOverlay(
+        code, Collections.singletonMap("kyuubi.operation.language", "SCALA"))) {
       throw new SQLException("The query did not generate a result set!");
     }
     return resultSet;
@@ -964,7 +983,7 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
       // Set on the server side.
       // @see org.apache.hive.service.cli.operation.SQLOperation#prepare
       String guid64 =
-          Base64.encodeBase64URLSafeString(stmtHandle.getOperationId().getGuid()).trim();
+          Base64.getUrlEncoder().encodeToString(stmtHandle.getOperationId().getGuid()).trim();
       return guid64;
     }
     return null;

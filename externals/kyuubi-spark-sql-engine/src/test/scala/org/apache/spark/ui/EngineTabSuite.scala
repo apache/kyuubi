@@ -20,7 +20,6 @@ package org.apache.spark.ui
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.util.EntityUtils
-import org.apache.spark.SparkContext
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -31,9 +30,14 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
     "spark.ui.port" -> "0",
     "spark.sql.redaction.string.regex" -> "(?i)url|access|secret|password")
 
-  override def beforeAll(): Unit = {
-    SparkContext.getActive.foreach(_.stop())
-    super.beforeAll()
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    startSparkEngine()
+  }
+
+  override protected def afterEach(): Unit = {
+    super.afterEach()
+    stopSparkEngine()
   }
 
   test("basic stats for engine tab") {
@@ -133,7 +137,7 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
       assert(resp.contains("sqlstat"))
 
       // check sql stats table title
-      assert(resp.contains("Query Execution"))
+      assert(resp.contains("Query Details"))
     }
   }
 

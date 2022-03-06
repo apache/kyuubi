@@ -38,7 +38,7 @@ import org.apache.kyuubi.service.AbstractService
 class JsonReporterService(registry: MetricRegistry)
   extends AbstractService("JsonReporterService") {
   private val jsonMapper = new ObjectMapper().registerModule(
-    new MetricsModule(TimeUnit.MILLISECONDS, TimeUnit.MILLISECONDS, false))
+    new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, false))
   private val timer = new Timer(true)
   private var reportDir: Path = _
   private var reportPath: Path = _

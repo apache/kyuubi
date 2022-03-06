@@ -18,17 +18,15 @@
 package org.apache.kyuubi.engine
 
 import java.io.{File, IOException}
-import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.JavaConverters._
-import scala.util.matching.Regex
 
 import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.NamedThreadFactory
@@ -57,7 +55,31 @@ trait ProcBuilder {
 
   protected val extraEngineLog: Option[OperationLog]
 
-  protected val workingDir: Path
+  protected val workingDir: Path = {
+    env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
+      val workingRoot = Paths.get(root).toAbsolutePath
+      if (!Files.exists(workingRoot)) {
+        debug(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
+        Files.createDirectories(workingRoot)
+      }
+      if (Files.isDirectory(workingRoot)) {
+        workingRoot.toString
+      } else null
+    }.map { rootAbs =>
+      val working = Paths.get(rootAbs, proxyUser)
+      if (!Files.exists(working)) {
+        debug(s"Creating $proxyUser's working directory at $working")
+        Files.createDirectories(working)
+      }
+      if (Files.isDirectory(working)) {
+        working
+      } else {
+        Utils.createTempDir(rootAbs, proxyUser)
+      }
+    }.getOrElse {
+      Utils.createTempDir(namePrefix = proxyUser)
+    }
+  }
 
   final lazy val processBuilder: ProcessBuilder = {
     val pb = new ProcessBuilder(commands: _*)
@@ -74,10 +96,12 @@ trait ProcBuilder {
   @volatile private var error: Throwable = UNCAUGHT_ERROR
 
   private val engineLogMaxLines = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
-  private val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
+  private val waitCompletion = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
+  protected val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
   // Visible for test
   @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
   private var logCaptureThread: Thread = _
+  private var process: Process = _
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
@@ -116,8 +140,7 @@ trait ProcBuilder {
   }
 
   final def start: Process = synchronized {
-
-    val proc = processBuilder.start()
+    process = processBuilder.start()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
     val redirect: Runnable = { () =>
@@ -159,35 +182,20 @@ trait ProcBuilder {
     logCaptureThreadReleased = false
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
-    proc
+    process
   }
 
-  val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
+  def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String = ""
 
-  def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String =
-    YARN_APP_NAME_REGEX.findFirstIn(line) match {
-      case Some(appId) =>
-        env.get(KyuubiConf.KYUUBI_HOME) match {
-          case Some(kyuubiHome) =>
-            val pb = new ProcessBuilder("/bin/sh", s"$kyuubiHome/bin/stop-application.sh", appId)
-            pb.environment()
-              .putAll(childProcEnv.asJava)
-            pb.redirectError(Redirect.appendTo(engineLog))
-            pb.redirectOutput(Redirect.appendTo(engineLog))
-            val process = pb.start()
-            process.waitFor() match {
-              case id if id != 0 => s"Failed to kill Application $appId, please kill it manually. "
-              case _ => s"Killed Application $appId successfully. "
-            }
-          case None =>
-            s"KYUUBI_HOME is not set! Failed to kill Application $appId, please kill it manually."
-        }
-      case None => ""
-    }
-
-  def close(): Unit = {
+  def close(): Unit = synchronized {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
+      logCaptureThread = null
+    }
+    if (!waitCompletion && process != null) {
+      info("Destroy the process, since waitCompletion is false.")
+      process.destroyForcibly()
+      process = null
     }
   }
 

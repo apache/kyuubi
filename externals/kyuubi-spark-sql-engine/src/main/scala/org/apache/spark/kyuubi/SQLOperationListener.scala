@@ -44,6 +44,8 @@ class SQLOperationListener(
   private val activeStages = new java.util.HashSet[Int]()
   private var executionId: Option[Long] = None
 
+  def getExecutionId: Option[Long] = executionId
+
   // For broadcast, Spark will introduce a new runId as SPARK_JOB_GROUP_ID, see:
   // https://github.com/apache/spark/pull/24595, So we will miss these logs.
   // TODO: Fix this until the below ticket resolved
