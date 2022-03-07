@@ -103,4 +103,30 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
 
     assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
   }
+
+  test("test with invalid kerberos authorization") {
+    val encodeAuthorization = new String(
+      Base64.encodeBase64(
+        s"invalidKerberosToken".getBytes()),
+      "UTF-8")
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"NEGOTIATE $encodeAuthorization")
+      .get()
+
+    assert(HttpServletResponse.SC_INTERNAL_SERVER_ERROR == response.getStatus)
+  }
+
+  test("test with not supported auth scheme") {
+    val encodeAuthorization = new String(
+      Base64.encodeBase64(
+        s"$ldapUser:$ldapUserPasswd".getBytes()),
+      "UTF-8")
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"OTHER_SCHEME $encodeAuthorization")
+      .get()
+
+    assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
+  }
 }

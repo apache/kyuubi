@@ -115,7 +115,7 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
   }
 
   private def doLogin(subject: Subject): Unit = {
-    info("login from keytab")
+    info(s"login from keytab $keytab with $principal")
     loginContext = new LoginContext(
       "kyuubi-kerberos-handler",
       subject,
