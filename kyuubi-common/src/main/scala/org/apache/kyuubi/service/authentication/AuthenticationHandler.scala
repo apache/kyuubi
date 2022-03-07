@@ -18,8 +18,7 @@
 package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
-import javax.servlet.http.HttpServletRequest
-
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthSchemes.AuthScheme
 
@@ -30,8 +29,10 @@ trait AuthenticationHandler {
 
   def init(conf: KyuubiConf): Unit
 
+  def destroy(): Unit
+
   @throws[AuthenticationException]
-  def authenticate(request: HttpServletRequest): AuthUser
+  def authenticate(request: HttpServletRequest, response: HttpServletResponse): AuthUser
 
   def matchAuthScheme(authorization: String): Boolean = {
     if (authorization == null || authorization.isEmpty) {

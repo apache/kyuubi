@@ -17,183 +17,165 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.security.{PrivilegedActionException, PrivilegedExceptionAction}
 import java.util.HashMap
 import javax.security.auth.Subject
-import javax.security.auth.kerberos.{KerberosPrincipal, KerberosTicket}
+import javax.security.auth.kerberos.{KerberosPrincipal, KerberosTicket, KeyTab}
 import javax.security.auth.login.{AppConfigurationEntry, Configuration, LoginContext, LoginException}
 import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag.REQUIRED
 import javax.security.sasl.AuthenticationException
-import javax.servlet.http.HttpServletRequest
-
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import scala.collection.JavaConverters._
-
 import com.sun.security.auth.module.Krb5LoginModule
 import org.apache.commons.codec.binary.Base64
+import org.apache.hadoop.security.authentication.server.HttpConstants
 import org.apache.hadoop.security.authentication.util.KerberosName
-import org.ietf.jgss.{GSSCredential, GSSException, GSSManager}
+import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 import org.ietf.jgss.GSSCredential.ACCEPT_ONLY
 import org.ietf.jgss.GSSCredential.INDEFINITE_LIFETIME
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.service.authentication.AuthSchemes.{AuthScheme, NEGOTIATE}
 import org.apache.kyuubi.service.authentication.KerberosUtil._
+
+import javax.servlet.ServletException
 
 class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
   import KerberosAuthenticationHandler._
 
-  private val gssManager = GSSManager.getInstance()
-  private var serverCredential: GSSCredential = _
-  private var loginContext: LoginContext = _
+  private var gssManager: GSSManager = _
   private var conf: KyuubiConf = _
+  private var serverSubject = new Subject()
   private var keytab: String = _
-  private var principal: String = _
 
   override val authScheme: AuthScheme = AuthSchemes.NEGOTIATE
 
   override def init(conf: KyuubiConf): Unit = {
     this.conf = conf
-    loginFromKeytab()
+    keytab = conf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
+    val principal = conf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
+    if (keytab.isEmpty || principal.isEmpty) {
+      throw new ServletException(
+        s"SPNEGO keytab[$keytab] or principal[$principal] is not defined")
+    }
+    val keytabFile = new File(keytab)
+    if (!keytabFile.exists()) {
+      throw new ServletException(s"Keytab[$keytab] does not exists")
+    }
+    if (!principal.startsWith("HTTP/")) {
+      throw new ServletException(s"SPNEGO principal[$principal] does not start with HTTP/")
+    }
+
+    info(s"Using keytab $keytab, for principal $principal")
+    serverSubject.getPrivateCredentials().add(KeyTab.getInstance(keytabFile))
+    serverSubject.getPrincipals.add(new KerberosPrincipal(principal))
+
+    // TODO: support to config kerberos.name.rules and kerberos.rule.mechanism
     // set default rules if no rules set, otherwise it will throw exception
     // when parse the kerberos name
     if (!KerberosName.hasRulesBeenSet) {
       KerberosName.setRules("DEFAULT")
     }
-  }
-
-  private def loginFromKeytab(): Unit = {
-    try {
-      keytab = conf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
-      principal = conf.get(KyuubiConf.SERVER_PRINCIPAL).getOrElse("")
-      if (keytab.isEmpty || principal.isEmpty) {
-        throw new LoginException("Kyuubi spnego keytab or principal is null or empty")
-      }
-      doLogin(new Subject())
-    } catch {
-      case e: Exception =>
-        throw new RuntimeException(e)
-    }
-  }
-
-  private def checkTGTAndReLoginFromKeytab(): Unit = {
-    val tgt = getTGT
-    val now = System.currentTimeMillis()
-    if (tgt == null && now >= getRefreshTime(tgt)) {
-      reLoginFromKeytab()
-    }
-  }
-
-  private def reLoginFromKeytab(): Unit = {
-    try {
-      loginContext.logout()
-      doLogin(loginContext.getSubject)
-    } catch {
-      case e @ (_: LoginException | _: GSSException | _: PrivilegedActionException) =>
-        throw new RuntimeException(e)
-    }
-  }
-
-  private def getTGT(): KerberosTicket = {
-    val subject = loginContext.getSubject
-    val tickets = subject.getPrivateCredentials(classOf[KerberosTicket]).asScala
-    var tgt: KerberosTicket = null
-    for (ticket <- tickets if tgt == null) {
-      val principal: KerberosPrincipal = ticket.getServer
-      if (principal.getName == "krbtgt/" + principal.getRealm + "@" + principal.getRealm) {
-        tgt = ticket
-      }
-    }
-    tgt
-  }
-
-  private def getRefreshTime(ticket: KerberosTicket): Long = {
-    val start = ticket.getStartTime.getTime
-    val end = ticket.getEndTime.getTime
-    start + ((end - start) * TICKET_RENEW_WINDOW).toLong
-  }
-
-  private def doLogin(subject: Subject): Unit = {
-    info(s"login from keytab $keytab with $principal")
-    loginContext = new LoginContext(
-      "kyuubi-kerberos-handler",
-      subject,
-      null,
-      new Configuration {
-        override def getAppConfigurationEntry(name: String): Array[AppConfigurationEntry] = {
-          val options = new HashMap[String, String]()
-          options.put("refreshKrb5Config", "true")
-          options.put("doNotPrompt", "true")
-          if (logger.isDebugEnabled) {
-            options.put("debug", "true")
-          }
-          options.put("keyTab", keytab)
-          options.put("isInitiator", "false")
-          options.put("useKeyTab", "true")
-          options.put("principal", principal)
-          options.put("storeKey", "true")
-          Array[AppConfigurationEntry](
-            new AppConfigurationEntry(classOf[Krb5LoginModule].getName, REQUIRED, options))
-        }
-      })
-    loginContext.login()
-
-    val serverName = gssManager.createName(principal, NT_GSS_KRB5_PRINCIPAL_OID)
-    serverCredential = Subject.doAs(
-      subject,
-      new PrivilegedExceptionAction[GSSCredential] {
-        override def run(): GSSCredential = {
-          gssManager.createCredential(
-            serverName,
-            INDEFINITE_LIFETIME,
-            Array(GSS_KRB5_MECH_OID, GSS_SPNEGO_MECH_OID),
-            ACCEPT_ONLY)
-        }
-      })
-  }
-
-  def auth(request: HttpServletRequest): Unit = {
-    beforeAuth(request)
-    val authorization = getAuthorization(request)
-    val clientToken = Base64.decodeBase64(authorization.getBytes("UTF-8"))
-    try {
-      val serverPrincipal =
-    }
-
-  }
-
-  override def authenticate(request: HttpServletRequest): AuthUser = {
-    beforeAuth(request)
-    checkTGTAndReLoginFromKeytab()
-    val authorization = getAuthorization(request)
-    val inputToken = Base64.decodeBase64(authorization.getBytes())
 
     try {
-      val kerberosName = Subject.doAs(
-        loginContext.getSubject,
-        new PrivilegedExceptionAction[KerberosName] {
-          override def run(): KerberosName = {
-            val context = gssManager.createContext(serverCredential)
-            context.acceptSecContext(inputToken, 0, inputToken.length)
-            if (!context.isEstablished) {
-              throw new AuthenticationException(
-                "Kerberos authentication failed:" +
-                  " unable to establish context with the service ticket provided by the client")
-            }
-            new KerberosName(context.getSrcName.toString)
+      gssManager = Subject.doAs(serverSubject,
+        new PrivilegedExceptionAction[GSSManager] {
+          override def run(): GSSManager = {
+            GSSManager.getInstance()
           }
         })
-      AuthUser(kerberosName.getShortName, "kerberos")
     } catch {
-      case e: PrivilegedActionException =>
-        throw new AuthenticationException("Kerberos authentication failed: ", e.getException)
-      case e: IOException =>
-        throw new AuthenticationException("Kerberos authentication failed: ", e)
+      case e: PrivilegedActionException => throw e.getException
+      case e: Exception => throw new ServletException(e)
     }
+  }
+
+  override def destroy(): Unit = {
+    keytab = null
+    serverSubject = null
+  }
+
+  override def authenticate(
+      request: HttpServletRequest,
+      response: HttpServletResponse): AuthUser = {
+    beforeAuth(request)
+    var authUser: AuthUser = null
+    val authorization = getAuthorization(request)
+    val base64 = new Base64(0)
+    val clientToken = base64.decode(authorization)
+    try {
+      val serverPrincipal = getTokenServerName(clientToken)
+      if (!serverPrincipal.startsWith("HTTP/")) {
+        throw new IllegalArgumentException(
+          s"Invalid server principal $serverPrincipal decoded from client request")
+      }
+      authUser = Subject.doAs(serverSubject,
+        new PrivilegedExceptionAction[AuthUser] {
+          override def run(): AuthUser = {
+            runWithPrincipal(serverPrincipal, clientToken, base64, response)
+          }
+        })
+    } catch {
+      case ex: PrivilegedActionException =>
+        ex.getException match {
+          case ioe: IOException =>
+            throw ioe
+          case e: Exception => throw new AuthenticationException("SPNEGO authentication failed", e)
+        }
+
+      case e: Exception => throw new AuthenticationException("SPNEGO authentication failed", e)
+    }
+    authUser
+  }
+
+  def runWithPrincipal(
+      serverPrincipal: String,
+      clientToken: Array[Byte],
+      base64: Base64,
+      response: HttpServletResponse): AuthUser = {
+    var gssContext: GSSContext = null
+    var gssCreds: GSSCredential = null
+    var authUser: AuthUser = null
+    try {
+      debug(s"SPNEGO initialized with server principal $serverPrincipal")
+      gssCreds = gssManager.createCredential(
+        gssManager.createName(serverPrincipal, NT_GSS_KRB5_PRINCIPAL_OID),
+        GSSCredential.INDEFINITE_LIFETIME,
+        Array[Oid](GSS_SPNEGO_MECH_OID, GSS_KRB5_MECH_OID),
+        GSSCredential.ACCEPT_ONLY)
+      gssContext = gssManager.createContext(gssCreds)
+      val serverToken = gssContext.acceptSecContext(clientToken, 0, clientToken.length)
+      if (serverToken != null && serverToken.length > 0) {
+        val authenticate = base64.encodeToString(serverToken)
+        response.setHeader(WWW_AUTHENTICATE, s"$NEGOTIATE $authenticate")
+      }
+      if (!gssContext.isEstablished) {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
+        debug("SPNEGO in progress")
+      } else {
+        val clientPrincipal = gssContext.getSrcName.toString
+        val kerberosName = new KerberosName(clientPrincipal)
+        val userName = kerberosName.getShortName
+        authUser = AuthUser(userName, clientPrincipal)
+        response.setStatus(HttpServletResponse.SC_OK)
+        debug(s"SPNEGO completed for client principal $clientPrincipal")
+      }
+    } finally {
+      if (gssContext != null) {
+        gssContext.dispose()
+      }
+      if (gssCreds != null) {
+        gssCreds.dispose()
+      }
+    }
+    authUser
   }
 }
 
 object KerberosAuthenticationHandler {
-  private val TICKET_RENEW_WINDOW = 0.80f
+  /**
+   * HTTP header used by the SPNEGO server endpoint during an authentication sequence.
+   */
+  val WWW_AUTHENTICATE: String = HttpConstants.WWW_AUTHENTICATE_HEADER
 }

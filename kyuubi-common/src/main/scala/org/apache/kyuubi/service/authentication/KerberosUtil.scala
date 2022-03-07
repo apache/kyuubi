@@ -17,13 +17,15 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.io.UnsupportedEncodingException
+import java.io.{File, IOException, UnsupportedEncodingException}
 import java.nio.ByteBuffer
 import java.nio.charset.IllegalCharsetNameException
-
 import org.ietf.jgss.{GSSException, Oid}
-
 import org.apache.kyuubi.Logging
+
+import java.util
+import java.util.{ArrayList, HashSet, List, Set}
+import java.util.regex.Pattern
 
 object KerberosUtil extends Logging {
   val GSS_SPNEGO_MECH_OID: Oid = getNumericOidInstance("1.3.6.1.5.5.2")
@@ -37,6 +39,48 @@ object KerberosUtil extends Logging {
   } catch {
     case ex: GSSException =>
       throw new IllegalArgumentException(ex)
+  }
+
+  /**
+   * Get all the unique principals from keytabfile which matches a pattern.
+   *
+   * @param keytab  Name of the keytab file to be read.
+   * @param pattern pattern to be matched.
+   * @return list of unique principals which matches the pattern.
+   * @throws IOException if cannot get the principal name
+   */
+  @throws[IOException]
+  def getPrincipalNames(keytab: String, pattern: Pattern): Array[String] = {
+    var principals: Array[String] = getPrincipalNames(keytab)
+    if (principals.length != 0) {
+      val matchingPrincipals: util.List[String] = new util.ArrayList[String]
+      for (principal <- principals) {
+        if (pattern.matcher(principal).matches) matchingPrincipals.add(principal)
+      }
+      principals = matchingPrincipals.toArray(new Array[String](0))
+    }
+    principals
+  }
+
+  /**
+   * Get all the unique principals present in the keytabfile.
+   *
+   * @param keytabFileName
+   * Name of the keytab file to be read.
+   * @return list of unique principals in the keytab.
+   * @throws IOException
+   * If keytab entries cannot be read from the file.
+   */
+  @throws[IOException]
+  private[util] def getPrincipalNames(keytabFileName: String) = {
+    val keytab = Keytab.loadKeytab(new File(keytabFileName))
+    val principals = new util.HashSet[String]
+    val entries = keytab.getPrincipals
+    import scala.collection.JavaConversions._
+    for (entry <- entries) {
+      principals.add(entry.getName.replace("\\", "/"))
+    }
+    principals.toArray(new Array[String](0))
   }
 
   private object DER {

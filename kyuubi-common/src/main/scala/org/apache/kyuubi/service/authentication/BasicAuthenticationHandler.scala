@@ -19,10 +19,8 @@ package org.apache.kyuubi.service.authentication
 
 import java.nio.charset.Charset
 import javax.security.sasl.AuthenticationException
-import javax.servlet.http.HttpServletRequest
-
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.apache.commons.codec.binary.Base64
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthSchemes.AuthScheme
@@ -58,7 +56,9 @@ class BasicAuthenticationHandler(basicAuthType: AuthTypes.AuthType)
     }
   }
 
-  override def authenticate(request: HttpServletRequest): AuthUser = {
+  override def authenticate(
+      request: HttpServletRequest,
+      response: HttpServletResponse): AuthUser = {
     beforeAuth(request)
     val authorization = getAuthorization(request)
     val inputToken = Option(authorization).map(a => Base64.decodeBase64(a.getBytes()))
