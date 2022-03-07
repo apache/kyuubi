@@ -21,26 +21,27 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
-import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.client.KyuubiSyncThriftClient
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.FrontendService
-import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 object TClientTestUtils extends Logging {
 
   def withThriftClient[T](url: String)(f: Iface => T): T = {
     val hostport = url.split(':')
-    val socket = new TSocket(hostport.head, hostport.last.toInt)
-    val transport = PlainSASLHelper.getPlainTransport(Utils.currentUser, "anonymous", socket)
-    val protocol = new TBinaryProtocol(transport)
-    val client = new TCLIService.Client(protocol)
-    transport.open()
+    val client = KyuubiSyncThriftClient.createClient(
+      Utils.currentUser,
+      "anonymous",
+      hostport.head,
+      hostport.last.toInt,
+      KyuubiConf())
     try {
       f(client)
     } finally {
-      socket.close()
+      val transport = client.getInputProtocol.getTransport
+      if (transport.isOpen) transport.close()
     }
   }
 
