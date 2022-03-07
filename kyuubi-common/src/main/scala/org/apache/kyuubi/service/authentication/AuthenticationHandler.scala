@@ -19,6 +19,7 @@ package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthSchemes.AuthScheme
 

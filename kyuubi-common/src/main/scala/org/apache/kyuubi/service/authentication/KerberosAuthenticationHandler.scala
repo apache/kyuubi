@@ -19,27 +19,21 @@ package org.apache.kyuubi.service.authentication
 
 import java.io.{File, IOException}
 import java.security.{PrivilegedActionException, PrivilegedExceptionAction}
-import java.util.HashMap
 import javax.security.auth.Subject
-import javax.security.auth.kerberos.{KerberosPrincipal, KerberosTicket, KeyTab}
-import javax.security.auth.login.{AppConfigurationEntry, Configuration, LoginContext, LoginException}
-import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag.REQUIRED
+import javax.security.auth.kerberos.{KerberosPrincipal, KeyTab}
 import javax.security.sasl.AuthenticationException
+import javax.servlet.ServletException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
-import scala.collection.JavaConverters._
-import com.sun.security.auth.module.Krb5LoginModule
+
 import org.apache.commons.codec.binary.Base64
 import org.apache.hadoop.security.authentication.server.HttpConstants
 import org.apache.hadoop.security.authentication.util.KerberosName
-import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
-import org.ietf.jgss.GSSCredential.ACCEPT_ONLY
-import org.ietf.jgss.GSSCredential.INDEFINITE_LIFETIME
+import org.ietf.jgss.{GSSContext, GSSCredential, GSSManager, Oid}
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthSchemes.{AuthScheme, NEGOTIATE}
 import org.apache.kyuubi.service.authentication.KerberosUtil._
-
-import javax.servlet.ServletException
 
 class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
   import KerberosAuthenticationHandler._
@@ -79,7 +73,8 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
     }
 
     try {
-      gssManager = Subject.doAs(serverSubject,
+      gssManager = Subject.doAs(
+        serverSubject,
         new PrivilegedExceptionAction[GSSManager] {
           override def run(): GSSManager = {
             GSSManager.getInstance()
@@ -110,7 +105,8 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
         throw new IllegalArgumentException(
           s"Invalid server principal $serverPrincipal decoded from client request")
       }
-      authUser = Subject.doAs(serverSubject,
+      authUser = Subject.doAs(
+        serverSubject,
         new PrivilegedExceptionAction[AuthUser] {
           override def run(): AuthUser = {
             runWithPrincipal(serverPrincipal, clientToken, base64, response)
@@ -174,6 +170,7 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
 }
 
 object KerberosAuthenticationHandler {
+
   /**
    * HTTP header used by the SPNEGO server endpoint during an authentication sequence.
    */

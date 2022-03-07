@@ -20,7 +20,9 @@ package org.apache.kyuubi.service.authentication
 import java.nio.charset.Charset
 import javax.security.sasl.AuthenticationException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
+
 import org.apache.commons.codec.binary.Base64
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthSchemes.AuthScheme
