@@ -60,7 +60,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
       .set(KyuubiConf.SERVER_KEYTAB.key, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.SERVER_SPNEGO_KEYTAB.key, testKeytab)
-      .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testPrincipal)
+      .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testSpnegoPrincipal)
       .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
       .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
       .set(

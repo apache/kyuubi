@@ -57,7 +57,7 @@ object KerberosUtil {
       if ((length & 0x80.toByte) != 0) {
         val varlength: Int = length & 0x7F
         length = 0
-        for (i <- 0 until varlength) {
+        (0 until varlength).foreach { _ =>
           length = (length << 8) | (bb.get & 0xFF)
         }
       }
@@ -92,7 +92,7 @@ object KerberosUtil {
       null
     }
 
-    private[util] def get(tags: Int*): DER = {
+    def get(tags: Int*): DER = {
       var der: DER = this
       for (i <- 0 until tags.length) {
         val expectedTag: Int = tags(i)
@@ -189,10 +189,10 @@ object KerberosUtil {
     val realm = ticket.get(0xA1, 0x1B).getAsString
     val names = ticket.get(0xA2, 0x30, 0xA1, 0x30)
     val sb = new StringBuilder
-    while ({
-      names.hasNext
-    }) {
-      if (sb.length > 0) sb.append('/')
+    while (names.hasNext) {
+      if (sb.length > 0) {
+        sb.append('/')
+      }
       sb.append(names.next.getAsString)
     }
     sb.append('@').append(realm).toString

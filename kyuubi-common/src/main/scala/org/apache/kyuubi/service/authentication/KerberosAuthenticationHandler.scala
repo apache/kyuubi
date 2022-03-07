@@ -53,7 +53,7 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
   override def init(conf: KyuubiConf): Unit = {
     this.conf = conf
     keytab = conf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
-    principal = conf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
+    principal = conf.get(KyuubiConf.SERVER_SPNEGO_PRINCIPAL).getOrElse("")
     if (authenticationSupported) {
       val keytabFile = new File(keytab)
       if (!keytabFile.exists()) {
