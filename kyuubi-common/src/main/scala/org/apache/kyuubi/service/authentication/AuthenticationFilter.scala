@@ -57,7 +57,9 @@ class AuthenticationFilter extends Filter with Logging {
     var matchedHandler: AuthenticationHandler = null
 
     for (authHandler <- authHandlers.asScala if matchedHandler == null) {
-      if (authHandler.matchAuthScheme(authorization)) matchedHandler = authHandler
+      if (authHandler.matchAuthScheme(authorization)) {
+        matchedHandler = authHandler
+      }
     }
 
     if (matchedHandler == null) {

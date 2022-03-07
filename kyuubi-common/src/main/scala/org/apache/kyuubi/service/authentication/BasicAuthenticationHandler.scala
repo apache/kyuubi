@@ -30,6 +30,8 @@ import org.apache.kyuubi.service.authentication.AuthTypes._
 
 class BasicAuthenticationHandler(basicAuthType: AuthTypes.AuthType)
   extends AuthenticationHandler with Logging {
+  import AuthenticationHandler._
+
   private var conf: KyuubiConf = _
 
   override val authScheme: AuthScheme = AuthSchemes.BASIC
@@ -38,10 +40,29 @@ class BasicAuthenticationHandler(basicAuthType: AuthTypes.AuthType)
     this.conf = conf
   }
 
+  override def matchAuthScheme(authorization: String): Boolean = {
+    if (authorization == null || authorization.isEmpty) {
+      basicAuthType == NOSASL || basicAuthType == NONE
+    } else {
+      super.matchAuthScheme(authorization)
+    }
+  }
+
+  override def getAuthorization(request: HttpServletRequest): String = {
+    val authHeader = request.getHeader(AUTHORIZATION_HEADER)
+    if ((authHeader == null || authHeader.isEmpty) &&
+      (basicAuthType == NOSASL || basicAuthType == NONE)) {
+      ""
+    } else {
+      super.getAuthorization(request)
+    }
+  }
+
   override def authenticate(request: HttpServletRequest): AuthUser = {
     beforeAuth(request)
     val authorization = getAuthorization(request)
-    val inputToken = Base64.decodeBase64(authorization.getBytes())
+    val inputToken = Option(authorization).map(a => Base64.decodeBase64(a.getBytes()))
+      .getOrElse(Array.empty[Byte])
     val creds = new String(inputToken, Charset.forName("UTF-8")).split(":")
 
     basicAuthType match {

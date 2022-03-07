@@ -40,13 +40,12 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private var server: JettyServer = _
 
   private val isStarted = new AtomicBoolean(false)
-  private lazy val authFactory: KyuubiAuthenticationFactory =
-    KyuubiAuthenticationFactory.getOrCreate(conf, true)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
       .getOrElse(Utils.findLocalInetAddress.getHostName)
     server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
+    val authFactory = KyuubiAuthenticationFactory.getOrCreate(conf, true)
     authFactory.initHttpAuthenticationFilter()
     super.initialize(conf)
   }
