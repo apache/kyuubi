@@ -35,9 +35,10 @@ trait AuthenticationHandler {
 
   def matchAuthScheme(authorization: String): Boolean = {
     if (authorization == null || authorization.isEmpty) {
-      throw new AuthenticationException("Authorization header received from the client is empty.")
+      false
+    } else {
+      authorization.trim.regionMatches(true, 0, authScheme.toString, 0, authScheme.toString.length)
     }
-    authorization.trim.regionMatches(true, 0, authScheme.toString, 0, authScheme.toString.length)
   }
 
   def beforeAuth(request: HttpServletRequest): Unit = {

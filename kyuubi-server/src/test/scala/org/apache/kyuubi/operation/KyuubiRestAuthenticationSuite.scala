@@ -17,22 +17,23 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{DriverManager, SQLException}
+import javax.servlet.http.HttpServletResponse
 
+import org.apache.commons.codec.binary.Base64
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.{KerberizedTestHelper, WithKyuubiServer}
+import org.apache.kyuubi.{KerberizedTestHelper, RestFrontendTestHelper}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.server.api.v1.SessionOpenCount
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
+import org.apache.kyuubi.service.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 
-class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with KerberizedTestHelper
-  with WithLdapServer with HiveJDBCTestHelper {
+class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with KerberizedTestHelper
+  with WithLdapServer {
+
   private val customUser: String = "user"
   private val customPasswd: String = "password"
-
-  override protected def jdbcUrl: String = getJdbcUrl
-  private def kerberosJdbcUrl: String = jdbcUrl + s"principal=${testPrincipal}"
   private val currentUser = UserGroupInformation.getCurrentUser
 
   override def beforeAll(): Unit = {
@@ -56,8 +57,10 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
     assert(UserGroupInformation.isSecurityEnabled)
 
     KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
-      .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
+      .set(KyuubiConf.SERVER_KEYTAB.key, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
+      .set(KyuubiConf.SERVER_SPNEGO_KEYTAB.key, testKeytab)
+      .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
       .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
       .set(
@@ -65,51 +68,39 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
   }
 
-  test("test with KERBEROS authentication") {
-    val conn = DriverManager.getConnection(jdbcUrlWithConf(kerberosJdbcUrl), user, "")
-    try {
-      val statement = conn.createStatement()
-      val resultSet = statement.executeQuery("select engine_name()")
-      assert(resultSet.next())
-      assert(resultSet.getString(1).nonEmpty)
-    } finally {
-      conn.close()
-    }
+  test("test with LDAP authorization") {
+    val encodeAuthorization = new String(
+      Base64.encodeBase64(
+        s"$ldapUser:$ldapUserPasswd".getBytes()),
+      "UTF-8")
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+
+    assert(HttpServletResponse.SC_OK == response.getStatus)
+    val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
+    assert(openedSessionCount.openSessionCount == 0)
   }
 
-  test("test with LDAP authentication") {
-    val conn = DriverManager.getConnection(jdbcUrlWithConf, ldapUser, ldapUserPasswd)
-    try {
-      val statement = conn.createStatement()
-      val resultSet = statement.executeQuery("select engine_name()")
-      assert(resultSet.next())
-      assert(resultSet.getString(1).nonEmpty)
-    } finally {
-      conn.close()
-    }
+  test("test with CUSTOM authorization") {
+    val encodeAuthorization = new String(
+      Base64.encodeBase64(
+        s"$customUser:$customPasswd".getBytes()),
+      "UTF-8")
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .get()
+
+    assert(HttpServletResponse.SC_INTERNAL_SERVER_ERROR == response.getStatus)
   }
 
-  test("only the first specified plain auth type is valid") {
-    intercept[SQLException] {
-      val conn = DriverManager.getConnection(jdbcUrlWithConf, customUser, customPasswd)
-      try {
-        val statement = conn.createStatement()
-        statement.executeQuery("select engine_name()")
-      } finally {
-        conn.close()
-      }
-    }
-  }
+  test("test without authorization") {
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .get()
 
-  test("test with invalid password") {
-    intercept[SQLException] {
-      val conn = DriverManager.getConnection(jdbcUrlWithConf, user, "invalidPassword")
-      try {
-        val statement = conn.createStatement()
-        statement.executeQuery("select engine_name()")
-      } finally {
-        conn.close()
-      }
-    }
+    assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
   }
 }
