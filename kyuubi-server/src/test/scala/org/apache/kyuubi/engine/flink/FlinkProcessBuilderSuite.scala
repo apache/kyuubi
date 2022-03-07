@@ -33,10 +33,11 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     val processBuilder = new FakeFlinkProcessBuilder(conf) {
       override protected def env: Map[String, String] = Map("FLINK_HOME" -> "")
     }
-    val exit1 = processBuilder.killApplication("""
-      [INFO] SQL update statement has been successfully submitted to the cluster:
-      Job ID: 6b1af540c0c0bb3fcfcad50ac037c862
-      """.stripMargin)
+    val exit1 = processBuilder.killApplication(
+      """
+        |[INFO] SQL update statement has been successfully submitted to the cluster:
+        |Job ID: 6b1af540c0c0bb3fcfcad50ac037c862
+        |""".stripMargin)
     assert(exit1.contains("6b1af540c0c0bb3fcfcad50ac037c862")
       && !exit1.contains("FLINK_HOME is not set!"))
 
