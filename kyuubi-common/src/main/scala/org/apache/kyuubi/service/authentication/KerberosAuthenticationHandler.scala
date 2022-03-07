@@ -153,6 +153,16 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
       })
   }
 
+  def auth(request: HttpServletRequest): Unit = {
+    beforeAuth(request)
+    val authorization = getAuthorization(request)
+    val clientToken = Base64.decodeBase64(authorization.getBytes("UTF-8"))
+    try {
+      val serverPrincipal =
+    }
+
+  }
+
   override def authenticate(request: HttpServletRequest): AuthUser = {
     beforeAuth(request)
     checkTGTAndReLoginFromKeytab()

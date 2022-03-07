@@ -53,7 +53,6 @@ class AuthenticationFilter extends Filter with Logging {
     val httpResponse = response.asInstanceOf[HttpServletResponse]
 
     val authorization = httpRequest.getHeader(AUTHORIZATION_HEADER)
-
     var matchedHandler: AuthenticationHandler = null
 
     for (authHandler <- authHandlers.asScala if matchedHandler == null) {
@@ -63,11 +62,12 @@ class AuthenticationFilter extends Filter with Logging {
     }
 
     if (matchedHandler == null) {
+      debug(s"No auth scheme matched for url: ${httpRequest.getRequestURL}")
       clearAuthFilterThreadLocals()
       httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
       httpResponse.sendError(
         HttpServletResponse.SC_UNAUTHORIZED,
-        s"No auth schema matched for $authorization")
+        s"No auth scheme matched for $authorization")
     } else {
       try {
         val authUser = matchedHandler.authenticate(httpRequest)
