@@ -30,6 +30,8 @@ trait AuthenticationHandler {
 
   def init(conf: KyuubiConf): Unit
 
+  def authenticationSupported: Boolean
+
   def destroy(): Unit
 
   @throws[AuthenticationException]

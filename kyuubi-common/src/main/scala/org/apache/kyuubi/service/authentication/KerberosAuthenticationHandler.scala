@@ -42,47 +42,50 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
   private var conf: KyuubiConf = _
   private var serverSubject = new Subject()
   private var keytab: String = _
+  private var principal: String = _
 
   override val authScheme: AuthScheme = AuthSchemes.NEGOTIATE
+
+  override def authenticationSupported: Boolean = {
+    !keytab.isEmpty && !principal.isEmpty
+  }
 
   override def init(conf: KyuubiConf): Unit = {
     this.conf = conf
     keytab = conf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
-    val principal = conf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
-    if (keytab.isEmpty || principal.isEmpty) {
-      throw new ServletException(
-        s"SPNEGO keytab[$keytab] or principal[$principal] is not defined")
-    }
-    val keytabFile = new File(keytab)
-    if (!keytabFile.exists()) {
-      throw new ServletException(s"Keytab[$keytab] does not exists")
-    }
-    if (!principal.startsWith("HTTP/")) {
-      throw new ServletException(s"SPNEGO principal[$principal] does not start with HTTP/")
-    }
+    principal = conf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
+    if (authenticationSupported) {
+      val keytabFile = new File(keytab)
+      if (!keytabFile.exists()) {
+        throw new ServletException(s"Keytab[$keytab] does not exists")
+      }
+      if (!principal.startsWith("HTTP/")) {
+        throw new ServletException(s"SPNEGO principal[$principal] does not start with HTTP/")
+      }
 
-    info(s"Using keytab $keytab, for principal $principal")
-    serverSubject.getPrivateCredentials().add(KeyTab.getInstance(keytabFile))
-    serverSubject.getPrincipals.add(new KerberosPrincipal(principal))
+      info(s"Using keytab $keytab, for principal $principal")
+      serverSubject.getPrivateCredentials().add(KeyTab.getInstance(keytabFile))
+      serverSubject.getPrincipals.add(new KerberosPrincipal(principal))
 
-    // TODO: support to config kerberos.name.rules and kerberos.rule.mechanism
-    // set default rules if no rules set, otherwise it will throw exception
-    // when parse the kerberos name
-    if (!KerberosName.hasRulesBeenSet) {
-      KerberosName.setRules("DEFAULT")
-    }
+      // TODO: support to config kerberos.name.rules and kerberos.rule.mechanism
+      // set default rules if no rules set, otherwise it will throw exception
+      // when parse the kerberos name
+      if (!KerberosName.hasRulesBeenSet) {
+        KerberosName.setRules("DEFAULT")
+      }
 
-    try {
-      gssManager = Subject.doAs(
-        serverSubject,
-        new PrivilegedExceptionAction[GSSManager] {
-          override def run(): GSSManager = {
-            GSSManager.getInstance()
-          }
-        })
-    } catch {
-      case e: PrivilegedActionException => throw e.getException
-      case e: Exception => throw new ServletException(e)
+      try {
+        gssManager = Subject.doAs(
+          serverSubject,
+          new PrivilegedExceptionAction[GSSManager] {
+            override def run(): GSSManager = {
+              GSSManager.getInstance()
+            }
+          })
+      } catch {
+        case e: PrivilegedActionException => throw e.getException
+        case e: Exception => throw new ServletException(e)
+      }
     }
   }
 

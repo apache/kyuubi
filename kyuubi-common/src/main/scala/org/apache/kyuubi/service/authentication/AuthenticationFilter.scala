@@ -70,7 +70,7 @@ class AuthenticationFilter extends Filter with Logging {
         s"No auth scheme matched for $authorization")
     } else {
       try {
-        val authUser = matchedHandler.authenticate(httpRequest)
+        val authUser = matchedHandler.authenticate(httpRequest, httpResponse)
         THREAD_LOCAL_USER_NAME.set(authUser.user)
         doFilter(filterChain, httpRequest, httpResponse)
       } catch {
@@ -100,6 +100,13 @@ class AuthenticationFilter extends Filter with Logging {
       response: HttpServletResponse): Unit = {
     filterChain.doFilter(request, response)
   }
+
+  override def destroy(): Unit = {
+    if (!authHandlers.isEmpty) {
+      authHandlers.asScala.foreach(_.destroy())
+      authHandlers.clear()
+    }
+  }
 }
 
 object AuthenticationFilter {
@@ -122,7 +129,9 @@ object AuthenticationFilter {
   private val authHandlers = new HashSet[AuthenticationHandler]()
 
   def addAuthHandler(authHandler: AuthenticationHandler, conf: KyuubiConf): Unit = {
-    authHandlers.add(authHandler)
     authHandler.init(conf)
+    if (authHandler.authenticationSupported) {
+      authHandlers.add(authHandler)
+    }
   }
 }

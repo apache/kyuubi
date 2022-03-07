@@ -41,6 +41,10 @@ class BasicAuthenticationHandler(basicAuthType: AuthTypes.AuthType)
     this.conf = conf
   }
 
+  override def authenticationSupported: Boolean = {
+    basicAuthType != null
+  }
+
   override def matchAuthScheme(authorization: String): Boolean = {
     if (authorization == null || authorization.isEmpty) {
       allowAnonymous
@@ -79,7 +83,10 @@ class BasicAuthenticationHandler(basicAuthType: AuthTypes.AuthType)
       val passwdAuthenticationProvider = AuthenticationProviderFactory
         .getAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
       passwdAuthenticationProvider.authenticate(user, password)
+      response.setStatus(HttpServletResponse.SC_OK)
       AuthUser(user, password)
     }
   }
+
+  override def destroy(): Unit = {}
 }
