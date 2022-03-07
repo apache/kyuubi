@@ -41,33 +41,14 @@ object MySQLDialectHelper {
         |  'utf8mb4' as `@@character_set_server`,
         |  'utf8mb4' as `@@character_set_database`
         |""".stripMargin
-    // mysql-connector-java:8 initialized query
-    case sql
-        if sql.contains("select  @@session.auto_increment_increment as auto_increment_increment, @@character_set_client as character_set_client, @@character_set_connection as character_set_connection, @@character_set_results as character_set_results, @@character_set_server as character_set_server, @@collation_server as collation_server, @@collation_connection as collation_connection, @@init_connect as init_connect, @@interactive_timeout as interactive_timeout, @@license as license, @@lower_case_table_names as lower_case_table_names, @@max_allowed_packet as max_allowed_packet, @@net_write_timeout as net_write_timeout, @@performance_schema as performance_schema, @@query_cache_size as query_cache_size, @@query_cache_type as query_cache_type, @@sql_mode as sql_mode, @@system_time_zone as system_time_zone, @@time_zone as time_zone, @@transaction_isolation as transaction_isolation, @@wait_timeout as wait_timeout") =>
-      """SELECT
-        |  1                    AS auto_increment_increment,
-        |  'utf8mb4'            AS character_set_client,
-        |  'utf8mb4'            AS character_set_connection,
-        |  'utf8mb4'            AS character_set_results,
-        |  'utf8mb4'            AS character_set_server,
-        |  'utf8mb4_general_ci' AS collation_server,
-        |  'utf8mb4_general_ci' AS collation_connection,
-        |  ''                   AS init_connect,
-        |  28800                AS interactive_timeout,
-        |  'Apache License 2.0' AS license,
-        |  0                    AS lower_case_table_names,
-        |  4194304              AS max_allowed_packet,
-        |  60                   AS net_write_timeout,
-        |  0                    AS performance_schema,
-        |  1048576              AS query_cache_size,
-        |  'OFF'                AS query_cache_type,
-        |  'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' AS sql_mode,
-        |  'UTC'                AS system_time_zone,
-        |  'SYSTEM'             AS time_zone,
-        |  'REPEATABLE-READ'    AS transaction_isolation,
-        |  '28800'              AS wait_timeout
-        |""".stripMargin
     // scalastyle:on line.size.limit
+    // mysql-connector-java:[5-8] version initialized query
+    case sql
+        if sql.contains("select @@session.auto_increment_increment") ||
+          sql.contains("select  @@session.auto_increment_increment") =>
+      convertInitSQL(sql)
+    case "set names utf8mb4" =>
+      "SET NAMES=utf8mb4"
     case "select @@session.transaction_read_only" =>
       "select '0' as `@@session.transaction_read_only`"
     case _ => origin
@@ -86,4 +67,45 @@ object MySQLDialectHelper {
     }
     throw MySQLErrorCode.ER_NOT_SUPPORTED_YET.toKyuubiSQLException
   }
+
+  private val regexInitSQL = "@@(session\\.)?([^ ]+)".r
+
+  private def convertInitSQL(originSQL: String): String = {
+    regexInitSQL.findAllMatchIn(originSQL).map(m => {
+      val key = m.group(2)
+      if (serverVariables.contains(key)) {
+        s"'${serverVariables(key)}' AS $key"
+      } else {
+        return originSQL
+      }
+    }).mkString("SELECT ", ",", "")
+  }
+
+  private val serverVariables: Map[String, String] =
+    Map(
+      "auto_increment_increment" -> "1",
+      "character_set_client" -> "utf8mb4",
+      "character_set_connection" -> "utf8mb4",
+      "character_set_results" -> "utf8mb4",
+      "character_set_server" -> "utf8mb4",
+      "collation_connection" -> "utf8mb4_general_ci",
+      "collation_server" -> "utf8mb4_general_ci",
+      "have_query_cache" -> "YES",
+      "init_connect" -> "",
+      "interactive_timeout" -> "28800",
+      "license" -> "Apache License 2.0",
+      "lower_case_table_names" -> "0",
+      "max_allowed_packet" -> "4194304",
+      "net_buffer_length" -> "16384",
+      "net_write_timeout" -> "60",
+      "performance_schema" -> "0",
+      "query_cache_size" -> "1048576",
+      "query_cache_type" -> "OFF",
+      "sql_mode" -> ("ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE," +
+        "NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"),
+      "system_time_zone" -> "UTC",
+      "time_zone" -> "SYSTEM",
+      "transaction_isolation" -> "REPEATABLE-READ",
+      "tx_isolation" -> "REPEATABLE-READ",
+      "wait_timeout" -> "28800")
 }
