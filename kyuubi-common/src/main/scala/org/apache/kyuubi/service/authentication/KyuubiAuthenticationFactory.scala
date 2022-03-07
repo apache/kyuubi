@@ -42,7 +42,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
   private val plainAuthTypeOpt = authTypes.filterNot(_.equals(KERBEROS))
     .filterNot(_.equals(NOSASL)).headOption
 
-  private lazy val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
+  private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
     if (kerberosEnabled) {
       val secretMgr = KyuubiDelegationTokenManager(conf)
       try {
