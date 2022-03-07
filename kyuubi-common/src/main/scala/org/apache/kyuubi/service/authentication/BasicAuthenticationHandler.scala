@@ -33,6 +33,7 @@ class BasicAuthenticationHandler(basicAuthType: AuthTypes.AuthType)
   import AuthenticationHandler._
 
   private var conf: KyuubiConf = _
+  private val allowAnonymous = basicAuthType == NOSASL || basicAuthType == NONE
 
   override val authScheme: AuthScheme = AuthSchemes.BASIC
 
@@ -42,7 +43,7 @@ class BasicAuthenticationHandler(basicAuthType: AuthTypes.AuthType)
 
   override def matchAuthScheme(authorization: String): Boolean = {
     if (authorization == null || authorization.isEmpty) {
-      basicAuthType == NOSASL || basicAuthType == NONE
+      allowAnonymous
     } else {
       super.matchAuthScheme(authorization)
     }
@@ -50,8 +51,7 @@ class BasicAuthenticationHandler(basicAuthType: AuthTypes.AuthType)
 
   override def getAuthorization(request: HttpServletRequest): String = {
     val authHeader = request.getHeader(AUTHORIZATION_HEADER)
-    if ((authHeader == null || authHeader.isEmpty) &&
-      (basicAuthType == NOSASL || basicAuthType == NONE)) {
+    if (allowAnonymous && (authHeader == null || authHeader.isEmpty)) {
       ""
     } else {
       super.getAuthorization(request)
@@ -65,21 +65,19 @@ class BasicAuthenticationHandler(basicAuthType: AuthTypes.AuthType)
       .getOrElse(Array.empty[Byte])
     val creds = new String(inputToken, Charset.forName("UTF-8")).split(":")
 
-    basicAuthType match {
-      case NOSASL | NONE =>
-        val user = creds.take(1).headOption.getOrElse("anonymous")
-        AuthUser(user, "")
-
-      case authType =>
-        if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
-          throw new AuthenticationException(
-            "Authorization header received from the client does not contain username or password.")
-        }
-        val Seq(user, password) = creds.toSeq.take(2)
-        val passwdAuthenticationProvider = AuthenticationProviderFactory
-          .getAuthenticationProvider(AuthMethods.withName(authType.toString), conf)
-        passwdAuthenticationProvider.authenticate(user, password)
-        AuthUser(user, password)
+    if (allowAnonymous) {
+      val user = creds.take(1).headOption.getOrElse("anonymous")
+      AuthUser(user, "")
+    } else {
+      if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
+        throw new AuthenticationException(
+          "Authorization header received from the client does not contain username or password.")
+      }
+      val Seq(user, password) = creds.toSeq.take(2)
+      val passwdAuthenticationProvider = AuthenticationProviderFactory
+        .getAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
+      passwdAuthenticationProvider.authenticate(user, password)
+      AuthUser(user, password)
     }
   }
 }
