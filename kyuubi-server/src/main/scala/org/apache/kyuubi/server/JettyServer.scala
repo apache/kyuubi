@@ -66,6 +66,7 @@ class JettyServer private (
     }
     handlerWrapper.setHandler(handler)
     rootHandler.addHandler(handlerWrapper)
+    if (!handler.isStarted) handler.start()
     if (!handlerWrapper.isStarted) handlerWrapper.start()
   }
 }
