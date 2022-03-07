@@ -22,12 +22,12 @@ import java.sql.{DriverManager, SQLException}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.{KerberizedTestHelper, WithKyuubiServer}
+import org.apache.kyuubi.{KerberizedTestHelper, RestFrontendTestHelper}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
-class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with KerberizedTestHelper
-  with WithLdapServer with HiveJDBCTestHelper {
+class KyuubiOperationKerberosAndPlainAuthSuite extends RestFrontendTestHelper
+  with KerberizedTestHelper with WithLdapServer with HiveJDBCTestHelper {
   private val customUser: String = "user"
   private val customPasswd: String = "password"
 
