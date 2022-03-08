@@ -66,8 +66,13 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         } else {
           val ss = spark.newSession()
           this.conf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sqlStr =>
-            ss.sparkContext.setJobDescription(sqlStr)
+            ss.sparkContext.setJobGroup(
+              "engine_initializing_queries",
+              sqlStr,
+              interruptOnCancel = true)
+            debug(s"Execute session initializing sql: $sqlStr")
             ss.sql(sqlStr).isEmpty
+            ss.sparkContext.clearJobGroup()
           }
           ss
         }

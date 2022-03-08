@@ -143,38 +143,44 @@ object HadoopThriftAuthBridgeServer {
           REMOTE_ADDRESS.set(socket.getInetAddress)
           val mechanismName = saslServer.getMechanismName
           USER_AUTH_MECHANISM.set(mechanismName)
-          if (AuthMethod.PLAIN.getMechanismName.equalsIgnoreCase(mechanismName)) {
-            REMOTE_USER.set(endUser)
-            wrapped.process(in, out)
-          } else {
-            if (AuthMethod.TOKEN.getMechanismName.equalsIgnoreCase(mechanismName)) {
-              try {
-                val identifier = SaslRpcServer.getIdentifier(authId, secretMgr)
-                endUser = identifier.getUser.getUserName
-              } catch {
-                case e: InvalidToken => throw new TException(e.getMessage)
-              }
-            }
-            val clientUgi: UserGroupInformation = UserGroupInformation.createRemoteUser(endUser)
-            try {
-              REMOTE_USER.set(clientUgi.getShortUserName)
-              debug(s"SET REMOTE USER: ${REMOTE_USER.get()} from endUser: $clientUgi")
+          try {
+            if (AuthMethod.PLAIN.getMechanismName.equalsIgnoreCase(mechanismName)) {
+              REMOTE_USER.set(endUser)
               wrapped.process(in, out)
-            } catch {
-              case e: RuntimeException => e.getCause match {
-                  case t: TException => throw t
-                  case _ => throw e
+            } else {
+              if (AuthMethod.TOKEN.getMechanismName.equalsIgnoreCase(mechanismName)) {
+                try {
+                  val identifier = SaslRpcServer.getIdentifier(authId, secretMgr)
+                  endUser = identifier.getUser.getUserName
+                } catch {
+                  case e: InvalidToken => throw new TException(e.getMessage)
                 }
-              case e: InterruptedException => throw new RuntimeException(e)
-              case e: IOException => throw new RuntimeException(e)
-            } finally {
+              }
+              val clientUgi: UserGroupInformation = UserGroupInformation.createRemoteUser(endUser)
               try {
-                FileSystem.closeAllForUGI(clientUgi)
+                REMOTE_USER.set(clientUgi.getShortUserName)
+                debug(s"SET REMOTE USER: ${REMOTE_USER.get()} from endUser: $clientUgi")
+                wrapped.process(in, out)
               } catch {
-                case e: IOException =>
-                  error(s"Could not clean up file-system handles for UGI: $clientUgi", e)
+                case e: RuntimeException => e.getCause match {
+                    case t: TException => throw t
+                    case _ => throw e
+                  }
+                case e: InterruptedException => throw new RuntimeException(e)
+                case e: IOException => throw new RuntimeException(e)
+              } finally {
+                try {
+                  FileSystem.closeAllForUGI(clientUgi)
+                } catch {
+                  case e: IOException =>
+                    error(s"Could not clean up file-system handles for UGI: $clientUgi", e)
+                }
               }
             }
+          } finally {
+            REMOTE_USER.remove()
+            REMOTE_ADDRESS.remove()
+            USER_AUTH_MECHANISM.remove()
           }
 
         case _ => throw new TException(s"Unexpected non-SASL transport ${transport.getClass}")
