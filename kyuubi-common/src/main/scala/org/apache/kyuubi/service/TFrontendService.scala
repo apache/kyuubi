@@ -32,7 +32,7 @@ import org.apache.thrift.transport.TTransport
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
-import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
+import org.apache.kyuubi.service.authentication.KyuubiThriftAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, NamedThreadFactory}
 
@@ -53,8 +53,8 @@ abstract class TFrontendService(name: String)
   protected lazy val serverAddr: InetAddress =
     serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
   protected lazy val serverSocket = new ServerSocket(portNum, -1, serverAddr)
-  protected lazy val authFactory: KyuubiAuthenticationFactory =
-    KyuubiAuthenticationFactory.getOrCreate(conf, isServer())
+  protected lazy val authFactory: KyuubiThriftAuthenticationFactory =
+    new KyuubiThriftAuthenticationFactory(conf, isServer())
 
   /**
    * Start the service itself(FE) and its composited (Discovery service, DS) in the order of:
@@ -122,11 +122,11 @@ abstract class TFrontendService(name: String)
       sessionConf: java.util.Map[String, String],
       ipAddress: String,
       realUser: String): String = {
-    val proxyUser = sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER)
+    val proxyUser = sessionConf.get(KyuubiThriftAuthenticationFactory.HS2_PROXY_USER)
     if (proxyUser == null) {
       realUser
     } else {
-      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+      KyuubiThriftAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
       proxyUser
     }
   }

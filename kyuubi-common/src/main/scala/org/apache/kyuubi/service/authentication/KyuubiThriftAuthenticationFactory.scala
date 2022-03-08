@@ -34,7 +34,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.authentication.AuthTypes._
 
-class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
+class KyuubiThriftAuthenticationFactory(
+    conf: KyuubiConf,
+    isServer: Boolean = true) extends Logging {
 
   private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
   private val noSasl = authTypes == Seq(NOSASL)
@@ -104,19 +106,6 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     }
   }
 
-  def initHttpAuthenticationFilter(): Unit = {
-    if (noSasl) {
-      AuthenticationFilter.addAuthHandler(new BasicAuthenticationHandler(NOSASL), conf)
-    } else {
-      if (kerberosEnabled) {
-        AuthenticationFilter.addAuthHandler(new KerberosAuthenticationHandler, conf)
-      }
-      plainAuthTypeOpt.foreach { plainAuth =>
-        AuthenticationFilter.addAuthHandler(new BasicAuthenticationHandler(plainAuth), conf)
-      }
-    }
-  }
-
   def getTProcessorFactory(fe: Iface): TProcessorFactory = hadoopAuthServer match {
     case Some(server) => FEServiceProcessorFactory(server, fe)
     case _ => PlainSASLHelper.getProcessFactory(fe)
@@ -134,17 +123,8 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
       .orElse(Option(AuthenticationFilter.getUserIpAddress))
   }
 }
-object KyuubiAuthenticationFactory {
+object KyuubiThriftAuthenticationFactory {
   val HS2_PROXY_USER = "hive.server2.proxy.user"
-
-  @volatile private var _authenticationFactory: KyuubiAuthenticationFactory = _
-
-  def getOrCreate(conf: KyuubiConf, isServer: Boolean): KyuubiAuthenticationFactory = {
-    if (_authenticationFactory == null) {
-      _authenticationFactory = new KyuubiAuthenticationFactory(conf, isServer)
-    }
-    _authenticationFactory
-  }
 
   @throws[KyuubiSQLException]
   def verifyProxyAccess(
