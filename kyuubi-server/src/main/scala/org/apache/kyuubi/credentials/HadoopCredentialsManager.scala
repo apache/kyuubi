@@ -26,7 +26,7 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.AbstractService
@@ -146,12 +146,13 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   def sendCredentialsIfNeeded(
       sessionId: String,
       appUser: String,
-      send: String => Unit): Unit = {
+      send: String => Unit,
+      onetime: Boolean = false): Unit = {
     if (renewalExecutor.isEmpty) {
       return
     }
 
-    val userRef = getOrCreateUserCredentialsRef(appUser)
+    val userRef = getOrCreateUserCredentialsRef(appUser, onetime)
     val sessionEpoch = getSessionCredentialsEpoch(sessionId)
 
     if (userRef.getEpoch > sessionEpoch) {
@@ -181,15 +182,25 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   }
 
   // Visible for testing.
-  private[credentials] def getOrCreateUserCredentialsRef(appUser: String): CredentialsRef =
-    userCredentialsRefMap.computeIfAbsent(
+  private[credentials] def getOrCreateUserCredentialsRef(
+      appUser: String,
+      onetime: Boolean = false): CredentialsRef = {
+    val ref = userCredentialsRefMap.computeIfAbsent(
       appUser,
       appUser => {
         val ref = new CredentialsRef(appUser)
-        scheduleRenewal(ref, 0)
+        scheduleRenewal(ref, 0, onetime)
         info(s"Created CredentialsRef for user $appUser and scheduled a renewal task")
         ref
       })
+
+    // schedule renewal task when encodedCredentials are invalid
+    if (onetime && ref.getEncodedCredentials == null) {
+      scheduleRenewal(ref, 0, onetime)
+    }
+
+    ref
+  }
 
   // Visible for testing.
   private[credentials] def getSessionCredentialsEpoch(sessionId: String): Long = {
@@ -201,7 +212,10 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     providers.contains(serviceName)
   }
 
-  private def scheduleRenewal(userRef: CredentialsRef, delay: Long): Unit = {
+  private def scheduleRenewal(
+      userRef: CredentialsRef,
+      delay: Long,
+      waitCompletion: Boolean = false): Unit = {
     val renewalTask = new Runnable {
       override def run(): Unit = {
         try {
@@ -219,13 +233,23 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
                 s" $renewalRetryWait ms",
               e)
             scheduleRenewal(userRef, renewalRetryWait)
+            // throw exception when one-time execution fails,
+            // so that client side can be aware of this
+            if (waitCompletion) {
+              throw new KyuubiException(s"One-time execution failed for token update task " +
+                s"for ${userRef.getAppUser}")
+            }
         }
       }
     }
 
-    renewalExecutor.foreach { executor =>
-      info(s"Scheduling renewal in $delay ms.")
-      executor.schedule(renewalTask, delay, TimeUnit.MILLISECONDS)
+    if (waitCompletion) {
+      renewalTask.run()
+    } else {
+      renewalExecutor.foreach { executor =>
+        info(s"Scheduling renewal in $delay ms.")
+        executor.schedule(renewalTask, delay, TimeUnit.MILLISECONDS)
+      }
     }
   }
 

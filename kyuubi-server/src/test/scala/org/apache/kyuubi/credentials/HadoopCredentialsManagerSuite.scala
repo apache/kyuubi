@@ -24,7 +24,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 
 class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
@@ -90,6 +90,24 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
       eventually(timeout(1100.milliseconds), interval(100.milliseconds)) {
         assert(userRef.getEpoch == 1)
       }
+    }
+  }
+
+  test("execute credentials renewal task and wait for completion") {
+    val kyuubiConf = new KyuubiConf(false)
+      .set(KyuubiConf.CREDENTIALS_RENEWAL_INTERVAL, 1000L)
+    withStartedManager(kyuubiConf) { manager =>
+      val userRef = manager.getOrCreateUserCredentialsRef(appUser, true)
+      assert(userRef.getEpoch == 0)
+    }
+  }
+
+  test("throw exception when credential renewal fails") {
+    val kyuubiConf = new KyuubiConf(false)
+      .set(KyuubiConf.CREDENTIALS_RENEWAL_INTERVAL, 1000L)
+    withStartedManager(kyuubiConf) { manager =>
+      UnstableDelegationTokenProvider.throwException = true
+      assertThrows[KyuubiException](manager.getOrCreateUserCredentialsRef(appUser, true))
     }
   }
 
