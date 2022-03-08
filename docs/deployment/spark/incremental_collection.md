@@ -120,7 +120,7 @@ Connected to: Apache Kyuubi (Incubating) (version 1.5.0-SNAPSHOT)
 10 rows selected (0.128 seconds)
 ```
 
-From the Spark UI, we can see that in incremental collection mode, the query produce 5 jobs (in red square), and in
-normal mode, one produce 1 job (in blue square).
+From the Spark UI, we can see that in incremental collection mode, the query produces 5 jobs (in red square), and in
+normal mode, only produces 1 job (in blue square).
 
 ![](../../imgs/spark/incremental_collection.png)
