@@ -34,9 +34,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.authentication.AuthTypes._
 
-class KyuubiThriftAuthenticationFactory(
-    conf: KyuubiConf,
-    isServer: Boolean = true) extends Logging {
+class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
 
   private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
   private val noSasl = authTypes == Seq(NOSASL)
@@ -123,7 +121,7 @@ class KyuubiThriftAuthenticationFactory(
       .orElse(Option(AuthenticationFilter.getUserIpAddress))
   }
 }
-object KyuubiThriftAuthenticationFactory {
+object KyuubiAuthenticationFactory {
   val HS2_PROXY_USER = "hive.server2.proxy.user"
 
   @throws[KyuubiSQLException]
