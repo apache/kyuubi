@@ -18,29 +18,38 @@
 package org.apache.kyuubi.service.authentication
 
 import java.io.IOException
-import java.util.HashSet
 import javax.servlet.{Filter, FilterChain, FilterConfig, ServletException, ServletRequest, ServletResponse}
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
-import scala.collection.JavaConverters._
+import scala.collection.mutable.HashMap
 
 import org.apache.hadoop.security.authentication.client.AuthenticationException
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
+import org.apache.kyuubi.service.authentication.AuthSchemes._
 import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
 class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationFilter._
   import AuthenticationHandler._
 
-  private val authHandlers = new HashSet[AuthenticationHandler]()
+  private val authSchemeHandlers = new HashMap[AuthScheme, AuthenticationHandler]()
 
   private def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
     authHandler.init(conf)
     if (authHandler.authenticationSupported) {
-      authHandlers.add(authHandler)
+      if (authSchemeHandlers.contains(authHandler.authScheme)) {
+        warn(s"Authentication handler has been defined for scheme ${authHandler.authScheme}")
+      } else {
+        info(s"Add authentication handler ${authHandler.getClass.getSimpleName}" +
+          s" for scheme ${authHandler.authScheme}")
+        authSchemeHandlers.put(authHandler.authScheme, authHandler)
+      }
+    } else {
+      warn(s"The authentication handler ${authHandler.getClass.getSimpleName}" +
+        s" for scheme ${authHandler.authScheme} is not supported")
     }
   }
 
@@ -88,7 +97,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     val authorization = httpRequest.getHeader(AUTHORIZATION_HEADER)
     var matchedHandler: AuthenticationHandler = null
 
-    for (authHandler <- authHandlers.asScala if matchedHandler == null) {
+    for (authHandler <- authSchemeHandlers.values if matchedHandler == null) {
       if (authHandler.matchAuthScheme(authorization)) {
         matchedHandler = authHandler
       }
@@ -135,9 +144,9 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   }
 
   override def destroy(): Unit = {
-    if (!authHandlers.isEmpty) {
-      authHandlers.asScala.foreach(_.destroy())
-      authHandlers.clear()
+    if (!authSchemeHandlers.isEmpty) {
+      authSchemeHandlers.values.foreach(_.destroy())
+      authSchemeHandlers.clear()
     }
   }
 }
