@@ -29,11 +29,4 @@ class SparkDeltaOperationSuite extends WithSparkSQLEngine
   override protected def jdbcUrl: String = getJdbcUrl
 
   override def withKyuubiConf: Map[String, String] = extraConfigs
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    for ((k, _) <- withKyuubiConf) {
-      System.clearProperty(k)
-    }
-  }
 }

@@ -28,7 +28,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.5.0-SNAPSHOT</version>
+    <version>1.6.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
@@ -110,8 +110,9 @@
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <guava.version>30.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
-        <hadoop.version>3.3.1</hadoop.version>
+        <hadoop.version>3.3.2</hadoop.version>
         <hive.version>2.3.9</hive.version>
+        <hive.service.rpc.version>3.1.2</hive.service.rpc.version>
         <hudi.version>0.10.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
         <iceberg.version>0.13.1</iceberg.version>
@@ -266,6 +267,12 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-api</artifactId>
                 <version>${hadoop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.xerial.snappy</groupId>
+                        <artifactId>snappy-java</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -276,6 +283,10 @@
                     <exclusion>
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.xerial.snappy</groupId>
+                        <artifactId>snappy-java</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -545,7 +556,7 @@
             <dependency>
                 <groupId>org.apache.hive</groupId>
                 <artifactId>hive-service-rpc</artifactId>
-                <version>${hive.version}</version>
+                <version>${hive.service.rpc.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -1455,12 +1466,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.plugin.surefire.version}</version>
                     <configuration>
-                        <includes>
-                            <include>**/Test*.java</include>
-                            <include>**/*Test.java</include>
-                            <include>**/*TestCase.java</include>
-                            <include>**/*Suite.java</include>
-                        </includes>
+                        <skipTests>true</skipTests>
                         <failIfNoTests>false</failIfNoTests>
                     </configuration>
                 </plugin>

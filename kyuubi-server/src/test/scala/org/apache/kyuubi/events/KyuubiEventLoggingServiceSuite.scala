@@ -34,7 +34,7 @@ import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
 
-class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper {
+class KyuubiEventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   private val engineLogRoot = "file://" + Utils.createTempDir().toString
   private val serverLogRoot = "file://" + Utils.createTempDir().toString

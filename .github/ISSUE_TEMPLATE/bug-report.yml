@@ -20,7 +20,7 @@
 name: Kyuubi Bug Report
 title: "[Bug] "
 description: Describe the bug you encountered with Apache Kyuubi
-labels: [ "bug" ]
+labels: [ "kind:bug,priority:major" ]
 body:
   - type: markdown
     attributes:

@@ -105,21 +105,7 @@ For 1.2 and earlier versions, please check the [Readthedocs](https://kyuubi.read
 
 Ready? [Getting Started](https://kyuubi.apache.org/docs/latest/quick_start/quick_start.html) with Kyuubi.
 
-## Contributing
-
-All bits of help are welcome. You can make various types of contributions to Kyuubi, including the following but not limited to,
-
-- Help new users in chat channel or share your success stories with us - [![Gitter](https://badges.gitter.im/kyuubi-on-spark/Lobby.svg)](https://gitter.im/kyuubi-on-spark/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-- Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
-- Test releases - [![Latest tag](https://img.shields.io/github/v/tag/apache/incubator-kyuubi?label=tag)](https://github.com/apache/incubator-kyuubi/tags)
-- Improve test coverage - [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
-- Report bugs and better help developers to reproduce
-- Review changes
-- Make a pull request
-- Promote to others
-- Click the star button if you like this project
-
-Before you start, we recommend that you check the [Contribution Guidelines](https://kyuubi.apache.org/docs/latest/community/contributions.html) first.
+## [Contributing](./CONTRIBUTING.md)
 
 ## Aside
 

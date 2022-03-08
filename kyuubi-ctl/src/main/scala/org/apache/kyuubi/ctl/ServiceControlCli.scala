@@ -23,6 +23,8 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.utils.ZKPaths
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_TYPE
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo, ZooKeeperClientProvider}
@@ -227,7 +229,16 @@ object ServiceControlCli extends CommandLineUtils with Logging {
       case ServiceControlObject.SERVER =>
         ZKPaths.makePath(null, args.cliArgs.namespace)
       case ServiceControlObject.ENGINE =>
-        ZKPaths.makePath(s"${args.cliArgs.namespace}_${ShareLevel.USER}", args.cliArgs.user)
+        val engineType = Some(args.cliArgs.engineType)
+          .filter(_ != null).filter(_.nonEmpty)
+          .getOrElse(args.conf.get(ENGINE_TYPE))
+        val engineSubdomain = Some(args.cliArgs.engineSubdomain)
+          .filter(_ != null).filter(_.nonEmpty)
+          .getOrElse(args.conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse("default"))
+        ZKPaths.makePath(
+          s"${args.cliArgs.namespace}_${ShareLevel.USER}_${engineType}",
+          args.cliArgs.user,
+          engineSubdomain)
     }
   }
 

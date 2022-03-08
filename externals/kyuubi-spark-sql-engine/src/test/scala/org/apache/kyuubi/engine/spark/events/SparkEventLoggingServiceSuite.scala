@@ -32,7 +32,7 @@ import org.apache.kyuubi.events.EventLoggerType._
 import org.apache.kyuubi.events.JsonProtocol
 import org.apache.kyuubi.operation.{HiveJDBCTestHelper, OperationHandle}
 
-class EventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
+class SparkEventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
   private val logRoot = "file://" + Utils.createTempDir().toString
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
