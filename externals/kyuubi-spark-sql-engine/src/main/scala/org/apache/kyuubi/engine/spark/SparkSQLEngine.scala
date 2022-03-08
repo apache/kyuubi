@@ -133,6 +133,7 @@ object SparkSQLEngine extends Logging {
           interruptOnCancel = true)
         debug(s"Execute session initializing sql: $sqlStr")
         session.sql(sqlStr).isEmpty
+        session.sparkContext.clearJobGroup()
       }
     session
   }
