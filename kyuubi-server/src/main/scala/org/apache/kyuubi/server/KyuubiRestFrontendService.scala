@@ -20,13 +20,15 @@ package org.apache.kyuubi.server
 import java.util.EnumSet
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.servlet.DispatcherType
+
 import org.eclipse.jetty.servlet.FilterHolder
+
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
-import org.apache.kyuubi.service.authentication.{AuthenticationFilter, KyuubiRestAuthenticationFactory, KyuubiThriftAuthenticationFactory}
+import org.apache.kyuubi.service.authentication.{AuthenticationFilter, KyuubiRestAuthenticationFactory}
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.

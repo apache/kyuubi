@@ -25,11 +25,12 @@ import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 class KyuubiRestAuthenticationFactory(conf: KyuubiConf) extends Logging {
   private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
   private val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
-  private val basicAuthTypeOpt = if (authTypes == Seq(NOSASL)) {
-    authTypes.headOption
-  } else {
-    authTypes.filterNot(_.equals(KERBEROS)).filterNot(_.equals(NOSASL)).headOption
-  }
+  private val basicAuthTypeOpt =
+    if (authTypes == Seq(NOSASL)) {
+      authTypes.headOption
+    } else {
+      authTypes.filterNot(_.equals(KERBEROS)).filterNot(_.equals(NOSASL)).headOption
+    }
 
   def initHttpAuthenticationFilter(): Unit = {
     if (spnegoKerberosEnabled) {
