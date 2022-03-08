@@ -72,7 +72,7 @@ object KerberosUtil {
     final private val bb: ByteBuffer = srcbb.slice
     val length = readLength(srcbb)
     bb.limit(length)
-    srcbb.position(srcbb.position + length)
+    srcbb.position(srcbb.position() + length)
 
     def this(buf: Array[Byte]) {
       this(ByteBuffer.wrap(buf))
@@ -118,7 +118,7 @@ object KerberosUtil {
 
     def getAsString: String =
       try {
-        new String(bb.array, bb.arrayOffset + bb.position, bb.remaining, "UTF-8")
+        new String(bb.array, bb.arrayOffset + bb.position(), bb.remaining, "UTF-8")
       } catch {
         case _: UnsupportedEncodingException =>
           throw new IllegalCharsetNameException("UTF-8") // won't happen.
