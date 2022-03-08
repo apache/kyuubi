@@ -35,15 +35,14 @@ if you have incremental collection mode.
 ## Incremental collection
 
 Since v1.4.0-incubating, Kyuubi supports incremental collection mode, it is a solution for big result sets. This feature
-is disabled in default, you can turn on it by setting the internal[1] configuration
-`kyuubi.operation.incremental.collect` to `true`.
+is disabled in default, you can turn on it by setting the configuration `kyuubi.operation.incremental.collect` to `true`.
 
 The incremental collection changes the gather method from `collect` to `toLocalIterator`. `toLocalIterator` is a Spark
 action that sequentially submits Jobs to retrieve partitions. As each partition is retrieved, the client through pulls
 the result set from the Driver through the Kyuubi Server streamingly. It reduces the amount of heap memory required on
 the Driver – from the whole result set size down to the largest single partition size.
 
-The incremental collection is not the silver bullet, you should turn on it carefully, because it can significantly hurt
+The incremental collection is not the silver bullet, you should turn it on carefully, because it can significantly hurt
 performance. And even in incremental collection mode, when multiple queries execute concurrently, each query still requires
 one partition of data in Driver memory. Therefore, it is still important to control the number of concurrent queries to
 avoid OOM.
@@ -51,7 +50,7 @@ avoid OOM.
 ## Use in single connections
 
 As above explains, the incremental collection mode is not suitable for common query sense, you can enable incremental
-collect mode for specific queries by using
+collection mode for specific queries by using
 
 ```
 beeline -u 'jdbc:hive2://kyuubi:10009/?spark.driver.maxResultSize=8g;spark.driver.memory=12g#kyuubi.engine.share.level=CONNECTION;kyuubi.operation.incremental.collect=true' \
@@ -125,5 +124,3 @@ From the Spark UI, we can see that in incremental collection mode, the query pro
 normal mode, one produce 1 job (in blue square).
 
 ![](../../imgs/spark/incremental_collection.png)
-
-[1] Internal means you can not find this configuration in the Configurations page.
