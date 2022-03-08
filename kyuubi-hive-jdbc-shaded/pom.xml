@@ -39,7 +39,7 @@
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-hive-jdbc</artifactId>
             <version>${project.version}</version>
-<!--            <optional>true</optional>-->
+            <optional>true</optional>
         </dependency>
 
         <dependency>
