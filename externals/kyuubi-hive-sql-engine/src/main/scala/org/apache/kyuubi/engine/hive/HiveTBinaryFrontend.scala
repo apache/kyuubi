@@ -15,17 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.engine.hive
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 
-class NoopSessionImpl(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
-    sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-  override def open(): Unit = {}
+class HiveTBinaryFrontend(override val serverable: Serverable)
+  extends TBinaryFrontendService("HiveTBinaryFrontend") {
+
+  override lazy val discoveryService: Option[Service] = {
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new EngineServiceDiscovery(this))
+    } else {
+      None
+    }
+  }
 }

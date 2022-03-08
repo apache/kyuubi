@@ -15,17 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.engine.hive.operation
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import scala.collection.JavaConverters._
 
-class NoopSessionImpl(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
-    sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-  override def open(): Unit = {}
+import org.apache.hive.service.cli.operation.Operation
+
+import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.session.Session
+
+class ExecuteStatement(
+    session: Session,
+    override val statement: String,
+    confOverlay: Map[String, String],
+    override val shouldRunAsync: Boolean,
+    queryTimeout: Long)
+  extends HiveOperation(OperationType.EXECUTE_STATEMENT, session) {
+  override val internalHiveOperation: Operation = {
+    delegatedOperationManager.newExecuteStatementOperation(
+      hive,
+      statement,
+      confOverlay.asJava,
+      shouldRunAsync,
+      queryTimeout)
+  }
 }

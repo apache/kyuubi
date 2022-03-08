@@ -44,7 +44,6 @@ class KyuubiSessionImpl(
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-  override val handle: SessionHandle = SessionHandle(protocol)
 
   private[kyuubi] val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(

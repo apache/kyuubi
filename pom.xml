@@ -68,6 +68,7 @@
         <module>dev/kyuubi-codecov</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
+        <module>externals/kyuubi-hive-sql-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
         <module>integration-tests</module>

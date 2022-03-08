@@ -15,17 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.engine.hive
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.engine.hive.session.HiveSessionManager
+import org.apache.kyuubi.service.AbstractBackendService
+import org.apache.kyuubi.session.SessionManager
 
-class NoopSessionImpl(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
-    sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-  override def open(): Unit = {}
+class HiveBackendService(engine: HiveSQLEngine)
+  extends AbstractBackendService("HiveBackendService") {
+  override val sessionManager: SessionManager = new HiveSessionManager(engine)
 }
