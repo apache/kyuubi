@@ -126,11 +126,7 @@ abstract class TFrontendService(name: String)
     if (proxyUser == null) {
       realUser
     } else {
-      KyuubiAuthenticationFactory.verifyProxyAccess(
-        realUser,
-        proxyUser,
-        ipAddress,
-        hadoopConf)
+      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
       proxyUser
     }
   }
