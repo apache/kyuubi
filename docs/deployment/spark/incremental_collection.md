@@ -77,7 +77,7 @@ Connected to: Apache Kyuubi (Incubating) (version 1.5.0-SNAPSHOT)
 +---------------------------------------+--------+
 1 row selected (0.039 seconds)
 
-0: jdbc:hive2://localhost:10009/> select /*+ REPARTITION(5) */ * from range(1, 100);
+0: jdbc:hive2://localhost:10009/> select /*+ REPARTITION(5) */ * from range(1, 10);
 +-----+
 | id  |
 +-----+
