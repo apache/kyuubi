@@ -39,8 +39,8 @@ is disabled in default, you can turn on it by setting the configuration `kyuubi.
 
 The incremental collection changes the gather method from `collect` to `toLocalIterator`. `toLocalIterator` is a Spark
 action that sequentially submits Jobs to retrieve partitions. As each partition is retrieved, the client through pulls
-the result set from the Driver through the Kyuubi Server streamingly. It reduces the amount of heap memory required on
-the Driver – from the whole result set size down to the largest single partition size.
+the result set from the Driver through the Kyuubi Server streamingly. It reduces the Driver memory significantly from
+the size of the complete result set to the maximum partition.
 
 The incremental collection is not the silver bullet, you should turn it on carefully, because it can significantly hurt
 performance. And even in incremental collection mode, when multiple queries execute concurrently, each query still requires
