@@ -76,6 +76,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
+    super.closeSession(sessionHandle)
     executor.closeSession(sessionHandle.toString)
   }
 }
