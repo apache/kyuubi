@@ -41,6 +41,7 @@ private[v1] class ApiRootResource extends ApiRequestContext {
     description = "Get the version of Kyuubi server.")
   @GET
   @Path("version")
+  @Produces(Array(MediaType.APPLICATION_JSON))
   def version(): VersionInfo = new VersionInfo(KYUUBI_VERSION)
 
   @GET
