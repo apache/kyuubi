@@ -17,12 +17,13 @@
 
 package org.apache.kyuubi.server.ui
 
-import org.apache.kyuubi.Utils.isWindows
 import org.eclipse.jetty.server.{HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
 import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
+
+import org.apache.kyuubi.Utils.isWindows
 
 private[kyuubi] case class JettyServer(
     server: Server,

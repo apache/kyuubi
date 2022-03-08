@@ -145,6 +145,7 @@
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.1.11</swagger.version>
+        <testcontainers.version>0.39.12</testcontainers.version>
         <trino.client.version>363</trino.client.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
@@ -511,17 +512,17 @@
                 <version>${trino.client.version}</version>
             </dependency>
 
-<!--            <dependency>-->
-<!--                <groupId>com.dimafeng</groupId>-->
-<!--                <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>-->
-<!--                <version>${testcontainers.version}</version>-->
-<!--            </dependency>-->
+            <dependency>
+                <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
 
-<!--            <dependency>-->
-<!--                <groupId>com.dimafeng</groupId>-->
-<!--                <artifactId>testcontainers-scala-trino_${scala.binary.version}</artifactId>-->
-<!--                <version>${testcontainers.version}</version>-->
-<!--            </dependency>-->
+            <dependency>
+                <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-trino_${scala.binary.version}</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.fabric8</groupId>
