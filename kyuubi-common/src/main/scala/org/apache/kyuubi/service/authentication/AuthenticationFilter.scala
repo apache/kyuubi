@@ -19,7 +19,7 @@ package org.apache.kyuubi.service.authentication
 
 import java.io.IOException
 import java.util.HashSet
-import javax.servlet.{Filter, FilterChain, ServletException, ServletRequest, ServletResponse}
+import javax.servlet.{Filter, FilterChain, FilterConfig, ServletException, ServletRequest, ServletResponse}
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import scala.collection.JavaConverters._
@@ -28,10 +28,43 @@ import org.apache.hadoop.security.authentication.client.AuthenticationException
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
+import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
-class AuthenticationFilter extends Filter with Logging {
+class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationFilter._
   import AuthenticationHandler._
+
+  private val authHandlers = new HashSet[AuthenticationHandler]()
+
+  private def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
+    authHandler.init(conf)
+    if (authHandler.authenticationSupported) {
+      authHandlers.add(authHandler)
+    }
+  }
+
+  override def init(filterConfig: FilterConfig): Unit = {
+    val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+    val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
+    val basicAuthTypeOpt = {
+      if (authTypes == Seq(NOSASL)) {
+        authTypes.headOption
+      } else {
+        authTypes.filterNot(_.equals(KERBEROS)).filterNot(_.equals(NOSASL)).headOption
+      }
+    }
+    if (spnegoKerberosEnabled) {
+      val kerberosHandler = new KerberosAuthenticationHandler
+      addAuthHandler(kerberosHandler)
+    }
+    basicAuthTypeOpt.foreach { basicAuthType =>
+      val basicHandler = new BasicAuthenticationHandler(basicAuthType)
+      addAuthHandler(basicHandler)
+
+    }
+    super.init(filterConfig)
+  }
 
   /**
    * If the request has a valid authentication token it allows the request to continue to the
@@ -124,14 +157,5 @@ object AuthenticationFilter {
   def clearAuthFilterThreadLocals(): Unit = {
     THREAD_LOCAL_IP_ADDRESS.remove()
     THREAD_LOCAL_USER_NAME.remove()
-  }
-
-  private val authHandlers = new HashSet[AuthenticationHandler]()
-
-  def addAuthHandler(authHandler: AuthenticationHandler, conf: KyuubiConf): Unit = {
-    authHandler.init(conf)
-    if (authHandler.authenticationSupported) {
-      authHandlers.add(authHandler)
-    }
   }
 }
