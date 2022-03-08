@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server
 
 import java.util.concurrent.atomic.AtomicBoolean
+
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
@@ -52,11 +53,11 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   private def startInternal(): Unit = {
+    server.addHandler(ApiRootResource.getServletHandler(this))
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
-    server.addRedirectHandler("/", "/static/")
+    server.addRedirectHandler("/", "/static")
     server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")
     server.addRedirectHandler("/docs", "/swagger")
-    server.addHandler(ApiRootResource.getServletHandler(this))
   }
 
   override def start(): Unit = synchronized {

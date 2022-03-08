@@ -19,14 +19,12 @@ package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs.{GET, Path, Produces}
 import javax.ws.rs.core.{MediaType, Response}
-
 import com.google.common.annotations.VisibleForTesting
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
-import org.glassfish.jersey.server.{ResourceConfig, ServerProperties}
+import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
-
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, OpenAPIConfig}
@@ -72,7 +70,6 @@ private[server] object ApiRootResource {
     val handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
     handler.setContextPath("/api")
     FrontendServiceContext.set(handler, fe)
-    holder.setInitParameter(ServerProperties.PROVIDER_PACKAGES, "org.apache.kyuubi.server.api.v1")
     handler.addServlet(holder, "/*")
     handler
   }
