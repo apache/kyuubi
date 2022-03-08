@@ -23,7 +23,7 @@ import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.v1.ApiRootResource
-import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
+import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 
 /**
@@ -40,10 +40,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
       .getOrElse(Utils.findLocalInetAddress.getHostName)
-    server = JettyUtils.createJettyServer(
-      getName,
-      host,
-      conf.get(FRONTEND_REST_BIND_PORT))
+    server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
     super.initialize(conf)
   }
 

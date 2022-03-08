@@ -20,54 +20,11 @@ package org.apache.kyuubi.server.ui
 import java.net.URL
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
-import org.eclipse.jetty.server.{HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
-import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
 import org.eclipse.jetty.servlet.{DefaultServlet, ServletContextHandler, ServletHolder}
-import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
-import org.apache.kyuubi.{KyuubiException, Utils}
+import org.apache.kyuubi.KyuubiException
 
 private[kyuubi] object JettyUtils {
-
-  /**
-   * Initializing [[JettyServer]] instance
-   *
-   * @param name server name
-   * @param host server host
-   * @param port server port, 0 for randomly picking
-   * @return
-   */
-  def createJettyServer(name: String, host: String, port: Int): JettyServer = {
-    val pool = new QueuedThreadPool() // TODO: Configurable pool size
-    pool.setName(name)
-    pool.setDaemon(true)
-    val server = new Server(pool)
-
-    val errorHandler = new ErrorHandler()
-    errorHandler.setShowStacks(true)
-    errorHandler.setServer(server)
-    server.addBean(errorHandler)
-
-    val collection = new ContextHandlerCollection
-    server.setHandler(collection)
-
-    val serverExecutor = new ScheduledExecutorScheduler(s"$name-JettyScheduler", true)
-    val httpConf = new HttpConfiguration()
-    val connector = new ServerConnector(
-      server,
-      null,
-      serverExecutor,
-      null,
-      -1,
-      -1,
-      new HttpConnectionFactory(httpConf))
-    connector.setHost(host)
-    connector.setPort(port)
-    connector.setReuseAddress(!Utils.isWindows)
-    connector.setAcceptQueueSize(math.min(connector.getAcceptors, 8))
-
-    JettyServer(server, connector, collection)
-  }
 
   /**
    * Create a handler for serving files from a static directory
