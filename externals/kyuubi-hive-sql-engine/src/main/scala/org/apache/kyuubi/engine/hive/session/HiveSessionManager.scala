@@ -21,7 +21,7 @@ import java.io.File
 import java.util.concurrent.Future
 
 import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.hive.service.cli.{SessionHandle => SH}
+import org.apache.hive.service.cli.{SessionHandle => ImportedSessionHandle}
 import org.apache.hive.service.cli.session.{HiveSessionImpl => ImportedHiveSessionImpl, SessionManager => ImportedHiveSessionManager}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -31,11 +31,9 @@ import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.engine.hive.operation.HiveOperationManager
 import org.apache.kyuubi.operation.OperationManager
-import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.session.{CLIENT_IP_KEY, SessionHandle, SessionManager}
 
-class HiveSessionManager(
-    serverable: Serverable) extends SessionManager("HiveSessionManager") {
+class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSessionManager") {
   override protected def isServer: Boolean = false
 
   override val operationManager: OperationManager = new HiveOperationManager()
@@ -77,7 +75,7 @@ class HiveSessionManager(
     val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
     info(s"Opening session for $user@$clientIp")
     val hive = new ImportedHiveSessionImpl(
-      new SH(sessionHandle.toTSessionHandle, protocol),
+      new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
       protocol,
       user,
       password,
@@ -113,7 +111,7 @@ class HiveSessionManager(
     super.closeSession(sessionHandle)
     if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
       info("Session stopped due to shared level is Connection.")
-      serverable.stop()
+      engine.stop()
     }
   }
 }

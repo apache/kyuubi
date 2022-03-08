@@ -18,10 +18,10 @@
 package org.apache.kyuubi.engine.hive
 
 import org.apache.kyuubi.engine.hive.session.HiveSessionManager
-import org.apache.kyuubi.service.{AbstractBackendService, Serverable}
+import org.apache.kyuubi.service.AbstractBackendService
 import org.apache.kyuubi.session.SessionManager
 
-class HiveBackendService(serv: Serverable)
+class HiveBackendService(engine: HiveSQLEngine)
   extends AbstractBackendService("HiveBackendService") {
-  override val sessionManager: SessionManager = new HiveSessionManager(serv)
+  override val sessionManager: SessionManager = new HiveSessionManager(engine)
 }
