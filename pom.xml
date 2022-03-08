@@ -1497,6 +1497,7 @@
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
                         <systemProperties>
+                            <log4j.ignoreTCL>true</log4j.ignoreTCL>
                             <log4j2.configurationFile>file:src/test/resources/log4j2-test.properties</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
