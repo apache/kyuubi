@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.hive
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 
-class HiveTBinaryFrontend(override val serverable: Serverable)
+class HiveTBinaryFrontendService(override val serverable: Serverable)
   extends TBinaryFrontendService("HiveTBinaryFrontend") {
 
   override lazy val discoveryService: Option[Service] = {

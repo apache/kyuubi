@@ -37,7 +37,7 @@ import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, NamedThreadFactory}
 
 /**
- * Apache Thrift based hive-service-prc base class
+ * Apache Thrift based hive-service-rpc base class
  *   1. http
  *   2. binary
  */
