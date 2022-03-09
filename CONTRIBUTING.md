@@ -51,11 +51,9 @@ You can make various types of contributions to Kyuubi, including the following b
 - Improve test coverage - [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
 - Report bugs and better help developers to reproduce
 - Review changes
-- Make a pull request
+- [Make a pull request](https://kyuubi.apache.org/pull_request.html)
 - Promote to others
 - Click the star button if you like this project
-
-Before you start, we recommend that you check the [Contribution Guidelines](https://kyuubi.apache.org/contributing.html) first.
 
 ## Easter Eggs for Contributors
 
