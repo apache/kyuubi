@@ -84,7 +84,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
 
   test("test engine submit timeout") {
     val timeout = 180000
-    val submitTime = System.currentTimeMillis() - timeout
+    val submitTime = System.currentTimeMillis() - timeout - 10000
     System.setProperty(s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY", String.valueOf(submitTime))
     System.setProperty(s"spark.${ENGINE_INIT_TIMEOUT.key}", String.valueOf(timeout))
     val e1 = intercept[KyuubiException] {
@@ -95,10 +95,13 @@ class SparkEngineSuites extends KyuubiFunSuite {
   }
 
   test("test engine create sparksession timeout") {
-    val timeout = 2000
+    val timeout = 10000
     val submitTime = System.currentTimeMillis()
     System.setProperty(s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY", String.valueOf(submitTime))
     System.setProperty(s"spark.${ENGINE_INIT_TIMEOUT.key}", String.valueOf(timeout))
+    System.setProperty(
+      s"spark.${ENGINE_INITIALIZE_SQL.key}",
+      "select 1 where java_method('java.lang.Thread', 'sleep', 60000L) is null")
     val logAppender = new LogAppender("test createSpark timeout")
     withLogAppender(logAppender) {
       SparkSQLEngine.main(Array.empty)
