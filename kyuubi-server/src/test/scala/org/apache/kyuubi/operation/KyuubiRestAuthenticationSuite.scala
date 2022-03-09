@@ -26,7 +26,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.{KerberizedTestHelper, RestFrontendTestHelper}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.api.v1.SessionOpenCount
-import org.apache.kyuubi.server.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
+import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
 class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with KerberizedTestHelper
@@ -59,7 +59,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
     KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
       .set(KyuubiConf.SERVER_KEYTAB.key, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
-      .set(KyuubiConf.SERVER_SPNEGO_KEYTAB.key, testKeytab)
+      .set(KyuubiConf.SERVER_SPNEGO_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testSpnegoPrincipal)
       .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
       .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)

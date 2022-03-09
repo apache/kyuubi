@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.authentication
+package org.apache.kyuubi.server.http.authentication
 
 import java.io.UnsupportedEncodingException
 import java.nio.ByteBuffer

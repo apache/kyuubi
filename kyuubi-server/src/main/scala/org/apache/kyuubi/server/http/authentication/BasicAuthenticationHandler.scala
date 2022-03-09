@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.authentication
+package org.apache.kyuubi.server.http.authentication
 
 import java.nio.charset.Charset
 import java.util.Base64
@@ -23,7 +23,7 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
 import org.apache.kyuubi.service.authentication.{AuthenticationProviderFactory, AuthMethods}
 import org.apache.kyuubi.service.authentication.AuthTypes._
 

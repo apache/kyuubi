@@ -26,7 +26,7 @@ import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
 import org.apache.kyuubi.Utils.isWindows
-import org.apache.kyuubi.server.authentication.AuthenticationFilter
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 
 private[kyuubi] case class JettyServer(
     server: Server,

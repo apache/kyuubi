@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.authentication
+package org.apache.kyuubi.server.http.authentication
 
 import javax.security.sasl.AuthenticationException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
@@ -23,7 +23,7 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.apache.hadoop.security.authentication.server.HttpConstants
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
 
 trait AuthenticationHandler {
   import AuthenticationHandler._

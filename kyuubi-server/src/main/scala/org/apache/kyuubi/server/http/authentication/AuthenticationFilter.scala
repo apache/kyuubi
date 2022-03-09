@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.authentication
+package org.apache.kyuubi.server.http.authentication
 
 import java.io.IOException
 import javax.servlet.{Filter, FilterChain, FilterConfig, ServletException, ServletRequest, ServletResponse}
@@ -28,13 +28,13 @@ import org.apache.hadoop.security.authentication.client.AuthenticationException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
-import org.apache.kyuubi.server.authentication.AuthSchemes._
 import org.apache.kyuubi.service.authentication.AuthTypes
 import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
 class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationFilter._
   import AuthenticationHandler._
+  import AuthSchemes._
 
   private val authSchemeHandlers = new HashMap[AuthScheme, AuthenticationHandler]()
 
