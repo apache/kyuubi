@@ -339,8 +339,8 @@ Key | Default | Meaning | Type | Since
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-<code>kyuubi.spnego.keytab</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Keytab file for SPNego principal</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.5.0</div>
-<code>kyuubi.spnego.principal</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>SPNego service principal, typical value would look like HTTP/_HOST@EXAMPLE.COM. SPNego service principal would be used when restful Kerberos security is enabled. This needs to be set only if SPNEGO is to be used in authentication.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.5.0</div>
+<code>kyuubi.spnego.keytab</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Keytab file for SPNego principal</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
+<code>kyuubi.spnego.principal</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>SPNego service principal, typical value would look like HTTP/_HOST@EXAMPLE.COM. SPNego service principal would be used when restful Kerberos security is enabled. This needs to be set only if SPNEGO is to be used in authentication.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
 
 
 ### Zookeeper

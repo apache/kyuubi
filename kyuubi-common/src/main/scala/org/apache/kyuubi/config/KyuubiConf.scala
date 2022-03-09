@@ -197,16 +197,17 @@ object KyuubiConf {
     .stringConf
     .createOptional
 
-  val SERVER_SPNEGO_KEYTAB: ConfigEntry[Option[String]] = buildConf("spnego.keytab")
+  val SERVER_SPNEGO_KEYTAB: OptionalConfigEntry[String] = buildConf("spnego.keytab")
     .doc("Keytab file for SPNego principal")
-    .version("1.5.0")
-    .fallbackConf(SERVER_KEYTAB)
+    .version("1.6.0")
+    .stringConf
+    .createOptional
 
   val SERVER_SPNEGO_PRINCIPAL: OptionalConfigEntry[String] = buildConf("spnego.principal")
     .doc("SPNego service principal, typical value would look like HTTP/_HOST@EXAMPLE.COM." +
       " SPNego service principal would be used when restful Kerberos security is enabled." +
       " This needs to be set only if SPNEGO is to be used in authentication.")
-    .version("1.5.0")
+    .version("1.6.0")
     .stringConf
     .createOptional
 
