@@ -34,7 +34,7 @@ import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
-import org.apache.kyuubi.util.RowSetUtils.{dateFormatter, timestampFormatter}
+import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
 
@@ -289,19 +289,19 @@ object RowSet {
         "null"
 
       case (d: Int, _: DateType) =>
-        dateFormatter.format(LocalDate.ofEpochDay(d))
+        formatLocalDate(LocalDate.ofEpochDay(d))
 
       case (ld: LocalDate, _: DateType) =>
-        dateFormatter.format(ld)
+        formatLocalDate(ld)
 
       case (d: Date, _: DateType) =>
-        dateFormatter.format(d.toInstant)
+        formatInstant(d.toInstant)
 
       case (ldt: LocalDateTime, _: TimestampType) =>
-        timestampFormatter.format(ldt)
+        formatLocalDateTime(ldt)
 
       case (ts: Timestamp, _: TimestampType) =>
-        timestampFormatter.format(ts.toInstant)
+        formatInstant(ts.toInstant)
 
       case (decimal: java.math.BigDecimal, _: DecimalType) =>
         decimal.toPlainString

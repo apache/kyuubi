@@ -212,16 +212,16 @@ object RowSet {
         "null"
 
       case (d: Date, DateType) =>
-        simpleDateFormatter.format(d)
+        formatDate(d)
 
       case (ld: LocalDate, DateType) =>
-        dateFormatter.format(ld)
+        formatLocalDate(ld)
 
       case (t: Timestamp, TimestampType) =>
-        simpleTimestampFormatter.format(t)
+        formatTimestamp(t)
 
       case (i: Instant, TimestampType) =>
-        timestampFormatter.withZone(timeZone).format(i)
+        formatInstant(i, Option(timeZone))
 
       case (bin: Array[Byte], BinaryType) =>
         new String(bin, StandardCharsets.UTF_8)
