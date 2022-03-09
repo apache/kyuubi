@@ -57,9 +57,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private def startInternal(): Unit = {
     val contextHandler = ApiRootResource.getServletHandler(this)
     val holder = new FilterHolder(new AuthenticationFilter(conf))
-    // TODO: complete exceptions for path authentication filter path spec
-    contextHandler.addFilter(holder, "/api/*", EnumSet.allOf(classOf[DispatcherType]))
+    contextHandler.addFilter(holder, "/*", EnumSet.allOf(classOf[DispatcherType]))
     server.addHandler(contextHandler)
+
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
     server.addRedirectHandler("/", "/static")
     server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")

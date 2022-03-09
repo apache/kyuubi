@@ -131,7 +131,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
   }
 
   test("test with non-authentication path") {
-    val response = webTarget.path("swagger-ui-redirected").request().get()
+    val response = webTarget.path("swagger").request().get()
     assert(HttpServletResponse.SC_OK == response.getStatus)
   }
 }
