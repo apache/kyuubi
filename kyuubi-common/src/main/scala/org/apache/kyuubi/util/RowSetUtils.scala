@@ -18,38 +18,62 @@
 package org.apache.kyuubi.util
 
 import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
+import java.sql.Timestamp
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
-import java.util.Locale
+import java.util.{Date, Locale}
 
 import scala.language.implicitConversions
 
+import org.apache.commons.lang3.time.FastDateFormat
+
 private[kyuubi] object RowSetUtils {
 
-  lazy val dateFormatter = {
+  private lazy val dateFormatter = {
     createDateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
       .toFormatter(Locale.US)
       .withChronology(IsoChronology.INSTANCE)
   }
 
-  lazy val simpleDateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
+  private lazy val legacyDateFormatter = FastDateFormat.getInstance("yyyy-MM-dd", Locale.US)
 
-  lazy val timestampFormatter: DateTimeFormatter = {
+  private lazy val timestampFormatter: DateTimeFormatter = {
     createDateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
       .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
       .toFormatter(Locale.US)
       .withChronology(IsoChronology.INSTANCE)
   }
 
-  lazy val simpleTimestampFormatter = {
-    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+  private lazy val legacyTimestampFormatter = {
+    FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
   }
 
   private def createDateTimeFormatterBuilder(): DateTimeFormatterBuilder = {
     new DateTimeFormatterBuilder().parseCaseInsensitive()
+  }
+
+  def formatDate(d: Date): String = {
+    legacyDateFormatter.format(d)
+  }
+
+  def formatLocalDate(ld: LocalDate): String = {
+    dateFormatter.format(ld)
+  }
+
+  def formatLocalDateTime(ldt: LocalDateTime): String = {
+    timestampFormatter.format(ldt)
+  }
+
+  def formatInstant(i: Instant, timeZone: Option[ZoneId] = None): String = {
+    timeZone.map(timestampFormatter.withZone(_).format(i))
+      .getOrElse(timestampFormatter.format(i))
+  }
+
+  def formatTimestamp(t: Timestamp): String = {
+    legacyTimestampFormatter.format(t)
   }
 
   implicit def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {
