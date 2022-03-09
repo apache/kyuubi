@@ -104,6 +104,17 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
     assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
   }
 
+  test("test with valid spnego authentication") {
+    UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
+    val token = generateToken()
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"NEGOTIATE $token")
+      .get()
+
+    assert(HttpServletResponse.SC_OK == response.getStatus)
+  }
+
   test("test with invalid spnego authorization") {
     val encodeAuthorization = new String(
       Base64.getEncoder.encode(

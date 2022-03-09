@@ -48,9 +48,9 @@ object KerberosUtil {
   private class DER(val srcbb: ByteBuffer) extends java.util.Iterator[DER] {
     import DER._
 
-    final private val tag: Int = srcbb.get & 0xFF
-    final private val bb: ByteBuffer = srcbb.slice
+    final private val tag: Int = srcbb.get() & 0xFF
     val length = readLength(srcbb)
+    final private val bb: ByteBuffer = srcbb.slice
     bb.limit(length)
     srcbb.position(srcbb.position() + length)
 
@@ -109,7 +109,8 @@ object KerberosUtil {
     }
 
     override def equals(o: Any): Boolean = {
-      o.isInstanceOf[DER] && tag == o.asInstanceOf[DER].tag && bb == o.asInstanceOf[DER].bb
+      o.isInstanceOf[DER] && tag.equals(o.asInstanceOf[DER].tag) &&
+      bb.equals(o.asInstanceOf[DER].bb)
     }
 
     override def hasNext: Boolean = {
@@ -173,14 +174,17 @@ object KerberosUtil {
     //     mech-token  (NegotiationToken or InnerContextToken)
     // }
     var oid = token.next
-    if (oid == DER.SPNEGO_MECH_OID) { // NegotiationToken ::= CHOICE {
+    if (oid.equals(DER.SPNEGO_MECH_OID)) {
+      // NegotiationToken ::= CHOICE {
       //     neg-token-init[0] NegTokenInit
       // NegTokenInit ::= SEQUENCE {
       //     mech-token[2]     InitialContextToken
       token = token.next.get(0xA0, 0x30, 0xA2, 0x04).next
       oid = token.next
     }
-    if (!(oid == DER.KRB5_MECH_OID)) throw new IllegalArgumentException("Malformed gss token")
+    if (!oid.equals(DER.KRB5_MECH_OID)) {
+      throw new IllegalArgumentException("Malformed gss token")
+    }
     // InnerContextToken ::= {
     //     token-id[1]
     //     AP-REQ

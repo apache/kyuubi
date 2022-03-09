@@ -20,6 +20,9 @@ package org.apache.kyuubi
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.security.PrivilegedExceptionAction
+import java.util.Base64
+import javax.security.sasl.AuthenticationException
 
 import scala.io.{Codec, Source}
 import scala.util.control.NonFatal
@@ -27,6 +30,7 @@ import scala.util.control.NonFatal
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
+import org.ietf.jgss.{GSSContext, GSSException, GSSManager, GSSName}
 import org.scalatest.time.SpanSugar._
 
 trait KerberizedTestHelper extends KyuubiFunSuite {
@@ -151,5 +155,40 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
       UserGroupInformation.setConfiguration(conf)
       assert(!UserGroupInformation.isSecurityEnabled)
     }
+  }
+
+  /**
+   * Generate SPNEGO challenge request token.
+   * Copy from Apache Hadoop YarnClientUtils::generateToken.
+   */
+  def generateToken(): String = {
+    val currentUser = UserGroupInformation.getCurrentUser
+    currentUser.doAs(new PrivilegedExceptionAction[String] {
+      override def run(): String = {
+        try {
+          val manager = GSSManager.getInstance()
+          val serverName = manager.createName("HTTP@" + hostName, GSSName.NT_HOSTBASED_SERVICE)
+          val gssContext = manager.createContext(
+            serverName.canonicalize(null),
+            null,
+            null,
+            GSSContext.DEFAULT_LIFETIME)
+          // Create a GSSContext for authentication with the service.
+          // We're passing client credentials as null since we want them to
+          // be read from the Subject.
+          // We're passing Oid as null to use the default.
+          gssContext.requestMutualAuth(true)
+          gssContext.requestCredDeleg(true)
+          // Establish context
+          val inToken = Array.empty[Byte]
+          val outToken = gssContext.initSecContext(inToken, 0, inToken.length)
+          gssContext.dispose()
+          new String(Base64.getEncoder.encode(outToken), StandardCharsets.US_ASCII)
+        } catch {
+          case e: GSSException =>
+            throw new AuthenticationException("Failed to generate token", e)
+        }
+      }
+    })
   }
 }
