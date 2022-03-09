@@ -31,7 +31,7 @@ import org.apache.spark.unsafe.types.CalendarInterval
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.spark.schema.RowSet.toHiveString
-import org.apache.kyuubi.util.RowSetUtils._
+import org.apache.kyuubi.util.DateTimeFormatter
 
 class RowSetSuite extends KyuubiFunSuite {
 
@@ -171,7 +171,7 @@ class RowSetSuite extends KyuubiFunSuite {
         assert(b === toHiveString(
           (Date.valueOf(s"2018-11-${i + 1}"), DateType),
           zoneId,
-          getTimeFormatters))
+          new DateTimeFormatter))
     }
 
     val tsCol = cols.next().getStringVal
@@ -181,7 +181,7 @@ class RowSetSuite extends KyuubiFunSuite {
           toHiveString(
             (Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType),
             zoneId,
-            getTimeFormatters))
+            new DateTimeFormatter))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -196,7 +196,7 @@ class RowSetSuite extends KyuubiFunSuite {
       case (b, i) => assert(b === toHiveString(
           (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ArrayType(DoubleType)),
           zoneId,
-          getTimeFormatters))
+          new DateTimeFormatter))
     }
 
     val mapCol = cols.next().getStringVal
@@ -205,7 +205,7 @@ class RowSetSuite extends KyuubiFunSuite {
       case (b, i) => assert(b === toHiveString(
           (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MapType(IntegerType, DoubleType)),
           zoneId,
-          getTimeFormatters))
+          new DateTimeFormatter))
     }
 
     val intervalCol = cols.next().getStringVal
@@ -254,7 +254,10 @@ class RowSetSuite extends KyuubiFunSuite {
     val r8 = iter.next().getColVals
     assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))
     assert(r8.get(13).getStringVal.getValue ===
-      toHiveString((Map(7 -> 7.7d), MapType(IntegerType, DoubleType)), zoneId, getTimeFormatters))
+      toHiveString(
+        (Map(7 -> 7.7d), MapType(IntegerType, DoubleType)),
+        zoneId,
+        new DateTimeFormatter))
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)

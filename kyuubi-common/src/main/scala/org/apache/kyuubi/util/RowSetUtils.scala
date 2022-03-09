@@ -18,41 +18,10 @@
 package org.apache.kyuubi.util
 
 import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
-import java.time.chrono.IsoChronology
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
-import java.time.temporal.ChronoField
-import java.util.Locale
 
 import scala.language.implicitConversions
 
 private[kyuubi] object RowSetUtils {
-  case class TimeFormatters(
-      date: DateTimeFormatter,
-      timestamp: DateTimeFormatter,
-      simpleDate: SimpleDateFormat,
-      simpleTimestamp: SimpleDateFormat)
-
-  def getTimeFormatters: TimeFormatters = {
-    val dateFormatter = createDateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-
-    val timestampFormatter = createDateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
-      .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-
-    val simpleDateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
-    val simpleTimestampFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
-
-    TimeFormatters(dateFormatter, timestampFormatter, simpleDateFormatter, simpleTimestampFormatter)
-  }
-
-  private def createDateTimeFormatterBuilder(): DateTimeFormatterBuilder = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive()
-  }
 
   implicit def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {
     ByteBuffer.wrap(bitSet.toByteArray)
