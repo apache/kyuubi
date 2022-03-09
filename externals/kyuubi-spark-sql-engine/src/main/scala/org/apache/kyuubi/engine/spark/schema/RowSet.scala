@@ -221,13 +221,13 @@ object RowSet {
         "null"
 
       case (d: Date, DateType) =>
-        timeFormatters.date.format(d.toInstant)
+        timeFormatters.simpleDate.format(d)
 
       case (ld: LocalDate, DateType) =>
         timeFormatters.date.format(ld)
 
       case (t: Timestamp, TimestampType) =>
-        timeFormatters.timestamp.format(t.toInstant)
+        timeFormatters.simpleTimestamp.format(t)
 
       case (i: Instant, TimestampType) =>
         timeFormatters.timestamp.withZone(timeZone).format(i)

@@ -18,6 +18,7 @@
 package org.apache.kyuubi.util
 
 import java.nio.ByteBuffer
+import java.text.SimpleDateFormat
 import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
@@ -27,7 +28,11 @@ import java.util.Locale
 import scala.language.implicitConversions
 
 private[kyuubi] object RowSetUtils {
-  case class TimeFormatters(date: DateTimeFormatter, timestamp: DateTimeFormatter)
+  case class TimeFormatters(
+      date: DateTimeFormatter,
+      timestamp: DateTimeFormatter,
+      simpleDate: SimpleDateFormat,
+      simpleTimestamp: SimpleDateFormat)
 
   def getTimeFormatters: TimeFormatters = {
     val dateFormatter = createDateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
@@ -38,7 +43,11 @@ private[kyuubi] object RowSetUtils {
       .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
       .toFormatter(Locale.US)
       .withChronology(IsoChronology.INSTANCE)
-    TimeFormatters(dateFormatter, timestampFormatter)
+
+    val simpleDateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    val simpleTimestampFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+
+    TimeFormatters(dateFormatter, timestampFormatter, simpleDateFormatter, simpleTimestampFormatter)
   }
 
   private def createDateTimeFormatterBuilder(): DateTimeFormatterBuilder = {
