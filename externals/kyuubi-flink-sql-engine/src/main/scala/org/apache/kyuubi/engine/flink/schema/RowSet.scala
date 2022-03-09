@@ -34,7 +34,7 @@ import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
-import org.apache.kyuubi.util.RowSetUtils.{dateFormatter, timestampFormatter}
+import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
 
@@ -52,7 +52,7 @@ object RowSet {
   def toRowBaseSet(rows: Seq[Row], resultSet: ResultSet): TRowSet = {
     val tRows = rows.map { row =>
       val tRow = new TRow()
-      (0 until row.getArity).map(i => toTColumnValue(i, row, resultSet))
+      (0 until row.getArity).map(i => toTColumnValue(i, row, resultSet, getTimeFormatters))
         .foreach(tRow.addToColVals)
       tRow
     }.asJava
@@ -64,7 +64,7 @@ object RowSet {
     val size = rows.length
     val tRowSet = new TRowSet(0, new util.ArrayList[TRow](size))
     resultSet.getColumns.asScala.zipWithIndex.foreach { case (filed, i) =>
-      val tColumn = toTColumn(rows, i, filed.getDataType.getLogicalType)
+      val tColumn = toTColumn(rows, i, filed.getDataType.getLogicalType, getTimeFormatters)
       tRowSet.addToColumns(tColumn)
     }
     tRowSet
@@ -73,7 +73,8 @@ object RowSet {
   private def toTColumnValue(
       ordinal: Int,
       row: Row,
-      resultSet: ResultSet): TColumnValue = {
+      resultSet: ResultSet,
+      timeFormatters: TimeFormatters): TColumnValue = {
 
     val column = resultSet.getColumns.get(ordinal)
     val logicalType = column.getDataType.getLogicalType
@@ -139,7 +140,7 @@ object RowSet {
       case t =>
         val tStringValue = new TStringValue
         if (row.getField(ordinal) != null) {
-          tStringValue.setValue(toHiveString((row.getField(ordinal), t)))
+          tStringValue.setValue(toHiveString((row.getField(ordinal), t), timeFormatters))
         }
         TColumnValue.stringVal(tStringValue)
     }
@@ -149,7 +150,11 @@ object RowSet {
     ByteBuffer.wrap(bitSet.toByteArray)
   }
 
-  private def toTColumn(rows: Seq[Row], ordinal: Int, logicalType: LogicalType): TColumn = {
+  private def toTColumn(
+      rows: Seq[Row],
+      ordinal: Int,
+      logicalType: LogicalType,
+      timeFormatters: TimeFormatters): TColumn = {
     val nulls = new java.util.BitSet()
     logicalType match {
       case _: BooleanType =>
@@ -186,7 +191,7 @@ object RowSet {
           if (row.getField(ordinal) == null) {
             ""
           } else {
-            toHiveString((row.getField(ordinal), logicalType))
+            toHiveString((row.getField(ordinal), logicalType), timeFormatters)
           }
         }.asJava
         TColumn.stringVal(new TStringColumn(values, nulls))
@@ -282,32 +287,32 @@ object RowSet {
    * A simpler impl of Flink's toHiveString
    * TODO: support Flink's new data type system
    */
-  def toHiveString(dataWithType: (Any, LogicalType)): String = {
+  def toHiveString(dataWithType: (Any, LogicalType), timeFormatters: TimeFormatters): String = {
     dataWithType match {
       case (null, _) =>
         // Only match nulls in nested type values
         "null"
 
       case (d: Int, _: DateType) =>
-        dateFormatter.format(LocalDate.ofEpochDay(d))
+        timeFormatters.date.format(LocalDate.ofEpochDay(d))
 
       case (ld: LocalDate, _: DateType) =>
-        dateFormatter.format(ld)
+        timeFormatters.date.format(ld)
 
       case (d: Date, _: DateType) =>
-        dateFormatter.format(d.toInstant)
+        timeFormatters.date.format(d.toInstant)
 
       case (ldt: LocalDateTime, _: TimestampType) =>
-        timestampFormatter.format(ldt)
+        timeFormatters.timestamp.format(ldt)
 
       case (ts: Timestamp, _: TimestampType) =>
-        timestampFormatter.format(ts.toInstant)
+        timeFormatters.timestamp.format(ts.toInstant)
 
       case (decimal: java.math.BigDecimal, _: DecimalType) =>
         decimal.toPlainString
 
       case (a: Array[_], t: ArrayType) =>
-        a.map(v => toHiveString((v, t.getElementType))).toSeq.mkString(
+        a.map(v => toHiveString((v, t.getElementType), timeFormatters)).toSeq.mkString(
           "[",
           ",",
           "]")
@@ -315,14 +320,17 @@ object RowSet {
       case (m: Map[_, _], t: MapType) =>
         m.map {
           case (k, v) =>
-            toHiveString((k, t.getKeyType)) + ":" + toHiveString((v, t.getValueType))
+            toHiveString((k, t.getKeyType), timeFormatters) +
+              ":" + toHiveString((v, t.getValueType), timeFormatters)
         }
           .toSeq.mkString("{", ",", "}")
 
       case (r: Row, t: RowType) =>
         val lb = ListBuffer[String]()
         for (i <- 0 until r.getArity) {
-          lb += s"""${t.getTypeAt(i).toString}:${toHiveString((r.getField(i), t.getTypeAt(i)))}"""
+          lb += s"""${t.getTypeAt(i).toString}:${toHiveString(
+            (r.getField(i), t.getTypeAt(i)),
+            timeFormatters)}"""
         }
         lb.toList.mkString("{", ",", "}")
 

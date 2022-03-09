@@ -31,6 +31,7 @@ import org.apache.spark.unsafe.types.CalendarInterval
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.spark.schema.RowSet.toHiveString
+import org.apache.kyuubi.util.RowSetUtils._
 
 class RowSetSuite extends KyuubiFunSuite {
 
@@ -167,14 +168,20 @@ class RowSetSuite extends KyuubiFunSuite {
     dateCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) =>
-        assert(b === toHiveString((Date.valueOf(s"2018-11-${i + 1}"), DateType), zoneId))
+        assert(b === toHiveString(
+          (Date.valueOf(s"2018-11-${i + 1}"), DateType),
+          zoneId,
+          getTimeFormatters))
     }
 
     val tsCol = cols.next().getStringVal
     tsCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) => assert(b ===
-          toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType), zoneId))
+          toHiveString(
+            (Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType),
+            zoneId,
+            getTimeFormatters))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -188,7 +195,8 @@ class RowSetSuite extends KyuubiFunSuite {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
           (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ArrayType(DoubleType)),
-          zoneId))
+          zoneId,
+          getTimeFormatters))
     }
 
     val mapCol = cols.next().getStringVal
@@ -196,7 +204,8 @@ class RowSetSuite extends KyuubiFunSuite {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
           (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MapType(IntegerType, DoubleType)),
-          zoneId))
+          zoneId,
+          getTimeFormatters))
     }
 
     val intervalCol = cols.next().getStringVal
@@ -245,7 +254,7 @@ class RowSetSuite extends KyuubiFunSuite {
     val r8 = iter.next().getColVals
     assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))
     assert(r8.get(13).getStringVal.getValue ===
-      toHiveString((Map(7 -> 7.7d), MapType(IntegerType, DoubleType)), zoneId))
+      toHiveString((Map(7 -> 7.7d), MapType(IntegerType, DoubleType)), zoneId, getTimeFormatters))
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)

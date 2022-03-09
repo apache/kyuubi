@@ -48,7 +48,7 @@ object RowSet {
   def toRowBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
     val tRows = rows.map { row =>
       val tRow = new TRow()
-      (0 until row.length).map(i => toTColumnValue(i, row, schema, timeZone))
+      (0 until row.length).map(i => toTColumnValue(i, row, schema, timeZone, getTimeFormatters))
         .foreach(tRow.addToColVals)
       tRow
     }.asJava
@@ -59,13 +59,18 @@ object RowSet {
     val size = rows.length
     val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](size))
     schema.zipWithIndex.foreach { case (filed, i) =>
-      val tColumn = toTColumn(rows, i, filed.dataType, timeZone)
+      val tColumn = toTColumn(rows, i, filed.dataType, timeZone, getTimeFormatters)
       tRowSet.addToColumns(tColumn)
     }
     tRowSet
   }
 
-  private def toTColumn(rows: Seq[Row], ordinal: Int, typ: DataType, timeZone: ZoneId): TColumn = {
+  private def toTColumn(
+      rows: Seq[Row],
+      ordinal: Int,
+      typ: DataType,
+      timeZone: ZoneId,
+      timeFormatters: TimeFormatters = getTimeFormatters): TColumn = {
     val nulls = new java.util.BitSet()
     typ match {
       case BooleanType =>
@@ -114,7 +119,7 @@ object RowSet {
           if (row.isNullAt(ordinal)) {
             ""
           } else {
-            toHiveString((row.get(ordinal), typ), timeZone)
+            toHiveString((row.get(ordinal), typ), timeZone, timeFormatters)
           }
         }.asJava
         TColumn.stringVal(new TStringColumn(values, nulls))
@@ -147,7 +152,8 @@ object RowSet {
       ordinal: Int,
       row: Row,
       types: StructType,
-      timeZone: ZoneId): TColumnValue = {
+      timeZone: ZoneId,
+      timeFormatters: TimeFormatters): TColumnValue = {
     types(ordinal).dataType match {
       case BooleanType =>
         val boolValue = new TBoolValue
@@ -196,7 +202,7 @@ object RowSet {
         val tStrValue = new TStringValue
         if (!row.isNullAt(ordinal)) {
           tStrValue.setValue(
-            toHiveString((row.get(ordinal), types(ordinal).dataType), timeZone))
+            toHiveString((row.get(ordinal), types(ordinal).dataType), timeZone, timeFormatters))
         }
         TColumnValue.stringVal(tStrValue)
     }
@@ -205,23 +211,26 @@ object RowSet {
   /**
    * A simpler impl of Spark's toHiveString
    */
-  def toHiveString(dataWithType: (Any, DataType), timeZone: ZoneId): String = {
+  def toHiveString(
+      dataWithType: (Any, DataType),
+      timeZone: ZoneId,
+      timeFormatters: TimeFormatters): String = {
     dataWithType match {
       case (null, _) =>
         // Only match nulls in nested type values
         "null"
 
       case (d: Date, DateType) =>
-        simpleDateFormatter.format(d)
+        timeFormatters.date.format(d.toInstant)
 
       case (ld: LocalDate, DateType) =>
-        dateFormatter.format(ld)
+        timeFormatters.date.format(ld)
 
       case (t: Timestamp, TimestampType) =>
-        simpleTimestampFormatter.format(t)
+        timeFormatters.timestamp.format(t.toInstant)
 
       case (i: Instant, TimestampType) =>
-        timestampFormatter.withZone(timeZone).format(i)
+        timeFormatters.timestamp.withZone(timeZone).format(i)
 
       case (bin: Array[Byte], BinaryType) =>
         new String(bin, StandardCharsets.UTF_8)
@@ -234,16 +243,18 @@ object RowSet {
         "\"" + s + "\""
 
       case (seq: scala.collection.Seq[_], ArrayType(typ, _)) =>
-        seq.map(v => (v, typ)).map(e => toHiveString(e, timeZone)).mkString("[", ",", "]")
+        seq.map(v => (v, typ)).map(e => toHiveString(e, timeZone, timeFormatters))
+          .mkString("[", ",", "]")
 
       case (m: Map[_, _], MapType(kType, vType, _)) =>
         m.map { case (key, value) =>
-          toHiveString((key, kType), timeZone) + ":" + toHiveString((value, vType), timeZone)
+          toHiveString((key, kType), timeZone, timeFormatters) +
+            ":" + toHiveString((value, vType), timeZone, timeFormatters)
         }.toSeq.sorted.mkString("{", ",", "}")
 
       case (struct: Row, StructType(fields)) =>
         struct.toSeq.zip(fields).map { case (v, t) =>
-          s""""${t.name}":${toHiveString((v, t.dataType), timeZone)}"""
+          s""""${t.name}":${toHiveString((v, t.dataType), timeZone, timeFormatters)}"""
         }.mkString("{", ",", "}")
 
       case (other, _) =>
