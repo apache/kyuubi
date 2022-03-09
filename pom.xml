@@ -146,7 +146,6 @@
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.1.11</swagger.version>
-        <swagger-ui.version>4.1.3</swagger-ui.version>
         <testcontainers.version>0.39.12</testcontainers.version>
         <trino.client.version>363</trino.client.version>
         <zookeeper.version>3.4.14</zookeeper.version>
@@ -1207,18 +1206,6 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.jdbc.version}</version>
-            </dependency>
-
-            <!--
-              1. This library only contains swagger-ui static resource (.html/.css/.js/.png), for more detail, see
-                 https://github.com/swagger-api/swagger-ui/blob/master/dist/
-              2. Note that when trying to upgrade swagger-ui, we should also update the version in the file(
-                 kyuubi-server/src/main/scala/org/apache/kyuubi/server/api/api.scala).
-            -->
-            <dependency>
-                <groupId>org.webjars</groupId>
-                <artifactId>swagger-ui</artifactId>
-                <version>${swagger-ui.version}</version>
             </dependency>
 
             <!-- flink -->

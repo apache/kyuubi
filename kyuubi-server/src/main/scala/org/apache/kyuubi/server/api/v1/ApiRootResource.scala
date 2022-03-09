@@ -17,14 +17,13 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import java.net.URI
 import javax.ws.rs.{GET, Path, Produces}
 import javax.ws.rs.core.{MediaType, Response}
 
 import com.google.common.annotations.VisibleForTesting
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
-import org.eclipse.jetty.servlet.{DefaultServlet, ServletContextHandler, ServletHolder}
+import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 
@@ -32,7 +31,7 @@ import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, OpenAPIConfig}
 
-@Path("/api/v1")
+@Path("/v1")
 private[v1] class ApiRootResource extends ApiRequestContext {
 
   @ApiResponse(
@@ -64,37 +63,17 @@ private[v1] class ApiRootResource extends ApiRequestContext {
     1 / 0
     Response.ok().build()
   }
-
-  @GET
-  @Path("swagger-ui")
-  @Produces(Array(MediaType.TEXT_HTML))
-  def swaggerUI(): Response = {
-    val swaggerUI = s"http://${fe.connectionUrl}/swagger-ui-redirected/index.html?url=" +
-      s"http://${fe.connectionUrl}/openapi.json"
-    Response.temporaryRedirect(new URI(swaggerUI)).build()
-  }
-
 }
 
 private[server] object ApiRootResource {
 
   def getServletHandler(fe: KyuubiRestFrontendService): ServletContextHandler = {
     val openapiConf: ResourceConfig = new OpenAPIConfig
-    val servlet = new ServletHolder(new ServletContainer(openapiConf))
+    val holder = new ServletHolder(new ServletContainer(openapiConf))
     val handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
+    handler.setContextPath("/api")
     FrontendServiceContext.set(handler, fe)
-    handler.addServlet(servlet, "/*")
-
-    // install swagger-ui, these static files are copied from
-    // https://github.com/swagger-api/swagger-ui/tree/master/dist
-    val swaggerUI = new ServletHolder("swagger-ui", classOf[DefaultServlet])
-    swaggerUI.setInitParameter(
-      "resourceBase",
-      getClass.getClassLoader()
-        .getResource("META-INF/resources/webjars/swagger-ui/4.1.3/")
-        .toExternalForm)
-    swaggerUI.setInitParameter("pathInfoOnly", "true")
-    handler.addServlet(swaggerUI, "/swagger-ui-redirected/*");
+    handler.addServlet(holder, "/*")
     handler
   }
 }

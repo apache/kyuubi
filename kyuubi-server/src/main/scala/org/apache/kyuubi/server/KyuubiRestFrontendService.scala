@@ -19,10 +19,11 @@ package org.apache.kyuubi.server
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.v1.ApiRootResource
+import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 
 /**
@@ -30,7 +31,7 @@ import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
  * Note: Currently, it only be used in the Kyuubi Server side.
  */
 class KyuubiRestFrontendService(override val serverable: Serverable)
-  extends AbstractFrontendService("KyuubiRestFrontendService") with Logging {
+  extends AbstractFrontendService("KyuubiRestFrontendService") {
 
   private var server: JettyServer = _
 
@@ -50,6 +51,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private def startInternal(): Unit = {
     server.addHandler(ApiRootResource.getServletHandler(this))
+    server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
+    server.addRedirectHandler("/", "/static")
+    server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")
+    server.addRedirectHandler("/docs", "/swagger")
   }
 
   override def start(): Unit = synchronized {

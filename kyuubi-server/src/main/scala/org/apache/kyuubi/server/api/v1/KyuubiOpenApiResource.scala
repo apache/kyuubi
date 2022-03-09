@@ -30,11 +30,14 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.integration.api.OpenApiContext
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.{Contact, Info, License}
+import io.swagger.v3.oas.models.servers.Server
 import io.swagger.v3.oas.models.tags.Tag
 import org.apache.commons.lang3.StringUtils
 
+import org.apache.kyuubi.server.api.ApiRequestContext
+
 @Path("/openapi.{type:json|yaml}")
-class KyuubiOpenApiResource extends BaseOpenApiResource {
+class KyuubiOpenApiResource extends BaseOpenApiResource with ApiRequestContext {
   @Context
   protected var config: ServletConfig = _
 
@@ -81,6 +84,8 @@ class KyuubiOpenApiResource extends BaseOpenApiResource {
   }
 
   private def setKyuubiOpenAPIDefinition(openApi: OpenAPI): OpenAPI = {
+    // TODO: to improve when https is enabled.
+    val apiUrl = s"http://${fe.connectionUrl}/api"
     openApi.info(
       new Info().title("Apache Kyuubi (Incubating) REST API Documentation")
         .version(org.apache.kyuubi.KYUUBI_VERSION)
@@ -93,6 +98,7 @@ class KyuubiOpenApiResource extends BaseOpenApiResource {
           new License().name("Apache License 2.0")
             .url("https://www.apache.org/licenses/LICENSE-2.0.txt")))
       .tags(List(new Tag().name("Session"), new Tag().name("Operation")).asJava)
+      .servers(List(new Server().url(apiUrl)).asJava)
   }
 }
 
