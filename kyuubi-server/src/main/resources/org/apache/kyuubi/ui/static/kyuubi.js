@@ -43,5 +43,4 @@ $(function(){
 		});
 	}
 	$('.item.server.version.right.padded').val(kyuubiVersion)
-	alert(kyuubiVersion);
 });
