@@ -106,7 +106,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
 
   test("test with valid spnego authentication") {
     UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
-    val token = generateToken()
+    val token = generateToken(hostName)
     val response = webTarget.path("api/v1/sessions/count")
       .request()
       .header(AUTHORIZATION_HEADER, s"NEGOTIATE $token")

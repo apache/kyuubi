@@ -36,9 +36,9 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationHandler._
   import AuthSchemes._
 
-  private val authSchemeHandlers = new HashMap[AuthScheme, AuthenticationHandler]()
+  private[authentication] val authSchemeHandlers = new HashMap[AuthScheme, AuthenticationHandler]()
 
-  private def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
+  private[authentication] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
     authHandler.init(conf)
     if (authHandler.authenticationSupported) {
       if (authSchemeHandlers.contains(authHandler.authScheme)) {

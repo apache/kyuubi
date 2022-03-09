@@ -159,15 +159,18 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
 
   /**
    * Generate SPNEGO challenge request token.
-   * Copy from Apache Hadoop YarnClientUtils::generateToken.
+   * Copy from Apache Hadoop YarnClientUtils::generateToken
+   *
+   * @param server - hostname to contact
+   * @return SPNEGO token challenge
    */
-  def generateToken(): String = {
+  def generateToken(server: String): String = {
     val currentUser = UserGroupInformation.getCurrentUser
     currentUser.doAs(new PrivilegedExceptionAction[String] {
-      override def run(): String = {
+      override def run(): String =
         try {
           val manager = GSSManager.getInstance()
-          val serverName = manager.createName("HTTP@" + hostName, GSSName.NT_HOSTBASED_SERVICE)
+          val serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE)
           val gssContext = manager.createContext(
             serverName.canonicalize(null),
             null,
@@ -183,12 +186,11 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
           val inToken = Array.empty[Byte]
           val outToken = gssContext.initSecContext(inToken, 0, inToken.length)
           gssContext.dispose()
-          new String(Base64.getEncoder.encode(outToken), StandardCharsets.US_ASCII)
+          new String(Base64.getEncoder.encode(outToken), StandardCharsets.UTF_8)
         } catch {
           case e: GSSException =>
             throw new AuthenticationException("Failed to generate token", e)
         }
-      }
     })
   }
 }
