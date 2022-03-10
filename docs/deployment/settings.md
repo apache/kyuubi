@@ -73,6 +73,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # - KYUUBI_WORK_DIR_ROOT    Root directory for launching sql engine applications.
 #                           (Default: $KYUUBI_HOME/work)
 # - HADOOP_CONF_DIR         Directory containing the Hadoop / YARN configuration to use.
+# - YARN_CONF_DIR           Directory containing the YARN configuration to use.
 #
 # - SPARK_HOME              Spark distribution which you would like to use in Kyuubi.
 # - SPARK_CONF_DIR          Optional directory where the Spark configuration lives.
@@ -85,6 +86,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
 # export SPARK_HOME=/opt/spark
 # export HADOOP_CONF_DIR=/usr/ndp/current/mapreduce_client/conf
+# export YARN_CONF_DIR=/usr/ndp/current/yarn/conf
 # export KYUUBI_JAVA_OPTS="-Xmx10g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark -XX:MaxDirectMemorySize=1024m  -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:./logs/kyuubi-server-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=5M -XX:NewRatio=3 -XX:MetaspaceSize=512m"
 # export KYUUBI_BEELINE_OPTS="-Xmx2g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark"
 ```
@@ -333,6 +335,14 @@ Key | Default | Meaning | Type | Since
 <code>kyuubi.session.idle.timeout</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT6H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>session idle timeout, it will be closed when it's not accessed for this duration</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.2.0</div>
 <code>kyuubi.session.name</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>A human readable name of session and we use empty string by default. This name will be recorded in event. Note that, we only apply this value from session conf.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.4.0</div>
 <code>kyuubi.session.timeout</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT6H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>(deprecated)session timeout, it will be closed when it's not accessed for this duration</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.0.0</div>
+
+
+### Spnego
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+<code>kyuubi.spnego.keytab</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Keytab file for SPNego principal</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
+<code>kyuubi.spnego.principal</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>SPNego service principal, typical value would look like HTTP/_HOST@EXAMPLE.COM. SPNego service principal would be used when restful Kerberos security is enabled. This needs to be set only if SPNEGO is to be used in authentication.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
 
 
 ### Zookeeper

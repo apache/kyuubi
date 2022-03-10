@@ -17,12 +17,17 @@
 
 package org.apache.kyuubi.server
 
+import java.util.EnumSet
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.servlet.DispatcherType
+
+import org.eclipse.jetty.servlet.FilterHolder
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.v1.ApiRootResource
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 
@@ -50,7 +55,11 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   private def startInternal(): Unit = {
-    server.addHandler(ApiRootResource.getServletHandler(this))
+    val contextHandler = ApiRootResource.getServletHandler(this)
+    val holder = new FilterHolder(new AuthenticationFilter(conf))
+    contextHandler.addFilter(holder, "/*", EnumSet.allOf(classOf[DispatcherType]))
+    server.addHandler(contextHandler)
+
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
     server.addRedirectHandler("/", "/static")
     server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")

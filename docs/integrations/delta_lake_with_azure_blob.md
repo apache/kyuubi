@@ -195,6 +195,7 @@ KYUUBI_WORK_DIR_ROOT: /usr/apache/current/kyuubi/work
 SPARK_HOME: /usr/apache/current/spark
 SPARK_CONF_DIR: /usr/apache/current/spark/conf
 HADOOP_CONF_DIR:
+YARN_CONF_DIR:
 Starting org.apache.kyuubi.server.KyuubiServer, logging to /usr/apache/current/kyuubi/logs/kyuubi-hadoop-org.apache.kyuubi.server.KyuubiServer-host.out
 Welcome to
   __  __                           __

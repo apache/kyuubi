@@ -17,13 +17,16 @@
 
 package org.apache.kyuubi.server.ui
 
-import org.eclipse.jetty.server.{HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
-import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
+
+import org.eclipse.jetty.server.{HttpConfiguration, HttpConnectionFactory, Request, Server, ServerConnector}
+import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler, HandlerWrapper}
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
 import org.apache.kyuubi.Utils.isWindows
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 
 private[kyuubi] case class JettyServer(
     server: Server,
@@ -53,8 +56,24 @@ private[kyuubi] case class JettyServer(
   def getServerUri: String = connector.getHost + ":" + connector.getLocalPort
 
   def addHandler(handler: ServletContextHandler): Unit = synchronized {
-    rootHandler.addHandler(handler)
+    val handlerWrapper = new HandlerWrapper {
+      override def handle(
+          target: String,
+          baseRequest: Request,
+          request: HttpServletRequest,
+          response: HttpServletResponse): Unit = {
+        try {
+          super.handle(target, baseRequest, request, response)
+        } finally {
+          AuthenticationFilter.HTTP_CLIENT_USER_NAME.remove()
+          AuthenticationFilter.HTTP_CLIENT_IP_ADDRESS.remove()
+        }
+      }
+    }
+    handlerWrapper.setHandler(handler)
+    rootHandler.addHandler(handlerWrapper)
     if (!handler.isStarted) handler.start()
+    if (!handlerWrapper.isStarted) handlerWrapper.start()
   }
 
   def addStaticHandler(

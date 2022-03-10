@@ -94,6 +94,16 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       assert(error1.getMessage.contains("See more: "))
       assert(!error1.getMessage.contains(msg), "stack trace shall be truncated")
     }
+
+    val pb3 =
+      new SparkProcessBuilder("kentyao", conf.set("spark.kerberos.principal", testPrincipal))
+    pb3.start
+    eventually(timeout(90.seconds), interval(500.milliseconds)) {
+      val error1 = pb3.getError
+      assert(!error1.getMessage.contains("Failed to detect the root cause"))
+      assert(error1.getMessage.contains("See more: "))
+      assert(error1.getMessage.contains("Exception in thread"))
+    }
   }
 
   test("proxy user or keytab") {
