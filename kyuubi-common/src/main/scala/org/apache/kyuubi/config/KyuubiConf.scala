@@ -39,7 +39,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   private def loadFromMap(props: Map[String, String] = Utils.getSystemProperties): KyuubiConf = {
-    for ((key, value) <- props ) {
+    for ((key, value) <- props) {
       set(key, value)
     }
     this
