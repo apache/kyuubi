@@ -102,4 +102,6 @@ if [ $silent -eq 0 ]; then
   echo "TRINO_ENGINE_HOME: ${TRINO_ENGINE_HOME}"
 
   echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
+
+  echo "YARN_CONF_DIR: ${YARN_CONF_DIR}"
 fi
