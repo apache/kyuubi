@@ -20,6 +20,9 @@ package org.apache.kyuubi
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.security.PrivilegedExceptionAction
+import java.util.Base64
+import javax.security.sasl.AuthenticationException
 
 import scala.io.{Codec, Source}
 import scala.util.control.NonFatal
@@ -27,6 +30,7 @@ import scala.util.control.NonFatal
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
+import org.ietf.jgss.{GSSContext, GSSException, GSSManager, GSSName}
 import org.scalatest.time.SpanSugar._
 
 trait KerberizedTestHelper extends KyuubiFunSuite {
@@ -54,6 +58,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   private val keytabFile = new File(baseDir, "kyuubi-test.keytab")
   protected val testKeytab: String = keytabFile.getAbsolutePath
   protected var testPrincipal: String = _
+  protected var testSpnegoPrincipal: String = _
 
   override def beforeAll(): Unit = {
     eventually(timeout(60.seconds), interval(1.second)) {
@@ -71,10 +76,13 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
       }
     }
     val tempTestPrincipal = s"client/$hostName"
-    kdc.createPrincipal(keytabFile, tempTestPrincipal)
+    val tempSpnegoPrincipal = s"HTTP/$hostName"
+    kdc.createPrincipal(keytabFile, tempTestPrincipal, tempSpnegoPrincipal)
     rewriteKrb5Conf()
     testPrincipal = tempTestPrincipal + "@" + kdc.getRealm
+    testSpnegoPrincipal = tempSpnegoPrincipal + "@" + kdc.getRealm
     info(s"KerberizedTest Principal: $testPrincipal")
+    info(s"KerberizedTest SPNEGO Principal: $testSpnegoPrincipal")
     info(s"KerberizedTest Keytab: $testKeytab")
     super.beforeAll()
   }
@@ -147,5 +155,42 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
       UserGroupInformation.setConfiguration(conf)
       assert(!UserGroupInformation.isSecurityEnabled)
     }
+  }
+
+  /**
+   * Generate SPNEGO challenge request token.
+   * Copy from Apache Hadoop YarnClientUtils::generateToken
+   *
+   * @param server - hostname to contact
+   * @return SPNEGO token challenge
+   */
+  def generateToken(server: String): String = {
+    val currentUser = UserGroupInformation.getCurrentUser
+    currentUser.doAs(new PrivilegedExceptionAction[String] {
+      override def run(): String =
+        try {
+          val manager = GSSManager.getInstance()
+          val serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE)
+          val gssContext = manager.createContext(
+            serverName.canonicalize(null),
+            null,
+            null,
+            GSSContext.DEFAULT_LIFETIME)
+          // Create a GSSContext for authentication with the service.
+          // We're passing client credentials as null since we want them to
+          // be read from the Subject.
+          // We're passing Oid as null to use the default.
+          gssContext.requestMutualAuth(true)
+          gssContext.requestCredDeleg(true)
+          // Establish context
+          val inToken = Array.empty[Byte]
+          val outToken = gssContext.initSecContext(inToken, 0, inToken.length)
+          gssContext.dispose()
+          new String(Base64.getEncoder.encode(outToken), StandardCharsets.UTF_8)
+        } catch {
+          case e: GSSException =>
+            throw new AuthenticationException("Failed to generate token", e)
+        }
+    })
   }
 }
