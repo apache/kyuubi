@@ -26,7 +26,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE, FRONTEND_THRIFT_BINARY_BIND_HOST}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
 import org.apache.kyuubi.service.ServiceUtils
@@ -270,26 +270,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val b1 = new SparkProcessBuilder("test", conf)
     assert(b1.toString.contains(s"--conf spark.files=$testKeytab"))
 
-  }
-
-  test("engine bind on host name or IP with Kyuubi") {
-    val conf = KyuubiConf()
-    conf.set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "kyuubi-example")
-
-    val builder = new SparkProcessBuilder("test", conf)
-    assert(builder.toString.contains("--conf spark.driver.host=kyuubi-example"))
-  }
-
-  test("respect to user set config") {
-    val conf = KyuubiConf()
-    conf.set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "kyuubi-example")
-    conf.set("spark.driver.host", "spark-example")
-
-    val builder = new SparkProcessBuilder("test", conf)
-    assertResult(false) {
-      builder.toString.contains("--conf spark.driver.host=kyuubi-example")
-    }
-    assert(builder.toString.contains("--conf spark.driver.host=spark-example"))
   }
 }
 
