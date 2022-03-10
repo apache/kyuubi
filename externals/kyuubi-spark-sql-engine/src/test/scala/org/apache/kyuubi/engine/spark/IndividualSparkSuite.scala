@@ -120,6 +120,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
         _.getMessage.getFormattedMessage.equals(errorMsg)))
     }
     SparkSession.getActiveSession.map(_.close())
+    SparkSession.getDefaultSession.map(_.close())
   }
 
   private def withSparkJdbcStatement(
