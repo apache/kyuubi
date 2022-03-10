@@ -134,6 +134,23 @@ trait KyuubiFunSuite extends AnyFunSuite
     }
   }
 
+  final def withSystemProperty(properties: Map[String, String])(f: => Unit): Unit = {
+    val originValues = properties.map {
+      case (key, value) =>
+        val originValue = System.getProperty(value)
+        setSystemProperty(key, value)
+        (key, originValue)
+    }
+    try {
+      f
+    } finally {
+      originValues.foreach {
+        case (key, originValue) =>
+          setSystemProperty(key, originValue)
+      }
+    }
+  }
+
   final def withSystemProperty(key: String, value: String)(f: => Unit): Unit = {
     val originValue = System.getProperty(key)
     setSystemProperty(key, value)

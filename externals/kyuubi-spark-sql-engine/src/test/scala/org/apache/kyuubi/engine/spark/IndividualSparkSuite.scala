@@ -85,37 +85,40 @@ class SparkEngineSuites extends KyuubiFunSuite {
   test("test engine submit timeout") {
     val timeout = 180000
     val submitTime = System.currentTimeMillis() - timeout
-    System.setProperty(s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY", String.valueOf(submitTime))
-    System.setProperty(s"spark.${ENGINE_INIT_TIMEOUT.key}", String.valueOf(timeout))
-    SparkSQLEngine.setupConf()
-    SparkSQLEngine.currentEngine = None
-    val e1 = intercept[KyuubiException] {
-      SparkSQLEngine.main(Array.empty)
-    }.getMessage
-    assert(SparkSQLEngine.currentEngine.isEmpty)
-    assert(e1.startsWith("The total engine initialization time"))
+    withSystemProperty(Map(
+      s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY" -> String.valueOf(submitTime),
+      s"spark.${ENGINE_INIT_TIMEOUT.key}" -> String.valueOf(timeout))) {
+      SparkSQLEngine.setupConf()
+      SparkSQLEngine.currentEngine = None
+      val e1 = intercept[KyuubiException] {
+        SparkSQLEngine.main(Array.empty)
+      }.getMessage
+      assert(SparkSQLEngine.currentEngine.isEmpty)
+      assert(e1.startsWith("The total engine initialization time"))
+    }
   }
 
   test("test engine create sparksession timeout") {
     val timeout = 10000
     val submitTime = System.currentTimeMillis()
-    System.setProperty(s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY", String.valueOf(submitTime))
-    System.setProperty(s"spark.${ENGINE_INIT_TIMEOUT.key}", String.valueOf(timeout))
-    System.setProperty(
-      s"spark.${ENGINE_INITIALIZE_SQL.key}",
-      "select 1 where java_method('java.lang.Thread', 'sleep', 60000L) is null")
-    SparkSQLEngine.setupConf()
-    SparkSQLEngine.currentEngine = None
-    val logAppender = new LogAppender("test createSpark timeout")
-    withLogAppender(logAppender) {
-      SparkSQLEngine.main(Array.empty)
+    withSystemProperty(Map(
+      s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY" -> String.valueOf(submitTime),
+      s"spark.${ENGINE_INIT_TIMEOUT.key}" -> String.valueOf(timeout),
+      s"spark.${ENGINE_INITIALIZE_SQL.key}" ->
+        "select 1 where java_method('java.lang.Thread', 'sleep', 60000L) is null")) {
+      SparkSQLEngine.setupConf()
+      SparkSQLEngine.currentEngine = None
+      val logAppender = new LogAppender("test createSpark timeout")
+      withLogAppender(logAppender) {
+        SparkSQLEngine.main(Array.empty)
+      }
+      assert(SparkSQLEngine.currentEngine.isEmpty)
+      val errorMsg = s"The engine initialization time exceeds" +
+        s" `kyuubi.session.engine.initialize.timeout` ($timeout ms)" +
+        s" and submitted at $submitTime."
+      assert(logAppender.loggingEvents.exists(
+        _.getMessage.getFormattedMessage.equals(errorMsg)))
     }
-    assert(SparkSQLEngine.currentEngine.isEmpty)
-    val errorMsg = s"The engine initialization time exceeds" +
-      s" `kyuubi.session.engine.initialize.timeout` ($timeout ms)" +
-      s" and submitted at $submitTime."
-    assert(logAppender.loggingEvents.exists(
-      _.getMessage.getFormattedMessage.equals(errorMsg)))
   }
 
   private def withSparkJdbcStatement(
