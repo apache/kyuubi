@@ -119,6 +119,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
       assert(logAppender.loggingEvents.exists(
         _.getMessage.getFormattedMessage.equals(errorMsg)))
     }
+    SparkSession.getActiveSession.map(_.close())
   }
 
   private def withSparkJdbcStatement(
