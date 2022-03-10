@@ -73,6 +73,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # - KYUUBI_WORK_DIR_ROOT    Root directory for launching sql engine applications.
 #                           (Default: $KYUUBI_HOME/work)
 # - HADOOP_CONF_DIR         Directory containing the Hadoop / YARN configuration to use.
+# - YARN_CONF_DIR           Directory containing the YARN configuration to use.
 #
 # - SPARK_HOME              Spark distribution which you would like to use in Kyuubi.
 # - SPARK_CONF_DIR          Optional directory where the Spark configuration lives.
@@ -85,6 +86,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
 # export SPARK_HOME=/opt/spark
 # export HADOOP_CONF_DIR=/usr/ndp/current/mapreduce_client/conf
+# export YARN_CONF_DIR=/usr/ndp/current/yarn/conf
 # export KYUUBI_JAVA_OPTS="-Xmx10g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark -XX:MaxDirectMemorySize=1024m  -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:./logs/kyuubi-server-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=5M -XX:NewRatio=3 -XX:MetaspaceSize=512m"
 # export KYUUBI_BEELINE_OPTS="-Xmx2g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark"
 ```
