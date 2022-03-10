@@ -73,7 +73,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # - KYUUBI_WORK_DIR_ROOT    Root directory for launching sql engine applications.
 #                           (Default: $KYUUBI_HOME/work)
 # - HADOOP_CONF_DIR         Directory containing the Hadoop / YARN configuration to use.
-# - YARN_CONF_DIR         Directory containing the YARN configuration to use.
+# - YARN_CONF_DIR           Directory containing the YARN configuration to use.
 #
 # - SPARK_HOME              Spark distribution which you would like to use in Kyuubi.
 # - SPARK_CONF_DIR          Optional directory where the Spark configuration lives.
