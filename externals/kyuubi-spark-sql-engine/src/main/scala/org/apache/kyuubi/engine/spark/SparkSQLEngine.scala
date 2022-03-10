@@ -18,10 +18,9 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.{CountDownLatch, Executors}
 
-import scala.concurrent.{Await, Future, TimeoutException}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -85,6 +84,9 @@ object SparkSQLEngine extends Logging {
   private lazy val user = currentUser
 
   private val countDownLatch = new CountDownLatch(1)
+
+  implicit private val ec: ExecutionContext =
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
 
   SignalRegister.registerLogger(logger)
   setupConf()
