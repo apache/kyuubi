@@ -43,6 +43,7 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     val conf = KyuubiConf().loadFileDefaults()
     assert(conf.getOption("kyuubi.yes").get === "yes")
     assert(conf.getOption("spark.kyuubi.yes").get === "no")
+    assert(conf.getOption("flink.jobmanager.rpc.address").get === "localhost")
   }
 
   test("set and unset conf") {
