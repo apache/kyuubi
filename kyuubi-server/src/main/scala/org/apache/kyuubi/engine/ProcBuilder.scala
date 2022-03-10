@@ -123,14 +123,14 @@ trait ProcBuilder {
         val maxErrorSize = conf.get(KyuubiConf.ENGINE_ERROR_MAX_SIZE)
         while (true) {
           if (reader.ready()) {
-            var line: String = reader.readLine
-            if (containsIgnoreCase(line, "Exception:") &&
+            var line: String = reader.readLine.trim
+            if (containsException(line) &&
               !line.contains("at ") && !line.startsWith("Caused by:")) {
               val sb = new StringBuilder(line)
               error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
-              line = reader.readLine()
+              line = reader.readLine().trim
               while (sb.length < maxErrorSize && line != null &&
-                (containsIgnoreCase(line, "Exception:") ||
+                (containsException(line) ||
                   line.startsWith("\tat ") ||
                   line.startsWith("Caused by: "))) {
                 sb.append("\n" + line)
@@ -201,6 +201,9 @@ trait ProcBuilder {
       case other => other
     }
   }
+
+  private def containsException(log: String): Boolean =
+    containsIgnoreCase(log, "Exception:") || containsIgnoreCase(log, "Exception in thread")
 }
 
 object ProcBuilder extends Logging {
