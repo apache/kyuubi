@@ -44,8 +44,8 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(conf.getOption("kyuubi.yes").get === "yes")
     assert(conf.getOption("spark.kyuubi.yes").get === "no")
     assert(conf.getOption("flink.kyuubi.yes").get === "no")
-    assert(conf.getOption("hive.cli.print.header").get === "true")
-    assert(conf.getOption("hadoop.tmp.dir").get === "/tmp/hadoop")
+    assert(conf.getOption("hive.kyuubi.yes").get === "no")
+    assert(conf.getOption("hadoop.kyuubi.yes").get === "no")
     assert(conf.getOption("trino.kyuubi.yes").get === "no")
   }
 
