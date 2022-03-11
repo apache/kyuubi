@@ -655,7 +655,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         // Raw socket connection (non-sasl)
         transport = socketTransport;
       }
-    } catch (SaslException | TTransportException e) {
+    } catch (SaslException e) {
       throw new SQLException(
           "Could not create secure connection to " + jdbcUriString + ": " + e.getMessage(),
           " 08S01",

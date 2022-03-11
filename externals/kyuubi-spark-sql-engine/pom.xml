@@ -191,9 +191,6 @@
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
-                            <include>org.apache.hive:hive-service-rpc</include>
-                            <include>org.apache.thrift:libfb303</include>
-                            <include>org.apache.thrift:libthrift</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -202,20 +199,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>
                             <includes>
                                 <include>org.apache.curator.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
-                            <includes>
-                                <include>org.apache.thrift.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.hive.service.rpc</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc</shadedPattern>
-                            <includes>
-                                <include>org.apache.hive.service.rpc.**</include>
                             </includes>
                         </relocation>
                     </relocations>
