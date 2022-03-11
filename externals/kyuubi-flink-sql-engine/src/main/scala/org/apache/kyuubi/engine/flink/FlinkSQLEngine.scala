@@ -25,7 +25,7 @@ import java.util.concurrent.CountDownLatch
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.flink.client.cli.{CliFrontend, CustomCommandLine, DefaultCLI}
+import org.apache.flink.client.cli.{CliFrontend, CustomCommandLine, DefaultCLI, GenericCLI}
 import org.apache.flink.configuration.DeploymentOptions
 import org.apache.flink.configuration.GlobalConfiguration
 import org.apache.flink.table.client.SqlClientException
@@ -103,7 +103,7 @@ object FlinkSQLEngine extends Logging {
       val engineContext = new DefaultContext(
         dependencies.asJava,
         flinkConf,
-        List[CustomCommandLine](new DefaultCLI).asJava)
+        List[CustomCommandLine](new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava)
 
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 

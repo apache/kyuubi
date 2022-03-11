@@ -56,10 +56,14 @@ else
   echo -e "\nFLINK_SQL_ENGINE_JAR $FLINK_SQL_ENGINE_JAR"
   _FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS=$(find $FLINK_SQL_ENGINE_LIB_DIR -regex '.*/hadoop-client-.*\.jar$' | tr '\n' ':')
 
-  echo -e "\n_FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS $_FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS"
+
+  FLINK_HADOOP_CLASSPATH="${_FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS%:}:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
 
   FLINK_HADOOP_CLASSPATH="${_FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS%:}"
   echo -e "\nFLINK_HADOOP_CLASSPATH $FLINK_HADOOP_CLASSPATH"
+
+
+
 
   log_file="unused.log"
   log4j2_conf_file="file:$FLINK_CONF_DIR/log4j-session.properties" # which send all logs to console
