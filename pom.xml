@@ -534,7 +534,7 @@
             <!--
               because of THRIFT-4805, we don't upgrade to libthrift:0.12.0,
               because of THRIFT-5274, we don't upgrade to libthrift:0.13.0,
-              so just keep hive-service-rpc:2.3.9 transitive dependency libthrift:0.9.3
+              so just keep libthrift:0.9.3
             -->
             <dependency>
                 <groupId>org.apache.thrift</groupId>
@@ -566,23 +566,7 @@
                 <version>${hive.service.rpc.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>commons-codec</groupId>
-                        <artifactId>commons-codec</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-cli</groupId>
-                        <artifactId>commons-cli</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>tomcat</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
+                        <groupId>*</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
