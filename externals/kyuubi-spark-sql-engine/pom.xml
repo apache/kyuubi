@@ -212,6 +212,13 @@
                             </includes>
                         </relocation>
                         <relocation>
+                            <pattern>com.facebook.fb303</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.facebook.fb303</shadedPattern>
+                            <includes>
+                                <include>com.facebook.fb303.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
                             <pattern>org.apache.hive.service.rpc</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc</shadedPattern>
                             <includes>
