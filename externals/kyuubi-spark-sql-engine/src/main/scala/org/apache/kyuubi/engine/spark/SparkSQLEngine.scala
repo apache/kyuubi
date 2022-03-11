@@ -125,7 +125,7 @@ object SparkSQLEngine extends Logging {
     }
   }
 
-  def createSpark(): SparkSession = {
+  private def createSpark(): SparkSession = {
     val session = SparkSession.builder.config(_sparkConf).getOrCreate
     (kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
       .foreach { sqlStr =>
@@ -138,6 +138,22 @@ object SparkSQLEngine extends Logging {
         session.sparkContext.clearJobGroup()
       }
     session
+  }
+
+  def createSparkWithFuture(timeout: Long): SparkSession = {
+    implicit val ec: ExecutionContextExecutorService =
+      ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))
+    try {
+      val sparkFuture = Future {
+        createSpark()
+      }
+      val spark = Await.result(sparkFuture, timeout.millisecond)
+      SparkSession.setDefaultSession(spark)
+      SparkSession.setActiveSession(spark)
+      spark
+    } finally {
+      ec.shutdown()
+    }
   }
 
   def startEngine(spark: SparkSession): Unit = {
@@ -197,14 +213,9 @@ object SparkSQLEngine extends Logging {
         s" and submitted at $submitTime.")
     } else {
       var spark: SparkSession = null
-      implicit val ec: ExecutionContextExecutorService =
-        ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))
       try {
-        val sparkFuture = Future {
-          createSpark()
-        }
         val timeout = initTimeout - totalInitTime
-        spark = Await.result(sparkFuture, timeout.millisecond)
+        spark = createSparkWithFuture(timeout)
         try {
           startEngine(spark)
           // blocking main thread
@@ -229,7 +240,6 @@ object SparkSQLEngine extends Logging {
             timeout)
         case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
       } finally {
-        ec.shutdown()
         if (spark != null) {
           spark.stop()
         }
