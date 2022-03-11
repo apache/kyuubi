@@ -94,6 +94,7 @@ jobs:
             **/target/unit-tests.log
             **/kyuubi-flink-sql-engine.log*
             **/kyuubi-spark-sql-engine.log*
+            **/kyuubi-trino-sql-engine.log*
             **/target/scalastyle-output.xml
 
   tpcds:
