@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark
 import java.time.Instant
 import java.util.concurrent.{CountDownLatch, Executors}
 
-import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutorService, Future, TimeoutException}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -84,9 +84,6 @@ object SparkSQLEngine extends Logging {
   private lazy val user = currentUser
 
   private val countDownLatch = new CountDownLatch(1)
-
-  implicit private val ec: ExecutionContext =
-    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
 
   SignalRegister.registerLogger(logger)
   setupConf()
@@ -200,6 +197,8 @@ object SparkSQLEngine extends Logging {
         s" and submitted at $submitTime.")
     } else {
       var spark: SparkSession = null
+      implicit val ec: ExecutionContextExecutorService =
+        ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))
       try {
         val sparkFuture = Future {
           createSpark()
@@ -230,6 +229,7 @@ object SparkSQLEngine extends Logging {
             timeout)
         case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
       } finally {
+        ec.shutdown()
         if (spark != null) {
           spark.stop()
         }
