@@ -37,7 +37,7 @@ FLINK_SQL_ENGINE_HOME="$(cd `dirname $0`/..; pwd)"
 if [[ "$FLINK_SQL_ENGINE_HOME" == "$KYUUBI_HOME/externals/engines/flink" ]]; then
   FLINK_SQL_ENGINE_LIB_DIR="$FLINK_SQL_ENGINE_HOME/lib"
   FLINK_SQL_ENGINE_JAR=$(find "$FLINK_SQL_ENGINE_LIB_DIR" -regex ".*/kyuubi-flink-sql-engine_.*\.jar")
-  FLINK_HADOOP_CLASSPATH="$INTERNAL_HADOOP_CLASSPATHS:$HADOOP_CLASSPATH"
+  FLINK_HADOOP_CLASSPATH="$INTERNAL_HADOOP_CLASSPATHS"
   log_file="$KYUUBI_LOG_DIR/kyuubi-flink-sql-engine-$FLINK_IDENT_STRING-$HOSTNAME.log"
   log4j2_conf_file="file:$FLINK_CONF_DIR/log4j.properties"
   logback_conf_file="file:$FLINK_CONF_DIR/logback.xml"
@@ -46,7 +46,7 @@ else
   FLINK_SQL_ENGINE_LIB_DIR="$FLINK_SQL_ENGINE_HOME/target"
   FLINK_SQL_ENGINE_JAR=$(find "$FLINK_SQL_ENGINE_LIB_DIR" -regex '.*/kyuubi-flink-sql-engine_.*\.jar$' | grep -v '\-javadoc.jar$' | grep -v '\-tests.jar$')
   _FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS=$(find $FLINK_SQL_ENGINE_LIB_DIR -regex '.*/hadoop-client-.*\.jar$' | tr '\n' ':')
-  FLINK_HADOOP_CLASSPATH="${_FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS%:}:$HADOOP_CLASSPATH"
+  FLINK_HADOOP_CLASSPATH="${_FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS%:}:${HADOOP_CLASSPATH}:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
   log_file="unused.log"
   log4j2_conf_file="file:$FLINK_CONF_DIR/log4j-session.properties" # which send all logs to console
   logback_conf_file="unused.xml"
