@@ -39,9 +39,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   private def loadFromMap(props: Map[String, String] = Utils.getSystemProperties): KyuubiConf = {
-    for ((key, value) <- props) {
-      set(key, value)
-    }
+    props
+      .withFilter { case (key, _) => !key.startsWith("java.") && !key.startsWith("sun.") }
+      .foreach { case (key, value) => set(key, value) }
     this
   }
 
