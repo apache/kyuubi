@@ -898,6 +898,8 @@ object KyuubiConf {
       " all the capacity of the Apache Spark. Note, it's a default engine type.</li>" +
       " <li>FLINK_SQL: specify this engine type will launch a Flink engine which can provide" +
       " all the capacity of the Apache Flink.</li>" +
+      " <li>TRINO: specify this engine type will launch a Trino engine which can provide" +
+      " all the capacity of the Trino.</li>" +
       "</ul>")
     .version("1.4.0")
     .stringConf
