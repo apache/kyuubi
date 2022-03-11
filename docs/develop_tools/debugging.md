@@ -46,6 +46,8 @@ In the IDE, you set the corresponding parameters(host&port) in debug configurati
 
 ## Debugging Apps
 
+### Spark Engine
+
 - Spark Driver
 
 ```bash
@@ -53,6 +55,39 @@ spark.driver.extraJavaOptions   -agentlib:jdwp=transport=dt_socket,server=y,susp
 ```
 
 - Spark Executor
+
 ```bash
 spark.executor.extraJavaOptions   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
+```
+
+### Flink Engine
+
+- Flink Processes
+
+```bash
+env.java.opts   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
+```
+
+- Flink JobManager
+
+```bash
+env.java.opts.jobmanager   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
+```
+
+- Flink TaskManager
+
+```bash
+env.java.opts.taskmanager   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
+```
+
+- Flink HistoryServer
+
+```bash
+env.java.opts.historyserver   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
+```
+
+- Flink Client
+
+```bash
+env.java.opts.client   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
 ```
