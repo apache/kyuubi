@@ -43,10 +43,6 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     val conf = KyuubiConf().loadFileDefaults()
     assert(conf.getOption("kyuubi.yes").get === "yes")
     assert(conf.getOption("spark.kyuubi.yes").get === "no")
-    assert(conf.getOption("flink.kyuubi.yes").get === "no")
-    assert(conf.getOption("hive.kyuubi.yes").get === "no")
-    assert(conf.getOption("hadoop.kyuubi.yes").get === "no")
-    assert(conf.getOption("trino.kyuubi.yes").get === "no")
   }
 
   test("set and unset conf") {
