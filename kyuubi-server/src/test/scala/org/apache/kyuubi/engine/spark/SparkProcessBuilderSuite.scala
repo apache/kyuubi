@@ -242,16 +242,17 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
   test("kill application") {
     val pb1 = new FakeSparkProcessBuilder(conf) {
       override protected def env: Map[String, String] = Map()
+      override def getYarnClient: YarnClient = mock(classOf[YarnClient])
     }
-    pb1.yarnClient = mock(classOf[YarnClient])
+
     val exit1 = pb1.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
       "Application report for application_1593587619692_20149 (state: ACCEPTED)")
     assert(exit1.contains("Killed Application application_1593587619692_20149 successfully."))
 
     val pb2 = new FakeSparkProcessBuilder(conf) {
       override protected def env: Map[String, String] = Map()
+      override def getYarnClient: YarnClient = null
     }
-    pb2.yarnClient = null
     val exit2 = pb2.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
       "Application report for application_1593587619692_20149 (state: ACCEPTED)")
     assert(exit2.contains("Failed to kill Application application_1593587619692_20149")
@@ -259,10 +260,9 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
 
     val pb3 = new FakeSparkProcessBuilder(conf) {
       override protected def env: Map[String, String] = Map()
+      override def getYarnClient: YarnClient = mock(classOf[YarnClient])
     }
-    pb3.yarnClient = mock(classOf[YarnClient])
     val exit3 = pb3.killApplication("unknow")
-
     assert(exit3.equals(""))
   }
 

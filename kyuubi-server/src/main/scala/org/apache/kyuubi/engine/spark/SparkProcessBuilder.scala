@@ -45,7 +45,9 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
-  var yarnClient = YarnClient.createYarnClient
+  val yarnClient = getYarnClient
+
+  def getYarnClient: YarnClient = YarnClient.createYarnClient
 
   override protected val executable: String = {
     val sparkHomeOpt = env.get("SPARK_HOME").orElse {
@@ -207,7 +209,8 @@ class SparkProcessBuilder(
           s"Killed Application $appId successfully."
         } catch {
           case e: Throwable =>
-            s"Failed to kill Application $appId, Caused by ${e.getMessage}."
+            s"Failed to kill Application $appId, please kill it manually." +
+              s" Caused by ${e.getMessage}."
         } finally {
           if (yarnClient != null) {
             yarnClient.stop()
