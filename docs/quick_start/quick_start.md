@@ -36,49 +36,51 @@ You can get the most recent stable release of Apache Kyuubi here:
 ## Requirements
 
 These are essential components required for Kyuubi to startup.
-For quick start deployment, the only thing you need is `JAVA_HOME` and `SPARK_HOME` being correctly set.
+For quick start deployment, the only thing you need is `JAVA_HOME` being correctly set.
 The Kyuubi release package you downloaded or built contains the rest prerequisites inside already.
 
 Components| Role | Optional | Version | Remarks
 --- | --- | --- | --- | ---
 Java | Java<br>Runtime<br>Environment | Required | Java 8/11 | Kyuubi is pre-built with Java 8
-Spark | Distributed<br>SQL<br>Engine | Required | 3.0.0 and above | By default Kyuubi binary release is delivered without<br> a Spark tarball.
+Spark | Distributed<br>SQL<br>Engine | Optional | 3.0.0 and above | By default Kyuubi binary release is delivered without<br> a Spark tarball.
+Flink | Distributed<br>SQL<br>Engine | Optional | 1.14.0 and above | By default Kyuubi binary release is delivered without<br> a Flink tarball.
 HDFS | Distributed<br>File<br>System |  Optional | referenced<br>by<br>Spark | Hadoop Distributed File System is a <br>part of Hadoop framework, used to<br> store and process the datasets.<br> You can interact with any<br> Spark-compatible versions of HDFS.
 Hive | Metastore | Optional | referenced<br>by<br>Spark | Hive Metastore for Spark SQL to connect
 Zookeeper | Service<br>Discovery | Optional | Any<br>zookeeper<br>ensemble<br>compatible<br>with<br>curator(2.12.0) | By default, Kyuubi provides a<br> embedded Zookeeper server inside for<br> non-production use.
 
-Additionally, if you want to work with other Spark compatible systems or plugins, you only need to take care of them as using them with regular Spark applications.
-For example, you can run Spark SQL engines created by the Kyuubi on any cluster manager, including YARN, Kubernetes, Mesos, e.t.c...
-Or, you can manipulate data from different data sources with the Spark Datasource API, e.g. Delta Lake, Apache Hudi, Apache Iceberg, Apache Kudu and e.t.c...
+Additionally, if you want to work with other Spark/Flink compatible systems or plugins, you only need to take care of them as using them with regular Spark/Flink applications.
+For example, you can run Spark/Flink SQL engines created by the Kyuubi on any cluster manager, including YARN, Kubernetes, Mesos, e.t.c...
+Or, you can manipulate data from different data sources with the Spark Datasource/Flink Table API, e.g. Delta Lake, Apache Hudi, Apache Iceberg, Apache Kudu and e.t.c...
 
 ## Installation
 
 To install Kyuubi, you need to unpack the tarball. For example,
 
 ```bash
-tar zxf apache-kyuubi-1.3.1-incubating-bin.tgz
+tar zxf apache-kyuubi-1.5.0-incubating-bin.tgz
 ```
 
-This will result in the creation of a subdirectory named `apache-kyuubi-1.3.1-incubating-bin` shown below,
+This will result in the creation of a subdirectory named `apache-kyuubi-1.5.0-incubating-bin` shown below,
 
 ```bash
-apache-kyuubi-1.3.1-incubating-bin
+apache-kyuubi-1.5.0-incubating-bin
 ├── DISCLAIMER
 ├── LICENSE
 ├── NOTICE
 ├── RELEASE
+├── beeline-jars
 ├── bin
 ├── conf
 |   ├── kyuubi-defaults.conf.template
 │   ├── kyuubi-env.sh.template
-│   └── log4j.properties.template
+│   └── log4j2.properties.template
 ├── docker
 │   ├── Dockerfile
+│   ├── helm
 │   ├── kyuubi-configmap.yaml
+│   ├── kyuubi-deployment.yaml
 │   ├── kyuubi-pod.yaml
 │   └── kyuubi-service.yaml
-├── extension
-│  └── kyuubi-extension-spark-3-1_2.12-1.3.1-incubating.jar
 ├── externals
 │  └── engines
 ├── jars
@@ -97,7 +99,7 @@ From top to bottom are:
 - bin: the entry of the Kyuubi server with `kyuubi` as the startup script.
 - conf: all the defaults used by Kyuubi Server itself or creating a session with Spark applications.
 - externals
-  - engines: contains all kinds of SQL engines that we support, e.g. Apache Spark, Apache Flink(coming soon).
+  - engines: contains all kinds of SQL engines that we support, e.g. Apache Spark, Apache Flink, Trino(coming soon).
 - licenses: a bunch of licenses included.
 - jars: packages needed by the Kyuubi server.
 - logs: where the logs of the Kyuubi server locates.
@@ -106,7 +108,11 @@ From top to bottom are:
 
 ## Running Kyuubi
 
-As mentioned above, for a quick start deployment, then only you need to be sure is that your java runtime environment and `SPARK_HOME` are correct.
+As mentioned above, for a quick start deployment, then only you need to be sure is that the below environments are correct:
+ 
+- Java runtime environment 
+- `SPARK_HOME` for the Spark engine
+- `FLINK_HOME` and `kyuubi.engine.type` in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` for the Flink engine.
 
 ### Setup JAVA
 
@@ -132,7 +138,9 @@ Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11.0.5+10-LTS, mixed mode)
 The recommended place to set `JAVA_HOME` is `$KYUUBI_HOME/conf/kyuubi-env.sh`, as the ways above are too flaky.
 The `JAVA_HOME` in `$KYUUBI_HOME/conf/kyuubi-env.sh` will take others' precedence.
 
-### Setup Spark
+### Spark Engine 
+
+#### Setup Spark
 
 Similar to `JAVA_HOME`, you can also set `SPARK_HOME` in different ways. However, we recommend setting it in `$KYUUBI_HOME/conf/kyuubi-env.sh` too.
 
@@ -140,6 +148,26 @@ For example,
 
 ```bash
 SPARK_HOME=~/Downloads/spark-3.2.0-bin-hadoop3.2
+```
+
+### Flink Engine
+
+#### Setup Flink
+
+Similar to `JAVA_HOME`, you can also set `FLINK_HOME` in different ways. However, we recommend setting it in `$KYUUBI_HOME/conf/kyuubi-env.sh` too.
+
+For example,
+
+```bash
+FLINK_HOME=/Downloads/flink-1.14.3
+```
+
+#### Setup Kyuubi Flink Configration
+
+To enable the Flink SQL engine, the `kyuubi.engine.type` in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` need to be set as `FLINK_SQL`.
+
+```bash
+kyuubi.engine.type FLINK_SQL
 ```
 
 ### Starting Kyuubi
@@ -194,7 +222,7 @@ bin/kyuubi run
 
 ## Using Hive Beeline
 
-Kyuubi server is compatible with Apache Hive beeline, so you can use `$SPARK_HOME/bin/beeline` for testing.
+Kyuubi server is compatible with Apache Hive beeline, so you can use `$KYUUBI_HOME/bin/beeline` for testing.
 
 ### Opening a Connection
 
@@ -212,7 +240,7 @@ Beeline version 2.3.7 by Apache Hive
 
 In this case, the session will create for the user named 'anonymous'.
 
-Kyuubi will create a Spark SQL engine application using `kyuubi-spark-sql-engine_2.12-<version>.jar`.
+Kyuubi will create a Spark/Flink SQL engine application using `kyuubi-<engine>-sql-engine_2.12-<version>.jar`.
 It will cost awhile for the application to be ready before fully establishing the session.
 Otherwise, an existing application will be reused, and the time cost here is negligible.
 
@@ -224,16 +252,27 @@ bin/beeline -u 'jdbc:hive2://localhost:10009/' -n kentyao
 
 The formerly created Spark application for user 'anonymous' will not be reused in this case, while a brand new application will be submitted for user 'kentyao' instead.
 
-Then, you can see 3 processes running in your local environment, including one `KyuubiServer` instance and 2 `SparkSubmit` instances as the SQL engines.
+Then, you can see two processes running in your local environment, including one `KyuubiServer` instance, one `SparkSubmit` or `FlinkSQLEngine` instances as the SQL engines.
+
+- Spark
 
 ```
 75730 Jps
 70843 KyuubiServer
 72566 SparkSubmit
-75356 SparkSubmit
+```
+
+- Flink
+
+```
+43484 Jps
+43194 KyuubiServer
+43260 FlinkSQLEngine
 ```
 
 ### Execute Statements
+
+#### Execute Spark SQL Statements
 
 If the beeline session is successfully connected, then you can run any query supported by Spark SQL now. For example,
 
@@ -302,6 +341,88 @@ Additionally, some useful information about the background Spark SQL application
 For example, you can get the Spark web UI from the log for debugging or tuning.
 
 ![](../imgs/spark_jobs_page.png)
+
+#### Execute Flink SQL Statements
+
+If the beeline session is successfully connected, then you can run any query supported by Flink SQL now. For example,
+
+```logtalk
+0: jdbc:hive2://127.0.0.1:10009/default> CREATE TABLE T (
+. . . . . . . . . . . . . . . . . . . . . . >     a INT,
+. . . . . . . . . . . . . . . . . . . . . . >     b VARCHAR(10)
+. . . . . . . . . . . . . . . . . . . . . . > ) WITH (
+. . . . . . . . . . . . . . . . . . . . . . >     'connector.type' = 'filesystem',
+. . . . . . . . . . . . . . . . . . . . . . >     'connector.path' = 'file:///tmp/T.csv',
+. . . . . . . . . . . . . . . . . . . . . . >     'format.type' = 'csv',
+. . . . . . . . . . . . . . . . . . . . . . >     'format.derive-schema' = 'true'
+. . . . . . . . . . . . . . . . . . . . . . > );
+16:28:47.164 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing anonymous's query[22a73e39-d9d7-479b-a118-33f9d2a5ad3f]: INITIALIZED_STATE -> PENDING_STATE, statement: CREATE TABLE T(
+a INT,
+b VARCHAR(10)
+) WITH (
+'connector.type' = 'filesystem',
+'connector.path' = 'file:///tmp/T.csv',
+'format.type' = 'csv',
+'format.derive-schema' = 'true'
+)
+16:28:47.187 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing anonymous's query[22a73e39-d9d7-479b-a118-33f9d2a5ad3f]: PENDING_STATE -> RUNNING_STATE, statement: CREATE TABLE T(
+a INT,
+b VARCHAR(10)
+) WITH (
+'connector.type' = 'filesystem',
+'connector.path' = 'file:///tmp/T.csv',
+'format.type' = 'csv',
+'format.derive-schema' = 'true'
+)
+16:28:47.320 INFO org.apache.kyuubi.operation.ExecuteStatement: Query[22a73e39-d9d7-479b-a118-33f9d2a5ad3f] in FINISHED_STATE
+16:28:47.322 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing anonymous's query[22a73e39-d9d7-479b-a118-33f9d2a5ad3f]: RUNNING_STATE -> FINISHED_STATE, statement: CREATE TABLE T(
+a INT,
+b VARCHAR(10)
+) WITH (
+'connector.type' = 'filesystem',
+'connector.path' = 'file:///tmp/T.csv',
+'format.type' = 'csv',
+'format.derive-schema' = 'true'
+), time taken: 0.134 seconds
++---------+
+| result  |
++---------+
+| OK      |
++---------+
+1 row selected (0.341 seconds)
+0: jdbc:hive2://127.0.0.1:10009/default> INSERT INTO T VALUES (1, 'Hi'), (2, 'Hello');
+16:28:52.780 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing anonymous's query[d79abf78-d2ae-468f-87b2-19db1fc6e19a]: INITIALIZED_STATE -> PENDING_STATE, statement: INSERT INTO T VALUES (1, 'Hi'), (2, 'Hello')
+16:28:52.786 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing anonymous's query[d79abf78-d2ae-468f-87b2-19db1fc6e19a]: PENDING_STATE -> RUNNING_STATE, statement: INSERT INTO T VALUES (1, 'Hi'), (2, 'Hello')
+16:28:57.827 INFO org.apache.kyuubi.operation.ExecuteStatement: Query[d79abf78-d2ae-468f-87b2-19db1fc6e19a] in RUNNING_STATE
+16:28:59.836 INFO org.apache.kyuubi.operation.ExecuteStatement: Query[d79abf78-d2ae-468f-87b2-19db1fc6e19a] in FINISHED_STATE
+16:28:59.837 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing anonymous's query[d79abf78-d2ae-468f-87b2-19db1fc6e19a]: RUNNING_STATE -> FINISHED_STATE, statement: INSERT INTO T VALUES (1, 'Hi'), (2, 'Hello'), time taken: 7.05 seconds
++-------------------------------------+
+| default_catalog.default_database.T  |
++-------------------------------------+
+| -1                                  |
++-------------------------------------+
+1 row selected (7.104 seconds)
+0: jdbc:hive2://127.0.0.1:10009/default>
+0: jdbc:hive2://127.0.0.1:10009/default> SELECT * FROM T;
+16:29:08.092 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing anonymous's query[af5660c0-fcc4-4f80-b3fd-c4a799faf33f]: INITIALIZED_STATE -> PENDING_STATE, statement: SELECT * FROM T
+16:29:08.101 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing anonymous's query[af5660c0-fcc4-4f80-b3fd-c4a799faf33f]: PENDING_STATE -> RUNNING_STATE, statement: SELECT * FROM T
+16:29:12.519 INFO org.apache.kyuubi.operation.ExecuteStatement: Query[af5660c0-fcc4-4f80-b3fd-c4a799faf33f] in FINISHED_STATE
+16:29:12.520 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing anonymous's query[af5660c0-fcc4-4f80-b3fd-c4a799faf33f]: RUNNING_STATE -> FINISHED_STATE, statement: SELECT * FROM T, time taken: 4.419 seconds
++----+--------+
+| a  |   b    |
++----+--------+
+| 1  | Hi     |
+| 2  | Hello  |
++----+--------+
+2 rows selected (4.466 seconds)
+```
+
+As shown in the above case, you can retrieve all the operation logs, the result schema, and the result to your client-side in the beeline console.
+
+Additionally, some useful information about the background Flink SQL application associated with this connection is also printed in the operation log.
+For example, you can get the Flink web UI from the log for debugging or tuning.
+
+![](../imgs/flink/flink_jobs_page.png)
 
 ### Closing a Connection
 
