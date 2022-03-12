@@ -147,6 +147,26 @@ Different session users have different folders to group all live and historical 
 Each engine will have one and only engine log.
 When using `cluster` deploy mode, the local engine logs only contain very little information, the main parts of engine logs are on the remote driver side, e.g. for YARN cluster, they are in ApplicationMasters' log.
 
+## Logs of Flink SQL Engine
+
+Flink SQL Engine is one type of Kyuubi Engines and also a typical Flink application.
+Thus, its logs mainly contain the logs of a Flink JobManager and TaskManager.
+Meanwhile, it also includes how all the services of an engine start/stop, how does it response the incoming calls from Kyuubi servers, etc.
+
+In general, when an exception occurs, we are able to find more information and clues in the engine's logs.
+
+#### Configuring Engine Logging
+
+Please refer to Apache Flink online documentation -[Configuring Logging](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/advanced/logging) for instructions.
+
+#### Where to Find the Engine Log
+
+The engine logs locate differently based on the deploy mode and the cluster manager.
+When using local backend or `client` deploy mode for other cluster managers, such as YARN, you can find the whole engine log in `$KYUUBI_WORK_DIR_ROOT/${session username}/kyuubi-flink-sql-engine.log.${num}`.
+Different session users have different folders to group all live and historical engine logs.
+Each engine will have one and only engine log.
+When using `cluster` deploy mode, the local engine logs only contain very little information, the main parts of engine logs are on the remote driver side, e.g. for YARN cluster, they are in ApplicationMasters' log.
+
 ## Operation Logs
 
 Operation log will show how SQL queries are executed, such as query planning, execution, and statistic reports.
