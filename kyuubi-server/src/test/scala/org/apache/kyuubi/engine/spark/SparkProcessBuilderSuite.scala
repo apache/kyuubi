@@ -22,8 +22,6 @@ import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
 
-import scala.reflect.classTag
-
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.scalatest.time.SpanSugar._
 import org.scalatestplus.mockito.MockitoSugar
@@ -244,9 +242,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   test("kill application") {
     val pb1 = new FakeSparkProcessBuilder(conf) {
       override protected def env: Map[String, String] = Map()
-      override def getYarnClient: YarnClient = mock(classTag[YarnClient])
+      override def getYarnClient: YarnClient = mock[YarnClient]
     }
-
     val exit1 = pb1.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
       "Application report for application_1593587619692_20149 (state: ACCEPTED)")
     assert(exit1.contains("Killed Application application_1593587619692_20149 successfully."))
@@ -262,7 +259,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
     val pb3 = new FakeSparkProcessBuilder(conf) {
       override protected def env: Map[String, String] = Map()
-      override def getYarnClient: YarnClient = mock(classTag[YarnClient])
+      override def getYarnClient: YarnClient = mock[YarnClient]
     }
     val exit3 = pb3.killApplication("unknow")
     assert(exit3.equals(""))
