@@ -46,21 +46,35 @@ object RowSet {
   }
 
   def toRowBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
-    val tRows = rows.map { row =>
+    val tRows = new java.util.ArrayList[TRow]()
+    var i = 0
+    val rowSize = rows.length
+    while (i < rowSize) {
+      val row = rows(i)
       val tRow = new TRow()
-      (0 until row.length).map(i => toTColumnValue(i, row, schema, timeZone))
-        .foreach(tRow.addToColVals)
-      tRow
-    }.asJava
+      var j = 0
+      val columnSize = row.length
+      while (j < columnSize) {
+        val columnValue = toTColumnValue(j, row, schema, timeZone)
+        tRow.addToColVals(columnValue)
+        j += 1
+      }
+      i += 1
+      tRows.add(tRow)
+    }
     new TRowSet(0, tRows)
   }
 
   def toColumnBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
-    val size = rows.length
-    val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](size))
-    schema.zipWithIndex.foreach { case (filed, i) =>
-      val tColumn = toTColumn(rows, i, filed.dataType, timeZone)
+    val rowSize = rows.length
+    val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](rowSize))
+    var i = 0
+    val columnSize = schema.length
+    while (i < columnSize) {
+      val field = schema(i)
+      val tColumn = toTColumn(rows, i, field.dataType, timeZone)
       tRowSet.addToColumns(tColumn)
+      i += 1
     }
     tRowSet
   }
