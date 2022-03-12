@@ -171,8 +171,7 @@
               <include>org.apache.curator:curator-framework</include>
               <include>org.apache.curator:curator-recipes</include>\
               <include>org.apache.hive:hive-service-rpc</include>
-              <include>org.apache.thrift:libfb303</include>
-              <include>org.apache.thrift:libthrift</include>
+              <include>org.apache.thrift:*</include>
               <include>org.apache.zookeeper:*</include>
             </includes>
           </artifactSet>
@@ -218,13 +217,6 @@
               <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
               <includes>
                 <include>org.apache.thrift.**</include>
-              </includes>
-            </relocation>
-            <relocation>
-              <pattern>com.facebook.fb303</pattern>
-              <shadedPattern>${kyuubi.shade.packageName}.com.facebook.fb303</shadedPattern>
-              <includes>
-                <include>com.facebook.fb303.**</include>
               </includes>
             </relocation>
             <relocation>
