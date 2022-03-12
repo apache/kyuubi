@@ -136,7 +136,7 @@
         <scalatest.version>3.2.9</scalatest.version>
         <scopt.version>4.0.1</scopt.version>
         <slf4j.version>1.7.35</slf4j.version>
-        <thrift.version>0.9.3</thrift.version>
+        <thrift.version>0.14.0</thrift.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `iceberg.name`, `maven.plugin.scalatest.exclude.tags`
