@@ -22,6 +22,8 @@ import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
 
+import org.apache.hadoop.yarn.client.api.YarnClient
+import org.mockito.Mockito.mock
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
@@ -241,19 +243,26 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val pb1 = new FakeSparkProcessBuilder(conf) {
       override protected def env: Map[String, String] = Map()
     }
+    pb1.yarnClient = mock(classOf[YarnClient])
     val exit1 = pb1.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
       "Application report for application_1593587619692_20149 (state: ACCEPTED)")
-    assert(exit1.contains("KYUUBI_HOME is not set!"))
+    assert(exit1.contains("Killed Application application_1593587619692_20149 successfully."))
 
     val pb2 = new FakeSparkProcessBuilder(conf) {
-      override protected def env: Map[String, String] = Map("KYUUBI_HOME" -> "")
+      override protected def env: Map[String, String] = Map()
     }
+    pb2.yarnClient = null
     val exit2 = pb2.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
       "Application report for application_1593587619692_20149 (state: ACCEPTED)")
-    assert(exit2.contains("application_1593587619692_20149")
-      && !exit2.contains("KYUUBI_HOME is not set!"))
+    assert(exit2.contains("Failed to kill Application application_1593587619692_20149")
+      && exit2.contains("Caused by"))
 
-    val exit3 = pb2.killApplication("unknow")
+    val pb3 = new FakeSparkProcessBuilder(conf) {
+      override protected def env: Map[String, String] = Map()
+    }
+    pb3.yarnClient = mock(classOf[YarnClient])
+    val exit3 = pb3.killApplication("unknow")
+
     assert(exit3.equals(""))
   }
 
