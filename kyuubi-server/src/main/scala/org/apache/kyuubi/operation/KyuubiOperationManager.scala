@@ -17,12 +17,9 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.TimeUnit
-
 import org.apache.hive.service.rpc.thrift.TRowSet
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -33,23 +30,10 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
 
   def this() = this(classOf[KyuubiOperationManager].getSimpleName)
 
-  private var queryTimeout: Option[Long] = None
-
   override def initialize(conf: KyuubiConf): Unit = {
-    queryTimeout = conf.get(OPERATION_QUERY_TIMEOUT).map(TimeUnit.MILLISECONDS.toSeconds)
     super.initialize(conf)
   }
 
-  private def getQueryTimeout(clientQueryTimeout: Long): Long = {
-    // If clientQueryTimeout is smaller than systemQueryTimeout value,
-    // we use the clientQueryTimeout value.
-    queryTimeout match {
-      case Some(systemQueryTimeout) if clientQueryTimeout > 0 =>
-        math.min(systemQueryTimeout, clientQueryTimeout)
-      case Some(systemQueryTimeout) => systemQueryTimeout
-      case None => clientQueryTimeout
-    }
-  }
 
   override def newExecuteStatementOperation(
       session: Session,
@@ -58,7 +42,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val operation =
-      new ExecuteStatement(session, statement, confOverlay, runAsync, getQueryTimeout(queryTimeout))
+      new ExecuteStatement(session, statement, confOverlay, runAsync, queryTimeout)
     addOperation(operation)
   }
 
