@@ -202,6 +202,51 @@
 
 ------------------------------------------------------------------------------------
 
+This product includes code from Apache Hadoop
+
+* org.apache.kyuubi.server.http.authentication.KerberosUtil copied from org.apache.hadoop.security.authentication.util.KerberosUtil
+
+Copyright: 2006 and onwards The Apache Software Foundation
+Home page: https://hadoop.apache.org/
+License: https://www.apache.org/licenses/LICENSE-2.0
+
+------------------------------------------------------------------------------------
+
+This product includes code from Apache Hive
+
+* bin/beeline copied from bin/beeline
+* org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream copied from org.apache.jdbc.hive.logs.InPlaceUpdateStream
+* org.apache.kyuubi.jdbc.hive.ClosedOrCancelledStatementException copied from org.apache.jdbc.hive.ClosedOrCancelledStatementException
+* org.apache.kyuubi.jdbc.hive.KyuubiBaseResultSet copied from org.apache.jdbc.hive.HiveBaseResultSet
+* org.apache.kyuubi.jdbc.hive.KyuubiCallableStatement copied from org.apache.jdbc.hive.HiveCallableStatement
+* org.apache.kyuubi.jdbc.hive.KyuubiConnection copied from org.apache.jdbc.hive.HiveConnection
+* org.apache.kyuubi.jdbc.hive.KyuubiDatabaseMetaData copied from org.apache.jdbc.hive.HiveDatabaseMetaData
+* org.apache.kyuubi.jdbc.hive.KyuubiDataSource copied from org.apache.jdbc.hive.HiveDataSource
+* org.apache.kyuubi.jdbc.hive.KyuubiDriver copied from org.apache.jdbc.hive.HiveDriver
+* org.apache.kyuubi.jdbc.hive.KyuubiMetaDataResultSet copied from org.apache.jdbc.hive.HiveMetaDataResultSet
+* org.apache.kyuubi.jdbc.hive.KyuubiPreparedStatement copied from org.apache.jdbc.hive.HivePreparedStatement
+* org.apache.kyuubi.jdbc.hive.KyuubiQueryResultSet copied from org.apache.jdbc.hive.HiveQueryResultSet
+* org.apache.kyuubi.jdbc.hive.KyuubiResultSetMetaData copied from org.apache.jdbc.hive.HiveResultSetMetaData
+* org.apache.kyuubi.jdbc.hive.KyuubiStatement copied from org.apache.jdbc.hive.HiveStatement
+* org.apache.kyuubi.jdbc.hive.HttpBasicAuthInterceptor copied from org.apache.jdbc.hive.HttpBasicAuthInterceptor
+* org.apache.kyuubi.jdbc.hive.HttpKerberosRequestInterceptor copied from org.apache.jdbc.hive.HttpKerberosRequestInterceptor
+* org.apache.kyuubi.jdbc.hive.HttpRequestInterceptorBase copied from org.apache.jdbc.hive.HttpRequestInterceptorBase
+* org.apache.kyuubi.jdbc.hive.HttpTokenAuthInterceptor copied from org.apache.jdbc.hive.HttpTokenAuthInterceptor
+* org.apache.kyuubi.jdbc.hive.JdbcColumn copied from org.apache.jdbc.hive.JdbcColumn
+* org.apache.kyuubi.jdbc.hive.JdbcColumnAttributes copied from org.apache.jdbc.hive.JdbcColumnAttributes
+* org.apache.kyuubi.jdbc.hive.JdbcTable copied from org.apache.jdbc.hive.JdbcTable
+* org.apache.kyuubi.jdbc.hive.JdbcUriParseException copied from org.apache.jdbc.hive.JdbcUriParseException
+* org.apache.kyuubi.jdbc.hive.Utils copied from org.apache.jdbc.hive.Utils
+* org.apache.kyuubi.jdbc.hive.XsrfHttpRequestInterceptor copied from org.apache.jdbc.hive.XsrfHttpRequestInterceptor
+* org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException copied from org.apache.jdbc.hive.ZooKeeperHiveClientException
+* org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientHelper copied from org.apache.jdbc.hive.ZooKeeperHiveClientHelper
+
+Copyright: 2011-2018 The Apache Software Foundation
+Home page: https://hive.apache.org/
+License: https://www.apache.org/licenses/LICENSE-2.0
+
+------------------------------------------------------------------------------------
+
 This product includes code from Apache Spark
 
 * org.apache.kyuubi.Logging copied from classes in org.apache.spark.internal.Logging
@@ -212,4 +257,14 @@ This product includes code from Apache Spark
 
 Copyright: 2014 and onwards The Apache Software Foundation
 Home page: https://spark.apache.org/
+License: https://www.apache.org/licenses/LICENSE-2.0
+
+------------------------------------------------------------------------------------
+
+This product includes code from Apache Zookeeper
+
+* bin/kyuubi-zk-cli copied from bin/zkCli.sh
+
+Copyright 2009-2019 The Apache Software Foundation
+Home page: https://zookeeper.apache.org/
 License: https://www.apache.org/licenses/LICENSE-2.0
