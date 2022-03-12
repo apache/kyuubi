@@ -127,12 +127,12 @@
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
-        <scalatestplus.version>3.2.9.0</scalatestplus.version>
         <netty.version>4.1.73.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
         <prometheus.version>0.14.1</prometheus.version>
         <scalacheck.version>3.2.9.0</scalacheck.version>
         <scalatest.version>3.2.9</scalatest.version>
+        <scalatestplus.version>3.2.9.0</scalatestplus.version>
         <scopt.version>4.0.1</scopt.version>
         <slf4j.version>1.7.35</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
@@ -889,6 +889,13 @@
             </dependency>
 
             <dependency>
+                <groupId>org.scalatestplus</groupId>
+                <artifactId>mockito-3-4_${scala.binary.version}</artifactId>
+                <version>${scalatestplus.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-minikdc</artifactId>
                 <version>${hadoop.version}</version>
@@ -1207,12 +1214,6 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.jdbc.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.scalatestplus</groupId>
-                <artifactId>mockito-3-4_${scala.binary.version}</artifactId>
-                <version>${scalatestplus.version}</version>
             </dependency>
 
             <!-- flink -->
