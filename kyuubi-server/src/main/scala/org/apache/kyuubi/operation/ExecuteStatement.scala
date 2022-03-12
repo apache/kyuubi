@@ -144,15 +144,16 @@ class ExecuteStatement(
             setState(OperationState.CANCELED)
 
           case TIMEDOUT_STATE =>
-            val state = if (operationQueryTimeoutCompatibleState) {
-              if (queryTimeout > 0) {
-                OperationState.TIMEOUT
+            val state =
+              if (operationQueryTimeoutCompatibleState) {
+                if (queryTimeout > 0) {
+                  OperationState.TIMEOUT
+                } else {
+                  OperationState.CANCELED
+                }
               } else {
-                OperationState.CANCELED
+                OperationState.TIMEOUT
               }
-            } else {
-              OperationState.TIMEOUT
-            }
             setState(state)
 
           case ERROR_STATE =>

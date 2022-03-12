@@ -34,7 +34,6 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     super.initialize(conf)
   }
 
-
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
