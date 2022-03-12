@@ -93,8 +93,7 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
     FileUtils.deleteDirectory(hadoopConfDir)
   }
 
-  // Ignore the test because LocalMetaServer can not work with Thrift 0.16.0.
-  ignore("obtain hive delegation token") {
+  test("obtain hive delegation token") {
     tryWithSecurityEnabled {
       UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
 
@@ -199,7 +198,7 @@ class HadoopThriftAuthBridgeWithServerContextClassLoader(classloader: ClassLoade
 
   class SetThreadContextClassLoaderProcess(wrapped: TProcessor) extends TProcessor {
 
-    override def process(in: TProtocol, out: TProtocol): Unit = {
+    override def process(in: TProtocol, out: TProtocol): Boolean = {
       val origin = Thread.currentThread().getContextClassLoader
       try {
         Thread.currentThread().setContextClassLoader(classloader)

@@ -102,10 +102,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val executeStmtResp = client.ExecuteStatement(executeStmtReq)
       assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
       assert(executeStmtResp.getOperationHandle === null)
-      assert(executeStmtResp.getStatus.getErrorMessage.contains(
-        "Caused by: java.net.SocketException: Broken pipe (Write failed)") ||
-        executeStmtResp.getStatus.getErrorMessage.contains(
-          "cancelled because SparkContext was shut down"))
+      assert(executeStmtResp.getStatus.getErrorMessage contains
+        "Caused by: java.net.SocketException: Broken pipe (Write failed)")
     }
   }
 
