@@ -17,9 +17,12 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.TimeUnit
+
 import org.apache.hive.service.rpc.thrift.TRowSet
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -31,6 +34,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   def this() = this(classOf[KyuubiOperationManager].getSimpleName)
 
   override def initialize(conf: KyuubiConf): Unit = {
+    // Check in advance whether the parameter values are set correctly
+    conf.get(OPERATION_QUERY_TIMEOUT).map(TimeUnit.MILLISECONDS.toSeconds)
     super.initialize(conf)
   }
 
