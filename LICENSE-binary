@@ -385,5 +385,4 @@ MIT License
 com.github.scopt:scopt_*
 io.github.classgraph:classgraph
 org.slf4j:slf4j-api
-org.slf4j:slf4j-log4j12
 org.slf4j:jcl-over-slf4j
