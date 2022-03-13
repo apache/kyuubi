@@ -215,10 +215,16 @@ trait ProcBuilder {
   private def containsException(log: String): Boolean =
     containsIgnoreCase(log, "Exception:") || containsIgnoreCase(log, "Exception in thread")
 
-  override def toString: String = commands.map {
-    case arg if arg.startsWith("--") => s"\\\n\t$arg"
-    case arg => arg
-  }.mkString(" ")
+  override def toString: String = {
+    if (commands == null) {
+      super.toString()
+    } else {
+      commands.map {
+        case arg if arg.startsWith("--") => s"\\\n\t$arg"
+        case arg => arg
+      }.mkString(" ")
+    }
+  }
 }
 
 object ProcBuilder extends Logging {
