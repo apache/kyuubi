@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.nio.file.Files
 import java.sql.DatabaseMetaData
 
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_CATALOG
@@ -30,6 +31,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OperationModes.NONE
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
+import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.service.ServiceState._
@@ -774,5 +776,40 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         assert(rows === 200)
       }
     }
+  }
+
+  test("execute statement - add/remove jar") {
+    val jarName = "newly-added.jar"
+    val newJar = TestUserClassLoaderJar.createJarFile(
+      Files.createTempDirectory("add-jar-test").toFile,
+      jarName,
+      GENERATED_UDF_CLASS,
+      GENERATED_UDF_CODE).toPath
+
+    withMultipleConnectionJdbcStatement()(
+      { statement =>
+        statement.execute(s"add jar '$newJar'")
+        val addJarResult = statement.executeQuery("set")
+        var success = false
+        while (addJarResult.next()) {
+          if (addJarResult.getString(1) == "pipeline.jars" &&
+            addJarResult.getString(2).contains(jarName)) {
+            success = true
+          }
+        }
+        assert(success)
+      },
+      { statement =>
+        statement.execute(s"remove jar '$newJar'")
+        val removeJarResult = statement.executeQuery("set")
+        var success = false
+        while (removeJarResult.next()) {
+          if (removeJarResult.getString(1) == "pipeline.jars" &&
+            !removeJarResult.getString(2).contains(jarName)) {
+            success = true
+          }
+        }
+        assert(success)
+      })
   }
 }
