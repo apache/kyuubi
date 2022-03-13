@@ -42,6 +42,8 @@ abstract class TBinaryFrontendService(name: String)
    * @note this is final because we don't want new implementations for engine to override this.
    *       and we shall simply set it to zero for randomly picking an available port
    */
+  final override protected lazy val serverHost: Option[String] =
+    conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
   final override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
 
   private var server: Option[TServer] = None
