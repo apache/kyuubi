@@ -50,7 +50,7 @@ ENV KYUUBI_WORK_DIR_ROOT ${KYUUBI_HOME}/work
 RUN set -ex && \
     sed -i 's/http:\/\/deb.\(.*\)/https:\/\/deb.\1/g' /etc/apt/sources.list && \
     apt-get update && \
-    apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps python3 && \
+    apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
     useradd -u ${kyuubi_uid} -g root kyuubi && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
     chmod ug+rw -R ${KYUUBI_HOME} && \
