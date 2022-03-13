@@ -79,10 +79,12 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
   }
 
   def closeSession(): Unit = {
-    val req = new TCloseSessionReq(_remoteSessionHandle)
     try {
-      val resp = withLockAcquired(CloseSession(req))
-      ThriftUtils.verifyTStatus(resp.getStatus)
+      if (_remoteSessionHandle != null) {
+        val req = new TCloseSessionReq(_remoteSessionHandle)
+        val resp = withLockAcquired(CloseSession(req))
+        ThriftUtils.verifyTStatus(resp.getStatus)
+      }
     } catch {
       case e: Exception =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
