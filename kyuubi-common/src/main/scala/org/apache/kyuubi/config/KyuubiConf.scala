@@ -668,6 +668,27 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofSeconds(60).toMillis)
 
+  val ENGINE_ALIVE_PROBE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("session.engine.alive.probe.enabled")
+      .doc("Whether to enable the engine alive probe, it true, we will create a companion thrift" +
+        " client that sends simple request to check whether the engine is keep alive.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_ALIVE_PROBE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("session.engine.alive.probe.timeout")
+      .doc("The timeout for engine alive probe.")
+      .version("1.6.0")
+      .fallbackConf(ENGINE_REQUEST_TIMEOUT)
+
+  val ENGINE_ALIVE_PROBE_INTERVAL: ConfigEntry[Long] =
+    buildConf("session.engine.alive.probe.interval")
+      .doc("The interval for engine alive probe.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
+
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
     .version("1.0.0")
@@ -825,12 +846,21 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
+  @deprecated(s"using kyuubi.operation.thrift.client.request.max.attempts instead", "1.6.0")
   val OPERATION_STATUS_POLLING_MAX_ATTEMPTS: ConfigEntry[Int] =
     buildConf("operation.status.polling.max.attempts")
-      .doc("Max attempts for long polling asynchronous running sql query's status on raw" +
-        " transport failures, e.g. TTransportException")
+      .doc(s"(deprecated) - Using kyuubi.operation.thrift.client.request.max.attempts instead")
       .version("1.4.0")
       .intConf
+      .createWithDefault(5)
+
+  val OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS: ConfigEntry[Int] =
+    buildConf("operation.thrift.client.request.max.attempts")
+      .doc("Max attempts for operation thrift request call at server-side on raw transport" +
+        " failures, e.g. TTransportException")
+      .version("1.6.0")
+      .intConf
+      .checkValue(_ > 0, "must be positive number")
       .createWithDefault(5)
 
   val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =

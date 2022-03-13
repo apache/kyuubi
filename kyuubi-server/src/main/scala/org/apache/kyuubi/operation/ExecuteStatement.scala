@@ -21,10 +21,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TProtocolVersion}
 import org.apache.hive.service.rpc.thrift.TOperationState._
-import org.apache.thrift.TException
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.{EventLogging, KyuubiOperationEvent}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -46,10 +44,6 @@ class ExecuteStatement(
     } else {
       null
     }
-
-  private val maxStatusPollOnFailure = {
-    session.sessionManager.getConf.get(KyuubiConf.OPERATION_STATUS_POLLING_MAX_ATTEMPTS)
-  }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
@@ -77,31 +71,11 @@ class ExecuteStatement(
     try {
       setState(OperationState.RUNNING)
       var statusResp: TGetOperationStatusResp = null
-      var currentAttempts = 0
-
-      def fetchOperationStatusWithRetry(): Unit = {
-        try {
-          statusResp = client.getOperationStatus(_remoteOpHandle)
-          currentAttempts = 0 // reset attempts whenever get touch with engine again
-        } catch {
-          case e: TException if currentAttempts >= maxStatusPollOnFailure =>
-            error(
-              s"Failed to get ${session.user}'s query[$getHandle] status after" +
-                s" $maxStatusPollOnFailure times, aborting",
-              e)
-            throw e
-          case e: TException =>
-            currentAttempts += 1
-            warn(
-              s"Failed to get ${session.user}'s query[$getHandle] status" +
-                s" ($currentAttempts / $maxStatusPollOnFailure)",
-              e)
-            Thread.sleep(100)
-        }
-      }
 
       // initialize operation status
-      while (statusResp == null) { fetchOperationStatusWithRetry() }
+      while (statusResp == null) {
+        statusResp = client.getOperationStatus(_remoteOpHandle)
+      }
 
       var isComplete = false
       while (!isComplete) {
@@ -113,7 +87,7 @@ class ExecuteStatement(
         remoteState match {
           case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
             isComplete = false
-            fetchOperationStatusWithRetry()
+            statusResp = client.getOperationStatus(_remoteOpHandle)
 
           case FINISHED_STATE =>
             setState(OperationState.FINISHED)

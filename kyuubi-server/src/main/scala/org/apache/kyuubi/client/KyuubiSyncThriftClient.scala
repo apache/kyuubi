@@ -17,30 +17,68 @@
 
 package org.apache.kyuubi.client
 
+import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
+import org.apache.thrift.TException
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.transport.TSocket
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOGIN_TIMEOUT, ENGINE_REQUEST_TIMEOUT}
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.ThriftUtils
+import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
 
-class KyuubiSyncThriftClient private (protocol: TProtocol)
+class KyuubiSyncThriftClient private (
+    protocol: TProtocol,
+    maxAttempts: Int,
+    engineAliveProbeProtocol: Option[TProtocol],
+    engineAliveProbeInterval: Long)
   extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
+  @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
   @volatile private var _engineId: Option[String] = _
+  @volatile private var aliveProbeConnectionBroken: Boolean = false
 
   private val lock = new ReentrantLock()
+
+  private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
+  private var engineAliveThreadPool: ScheduledExecutorService = _
+
+  private def startEngineAliveProbe(): Unit = {
+    engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
+      "engine-alive-probe-" + _aliveProbeSessionHandle)
+    val task = new Runnable {
+      override def run(): Unit = {
+        engineAliveProbeClient.foreach { client =>
+          val tGetInfoReq = new TGetInfoReq()
+          tGetInfoReq.setSessionHandle(_aliveProbeSessionHandle)
+          tGetInfoReq.setInfoType(TGetInfoType.CLI_DBMS_VER)
+
+          try {
+            client.GetInfo(tGetInfoReq).getInfoValue.getStringValue
+          } catch {
+            case e: Throwable =>
+              error(s"The alive probe connection is broken, assume that the engine is not alive", e)
+              aliveProbeConnectionBroken = true
+          }
+        }
+      }
+    }
+    engineAliveThreadPool.scheduleAtFixedRate(
+      task,
+      engineAliveProbeInterval,
+      engineAliveProbeInterval,
+      TimeUnit.MILLISECONDS)
+  }
 
   /**
    * Lock every rpc call to send them sequentially
@@ -48,11 +86,31 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
   private def withLockAcquired[T](block: => T): T = {
     try {
       lock.lock()
-      if (!protocol.getTransport.isOpen) {
+      if (!isConnectionValid()) {
         throw KyuubiSQLException.connectionDoesNotExist()
       }
       block
     } finally lock.unlock()
+  }
+
+  private def withRetryingRequest[T](block: => T, request: String): T = withLockAcquired {
+    var attemptCount = 1
+
+    var resp: T = null.asInstanceOf[T]
+    while (attemptCount <= maxAttempts && resp == null) {
+      try {
+        resp = block
+      } catch {
+        case e: TException if attemptCount < maxAttempts && isConnectionValid() =>
+          warn(s"Failed to execute $request after $attemptCount/$maxAttempts times, retrying", e)
+          attemptCount += 1
+          Thread.sleep(100)
+        case e: Throwable =>
+          error(s"Failed to execute $request after $attemptCount/$maxAttempts times, aborting", e)
+          throw e
+      }
+    }
+    resp
   }
 
   def engineId: Option[String] = _engineId
@@ -69,12 +127,22 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     req.setUsername(user)
     req.setPassword(password)
     req.setConfiguration(configs.asJava)
-    val resp = withLockAcquired(OpenSession(req))
+    val resp = withRetryingRequest(OpenSession(req), "OpenSession")
     ThriftUtils.verifyTStatus(resp.getStatus)
     _remoteSessionHandle = resp.getSessionHandle
     _engineId = Option(resp.getConfiguration)
       .filter(_.containsKey("kyuubi.engine.id"))
       .map(_.get("kyuubi.engine.id"))
+
+    engineAliveProbeClient.foreach { aliveProbeClient =>
+      Utils.tryLogNonFatalError {
+        val resp = aliveProbeClient.OpenSession(req)
+        ThriftUtils.verifyTStatus(resp.getStatus)
+        _aliveProbeSessionHandle = resp.getSessionHandle
+        startEngineAliveProbe()
+      }
+    }
+
     SessionHandle(_remoteSessionHandle, protocol)
   }
 
@@ -82,14 +150,26 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     try {
       if (_remoteSessionHandle != null) {
         val req = new TCloseSessionReq(_remoteSessionHandle)
-        val resp = withLockAcquired(CloseSession(req))
+        val resp = withRetryingRequest(CloseSession(req), "CloseSession")
         ThriftUtils.verifyTStatus(resp.getStatus)
       }
     } catch {
       case e: Exception =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      if (protocol.getTransport.isOpen) protocol.getTransport.close()
+      Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+        if (tProtocol.getTransport.isOpen) tProtocol.getTransport.close()
+      }
+      Option(engineAliveThreadPool).foreach(_.shutdown())
+      if (_aliveProbeSessionHandle != null) {
+        engineAliveProbeClient.foreach { client =>
+          Utils.tryLogNonFatalError {
+            val req = new TCloseSessionReq(_aliveProbeSessionHandle)
+            val resp = client.CloseSession(req)
+            ThriftUtils.verifyTStatus(resp.getStatus)
+          }
+        }
+      }
     }
   }
 
@@ -104,21 +184,21 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     req.setConfOverlay(confOverlay.asJava)
     req.setRunAsync(shouldRunAsync)
     req.setQueryTimeout(queryTimeout)
-    val resp = withLockAcquired(ExecuteStatement(req))
+    val resp = withRetryingRequest(ExecuteStatement(req), "ExecuteStatement")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
 
   def getTypeInfo: TOperationHandle = {
     val req = new TGetTypeInfoReq(_remoteSessionHandle)
-    val resp = withLockAcquired(GetTypeInfo(req))
+    val resp = withRetryingRequest(GetTypeInfo(req), "GetTypeInfo")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
 
   def getCatalogs: TOperationHandle = {
     val req = new TGetCatalogsReq(_remoteSessionHandle)
-    val resp = withLockAcquired(GetCatalogs(req))
+    val resp = withRetryingRequest(GetCatalogs(req), "GetCatalogs")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
@@ -128,7 +208,7 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     req.setSessionHandle(_remoteSessionHandle)
     req.setCatalogName(catalogName)
     req.setSchemaName(schemaName)
-    val resp = withLockAcquired(GetSchemas(req))
+    val resp = withRetryingRequest(GetSchemas(req), "GetSchemas")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
@@ -144,14 +224,14 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     req.setSchemaName(schemaName)
     req.setTableName(tableName)
     req.setTableTypes(tableTypes)
-    val resp = withLockAcquired(GetTables(req))
+    val resp = withRetryingRequest(GetTables(req), "GetTables")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
 
   def getTableTypes: TOperationHandle = {
     val req = new TGetTableTypesReq(_remoteSessionHandle)
-    val resp = withLockAcquired(GetTableTypes(req))
+    val resp = withRetryingRequest(GetTableTypes(req), "GetTableTypes")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
@@ -166,7 +246,7 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     req.setSchemaName(schemaName)
     req.setTableName(tableName)
     req.setColumnName(columnName)
-    val resp = withLockAcquired(GetColumns(req))
+    val resp = withRetryingRequest(GetColumns(req), "GetColumns")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
@@ -178,7 +258,7 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     val req = new TGetFunctionsReq(_remoteSessionHandle, functionName)
     req.setCatalogName(catalogName)
     req.setSchemaName(schemaName)
-    val resp = withLockAcquired(GetFunctions(req))
+    val resp = withRetryingRequest(GetFunctions(req), "GetFunctions")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
@@ -192,7 +272,7 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     req.setCatalogName(catalogName)
     req.setSchemaName(schemaName)
     req.setTableName(tableName)
-    val resp = withLockAcquired(GetPrimaryKeys(req))
+    val resp = withRetryingRequest(GetPrimaryKeys(req), "GetPrimaryKeys")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
@@ -212,20 +292,20 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     req.setForeignCatalogName(foreignCatalog)
     req.setForeignSchemaName(foreignSchema)
     req.setForeignTableName(foreignTable)
-    val resp = withLockAcquired(GetCrossReference(req))
+    val resp = withRetryingRequest(GetCrossReference(req), "GetCrossReference")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
 
   def getOperationStatus(operationHandle: TOperationHandle): TGetOperationStatusResp = {
     val req = new TGetOperationStatusReq(operationHandle)
-    val resp = withLockAcquired(GetOperationStatus(req))
+    val resp = withRetryingRequest(GetOperationStatus(req), "GetOperationStatus")
     resp
   }
 
   def cancelOperation(operationHandle: TOperationHandle): Unit = {
     val req = new TCancelOperationReq(operationHandle)
-    val resp = withLockAcquired(CancelOperation(req))
+    val resp = withRetryingRequest(CancelOperation(req), "CancelOperation")
     if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
       info(s"$req succeed on engine side")
     } else {
@@ -235,7 +315,7 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
 
   def closeOperation(operationHandle: TOperationHandle): Unit = {
     val req = new TCloseOperationReq(operationHandle)
-    val resp = withLockAcquired(CloseOperation(req))
+    val resp = withRetryingRequest(CloseOperation(req), "CloseOperation")
     if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
       info(s"$req succeed on engine side")
     } else {
@@ -245,7 +325,7 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
 
   def getResultSetMetadata(operationHandle: TOperationHandle): TTableSchema = {
     val req = new TGetResultSetMetadataReq(operationHandle)
-    val resp = withLockAcquired(GetResultSetMetadata(req))
+    val resp = withRetryingRequest(GetResultSetMetadata(req), "GetResultSetMetadata")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getSchema
   }
@@ -259,7 +339,7 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     val req = new TFetchResultsReq(operationHandle, or, maxRows)
     val fetchType = if (fetchLog) 1.toShort else 0.toShort
     req.setFetchType(fetchType)
-    val resp = withLockAcquired(FetchResults(req))
+    val resp = withRetryingRequest(FetchResults(req), "FetchResults")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getResults
   }
@@ -281,9 +361,26 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
       case e: Exception => warn(s"$req failed on engine side", e)
     }
   }
+
+  def isConnectionValid(): Boolean = {
+    !aliveProbeConnectionBroken && protocol.getTransport.isOpen
+  }
 }
 
 private[kyuubi] object KyuubiSyncThriftClient {
+  private def createTProtocol(
+      user: String,
+      passwd: String,
+      host: String,
+      port: Int,
+      socketTimeout: Int,
+      connectionTimeout: Int): TProtocol = {
+    val tSocket = new TSocket(host, port, socketTimeout, connectionTimeout)
+    val tTransport = PlainSASLHelper.getPlainTransport(user, passwd, tSocket)
+    tTransport.open()
+    new TBinaryProtocol(tTransport)
+  }
+
   def createClient(
       user: String,
       password: String,
@@ -293,10 +390,22 @@ private[kyuubi] object KyuubiSyncThriftClient {
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = conf.get(ENGINE_LOGIN_TIMEOUT).toInt
     val requestTimeout = conf.get(ENGINE_REQUEST_TIMEOUT).toInt
-    val tSocket = new TSocket(host, port, requestTimeout, loginTimeout)
-    val tTransport = PlainSASLHelper.getPlainTransport(user, passwd, tSocket)
-    tTransport.open()
-    val tProtocol = new TBinaryProtocol(tTransport)
-    new KyuubiSyncThriftClient(tProtocol)
+    val requestMaxAttempts = conf.get(KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS)
+    val aliveProbeEnabled = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
+    val aliveProbeTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_TIMEOUT).toInt
+    val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL)
+
+    val tProtocol = createTProtocol(user, passwd, host, port, requestTimeout, loginTimeout)
+    val aliveProbeProtocol =
+      if (aliveProbeEnabled) {
+        Option(createTProtocol(user, passwd, host, port, aliveProbeTimeout, loginTimeout))
+      } else {
+        None
+      }
+    new KyuubiSyncThriftClient(
+      tProtocol,
+      requestMaxAttempts,
+      aliveProbeProtocol,
+        aliveProbeInterval)
   }
 }
