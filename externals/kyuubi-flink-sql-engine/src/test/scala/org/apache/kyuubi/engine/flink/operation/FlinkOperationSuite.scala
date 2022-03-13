@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.flink.operation
 
 import java.nio.file.Files
 import java.sql.DatabaseMetaData
+import java.util.UUID
 
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_CATALOG
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_DATABASE
@@ -778,38 +779,35 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - add/remove jar") {
-    val jarName = "newly-added.jar"
+  test("execute statement - add/remove/show jar") {
+    val jarName = s"newly-added-${UUID.randomUUID()}.jar"
     val newJar = TestUserClassLoaderJar.createJarFile(
       Files.createTempDirectory("add-jar-test").toFile,
       jarName,
       GENERATED_UDF_CLASS,
       GENERATED_UDF_CODE).toPath
 
-    withMultipleConnectionJdbcStatement()(
-      { statement =>
-        statement.execute(s"add jar '$newJar'")
-        val addJarResult = statement.executeQuery("set")
-        var success = false
-        while (addJarResult.next()) {
-          if (addJarResult.getString(1) == "pipeline.jars" &&
-            addJarResult.getString(2).contains(jarName)) {
-            success = true
-          }
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.execute(s"add jar '$newJar'")
+
+      val showJarsResultAdded = statement.executeQuery("show jars")
+      var exists = false
+      while (showJarsResultAdded.next()) {
+        if (showJarsResultAdded.getString(1).contains(jarName)) {
+          exists = true
         }
-        assert(success)
-      },
-      { statement =>
-        statement.execute(s"remove jar '$newJar'")
-        val removeJarResult = statement.executeQuery("set")
-        var success = false
-        while (removeJarResult.next()) {
-          if (removeJarResult.getString(1) == "pipeline.jars" &&
-            !removeJarResult.getString(2).contains(jarName)) {
-            success = true
-          }
+      }
+      assert(exists)
+
+      statement.execute(s"remove jar '$newJar'")
+      val showJarsResultRemoved = statement.executeQuery("show jars")
+      exists = false
+      while (showJarsResultRemoved.next()) {
+        if (showJarsResultRemoved.getString(1).contains(jarName)) {
+          exists = true
         }
-        assert(success)
-      })
+      }
+      assert(!exists)
+    })
   }
 }

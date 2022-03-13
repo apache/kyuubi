@@ -19,15 +19,16 @@ package org.apache.kyuubi.engine.flink.operation
 
 import java.util
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.flink.table.api.{DataTypes, ResultKind}
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.client.gateway.Executor
-import org.apache.flink.table.operations.command.{AddJarOperation, RemoveJarOperation, ResetOperation, SetOperation}
+import org.apache.flink.table.operations.command._
 import org.apache.flink.types.Row
 
-import org.apache.kyuubi.engine.flink.result.ResultSet
+import org.apache.kyuubi.engine.flink.result.{ResultSet, ResultSetUtil}
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil.successResultSet
 
 object OperationUtils {
@@ -111,12 +112,13 @@ object OperationUtils {
   }
 
   /**
-   * Runs a AddJarOperation with executor. Returns when AddJarOperation is executed successfully.
+   * Runs a AddJarOperation with the executor. Currently only jars on local filesystem
+   * are supported.
    *
    * @param addJarOperation Add-jar operation.
    * @param executor A gateway for communicating with Flink and other external systems.
    * @param sessionId Id of the session.
-   * @return A ResultSet of ResetOperation execution.
+   * @return A ResultSet of AddJarOperation execution.
    */
   def runAddJarOperation(
       addJarOperation: AddJarOperation,
@@ -127,13 +129,13 @@ object OperationUtils {
   }
 
   /**
-   * Runs a RemoveJarOperation with executor. Returns when RemoveJarOperation is executed
-   * successfully.
+   * Runs a RemoveJarOperation with the executor. Only jars added by AddJarOperation could
+   * be removed.
    *
    * @param removeJarOperation Add-jar operation.
    * @param executor A gateway for communicating with Flink and other external systems.
    * @param sessionId Id of the session.
-   * @return A ResultSet of ResetOperation execution.
+   * @return A ResultSet of RemoveJarOperation execution.
    */
   def runRemoveJarOperation(
       removeJarOperation: RemoveJarOperation,
@@ -141,5 +143,21 @@ object OperationUtils {
       sessionId: String): ResultSet = {
     executor.removeJar(sessionId, removeJarOperation.getPath)
     successResultSet
+  }
+
+  /**
+   * Runs a ShowJarsOperation with the executor. Returns the jars of the current session.
+   *
+   * @param showJarsOperation Show-jar operation.
+   * @param executor A gateway for communicating with Flink and other external systems.
+   * @param sessionId Id of the session.
+   * @return A ResultSet of ShowJarsOperation execution.
+   */
+  def runShowJarOperation(
+      showJarsOperation: ShowJarsOperation,
+      executor: Executor,
+      sessionId: String): ResultSet = {
+    val jars = executor.listJars(sessionId)
+    ResultSetUtil.stringListToResultSet(jars.asScala.toList, "jar")
   }
 }

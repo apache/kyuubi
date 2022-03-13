@@ -114,6 +114,8 @@ class ExecuteStatement(
           resultSet = OperationUtils.runAddJarOperation(addJarOperation, executor, sessionId)
         case removeJarOperation: RemoveJarOperation =>
           resultSet = OperationUtils.runRemoveJarOperation(removeJarOperation, executor, sessionId)
+        case showJarsOperation: ShowJarsOperation =>
+          resultSet = OperationUtils.runShowJarOperation(showJarsOperation, executor, sessionId)
         case operation: Operation => runOperation(operation)
       }
       setState(OperationState.FINISHED)
