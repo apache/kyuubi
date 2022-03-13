@@ -46,7 +46,10 @@ ENV CI ${CI}
 ADD . /workspace/kyuubi
 WORKDIR /workspace/kyuubi
 
-RUN ./build/dist ${MVN_ARG} && \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y python3 && \
+    ./build/dist ${MVN_ARG} && \
     mv /workspace/kyuubi/dist /opt/kyuubi && \
     # Removing stuff saves time because docker creates a temporary layer
     rm -rf ~/.m2 && \
