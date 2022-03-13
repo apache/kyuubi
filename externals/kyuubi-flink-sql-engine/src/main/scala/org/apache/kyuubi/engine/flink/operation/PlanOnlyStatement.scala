@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import org.apache.flink.table.api.TableEnvironment
-import org.apache.flink.table.operations.command.{AddJarOperation, RemoveJarOperation, ResetOperation, SetOperation}
+import org.apache.flink.table.operations.command._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.OperationModes._
@@ -52,6 +52,8 @@ class PlanOnlyStatement(
           resultSet = OperationUtils.runAddJarOperation(addJarOperation, executor, sessionId)
         case removeJarOperation: RemoveJarOperation =>
           resultSet = OperationUtils.runRemoveJarOperation(removeJarOperation, executor, sessionId)
+        case showJarsOperation: ShowJarsOperation =>
+          resultSet = OperationUtils.runShowJarOperation(showJarsOperation, executor, sessionId)
         case _ => explainOperation(statement)
       }
     } catch {
