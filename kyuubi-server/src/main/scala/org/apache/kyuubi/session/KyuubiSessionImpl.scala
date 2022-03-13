@@ -106,8 +106,10 @@ class KyuubiSessionImpl(
         _engineSessionHandle = _client.openSession(protocol, user, passwd, optimizedConf)
       } catch {
         case e: Throwable =>
-          error(s"Opening engine [${engine.defaultEngineName} $host:$port]" +
-            s" for $user session failed", e)
+          error(
+            s"Opening engine [${engine.defaultEngineName} $host:$port]" +
+              s" for $user session failed",
+            e)
           throw e
       }
       logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
