@@ -111,11 +111,6 @@ class TrinoProcessBuilder(
       trinoConf.map { case (k, v) => s"-D$k=$v" }.mkString(" "))
 
   override protected def commands: Array[String] = Array(executable)
-
-  override def toString: String = commands.map {
-    case arg if arg.startsWith("--") => s"\\\n\t$arg"
-    case arg => arg
-  }.mkString(" ")
 }
 
 object TrinoProcessBuilder {
