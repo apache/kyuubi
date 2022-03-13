@@ -33,9 +33,10 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
-import org.apache.kyuubi.engine.EngineType.{EngineType, FLINK_SQL, SPARK_SQL, TRINO}
+import org.apache.kyuubi.engine.EngineType.{EngineType, FLINK_SQL, HIVE_SQL, SPARK_SQL, TRINO}
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
+import org.apache.kyuubi.engine.hive.HiveProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
@@ -198,6 +199,8 @@ private[kyuubi] class EngineRef(
         new FlinkProcessBuilder(appUser, conf, extraEngineLog)
       case TRINO =>
         new TrinoProcessBuilder(appUser, conf, extraEngineLog)
+      case HIVE_SQL =>
+        new HiveProcessBuilder(appUser, conf, extraEngineLog)
     }
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))

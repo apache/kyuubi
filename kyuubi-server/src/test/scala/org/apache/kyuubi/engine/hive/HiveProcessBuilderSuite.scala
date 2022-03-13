@@ -15,13 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.hive
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.config.KyuubiConf
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL = Value
+class HiveProcessBuilderSuite extends KyuubiFunSuite {
+
+  private def conf = KyuubiConf().set("kyuubi.on", "off")
+
+  test("hive process builder") {
+    val builder = new HiveProcessBuilder("kyuubi", conf)
+    val commands = builder.toString.split(' ')
+    assert(commands.exists(_.endsWith("hive-sql-engine.sh")))
+  }
 }
