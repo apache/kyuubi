@@ -24,44 +24,83 @@
   - ".github/**/*"
   - ".gitignore"
   - ".travis.yml"
-  - "codecov.yml"
   - "DISCLAIMER"
+  - "LICENSE"
+  - "LICENSE-binary"
+  - "NOTICE"
+  - "NOTICE-binary"
+  - "codecov.yml"
   - "dev/kyuubi-codecov/**/*"
-  # - "LICENSE"
-  # - "LICENSE-binary"
-  # - "NOTICE"
-  # - "NOTICE-binary"
+  - "licenses-binary"
 
 "kind:build":
   - ".dockerignore"
   - ".rat-excludes"
   - ".scalafmt"
-  - "scalastyle-config.xml"
-  - "bin/docker-image-tool.sh"
   - "**/*pom.xml"
+  - "bin/docker-image-tool.sh"
+  - "build/**/*"
+  - "docker/**/*"
+  - "docs/requirements"
+  - "kyuubi-assembly/**/*"
+  - "scalastyle-config.xml"
+  - any: ["dev/**/*", "!dev/kyuubi-codecov/**/*", "!dev/kyuubi-extension-spark*/**/*", "!dev/kyuubi-tpcds/**/*"]
 
 "kind:docs":
-  - "readthedocs.yml"
   - "*.md"
+  - "conf/**/*"
+  - "docs/**/*"
+  - "readthedocs.yml"
 
 "kind:deploy":
-  - any: ["bin/**/*", "!bin/beeline"]
+  - any: ["bin/**/*", "!bin/beeline", "!bin/docker-image-tool.sh"]
 
-"module:spark":
-  - "externals/kyuubi-spark-sql-engine/**/*" 
-  - "dev/kyuubi-extension-spark*/**/*"
+"module:common":
+  - "kyuubi-common/**/*"
+
+"module:ctl":
+  - "bin/beeline"
+  - "kyuubi-common/**/*"
+  - "kyuubi-hive-beeline/**/*"
+  - "kyuubi-hive-jdbc/**/*"
+  - "kyuubi-hive-jdbc-shaded/**/*"
 
 "module:flink":
+  - "kyuubi-flink-it/**/*"
   - "externals/kyuubi-flink-sql-engine/**/*" 
+
+"module:ha":
+  - "kyuubi-ha/**/*"
+  - "kyuubi-zookeeper/**/*"
+
+"module:hive":
+  - "kyuubi-hive-sql-engine/**/*"
+
+"module:kubernetes":
+  - ".dockerignore"
+  - "bin/docker-image-tool.sh"
+  - "docker/**/*"
+  - "integration-tests/kyuubi-kubernetes-deployment-it/**/*"
+  - "tools/spark-block-cleaner/**/*"
+
+"module:metrics":
+  - "kyuubi-metrics/**/*"
 
 "module:trino":
   - "externals/kyuubi-trino-engine/**/*" 
 
+"module:tpcds":
+  - "dev/kyuubi-tpcds/**/*"
+
 "module:server":
   - "bin/kyuubi"
   - "kyuubi-server/**/*"
+  - "kyuubi-server-plugin/**/*"
 
-# module:plugin
+"module:spark":
+  - "externals/kyuubi-spark-sql-engine/**/*" 
+  - "dev/kyuubi-extension-spark*/**/*"
+  - "tools/spark-block-cleaner/**/*"
 
-"module:ctl":
-  - "bin/beeline"
+"module:plugin":
+  - "kyuubi-server-plugin/**/*"
