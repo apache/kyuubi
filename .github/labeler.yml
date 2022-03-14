@@ -34,7 +34,7 @@
 "kind:deploy":
   - any: ["bin/**/*", "!bin/beeline", "!bin/docker-image-tool.sh"]
     
-"kind:docs":
+"kind:documentation":
   - "*.md"
   - "conf/**/*"
   - "docs/**/*"
