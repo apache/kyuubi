@@ -195,8 +195,6 @@ private[kyuubi] class EngineRef(
         conf.set(
           FlinkProcessBuilder.TAG_KEY,
           conf.getOption(FlinkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
-        conf.set(HA_ZK_NAMESPACE, engineSpace)
-        conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
         new FlinkProcessBuilder(appUser, conf, extraEngineLog)
       case TRINO =>
         new TrinoProcessBuilder(appUser, conf, extraEngineLog)
