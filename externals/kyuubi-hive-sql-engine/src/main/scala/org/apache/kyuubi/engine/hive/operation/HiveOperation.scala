@@ -99,4 +99,6 @@ abstract class HiveOperation(opType: OperationType, session: Session)
   }
 
   override def isTimedOut: Boolean = internalHiveOperation.isTimedOut(System.currentTimeMillis)
+
+  override def shouldRunAsync: Boolean = false
 }
