@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.nio.file.Files
 import java.sql.DatabaseMetaData
+import java.util.UUID
 
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_CATALOG
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_DATABASE
@@ -30,6 +32,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OperationModes.NONE
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
+import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.service.ServiceState._
@@ -774,5 +777,37 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         assert(rows === 200)
       }
     }
+  }
+
+  test("execute statement - add/remove/show jar") {
+    val jarName = s"newly-added-${UUID.randomUUID()}.jar"
+    val newJar = TestUserClassLoaderJar.createJarFile(
+      Files.createTempDirectory("add-jar-test").toFile,
+      jarName,
+      GENERATED_UDF_CLASS,
+      GENERATED_UDF_CODE).toPath
+
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.execute(s"add jar '$newJar'")
+
+      val showJarsResultAdded = statement.executeQuery("show jars")
+      var exists = false
+      while (showJarsResultAdded.next()) {
+        if (showJarsResultAdded.getString(1).contains(jarName)) {
+          exists = true
+        }
+      }
+      assert(exists)
+
+      statement.execute(s"remove jar '$newJar'")
+      val showJarsResultRemoved = statement.executeQuery("show jars")
+      exists = false
+      while (showJarsResultRemoved.next()) {
+        if (showJarsResultRemoved.getString(1).contains(jarName)) {
+          exists = true
+        }
+      }
+      assert(!exists)
+    })
   }
 }
