@@ -110,7 +110,15 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       catalogName: String,
       schemaName: String,
       tableName: String,
-      columnName: String): Operation = null
+      columnName: String): Operation = {
+    throw new UnsupportedOperationException(String.format(
+      "Not implemented yet. You can execute statement `DESCRIBE `%s`.`%s`.`%s` instead " +
+        "to get column infos.",
+      catalogName,
+      schemaName,
+      tableName
+    ))
+  }
 
   override def newGetFunctionsOperation(
       session: Session,
