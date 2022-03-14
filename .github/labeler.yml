@@ -18,6 +18,28 @@
 #
 # Pull Request Labeler Github Action Configuration: https://github.com/marketplace/actions/labeler
 
+"kind:build":
+  - ".dockerignore"
+  - ".rat-excludes"
+  - ".scalafmt"
+  - "**/*pom.xml"
+  - "bin/docker-image-tool.sh"
+  - "build/**/*"
+  - "docker/**/*"
+  - "docs/requirements"
+  - "kyuubi-assembly/**/*"
+  - "scalastyle-config.xml"
+  - any: ["dev/**/*", "!dev/kyuubi-codecov/**/*", "!dev/kyuubi-extension-spark*/**/*", "!dev/kyuubi-tpcds/**/*"]
+
+"kind:deploy":
+  - any: ["bin/**/*", "!bin/beeline", "!bin/docker-image-tool.sh"]
+    
+"kind:docs":
+  - "*.md"
+  - "conf/**/*"
+  - "docs/**/*"
+  - "readthedocs.yml"
+
 "kind:infra":
   - ".asf.yaml"
   - ".gitattributes"
@@ -32,28 +54,6 @@
   - "codecov.yml"
   - "dev/kyuubi-codecov/**/*"
   - "licenses-binary"
-
-"kind:build":
-  - ".dockerignore"
-  - ".rat-excludes"
-  - ".scalafmt"
-  - "**/*pom.xml"
-  - "bin/docker-image-tool.sh"
-  - "build/**/*"
-  - "docker/**/*"
-  - "docs/requirements"
-  - "kyuubi-assembly/**/*"
-  - "scalastyle-config.xml"
-  - any: ["dev/**/*", "!dev/kyuubi-codecov/**/*", "!dev/kyuubi-extension-spark*/**/*", "!dev/kyuubi-tpcds/**/*"]
-
-"kind:docs":
-  - "*.md"
-  - "conf/**/*"
-  - "docs/**/*"
-  - "readthedocs.yml"
-
-"kind:deploy":
-  - any: ["bin/**/*", "!bin/beeline", "!bin/docker-image-tool.sh"]
 
 "module:common":
   - "kyuubi-common/**/*"
