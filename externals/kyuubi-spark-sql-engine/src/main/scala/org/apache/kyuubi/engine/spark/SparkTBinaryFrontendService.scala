@@ -52,6 +52,9 @@ class SparkTBinaryFrontendService(
       addHiveToken(hiveTokens, oldCreds, updateCreds)
       addOtherTokens(otherTokens, oldCreds, updateCreds)
       if (updateCreds.numberOfTokens() > 0) {
+        info("Update delegation tokens. " +
+          s"The number of tokens sent by the server is ${newCreds.numberOfTokens()}. " +
+          s"The actual number of updated tokens is ${updateCreds.numberOfTokens()}.")
         SparkContextHelper.updateDelegationTokens(sc, updateCreds)
       }
 
