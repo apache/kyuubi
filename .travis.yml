@@ -22,7 +22,6 @@ branches:
     - master
 
 # https://releases.ubuntu.com/ use the latest LTS release of ubuntu
-dist: bionic
 language: scala
 scala:
   - 2.12.15
@@ -36,6 +35,7 @@ matrix:
     arch: arm64-graviton2
     group: edge
     virt: vm
+    env: SPARK_LOCAL_IP=localhost
 
 cache:
   directories:
@@ -47,7 +47,7 @@ install:
 script:
   - export MVN_ARGS="-Dmaven.javadoc.skip=true -V -B -ntp -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
   - ./build/mvn clean install -DskipTests $MVN_ARGS
-  - ./build/mvn test $MVN_ARGS -pl kyuubi-common -am
+  - ./build/mvn test $MVN_ARGS -pl kyuubi-common,kyuubi-zookeeper,kyuubi-ha,kyuubi-ctl,kyuubi-metrics,kyuubi-hive-beeline,kyuubi-hive-jdbc,kyuubi-server-plugin -am
 
 after_success:
   - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
