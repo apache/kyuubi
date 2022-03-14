@@ -125,11 +125,6 @@ class FlinkProcessBuilder(
     }
   }
 
-  override def toString: String = commands.map {
-    case arg if arg.startsWith("--") => s"\\\n\t$arg"
-    case arg => arg
-  }.mkString(" ")
-
   @VisibleForTesting
   def FLINK_HOME: String = {
     // prepare FLINK_HOME

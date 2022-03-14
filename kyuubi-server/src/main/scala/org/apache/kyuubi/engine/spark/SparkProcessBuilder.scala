@@ -145,11 +145,6 @@ class SparkProcessBuilder(
     buffer.toArray
   }
 
-  override def toString: String = commands.map {
-    case arg if arg.startsWith("--") => s"\\\n\t$arg"
-    case arg => arg
-  }.mkString(" ")
-
   override protected def module: String = "kyuubi-spark-sql-engine"
 
   val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
