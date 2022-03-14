@@ -809,17 +809,6 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
-  val OPERATION_QUERY_TIMEOUT_COMPATIBLE_STATE: ConfigEntry[Boolean] =
-    buildConf("operation.query.timeout.compatible.state")
-      .doc("Clients less than version 2.1 have no HIVE-4924 Patch, no queryTimeout parameter and" +
-        s" no TIMEOUT state. When the server enables ${OPERATION_QUERY_TIMEOUT.key}, this will" +
-        " cause the client of the lower version to get stuck. When true, regardless of the" +
-        " client version, the TIMEOUT state will be converted to CANCELED to be compatible with" +
-        " the client.")
-      .version("1.6.0")
-      .booleanConf
-      .createWithDefault(false)
-
   val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
     buildConf("operation.incremental.collect")
       .internal

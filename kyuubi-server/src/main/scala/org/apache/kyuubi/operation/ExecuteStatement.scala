@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TGetOperationStatusResp
+import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TProtocolVersion}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.thrift.TException
 
@@ -49,10 +49,6 @@ class ExecuteStatement(
 
   private val maxStatusPollOnFailure = {
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_STATUS_POLLING_MAX_ATTEMPTS)
-  }
-
-  private val operationQueryTimeoutCompatibleState = {
-    session.sessionManager.getConf.get(KyuubiConf.OPERATION_QUERY_TIMEOUT_COMPATIBLE_STATE)
   }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
@@ -128,7 +124,8 @@ class ExecuteStatement(
           case CANCELED_STATE =>
             setState(OperationState.CANCELED)
 
-          case TIMEDOUT_STATE if operationQueryTimeoutCompatibleState =>
+          case TIMEDOUT_STATE if getSession.protocol.getValue <=
+            TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue =>
             setState(OperationState.CANCELED)
 
           case TIMEDOUT_STATE =>
