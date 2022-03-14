@@ -116,8 +116,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
         "to get column infos.",
       catalogName,
       schemaName,
-      tableName
-    ))
+      tableName))
   }
 
   override def newGetFunctionsOperation(
