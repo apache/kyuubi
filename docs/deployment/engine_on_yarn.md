@@ -23,7 +23,9 @@
 
 # Deploy Kyuubi engines on Yarn
 
-## Requirements
+## Deploy Kyuubi Spark Engine on Yarn
+
+### Requirements
 
 When you want to deploy Kyuubi's Spark SQL engines on YARN, you'd better have cognition upon the following things.
 
@@ -36,10 +38,9 @@ When you want to deploy Kyuubi's Spark SQL engines on YARN, you'd better have co
 - An active Apache Hadoop HDFS cluster
 - Setup Hadoop client configurations at the machine the Kyuubi server locates
 
+### Configurations
 
-## Configurations
-
-### Environment
+#### Environment
 
 Either `HADOOP_CONF_DIR` or `YARN_CONF_DIR` is configured and points to the Hadoop client configurations directory, usually, `$HADOOP_HOME/etc/hadoop`.
 
@@ -59,7 +60,7 @@ If the `SparkPi` passes, configure it in `$KYUUBI_HOME/conf/kyuubi-env.sh` or `$
 $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi-env.sh
 ```
 
-### Spark Properties
+#### Spark Properties
 
 These properties are defined by Spark and Kyuubi will pass them to `spark-submit` to create Spark applications.
 
@@ -71,16 +72,16 @@ These properties are defined by Spark and Kyuubi will pass them to `spark-submit
 
 **Note:** The priority goes down from top to bottom.
 
-#### Master
+##### Master
 
 Setting `spark.master=yarn` tells Kyuubi to submit Spark SQL engine applications to the YARN cluster manager.
 
-#### Queue
+##### Queue
 
 Set `spark.yarn.queue=thequeue` in the JDBC connection string to tell Kyuubi to use the QUEUE in the YARN cluster, otherwise,
 the QUEUE configured at Kyuubi server side will be used as default.
 
-#### Sizing
+##### Sizing
 
 Pass the configurations below through the JDBC connection string to set how many instances of Spark executor will be used
 and how many cpus and memory will Spark driver, ApplicationMaster and each executor take.
@@ -101,21 +102,72 @@ since the SQL engine will be long-running for a period, execute user's queries f
 and the demand for computing resources is not the same for those queries.
 It is better for Spark to release some executors when either the query is lightweight, or the SQL engine is being idled. 
 
-
-#### Tuning
+##### Tuning
 
 You can specify `spark.yarn.archive` or `spark.yarn.jars` to point to a world-readable location that contains Spark jars on HDFS,
 which allows YARN to cache it on nodes so that it doesn't need to be distributed each time an application runs. 
 
-#### Others
+##### Others
 
 Please refer to [Spark properties](http://spark.apache.org/docs/latest/running-on-yarn.html#spark-properties) to check other acceptable configs.
 
-
-## Kerberos
+### Kerberos
 
 Kyuubi currently does not support Spark's [YARN-specific Kerberos Configuration](http://spark.apache.org/docs/3.0.1/running-on-yarn.html#kerberos),
 so `spark.kerberos.keytab` and `spark.kerberos.principal` should not use now.
 
 Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](settings.html#kinit).
  
+ ## Deploy Kyuubi Flink Engine on Yarn
+ 
+ ### Requirements
+ 
+ When you want to deploy Kyuubi's Flink SQL engines on YARN, you'd better have cognition upon the following things.
+ 
+ - Knowing the basics about [Running Flink on YARN](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/yarn)
+ - A binary distribution of Flink which is built with YARN support
+   - Download a recent Flink distribution from the [Flink official website](https://flink.apache.org/downloads.html) and unpack it
+ - An active [Apache Hadoop YARN](https://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) cluster
+   - Make sure your YARN cluster is ready for accepting Flink applications by running yarn top. It should show no error messages
+ - An active Apache Hadoop HDFS cluster
+ - Setup Hadoop client configurations at the machine the Kyuubi server locates
+ 
+ ### Configurations
+ 
+ #### Environment
+ 
+ Either `HADOOP_CONF_DIR` or `YARN_CONF_DIR` is configured and points to the Hadoop client configurations directory, usually, `$HADOOP_HOME/etc/hadoop`.
+ 
+ If the `HADOOP_CONF_DIR` points the YARN and HDFS cluster correctly, and the `HADOOP_CLASSPATH` environment variable is set, you can launch a Flink on YARN session, and submit an example job:
+ ```bash
+# we assume to be in the root directory of 
+# the unzipped Flink distribution
+
+# (0) export HADOOP_CLASSPATH
+export HADOOP_CLASSPATH=`hadoop classpath`
+
+# (1) Start YARN Session
+./bin/yarn-session.sh --detached
+
+# (2) You can now access the Flink Web Interface through the
+# URL printed in the last lines of the command output, or through
+# the YARN ResourceManager web UI.
+
+# (3) Submit example job
+./bin/flink run ./examples/streaming/TopSpeedWindowing.jar
+
+# (4) Stop YARN session (replace the application id based 
+# on the output of the yarn-session.sh command)
+echo "stop" | ./bin/yarn-session.sh -id application_XXXXX_XXX
+ ```
+ 
+ If the `TopSpeedWindowing` passes, configure it in `$KYUUBI_HOME/conf/kyuubi-env.sh` or `$FLINK_HOME/bin/config.sh`, e.g.
+ 
+ ```bash
+ $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+ ```
+
+#### Deployment Modes Supported by Flink on YARN
+
+For experiment use, we recommend deploying Kyuubi Flink SQL engine in [Session Mode](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/yarn/#session-mode).
+At present, [Application Mode](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/yarn/#application-mode) and [Per-Job Mode (deprecated)](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/yarn/#per-job-mode-deprecated) are not supported for Flink engine.
