@@ -45,7 +45,7 @@ install:
   - ./build/mvn --version
 
 script:
-  - export MVN_ARGS="-Dmaven.javadoc.skip=true -V -B -ntp"
+  - export MVN_ARGS="-Dmaven.javadoc.skip=true -V -B -ntp -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
   - ./build/mvn clean install -DskipTests $MVN_ARGS
   - ./build/mvn test $MVN_ARGS -pl kyuubi-common -am
 
