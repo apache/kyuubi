@@ -201,8 +201,9 @@
    limitations under the License.
 
 ------------------------------------------------------------------------------------
-
-This project bundles some components that are licensed under the
+This product bundles various third-party components under other open source licenses.
+This section summarizes those components and their licenses. See licenses/
+for text of these licenses.
 
 Apache License Version 2.0
 --------------------------
@@ -285,6 +286,8 @@ io.swagger.core.v3:swagger-jaxrs2
 io.swagger.core.v3:swagger-models
 org.apache.zookeeper:zookeeper
 
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/swagger/*
+
 BSD
 ------------
 jline:jline
@@ -317,3 +320,9 @@ com.github.scopt:scopt_*
 io.github.classgraph:classgraph
 org.slf4j:slf4j-api
 org.slf4j:jcl-over-slf4j
+
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/assets/fonts/*
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/icon.min.css
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/semantic.min.css
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/semantic.min.js
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/jquery-3.6.0.min.js
