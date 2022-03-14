@@ -131,7 +131,7 @@ object HadoopThriftAuthBridgeServer {
   class TUGIAssumingProcessor(
       wrapped: TProcessor,
       secretMgr: KyuubiDelegationTokenManager) extends TProcessor with Logging {
-    override def process(in: TProtocol, out: TProtocol): Unit = {
+    override def process(in: TProtocol, out: TProtocol): Boolean = {
       val transport = in.getTransport
       transport match {
         case saslTrans: TSaslServerTransport =>

@@ -22,7 +22,6 @@ import java.util.concurrent.locks.ReentrantLock
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.TConfiguration
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.transport.TSocket
 
@@ -80,10 +79,12 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
   }
 
   def closeSession(): Unit = {
-    val req = new TCloseSessionReq(_remoteSessionHandle)
     try {
-      val resp = withLockAcquired(CloseSession(req))
-      ThriftUtils.verifyTStatus(resp.getStatus)
+      if (_remoteSessionHandle != null) {
+        val req = new TCloseSessionReq(_remoteSessionHandle)
+        val resp = withLockAcquired(CloseSession(req))
+        ThriftUtils.verifyTStatus(resp.getStatus)
+      }
     } catch {
       case e: Exception =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
@@ -258,7 +259,7 @@ private[kyuubi] object KyuubiSyncThriftClient {
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = conf.get(ENGINE_LOGIN_TIMEOUT).toInt
     val requestTimeout = conf.get(ENGINE_REQUEST_TIMEOUT).toInt
-    val tSocket = new TSocket(new TConfiguration, host, port, requestTimeout, loginTimeout)
+    val tSocket = new TSocket(host, port, requestTimeout, loginTimeout)
     val tTransport = PlainSASLHelper.getPlainTransport(user, passwd, tSocket)
     tTransport.open()
     val tProtocol = new TBinaryProtocol(tTransport)

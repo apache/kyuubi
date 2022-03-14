@@ -101,8 +101,17 @@ class KyuubiSessionImpl(
         } else {
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }
-      _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
-      _engineSessionHandle = _client.openSession(protocol, user, passwd, optimizedConf)
+      try {
+        _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
+        _engineSessionHandle = _client.openSession(protocol, user, passwd, optimizedConf)
+      } catch {
+        case e: Throwable =>
+          error(
+            s"Opening engine [${engine.defaultEngineName} $host:$port]" +
+              s" for $user session failed",
+            e)
+          throw e
+      }
       logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
