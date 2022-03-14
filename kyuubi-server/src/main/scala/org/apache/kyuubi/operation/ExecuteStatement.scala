@@ -124,8 +124,9 @@ class ExecuteStatement(
           case CANCELED_STATE =>
             setState(OperationState.CANCELED)
 
-          case TIMEDOUT_STATE if getSession.protocol.getValue <=
-            TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue =>
+          case TIMEDOUT_STATE
+              if getSession.protocol.getValue <=
+                TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue =>
             setState(OperationState.CANCELED)
 
           case TIMEDOUT_STATE =>
