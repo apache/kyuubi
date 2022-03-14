@@ -42,7 +42,7 @@ jobs:
           java-version: 8
       - name: Install
         run: >-
-          build/mvn clean install -V -Pflink-provided,spark-provided -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
+          build/mvn clean install -V -Pflink-provided,spark-provided \
               -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests \
               -Pflink-provided,spark-provided \
               -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
