@@ -18,7 +18,7 @@
 #
 # Pull Request Labeler Github Action Configuration: https://github.com/marketplace/actions/labeler
 
-kind:infra
+"kind:infra":
   - ".asf.yaml"
   - ".gitattributes"
   - ".github/**/*"
@@ -32,7 +32,7 @@ kind:infra
   # - "NOTICE"
   # - "NOTICE-binary"
 
-kind:build
+"kind:build":
   - ".dockerignore"
   - ".rat-excludes"
   - ".scalafmt"
@@ -40,28 +40,28 @@ kind:build
   - "bin/docker-image-tool.sh"
   - "**/*pom.xml"
 
-kind:docs
+"kind:docs":
   - "readthedocs.yml"
   - "*.md"
 
-kind:deploy
+"kind:deploy":
   - any: ["bin/**/*", "!bin/beeline"]
 
-module:spark
+"module:spark":
   - "externals/kyuubi-spark-sql-engine/**/*" 
   - "dev/kyuubi-extension-spark*/**/*"
 
-module:flink
+"module:flink":
   - "externals/kyuubi-flink-sql-engine/**/*" 
 
-module:trino
+"module:trino":
   - "externals/kyuubi-trino-engine/**/*" 
 
-module:server
+"module:server":
   - "bin/kyuubi"
   - "kyuubi-server/**/*"
 
 # module:plugin
 
-module:ctl
+"module:ctl":
   - "bin/beeline"
