@@ -201,15 +201,18 @@
    limitations under the License.
 
 ------------------------------------------------------------------------------------
+This product bundles various third-party components under other open source licenses.
+This section summarizes those components and their licenses. See licenses/
+for text of these licenses.
 
-This product includes code from Apache Spark
+Apache License Version 2.0
+--------------------------
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/swagger/*
 
-* org.apache.kyuubi.Logging copied from classes in org.apache.spark.internal.Logging
-* org.apache.kyuubi.engine.spark.FetchIterator copied from org.apache.spark.sql.hive.thriftserver.FetchIterator
-* org.apache.kyuubi.engine.spark.shim.CatalogShim_v3_0 copied some methods from org.apache.spark.sql.connector.catalog.CatalogV2Implicits
-* org.apache.kyuubi.engine.flink.util.StringUtils copied from classes in org.apache.spark.sql.catalyst.util.StringUtils
-* org.apache.kyuubi.engine.flink.util.StringUtilsSuite copied from classes in org.apache.spark.sql.catalyst.util.StringUtilsSuite
-
-Copyright: 2014 and onwards The Apache Software Foundation
-Home page: https://spark.apache.org/
-License: https://www.apache.org/licenses/LICENSE-2.0
+MIT license
+-----------
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/assets/fonts/*
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/icon.min.css
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/semantic.min.css
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/semantic.min.js
+kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/jquery-3.6.0.min.js

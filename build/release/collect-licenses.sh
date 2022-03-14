@@ -55,7 +55,7 @@ done
 NOTICE="${DST}/NOTICE"
 [ -f "${NOTICE}" ] && rm "${NOTICE}"
 cp "${NOTICE_BINARY_PREAMBLE}" "${NOTICE}"
-(export LC_ALL=C; find "${TMP}" -name "NOTICE" | sort | xargs cat >> "${NOTICE}")
+(export LC_ALL=C; find "${TMP}" -name "NOTICE*" | sort | xargs ${KYUUBI_DIR}/build/release/append_notice.py "${NOTICE}")
 
 LICENSES="${DST}/licenses"
 [ -f "${LICENSES}" ] && rm -r "${LICENSES}"
