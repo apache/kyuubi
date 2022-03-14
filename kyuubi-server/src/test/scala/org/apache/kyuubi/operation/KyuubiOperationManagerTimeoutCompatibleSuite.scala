@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{SQLException, SQLTimeoutException}
+import java.sql.SQLException
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
@@ -35,22 +35,10 @@ class KyuubiOperationManagerTimeoutCompatibleSuite extends WithKyuubiServer
     withJdbcStatement() { statement =>
       Seq(-1, 0, 5, 10, 20).foreach { clientTimeout =>
         statement.setQueryTimeout(clientTimeout)
-
-        def query(): Unit = {
+        val e = intercept[SQLException] {
           statement.executeQuery("select java_method('java.lang.Thread', 'sleep', 10000L)")
-        }
-
-        if (clientTimeout > 0) {
-          val e = intercept[SQLTimeoutException] {
-            query()
-          }.getMessage
-          assert(e.contains("Query timed out after"))
-        } else {
-          val e = intercept[SQLException] {
-            query()
-          }.getMessage
-          assert(e.contains("Query was cancelled"))
-        }
+        }.getMessage
+        assert(e.contains("Query was cancelled"))
       }
     }
   }

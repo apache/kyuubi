@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.TimeUnit
-
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TGetOperationStatusResp
@@ -27,7 +25,6 @@ import org.apache.thrift.TException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.events.{EventLogging, KyuubiOperationEvent}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -58,18 +55,6 @@ class ExecuteStatement(
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_QUERY_TIMEOUT_COMPATIBLE_STATE)
   }
 
-  private val timeout = {
-    val systemQueryTimeout = session.sessionManager.getConf.get(OPERATION_QUERY_TIMEOUT)
-      .map(TimeUnit.MILLISECONDS.toSeconds)
-
-    systemQueryTimeout match {
-      case Some(systemQueryTimeout) if queryTimeout > 0 =>
-        math.min(systemQueryTimeout, queryTimeout)
-      case Some(systemQueryTimeout) => systemQueryTimeout
-      case None => queryTimeout
-    }
-  }
-
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
   override def beforeRun(): Unit = {
@@ -87,7 +72,7 @@ class ExecuteStatement(
       // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
       // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
       // engine crash without response before socket read timeout.
-      _remoteOpHandle = client.executeStatement(statement, confOverlay, true, timeout)
+      _remoteOpHandle = client.executeStatement(statement, confOverlay, true, queryTimeout)
       setHasResultSet(_remoteOpHandle.isHasResultSet)
     } catch onError()
   }
@@ -143,18 +128,11 @@ class ExecuteStatement(
           case CANCELED_STATE =>
             setState(OperationState.CANCELED)
 
+          case TIMEDOUT_STATE if operationQueryTimeoutCompatibleState =>
+            setState(OperationState.CANCELED)
+
           case TIMEDOUT_STATE =>
-            val state =
-              if (operationQueryTimeoutCompatibleState) {
-                if (queryTimeout > 0) {
-                  OperationState.TIMEOUT
-                } else {
-                  OperationState.CANCELED
-                }
-              } else {
-                OperationState.TIMEOUT
-              }
-            setState(state)
+            setState(OperationState.TIMEOUT)
 
           case ERROR_STATE =>
             throw KyuubiSQLException(statusResp.getErrorMessage)

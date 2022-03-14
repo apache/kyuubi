@@ -814,10 +814,8 @@ object KyuubiConf {
       .doc("Clients less than version 2.1 have no HIVE-4924 Patch, no queryTimeout parameter and" +
         s" no TIMEOUT state. When the server enables ${OPERATION_QUERY_TIMEOUT.key}, this will" +
         " cause the client of the lower version to get stuck. When true, regardless of the" +
-        " client version, if the client does not set queryTimeout, the TIMEOUT state will be" +
-        " converted to CANCELED to be compatible with the client. If the client sets" +
-        " queryTimeout, it means that the client supports the queryTimeout feature, and the" +
-        " TIMEOUT state is still used at this time.")
+        " client version, the TIMEOUT state will be converted to CANCELED to be compatible with" +
+        " the client.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
