@@ -232,8 +232,7 @@
                         </relocation>
                         <relocation>
                             <pattern>org.apache.hive.service.rpc.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift
-                            </shadedPattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>
                             <includes>
                                 <include>org.apache.hive.service.rpc.thrift.**</include>
                             </includes>
