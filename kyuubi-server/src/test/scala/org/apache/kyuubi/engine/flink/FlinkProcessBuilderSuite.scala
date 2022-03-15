@@ -65,6 +65,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
 
     val flinkHome = builder.flinkHome
     classpathEntries.add(s"$flinkHome$flinkSqlClientJarPathSuffixRegex")
+    classpathEntries.add(s"$flinkHome$flinkPythonJarPathSuffixRegex")
     classpathEntries.add(s"$flinkHome$flinkLibPathSuffixRegex")
     classpathEntries.add(s"$flinkHome$flinkConfPathSuffix")
     val envMap = builder.env
@@ -82,6 +83,8 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private val javaPath = s"${envDefault("JAVA_HOME")}${File.separator}bin${File.separator}java"
   private val flinkSqlClientJarPathSuffixRegex = s"${File.separator}opt${File.separator}" +
     s"flink-sql-client-.*.jar"
+  private val flinkPythonJarPathSuffixRegex = s"${File.separator}opt${File.separator}" +
+    s"flink-python-.*.jar"
   private val flinkLibPathSuffixRegex = s"${File.separator}lib${File.separator}\\*"
   private val flinkConfPathSuffix = s"${File.separator}conf"
   private val mainClassStr = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"

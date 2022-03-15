@@ -72,6 +72,9 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       "test-classloader-udf.jar",
       GENERATED_UDF_CLASS,
       GENERATED_UDF_CODE)
+    flinkConfig.setString(
+      "python.files",
+      this.getClass.getClassLoader.getResource("kyuubi_udf.py").getPath)
     val engineContext = new DefaultContext(
       List(udfJar.toURI.toURL).asJava,
       flinkConfig,

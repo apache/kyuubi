@@ -84,6 +84,17 @@ class FlinkProcessBuilder(
       }).head.getAbsolutePath
     classpathEntries.add(flinkSqlClientPath)
 
+    // flink python jar
+    val flinkPythonPath = Paths.get(flinkHome)
+      .resolve("opt")
+      .toFile
+      .listFiles(new FilenameFilter {
+        override def accept(dir: File, name: String): Boolean = {
+          name.toLowerCase.startsWith("flink-python")
+        }
+      }).head.getAbsolutePath
+    classpathEntries.add(flinkPythonPath)
+
     // jars from flink lib
     classpathEntries.add(s"$flinkHome${File.separator}lib${File.separator}*")
 

@@ -1003,6 +1003,15 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
+  test("execute statement - select python udf") {
+    withJdbcStatement() { statement =>
+      statement.execute(s"CREATE FUNCTION my_upper AS 'kyuubi_udf.upper_udf' LANGUAGE PYTHON")
+      val resultSet = statement.executeQuery(s"select my_upper('a')")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) === "A")
+    }
+  }
+
   test("async execute statement - select column name with dots") {
     withThriftClient { client =>
       val tOpenSessionReq = new TOpenSessionReq()
