@@ -74,7 +74,7 @@
   - "kyuubi-zookeeper/**/*"
 
 "module:hive":
-  - "kyuubi-hive-sql-engine/**/*"
+  - "externals/kyuubi-hive-sql-engine/**/*"
 
 "module:kubernetes":
   - ".dockerignore"
