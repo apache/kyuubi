@@ -1,3 +1,4 @@
+
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -199,3 +200,29 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+------------------------------------------------------------------------------------
+
+This project bundles some components that are licensed under the
+
+Apache License Version 2.0
+--------------------------
+org.apache.hive:hive-storage-api
+org.apache.hive:hive-service-rpc
+org.apache.hive.shims:hive-shims-common
+org.apache.hive.shims:hive-shims-0.23
+org.apache.hive:hive-common
+org.apache.hive:hive-metastore
+org.apache.hive:hive-serde
+org.apache.hive:hive-service
+com.google.guava:failureaccess
+com.google.guava:guava
+commons-codec:commons-codec
+commons-lang:commons-lang
+org.apache.curator:curator-framework
+org.apache.curator:curator-client
+org.apache.httpcomponents:httpclient
+org.apache.httpcomponents:httpcore
+org.apache.thrift:fb303
+org.apache.thrift:libthrift
+org.apache.zookeeper:zookeeper
