@@ -39,11 +39,12 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   private def loadFromMap(props: Map[String, String] = Utils.getSystemProperties): KyuubiConf = {
-    for ((key, value) <- props if key.startsWith("kyuubi.") || key.startsWith("spark.") ||
-        // for user specific defaults
-        key.startsWith("___")) {
-      set(key, value)
-    }
+
+    val ignorePrefixList = props.get(SERVER_CONF_IGNORE_PREFIX_LIST.key)
+      .map(_.split(",").map(_.trim).toSeq).getOrElse(get(SERVER_CONF_IGNORE_PREFIX_LIST))
+
+    props.withFilter { case (key, _) => !ignorePrefixList.contains(key.split("\\.").apply(0).trim) }
+      .foreach { case (key, value) => set(key, value) }
     this
   }
 
@@ -1237,4 +1238,17 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .createOptional
+
+  val SERVER_CONF_IGNORE_PREFIX_LIST: ConfigEntry[Seq[String]] =
+    buildConf("server.conf.ignore.prefix.list")
+      .doc("A comma separated list of ignored keys prefix. If kyuubi conf contains any of" +
+        " them, the key and the corresponding value will be removed silently during server" +
+        " setup." +
+        " Note that this rule is for server-side protection defined via administrators to" +
+        " prevent some essential configs from tampering but will not forbid users to set dynamic" +
+        " configurations via SET syntax.")
+      .version("1.6.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Seq("java", "sun", "os", "jdk"))
 }

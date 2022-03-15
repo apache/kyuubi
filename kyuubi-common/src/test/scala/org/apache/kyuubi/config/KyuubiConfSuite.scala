@@ -94,6 +94,15 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(conf.getUserDefaults("userc").getOption("spark.user.test").get === "c")
   }
 
+  test("Ignore configurations with a specific prefix") {
+    val conf = KyuubiConf().loadFileDefaults()
+    assert(conf.getOption("jdk.vendor.version").isEmpty)
+    assert(conf.getOption("sun.os.patch.level").isEmpty)
+    assert(conf.getOption("os.name").isEmpty)
+    assert(conf.getOption("java.vm.name").isEmpty)
+
+  }
+
   test("time config test") {
     val kyuubiConf = KyuubiConf()
     kyuubiConf.set(OPERATION_IDLE_TIMEOUT, 1000L)
