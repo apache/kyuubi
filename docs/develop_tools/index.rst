@@ -29,3 +29,4 @@ Develop Tools
     testing
     debugging
     developer
+    idea_setup
