@@ -115,6 +115,9 @@
         <hadoop.version>3.3.2</hadoop.version>
         <hive.version>2.3.9</hive.version>
         <hive.service.rpc.version>3.1.2</hive.service.rpc.version>
+        <hive.archive.name>apache-hive-${hive.version}-bin.tar.gz</hive.archive.name>
+        <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.version}</hive.archive.mirror>
+        <hive.archive.download.skip>false</hive.archive.download.skip>
         <hudi.version>0.10.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
         <iceberg.version>0.13.1</iceberg.version>
@@ -1923,6 +1926,13 @@
             <id>flink-provided</id>
             <properties>
                 <flink.archive.download.skip>true</flink.archive.download.skip>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>hive-provided</id>
+            <properties>
+                <hive.archive.download.skip>true</hive.archive.download.skip>
             </properties>
         </profile>
 
