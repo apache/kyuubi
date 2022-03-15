@@ -31,6 +31,13 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
     "jdbc:hive2://" + HiveSQLEngine.currentEngine.get.frontendServices.head.connectionUrl + "/;"
   }
 
+  test("get catalogs") {
+    withJdbcStatement() { statement =>
+      val catalogs = statement.getConnection.getMetaData.getCatalogs
+      assert(!catalogs.next())
+    }
+  }
+
   test("basic execute statements, create, insert query") {
     withJdbcStatement("hive_engine_test") { statement =>
       statement.execute("CREATE TABLE hive_engine_test(id int, value string) stored as orc")
