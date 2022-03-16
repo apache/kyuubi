@@ -46,7 +46,15 @@ Kyuubi uses the `dev/dependencyList` file to indicate what upstream dependencies
 
 For Pull requests, a linter for dependency check will be automatically executed in GitHub Actions.
 
-
 You can run `build/dependency.sh` locally first to detect the potential dependency change first.
 
 If the changes look expected, run `build/dependency.sh --replace` to update `dev/dependencyList` in your Pull request.
+
+
+## Format All Code
+
+Kyuubi uses [Spotless](https://github.com/diffplug/spotless/tree/main/plugin-maven)
+with [google-java-format](https://github.com/google/google-java-format) and [Scalafmt](https://scalameta.org/scalafmt/)
+to format the Java and Scala code.
+
+You can run `dev/reformat` to format all Java and Scala code.
