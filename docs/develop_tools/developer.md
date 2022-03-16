@@ -53,7 +53,7 @@ If the changes look expected, run `build/dependency.sh --replace` to update `dev
 
 ## Format All Code
 
-Kyuubi use [Spotless](https://github.com/diffplug/spotless/tree/main/plugin-maven)
+Kyuubi uses [Spotless](https://github.com/diffplug/spotless/tree/main/plugin-maven)
 with [google-java-format](https://github.com/google/google-java-format) and [Scalafmt](https://scalameta.org/scalafmt/)
 to format the Java and Scala code.
 
