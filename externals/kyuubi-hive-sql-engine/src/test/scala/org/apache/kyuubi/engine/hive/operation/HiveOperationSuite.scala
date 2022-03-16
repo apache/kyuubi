@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.engine.hive.operation
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{TABLE_CATALOG, TABLE_SCHEM}
 
 class HiveOperationSuite extends HiveJDBCTestHelper {
 
@@ -35,6 +38,28 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       val catalogs = statement.getConnection.getMetaData.getCatalogs
       assert(!catalogs.next())
+    }
+  }
+
+  test("get schemas") {
+    withDatabases("test_schema") { statement =>
+      statement.execute("CREATE SCHEMA IF NOT EXISTS test_schema")
+      val metaData = statement.getConnection.getMetaData
+      var resultSet = metaData.getSchemas(null, null)
+      val resultSetBuffer = ArrayBuffer[(String, String)]()
+      while (resultSet.next()) {
+        resultSetBuffer += Tuple2(
+          resultSet.getString(TABLE_CATALOG),
+          resultSet.getString(TABLE_SCHEM))
+      }
+      assert(resultSetBuffer.contains(("", "default")))
+      assert(resultSetBuffer.contains(("", "test_schema")))
+
+      resultSet = metaData.getSchemas("", "test")
+      while (resultSet.next()) {
+        assert(resultSet.getString(TABLE_CATALOG) == "")
+        assert(resultSet.getString(TABLE_SCHEM) == "test_schema")
+      }
     }
   }
 
