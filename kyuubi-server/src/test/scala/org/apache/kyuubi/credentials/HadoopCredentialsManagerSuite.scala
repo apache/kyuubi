@@ -99,6 +99,10 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
     withStartedManager(kyuubiConf) { manager =>
       val userRef = manager.getOrCreateUserCredentialsRef(appUser, true)
       assert(userRef.getEpoch == 0)
+
+      eventually(timeout(1100.milliseconds), interval(100.milliseconds)) {
+        assert(userRef.getEpoch == 1)
+      }
     }
   }
 

@@ -161,6 +161,7 @@ Key | Default | Meaning | Type | Since
 <code>kyuubi.credentials.hive.enabled</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Whether to renew Hive metastore delegation token</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.4.0</div>
 <code>kyuubi.credentials.renewal.interval</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How often Kyuubi renews one user's delegation tokens</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
 <code>kyuubi.credentials.renewal.retry.wait</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How long to wait before retrying to fetch new credentials after a failure.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
+<code>kyuubi.credentials.update.wait.timeout</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How long to wait until credentials are ready.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.5.0</div>
 
 
 ### Delegation

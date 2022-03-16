@@ -19,7 +19,10 @@ package org.apache.kyuubi.util
 
 import java.util.concurrent.{LinkedBlockingQueue, ScheduledExecutorService, ScheduledThreadPoolExecutor, ThreadPoolExecutor, TimeUnit}
 
-import org.apache.kyuubi.Logging
+import scala.concurrent.Awaitable
+import scala.concurrent.duration.Duration
+
+import org.apache.kyuubi.{KyuubiException, Logging}
 
 object ThreadUtils extends Logging {
 
@@ -48,5 +51,17 @@ object ThreadUtils extends Logging {
       nameFactory)
     executor.allowCoreThreadTimeOut(true)
     executor
+  }
+
+  def awaitResult[T](awaitable: Awaitable[T], atMost: Duration): T = {
+    try {
+      // `awaitPermission` is not actually used anywhere so it's safe to pass in null here.
+      // See SPARK-13747.
+      val awaitPermission = null.asInstanceOf[scala.concurrent.CanAwait]
+      awaitable.result(atMost)(awaitPermission)
+    } catch {
+      case e: Exception =>
+        throw new KyuubiException("Exception thrown in awaitResult: ", e)
+    }
   }
 }
