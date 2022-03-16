@@ -246,6 +246,14 @@ object KyuubiConf {
       .checkValue(t => t > 0, "must be positive integer")
       .createWithDefault(Duration.ofMinutes(1).toMillis)
 
+  val CREDENTIALS_UPDATE_WAIT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("credentials.update.wait.timeout")
+      .doc("How long to wait until credentials are ready.")
+      .version("1.5.0")
+      .timeConf
+      .checkValue(t => t > 0, "must be positive integer")
+      .createWithDefault(Duration.ofMinutes(1).toMillis)
+
   val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hadoopfs.enabled")
       .doc("Whether to renew Hadoop filesystem delegation tokens")
