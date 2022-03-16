@@ -52,7 +52,7 @@ REVISION: 1
 TEST SUITE: None
 NOTES:
 Get kyuubi expose URL by running these commands:
-  export NODE_PORT=$(kubectl get --namespace kyuubi -o jsonpath="{.spec.ports[0].nodePort}" services kyuubi-helm-nodeport)
+  export NODE_PORT=$(kubectl get --namespace kyuubi -o jsonpath="{.spec.ports[0].nodePort}" services kyuubi-svc)
   export NODE_IP=$(kubectl get nodes --namespace kyuubi -o jsonpath="{.items[0].status.addresses[0].address}")
   echo $NODE_IP:$NODE_PORT
 ```
