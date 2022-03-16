@@ -58,3 +58,6 @@ You can make various types of contributions to Kyuubi, including the following b
 ## Easter Eggs for Contributors
 
 TBD, please be patient for the surprise.
+
+## IDE Setup Guide
+[IntelliJ IDEA Setup Guide](https://kyuubi.apache.org/docs/latest/develop_tools/idea_setup.html)
