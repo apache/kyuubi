@@ -46,7 +46,9 @@ object PrivilegesBuilder {
     parts.map(quoteIfNeeded).mkString(".")
   }
 
-  // fixme error handling need improve here
+  /**
+   * fixme error handling need improve here
+   */
   private def getFieldVal[T](o: Any, name: String): T = {
     Try {
       val field = o.getClass.getDeclaredField(name)
@@ -76,7 +78,8 @@ object PrivilegesBuilder {
   }
 
   /**
-   * Build SparkPrivilegeObjects from Spark LogicalPlan
+   * Build PrivilegeObjects from Spark LogicalPlan
+   *
    * @param plan a Spark LogicalPlan used to generate SparkPrivilegeObjects
    * @param privilegeObjects input or output spark privilege object list
    * @param projectionList Projection list after pruning
@@ -85,11 +88,7 @@ object PrivilegesBuilder {
       plan: LogicalPlan,
       privilegeObjects: ArrayBuffer[PrivilegeObject],
       projectionList: Seq[NamedExpression] = Nil): Unit = {
-
-    /**
-     * Columns in Projection take priority for column level privilege checking
-     * @param table catalogTable of a given relation
-     */
+    
     def mergeProjection(table: CatalogTable): Unit = {
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
@@ -395,14 +394,14 @@ object PrivilegesBuilder {
   }
 
   /**
-   * Build input and output privilege objects from a Spark's [[LogicalPlan]]
+   * Build input and output privilege objects from a Spark's LogicalPlan
    *
-   * For [[Command]]s, build outputs if it has an target to write, build inputs for the
+   * For `Command`s, build outputs if it has an target to write, build inputs for the
    * inside query if exists.
    *
    * For other queries, build inputs.
    *
-   * @param plan A Spark [[LogicalPlan]]
+   * @param plan A Spark LogicalPlan
    */
   def build(plan: LogicalPlan): (Seq[PrivilegeObject], Seq[PrivilegeObject]) = {
     val inputObjs = new ArrayBuffer[PrivilegeObject]

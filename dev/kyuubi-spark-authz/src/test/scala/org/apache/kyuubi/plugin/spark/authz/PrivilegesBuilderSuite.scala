@@ -97,9 +97,11 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
 
   test("AlterTableRenameCommand") {
     withTable(s"${getClass.getSimpleName}.efg") { t =>
+      sql(s"CREATE TABLE IF NOT EXISTS ${getClass.getSimpleName}.${getClass.getSimpleName}_old" +
+        s" (key int, value string) USING parquet")
       // toLowerCase because of: SPARK-38587
       val plan =
-        sql(s"ALTER TABLE ${getClass.getSimpleName.toLowerCase}.${getClass.getSimpleName}" +
+        sql(s"ALTER TABLE ${getClass.getSimpleName.toLowerCase}.${getClass.getSimpleName}_old" +
           s" RENAME TO $t").queryExecution.analyzed
       val operationType = OperationType(plan.nodeName)
       assert(operationType === ALTERTABLE_RENAME)
@@ -109,7 +111,7 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
       tuple._2.foreach { po =>
         assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
         assert(po.dbname equalsIgnoreCase getClass.getSimpleName)
-        assert(Set(getClass.getSimpleName, "efg").contains(po.objectName))
+        assert(Set(getClass.getSimpleName + "_old", "efg").contains(po.objectName))
         assert(po.columns.isEmpty)
         val accessType = AccessType(po, operationType, isInput = false)
         assert(Set(AccessType.CREATE, AccessType.DROP).contains(accessType))
@@ -154,6 +156,23 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.DROP)
     }
+  }
 
+  test("AlterTableAddColumnsCommand") {
+    val plan = sql(s"ALTER TABLE ${getClass.getSimpleName}.${getClass.getSimpleName}" +
+      s" ADD COLUMNS (a int)").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERTABLE_ADDCOLS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase getClass.getSimpleName)
+    assert(po.objectName === getClass.getSimpleName)
+    assert(po.columns.head === "a")
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
   }
 }
