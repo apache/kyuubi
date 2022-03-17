@@ -20,19 +20,41 @@ package org.apache.kyuubi.plugin.spark.authz
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.plugin.spark.authz.OperationType.ALTERDATABASE
+import org.apache.kyuubi.plugin.spark.authz.OperationType._
 
 class PrivilegesBuilderSuite extends KyuubiFunSuite {
+
   private val spark = SparkSession.builder()
     .master("local")
     .config("spark.ui.enabled", "false")
     .getOrCreate()
   private val sql = spark.sql _
 
+  override def afterAll(): Unit = {
+    spark.stop()
+    super.afterAll()
+  }
+
   test("AlterDatabasePropertiesCommand") {
     val plan = sql("ALTER DATABASE default SET DBPROPERTIES (abc = '123')").queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
     assert(operationType === ALTERDATABASE)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.DATABASE)
+    assert(po.dbname === "default")
+    assert(po.objectName === "default")
+    assert(po.columns.isEmpty)
+  }
+
+  test("AlterDatabaseSetLocationCommand") {
+    val plan = sql("ALTER DATABASE default SET LOCATION 'some where i belong'")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERDATABASE_LOCATION)
     val tuple = PrivilegesBuilder.build(plan)
     assert(tuple._1.isEmpty)
     assert(tuple._2.size === 1)
