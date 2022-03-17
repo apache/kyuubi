@@ -168,12 +168,12 @@ object PrivilegesBuilder {
       case "AlterTableDropPartitionCommand" =>
         val table = getTable
         val cols = getPlanField[Seq[TablePartitionSpec]]("specs").flatMap(_.keySet).distinct
-        outputObjs += tablePrivileges(table, cols, DELETE)
+        outputObjs += tablePrivileges(table, cols)
 
       case "AlterTableRenameCommand" =>
         val oldTable = getPlanField[TableIdentifier]("oldName")
         val newTable = getPlanField[TableIdentifier]("newName")
-        outputObjs += tablePrivileges(oldTable)
+        outputObjs += tablePrivileges(oldTable, actionType = PrivilegeObjectActionType.DELETE)
         outputObjs += tablePrivileges(newTable)
 
       case "AlterTableRenamePartitionCommand" =>
@@ -302,8 +302,7 @@ object PrivilegesBuilder {
         inputObjs += functionPrivileges(func.database.orNull, func.funcName)
 
       case "DropTableCommand" =>
-        val table = getTable
-        outputObjs += tablePrivileges(table, actionType = DELETE)
+        outputObjs += tablePrivileges(getTable)
 
       case "ExplainCommand" =>
 

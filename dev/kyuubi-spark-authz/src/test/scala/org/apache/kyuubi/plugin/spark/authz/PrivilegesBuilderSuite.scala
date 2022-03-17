@@ -36,7 +36,14 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
     } finally {
       sql(s"DROP TABLE IF EXISTS $t")
     }
+  }
 
+  private def withDatabase(t: String)(f: String => Unit): Unit = {
+    try {
+      f(t)
+    } finally {
+      sql(s"DROP DATABASE IF EXISTS $t")
+    }
   }
   override def beforeAll(): Unit = {
     sql(s"CREATE DATABASE IF NOT EXISTS ${getClass.getSimpleName}")
@@ -66,6 +73,8 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
   }
 
   test("AlterDatabaseSetLocationCommand") {
@@ -82,9 +91,11 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
   }
 
-  test("AlterTableAddColumnsCommand") {
+  test("AlterTableRenameCommand") {
     withTable(s"${getClass.getSimpleName}.efg") { t =>
       // toLowerCase because of: SPARK-38587
       val plan =
@@ -96,12 +107,53 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._1.isEmpty)
       assert(tuple._2.size === 2)
       tuple._2.foreach { po =>
-        assert(po.actionType === PrivilegeObjectActionType.OTHER)
         assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
         assert(po.dbname equalsIgnoreCase getClass.getSimpleName)
         assert(Set(getClass.getSimpleName, "efg").contains(po.objectName))
         assert(po.columns.isEmpty)
+        val accessType = AccessType(po, operationType, isInput = false)
+        assert(Set(AccessType.CREATE, AccessType.DROP).contains(accessType))
       }
     }
+  }
+
+  test("CreateDatabaseCommand") {
+    withDatabase("CreateDatabaseCommand") { db =>
+      val plan = sql(s"CREATE DATABASE $db").queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === CREATEDATABASE)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.isEmpty)
+      assert(tuple._2.size === 1)
+      val po = tuple._2.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.typ === PrivilegeObjectType.DATABASE)
+      assert(po.dbname === "CreateDatabaseCommand")
+      assert(po.objectName === "CreateDatabaseCommand")
+      assert(po.columns.isEmpty)
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.CREATE)
+    }
+  }
+
+  test("DropDatabaseCommand") {
+    withDatabase("DropDatabaseCommand") { db =>
+      sql(s"CREATE DATABASE $db")
+      val plan = sql(s"DROP DATABASE DropDatabaseCommand").queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === DROPDATABASE)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.isEmpty)
+      assert(tuple._2.size === 1)
+      val po = tuple._2.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.typ === PrivilegeObjectType.DATABASE)
+      assert(po.dbname === "DropDatabaseCommand")
+      assert(po.objectName === "DropDatabaseCommand")
+      assert(po.columns.isEmpty)
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.DROP)
+    }
+
   }
 }

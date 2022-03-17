@@ -18,7 +18,6 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
-import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 
 object AccessType extends Enumeration {
@@ -29,11 +28,13 @@ object AccessType extends Enumeration {
 
   def apply(obj: PrivilegeObject, opType: OperationType, isInput: Boolean): AccessType = {
     obj.actionType match {
-      case OTHER => opType match {
+      case PrivilegeObjectActionType.OTHER => opType match {
           case CREATEDATABASE if obj.typ == DATABASE => CREATE
           case CREATEFUNCTION if obj.typ == FUNCTION => CREATE
           case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT if obj.typ == TABLE_OR_VIEW =>
             if (isInput) SELECT else CREATE
+          // new table new `CREATE` privilege here and the old table gets `DELETE` via actionType
+          case ALTERTABLE_RENAME => CREATE
           case ALTERDATABASE |
               ALTERDATABASE_LOCATION |
               ALTERTABLE_ADDCOLS |
@@ -41,7 +42,6 @@ object AccessType extends Enumeration {
               ALTERTABLE_DROPPARTS |
               ALTERTABLE_LOCATION |
               ALTERTABLE_PROPERTIES |
-              ALTERTABLE_RENAME |
               ALTERTABLE_RENAMECOL |
               ALTERTABLE_REPLACECOLS |
               ALTERTABLE_SERDEPROPERTIES |
@@ -64,8 +64,8 @@ object AccessType extends Enumeration {
           case SHOWDATABASES | SWITCHDATABASE | DESCDATABASE | SHOWTABLES => USE
           case TRUNCATETABLE => UPDATE
           case _ => NONE
-
         }
+      case PrivilegeObjectActionType.DELETE => DROP
       case _ => UPDATE
     }
   }
