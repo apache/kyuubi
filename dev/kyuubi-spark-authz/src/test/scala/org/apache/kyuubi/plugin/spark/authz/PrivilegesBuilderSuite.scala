@@ -30,6 +30,14 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
     .getOrCreate()
   private val sql = spark.sql _
 
+  private def withTable(t: String)(f: String => Unit): Unit = {
+    try {
+      f(t)
+    } finally {
+      sql(s"DROP TABLE IF EXISTS $t")
+    }
+
+  }
   override def beforeAll(): Unit = {
     sql(s"CREATE DATABASE IF NOT EXISTS ${getClass.getSimpleName}")
     sql(s"CREATE TABLE IF NOT EXISTS ${getClass.getSimpleName}.${getClass.getSimpleName}" +
@@ -77,9 +85,23 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
   }
 
   test("AlterTableAddColumnsCommand") {
-    val plan = sql(s"ALTER TABLE ${getClass.getSimpleName}.${getClass.getSimpleName}" +
-      s" RENAME TO abc").queryExecution.analyzed
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === ALTERDATABASE_LOCATION)
+    withTable(s"${getClass.getSimpleName}.efg") { t =>
+      // toLowerCase because of: SPARK-38587
+      val plan =
+        sql(s"ALTER TABLE ${getClass.getSimpleName.toLowerCase}.${getClass.getSimpleName}" +
+          s" RENAME TO $t").queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === ALTERTABLE_RENAME)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.isEmpty)
+      assert(tuple._2.size === 2)
+      tuple._2.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
+        assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.dbname equalsIgnoreCase getClass.getSimpleName)
+        assert(Set(getClass.getSimpleName, "efg").contains(po.objectName))
+        assert(po.columns.isEmpty)
+      }
+    }
   }
 }
