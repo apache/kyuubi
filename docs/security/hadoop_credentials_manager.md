@@ -75,3 +75,16 @@ kyuubi\.credentials<br>\.hadoopfs\.uris|<div style='width: 65pt;word-wrap: break
 kyuubi\.credentials<br>\.hive\.enabled|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Whether to renew Hive metastore delegation token</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.4.0</div>
 kyuubi\.credentials<br>\.renewal\.interval|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How often Kyuubi renews one user's delegation tokens</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
 kyuubi\.credentials<br>\.renewal\.retry\.wait|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How long to wait before retrying to fetch new credentials after a failure.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
+
+
+### Required Security Configs
+
+The necessary configurations for hdfs and hive to obtain delegation token are as follows:
+
+Key | Meaning | value
+--- | --- | ---
+<div style='width: 40pt;word-wrap: break-word;white-space: normal'>hadoop.security.authentication</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>Set the authentication for the cluster</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>kerberos</div>
+<div style='width: 40pt;word-wrap: break-word;white-space: normal'>hive.metastore.uris</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>URI for client to contact metastore server</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>thrift://{metastoreHost}:{metastorePort}}</div>
+<div style='width: 40pt;word-wrap: break-word;white-space: normal'>hive.metastore.sasl.enabled</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>If true, the metastore thrift interface will be secured with SASL.Clients must authenticate with Kerberos.</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>true</div>
+<div style='width: 40pt;word-wrap: break-word;white-space: normal'>hive.metastore.kerberos.principal</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>The service principal for the metastore thrift server. The special string _HOST will be replaced automatically with the correct host name.</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>for example hive/_HOST@${realm}</div>
+<div style='width: 40pt;word-wrap: break-word;white-space: normal'>hive.metastore.kerberos.keytab.file</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>The path to the Kerberos Keytab file containing the metastore thrift server's service principal.</div>|<div style='width: 40pt;word-wrap: break-word;white-space: normal'>for example /etc/security/keytabs/hive.service.keytab</div>
