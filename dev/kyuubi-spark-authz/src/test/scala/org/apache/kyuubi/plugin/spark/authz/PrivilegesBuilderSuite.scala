@@ -30,7 +30,17 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
     .getOrCreate()
   private val sql = spark.sql _
 
+  override def beforeAll(): Unit = {
+    sql(s"CREATE DATABASE IF NOT EXISTS ${getClass.getSimpleName}")
+    sql(s"CREATE TABLE IF NOT EXISTS ${getClass.getSimpleName}.${getClass.getSimpleName}" +
+      s" (key int, value string) USING parquet")
+
+    super.beforeAll()
+  }
+
   override def afterAll(): Unit = {
+    sql(s"DROP TABLE IF EXISTS ${getClass.getSimpleName}.${getClass.getSimpleName}")
+    sql(s"DROP DATABASE IF EXISTS ${getClass.getSimpleName}")
     spark.stop()
     super.afterAll()
   }
@@ -64,5 +74,12 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
+  }
+
+  test("AlterTableAddColumnsCommand") {
+    val plan = sql(s"ALTER TABLE ${getClass.getSimpleName}.${getClass.getSimpleName}" +
+      s" RENAME TO abc").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERDATABASE_LOCATION)
   }
 }
