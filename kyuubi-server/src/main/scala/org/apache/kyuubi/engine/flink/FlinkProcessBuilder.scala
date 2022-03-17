@@ -98,7 +98,12 @@ class FlinkProcessBuilder(
     ("FLINK_CONF_DIR" -> s"$FLINK_HOME/conf") +
     ("FLINK_SQL_ENGINE_JAR" -> mainResource.get) +
     ("FLINK_SQL_ENGINE_DYNAMIC_ARGS" ->
-      conf.getAll.map { case (k, v) => s"-D$k=$v" }.mkString(" "))
+      conf.getAll.map { case (k, v) =>
+        k match {
+          case "line.separator" => ""
+          case _ => s"-D$k=$v"
+        }
+      }.mkString(" "))
 
   override protected def commands: Array[String] = Array(executable)
 
