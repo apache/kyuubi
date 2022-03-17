@@ -100,7 +100,11 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
         val required = provider.delegationTokensRequired()
         if (!required) {
           warn(s"Service ${provider.serviceName} does not require a token." +
-            s" Check your configuration to see if security is disabled or not.")
+            s" Check your configuration to see if security is disabled or not." +
+            s" If security is enabled, some configurations of ${provider.serviceName} " +
+            s" might be missing, please check the configurations in " +
+            s" https://kyuubi.readthedocs.io/en/latest/security" +
+            s"/hadoop_credentials_manager.html#required-security-configs")
           provider.close()
         }
         required
