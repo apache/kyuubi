@@ -21,48 +21,14 @@ object OperationType extends Enumeration {
 
   type OperationType = Value
 
-  val
-  ALTERDATABASE,
-  ALTERDATABASE_LOCATION,
-  ALTERTABLE_ADDCOLS,
-  ALTERTABLE_ADDPARTS,
-  ALTERTABLE_RENAMECOL,
-  ALTERTABLE_REPLACECOLS,
-  ALTERTABLE_DROPPARTS,
-  ALTERTABLE_RENAMEPART,
-  ALTERTABLE_RENAME,
-  ALTERTABLE_PROPERTIES,
-  ALTERTABLE_SERDEPROPERTIES,
-  ALTERTABLE_LOCATION,
-  ALTERVIEW_AS,
-  ALTERVIEW_RENAME,
-  ANALYZE_TABLE,
-  CREATEDATABASE,
-  CREATETABLE,
-  CREATETABLE_AS_SELECT,
-  CREATEFUNCTION,
-  CREATEVIEW,
-  DESCDATABASE,
-  DESCFUNCTION,
-  DESCTABLE,
-  DROPDATABASE,
-  DROPFUNCTION,
-  DROPTABLE,
-  DROPVIEW,
-  EXPLAIN,
-  LOAD,
-  MSCK,
-  QUERY,
-  SHOWCONF,
-  SHOW_CREATETABLE,
-  SHOWCOLUMNS,
-  SHOWDATABASES,
-  SHOWFUNCTIONS,
-  SHOWPARTITIONS,
-  SHOWTABLES,
-  SHOW_TBLPROPERTIES,
-  SWITCHDATABASE,
-  TRUNCATETABLE = Value
+  val ALTERDATABASE, ALTERDATABASE_LOCATION, ALTERTABLE_ADDCOLS, ALTERTABLE_ADDPARTS,
+      ALTERTABLE_RENAMECOL, ALTERTABLE_REPLACECOLS, ALTERTABLE_DROPPARTS, ALTERTABLE_RENAMEPART,
+      ALTERTABLE_RENAME, ALTERTABLE_PROPERTIES, ALTERTABLE_SERDEPROPERTIES, ALTERTABLE_LOCATION,
+      ALTERVIEW_AS, ALTERVIEW_RENAME, ANALYZE_TABLE, CREATEDATABASE, CREATETABLE,
+      CREATETABLE_AS_SELECT, CREATEFUNCTION, CREATEVIEW, DESCDATABASE, DESCFUNCTION, DESCTABLE,
+      DROPDATABASE, DROPFUNCTION, DROPTABLE, DROPVIEW, EXPLAIN, LOAD, MSCK, QUERY, SHOWCONF,
+      SHOW_CREATETABLE, SHOWCOLUMNS, SHOWDATABASES, SHOWFUNCTIONS, SHOWPARTITIONS, SHOWTABLES,
+      SHOW_TBLPROPERTIES, SWITCHDATABASE, TRUNCATETABLE = Value
 
   /**
    * Mapping Spark plan's nodeName to operation type
@@ -79,34 +45,34 @@ object OperationType extends Enumeration {
       case "AlterDatabasePropertiesCommand" => ALTERDATABASE
       case "AlterDatabaseSetLocationCommand" => ALTERDATABASE_LOCATION
       case "AlterTableAddColumnsCommand" |
-           "AlterHoodieTableAddColumnsCommand" => ALTERTABLE_ADDCOLS
+          "AlterHoodieTableAddColumnsCommand" => ALTERTABLE_ADDCOLS
       case "AlterTableAddPartitionCommand" => ALTERTABLE_ADDPARTS
       case "AlterTableChangeColumnCommand" => ALTERTABLE_REPLACECOLS
       case "AlterTableDropPartitionCommand" => ALTERTABLE_DROPPARTS
       case "AlterTableRenameCommand" => ALTERTABLE_RENAME
       case "AlterTableRecoverPartitionsCommand" |
-           "RepairTableCommand" => MSCK
+          "RepairTableCommand" => MSCK
       case "AlterTableRenamePartitionCommand" => ALTERTABLE_RENAMEPART
       case "AlterTableSerDePropertiesCommand" => ALTERTABLE_SERDEPROPERTIES
       case "AlterTableSetLocationCommand" => ALTERTABLE_LOCATION
       case "AlterTableSetPropertiesCommand" |
-           "AlterTableUnsetPropertiesCommand" => ALTERTABLE_PROPERTIES
+          "AlterTableUnsetPropertiesCommand" => ALTERTABLE_PROPERTIES
       case ava if ava.contains("AlterViewAs") => ALTERVIEW_AS
       case ac if ac.startsWith("Analyze") => ANALYZE_TABLE
       case "AppendData" => ALTERTABLE_ADDPARTS
       case "CreateDatabaseCommand" => CREATEDATABASE
       case "CreateTableAsSelect" |
-           "CreateDataSourceTableAsSelectCommand" |
-           "CreateHiveTableAsSelectCommand" |
-           "OptimizedCreateHiveTableAsSelectCommand" => CREATETABLE_AS_SELECT
+          "CreateDataSourceTableAsSelectCommand" |
+          "CreateHiveTableAsSelectCommand" |
+          "OptimizedCreateHiveTableAsSelectCommand" => CREATETABLE_AS_SELECT
       case "CreateTableCommand" |
-           "CreateDataSourceTableCommand" |
-           "CreateTableLikeCommand" => CREATETABLE
+          "CreateDataSourceTableCommand" |
+          "CreateTableLikeCommand" => CREATETABLE
       case "CreateViewCommand" |
-           "CacheTableCommand" |
-           "CreateTempViewUsing" |
-           "CacheTable" |
-           "CacheTableAsSelect" => CREATEVIEW
+          "CacheTableCommand" |
+          "CreateTempViewUsing" |
+          "CacheTable" |
+          "CacheTableAsSelect" => CREATEVIEW
       case "DescribeDatabaseCommand" => DESCDATABASE
       case "DescribeFunctionCommand" => DESCFUNCTION
       case "DescribeColumnCommand" => DESCTABLE
@@ -115,24 +81,24 @@ object OperationType extends Enumeration {
       case "DropTableCommand" => DROPTABLE
       case "ExplainCommand" => EXPLAIN
       case "InsertIntoDataSourceCommand" |
-           "InsertIntoDataSourceDirCommand" |
-           "InsertIntoHiveTable" |
-           "InsertIntoHiveDirCommand" |
-           "SaveIntoDataSourceCommand" => QUERY
+          "InsertIntoDataSourceDirCommand" |
+          "InsertIntoHiveTable" |
+          "InsertIntoHiveDirCommand" |
+          "SaveIntoDataSourceCommand" => QUERY
       case "LoadDataCommand" => LOAD
       case "SetCommand" => SHOWCONF
       case "RefreshTableCommand" => QUERY
       case "SetCatalogCommand" |
-           "SetCatalogAndNamespace" |
-           "SetNamespaceCommand" |
-           "SetDatabaseCommand" => SWITCHDATABASE
+          "SetCatalogAndNamespace" |
+          "SetNamespaceCommand" |
+          "SetDatabaseCommand" => SWITCHDATABASE
       case "ShowCatalogsCommand" |
-           "ShowCurrentNamespaceCommand" => SHOWDATABASES
+          "ShowCurrentNamespaceCommand" => SHOWDATABASES
       case "ShowTablesCommand" |
-           "ShowViewsCommand" => SHOWTABLES
+          "ShowViewsCommand" => SHOWTABLES
       case "ShowColumnsCommand" => SHOWCOLUMNS
       case "ShowCreateTableAsSerdeCommand" |
-           "ShowCreateTableCommand" => SHOW_CREATETABLE
+          "ShowCreateTableCommand" => SHOW_CREATETABLE
       case "ShowFunctionsCommand" => SHOWFUNCTIONS
       case "ShowPartitionsCommand" => SHOWPARTITIONS
       case "ShowTablePropertiesCommand" => SHOW_TBLPROPERTIES

@@ -25,19 +25,13 @@ object ObjectType extends Enumeration {
 
   type ObjectType = Value
 
-  val
-  NONE,
-  DATABASE,
-  TABLE,
-  VIEW,
-  COLUMN,
-  FUNCTION = Value
+  val NONE, DATABASE, TABLE, VIEW, COLUMN, FUNCTION = Value
 
   def apply(obj: PrivilegeObject, opType: OperationType): ObjectType = {
     obj.typ match {
       case PrivilegeObjectType.DATABASE | null => DATABASE
-      case PrivilegeObjectType.TABLE_OR_VIEW
-          if obj.columns != null && obj.columns.nonEmpty => COLUMN
+      case PrivilegeObjectType.TABLE_OR_VIEW if obj.columns != null && obj.columns.nonEmpty =>
+        COLUMN
       case PrivilegeObjectType.TABLE_OR_VIEW
           if StringUtils.containsIgnoreCase(opType.toString, "view") => VIEW
       case PrivilegeObjectType.TABLE_OR_VIEW => TABLE

@@ -82,9 +82,9 @@ object PrivilegesBuilder {
    * @param projectionList Projection list after pruning
    */
   private def buildQuery(
-    plan: LogicalPlan,
-    privilegeObjects: ArrayBuffer[PrivilegeObject],
-    projectionList: Seq[NamedExpression] = Nil): Unit = {
+      plan: LogicalPlan,
+      privilegeObjects: ArrayBuffer[PrivilegeObject],
+      projectionList: Seq[NamedExpression] = Nil): Unit = {
 
     /**
      * Columns in Projection take priority for column level privilege checking
@@ -125,9 +125,9 @@ object PrivilegesBuilder {
    * @param outputObjs output privilege object list
    */
   private def buildCommand(
-    plan: LogicalPlan,
-    inputObjs: ArrayBuffer[PrivilegeObject],
-    outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
+      plan: LogicalPlan,
+      inputObjs: ArrayBuffer[PrivilegeObject],
+      outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
 
     def getPlanField[T](field: String): T = {
       getFieldVal[T](plan, field)
@@ -143,9 +143,9 @@ object PrivilegesBuilder {
 
     plan.nodeName match {
       case "AlterDatabasePropertiesCommand" |
-           "AlterDatabaseSetLocationCommand" |
-           "CreateDatabaseCommand" |
-           "DropDatabaseCommand" =>
+          "AlterDatabaseSetLocationCommand" |
+          "CreateDatabaseCommand" |
+          "DropDatabaseCommand" =>
         val database = getPlanField[String]("databaseName")
         outputObjs += databasePrivileges(database)
 
@@ -182,9 +182,9 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(table, cols)
 
       case "AlterTableSerDePropertiesCommand" |
-           "AlterTableSetLocationCommand" |
-           "AlterTableSetPropertiesCommand" |
-           "AlterTableUnsetPropertiesCommand" =>
+          "AlterTableSetLocationCommand" |
+          "AlterTableSetPropertiesCommand" |
+          "AlterTableUnsetPropertiesCommand" =>
         val table = getTable
         outputObjs += tablePrivileges(table)
 
@@ -201,13 +201,13 @@ object PrivilegesBuilder {
         inputObjs += tablePrivileges(table, cols)
 
       case "AnalyzePartitionCommand" |
-           "AnalyzeTableCommand" |
-           "RefreshTableCommand" =>
+          "AnalyzeTableCommand" |
+          "RefreshTableCommand" =>
         val table = getPlanField[TableIdentifier]("tableIdent")
         inputObjs += tablePrivileges(table)
 
       case "AnalyzeTableCommand" |
-           "ShowTablesCommand" =>
+          "ShowTablesCommand" =>
         val db = getPlanField[Option[String]]("databaseName")
         if (db.nonEmpty) {
           inputObjs += databasePrivileges(db.get)
@@ -242,8 +242,8 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(table)
 
       case "CreateDataSourceTableAsSelectCommand" |
-           "OptimizedCreateHiveTableAsSelectCommand" |
-           "InsertIntoHiveTable" =>
+          "OptimizedCreateHiveTableAsSelectCommand" |
+          "InsertIntoHiveTable" =>
         val table = getPlanField[CatalogTable]("table").identifier
         outputObjs += tablePrivileges(table)
         buildQuery(getQuery, inputObjs)
@@ -256,14 +256,14 @@ object PrivilegesBuilder {
         buildQuery(getQuery, inputObjs)
 
       case "CreateFunctionCommand" |
-           "DropFunctionCommand" |
-           "RefreshFunctionCommand" =>
+          "DropFunctionCommand" |
+          "RefreshFunctionCommand" =>
         val db = getPlanField[Option[String]]("databaseName")
         val functionName = getPlanField[String]("functionName")
         outputObjs += functionPrivileges(db.orNull, functionName)
 
       case "CreateTableAsSelect" |
-           "ReplaceTableAsSelect" =>
+          "ReplaceTableAsSelect" =>
         val left = getPlanField[LogicalPlan]("name")
         left.nodeName match {
           case "ResolvedDBObjectName" =>
@@ -319,9 +319,9 @@ object PrivilegesBuilder {
         buildQuery(getQuery, inputObjs)
 
       case "InsertIntoDataSourceDirCommand" |
-           "SaveIntoDataSourceCommand" |
-           "InsertIntoHadoopFsRelationCommand" |
-           "InsertIntoHiveDirCommand" =>
+          "SaveIntoDataSourceCommand" |
+          "InsertIntoHadoopFsRelationCommand" |
+          "InsertIntoHiveDirCommand" =>
         // TODO: Should get the table via datasource options
         buildQuery(getQuery, inputObjs)
 
@@ -362,7 +362,7 @@ object PrivilegesBuilder {
         inputObjs += tablePrivileges(getTable)
 
       case "ShowCreateTableCommand" |
-           "ShowTablePropertiesCommand" =>
+          "ShowTablePropertiesCommand" =>
         val table = getPlanField[TableIdentifier]("table")
         inputObjs += tablePrivileges(table)
 
@@ -372,26 +372,26 @@ object PrivilegesBuilder {
         inputObjs += tablePrivileges(getTable)
 
       case _ =>
-        // AddArchivesCommand
-        // AddFileCommand
-        // AddJarCommand
-        // AnalyzeColumnCommand
-        // ClearCacheCommand
-        // CreateTempViewUsing
-        // DescribeFunctionCommand
-        // DescribeQueryCommand
-        // ExplainCommand
-        // ListArchivesCommand
-        // ListFilesCommand
-        // ListJarsCommand
-        // RefreshResource
-        // RefreshTable
-        // RefreshTable
-        // ResetCommand
-        // SetCommand
-        // ShowDatabasesCommand
-        // StreamingExplainCommand
-        // UncacheTableCommand
+      // AddArchivesCommand
+      // AddFileCommand
+      // AddJarCommand
+      // AnalyzeColumnCommand
+      // ClearCacheCommand
+      // CreateTempViewUsing
+      // DescribeFunctionCommand
+      // DescribeQueryCommand
+      // ExplainCommand
+      // ListArchivesCommand
+      // ListFilesCommand
+      // ListJarsCommand
+      // RefreshResource
+      // RefreshTable
+      // RefreshTable
+      // ResetCommand
+      // SetCommand
+      // ShowDatabasesCommand
+      // StreamingExplainCommand
+      // UncacheTableCommand
     }
   }
 

@@ -55,16 +55,15 @@ object RangerSparkAuthorizer {
     val requests = new ArrayBuffer[RangerAccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
       val resource = RangerAccessResource(DATABASE, null)
-      requests += RangerAccessRequest(resource, user, groups, opType.toString,
-        AccessType.USE)
+      requests += RangerAccessRequest(resource, user, groups, opType.toString, AccessType.USE)
     }
 
     def addAccessRequest(objects: Seq[PrivilegeObject], isInput: Boolean): Unit = {
       objects.foreach { obj =>
         val resource = RangerAccessResource(obj, opType)
         val accessType = AccessType(obj, opType, isInput)
-        if (accessType != AccessType.NONE && !requests.exists(
-          o => o.accessType == accessType && o.getResource == resource)) {
+        if (accessType != AccessType.NONE && !requests.exists(o =>
+            o.accessType == accessType && o.getResource == resource)) {
           requests += RangerAccessRequest(resource, user, groups, opType.toString, accessType)
         }
       }

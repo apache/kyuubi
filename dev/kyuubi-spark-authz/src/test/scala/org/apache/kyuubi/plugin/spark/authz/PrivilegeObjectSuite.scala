@@ -31,9 +31,17 @@ class PrivilegeObjectSuite extends KyuubiFunSuite {
 
     val tbl1 = PrivilegeObject(PrivilegeObjectType.TABLE_OR_VIEW, INSERT, "default1", "default1")
     val tbl2 = PrivilegeObject(
-      PrivilegeObjectType.TABLE_OR_VIEW, INSERT, "default1", "default1", Seq("ab"))
+      PrivilegeObjectType.TABLE_OR_VIEW,
+      INSERT,
+      "default1",
+      "default1",
+      Seq("ab"))
     val tbl22 = PrivilegeObject(
-      PrivilegeObjectType.TABLE_OR_VIEW, OTHER, "default1", "default1", Seq("ab"))
+      PrivilegeObjectType.TABLE_OR_VIEW,
+      OTHER,
+      "default1",
+      "default1",
+      Seq("ab"))
     assert(db1.compareTo(tbl1) === -1)
     assert(tbl1.compareTo(tbl2) === -1)
     assert(tbl2.compareTo(tbl22) === 0)

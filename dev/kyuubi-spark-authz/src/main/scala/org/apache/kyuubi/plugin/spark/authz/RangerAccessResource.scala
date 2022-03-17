@@ -42,7 +42,7 @@ object RangerAccessResource {
       firstLevelResource: String,
       secondLevelResource: String,
       thirdLevelResource: String): RangerAccessResource = {
-   val resource = new RangerAccessResource(objectType)
+    val resource = new RangerAccessResource(objectType)
 
     resource.objectType match {
       case DATABASE => resource.setValue("database", firstLevelResource)
@@ -66,7 +66,7 @@ object RangerAccessResource {
       objectType: ObjectType,
       firstLevelResource: String,
       secondLevelResource: String): RangerAccessResource = {
-      apply(objectType, firstLevelResource, secondLevelResource, null)
+    apply(objectType, firstLevelResource, secondLevelResource, null)
   }
 
   def apply(
@@ -86,8 +86,8 @@ object RangerAccessResource {
     }
   }
   def apply(
-    obj: PrivilegeObject,
-    opType: OperationType): RangerAccessResource = {
+      obj: PrivilegeObject,
+      opType: OperationType): RangerAccessResource = {
     apply(ObjectType(obj, opType), obj.dbname, obj.objectName, obj.columns.mkString(","))
   }
 }

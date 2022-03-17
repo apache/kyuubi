@@ -25,58 +25,47 @@ object AccessType extends Enumeration {
 
   type AccessType = Value
 
-  val
-  NONE,
-  CREATE,
-  ALTER,
-  DROP,
-  SELECT,
-  UPDATE,
-  USE,
-  READ,
-  WRITE,
-  ALL,
-  ADMIN = Value
+  val NONE, CREATE, ALTER, DROP, SELECT, UPDATE, USE, READ, WRITE, ALL, ADMIN = Value
 
   def apply(obj: PrivilegeObject, opType: OperationType, isInput: Boolean): AccessType = {
     obj.actionType match {
       case OTHER => opType match {
-        case CREATEDATABASE if obj.typ == DATABASE => CREATE
-        case CREATEFUNCTION if obj.typ == FUNCTION => CREATE
-        case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT if obj.typ == TABLE_OR_VIEW =>
-          if (isInput) SELECT else CREATE
-        case ALTERDATABASE |
-             ALTERDATABASE_LOCATION |
-             ALTERTABLE_ADDCOLS |
-             ALTERTABLE_ADDPARTS |
-             ALTERTABLE_DROPPARTS |
-             ALTERTABLE_LOCATION |
-             ALTERTABLE_PROPERTIES |
-             ALTERTABLE_RENAME |
-             ALTERTABLE_RENAMECOL |
-             ALTERTABLE_REPLACECOLS |
-             ALTERTABLE_SERDEPROPERTIES |
-             ALTERVIEW_AS |
-             ALTERVIEW_RENAME |
-             MSCK => ALTER
-        case DROPDATABASE | DROPTABLE | DROPFUNCTION | DROPVIEW => DROP
-        case LOAD => if (isInput) SELECT else UPDATE
-        case QUERY |
-             SHOW_CREATETABLE |
-             SHOW_TBLPROPERTIES |
-             SHOWPARTITIONS |
-             ANALYZE_TABLE => SELECT
-        case SHOWCOLUMNS | DESCTABLE =>
-          if (RangerSparkPlugin.showColumnsOption.equalsIgnoreCase("show-all")) {
-            USE
-          } else {
-            SELECT
-          }
-        case SHOWDATABASES | SWITCHDATABASE | DESCDATABASE| SHOWTABLES => USE
-        case TRUNCATETABLE => UPDATE
-        case _ => NONE
+          case CREATEDATABASE if obj.typ == DATABASE => CREATE
+          case CREATEFUNCTION if obj.typ == FUNCTION => CREATE
+          case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT if obj.typ == TABLE_OR_VIEW =>
+            if (isInput) SELECT else CREATE
+          case ALTERDATABASE |
+              ALTERDATABASE_LOCATION |
+              ALTERTABLE_ADDCOLS |
+              ALTERTABLE_ADDPARTS |
+              ALTERTABLE_DROPPARTS |
+              ALTERTABLE_LOCATION |
+              ALTERTABLE_PROPERTIES |
+              ALTERTABLE_RENAME |
+              ALTERTABLE_RENAMECOL |
+              ALTERTABLE_REPLACECOLS |
+              ALTERTABLE_SERDEPROPERTIES |
+              ALTERVIEW_AS |
+              ALTERVIEW_RENAME |
+              MSCK => ALTER
+          case DROPDATABASE | DROPTABLE | DROPFUNCTION | DROPVIEW => DROP
+          case LOAD => if (isInput) SELECT else UPDATE
+          case QUERY |
+              SHOW_CREATETABLE |
+              SHOW_TBLPROPERTIES |
+              SHOWPARTITIONS |
+              ANALYZE_TABLE => SELECT
+          case SHOWCOLUMNS | DESCTABLE =>
+            if (RangerSparkPlugin.showColumnsOption.equalsIgnoreCase("show-all")) {
+              USE
+            } else {
+              SELECT
+            }
+          case SHOWDATABASES | SWITCHDATABASE | DESCDATABASE | SHOWTABLES => USE
+          case TRUNCATETABLE => UPDATE
+          case _ => NONE
 
-      }
+        }
       case _ => UPDATE
     }
   }
