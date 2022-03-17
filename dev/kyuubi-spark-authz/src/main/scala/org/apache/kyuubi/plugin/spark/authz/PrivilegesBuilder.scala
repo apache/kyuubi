@@ -88,7 +88,7 @@ object PrivilegesBuilder {
       plan: LogicalPlan,
       privilegeObjects: ArrayBuffer[PrivilegeObject],
       projectionList: Seq[NamedExpression] = Nil): Unit = {
-    
+
     def mergeProjection(table: CatalogTable): Unit = {
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
