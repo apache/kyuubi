@@ -1866,6 +1866,9 @@
                 <!-- Hudi 0.10.0 still support Spark 3.0, but need build by user with specific profile -->
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <modules>
+                <module>dev/kyuubi-spark-authz</module>
+            </modules>
         </profile>
 
         <profile>
@@ -1879,6 +1882,7 @@
             <modules>
                 <module>dev/kyuubi-extension-spark-common</module>
                 <module>dev/kyuubi-extension-spark-3-1</module>
+                <module>dev/kyuubi-spark-authz</module>
             </modules>
         </profile>
 
@@ -1893,6 +1897,7 @@
             <modules>
                 <module>dev/kyuubi-extension-spark-common</module>
                 <module>dev/kyuubi-extension-spark-3-2</module>
+                <module>dev/kyuubi-spark-authz</module>
             </modules>
         </profile>
 
