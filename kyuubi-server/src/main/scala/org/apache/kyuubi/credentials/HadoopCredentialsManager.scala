@@ -96,7 +96,8 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
         val required = provider.delegationTokensRequired()
         if (!required) {
           warn(s"Service ${provider.serviceName} does not require a token." +
-            s" Check your configuration to see if security is disabled or not.")
+            s" Check your configuration to see if security is disabled or not." +
+            s" If security is enabled,some configuration of ${provider.serviceName} is missing")
           provider.close()
         }
         required
