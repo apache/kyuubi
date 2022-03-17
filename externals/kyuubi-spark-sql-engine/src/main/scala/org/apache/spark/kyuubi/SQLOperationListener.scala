@@ -18,6 +18,7 @@
 package org.apache.spark.kyuubi
 
 import java.util.Properties
+import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
@@ -43,6 +44,11 @@ class SQLOperationListener(
   private val activeJobs = new java.util.HashSet[Int]()
   private val activeStages = new java.util.HashSet[Int]()
   private var executionId: Option[Long] = None
+  private val liveStages = new ConcurrentHashMap[StageAttempt, StageInfo]()
+
+  private val consoleProgressBar = new SparkConsoleProgressBar(
+    operation,
+    liveStages)
 
   def getExecutionId: Option[Long] = executionId
 
@@ -98,6 +104,9 @@ class SQLOperationListener(
         val stageInfo = stageSubmitted.stageInfo
         val stageId = stageInfo.stageId
         activeStages.add(stageId)
+        liveStages.put(
+          StageAttempt(stageId, stageInfo.attemptNumber()),
+          new StageInfo(stageId, stageInfo.numTasks))
         withOperationLog {
           info(s"Query [$operationId]: Stage $stageId started with ${stageInfo.numTasks} tasks," +
             s" ${activeStages.size()} active stages running")
@@ -111,13 +120,27 @@ class SQLOperationListener(
     val stageId = stageInfo.stageId
     activeStages.synchronized {
       if (activeStages.remove(stageId)) {
+        liveStages.remove(StageAttempt(stageId, stageInfo.attemptNumber()))
         withOperationLog(super.onStageCompleted(stageCompleted))
       }
     }
   }
 
+  override def onTaskStart(taskStart: SparkListenerTaskStart): Unit = activeStages.synchronized {
+    if (activeStages.contains(taskStart.stageId)) {
+      liveStages.get(StageAttempt(taskStart.stageId, taskStart.stageAttemptId)).numActiveTasks += 1
+      super.onTaskStart(taskStart)
+    }
+  }
+
   override def onTaskEnd(taskEnd: SparkListenerTaskEnd): Unit = activeStages.synchronized {
-    if (activeStages.contains(taskEnd.stageId)) super.onTaskEnd(taskEnd)
+    if (activeStages.contains(taskEnd.stageId)) {
+      liveStages.get(StageAttempt(taskEnd.stageId, taskEnd.stageAttemptId)).numActiveTasks -= 1
+      if (taskEnd.reason == org.apache.spark.Success) {
+        liveStages.get(StageAttempt(taskEnd.stageId, taskEnd.stageAttemptId)).numCompleteTasks += 1
+      }
+      super.onTaskEnd(taskEnd)
+    }
   }
 
   override def onOtherEvent(event: SparkListenerEvent): Unit = {
@@ -125,6 +148,7 @@ class SQLOperationListener(
       case sqlExecutionEnd: SparkListenerSQLExecutionEnd
           if executionId.contains(sqlExecutionEnd.executionId) =>
         spark.sparkContext.removeSparkListener(this)
+        consoleProgressBar.finish()
       case _ =>
     }
   }
