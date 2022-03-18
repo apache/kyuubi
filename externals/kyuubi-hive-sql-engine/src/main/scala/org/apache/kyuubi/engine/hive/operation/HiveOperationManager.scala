@@ -80,7 +80,8 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = new GetColumns(session, catalogName, schemaName, tableName, columnName)
+    addOperation(operation)
   }
 
   override def newGetFunctionsOperation(
