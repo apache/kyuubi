@@ -87,7 +87,8 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
       catalogName: String,
       schemaName: String,
       functionName: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = new GetFunctions(session, catalogName, schemaName, functionName)
+    addOperation(operation)
   }
 
   override def getOperationLogRowSet(
