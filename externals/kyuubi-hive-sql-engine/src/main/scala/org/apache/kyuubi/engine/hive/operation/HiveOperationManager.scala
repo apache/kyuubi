@@ -55,7 +55,8 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
       session: Session,
       catalog: String,
       schema: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = new GetSchemas(session, catalog, schema)
+    addOperation(operation)
   }
 
   override def newGetTablesOperation(
@@ -64,7 +65,8 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
       schemaName: String,
       tableName: String,
       tableTypes: List[String]): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = new GetTables(session, catalogName, schemaName, tableName, tableTypes)
+    addOperation(operation)
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {

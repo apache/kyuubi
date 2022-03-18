@@ -17,14 +17,26 @@
 
 package org.apache.kyuubi.engine.hive.operation
 
+import java.util.List
+
 import org.apache.hive.service.cli.operation.Operation
 
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
-class GetCatalogs(session: Session)
-  extends HiveOperation(OperationType.GET_CATALOGS, session) {
+class GetTables(
+    session: Session,
+    catalogName: String,
+    schemaName: String,
+    tableName: String,
+    tableTypes: List[String])
+  extends HiveOperation(OperationType.GET_TABLES, session) {
 
   override val internalHiveOperation: Operation =
-    delegatedOperationManager.newGetCatalogsOperation(hive)
+    delegatedOperationManager.newGetTablesOperation(
+      hive,
+      catalogName,
+      schemaName,
+      tableName,
+      tableTypes)
 }

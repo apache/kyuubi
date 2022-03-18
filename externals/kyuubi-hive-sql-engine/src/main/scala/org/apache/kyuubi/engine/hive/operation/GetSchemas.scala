@@ -22,9 +22,9 @@ import org.apache.hive.service.cli.operation.Operation
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
-class GetCatalogs(session: Session)
-  extends HiveOperation(OperationType.GET_CATALOGS, session) {
+class GetSchemas(session: Session, catalogName: String, schemaName: String)
+  extends HiveOperation(OperationType.GET_SCHEMAS, session) {
 
   override val internalHiveOperation: Operation =
-    delegatedOperationManager.newGetCatalogsOperation(hive)
+    delegatedOperationManager.newGetSchemasOperation(hive, catalogName, schemaName)
 }

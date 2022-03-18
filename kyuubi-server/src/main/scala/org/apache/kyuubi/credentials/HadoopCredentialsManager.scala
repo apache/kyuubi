@@ -21,12 +21,15 @@ import java.util.ServiceLoader
 import java.util.concurrent._
 
 import scala.collection.mutable
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 
-import org.apache.kyuubi.{KyuubiException, Logging}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.AbstractService
@@ -84,6 +87,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   private var providers: Map[String, HadoopDelegationTokenProvider] = _
   private var renewalInterval: Long = _
   private var renewalRetryWait: Long = _
+  private var credentialsWaitTimeout: Long = _
   private var hadoopConf: Configuration = _
 
   private[credentials] var renewalExecutor: Option[ScheduledExecutorService] = None
@@ -115,6 +119,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
 
     renewalInterval = conf.get(CREDENTIALS_RENEWAL_INTERVAL)
     renewalRetryWait = conf.get(CREDENTIALS_RENEWAL_RETRY_WAIT)
+    credentialsWaitTimeout = conf.get(CREDENTIALS_UPDATE_WAIT_TIMEOUT)
     super.initialize(conf)
   }
 
@@ -151,12 +156,12 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
       sessionId: String,
       appUser: String,
       send: String => Unit,
-      onetime: Boolean = false): Unit = {
+      waitUntilCredentialsReady: Boolean = false): Unit = {
     if (renewalExecutor.isEmpty) {
       return
     }
 
-    val userRef = getOrCreateUserCredentialsRef(appUser, onetime)
+    val userRef = getOrCreateUserCredentialsRef(appUser, waitUntilCredentialsReady)
     val sessionEpoch = getSessionCredentialsEpoch(sessionId)
 
     if (userRef.getEpoch > sessionEpoch) {
@@ -188,19 +193,19 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   // Visible for testing.
   private[credentials] def getOrCreateUserCredentialsRef(
       appUser: String,
-      onetime: Boolean = false): CredentialsRef = {
+      waitUntilCredentialsReady: Boolean = false): CredentialsRef = {
     val ref = userCredentialsRefMap.computeIfAbsent(
       appUser,
       appUser => {
         val ref = new CredentialsRef(appUser)
-        scheduleRenewal(ref, 0, onetime)
+        val credentialsFuture: Future[Unit] = scheduleRenewal(ref, 0, waitUntilCredentialsReady)
+        ref.setFuture(credentialsFuture)
         info(s"Created CredentialsRef for user $appUser and scheduled a renewal task")
         ref
       })
 
-    // schedule renewal task when encodedCredentials are invalid
-    if (onetime && ref.getEncodedCredentials == null) {
-      scheduleRenewal(ref, 0, onetime)
+    if (waitUntilCredentialsReady) {
+      ref.waitUntilReady(Duration(credentialsWaitTimeout, TimeUnit.MILLISECONDS))
     }
 
     ref
@@ -216,17 +221,24 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     providers.contains(serviceName)
   }
 
+  private def updateCredentials(userRef: CredentialsRef): Unit = {
+    val creds = new Credentials()
+    providers.values
+      .foreach(_.obtainDelegationTokens(userRef.getAppUser, creds))
+    userRef.updateCredentials(creds)
+  }
+
   private def scheduleRenewal(
       userRef: CredentialsRef,
       delay: Long,
-      waitCompletion: Boolean = false): Unit = {
+      waitUntilCredentialsReady: Boolean = false): Future[Unit] = {
+    val promise = Promise[Unit]()
+
     val renewalTask = new Runnable {
       override def run(): Unit = {
         try {
-          val creds = new Credentials()
-          providers.values
-            .foreach(_.obtainDelegationTokens(userRef.getAppUser, creds))
-          userRef.updateCredentials(creds)
+          promise.trySuccess(updateCredentials(userRef))
+
           scheduleRenewal(userRef, renewalInterval)
         } catch {
           case _: InterruptedException =>
@@ -237,24 +249,19 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
                 s" $renewalRetryWait ms",
               e)
             scheduleRenewal(userRef, renewalRetryWait)
-            // throw exception when one-time execution fails,
-            // so that client side can be aware of this
-            if (waitCompletion) {
-              throw new KyuubiException(s"One-time execution failed for token update task " +
-                s"for ${userRef.getAppUser}")
+            if (waitUntilCredentialsReady) {
+              promise.tryFailure(e)
             }
         }
       }
     }
 
-    if (waitCompletion) {
-      renewalTask.run()
-    } else {
-      renewalExecutor.foreach { executor =>
-        info(s"Scheduling renewal in $delay ms.")
-        executor.schedule(renewalTask, delay, TimeUnit.MILLISECONDS)
-      }
+    renewalExecutor.foreach { executor =>
+      info(s"Scheduling renewal in $delay ms.")
+      executor.schedule(renewalTask, delay, TimeUnit.MILLISECONDS)
     }
+
+    promise.future
   }
 
 }

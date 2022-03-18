@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.engine.hive.operation
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{TABLE_CAT, TABLE_CATALOG, TABLE_NAME, TABLE_SCHEM, TABLE_TYPE}
 
 class HiveOperationSuite extends HiveJDBCTestHelper {
 
@@ -35,6 +38,95 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       val catalogs = statement.getConnection.getMetaData.getCatalogs
       assert(!catalogs.next())
+    }
+  }
+
+  test("get schemas") {
+    withDatabases("test_schema") { statement =>
+      statement.execute("CREATE SCHEMA IF NOT EXISTS test_schema")
+      val metaData = statement.getConnection.getMetaData
+      var resultSet = metaData.getSchemas(null, null)
+      val resultSetBuffer = ArrayBuffer[(String, String)]()
+      while (resultSet.next()) {
+        resultSetBuffer += Tuple2(
+          resultSet.getString(TABLE_CATALOG),
+          resultSet.getString(TABLE_SCHEM))
+      }
+      assert(resultSetBuffer.contains(("", "default")))
+      assert(resultSetBuffer.contains(("", "test_schema")))
+
+      resultSet = metaData.getSchemas("", "test")
+      while (resultSet.next()) {
+        assert(resultSet.getString(TABLE_CATALOG) == "")
+        assert(resultSet.getString(TABLE_SCHEM) == "test_schema")
+      }
+    }
+  }
+
+  test("get tables") {
+    withDatabases("test_schema") { statement =>
+      statement.execute("CREATE SCHEMA IF NOT EXISTS test_schema")
+      statement.execute("CREATE TABLE IF NOT EXISTS test_schema.test_table(a string)")
+      statement.execute(
+        "CREATE OR REPLACE VIEW test_schema.test_view AS SELECT  * FROM test_schema.test_table")
+
+      try {
+        val meta = statement.getConnection.getMetaData
+        var resultSet = meta.getTables(null, null, null, null)
+        val resultSetBuffer = ArrayBuffer[(String, String, String, String)]()
+        while (resultSet.next()) {
+          resultSetBuffer += Tuple4(
+            resultSet.getString(TABLE_CAT),
+            resultSet.getString(TABLE_SCHEM),
+            resultSet.getString(TABLE_NAME),
+            resultSet.getString(TABLE_TYPE))
+        }
+        assert(resultSetBuffer.contains(("", "test_schema", "test_table", "TABLE")))
+        assert(resultSetBuffer.contains(("", "test_schema", "test_view", "VIEW")))
+
+        resultSet = meta.getTables("", null, null, null)
+        resultSetBuffer.clear()
+        while (resultSet.next()) {
+          resultSetBuffer += Tuple4(
+            resultSet.getString(TABLE_CAT),
+            resultSet.getString(TABLE_SCHEM),
+            resultSet.getString(TABLE_NAME),
+            resultSet.getString(TABLE_TYPE))
+        }
+        assert(resultSetBuffer.contains(("", "test_schema", "test_table", "TABLE")))
+        assert(resultSetBuffer.contains(("", "test_schema", "test_view", "VIEW")))
+
+        resultSet = meta.getTables(null, "test_schema", null, null)
+        resultSetBuffer.clear()
+        while (resultSet.next()) {
+          resultSetBuffer += Tuple4(
+            resultSet.getString(TABLE_CAT),
+            resultSet.getString(TABLE_SCHEM),
+            resultSet.getString(TABLE_NAME),
+            resultSet.getString(TABLE_TYPE))
+        }
+        assert(resultSetBuffer.contains(("", "test_schema", "test_table", "TABLE")))
+        assert(resultSetBuffer.contains(("", "test_schema", "test_view", "VIEW")))
+
+        resultSet = meta.getTables(null, null, "test_table", null)
+        while (resultSet.next()) {
+          assert(resultSet.getString(TABLE_CAT) == "")
+          assert(resultSet.getString(TABLE_SCHEM) == "test_schema")
+          assert(resultSet.getString(TABLE_NAME) == "test_table")
+          assert(resultSet.getString(TABLE_TYPE) == "TABLE")
+        }
+
+        resultSet = meta.getTables(null, null, null, Array("VIEW"))
+        while (resultSet.next()) {
+          assert(resultSet.getString(TABLE_CAT) == "")
+          assert(resultSet.getString(TABLE_SCHEM) == "test_schema")
+          assert(resultSet.getString(TABLE_NAME) == "test_view")
+          assert(resultSet.getString(TABLE_TYPE) == "VIEW")
+        }
+      } finally {
+        statement.execute("DROP VIEW test_schema.test_view")
+        statement.execute("DROP TABLE test_schema.test_table")
+      }
     }
   }
 
