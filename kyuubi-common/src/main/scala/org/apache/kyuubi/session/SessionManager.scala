@@ -227,6 +227,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
+    _operationLogRoot = Some(Utils.getAbsolutePathFromWork(
+      conf.get(ENGINE_OPERATION_LOG_DIR_ROOT)).toAbsolutePath.toString)
+
     addService(operationManager)
     initOperationLogRootDir()
 
