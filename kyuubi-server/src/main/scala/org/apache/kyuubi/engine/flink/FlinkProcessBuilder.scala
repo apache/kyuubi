@@ -99,9 +99,11 @@ class FlinkProcessBuilder(
     ("FLINK_SQL_ENGINE_JAR" -> mainResource.get) +
     ("FLINK_SQL_ENGINE_DYNAMIC_ARGS" ->
       conf.getAll.map { case (k, v) =>
-        k match {
-          case "line.separator" => ""
-          case _ => s"-D$k=$v"
+        if (k.startsWith("kyuubi.") || k.startsWith("flink.")
+          || k.startsWith("hadoop.") || k.startsWith("yarn.")) {
+          s"-D$k=$v"
+        } else {
+          ""
         }
       }.mkString(" "))
 
