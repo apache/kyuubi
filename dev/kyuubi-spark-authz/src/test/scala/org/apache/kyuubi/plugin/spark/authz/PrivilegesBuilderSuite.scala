@@ -252,20 +252,77 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(accessType === AccessType.ALTER)
   }
 
-  test("AlterTableSetPropertiesCommand") {
-    val plan = sql(s"ALTER TABLE $reusedTable" +
-      s" SET TBLPROPERTIES (key='AlterTableSetPropertiesCommand')")
+  test("AlterTable(Un)SetPropertiesCommand") {
+    Seq(
+      " SET TBLPROPERTIES (key='AlterTableSetPropertiesCommand')",
+      "UNSET TBLPROPERTIES (key)").foreach { t =>
+      val plan = sql(s"ALTER TABLE $reusedTable" +
+        " SET TBLPROPERTIES (key='AlterTableSetPropertiesCommand')")
+        .queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === ALTERTABLE_PROPERTIES)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.isEmpty)
+      assert(tuple._2.size === 1)
+      val po = tuple._2.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname === reusedDb)
+      assert(po.objectName === reusedTable.split("\\.").last)
+      assert(po.columns.isEmpty)
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.ALTER)
+    }
+  }
+
+  test("AlterViewAsCommand") {
+    sql(s"CREATE VIEW AlterViewAsCommand AS SELECT * FROM $reusedTable")
+    val plan = sql(s"ALTER VIEW AlterViewAsCommand AS SELECT * FROM $reusedPartTable")
       .queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
-    assert(operationType === ALTERTABLE_PROPERTIES)
+    assert(operationType === ALTERVIEW_AS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    // ignore this check as it behaves differently across spark versions
+    // assert(po0.columns === Seq("key", "value", "pid"))
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname === "default")
+    assert(po.objectName === "AlterViewAsCommand")
+    assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
+}
+
+class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
+  override protected val catalogImpl: String = "in-memory"
+
+  // some hive version does not support set database location
+  test("AlterDatabaseSetLocationCommand") {
+    assume(!org.apache.spark.SPARK_VERSION.startsWith("2"))
+    val plan = sql("ALTER DATABASE default SET LOCATION 'some where i belong'")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERDATABASE_LOCATION)
     val tuple = PrivilegesBuilder.build(plan)
     assert(tuple._1.isEmpty)
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname === reusedDb)
-    assert(po.objectName === reusedTable.split("\\.").last)
+    assert(po.typ === PrivilegeObjectType.DATABASE)
+    assert(po.dbname === "default")
+    assert(po.objectName === "default")
     assert(po.columns.isEmpty)
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
@@ -297,29 +354,5 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.ALTER)
     }
-  }
-}
-
-class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
-  override protected val catalogImpl: String = "in-memory"
-
-  // some hive version does not support set database location
-  test("AlterDatabaseSetLocationCommand") {
-    assume(!org.apache.spark.SPARK_VERSION.startsWith("2"))
-    val plan = sql("ALTER DATABASE default SET LOCATION 'some where i belong'")
-      .queryExecution.analyzed
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === ALTERDATABASE_LOCATION)
-    val tuple = PrivilegesBuilder.build(plan)
-    assert(tuple._1.isEmpty)
-    assert(tuple._2.size === 1)
-    val po = tuple._2.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.DATABASE)
-    assert(po.dbname === "default")
-    assert(po.objectName === "default")
-    assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
   }
 }

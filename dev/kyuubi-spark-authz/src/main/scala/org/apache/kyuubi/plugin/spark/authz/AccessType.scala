@@ -46,9 +46,9 @@ object AccessType extends Enumeration {
               ALTERTABLE_RENAMEPART |
               ALTERTABLE_REPLACECOLS |
               ALTERTABLE_SERDEPROPERTIES |
-              ALTERVIEW_AS |
               ALTERVIEW_RENAME |
               MSCK => ALTER
+          case ALTERVIEW_AS => if (isInput) SELECT else ALTER
           case DROPDATABASE | DROPTABLE | DROPFUNCTION | DROPVIEW => DROP
           case LOAD => if (isInput) SELECT else UPDATE
           case QUERY |

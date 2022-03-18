@@ -110,6 +110,12 @@ object PrivilegesBuilder {
           mergeProjection(t)
         }
 
+      case u if u.nodeName == "UnresolvedRelation" =>
+        val tableNameM = u.getClass.getMethod("tableName")
+        val parts = tableNameM.invoke(u).asInstanceOf[String].split("\\.")
+        val db = quote(parts.init)
+        privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
+
       case p =>
         for (child <- p.children) {
           buildQuery(child, privilegeObjects, projectionList)
