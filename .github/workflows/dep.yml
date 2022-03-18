@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: Style check
+name: Dependency
 
 # This GitHub workflow checks style & dependency issues.
 
@@ -36,7 +36,7 @@ env:
 
 jobs:
   linter:
-    name: Style and Dependency check
+    name: Dependency check
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2

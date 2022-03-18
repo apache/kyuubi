@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: Style check
+name: Style
 
 # This GitHub workflow checks style & dependency issues.
 
