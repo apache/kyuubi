@@ -57,6 +57,11 @@ jobs:
       - name: JavaStyle with maven
         run: build/mvn -T 4 spotless:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'
       - name: Maven install
+        # run install after style check because it is expensive, we can skip build if style fails
+        # Well, sometimes when we introduce a new module, it may 'fail' the style check for missing
+        # dependency we just create for other module to inherit.
+        # We can ignore this failure and merge the PR, if we see the style check pass on the new module
+        # or via a local quick verification.
         run: >-
           build/mvn -T 4 clean install -V -B -Pflink-provided,spark-provided \
           -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests \
