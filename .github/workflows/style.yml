@@ -63,8 +63,8 @@ jobs:
         # We can ignore this failure and merge the PR, if we see the style check pass on the new module
         # or via a local quick verification.
         run: >-
-          build/mvn -T 4 clean install -V -B -Pflink-provided,spark-provided \
-          -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests \
+          build/mvn -T 4 clean install -Pflink-provided,spark-provided
+          -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Check dependency list
         run: build/dependency.sh
