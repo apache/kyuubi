@@ -70,7 +70,8 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = new GetTableTypes(session)
+    addOperation(operation)
   }
 
   override def newGetColumnsOperation(

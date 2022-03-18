@@ -149,6 +149,20 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
     }
   }
 
+  test("get table types") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.getConnection.getMetaData.getTableTypes
+      val expected = Set("TABLE", "VIEW", "INDEX_TABLE", "MATERIALIZED_VIEW")
+      var tableTypes = Set[String]()
+      while (resultSet.next()) {
+        assert(expected.contains(resultSet.getString(TABLE_TYPE)))
+        tableTypes += resultSet.getString(TABLE_TYPE)
+      }
+      assert(!resultSet.next())
+      assert(expected.size === tableTypes.size)
+    }
+  }
+
   test("basic execute statements, create, insert query") {
     withJdbcStatement("hive_engine_test") { statement =>
       statement.execute("CREATE TABLE hive_engine_test(id int, value string) stored as orc")
