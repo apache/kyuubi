@@ -20,26 +20,16 @@ package org.apache.kyuubi.engine.trino.session
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Utils
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_OPERATION_LOG_DIR_ROOT
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.trino.TrinoSqlEngine
 import org.apache.kyuubi.engine.trino.operation.TrinoOperationManager
-import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.session.SessionManager
+import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
 class TrinoSessionManager
   extends SessionManager("TrinoSessionManager") {
 
   val operationManager = new TrinoOperationManager()
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    val absPath = Utils.getAbsolutePathFromWork(conf.get(ENGINE_OPERATION_LOG_DIR_ROOT))
-    _operationLogRoot = Some(absPath.toAbsolutePath.toString)
-    super.initialize(conf)
-  }
 
   override def openSession(
       protocol: TProtocolVersion,
