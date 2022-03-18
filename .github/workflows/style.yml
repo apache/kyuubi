@@ -29,9 +29,6 @@ concurrency:
   group: linter-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
-
 # no install runs before style check because it is expensive, we can skip build if style fails
 # Well, sometimes when we introduce a new module, it may 'fail' the style check for missing
 # dependency we just create for other module to inherit.
@@ -55,9 +52,9 @@ jobs:
           cache: 'maven'
           check-latest: false
       - name: Scalastyle with maven
-        run: build/mvn -T 4 scalastyle:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'
+        run: build/mvn scalastyle:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'
       - name: Upload scalastyle report
         if: failure()
         run: for log in `find * -name "scalastyle-output.xml"`;  do echo "=========$log========="; grep "error" $log; done
       - name: JavaStyle with maven
-        run: build/mvn -T 4 spotless:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'
+        run: build/mvn spotless:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'

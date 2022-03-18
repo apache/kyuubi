@@ -49,7 +49,7 @@ jobs:
           check-latest: false
       - name: Maven install
         run: >-
-          build/mvn -T 4 clean install -Pflink-provided,spark-provided
+          build/mvn clean install -Pflink-provided,spark-provided
           -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests
           -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Check dependency list
