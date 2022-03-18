@@ -27,6 +27,10 @@ on:
       - master
       - branch-*
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   build:
@@ -95,7 +99,6 @@ jobs:
             **/kyuubi-flink-sql-engine.log*
             **/kyuubi-spark-sql-engine.log*
             **/kyuubi-trino-sql-engine.log*
-            **/target/scalastyle-output.xml
 
   tpcds:
     name: TPC-DS Tests
