@@ -43,6 +43,7 @@ object AccessType extends Enumeration {
               ALTERTABLE_LOCATION |
               ALTERTABLE_PROPERTIES |
               ALTERTABLE_RENAMECOL |
+              ALTERTABLE_RENAMEPART |
               ALTERTABLE_REPLACECOLS |
               ALTERTABLE_SERDEPROPERTIES |
               ALTERVIEW_AS |

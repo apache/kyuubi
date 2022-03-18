@@ -17,20 +17,27 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 
-class PrivilegesBuilderSuite extends KyuubiFunSuite {
+abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
 
-  private val spark = SparkSession.builder()
+  protected val catalogImpl: String
+
+  protected lazy val spark: SparkSession = SparkSession.builder()
     .master("local")
     .config("spark.ui.enabled", "false")
+    .config(
+      "spark.sql.warehouse.dir",
+      Utils.createTempDir(namePrefix = "spark-warehouse").toString)
+    .config("spark.sql.catalogImplementation", catalogImpl)
     .getOrCreate()
-  private val sql = spark.sql _
 
-  private def withTable(t: String)(f: String => Unit): Unit = {
+  protected val sql: String => DataFrame = spark.sql
+
+  protected def withTable(t: String)(f: String => Unit): Unit = {
     try {
       f(t)
     } finally {
@@ -38,24 +45,33 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
     }
   }
 
-  private def withDatabase(t: String)(f: String => Unit): Unit = {
+  protected def withDatabase(t: String)(f: String => Unit): Unit = {
     try {
       f(t)
     } finally {
       sql(s"DROP DATABASE IF EXISTS $t")
     }
   }
-  override def beforeAll(): Unit = {
-    sql(s"CREATE DATABASE IF NOT EXISTS ${getClass.getSimpleName}")
-    sql(s"CREATE TABLE IF NOT EXISTS ${getClass.getSimpleName}.${getClass.getSimpleName}" +
-      s" (key int, value string) USING parquet")
 
+  protected val reusedDb: String = getClass.getSimpleName
+  protected val reusedTable: String = reusedDb + "." + getClass.getSimpleName
+  protected val reusedPartTable: String = reusedTable + "_part"
+
+  override def beforeAll(): Unit = {
+    sql(s"CREATE DATABASE IF NOT EXISTS $reusedDb")
+    sql(s"CREATE TABLE IF NOT EXISTS $reusedTable" +
+      s" (key int, value string) USING parquet")
+    sql(s"CREATE TABLE IF NOT EXISTS $reusedPartTable" +
+      s" (key int, value string, pid string) USING parquet" +
+      s"  PARTITIONED BY(pid)")
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
-    sql(s"DROP TABLE IF EXISTS ${getClass.getSimpleName}.${getClass.getSimpleName}")
-    sql(s"DROP DATABASE IF EXISTS ${getClass.getSimpleName}")
+    Seq(reusedTable, reusedPartTable).foreach { t =>
+      sql(s"DROP TABLE IF EXISTS $t")
+    }
+    sql(s"DROP DATABASE IF EXISTS $reusedDb")
     spark.stop()
     super.afterAll()
   }
@@ -77,31 +93,13 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(accessType === AccessType.ALTER)
   }
 
-  test("AlterDatabaseSetLocationCommand") {
-    val plan = sql("ALTER DATABASE default SET LOCATION 'some where i belong'")
-      .queryExecution.analyzed
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === ALTERDATABASE_LOCATION)
-    val tuple = PrivilegesBuilder.build(plan)
-    assert(tuple._1.isEmpty)
-    assert(tuple._2.size === 1)
-    val po = tuple._2.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.DATABASE)
-    assert(po.dbname === "default")
-    assert(po.objectName === "default")
-    assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
-  }
-
   test("AlterTableRenameCommand") {
-    withTable(s"${getClass.getSimpleName}.efg") { t =>
-      sql(s"CREATE TABLE IF NOT EXISTS ${getClass.getSimpleName}.${getClass.getSimpleName}_old" +
+    withTable(s"$reusedDb.efg") { t =>
+      sql(s"CREATE TABLE IF NOT EXISTS ${reusedTable}_old" +
         s" (key int, value string) USING parquet")
       // toLowerCase because of: SPARK-38587
       val plan =
-        sql(s"ALTER TABLE ${getClass.getSimpleName.toLowerCase}.${getClass.getSimpleName}_old" +
+        sql(s"ALTER TABLE ${reusedDb.toLowerCase}.${getClass.getSimpleName}_old" +
           s" RENAME TO $t").queryExecution.analyzed
       val operationType = OperationType(plan.nodeName)
       assert(operationType === ALTERTABLE_RENAME)
@@ -110,8 +108,8 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._2.size === 2)
       tuple._2.foreach { po =>
         assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
-        assert(po.dbname equalsIgnoreCase getClass.getSimpleName)
-        assert(Set(getClass.getSimpleName + "_old", "efg").contains(po.objectName))
+        assert(po.dbname equalsIgnoreCase reusedDb)
+        assert(Set(reusedDb + "_old", "efg").contains(po.objectName))
         assert(po.columns.isEmpty)
         val accessType = AccessType(po, operationType, isInput = false)
         assert(Set(AccessType.CREATE, AccessType.DROP).contains(accessType))
@@ -159,7 +157,7 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
   }
 
   test("AlterTableAddColumnsCommand") {
-    val plan = sql(s"ALTER TABLE ${getClass.getSimpleName}.${getClass.getSimpleName}" +
+    val plan = sql(s"ALTER TABLE $reusedTable" +
       s" ADD COLUMNS (a int)").queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
     assert(operationType === ALTERTABLE_ADDCOLS)
@@ -169,9 +167,158 @@ class PrivilegesBuilderSuite extends KyuubiFunSuite {
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname equalsIgnoreCase getClass.getSimpleName)
+    assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === getClass.getSimpleName)
     assert(po.columns.head === "a")
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
+
+  test("AlterTableAddPartitionCommand") {
+    val plan = sql(s"ALTER TABLE $reusedPartTable ADD IF NOT EXISTS PARTITION (pid=1)")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERTABLE_ADDPARTS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.columns.head === "pid")
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
+
+  test("AlterTableDropPartitionCommand") {
+    val plan = sql(s"ALTER TABLE $reusedPartTable DROP IF EXISTS PARTITION (pid=1)")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERTABLE_DROPPARTS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.columns.head === "pid")
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
+
+  // ALTER TABLE default.StudentInfo PARTITION (age='10') RENAME TO PARTITION (age='15');
+  test("AlterTableRenamePartitionCommand") {
+    sql(s"ALTER TABLE $reusedPartTable ADD IF NOT EXISTS PARTITION (pid=1)")
+    val plan = sql(s"ALTER TABLE $reusedPartTable PARTITION (pid=1) " +
+      s"RENAME TO PARTITION (PID=10)")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERTABLE_RENAMEPART)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.columns.head === "pid")
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
+
+  test("AlterTableSetLocationCommand") {
+    sql(s"ALTER TABLE $reusedPartTable ADD IF NOT EXISTS PARTITION (pid=1)")
+    val newLoc = spark.conf.get("spark.sql.warehouse.dir") + "/new_location"
+    val plan = sql(s"ALTER TABLE $reusedPartTable PARTITION (pid=1)" +
+      s" SET LOCATION '$newLoc'")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERTABLE_LOCATION)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname === reusedDb)
+    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.columns.head === "pid")
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
+
+  test("AlterTableSetPropertiesCommand") {
+    val plan = sql(s"ALTER TABLE $reusedTable" +
+      s" SET TBLPROPERTIES (key='AlterTableSetPropertiesCommand')")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERTABLE_PROPERTIES)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname === reusedDb)
+    assert(po.objectName === reusedTable.split("\\.").last)
+    assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
+}
+
+class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
+  override protected val catalogImpl: String = "hive"
+
+  test("AlterTableSerDePropertiesCommand") {
+    assume(!org.apache.spark.SPARK_VERSION.startsWith("2"))
+    withTable("AlterTableSerDePropertiesCommand") { t =>
+      sql(s"CREATE TABLE $t (key int, pid int) USING hive PARTITIONED BY (pid)")
+      sql(s"ALTER TABLE $t ADD IF NOT EXISTS PARTITION (pid=1)")
+      val plan = sql(s"ALTER TABLE $t PARTITION (pid=1)" +
+        s" SET SERDEPROPERTIES ( key1 = 'some key')")
+        .queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === ALTERTABLE_SERDEPROPERTIES)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.isEmpty)
+      assert(tuple._2.size === 1)
+      val po = tuple._2.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname === "default")
+      assert(po.objectName === t)
+      assert(po.columns.head === "pid")
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.ALTER)
+    }
+  }
+}
+
+class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
+  override protected val catalogImpl: String = "in-memory"
+
+  // some hive version does not support set database location
+  test("AlterDatabaseSetLocationCommand") {
+    assume(!org.apache.spark.SPARK_VERSION.startsWith("2"))
+    val plan = sql("ALTER DATABASE default SET LOCATION 'some where i belong'")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERDATABASE_LOCATION)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.DATABASE)
+    assert(po.dbname === "default")
+    assert(po.objectName === "default")
+    assert(po.columns.isEmpty)
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }

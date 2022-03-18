@@ -157,7 +157,7 @@ object PrivilegesBuilder {
         val table = getTable
         val cols = getPlanField[Seq[(TablePartitionSpec, Option[String])]]("partitionSpecsAndLocs")
           .flatMap(_._1.keySet).distinct
-        outputObjs += tablePrivileges(table, cols, INSERT)
+        outputObjs += tablePrivileges(table, cols)
 
       case "AlterTableChangeColumnCommand" =>
         val table = getTable
@@ -180,9 +180,19 @@ object PrivilegesBuilder {
         val cols = getPlanField[TablePartitionSpec]("oldPartition").keySet.toSeq
         outputObjs += tablePrivileges(table, cols)
 
-      case "AlterTableSerDePropertiesCommand" |
-          "AlterTableSetLocationCommand" |
-          "AlterTableSetPropertiesCommand" |
+      case "AlterTableSerDePropertiesCommand" =>
+        val table = getTable
+        val cols = getPlanField[Option[TablePartitionSpec]]("partSpec")
+          .toSeq.flatMap(_.keySet)
+        outputObjs += tablePrivileges(table, cols)
+
+      case "AlterTableSetLocationCommand" =>
+        val table = getTable
+        val cols = getPlanField[Option[TablePartitionSpec]]("partitionSpec")
+          .toSeq.flatMap(_.keySet)
+        outputObjs += tablePrivileges(table, cols)
+
+      case "AlterTableSetPropertiesCommand" |
           "AlterTableUnsetPropertiesCommand" =>
         val table = getTable
         outputObjs += tablePrivileges(table)
