@@ -52,8 +52,6 @@ jobs:
         with:
           distribution: zulu
           java-version: 8
-          cache: 'maven'
-          check-latest: false
       - name: Scalastyle with maven
         run: build/mvn -T 4 scalastyle:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'
       - name: Upload scalastyle report
