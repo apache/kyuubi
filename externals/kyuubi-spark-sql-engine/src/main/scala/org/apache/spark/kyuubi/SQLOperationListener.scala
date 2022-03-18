@@ -25,6 +25,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_SHOW_PROGRESS, ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SQL_EXECUTION_ID_KEY
 import org.apache.kyuubi.operation.Operation
@@ -46,9 +48,17 @@ class SQLOperationListener(
   private var executionId: Option[Long] = None
   private val liveStages = new ConcurrentHashMap[StageAttempt, StageInfo]()
 
-  private val consoleProgressBar = new SparkConsoleProgressBar(
-    operation,
-    liveStages)
+  private val conf: KyuubiConf = operation.getSession.sessionManager.getConf
+  private val consoleProgressBar =
+    if (conf.get(ENGINE_SPARK_SHOW_PROGRESS)) {
+      Some(new SparkConsoleProgressBar(
+        operation,
+        liveStages,
+        conf.get(ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL),
+        conf.get(ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT)))
+    } else {
+      None
+    }
 
   def getExecutionId: Option[Long] = executionId
 
@@ -148,7 +158,7 @@ class SQLOperationListener(
       case sqlExecutionEnd: SparkListenerSQLExecutionEnd
           if executionId.contains(sqlExecutionEnd.executionId) =>
         spark.sparkContext.removeSparkListener(this)
-        consoleProgressBar.finish()
+        consoleProgressBar.foreach(_.finish())
       case _ =>
     }
   }

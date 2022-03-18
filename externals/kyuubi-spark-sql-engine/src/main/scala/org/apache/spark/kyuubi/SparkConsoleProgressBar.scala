@@ -29,12 +29,12 @@ import org.apache.kyuubi.operation.Operation
 
 class SparkConsoleProgressBar(
     operation: Operation,
-    liveStages: ConcurrentHashMap[StageAttempt, StageInfo])
+    liveStages: ConcurrentHashMap[StageAttempt, StageInfo],
+    updatePeriodMSec: Long,
+    timeFormat: String)
   extends Logging {
   // Carriage return
   private val CR = '\r'
-  // Update period of progress bar, in milliseconds
-  private val updatePeriodMSec = 200L
   // Delay to show up a progress bar, in milliseconds
   private val firstDelayMSec = 500L
 
@@ -44,7 +44,7 @@ class SparkConsoleProgressBar(
   private var lastUpdateTime = 0L
   private var lastProgressBar = ""
 
-  val dtFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+  val dtFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern(timeFormat)
     .withLocale(Locale.getDefault).withZone(ZoneId.systemDefault)
 
   // Schedule a refresh thread to run periodically
