@@ -49,17 +49,17 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
-      - name: Maven install
-        run: >-
-          build/mvn -T 4 clean install -V -B -Pflink-provided,spark-provided \
-              -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests \
-              -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Scalastyle with maven
         run: build/mvn -T 4 scalastyle:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'
       - name: Upload scalastyle report
         if: failure()
         run: for log in `find * -name "scalastyle-output.xml"`;  do echo "=========$log========="; grep "error" $log; done
       - name: JavaStyle with maven
-        run: build/mvn -T 4 spotless:check ${{ matrix.profiles }}
+        run: build/mvn -T 4 spotless:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'
+      - name: Maven install
+        run: >-
+          build/mvn -T 4 clean install -V -B -Pflink-provided,spark-provided \
+          -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests \
+          -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Check dependency list
         run: build/dependency.sh
