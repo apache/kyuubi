@@ -19,9 +19,11 @@ package org.apache.kyuubi.engine.hive.operation
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.hadoop.hive.ql.exec.FunctionInfo
+
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{TABLE_CAT, TABLE_CATALOG, TABLE_NAME, TABLE_SCHEM, TABLE_TYPE}
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{FUNCTION_CAT, FUNCTION_NAME, FUNCTION_SCHEM, REMARKS, SPECIFIC_NAME, TABLE_CAT, TABLE_CATALOG, TABLE_NAME, TABLE_SCHEM, TABLE_TYPE}
 
 class HiveOperationSuite extends HiveJDBCTestHelper {
 
@@ -126,6 +128,23 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
       } finally {
         statement.execute("DROP VIEW test_schema.test_view")
         statement.execute("DROP TABLE test_schema.test_table")
+      }
+    }
+  }
+
+  test("get functions") {
+    withJdbcStatement() { statement =>
+      val metaData = statement.getConnection.getMetaData
+      Seq("from_unixtime", "to_date", "date_format", "date_format", "round", "sin").foreach {
+        func =>
+          val resultSet = metaData.getFunctions(null, null, func)
+          while (resultSet.next()) {
+            assert(resultSet.getString(FUNCTION_CAT) === null)
+            assert(resultSet.getString(FUNCTION_SCHEM) === null)
+            assert(resultSet.getString(FUNCTION_NAME) === func)
+            assert(resultSet.getString(REMARKS).isEmpty)
+            assert(resultSet.getString(SPECIFIC_NAME) === classOf[FunctionInfo].getName)
+          }
       }
     }
   }
