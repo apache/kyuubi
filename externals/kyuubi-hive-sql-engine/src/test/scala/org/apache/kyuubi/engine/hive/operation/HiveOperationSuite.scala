@@ -23,7 +23,7 @@ import org.apache.hadoop.hive.ql.exec.FunctionInfo
 
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{FUNCTION_CAT, FUNCTION_NAME, FUNCTION_SCHEM, REMARKS, SPECIFIC_NAME, TABLE_CAT, TABLE_CATALOG, TABLE_NAME, TABLE_SCHEM, TABLE_TYPE}
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class HiveOperationSuite extends HiveJDBCTestHelper {
 
