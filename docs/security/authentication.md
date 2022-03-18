@@ -36,16 +36,16 @@ In `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, specify `kyuubi.authentication` to 
 
 Key | Default | Meaning | Since
 --- | --- | --- | ---
-kyuubi\.authentication|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>NONE</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.authentication</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>NONE</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
 
 
 Key | Default | Meaning | Since
 --- | --- | --- | ---
-kyuubi\.authentication|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>NONE</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.authentication<br>\.ldap\.base\.dn|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>LDAP base DN.</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.authentication<br>\.ldap\.domain|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>LDAP base DN.</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.authentication<br>\.ldap\.url|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>SPACE character separated LDAP connection URL(s).</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.authentication<br>\.sasl\.qop|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>auth</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul></div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.authentication</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>NONE</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.authentication.ldap.base.dn</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>LDAP base DN.</div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.authentication.ldap.domain</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>LDAP base DN.</div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.authentication.ldap.url</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>SPACE character separated LDAP connection URL(s).</div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.authentication.sasl.qop</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>auth</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul></div>|<div style='width: 20pt'>1.0.0</div>
 
 
 #### Using KERBEROS
@@ -64,10 +64,10 @@ Following configurations also need to be set to enable KERBEROS authentication:
 
 Key | Default | Meaning | Since
 --- | --- | --- | ---
-kyuubi\.kinit<br>\.principal|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Name of the Kerberos principal.</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.kinit\.keytab|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Location of Kyuubi server's keytab.</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.kinit\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often will Kyuubi server run `kinit -kt [keytab] [principal]` to renew the local Kerberos credentials cache</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.kinit\.max<br>\.attempts|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.kinit.principal</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Name of the Kerberos principal.</div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.kinit.keytab</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Location of Kyuubi server's keytab.</div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.kinit.interval</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often will Kyuubi server run `kinit -kt [keytab] [principal]` to renew the local Kerberos credentials cache</div>|<div style='width: 20pt'>1.0.0</div>
+<code>kyuubi.kinit.max.attempts</code>|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>|<div style='width: 20pt'>1.0.0</div>
 
 
 Please refer to [Kinit Auxiliary Service](kinit.html) to get configuration steps.
