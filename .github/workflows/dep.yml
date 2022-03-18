@@ -24,6 +24,8 @@ on:
     branches:
       - master
       - branch-*
+    paths:
+      - '**pom.xml'
 
 concurrency:
   group: linter-${{ github.ref }}
@@ -32,19 +34,10 @@ concurrency:
 env:
   MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
 
-# no install runs before style check because it is expensive, we can skip build if style fails
-# Well, sometimes when we introduce a new module, it may 'fail' the style check for missing
-# dependency we just create for other module to inherit.
-# We can ignore this failure and merge the PR, if we see the style check pass on the new module
-  # or via a local quick verification.
 jobs:
   linter:
-    name: Style check
+    name: Style and Dependency check
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        profiles:
-          - '-Ptpcds -Pspark-block-cleaner -Pkubernetes-deployment-it -Pspark-3.1 -Pspark-3.2'
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 8
@@ -54,10 +47,10 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
-      - name: Scalastyle with maven
-        run: build/mvn -T 4 scalastyle:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'
-      - name: Upload scalastyle report
-        if: failure()
-        run: for log in `find * -name "scalastyle-output.xml"`;  do echo "=========$log========="; grep "error" $log; done
-      - name: JavaStyle with maven
-        run: build/mvn -T 4 spotless:check ${{ matrix.profiles }} -pl '!:kyuubi-codecov_2.12,!:kyuubi-assembly_2.12'
+      - name: Maven install
+        run: >-
+          build/mvn -T 4 clean install -Pflink-provided,spark-provided
+          -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests
+          -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
+      - name: Check dependency list
+        run: build/dependency.sh
