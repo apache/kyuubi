@@ -25,10 +25,10 @@ on:
       - master
       - branch-*
     paths:
-      - '**pom.xml'
+      - '**/pom.xml'
 
 concurrency:
-  group: linter-${{ github.ref }}
+  group: dep-${{ github.ref }}
   cancel-in-progress: true
 
 env:
