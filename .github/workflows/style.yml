@@ -31,7 +31,7 @@ concurrency:
 # Well, sometimes when we introduce a new module, it may 'fail' the style check for missing
 # dependency we just create for other module to inherit.
 # We can ignore this failure and merge the PR, if we see the style check pass on the new module
- # or via a local quick verification.
+# or via a local quick verification.
 jobs:
   linter:
     name: Style check
