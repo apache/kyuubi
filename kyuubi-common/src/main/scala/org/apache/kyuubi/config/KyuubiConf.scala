@@ -648,6 +648,14 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_HIVE_MAIN_RESOURCE: OptionalConfigEntry[String] =
+    buildConf("session.engine.hive.main.resource")
+      .doc("The package used to create Hive engine remote job. If it is undefined," +
+        " Kyuubi will use the default")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_LOGIN_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.login.timeout")
     .doc("The timeout of creating the connection to remote sql query engine")
     .version("1.0.0")
