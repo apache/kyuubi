@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: Kyuubi Nightly
+name: Kyuubi Spark Nightly
 
 on:
   schedule:
@@ -41,30 +41,8 @@ jobs:
         with:
           distribution: zulu
           java-version: 8
-      - uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository/com
-          key: ${{ runner.os }}-maven-com-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-com-
-      - uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository/org
-          key: ${{ runner.os }}-maven-org-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-org-
-      - uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository/net
-          key: ${{ runner.os }}-maven-net-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-net-
-      - uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository/io
-          key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-io-
+          cache: 'maven'
+          check-latest: false
       - name: Build with Maven
         run: ./build/mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
       - name: Upload test logs
@@ -74,6 +52,4 @@ jobs:
           name: unit-tests-log
           path: |
             **/target/unit-tests.log
-            **/kyuubi-flink-sql-engine.log*
             **/kyuubi-spark-sql-engine.log*
-            **/kyuubi-trino-sql-engine.log*
