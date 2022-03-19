@@ -159,7 +159,7 @@ Similar to `JAVA_HOME`, you can also set `FLINK_HOME` in different ways. However
 For example,
 
 ```bash
-FLINK_HOME=/Downloads/flink-1.14.3
+FLINK_HOME=/Downloads/flink-1.14.4
 ```
 
 #### Setup Kyuubi Flink Configration
