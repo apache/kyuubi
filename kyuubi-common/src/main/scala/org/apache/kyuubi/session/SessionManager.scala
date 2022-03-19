@@ -19,9 +19,7 @@ package org.apache.kyuubi.session
 
 import java.io.IOException
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.{ConcurrentHashMap, Future, ThreadPoolExecutor, TimeUnit}
-
-import scala.collection.JavaConverters._
+import java.util.concurrent.{Future, ThreadPoolExecutor, TimeUnit}
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -63,7 +61,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
   def latestLogoutTime: Long = _latestLogoutTime
 
-  private val handleToSession = new ConcurrentHashMap[SessionHandle, Session]
+  private val sessionStore = new MemorySessionStore()
 
   private val timeoutChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
@@ -85,7 +83,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def closeSession(sessionHandle: SessionHandle): Unit = {
     _latestLogoutTime = System.currentTimeMillis()
-    val session = handleToSession.remove(sessionHandle)
+    val session = sessionStore.remove(sessionHandle)
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
@@ -94,7 +92,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   def getSession(sessionHandle: SessionHandle): Session = {
-    val session = handleToSession.get(sessionHandle)
+    val session = sessionStore.get(sessionHandle)
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
@@ -102,12 +100,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   final protected def setSession(sessionHandle: SessionHandle, session: Session): Unit = {
-    handleToSession.put(sessionHandle, session)
+    sessionStore.save(sessionHandle, session)
   }
 
-  def getOpenSessionCount: Int = handleToSession.size()
+  def getOpenSessionCount: Int = sessionStore.sessionCount()
 
-  def allSessions(): Iterable[Session] = handleToSession.values().asScala
+  def allSessions(): Iterable[Session] = sessionStore.getAllSessions()
 
   def getExecPoolSize: Int = {
     assert(execPool != null)
@@ -243,7 +241,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       override def run(): Unit = {
         val current = System.currentTimeMillis
         if (!shutdown) {
-          for (session <- handleToSession.values().asScala) {
+          for (session <- allSessions()) {
             if (session.lastAccessTime + timeout <= current &&
               session.getNoOperationTime > timeout) {
               try {
