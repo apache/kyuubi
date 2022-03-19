@@ -30,9 +30,6 @@ concurrency:
   group: dep-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
-
 jobs:
   dep:
     name: Dependency check
@@ -47,6 +44,8 @@ jobs:
           cache: 'maven'
           check-latest: false
       - name: build
+        env:
+          MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
         run: >-
           build/mvn clean install
           -Pflink-provided,spark-provided
