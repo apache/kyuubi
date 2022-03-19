@@ -59,6 +59,7 @@ RUN set -ex && \
 
 COPY bin ${KYUUBI_HOME}/bin
 COPY jars ${KYUUBI_HOME}/jars
+COPY beeline-jars ${KYUUBI_HOME}/beeline-jars
 COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
 
 WORKDIR ${KYUUBI_HOME}
