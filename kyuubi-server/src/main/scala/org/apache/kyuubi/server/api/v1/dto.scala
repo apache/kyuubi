@@ -71,6 +71,11 @@ case class GetFunctionsRequest(
     schemaName: String,
     functionName: String)
 
+case class GetPrimaryKeysRequest(
+    catalogName: String,
+    schemaName: String,
+    tableName: String)
+
 case class OpActionRequest(action: String)
 
 case class ResultSetMetaData(columns: Seq[ColumnDesc])

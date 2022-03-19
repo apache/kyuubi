@@ -173,6 +173,15 @@ abstract class AbstractSession(
     runOperation(operation)
   }
 
+  override def getPrimaryKeys(
+      catalogName: String,
+      schemaName: String,
+      tableName: String): OperationHandle = {
+    val operation = sessionManager.operationManager
+      .newGetPrimaryKeysOperation(this, catalogName, schemaName, tableName)
+    runOperation(operation)
+  }
+
   override def cancelOperation(operationHandle: OperationHandle): Unit = withAcquireRelease() {
     sessionManager.operationManager.cancelOperation(operationHandle)
   }

@@ -327,4 +327,28 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         throw new NotFoundException(errorMsg)
     }
   }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with GET_FUNCTIONS type")
+  @POST
+  @Path("{sessionHandle}/operations/primaryKeys")
+  def getPrimaryKeys(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetPrimaryKeysRequest): OperationHandle = {
+    try {
+      fe.be.getPrimaryKeys(
+        parseSessionHandle(sessionHandleStr),
+        request.catalogName,
+        request.schemaName,
+        request.tableName)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting primary keys"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
 }

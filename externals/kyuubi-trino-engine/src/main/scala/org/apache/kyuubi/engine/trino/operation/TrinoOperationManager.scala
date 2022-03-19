@@ -96,4 +96,12 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
     // TODO: Supports the GetFunctions operation when Trino supports the query of the functions.
     throw KyuubiSQLException.featureNotSupported()
   }
+
+  override def newGetPrimaryKeysOperation(
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 }

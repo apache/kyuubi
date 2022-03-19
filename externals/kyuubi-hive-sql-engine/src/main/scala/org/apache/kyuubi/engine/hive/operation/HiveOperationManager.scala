@@ -93,6 +93,15 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
     addOperation(operation)
   }
 
+  override def newGetPrimaryKeysOperation(
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String): Operation = {
+    val operation = new GetPrimaryKeys(session, catalogName, schemaName, tableName)
+    addOperation(operation)
+  }
+
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,

@@ -71,6 +71,10 @@ trait Session {
       catalogName: String,
       schemaName: String,
       functionName: String): OperationHandle
+  def getPrimaryKeys(
+      catalogName: String,
+      schemaName: String,
+      tableName: String): OperationHandle
 
   def cancelOperation(operationHandle: OperationHandle): Unit
   def closeOperation(operationHandle: OperationHandle): Unit

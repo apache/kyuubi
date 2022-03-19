@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.OperationModes._
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
@@ -130,5 +131,13 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       functionName: String): Operation = {
     val op = new GetFunctions(session, catalogName, schemaName, functionName)
     addOperation(op)
+  }
+
+  override def newGetPrimaryKeysOperation(
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
   }
 }

@@ -76,6 +76,11 @@ trait BackendService {
       catalogName: String,
       schemaName: String,
       functionName: String): OperationHandle
+  def getPrimaryKeys(
+      sessionHandle: SessionHandle,
+      catalogName: String,
+      schemaName: String,
+      tableName: String): OperationHandle
 
   def getOperationStatus(operationHandle: OperationHandle): OperationStatus
   def cancelOperation(operationHandle: OperationHandle): Unit

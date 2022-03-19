@@ -246,5 +246,13 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
     operationHandle = response.readEntity(classOf[OperationHandle])
     assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
+
+    val getPrimaryKeysReq = GetPrimaryKeysRequest("spark_catalog", "default", "default")
+    response = webTarget.path(s"$pathPrefix/operations/primaryKeys")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(getPrimaryKeysReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
   }
 }
