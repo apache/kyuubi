@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -453,6 +454,37 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedDb)
+    assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.CREATE)
+  }
+
+  test("CacheTableAsSelect") {
+    val plan = sql(s"CACHE TABLE CacheTableAsSelect AS SELECT * FROM $reusedTable")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === CREATEVIEW)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+    if (isSparkV32OrGreater) {
+      assert(po0.columns.head === "key")
+    } else {
+      assert(po0.columns.isEmpty)
+    }
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(StringUtils.isEmpty(po.dbname))
+    assert(po.objectName === "CacheTableAsSelect")
     assert(po.columns.isEmpty)
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
