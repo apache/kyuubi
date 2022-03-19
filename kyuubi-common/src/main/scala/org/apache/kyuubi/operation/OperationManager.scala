@@ -34,9 +34,9 @@ import org.apache.kyuubi.session.Session
  */
 abstract class OperationManager(name: String) extends AbstractService(name) {
 
-  final private val handleToOperation = new java.util.HashMap[OperationHandle, Operation]()
+  final private val operationStore = new MemoryOperationStore()
 
-  def getOperationCount: Int = handleToOperation.size()
+  def getOperationCount: Int = operationStore.operationCount()
 
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize()
@@ -72,20 +72,20 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       functionName: String): Operation
 
   final def addOperation(operation: Operation): Operation = synchronized {
-    handleToOperation.put(operation.getHandle, operation)
+    operationStore.save(operation.getHandle, operation)
     operation
   }
 
   @throws[KyuubiSQLException]
   final def getOperation(opHandle: OperationHandle): Operation = {
-    val operation = synchronized { handleToOperation.get(opHandle) }
+    val operation = synchronized { operationStore.get(opHandle) }
     if (operation == null) throw KyuubiSQLException(s"Invalid $opHandle")
     operation
   }
 
   @throws[KyuubiSQLException]
   final def removeOperation(opHandle: OperationHandle): Operation = synchronized {
-    val operation = handleToOperation.remove(opHandle)
+    val operation = operationStore.remove(opHandle)
     if (operation == null) throw KyuubiSQLException(s"Invalid $opHandle")
     operation
   }
@@ -127,10 +127,10 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   }
 
   final def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[Operation] = synchronized {
-    handles.map(handleToOperation.get).filter { operation =>
+    handles.map(operationStore.get).filter { operation =>
       val isTimeout = operation != null && operation.isTimedOut
       if (isTimeout) {
-        handleToOperation.remove(operation.getHandle)
+        operationStore.remove(operation.getHandle)
         warn("Operation " + operation.getHandle + " is timed-out and will be closed")
         isTimeout
       } else {
