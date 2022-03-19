@@ -132,6 +132,80 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
     }
   }
 
+  test("get columns") {
+    withDatabases("test_schema") { statement =>
+      statement.execute("CREATE SCHEMA IF NOT EXISTS test_schema")
+      statement.execute("CREATE TABLE IF NOT EXISTS test_schema.test_table(a int, b string)")
+
+      try {
+        val meta = statement.getConnection.getMetaData
+        var resultSet = meta.getColumns(null, null, null, null)
+        var resultSetBuffer = ArrayBuffer[(String, String, String, String, String)]()
+        while (resultSet.next()) {
+          resultSetBuffer += Tuple5(
+            resultSet.getString(TABLE_CAT),
+            resultSet.getString(TABLE_SCHEM),
+            resultSet.getString(TABLE_NAME),
+            resultSet.getString(COLUMN_NAME),
+            resultSet.getString(TYPE_NAME))
+        }
+        assert(resultSetBuffer.contains((null, "test_schema", "test_table", "a", "INT")))
+        assert(resultSetBuffer.contains((null, "test_schema", "test_table", "b", "STRING")))
+
+        resultSet = meta.getColumns("", null, null, null)
+        resultSetBuffer.clear()
+        while (resultSet.next()) {
+          resultSetBuffer += Tuple5(
+            resultSet.getString(TABLE_CAT),
+            resultSet.getString(TABLE_SCHEM),
+            resultSet.getString(TABLE_NAME),
+            resultSet.getString(COLUMN_NAME),
+            resultSet.getString(TYPE_NAME))
+        }
+        assert(resultSetBuffer.contains((null, "test_schema", "test_table", "a", "INT")))
+        assert(resultSetBuffer.contains((null, "test_schema", "test_table", "b", "STRING")))
+
+        resultSet = meta.getColumns(null, "test_schema", null, null)
+        resultSetBuffer.clear()
+        while (resultSet.next()) {
+          resultSetBuffer += Tuple5(
+            resultSet.getString(TABLE_CAT),
+            resultSet.getString(TABLE_SCHEM),
+            resultSet.getString(TABLE_NAME),
+            resultSet.getString(COLUMN_NAME),
+            resultSet.getString(TYPE_NAME))
+        }
+        assert(resultSetBuffer.contains((null, "test_schema", "test_table", "a", "INT")))
+        assert(resultSetBuffer.contains((null, "test_schema", "test_table", "b", "STRING")))
+
+        resultSet = meta.getColumns(null, null, "test_table", null)
+        resultSetBuffer.clear()
+        while (resultSet.next()) {
+          resultSetBuffer += Tuple5(
+            resultSet.getString(TABLE_CAT),
+            resultSet.getString(TABLE_SCHEM),
+            resultSet.getString(TABLE_NAME),
+            resultSet.getString(COLUMN_NAME),
+            resultSet.getString(TYPE_NAME))
+        }
+        assert(resultSetBuffer.contains((null, "test_schema", "test_table", "a", "INT")))
+        assert(resultSetBuffer.contains((null, "test_schema", "test_table", "b", "STRING")))
+
+        resultSet = meta.getColumns(null, null, null, "a")
+        while (resultSet.next()) {
+          assert(resultSet.getString(TABLE_CAT) == null)
+          assert(resultSet.getString(TABLE_SCHEM) == "test_schema")
+          assert(resultSet.getString(TABLE_NAME) == "test_table")
+          assert(resultSet.getString(COLUMN_NAME) == "a")
+          assert(resultSet.getString(TYPE_NAME) == "INT")
+        }
+      } finally {
+        statement.execute("DROP VIEW test_schema.test_view")
+        statement.execute("DROP TABLE test_schema.test_table")
+      }
+    }
+  }
+
   test("get functions") {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
