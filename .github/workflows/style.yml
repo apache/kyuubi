@@ -17,8 +17,6 @@
 
 name: Style
 
-# This GitHub workflow checks style & dependency issues.
-
 on:
   pull_request:
     branches:
