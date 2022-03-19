@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
@@ -33,6 +34,11 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 
 object PrivilegesBuilder {
+
+  private val versionParts = SPARK_VERSION.split('.')
+
+  private val majorVersion: Int = versionParts.head.toInt
+  private val minorVersion: Int = versionParts(1).toInt
 
   private def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
@@ -56,7 +62,9 @@ object PrivilegesBuilder {
       field.get(o)
     } match {
       case Success(value) => value.asInstanceOf[T]
-      case Failure(exception) => throw exception
+      case Failure(e) =>
+        val candidates = o.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
+        throw new RuntimeException(s"$name not in $candidates", e)
     }
   }
 
@@ -138,8 +146,20 @@ object PrivilegesBuilder {
       getFieldVal[T](plan, field)
     }
 
-    def getTable: TableIdentifier = {
+    def getTableName: TableIdentifier = {
       getPlanField[TableIdentifier]("tableName")
+    }
+
+    def getTableIdent: TableIdentifier = {
+      getPlanField[TableIdentifier]("tableIdent")
+    }
+
+    def getMultipartIdentifier: TableIdentifier = {
+      val multipartIdentifier = getPlanField[Seq[String]]("multipartIdentifier")
+      assert(multipartIdentifier.nonEmpty)
+      val table = multipartIdentifier.last
+      val db = Some(quote(multipartIdentifier.init))
+      TableIdentifier(table, db)
     }
 
     def getQuery: LogicalPlan = {
@@ -160,18 +180,18 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(table, cols)
 
       case "AlterTableAddPartitionCommand" =>
-        val table = getTable
+        val table = getTableName
         val cols = getPlanField[Seq[(TablePartitionSpec, Option[String])]]("partitionSpecsAndLocs")
           .flatMap(_._1.keySet).distinct
         outputObjs += tablePrivileges(table, cols)
 
       case "AlterTableChangeColumnCommand" =>
-        val table = getTable
+        val table = getTableName
         val cols = getPlanField[String]("columnName") :: Nil
         outputObjs += tablePrivileges(table, cols)
 
       case "AlterTableDropPartitionCommand" =>
-        val table = getTable
+        val table = getTableName
         val cols = getPlanField[Seq[TablePartitionSpec]]("specs").flatMap(_.keySet).distinct
         outputObjs += tablePrivileges(table, cols)
 
@@ -182,25 +202,25 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(newTable)
 
       case "AlterTableRenamePartitionCommand" =>
-        val table = getTable
+        val table = getTableName
         val cols = getPlanField[TablePartitionSpec]("oldPartition").keySet.toSeq
         outputObjs += tablePrivileges(table, cols)
 
       case "AlterTableSerDePropertiesCommand" =>
-        val table = getTable
+        val table = getTableName
         val cols = getPlanField[Option[TablePartitionSpec]]("partSpec")
           .toSeq.flatMap(_.keySet)
         outputObjs += tablePrivileges(table, cols)
 
       case "AlterTableSetLocationCommand" =>
-        val table = getTable
+        val table = getTableName
         val cols = getPlanField[Option[TablePartitionSpec]]("partitionSpec")
           .toSeq.flatMap(_.keySet)
         outputObjs += tablePrivileges(table, cols)
 
       case "AlterTableSetPropertiesCommand" |
           "AlterTableUnsetPropertiesCommand" =>
-        val table = getTable
+        val table = getTableName
         outputObjs += tablePrivileges(table)
 
       case "AlterViewAsCommand" =>
@@ -211,17 +231,22 @@ object PrivilegesBuilder {
       case "AlterViewAs" =>
 
       case "AnalyzeColumnCommand" =>
-        val table = getPlanField[TableIdentifier]("tableIdent")
+        val table = getTableIdent
         val cols = getPlanField[Option[Seq[String]]]("columnNames").getOrElse(Nil)
         inputObjs += tablePrivileges(table, cols)
 
-      case "AnalyzePartitionCommand" |
-          "AnalyzeTableCommand" |
-          "RefreshTableCommand" =>
-        val table = getPlanField[TableIdentifier]("tableIdent")
-        inputObjs += tablePrivileges(table)
+      case "AnalyzePartitionCommand" =>
+        val table = getTableIdent
+        val cols = getPlanField[Map[String, Option[String]]]("partitionSpec")
+          .keySet.toSeq
+        inputObjs += tablePrivileges(table, cols)
 
       case "AnalyzeTableCommand" |
+          "RefreshTableCommand" |
+          "RefreshTable" =>
+        inputObjs += tablePrivileges(getTableIdent)
+
+      case "AnalyzeTablesCommand" |
           "ShowTablesCommand" =>
         val db = getPlanField[Option[String]]("databaseName")
         if (db.nonEmpty) {
@@ -229,13 +254,18 @@ object PrivilegesBuilder {
         }
 
       case "CacheTable" =>
-        val multipartIdentifier = getPlanField[Seq[String]]("multipartIdentifier")
-        assert(multipartIdentifier.nonEmpty)
-        val table = multipartIdentifier.last
-        val db = Some(quote(multipartIdentifier.init))
-        outputObjs += tablePrivileges(TableIdentifier(table, db))
-        val query = getPlanField[LogicalPlan]("relation") // table to cache
+        // >= 3.2
+        outputObjs += tablePrivileges(getMultipartIdentifier)
+        val query = getPlanField[LogicalPlan]("table") // table to cache
         buildQuery(query, inputObjs)
+
+      case "CacheTableCommand" =>
+        if (majorVersion == 3 && minorVersion == 1) {
+          outputObjs += tablePrivileges(getMultipartIdentifier)
+        } else {
+          outputObjs += tablePrivileges(getTableIdent)
+        }
+        getPlanField[Option[LogicalPlan]]("plan").foreach(buildQuery(_, inputObjs))
 
       case "CacheTableAsSelect" =>
         val view = getPlanField[String]("tempViewName")
@@ -296,8 +326,7 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(target)
 
       case "CreateTempViewUsing" =>
-        val table = getPlanField[TableIdentifier]("tableIdent")
-        outputObjs += tablePrivileges(table)
+        outputObjs += tablePrivileges(getTableIdent)
 
       case "DescribeColumnCommand" =>
         val table = getPlanField[TableIdentifier]("table")
@@ -317,7 +346,7 @@ object PrivilegesBuilder {
         inputObjs += functionPrivileges(func.database.orNull, func.funcName)
 
       case "DropTableCommand" =>
-        outputObjs += tablePrivileges(getTable)
+        outputObjs += tablePrivileges(getTableName)
 
       case "ExplainCommand" =>
 
@@ -352,11 +381,11 @@ object PrivilegesBuilder {
       case "RepairTableCommand" =>
         val enableAddPartitions = getPlanField[Boolean]("enableAddPartitions")
         if (enableAddPartitions) {
-          outputObjs += tablePrivileges(getTable, actionType = INSERT)
+          outputObjs += tablePrivileges(getTableName, actionType = INSERT)
         } else if (getPlanField[Boolean]("enableDropPartitions")) {
-          outputObjs += tablePrivileges(getTable, actionType = DELETE)
+          outputObjs += tablePrivileges(getTableName, actionType = DELETE)
         } else {
-          inputObjs += tablePrivileges(getTable)
+          inputObjs += tablePrivileges(getTableName)
         }
 
       case "SetCatalogCommand" =>
@@ -367,13 +396,13 @@ object PrivilegesBuilder {
         inputObjs += databasePrivileges(namespace)
 
       case "TruncateTableCommand" =>
-        val table = getTable
+        val table = getTableName
         val cols = getPlanField[Option[TablePartitionSpec]]("partitionSpec")
           .map(_.keySet).getOrElse(Nil)
         outputObjs += tablePrivileges(table, cols.toSeq, DELETE)
 
       case "ShowColumnsCommand" =>
-        inputObjs += tablePrivileges(getTable)
+        inputObjs += tablePrivileges(getTableName)
 
       case "ShowCreateTableCommand" |
           "ShowTablePropertiesCommand" =>
@@ -383,7 +412,7 @@ object PrivilegesBuilder {
       case "ShowFunctionsCommand" =>
 
       case "ShowPartitionsCommand" =>
-        inputObjs += tablePrivileges(getTable)
+        inputObjs += tablePrivileges(getTableName)
 
       case _ =>
       // AddArchivesCommand

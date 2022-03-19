@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
@@ -26,6 +27,11 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
 
   protected val catalogImpl: String
 
+  protected val isSparkV2: Boolean = SPARK_VERSION.split("\\.").head == "2"
+  protected val isSparkV32OrGreater: Boolean = {
+    val parts = SPARK_VERSION.split("\\.").map(_.toInt)
+    (parts.head > 3) || (parts.head == 3 && parts(1) >= 2)
+  }
   protected lazy val spark: SparkSession = SparkSession.builder()
     .master("local")
     .config("spark.ui.enabled", "false")
@@ -303,6 +309,154 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
+
+  test("AnalyzeColumnCommand") {
+    val plan = sql(s"ANALYZE TABLE $reusedPartTable PARTITION (pid=1)" +
+      s" COMPUTE STATISTICS FOR COLUMNS key").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ANALYZE_TABLE)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    // ignore this check as it behaves differently across spark versions
+    assert(po0.columns === Seq("key"))
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("AnalyzePartitionCommand") {
+    val plan = sql(s"ANALYZE TABLE $reusedPartTable" +
+      s" PARTITION (pid = 1) COMPUTE STATISTICS").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ANALYZE_TABLE)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    // ignore this check as it behaves differently across spark versions
+    assert(po0.columns === Seq("pid"))
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("AnalyzeTableCommand") {
+    val plan = sql(s"ANALYZE TABLE $reusedPartTable COMPUTE STATISTICS")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ANALYZE_TABLE)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    // ignore this check as it behaves differently across spark versions
+    assert(po0.columns.isEmpty)
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("AnalyzeTablesCommand") {
+    assume(isSparkV32OrGreater)
+    val plan = sql(s"ANALYZE TABLES IN $reusedDb COMPUTE STATISTICS")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ANALYZE_TABLE)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.DATABASE)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedDb)
+    // ignore this check as it behaves differently across spark versions
+    assert(po0.columns.isEmpty)
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("RefreshTableCommand / RefreshTable") {
+    val plan = sql(s"REFRESH TABLE $reusedTable").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedDb)
+    assert(po0.columns.isEmpty)
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("ShowTablesCommand") {
+    val plan = sql(s"SHOW TABLES IN $reusedDb")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === SHOWTABLES)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.DATABASE)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedDb)
+    assert(po0.columns.isEmpty)
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.USE)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("CacheTable") {
+    val plan = sql(s"CACHE LAZY TABLE $reusedTable").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === CREATEVIEW)
+    val tuple = PrivilegesBuilder.build(plan)
+    if (isSparkV32OrGreater) {
+      assert(tuple._1.size === 1)
+      val po0 = tuple._1.head
+      assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.dbname equalsIgnoreCase reusedDb)
+      assert(po0.objectName equalsIgnoreCase reusedDb)
+      assert(po0.columns.head === "key")
+      val accessType0 = AccessType(po0, operationType, isInput = true)
+      assert(accessType0 === AccessType.SELECT)
+    } else {
+      assert(tuple._1.isEmpty)
+    }
+
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName equalsIgnoreCase reusedDb)
+    assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.CREATE)
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
@@ -310,7 +464,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
   // some hive version does not support set database location
   test("AlterDatabaseSetLocationCommand") {
-    assume(!org.apache.spark.SPARK_VERSION.startsWith("2"))
+    assume(!isSparkV2)
     val plan = sql("ALTER DATABASE default SET LOCATION 'some where i belong'")
       .queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
@@ -333,7 +487,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   override protected val catalogImpl: String = "hive"
 
   test("AlterTableSerDePropertiesCommand") {
-    assume(!org.apache.spark.SPARK_VERSION.startsWith("2"))
+    assume(!isSparkV2)
     withTable("AlterTableSerDePropertiesCommand") { t =>
       sql(s"CREATE TABLE $t (key int, pid int) USING hive PARTITIONED BY (pid)")
       sql(s"ALTER TABLE $t ADD IF NOT EXISTS PARTITION (pid=1)")

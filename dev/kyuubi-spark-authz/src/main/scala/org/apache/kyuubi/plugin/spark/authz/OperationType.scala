@@ -87,7 +87,7 @@ object OperationType extends Enumeration {
           "SaveIntoDataSourceCommand" => QUERY
       case "LoadDataCommand" => LOAD
       case "SetCommand" => SHOWCONF
-      case "RefreshTableCommand" => QUERY
+      case "RefreshTableCommand" | "RefreshTable" => QUERY
       case "SetCatalogCommand" |
           "SetCatalogAndNamespace" |
           "SetNamespaceCommand" |
