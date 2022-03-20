@@ -489,6 +489,37 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
+
+  test("CreateViewCommand") {
+    val plan = sql(s"CREATE VIEW CreateViewCommand(a, b) AS SELECT key, value FROM $reusedTable")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === CREATEVIEW)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+    if (isSparkV32OrGreater) {
+      assert(po0.columns === Seq("key", "value"))
+    } else {
+      assert(po0.columns.isEmpty)
+    }
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname === "default")
+    assert(po.objectName === "CreateViewCommand")
+    assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.CREATE)
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {

@@ -276,8 +276,12 @@ object PrivilegesBuilder {
 
       case "CreateViewCommand" =>
         val view = getPlanField[TableIdentifier]("name")
-        outputObjs += tablePrivileges(view, actionType = INSERT_OVERWRITE)
-        val query = getPlanField[LogicalPlan]("plan")
+        outputObjs += tablePrivileges(view)
+        val query = if (majorVersion < 3 || (majorVersion == 3 && minorVersion <= 1)) {
+          getPlanField[LogicalPlan]("child")
+        } else {
+          getPlanField[LogicalPlan]("plan")
+        }
         buildQuery(query, inputObjs)
 
       case "CreateView" => // revisit this after spark has view catalog
