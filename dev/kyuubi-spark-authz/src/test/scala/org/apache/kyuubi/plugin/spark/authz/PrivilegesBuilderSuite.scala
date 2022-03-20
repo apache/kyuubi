@@ -565,6 +565,39 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
+
+  test("CreateDataSourceTableAsSelectCommand") {
+    val plan = sql(s"CREATE TABLE CreateDataSourceTableAsSelectCommand USING parquet" +
+      s" AS SELECT key, value FROM $reusedTable")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+
+    assert(operationType === CREATETABLE_AS_SELECT)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+    assert(po0.columns === Seq("key", "value"))
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname === "default")
+    assert(po.objectName === "CreateDataSourceTableAsSelectCommand")
+    if (catalogImpl == "hive") {
+       assert(po.columns === Seq("key", "value"))
+    } else {
+      assert(po.columns.isEmpty)
+    }
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.CREATE)
+  }
 }
 
 class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
@@ -612,5 +645,34 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }
+  }
+
+  test("CreateHiveTableAsSelectCommand") {
+    val plan = sql(s"CREATE TABLE CreateHiveTableAsSelectCommand USING hive" +
+      s" AS SELECT key, value FROM $reusedTable")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+
+    assert(operationType === CREATETABLE_AS_SELECT)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+    assert(po0.columns === Seq("key", "value"))
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname === "default")
+    assert(po.objectName === "CreateHiveTableAsSelectCommand")
+    assert(po.columns === Seq("key", "value"))
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.CREATE)
   }
 }

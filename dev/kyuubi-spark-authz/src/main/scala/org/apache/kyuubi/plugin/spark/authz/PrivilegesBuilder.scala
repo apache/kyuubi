@@ -21,7 +21,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.SPARK_VERSION
-import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -301,8 +300,7 @@ object PrivilegesBuilder {
       case "CreateHiveTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("tableDesc").identifier
         val cols = getPlanField[Seq[String]]("outputColumnNames")
-        val mode = getPlanField[SaveMode]("mode").toString
-        outputObjs += tablePrivileges(table, cols, PrivilegeObjectActionType(mode))
+        outputObjs += tablePrivileges(table, cols)
         buildQuery(getQuery, inputObjs)
 
       case "CreateFunctionCommand" |
@@ -370,7 +368,7 @@ object PrivilegesBuilder {
           "SaveIntoDataSourceCommand" |
           "InsertIntoHadoopFsRelationCommand" |
           "InsertIntoHiveDirCommand" =>
-        // TODO: Should get the table via datasource options
+        // TODO: Should get the table via datasource options?
         buildQuery(getQuery, inputObjs)
 
       case "LoadDataCommand" =>
