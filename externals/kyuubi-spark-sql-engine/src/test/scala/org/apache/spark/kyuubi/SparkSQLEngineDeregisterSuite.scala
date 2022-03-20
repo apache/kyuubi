@@ -19,7 +19,6 @@ package org.apache.spark.kyuubi
 
 import java.util.UUID
 
-import org.apache.spark.SparkArithmeticException
 import org.apache.spark.SparkException
 import org.apache.spark.sql.internal.SQLConf.ANSI_ENABLED
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
@@ -61,7 +60,10 @@ class SparkSQLEngineDeregisterExceptionSuite extends SparkSQLEngineDeregisterSui
     super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> {
       sparkMajorMinorVersion match {
         // see https://issues.apache.org/jira/browse/SPARK-35958
-        case (3, minor) if minor >= 2 => classOf[SparkArithmeticException].getCanonicalName
+        case (3, minor) if minor >= 2 => {
+          import org.apache.spark.SparkArithmeticException
+          classOf[SparkArithmeticException].getCanonicalName
+        }
         case _ => classOf[ArithmeticException].getCanonicalName
       }
     })
@@ -86,7 +88,10 @@ class SparkSQLEngineDeregisterExceptionTTLSuite extends WithDiscoverySparkSQLEng
       ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> {
         sparkMajorMinorVersion match {
           // see https://issues.apache.org/jira/browse/SPARK-35958
-          case (3, minor) if minor >= 2 => classOf[SparkArithmeticException].getCanonicalName
+          case (3, minor) if minor >= 2 => {
+            import org.apache.spark.SparkArithmeticException
+            classOf[SparkArithmeticException].getCanonicalName
+          }
           case _ => classOf[ArithmeticException].getCanonicalName
         }
       },
