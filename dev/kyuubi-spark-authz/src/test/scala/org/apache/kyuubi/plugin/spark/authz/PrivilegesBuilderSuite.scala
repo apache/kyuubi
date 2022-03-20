@@ -520,6 +520,27 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
+
+  test("CreateDataSourceTableCommand") {
+    val tableName = s"CreateDataSourceTableCommand"
+    withTable(tableName) { _ =>
+      val plan = sql(s"CREATE TABLE $tableName(a int, b string) USING parquet")
+        .queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === CREATETABLE)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.size === 0)
+      assert(tuple._2.size === 1)
+      val po = tuple._2.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname === "default")
+      assert(po.objectName === tableName)
+      assert(po.columns.isEmpty)
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.CREATE)
+    }
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
@@ -570,6 +591,26 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po.columns.head === "pid")
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.ALTER)
+    }
+  }
+
+  test("CreateTableCommand") {
+    withTable("CreateTableCommand") { _ =>
+      val plan = sql(s"CREATE TABLE CreateTableCommand(a int, b string) USING hive")
+        .queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === CREATETABLE)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.size === 0)
+      assert(tuple._2.size === 1)
+      val po = tuple._2.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname === "default")
+      assert(po.objectName === "CreateTableCommand")
+      assert(po.columns.isEmpty)
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.CREATE)
     }
   }
 }
