@@ -19,11 +19,13 @@ package org.apache.spark.kyuubi
 
 import java.util.UUID
 
+import org.apache.spark.SparkArithmeticException
 import org.apache.spark.SparkException
 import org.apache.spark.sql.internal.SQLConf.ANSI_ENABLED
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.sparkMajorMinorVersion
 import org.apache.kyuubi.engine.spark.WithDiscoverySparkSQLEngine
 import org.apache.kyuubi.service.ServiceState
 
@@ -56,8 +58,14 @@ abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine
 
 class SparkSQLEngineDeregisterExceptionSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
-    super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_CLASSES.key ->
-      classOf[ArithmeticException].getCanonicalName)
+    super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> {
+      sparkMajorMinorVersion match {
+        // see https://issues.apache.org/jira/browse/SPARK-35958
+        case (3, minor) if minor >= 2 => classOf[SparkArithmeticException].getCanonicalName
+        case _ => classOf[ArithmeticException].getCanonicalName
+      }
+    })
+
   }
 }
 
@@ -75,7 +83,13 @@ class SparkSQLEngineDeregisterExceptionTTLSuite extends WithDiscoverySparkSQLEng
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(
       ANSI_ENABLED.key -> "true",
-      ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> classOf[ArithmeticException].getCanonicalName,
+      ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> {
+        sparkMajorMinorVersion match {
+          // see https://issues.apache.org/jira/browse/SPARK-35958
+          case (3, minor) if minor >= 2 => classOf[SparkArithmeticException].getCanonicalName
+          case _ => classOf[ArithmeticException].getCanonicalName
+        }
+      },
       ENGINE_DEREGISTER_JOB_MAX_FAILURES.key -> maxJobFailures.toString,
       ENGINE_DEREGISTER_EXCEPTION_TTL.key -> deregisterExceptionTTL.toString)
   }
