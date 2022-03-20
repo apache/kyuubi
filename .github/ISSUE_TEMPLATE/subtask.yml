@@ -39,15 +39,6 @@ body:
             issues.
           required: true
 
-  - type: checkboxes
-    attributes:
-      label: Search before asking
-      options:
-        - label: >
-            I have searched in the [issues](https://github.com/apache/incubator-kyuubi/issues) and found no similar
-            issues.
-          required: true
-
   - type: textarea
     attributes:
       label: Describe the subtask
