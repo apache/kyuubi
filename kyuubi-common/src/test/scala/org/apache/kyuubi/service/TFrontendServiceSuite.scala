@@ -324,10 +324,17 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     withSessionHandle { (client, handle) =>
       val req = new TGetPrimaryKeysReq(handle)
       val resp = client.GetPrimaryKeys(req)
-      assert(resp.getOperationHandle === null)
-      assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(resp.getStatus.getSqlState === "0A000")
-      assert(resp.getStatus.getErrorMessage startsWith "feature not supported")
+      val opHandle = resp.getOperationHandle
+      assert(opHandle.getOperationType === TOperationType.GET_FUNCTIONS)
+      assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      checkOperationResult(client, opHandle)
+
+      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      val resp1 = client.GetPrimaryKeys(req)
+      assert(resp1.getOperationHandle === null)
+      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp1.getStatus.getSqlState === null)
+      assert(resp1.getStatus.getErrorMessage startsWith "Invalid SessionHandle")
     }
   }
 

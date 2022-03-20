@@ -70,6 +70,11 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       catalogName: String,
       schemaName: String,
       functionName: String): Operation
+  def newGetPrimaryKeysOperation(
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String): Operation
 
   final def addOperation(operation: Operation): Operation = synchronized {
     handleToOperation.put(operation.getHandle, operation)

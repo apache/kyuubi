@@ -237,6 +237,30 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
     }
   }
 
+  test("get primary keys") {
+    withDatabases("test_schema") { statement =>
+      statement.execute("CREATE SCHEMA IF NOT EXISTS test_schema")
+      statement.execute("CREATE TABLE IF NOT EXISTS test_schema.test_table(a string, " +
+        "PRIMARY KEY(a) disable novalidate)")
+
+      try {
+        val meta = statement.getConnection.getMetaData
+        val resultSet = meta.getPrimaryKeys(null, "test_schema", "test_table")
+        val resultSetBuffer = ArrayBuffer[(String, String, String, String)]()
+        while (resultSet.next()) {
+          resultSetBuffer += Tuple4(
+            resultSet.getString(TABLE_CAT),
+            resultSet.getString(TABLE_SCHEM),
+            resultSet.getString(TABLE_NAME),
+            resultSet.getString(COLUMN_NAME))
+        }
+        assert(resultSetBuffer.contains((null, "test_schema", "test_table", "a")))
+      } finally {
+        statement.execute("DROP TABLE test_schema.test_table")
+      }
+    }
+  }
+
   test("basic execute statements, create, insert query") {
     withJdbcStatement("hive_engine_test") { statement =>
       statement.execute("CREATE TABLE hive_engine_test(id int, value string) stored as orc")

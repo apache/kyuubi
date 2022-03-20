@@ -21,8 +21,7 @@ import java.sql.{DatabaseMetaData, ResultSet, SQLException, SQLFeatureNotSupport
 
 import scala.util.Random
 
-import org.apache.kyuubi.KYUUBI_VERSION
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Utils}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 // For both `in-memory` and `hive` external catalog
@@ -457,7 +456,13 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
       assert(metaData.getDefaultTransactionIsolation === java.sql.Connection.TRANSACTION_NONE)
       assert(!metaData.supportsTransactions)
       assert(!metaData.getProcedureColumns("", "%", "%", "%").next())
-      intercept[SQLException](metaData.getPrimaryKeys("", "default", ""))
+      try {
+        assert(!metaData.getPrimaryKeys("", "default", "src").next())
+      } catch {
+        case e: Exception =>
+          assert(e.isInstanceOf[SQLException])
+          assert(e.getMessage.contains(KyuubiSQLException.featureNotSupported().getMessage))
+      }
       assert(!metaData.getImportedKeys("", "default", "").next())
       intercept[SQLException] {
         metaData.getCrossReference("", "default", "src", "", "default", "src2")

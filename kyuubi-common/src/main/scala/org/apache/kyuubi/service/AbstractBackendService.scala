@@ -121,6 +121,16 @@ abstract class AbstractBackendService(name: String)
       .getFunctions(catalogName, schemaName, functionName)
   }
 
+  override def getPrimaryKeys(
+      sessionHandle: SessionHandle,
+      catalogName: String,
+      schemaName: String,
+      tableName: String): OperationHandle = {
+    sessionManager
+      .getSession(sessionHandle)
+      .getPrimaryKeys(catalogName, schemaName, tableName)
+  }
+
   override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
     val operation = sessionManager.operationManager.getOperation(operationHandle)
     if (operation.shouldRunAsync) {

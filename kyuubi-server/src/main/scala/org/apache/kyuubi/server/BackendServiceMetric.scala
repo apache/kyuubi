@@ -122,6 +122,16 @@ trait BackendServiceMetric extends BackendService {
     }
   }
 
+  abstract override def getPrimaryKeys(
+      sessionHandle: SessionHandle,
+      catalogName: String,
+      schemaName: String,
+      tableName: String): OperationHandle = {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_PRIMARY_KEY) {
+      super.getPrimaryKeys(sessionHandle, catalogName, schemaName, tableName)
+    }
+  }
+
   abstract override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
     MetricsSystem.timerTracing(MetricsConstants.BS_GET_OPERATION_STATUS) {
       super.getOperationStatus(operationHandle)

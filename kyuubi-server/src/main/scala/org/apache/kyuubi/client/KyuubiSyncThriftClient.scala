@@ -183,6 +183,20 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     resp.getOperationHandle
   }
 
+  def getPrimaryKeys(
+      catalogName: String,
+      schemaName: String,
+      tableName: String): TOperationHandle = {
+    val req = new TGetPrimaryKeysReq()
+    req.setSessionHandle(_remoteSessionHandle)
+    req.setCatalogName(catalogName)
+    req.setSchemaName(schemaName)
+    req.setTableName(tableName)
+    val resp = withLockAcquired(GetPrimaryKeys(req))
+    ThriftUtils.verifyTStatus(resp.getStatus)
+    resp.getOperationHandle
+  }
+
   def getOperationStatus(operationHandle: TOperationHandle): TGetOperationStatusResp = {
     val req = new TGetOperationStatusReq(operationHandle)
     val resp = withLockAcquired(GetOperationStatus(req))

@@ -91,6 +91,16 @@ class NoopOperationManager extends OperationManager("noop") {
     addOperation(operation)
   }
 
+  override def newGetPrimaryKeysOperation(
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String): Operation = {
+    val operation =
+      new NoopOperation(OperationType.GET_FUNCTIONS, session, schemaName == invalid)
+    addOperation(operation)
+  }
+
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,

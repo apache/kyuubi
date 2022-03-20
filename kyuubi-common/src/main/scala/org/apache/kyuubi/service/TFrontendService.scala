@@ -365,8 +365,19 @@ abstract class TFrontendService(name: String)
   override def GetPrimaryKeys(req: TGetPrimaryKeysReq): TGetPrimaryKeysResp = {
     debug(req.toString)
     val resp = new TGetPrimaryKeysResp
-    val errStatus = KyuubiSQLException.featureNotSupported().toTStatus
-    resp.setStatus(errStatus)
+    try {
+      val sessionHandle = SessionHandle(req.getSessionHandle)
+      val catalog = req.getCatalogName
+      val schema = req.getSchemaName
+      val table = req.getTableName
+      val opHandle = be.getPrimaryKeys(sessionHandle, catalog, schema, table)
+      resp.setOperationHandle(opHandle.toTOperationHandle)
+      resp.setStatus(OK_STATUS)
+    } catch {
+      case e: Exception =>
+        error("Error getting primary keys: ", e)
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
+    }
     resp
   }
 

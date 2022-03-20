@@ -114,6 +114,15 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     addOperation(operation)
   }
 
+  override def newGetPrimaryKeysOperation(
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String): Operation = {
+    val operation = new GetFunctions(session, catalogName, schemaName, tableName)
+    addOperation(operation)
+  }
+
   def newLaunchEngineOperation(session: KyuubiSessionImpl, shouldRunAsync: Boolean): Operation = {
     val operation = new LaunchEngine(session, shouldRunAsync)
     addOperation(operation)

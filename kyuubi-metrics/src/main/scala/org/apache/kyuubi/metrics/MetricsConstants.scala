@@ -61,6 +61,7 @@ object MetricsConstants {
   final val BS_GET_TABLE_TYPES = BACKEND_SERVICE + "get_table_types"
   final val BS_GET_COLUMNS = BACKEND_SERVICE + "get_columns"
   final val BS_GET_FUNCTIONS = BACKEND_SERVICE + "get_functions"
+  final val BS_GET_PRIMARY_KEY = BACKEND_SERVICE + "get_primary_keys"
   final val BS_GET_OPERATION_STATUS = BACKEND_SERVICE + "get_operation_status"
   final val BS_CANCEL_OPERATION = BACKEND_SERVICE + "cancel_operation"
   final val BS_CLOSE_OPERATION = BACKEND_SERVICE + "close_operation"
