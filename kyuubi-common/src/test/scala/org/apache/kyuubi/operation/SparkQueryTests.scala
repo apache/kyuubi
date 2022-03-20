@@ -420,7 +420,7 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       rs.next()
       // scala repl will return resX = YYYYY, and here we only check YYYYY
       val sparkVer = rs.getString(1).split("=")(1).trim
-      assert("\\d\\.\\d\\.\\d".r.pattern.matcher(sparkVer).matches())
+      assert("\\d\\.\\d\\.\\d(-SNAPSHOT)?".r.pattern.matcher(sparkVer).matches())
       assert(rs.getMetaData.getColumnName(1) === "output")
     }
   }
