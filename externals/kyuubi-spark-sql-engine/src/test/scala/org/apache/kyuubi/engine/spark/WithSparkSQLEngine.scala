@@ -36,7 +36,7 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
   //    engine.initialize.sql='SHOW DATABASES'
   protected var initJobId: Int = {
     sparkMajorMinorVersion match {
-      case (3, 2) => 1 // SPARK-35378
+      case (3, minor) if minor >= 2 => 1 // SPARK-35378
       case (3, _) => 0
       case _ =>
         throw new IllegalArgumentException(s"Not Support spark version $sparkMajorMinorVersion")
