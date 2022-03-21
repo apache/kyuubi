@@ -391,6 +391,15 @@ object PrivilegesBuilder {
           inputObjs += tablePrivileges(getTableName)
         }
 
+      case "SetCatalogAndNamespace" =>
+        getPlanField[Option[String]]("catalogName").foreach { catalog =>
+          // fixme do we need to skip spark_catalog?
+          inputObjs += databasePrivileges(catalog)
+        }
+        getPlanField[Option[Seq[String]]]("namespace").foreach { nameParts =>
+          inputObjs += databasePrivileges(quote(nameParts))
+        }
+
       case "SetCatalogCommand" =>
         inputObjs += databasePrivileges(getPlanField[String]("catalogName"))
 
@@ -402,7 +411,7 @@ object PrivilegesBuilder {
         val table = getTableName
         val cols = getPlanField[Option[TablePartitionSpec]]("partitionSpec")
           .map(_.keySet).getOrElse(Nil)
-        outputObjs += tablePrivileges(table, cols.toSeq, DELETE)
+        outputObjs += tablePrivileges(table, cols.toSeq)
 
       case "ShowColumnsCommand" =>
         inputObjs += tablePrivileges(getTableName)

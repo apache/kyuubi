@@ -688,6 +688,56 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
 
     assert(tuple._2.size === 0)
   }
+
+  test("DescribeDatabaseCommand") {
+    val plan = sql(s"DESC DATABASE $reusedDb").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === DESCDATABASE)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po = tuple._1.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.DATABASE)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName equalsIgnoreCase reusedDb)
+    assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.USE)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("SetDatabaseCommand") {
+    try {
+      val plan = sql(s"USE $reusedDb").queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === SWITCHDATABASE)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.size === 2)
+      val po = tuple._1.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.typ === PrivilegeObjectType.DATABASE)
+      assert(po.dbname === "spark_catalog")
+      assert(po.objectName === "spark_catalog")
+      assert(po.columns.isEmpty)
+      val accessType = AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.USE)
+
+      val po0 = tuple._1.last
+      assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po0.typ === PrivilegeObjectType.DATABASE)
+      assert(po0.dbname equalsIgnoreCase reusedDb)
+      assert(po0.objectName equalsIgnoreCase reusedDb)
+      assert(po0.columns.isEmpty)
+      val accessType0 = AccessType(po, operationType, isInput = false)
+      assert(accessType0 === AccessType.USE)
+
+      assert(tuple._2.size === 0)
+    } finally {
+      sql("USE default")
+    }
+
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
