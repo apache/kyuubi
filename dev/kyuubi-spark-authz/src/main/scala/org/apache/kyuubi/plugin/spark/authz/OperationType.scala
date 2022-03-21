@@ -76,7 +76,7 @@ object OperationType extends Enumeration {
           "CacheTableAsSelect" => CREATEVIEW
       case "DescribeDatabaseCommand" => DESCDATABASE
       case "DescribeFunctionCommand" => DESCFUNCTION
-      case "DescribeColumnCommand" => DESCTABLE
+      case "DescribeColumnCommand" | "DescribeTableCommand" => DESCTABLE
       case "DropDatabaseCommand" => DROPDATABASE
       case "DropFunctionCommand" => DROPFUNCTION
       case "DropTableCommand" => DROPTABLE

@@ -29,10 +29,15 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
   protected val catalogImpl: String
 
   protected val isSparkV2: Boolean = SPARK_VERSION.split("\\.").head == "2"
+  protected val isSparkV31OrGreater: Boolean = {
+    val parts = SPARK_VERSION.split("\\.").map(_.toInt)
+    (parts.head > 3) || (parts.head == 3 && parts(1) >= 1)
+  }
   protected val isSparkV32OrGreater: Boolean = {
     val parts = SPARK_VERSION.split("\\.").map(_.toInt)
     (parts.head > 3) || (parts.head == 3 && parts(1) >= 2)
   }
+
   protected lazy val spark: SparkSession = SparkSession.builder()
     .master("local")
     .config("spark.ui.enabled", "false")
@@ -580,6 +585,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
   }
 
   test("RefreshFunctionCommand") {
+    assume(isSparkV31OrGreater)
     sql(s"CREATE FUNCTION RefreshFunctionCommand AS '${getClass.getCanonicalName}'")
     val plan = sql("REFRESH FUNCTION RefreshFunctionCommand")
       .queryExecution.analyzed
@@ -659,6 +665,24 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po.columns === Seq("key"))
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.SELECT)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("DescribeTableCommand") {
+    val plan = sql(s"DESC TABLE $reusedTable").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === DESCTABLE)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po = tuple._1.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+    assert(po.columns.isEmpty)
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.SELECT)
 
