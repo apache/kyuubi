@@ -333,7 +333,7 @@ object PrivilegesBuilder {
 
       case "DescribeColumnCommand" =>
         val table = getPlanField[TableIdentifier]("table")
-        val cols = getPlanField[Seq[String]]("colNameParts")
+        val cols = getPlanField[Seq[String]]("colNameParts").takeRight(1)
         inputObjs += tablePrivileges(table, cols)
 
       case "DescribeTableCommand" =>
