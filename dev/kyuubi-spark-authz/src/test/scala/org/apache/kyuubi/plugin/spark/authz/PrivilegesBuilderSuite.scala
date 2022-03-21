@@ -755,6 +755,32 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.UPDATE)
   }
+
+  test("ShowColumnsCommand") {
+    val plan = sql(s"SHOW COLUMNS IN $reusedTable").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === SHOWCOLUMNS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+    assert(po0.columns.isEmpty)
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+
+    assert(accessType0 === AccessType.SELECT)
+    try {
+      RangerSparkPlugin.getConfig
+        .set("xasecure.spark.describetable.showcolumns.authorization.option", "show-all")
+      assert(AccessType(po0, operationType, isInput = true) === AccessType.USE)
+    } finally {
+      RangerSparkPlugin.getConfig
+        .set("xasecure.spark.describetable.showcolumns.authorization.option", "NONE")
+    }
+    assert(tuple._2.size === 0)
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {

@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
 object RangerSparkPlugin extends RangerBasePlugin("spark", "sparkSql") {
-  lazy val showColumnsOption: String = getConfig.get(
+  def showAllColumns: Boolean = getConfig.get(
     "xasecure.spark.describetable.showcolumns.authorization.option",
-    "NONE")
+    "NONE").equalsIgnoreCase("show-all")
 }

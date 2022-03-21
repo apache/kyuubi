@@ -57,7 +57,7 @@ object AccessType extends Enumeration {
               SHOWPARTITIONS |
               ANALYZE_TABLE => SELECT
           case SHOWCOLUMNS | DESCTABLE =>
-            if (RangerSparkPlugin.showColumnsOption.equalsIgnoreCase("show-all")) {
+            if (RangerSparkPlugin.showAllColumns) {
               USE
             } else {
               SELECT
