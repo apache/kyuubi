@@ -267,9 +267,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
   test("AlterTable(Un)SetPropertiesCommand") {
     Seq(
       " SET TBLPROPERTIES (key='AlterTableSetPropertiesCommand')",
-      "UNSET TBLPROPERTIES (key)").foreach { t =>
-      val plan = sql(s"ALTER TABLE $reusedTable" +
-        " SET TBLPROPERTIES (key='AlterTableSetPropertiesCommand')")
+      "UNSET TBLPROPERTIES (key)").foreach { clause =>
+      val plan = sql(s"ALTER TABLE $reusedTable $clause")
         .queryExecution.analyzed
       val operationType = OperationType(plan.nodeName)
       assert(operationType === ALTERTABLE_PROPERTIES)
@@ -781,6 +780,70 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     }
     assert(tuple._2.size === 0)
   }
+
+  test("ShowCreateTableCommand") {
+    val plan = sql(s"SHOW CREATE TABLE $reusedTable").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === SHOW_CREATETABLE)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+    assert(po0.columns.isEmpty)
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("ShowTablePropertiesCommand") {
+    val plan = sql(s"SHOW TBLPROPERTIES $reusedTable ").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === SHOW_TBLPROPERTIES)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+    assert(po0.columns.isEmpty)
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 0)
+  }
+
+  test("ShowFunctionsCommand") {
+    val plan = sql("SHOW FUNCTIONS").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === SHOWFUNCTIONS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 0)
+    assert(tuple._2.size === 0)
+  }
+
+  test("ShowPartitionsCommand") {
+    val plan = sql(s"SHOW PARTITIONS $reusedPartTable PARTITION (pid=1)")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === SHOWPARTITIONS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.columns === Seq("pid"))
+    val accessType0 = AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.size === 0)
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
@@ -915,5 +978,26 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.columns === Seq("key", "value"))
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
+  }
+
+  test("ShowCreateTableAsSerdeCommand") {
+    withTable("ShowCreateTableAsSerdeCommand") { t =>
+      sql(s"CREATE TABLE $t (key int, pid int) USING hive PARTITIONED BY (pid)")
+      val plan = sql(s"SHOW CREATE TABLE $t AS SERDE").queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === SHOW_CREATETABLE)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.size === 1)
+      val po0 = tuple._1.head
+      assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.dbname === "default")
+      assert(po0.objectName === t)
+      assert(po0.columns.isEmpty)
+      val accessType0 = AccessType(po0, operationType, isInput = true)
+      assert(accessType0 === AccessType.SELECT)
+
+      assert(tuple._2.size === 0)
+    }
   }
 }

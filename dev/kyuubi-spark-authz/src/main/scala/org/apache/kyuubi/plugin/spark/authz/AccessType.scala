@@ -62,7 +62,7 @@ object AccessType extends Enumeration {
             } else {
               SELECT
             }
-          case SHOWDATABASES | SWITCHDATABASE | DESCDATABASE | SHOWTABLES => USE
+          case SHOWDATABASES | SWITCHDATABASE | DESCDATABASE | SHOWTABLES | SHOWFUNCTIONS => USE
           case TRUNCATETABLE => UPDATE
           case _ => NONE
         }

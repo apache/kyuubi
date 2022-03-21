@@ -417,14 +417,20 @@ object PrivilegesBuilder {
         inputObjs += tablePrivileges(getTableName)
 
       case "ShowCreateTableCommand" |
+          "ShowCreateTableAsSerdeCommand" |
           "ShowTablePropertiesCommand" =>
         val table = getPlanField[TableIdentifier]("table")
         inputObjs += tablePrivileges(table)
 
       case "ShowFunctionsCommand" =>
+        getPlanField[Option[String]]("db").foreach { db =>
+          inputObjs += databasePrivileges(db)
+        }
 
       case "ShowPartitionsCommand" =>
-        inputObjs += tablePrivileges(getTableName)
+        val cols = getPlanField[Option[TablePartitionSpec]]("spec")
+          .map(_.keySet.toSeq).getOrElse(Nil)
+        inputObjs += tablePrivileges(getTableName, cols)
 
       case _ =>
       // AddArchivesCommand
