@@ -182,6 +182,25 @@ abstract class AbstractSession(
     runOperation(operation)
   }
 
+  override def getCrossReference(
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): OperationHandle = {
+    val operation = sessionManager.operationManager
+      .newGetCrossReferenceOperation(
+        this,
+        primaryCatalog,
+        primarySchema,
+        primaryTable,
+        foreignCatalog,
+        foreignSchema,
+        foreignTable)
+    runOperation(operation)
+  }
+
   override def cancelOperation(operationHandle: OperationHandle): Unit = withAcquireRelease() {
     sessionManager.operationManager.cancelOperation(operationHandle)
   }

@@ -131,6 +131,25 @@ abstract class AbstractBackendService(name: String)
       .getPrimaryKeys(catalogName, schemaName, tableName)
   }
 
+  override def getCrossReference(
+      sessionHandle: SessionHandle,
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): OperationHandle = {
+    sessionManager
+      .getSession(sessionHandle)
+      .getCrossReference(
+        primaryCatalog,
+        primarySchema,
+        primaryTable,
+        foreignCatalog,
+        foreignSchema,
+        foreignTable)
+  }
+
   override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
     val operation = sessionManager.operationManager.getOperation(operationHandle)
     if (operation.shouldRunAsync) {

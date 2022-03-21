@@ -351,4 +351,31 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         throw new NotFoundException(errorMsg)
     }
   }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with GET_FUNCTIONS type")
+  @POST
+  @Path("{sessionHandle}/operations/crossReference")
+  def getCrossReference(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetCrossReferenceRequest): OperationHandle = {
+    try {
+      fe.be.getCrossReference(
+        parseSessionHandle(sessionHandleStr),
+        request.primaryCatalog,
+        request.primarySchema,
+        request.primaryTable,
+        request.foreignCatalog,
+        request.foreignSchema,
+        request.foreignTable)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting cross reference"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
 }

@@ -119,7 +119,26 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       catalogName: String,
       schemaName: String,
       tableName: String): Operation = {
-    val operation = new GetFunctions(session, catalogName, schemaName, tableName)
+    val operation = new GetPrimaryKeys(session, catalogName, schemaName, tableName)
+    addOperation(operation)
+  }
+
+  override def newGetCrossReferenceOperation(
+      session: Session,
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): Operation = {
+    val operation = new GetCrossReference(
+      session,
+      primaryCatalog,
+      primarySchema,
+      primaryTable,
+      foreignCatalog,
+      foreignSchema,
+      foreignTable)
     addOperation(operation)
   }
 

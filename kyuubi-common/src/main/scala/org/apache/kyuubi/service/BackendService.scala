@@ -81,6 +81,14 @@ trait BackendService {
       catalogName: String,
       schemaName: String,
       tableName: String): OperationHandle
+  def getCrossReference(
+      sessionHandle: SessionHandle,
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): OperationHandle
 
   def getOperationStatus(operationHandle: OperationHandle): OperationStatus
   def cancelOperation(operationHandle: OperationHandle): Unit

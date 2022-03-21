@@ -384,8 +384,29 @@ abstract class TFrontendService(name: String)
   override def GetCrossReference(req: TGetCrossReferenceReq): TGetCrossReferenceResp = {
     debug(req.toString)
     val resp = new TGetCrossReferenceResp
-    val errStatus = KyuubiSQLException.featureNotSupported().toTStatus
-    resp.setStatus(errStatus)
+    try {
+      val sessionHandle = SessionHandle(req.getSessionHandle)
+      val primaryCatalog = req.getParentCatalogName
+      val primarySchema = req.getParentSchemaName
+      val primaryTable = req.getParentTableName
+      val foreignCatalog = req.getForeignCatalogName
+      val foreignSchema = req.getForeignSchemaName
+      val foreignTable = req.getForeignTableName
+      val opHandle = be.getCrossReference(
+        sessionHandle,
+        primaryCatalog,
+        primarySchema,
+        primaryTable,
+        foreignCatalog,
+        foreignSchema,
+        foreignTable)
+      resp.setOperationHandle(opHandle.toTOperationHandle)
+      resp.setStatus(OK_STATUS)
+    } catch {
+      case e: Exception =>
+        error("Error getting primary keys: ", e)
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
+    }
     resp
   }
 

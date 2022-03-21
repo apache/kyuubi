@@ -197,6 +197,26 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     resp.getOperationHandle
   }
 
+  def getCrossReference(
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): TOperationHandle = {
+    val req = new TGetCrossReferenceReq()
+    req.setSessionHandle(_remoteSessionHandle)
+    req.setParentCatalogName(primaryCatalog)
+    req.setParentSchemaName(primarySchema)
+    req.setParentTableName(primaryTable)
+    req.setForeignCatalogName(foreignCatalog)
+    req.setForeignSchemaName(foreignSchema)
+    req.setForeignTableName(foreignTable)
+    val resp = withLockAcquired(GetCrossReference(req))
+    ThriftUtils.verifyTStatus(resp.getStatus)
+    resp.getOperationHandle
+  }
+
   def getOperationStatus(operationHandle: TOperationHandle): TGetOperationStatusResp = {
     val req = new TGetOperationStatusReq(operationHandle)
     val resp = withLockAcquired(GetOperationStatus(req))

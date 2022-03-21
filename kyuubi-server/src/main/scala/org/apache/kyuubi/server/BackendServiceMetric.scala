@@ -132,6 +132,26 @@ trait BackendServiceMetric extends BackendService {
     }
   }
 
+  abstract override def getCrossReference(
+      sessionHandle: SessionHandle,
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): OperationHandle = {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_CROSS_REFERENCE) {
+      super.getCrossReference(
+        sessionHandle,
+        primaryCatalog,
+        primarySchema,
+        primaryTable,
+        foreignCatalog,
+        foreignSchema,
+        foreignTable)
+    }
+  }
+
   abstract override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
     MetricsSystem.timerTracing(MetricsConstants.BS_GET_OPERATION_STATUS) {
       super.getOperationStatus(operationHandle)
