@@ -844,6 +844,47 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
 
     assert(tuple._2.size === 0)
   }
+
+  test("Star") {
+    val plan = sql(s"SELECT * FROM $reusedTable t1").queryExecution.optimizedPlan
+    val po = PrivilegesBuilder.build(plan)._1.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName equalsIgnoreCase reusedTable.toLowerCase.split("\\.").last)
+    assert(po.columns === Seq("key", "value"))
+
+
+
+  }
+
+  test("INNER JOIN") {
+    val sqlStr =
+      s"""
+         |SELECT t1.key, t1.value, t2.value
+         |    FROM $reusedTable t1
+         |    INNER JOIN $reusedPartTable t2
+         |    ON t1.key = t2.key
+         |    """.stripMargin
+
+    val plan = sql(sqlStr).queryExecution.optimizedPlan
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+
+    assert(tuple._1.size === 2)
+    tuple._1.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname equalsIgnoreCase reusedDb)
+      assert(po.objectName startsWith reusedTable.toLowerCase.split("\\.").last)
+      assert(po.columns === Seq("key", "value"),
+        s"$reusedPartTable 'key' is the join key and 'pid' is omitted")
+      val accessType = AccessType(po, operationType, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+    assert(tuple._2.size === 0)
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {

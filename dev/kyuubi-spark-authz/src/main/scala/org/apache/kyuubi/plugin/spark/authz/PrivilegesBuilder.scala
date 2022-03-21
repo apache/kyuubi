@@ -100,9 +100,10 @@ object PrivilegesBuilder {
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table.identifier,
-          table.partitionColumnNames ++ table.schema.fieldNames)
+          table.schema.fieldNames)
       } else {
-        privilegeObjects += tablePrivileges(table.identifier, projectionList.map(_.name))
+        val cols = table.schema.fieldNames.filter(projectionList.map(_.name).contains)
+        privilegeObjects += tablePrivileges(table.identifier, cols)
       }
     }
 
