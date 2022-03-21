@@ -561,10 +561,11 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
   }
 
   test("DropFunctionCommand") {
-    val plan = sql("DROP FUNCTION CreateFunctionCommand")
+    sql("CREATE FUNCTION DropFunctionCommand AS 'class_name'")
+    val plan = sql("DROP FUNCTION DropFunctionCommand")
       .queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
-    assert(operationType === CREATEFUNCTION)
+    assert(operationType === DROPFUNCTION)
     val tuple = PrivilegesBuilder.build(plan)
     assert(tuple._1.size === 0)
     assert(tuple._2.size === 1)
@@ -572,10 +573,29 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.typ === PrivilegeObjectType.FUNCTION)
     assert(po.dbname === null)
-    assert(po.objectName === "CreateFunctionCommand")
+    assert(po.objectName === "DropFunctionCommand")
     assert(po.columns.isEmpty)
     val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.CREATE)
+    assert(accessType === AccessType.DROP)
+  }
+
+  test("RefreshFunctionCommand") {
+    sql(s"CREATE FUNCTION RefreshFunctionCommand AS '${getClass.getCanonicalName}'")
+    val plan = sql("REFRESH FUNCTION RefreshFunctionCommand")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === RELOADFUNCTION)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 0)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.FUNCTION)
+    assert(po.dbname === null)
+    assert(po.objectName === "RefreshFunctionCommand")
+    assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.NONE)
   }
 }
 
@@ -585,7 +605,8 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   // some hive version does not support set database location
   test("AlterDatabaseSetLocationCommand") {
     assume(!isSparkV2)
-    val plan = sql("ALTER DATABASE default SET LOCATION 'some where i belong'")
+    val newLoc = spark.conf.get("spark.sql.warehouse.dir") + "/new_db_location"
+    val plan = sql(s"ALTER DATABASE default SET LOCATION '$newLoc'")
       .queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
     assert(operationType === ALTERDATABASE_LOCATION)
@@ -627,7 +648,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.dbname === "default")
     assert(po.objectName === "CreateDataSourceTableAsSelectCommand")
     if (catalogImpl == "hive") {
-       assert(po.columns === Seq("key", "value"))
+      assert(po.columns === Seq("key", "value"))
     } else {
       assert(po.columns.isEmpty)
     }
