@@ -736,7 +736,24 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     } finally {
       sql("USE default")
     }
+  }
 
+  test("TruncateTableCommand") {
+    val plan = sql(s"TRUNCATE TABLE $reusedPartTable PARTITION (pid=1)")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === TRUNCATETABLE)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.columns.head === "pid")
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.UPDATE)
   }
 }
 
