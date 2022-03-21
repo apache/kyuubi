@@ -46,7 +46,7 @@ matrix:
       - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-spark-sql-engine,kyuubi-server
   - name: Build Kyuubi Trino on Linux ARM64
     script:
-      - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-trino-sql-engine,kyuubi-server
+      - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-trino-engine,kyuubi-server
   - name: Build Kyuubi Hive on Linux ARM64
     script:
       - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-hive-sql-engine,kyuubi-server
