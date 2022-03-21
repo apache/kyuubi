@@ -88,6 +88,11 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     super.afterAll()
   }
 
+  override def beforeEach(): Unit = {
+    sql("CLEAR CACHE")
+    super.beforeEach()
+  }
+
   test("AlterDatabasePropertiesCommand") {
     val plan = sql("ALTER DATABASE default SET DBPROPERTIES (abc = '123')").queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
@@ -846,16 +851,13 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
   }
 
   test("Star") {
-    val plan = sql(s"SELECT * FROM $reusedTable t1").queryExecution.optimizedPlan
+    val plan = sql(s"SELECT * FROM $reusedTable").queryExecution.optimizedPlan
     val po = PrivilegesBuilder.build(plan)._1.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.toLowerCase.split("\\.").last)
-    assert(po.columns === Seq("key", "value"))
-
-
-
+    assert(po.columns.take(2) === Seq("key", "value"))
   }
 
   test("INNER JOIN") {
@@ -878,7 +880,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName startsWith reusedTable.toLowerCase.split("\\.").last)
-      assert(po.columns === Seq("key", "value"),
+      assert(
+        po.columns === Seq("key", "value"),
         s"$reusedPartTable 'key' is the join key and 'pid' is omitted")
       val accessType = AccessType(po, operationType, isInput = true)
       assert(accessType === AccessType.SELECT)

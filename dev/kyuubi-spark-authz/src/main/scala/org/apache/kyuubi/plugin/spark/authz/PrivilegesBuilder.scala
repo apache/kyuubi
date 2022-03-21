@@ -102,8 +102,7 @@ object PrivilegesBuilder {
           table.identifier,
           table.schema.fieldNames)
       } else {
-        val cols = table.schema.fieldNames.filter(projectionList.map(_.name).contains)
-        privilegeObjects += tablePrivileges(table.identifier, cols)
+        privilegeObjects += tablePrivileges(table.identifier, projectionList.map(_.name))
       }
     }
 
