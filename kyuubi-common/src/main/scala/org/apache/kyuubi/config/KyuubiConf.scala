@@ -1267,4 +1267,26 @@ object KyuubiConf {
       .stringConf
       .toSequence()
       .createWithDefault(Seq("java", "sun", "os", "jdk"))
+
+  val ENGINE_SPARK_SHOW_PROGRESS: ConfigEntry[Boolean] =
+    buildConf("session.engine.spark.showProgress")
+      .doc("When true, show the progress bar in the spark engine log.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL: ConfigEntry[Long] =
+    buildConf("session.engine.spark.progress.update.interval")
+      .doc("Update period of progress bar.")
+      .version("1.6.0")
+      .timeConf
+      .checkValue(_ >= 200, "Minimum 200 milliseconds")
+      .createWithDefault(1000)
+
+  val ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT: ConfigEntry[String] =
+    buildConf("session.engine.spark.progress.timeFormat")
+      .doc("The time format of the progress bar")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
 }
