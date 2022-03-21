@@ -16,13 +16,17 @@
 #
 
 sudo: required
+dist: focal
+arch: arm64-graviton2
+group: edge
+virt: vm
+env: SPARK_LOCAL_IP=localhost
 
 branches:
   only:
     - master
 
 # https://releases.ubuntu.com/ use the latest LTS release of ubuntu
-dist: bionic
 language: scala
 scala:
   - 2.12.15
@@ -31,11 +35,21 @@ jdk:
 
 matrix:
   include:
-  - name: Build Kyuubi on Linux ARM64
-    dist: focal
-    arch: arm64-graviton2
-    group: edge
-    virt: vm
+  - name: Build Kyuubi common on Linux ARM64
+    script:
+      - ./build/mvn test $MVN_ARGS -pl kyuubi-common,kyuubi-zookeeper,kyuubi-ha,kyuubi-ctl,kyuubi-metrics,kyuubi-hive-beeline,kyuubi-hive-jdbc,kyuubi-server-plugin -am
+  - name: Build Kyuubi Flink on Linux ARM64
+    script:
+      - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-flink-sql-engine,kyuubi-server
+  - name: Build Kyuubi Spark on Linux ARM64
+    script:
+      - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-spark-sql-engine,kyuubi-server
+  - name: Build Kyuubi Trino on Linux ARM64
+    script:
+      - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-trino-engine,kyuubi-server
+  - name: Build Kyuubi Hive on Linux ARM64
+    script:
+      - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-hive-sql-engine,kyuubi-server
 
 cache:
   directories:
@@ -44,10 +58,10 @@ cache:
 install:
   - ./build/mvn --version
 
-script:
+before_script:
   - export MVN_ARGS="-Dmaven.javadoc.skip=true -V -B -ntp -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
   - ./build/mvn clean install -DskipTests $MVN_ARGS
-  - ./build/mvn test $MVN_ARGS -pl kyuubi-common -am
+
 
 after_success:
   - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
