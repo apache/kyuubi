@@ -61,6 +61,7 @@ object OperationType extends Enumeration {
       case ac if ac.startsWith("Analyze") => ANALYZE_TABLE
       case "AppendData" => ALTERTABLE_ADDPARTS
       case "CreateDatabaseCommand" => CREATEDATABASE
+      case "CreateFunctionCommand" => CREATEFUNCTION
       case "CreateTableAsSelect" |
           "CreateDataSourceTableAsSelectCommand" |
           "CreateHiveTableAsSelectCommand" |

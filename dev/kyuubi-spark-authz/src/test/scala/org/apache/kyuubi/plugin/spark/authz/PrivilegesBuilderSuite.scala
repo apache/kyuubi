@@ -541,6 +541,24 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(accessType === AccessType.CREATE)
     }
   }
+
+  test("CreateFunctionCommand") {
+    val plan = sql("CREATE FUNCTION CreateFunctionCommand AS 'class_name'")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === CREATEFUNCTION)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 0)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.FUNCTION)
+    assert(po.dbname === null)
+    assert(po.objectName === "CreateFunctionCommand")
+    assert(po.columns.isEmpty)
+    val accessType = AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.CREATE)
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
