@@ -201,11 +201,12 @@ object RowSet {
         while (i < rowSize) {
           val row = rows(i)
           nulls.set(i, row.getField(ordinal) == null)
-          val value = if (row.getField(ordinal) == null) {
-            ""
-          } else {
-            toHiveString((row.getField(ordinal), logicalType))
-          }
+          val value =
+            if (row.getField(ordinal) == null) {
+              ""
+            } else {
+              toHiveString((row.getField(ordinal), logicalType))
+            }
           values.add(value)
           i += 1
         }

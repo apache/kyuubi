@@ -19,7 +19,10 @@ package org.apache.kyuubi.engine.trino.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.util
+
 import scala.collection.JavaConverters._
+
 import io.trino.client.ClientStandardTypes._
 import io.trino.client.ClientTypeSignature
 import io.trino.client.Column
@@ -44,10 +47,9 @@ import org.apache.hive.service.rpc.thrift.TRow
 import org.apache.hive.service.rpc.thrift.TRowSet
 import org.apache.hive.service.rpc.thrift.TStringColumn
 import org.apache.hive.service.rpc.thrift.TStringValue
+
 import org.apache.kyuubi.engine.trino.util.PreconditionsWrapper._
 import org.apache.kyuubi.util.RowSetUtils.bitSetToBuffer
-
-import java.util
 
 object RowSet {
 
@@ -149,11 +151,12 @@ object RowSet {
         while (i < rowSize) {
           val row = rows(i)
           nulls.set(i, row(ordinal) == null)
-          val value = if (row(ordinal) == null) {
-            ""
-          } else {
-            toHiveString(row(ordinal), typ)
-          }
+          val value =
+            if (row(ordinal) == null) {
+              ""
+            } else {
+              toHiveString(row(ordinal), typ)
+            }
           values.add(value)
           i += 1
         }

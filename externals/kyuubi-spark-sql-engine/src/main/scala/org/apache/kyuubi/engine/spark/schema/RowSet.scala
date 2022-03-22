@@ -129,11 +129,12 @@ object RowSet {
         while (i < rowSize) {
           val row = rows(i)
           nulls.set(i, row.isNullAt(ordinal))
-          val value = if (row.isNullAt(ordinal)) {
-            ""
-          } else {
-            toHiveString((row.get(ordinal), typ), timeZone)
-          }
+          val value =
+            if (row.isNullAt(ordinal)) {
+              ""
+            } else {
+              toHiveString((row.get(ordinal), typ), timeZone)
+            }
           values.add(value)
           i += 1
         }
