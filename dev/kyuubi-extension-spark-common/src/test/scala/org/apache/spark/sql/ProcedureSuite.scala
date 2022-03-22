@@ -30,7 +30,8 @@ class ProcedureSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelp
 
   test("parse call statements") {
     val p1 = sql(
-      "call spark.kyuubi.create_tpcds(db=>'tpcds_sf10', sf=>10, format=>'parquet')").queryExecution.analyzed
+      "call spark.kyuubi.create_tpcds(db=>'tpcds_sf10', sf=>10, format=>'parquet')"
+    ).queryExecution.analyzed
     assert(p1 != null)
   }
 
