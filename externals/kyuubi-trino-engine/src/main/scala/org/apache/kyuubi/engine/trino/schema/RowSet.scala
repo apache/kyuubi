@@ -19,9 +19,7 @@ package org.apache.kyuubi.engine.trino.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-
 import scala.collection.JavaConverters._
-
 import io.trino.client.ClientStandardTypes._
 import io.trino.client.ClientTypeSignature
 import io.trino.client.Column
@@ -46,9 +44,10 @@ import org.apache.hive.service.rpc.thrift.TRow
 import org.apache.hive.service.rpc.thrift.TRowSet
 import org.apache.hive.service.rpc.thrift.TStringColumn
 import org.apache.hive.service.rpc.thrift.TStringValue
-
 import org.apache.kyuubi.engine.trino.util.PreconditionsWrapper._
 import org.apache.kyuubi.util.RowSetUtils.bitSetToBuffer
+
+import java.util
 
 object RowSet {
 
@@ -64,24 +63,35 @@ object RowSet {
   }
 
   def toRowBasedSet(rows: Seq[List[_]], schema: List[Column]): TRowSet = {
-    val tRows = rows.map { row =>
+    val rowSize = rows.length
+    val tRows = new util.ArrayList[TRow](rowSize)
+    var i = 0
+    while (i < rowSize) {
+      val row = rows(i)
       val tRow = new TRow()
-      (0 until row.size).map(i => toTColumnValue(i, row, schema))
-        .foreach(tRow.addToColVals)
-      tRow
-    }.asJava
+      val columnSize = row.size
+      var j = 0
+      while (j < columnSize) {
+        val columnValue = toTColumnValue(j, row, schema)
+        tRow.addToColVals(columnValue)
+        j += 1
+      }
+      tRows.add(tRow)
+      i += 1
+    }
     new TRowSet(0, tRows)
   }
 
   def toColumnBasedSet(rows: Seq[List[_]], schema: List[Column]): TRowSet = {
     val size = rows.size
     val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](size))
-    schema.zipWithIndex.foreach { case (filed, i) =>
-      val tColumn = toTColumn(
-        rows,
-        i,
-        filed.getTypeSignature)
+    val columnSize = schema.length
+    var i = 0
+    while (i < columnSize) {
+      val field = schema(i)
+      val tColumn = toTColumn(rows, i, field.getTypeSignature)
       tRowSet.addToColumns(tColumn)
+      i += 1
     }
     tRowSet
   }
@@ -133,14 +143,20 @@ object RowSet {
         TColumn.binaryVal(new TBinaryColumn(values, nulls))
 
       case _ =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val rowSize = rows.length
+        val values = new util.ArrayList[String](rowSize)
+        var i = 0
+        while (i < rowSize) {
+          val row = rows(i)
           nulls.set(i, row(ordinal) == null)
-          if (row(ordinal) == null) {
+          val value = if (row(ordinal) == null) {
             ""
           } else {
             toHiveString(row(ordinal), typ)
           }
-        }.asJava
+          values.add(value)
+          i += 1
+        }
         TColumn.stringVal(new TStringColumn(values, nulls))
     }
   }

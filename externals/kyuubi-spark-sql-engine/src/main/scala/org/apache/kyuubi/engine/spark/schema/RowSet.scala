@@ -46,9 +46,9 @@ object RowSet {
   }
 
   def toRowBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
-    val tRows = new java.util.ArrayList[TRow]()
     var i = 0
     val rowSize = rows.length
+    val tRows = new java.util.ArrayList[TRow](rowSize)
     while (i < rowSize) {
       val row = rows(i)
       val tRow = new TRow()
@@ -123,14 +123,20 @@ object RowSet {
         TColumn.binaryVal(new TBinaryColumn(values, nulls))
 
       case _ =>
-        val values = rows.zipWithIndex.toList.map { case (row, i) =>
+        var i = 0
+        val rowSize = rows.length
+        val values = new java.util.ArrayList[String](rowSize)
+        while (i < rowSize) {
+          val row = rows(i)
           nulls.set(i, row.isNullAt(ordinal))
-          if (row.isNullAt(ordinal)) {
+          val value = if (row.isNullAt(ordinal)) {
             ""
           } else {
             toHiveString((row.get(ordinal), typ), timeZone)
           }
-        }.asJava
+          values.add(value)
+          i += 1
+        }
         TColumn.stringVal(new TStringColumn(values, nulls))
     }
   }
