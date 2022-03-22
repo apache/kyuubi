@@ -50,8 +50,9 @@ singleStatement
     ;
 
 statement
-    : OPTIMIZE multipartIdentifier whereClause? zorderClause        #optimizeZorder
-    | .*?                                                           #passThrough
+    : OPTIMIZE multipartIdentifier whereClause? zorderClause                    #optimizeZorder
+    | CALL multipartIdentifier '(' (callArgument (',' callArgument)*)? ')'      #call
+    | .*?                                                                       #passThrough
     ;
 
 whereClause
@@ -68,6 +69,11 @@ booleanExpression
     | left=booleanExpression operator=OR right=booleanExpression         #logicalBinary
     ;
 
+callArgument
+    : expression                    #positionalArgument
+    | identifier '=>' expression    #namedArgument
+    ;
+
 query
     : '('? multipartIdentifier comparisonOperator constant ')'?
     ;
@@ -76,12 +82,21 @@ comparisonOperator
     : EQ | NEQ | NEQJ | LT | LTE | GT | GTE | NSEQ
     ;
 
+expression
+    : constant
+    | stringMap
+    ;
+
 constant
     : NULL                     #nullLiteral
     | identifier STRING        #typeConstructor
     | number                   #numericLiteral
     | booleanValue             #booleanLiteral
     | STRING+                  #stringLiteral
+    ;
+
+stringMap
+    : MAP '(' constant (',' constant)* ')'
     ;
 
 multipartIdentifier
@@ -119,6 +134,7 @@ quotedIdentifier
 nonReserved
     : AND
     | BY
+    | CALL
     | FALSE
     | DATE
     | INTERVAL
@@ -133,6 +149,7 @@ nonReserved
 
 AND: 'AND';
 BY: 'BY';
+CALL: 'CALL';
 FALSE: 'FALSE';
 DATE: 'DATE';
 INTERVAL: 'INTERVAL';
@@ -153,6 +170,8 @@ LT  : '<';
 LTE : '<=' | '!>';
 GT  : '>';
 GTE : '>=' | '!<';
+
+MAP: 'MAP';
 
 MINUS: '-';
 

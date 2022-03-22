@@ -75,3 +75,4 @@ embedded_zookeeper/
 **/operation_logs/
 **/server_operation_logs/
 **/engine_operation_logs/
+**/.idea/

@@ -20,11 +20,13 @@ package org.apache.kyuubi.sql.zorder
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.AttributeSet
+import org.apache.spark.sql.catalyst.expressions.{AttributeSet, GenericInternalRow, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
+import org.apache.kyuubi.sql.call.{CallArgument, CallCommand, CallStatement, KyuubiProcedureCatalog, NamedArgument}
+import org.apache.kyuubi.sql.call.procedure.ProcedureParameter
 
 /**
  * Resolve `OptimizeZorderStatement` to `OptimizeZorderCommand`
@@ -62,6 +64,37 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] {
       val tableIdentifier = getTableIdentifier(statement.tableIdentifier)
       val catalogTable = session.sessionState.catalog.getTableMetadata(tableIdentifier)
       buildOptimizeZorderCommand(catalogTable, statement.query)
+
+    case CallStatement(name, args) =>
+      val ident = KyuubiProcedureCatalog.toIdentifier(name)
+      val procedure = KyuubiProcedureCatalog.kyuubiCatalog.loadProcedure(ident)
+
+      val params = procedure.parameters
+      val normalizedParams = KyuubiProcedureCatalog.normalizeParams(params)
+      KyuubiProcedureCatalog.validateParams(normalizedParams)
+
+      val normalizedArgs: Seq[CallArgument] = KyuubiProcedureCatalog.normalizeArgs(args)
+
+      val valMap = normalizedArgs.collect {
+        case NamedArgument(name, Literal(v, _)) => (name, v)
+      }.toMap
+
+      val pargs = new GenericInternalRow(normalizedParams.size)
+
+      normalizedParams.zipWithIndex.foreach {
+        case (param: ProcedureParameter, i) =>
+          val pname = param.name()
+          val ptype = param.dataType()
+          (param.required(), valMap.get(pname)) match {
+            case (true, Some(value)) => pargs.update(i, value)
+            case (true, None) =>
+              throw new KyuubiSQLExtensionException(s"$ident param $pname required")
+            case (false, Some(value)) => pargs.update(i, value)
+            case (false, None) => pargs.update(i, null)
+          }
+      }
+
+      CallCommand(procedure, pargs)
 
     case _ => plan
   }

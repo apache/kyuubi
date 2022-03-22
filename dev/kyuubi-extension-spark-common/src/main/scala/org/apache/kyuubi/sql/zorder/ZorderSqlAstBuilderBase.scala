@@ -41,9 +41,14 @@ import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
-import org.apache.kyuubi.sql.zorder.ZorderSqlExtensionsParser.{BigDecimalLiteralContext, BigIntLiteralContext, BooleanLiteralContext, DecimalLiteralContext, DoubleLiteralContext, IntegerLiteralContext, LogicalBinaryContext, MultipartIdentifierContext, NullLiteralContext, NumberContext, OptimizeZorderContext, PassThroughContext, QueryContext, SingleStatementContext, SmallIntLiteralContext, StringLiteralContext, TinyIntLiteralContext, TypeConstructorContext, ZorderClauseContext}
+import org.apache.kyuubi.sql.call.{CallArgument, CallStatement, NamedArgument, PositionalArgument}
+import org.apache.kyuubi.sql.zorder.ZorderSqlExtensionsParser.{BigDecimalLiteralContext, BigIntLiteralContext, BooleanLiteralContext, CallContext, DecimalLiteralContext, DoubleLiteralContext, IntegerLiteralContext, LogicalBinaryContext, MultipartIdentifierContext, NamedArgumentContext, NullLiteralContext, NumberContext, OptimizeZorderContext, PassThroughContext, PositionalArgumentContext, QueryContext, SingleStatementContext, SmallIntLiteralContext, StringLiteralContext, TinyIntLiteralContext, TypeConstructorContext, ZorderClauseContext}
 
 abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
+  private def toBuffer[T](list: java.util.List[T]): scala.collection.mutable.Buffer[T] =
+    list.asScala
+  private def toSeq[T](list: java.util.List[T]): Seq[T] = toBuffer(list)
+
   def buildZorder(child: Seq[Expression]): ZorderBase
   def buildOptimizeZorderStatement(
       tableIdentifier: Seq[String],
@@ -59,6 +64,33 @@ abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[An
 
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan = {
     visit(ctx.statement()).asInstanceOf[LogicalPlan]
+  }
+
+  /**
+   * Create a CallStatement for a stored procedure call.
+   */
+  override def visitCall(ctx: CallContext): CallStatement = withOrigin(ctx) {
+    val name = toSeq(ctx.multipartIdentifier.parts).map(_.getText)
+    val args = toSeq(ctx.callArgument).map(typedVisit[CallArgument])
+    CallStatement(name, args)
+  }
+
+  /**
+   * Create a positional argument in a stored procedure call.
+   */
+  override def visitPositionalArgument(ctx: PositionalArgumentContext): CallArgument =
+    withOrigin(ctx) {
+      val expr = typedVisit[Expression](ctx.expression)
+      PositionalArgument(expr)
+    }
+
+  /**
+   * Create a named argument in a stored procedure call.
+   */
+  override def visitNamedArgument(ctx: NamedArgumentContext): CallArgument = withOrigin(ctx) {
+    val name = ctx.identifier.getText
+    val expr = typedVisit[Expression](ctx.expression)
+    NamedArgument(name, expr)
   }
 
   override def visitOptimizeZorder(
