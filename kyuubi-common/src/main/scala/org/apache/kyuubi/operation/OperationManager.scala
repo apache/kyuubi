@@ -75,6 +75,14 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       catalogName: String,
       schemaName: String,
       tableName: String): Operation
+  def newGetCrossReferenceOperation(
+      session: Session,
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): Operation
 
   final def addOperation(operation: Operation): Operation = synchronized {
     handleToOperation.put(operation.getHandle, operation)

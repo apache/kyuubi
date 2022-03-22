@@ -140,4 +140,15 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       tableName: String): Operation = {
     throw KyuubiSQLException.featureNotSupported()
   }
+
+  override def newGetCrossReferenceOperation(
+      session: Session,
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 }

@@ -464,8 +464,12 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
           assert(e.getMessage.contains(KyuubiSQLException.featureNotSupported().getMessage))
       }
       assert(!metaData.getImportedKeys("", "default", "").next())
-      intercept[SQLException] {
-        metaData.getCrossReference("", "default", "src", "", "default", "src2")
+      try {
+        assert(!metaData.getCrossReference("", "default", "src", "", "default", "src2").next())
+      } catch {
+        case e: Exception =>
+          assert(e.isInstanceOf[SQLException])
+          assert(e.getMessage.contains(KyuubiSQLException.featureNotSupported().getMessage))
       }
       assert(!metaData.getIndexInfo("", "default", "src", true, true).next())
 

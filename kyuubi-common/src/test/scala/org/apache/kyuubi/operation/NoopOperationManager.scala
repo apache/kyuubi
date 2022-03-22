@@ -101,6 +101,19 @@ class NoopOperationManager extends OperationManager("noop") {
     addOperation(operation)
   }
 
+  override def newGetCrossReferenceOperation(
+      session: Session,
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): Operation = {
+    val operation =
+      new NoopOperation(OperationType.GET_FUNCTIONS, session, primarySchema == invalid)
+    addOperation(operation)
+  }
+
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,

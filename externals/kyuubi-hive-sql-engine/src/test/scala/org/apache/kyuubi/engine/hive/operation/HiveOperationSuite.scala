@@ -241,7 +241,7 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
     withDatabases("test_schema") { statement =>
       statement.execute("CREATE SCHEMA IF NOT EXISTS test_schema")
       statement.execute("CREATE TABLE IF NOT EXISTS test_schema.test_table(a string, " +
-        "PRIMARY KEY(a) disable novalidate)")
+        "PRIMARY KEY(a) DISABLE NOVALIDATE)")
 
       try {
         val meta = statement.getConnection.getMetaData
@@ -257,6 +257,52 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
         assert(resultSetBuffer.contains((null, "test_schema", "test_table", "a")))
       } finally {
         statement.execute("DROP TABLE test_schema.test_table")
+      }
+    }
+  }
+
+  test("get cross reference") {
+    withDatabases("test_schema") { statement =>
+      statement.execute("CREATE SCHEMA IF NOT EXISTS test_schema")
+      statement.execute("CREATE TABLE IF NOT EXISTS test_schema.test_table1(a string, " +
+        "PRIMARY KEY(a) DISABLE NOVALIDATE)")
+      statement.execute("CREATE TABLE IF NOT EXISTS test_schema.test_table2(a string, b string, " +
+        "FOREIGN KEY(b) REFERENCES test_schema.test_table1(a) DISABLE NOVALIDATE)")
+
+      try {
+        val meta = statement.getConnection.getMetaData
+        val resultSet = meta.getCrossReference(
+          null,
+          "test_schema",
+          "test_table1",
+          null,
+          "test_schema",
+          "test_table2")
+        val resultSetBuffer =
+          ArrayBuffer[(String, String, String, String, String, String, String, String)]()
+        while (resultSet.next()) {
+          resultSetBuffer += Tuple8(
+            resultSet.getString("PKTABLE_CAT"),
+            resultSet.getString("PKTABLE_SCHEM"),
+            resultSet.getString("PKTABLE_NAME"),
+            resultSet.getString("PKCOLUMN_NAME"),
+            resultSet.getString("FKTABLE_CAT"),
+            resultSet.getString("FKTABLE_SCHEM"),
+            resultSet.getString("FKTABLE_NAME"),
+            resultSet.getString("FKCOLUMN_NAME"))
+        }
+        assert(resultSetBuffer.contains((
+          null,
+          "test_schema",
+          "test_table1",
+          "a",
+          null,
+          "test_schema",
+          "test_table2",
+          "b")))
+      } finally {
+        statement.execute("DROP TABLE test_schema.test_table2")
+        statement.execute("DROP TABLE test_schema.test_table1")
       }
     }
   }

@@ -76,6 +76,14 @@ case class GetPrimaryKeysRequest(
     schemaName: String,
     tableName: String)
 
+case class GetCrossReferenceRequest(
+    primaryCatalog: String,
+    primarySchema: String,
+    primaryTable: String,
+    foreignCatalog: String,
+    foreignSchema: String,
+    foreignTable: String)
+
 case class OpActionRequest(action: String)
 
 case class ResultSetMetaData(columns: Seq[ColumnDesc])

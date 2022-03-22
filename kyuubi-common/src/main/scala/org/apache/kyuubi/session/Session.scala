@@ -75,6 +75,13 @@ trait Session {
       catalogName: String,
       schemaName: String,
       tableName: String): OperationHandle
+  def getCrossReference(
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): OperationHandle
 
   def cancelOperation(operationHandle: OperationHandle): Unit
   def closeOperation(operationHandle: OperationHandle): Unit
