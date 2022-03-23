@@ -23,6 +23,7 @@ import scala.reflect.{classTag, ClassTag}
 import scala.util.Try
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.events.handler.EventHandler
 import org.apache.kyuubi.util.ThreadUtils
 
 sealed trait EventBus {

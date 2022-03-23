@@ -21,7 +21,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.config.KyuubiConf
 
 class EventBusSuite extends KyuubiFunSuite {
 
@@ -140,34 +139,5 @@ class EventBusSuite extends KyuubiFunSuite {
     EventBus.post(Test0KyuubiEvent("test1"))
     countDownLatch.await()
     assert(count.get() == 4)
-  }
-
-  test("combine with logging service") {
-
-    class Test3EventLogger extends EventLogger[Test3KyuubiEvent] {
-      override def logEvent(event: Test3KyuubiEvent): Unit = {
-        assert(event.content == "test3 logger service")
-      }
-    }
-
-    class Test3LogService extends AbstractEventLoggingService[Test3KyuubiEvent]
-      with EventHandler[Test3KyuubiEvent] {
-
-      override def apply(e: Test3KyuubiEvent): Unit = {
-        onEvent(e)
-      }
-
-      override def initialize(conf: KyuubiConf): Unit = {
-        val testEventLogger = new Test3EventLogger
-        addEventLogger(testEventLogger)
-        super.initialize(conf)
-      }
-    }
-
-    val testLogService = new Test3LogService()
-    testLogService.initialize(new KyuubiConf())
-
-    EventBus.register[Test3KyuubiEvent](testLogService)
-    EventBus.post(Test3KyuubiEvent("test3 logger service"))
   }
 }

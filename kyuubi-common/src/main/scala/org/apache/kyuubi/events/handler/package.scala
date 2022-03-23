@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi
+package org.apache.kyuubi.events
 
-package object events {
+package object handler {
   type EventHandler[T <: KyuubiEvent] = T => Unit
 }
