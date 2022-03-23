@@ -24,11 +24,9 @@ import scala.collection.JavaConverters._
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
 
-import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
+import org.apache.kyuubi.KYUUBI_VERSION
 
 trait SparkQueryTests extends HiveJDBCTestHelper {
-
-  protected lazy val SPARK_ENGINE_MAJOR_MINOR_VERSION: (Int, Int) = sparkEngineMajorMinorVersion
 
   test("execute statement - select null") {
     withJdbcStatement() { statement =>
@@ -174,15 +172,32 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - select interval") {
+  test("execute statement - select daytime interval") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT -interval '2' day AS col")
-      assert(resultSet.next())
-      assert(resultSet.getObject("col") === "-2 00:00:00.000000000")
-      assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.VARCHAR)
-      val metaData = resultSet.getMetaData
-      assert(metaData.getPrecision(1) === Int.MaxValue)
-      assert(metaData.getScale(1) === 0)
+      Map(
+        "-interval 2 day" -> "-2 00:00:00.000000000",
+        "-interval 200 day" -> "-200 00:00:00.000000000",
+        "interval 1 day 1 hour" -> "1 01:00:00.000000000",
+        "interval 1 day 1 hour -60 minutes" -> "1 00:00:00.000000000",
+        "interval 1 day 1 hour -60 minutes 30 seconds" -> "1 00:00:30.000000000",
+        "interval 1 day 1 hour 59 minutes 30 seconds 12345 milliseconds" ->
+          "1 01:59:42.345000000").foreach { kv => // value -> result pair
+        val resultSet = statement.executeQuery(s"SELECT ${kv._1} AS col")
+        assert(resultSet.next())
+        val result = resultSet.getString("col")
+        val metaData = resultSet.getMetaData
+        if (result.contains("days")) {
+          // for spark 3.1 and backwards
+          assert(result.split("days").head.trim === kv._2.split(" ").head)
+          assert(metaData.getPrecision(1) === Int.MaxValue)
+          assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.VARCHAR)
+        } else {
+          assert(result === kv._2)
+          assert(metaData.getPrecision(1) === 29)
+          assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.OTHER)
+        }
+        assert(metaData.getScale(1) === 0)
+      }
     }
   }
 
@@ -529,16 +544,5 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       }
       assert(foundOperationLangItem)
     }
-  }
-
-  def sparkEngineMajorMinorVersion: (Int, Int) = {
-    var sparkRuntimeVer = ""
-    withJdbcStatement() { stmt =>
-      val result = stmt.executeQuery("SELECT version()")
-      assert(result.next())
-      sparkRuntimeVer = result.getString(1)
-      assert(!result.next())
-    }
-    Utils.majorMinorVersion(sparkRuntimeVer)
   }
 }

@@ -41,7 +41,7 @@ object SchemaHelper {
     case TimestampType => TTypeId.TIMESTAMP_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
     case CalendarIntervalType => TTypeId.STRING_TYPE
-    case dt if dt.simpleString == "interval day" =>
+    case dt if dt.simpleString.startsWith("interval day") =>
       TTypeId.INTERVAL_DAY_TIME_TYPE
     case _: ArrayType => TTypeId.ARRAY_TYPE
     case _: MapType => TTypeId.MAP_TYPE

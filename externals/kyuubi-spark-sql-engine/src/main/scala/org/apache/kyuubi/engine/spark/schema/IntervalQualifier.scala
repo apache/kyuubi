@@ -20,32 +20,26 @@ package org.apache.kyuubi.engine.spark.schema
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
-import org.apache.spark.sql.types.DataType
-
 object IntervalQualifier extends Enumeration {
 
   type IntervalQualifier = Value
 
-  val DAY = new Val(0, "DAY")
-  val HOUR = new Val(1, "HOUR")
-  val MINUTE = new Val(3, "MINUTE")
-  val SECOND = new Val(4, "SECOND")
-  private final val SECOND_PER_MINUTE: Long = 60L
-  private final val SECOND_PER_HOUR: Long = SECOND_PER_MINUTE * 60L
-  private final val SECOND_PER_DAY: Long = SECOND_PER_HOUR * 24L
+  val DAY = new Val(0, "interval day")
+  val HOUR = new Val(1, "interval day to hour")
+  val MINUTE = new Val(3, "interval day to minute")
+  val SECOND = new Val(4, "interval day to second")
+  final private val SECOND_PER_MINUTE: Long = 60L
+  final private val SECOND_PER_HOUR: Long = SECOND_PER_MINUTE * 60L
+  final private val SECOND_PER_DAY: Long = SECOND_PER_HOUR * 24L
 
-  def toDayTimeIntervalString(d: Duration, typ: DataType): String = {
-    val endField = typ.getClass.getDeclaredField("endField")
-    endField.setAccessible(true)
-    val end = endField.get(typ).asInstanceOf[Byte]
-    val to = IntervalQualifier(end)
+  def toDayTimeIntervalString(d: Duration, iq: IntervalQualifier): String = {
     var sign = ""
     var rest = d.getSeconds
     if (d.getSeconds < 0) {
       sign = "-"
       rest = -rest
     }
-    to match {
+    iq match {
       case DAY =>
         val days = TimeUnit.SECONDS.toDays(rest)
         s"$sign$days 00:00:00.000000000"

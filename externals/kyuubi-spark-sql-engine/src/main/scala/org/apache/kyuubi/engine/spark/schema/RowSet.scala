@@ -29,6 +29,7 @@ import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
+import org.apache.kyuubi.engine.spark.schema.IntervalQualifier.{DAY, HOUR, MINUTE, SECOND}
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
@@ -253,8 +254,17 @@ object RowSet {
       case (s: String, StringType) =>
         // Only match string in nested type values
         "\"" + s + "\""
-      case (d: Duration, dt) if dt.simpleString == "interval day" =>
-        IntervalQualifier.toDayTimeIntervalString(d, dt)
+
+      case (d: Duration, dt) =>
+        if (dt.simpleString == DAY.toString()) {
+          IntervalQualifier.toDayTimeIntervalString(d, DAY)
+        } else if (dt.simpleString == HOUR.toString()) {
+          IntervalQualifier.toDayTimeIntervalString(d, HOUR)
+        } else if (dt.simpleString == MINUTE.toString()) {
+          IntervalQualifier.toDayTimeIntervalString(d, MINUTE)
+        } else {
+          IntervalQualifier.toDayTimeIntervalString(d, SECOND)
+        }
 
       case (seq: scala.collection.Seq[_], ArrayType(typ, _)) =>
         seq.map(v => (v, typ)).map(e => toHiveString(e, timeZone)).mkString("[", ",", "]")
