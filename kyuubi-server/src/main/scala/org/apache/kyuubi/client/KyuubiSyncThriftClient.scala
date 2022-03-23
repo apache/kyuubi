@@ -406,6 +406,6 @@ private[kyuubi] object KyuubiSyncThriftClient {
       tProtocol,
       requestMaxAttempts,
       aliveProbeProtocol,
-        aliveProbeInterval)
+      aliveProbeInterval)
   }
 }
