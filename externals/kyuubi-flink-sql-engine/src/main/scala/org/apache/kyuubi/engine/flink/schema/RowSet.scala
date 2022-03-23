@@ -50,12 +50,22 @@ object RowSet {
   }
 
   def toRowBaseSet(rows: Seq[Row], resultSet: ResultSet): TRowSet = {
-    val tRows = rows.map { row =>
+    val rowSize = rows.size
+    val tRows = new util.ArrayList[TRow](rowSize)
+    var i = 0
+    while (i < rowSize) {
+      val row = rows(i)
       val tRow = new TRow()
-      (0 until row.getArity).map(i => toTColumnValue(i, row, resultSet))
-        .foreach(tRow.addToColVals)
-      tRow
-    }.asJava
+      val columnSize = row.getArity
+      var j = 0
+      while (j < columnSize) {
+        val columnValue = toTColumnValue(j, row, resultSet)
+        tRow.addToColVals(columnValue)
+        j += 1
+      }
+      tRows.add(tRow)
+      i += 1
+    }
 
     new TRowSet(0, tRows)
   }
@@ -63,9 +73,13 @@ object RowSet {
   def toColumnBasedSet(rows: Seq[Row], resultSet: ResultSet): TRowSet = {
     val size = rows.length
     val tRowSet = new TRowSet(0, new util.ArrayList[TRow](size))
-    resultSet.getColumns.asScala.zipWithIndex.foreach { case (filed, i) =>
-      val tColumn = toTColumn(rows, i, filed.getDataType.getLogicalType)
+    val columnSize = resultSet.getColumns.size()
+    var i = 0
+    while (i < columnSize) {
+      val field = resultSet.getColumns.get(i)
+      val tColumn = toTColumn(rows, i, field.getDataType.getLogicalType)
       tRowSet.addToColumns(tColumn)
+      i += 1
     }
     tRowSet
   }
@@ -181,14 +195,21 @@ object RowSet {
         val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
         TColumn.stringVal(new TStringColumn(values, nulls))
       case _ =>
-        val values = rows.zipWithIndex.toList.map { case (row, i) =>
+        var i = 0
+        val rowSize = rows.length
+        val values = new java.util.ArrayList[String](rowSize)
+        while (i < rowSize) {
+          val row = rows(i)
           nulls.set(i, row.getField(ordinal) == null)
-          if (row.getField(ordinal) == null) {
-            ""
-          } else {
-            toHiveString((row.getField(ordinal), logicalType))
-          }
-        }.asJava
+          val value =
+            if (row.getField(ordinal) == null) {
+              ""
+            } else {
+              toHiveString((row.getField(ordinal), logicalType))
+            }
+          values.add(value)
+          i += 1
+        }
         TColumn.stringVal(new TStringColumn(values, nulls))
     }
   }
