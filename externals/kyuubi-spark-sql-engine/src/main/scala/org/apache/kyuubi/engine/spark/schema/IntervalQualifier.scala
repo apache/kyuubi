@@ -26,8 +26,8 @@ object IntervalQualifier extends Enumeration {
 
   val DAY = new Val(0, "interval day")
   val HOUR = new Val(1, "interval day to hour")
-  val MINUTE = new Val(3, "interval day to minute")
-  val SECOND = new Val(4, "interval day to second")
+  val MINUTE = new Val(2, "interval day to minute")
+  val SECOND = new Val(3, "interval day to second")
   final private val SECOND_PER_MINUTE: Long = 60L
   final private val SECOND_PER_HOUR: Long = SECOND_PER_MINUTE * 60L
   final private val SECOND_PER_DAY: Long = SECOND_PER_HOUR * 24L
