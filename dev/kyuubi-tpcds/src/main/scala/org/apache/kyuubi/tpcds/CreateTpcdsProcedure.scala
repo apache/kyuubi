@@ -16,27 +16,24 @@
  */
 package org.apache.kyuubi.tpcds
 
-import org.apache.kyuubi.sql.call.procedure.{Procedure, ProcedureParameter}
-import org.apache.kyuubi.tpcds.DataGenerator.Config
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
+import org.apache.kyuubi.sql.call.procedure.{Procedure, ProcedureParameter}
+import org.apache.kyuubi.tpcds.DataGenerator.Config
 
-class CreateTpcdsProcedure extends Procedure  {
-
+class CreateTpcdsProcedure extends Procedure {
 
   override def parameters(): Array[ProcedureParameter] = Array(
     ProcedureParameter.required("sf", DataTypes.IntegerType),
     ProcedureParameter.required("db", DataTypes.StringType),
     ProcedureParameter.required("format", DataTypes.StringType),
-    ProcedureParameter.optional("parallel", DataTypes.IntegerType)
-  )
+    ProcedureParameter.optional("parallel", DataTypes.IntegerType))
 
   override def outputType(): StructType = new StructType(Array[StructField](
-    new StructField("result", DataTypes.LongType, false, Metadata.empty)
-  ));
+    new StructField("result", DataTypes.LongType, false, Metadata.empty)));
 
   override def call(args: InternalRow): Array[InternalRow] = {
     val sf = args.getInt(0)
@@ -48,7 +45,5 @@ class CreateTpcdsProcedure extends Procedure  {
     Array(new GenericInternalRow(0))
   }
 
-  override def getIdentifier: Identifier = Identifier.of(Array("spark","kyuubi"), "create_tpcds")
+  override def getIdentifier: Identifier = Identifier.of(Array("spark", "kyuubi"), "create_tpcds")
 }
-
-
