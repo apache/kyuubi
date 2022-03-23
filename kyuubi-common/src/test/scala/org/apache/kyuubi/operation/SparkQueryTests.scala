@@ -175,12 +175,10 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select interval") {
-    // FIXME: [KYUUBI #1250]
-    assume(SPARK_ENGINE_MAJOR_MINOR_VERSION !== ((3, 2)))
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT interval '1' day AS col")
+      val resultSet = statement.executeQuery("SELECT -interval '2' day AS col")
       assert(resultSet.next())
-      assert(resultSet.getString("col") === "1 days")
+      assert(resultSet.getObject("col") === "-2 00:00:00.000000000")
       assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.VARCHAR)
       val metaData = resultSet.getMetaData
       assert(metaData.getPrecision(1) === Int.MaxValue)

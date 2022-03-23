@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.schema
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.Timestamp
-import java.time.{Instant, LocalDate, ZoneId}
+import java.time.{Duration, Instant, LocalDate, ZoneId}
 import java.util.Date
 
 import scala.collection.JavaConverters._
@@ -253,6 +253,8 @@ object RowSet {
       case (s: String, StringType) =>
         // Only match string in nested type values
         "\"" + s + "\""
+      case (d: Duration, dt) if dt.simpleString == "interval day" =>
+        IntervalQualifier.toDayTimeIntervalString(d, dt)
 
       case (seq: scala.collection.Seq[_], ArrayType(typ, _)) =>
         seq.map(v => (v, typ)).map(e => toHiveString(e, timeZone)).mkString("[", ",", "]")
