@@ -46,7 +46,6 @@
                         </goals>
                         <configuration>
                             <skip>${spark.archive.download.skip}</skip>
-                            <skipCache>true</skipCache>
                             <url>${spark.archive.mirror}/${spark.archive.name}</url>
                         </configuration>
                     </execution>
