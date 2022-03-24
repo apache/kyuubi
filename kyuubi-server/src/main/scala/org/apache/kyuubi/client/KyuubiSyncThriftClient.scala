@@ -92,7 +92,7 @@ class KyuubiSyncThriftClient private (
   private def withLockAcquired[T](block: => T): T = {
     try {
       lock.lock()
-      if (!isConnectionValid()) {
+      if (!protocol.getTransport.isOpen) {
         throw KyuubiSQLException.connectionDoesNotExist()
       }
       block
