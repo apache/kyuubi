@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
@@ -65,9 +66,24 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     }
   }
 
+  protected def checkColumns(plan: LogicalPlan, cols: Seq[String]): Unit = {
+    val (in, out) = PrivilegesBuilder.build(plan)
+    assert(out.isEmpty, "Queries shall not check output privileges")
+    val po = in.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.columns === cols)
+  }
+
+  protected def checkColumns(query: String, cols: Seq[String]): Unit = {
+    checkColumns(sql(query).queryExecution.optimizedPlan, cols)
+  }
+
   protected val reusedDb: String = getClass.getSimpleName
   protected val reusedTable: String = reusedDb + "." + getClass.getSimpleName
+  protected val reusedTableShort: String = reusedTable.split("\\.").last
   protected val reusedPartTable: String = reusedTable + "_part"
+  protected val reusedPartTableShort: String = reusedPartTable.split("\\.").last
 
   override def beforeAll(): Unit = {
     sql(s"CREATE DATABASE IF NOT EXISTS $reusedDb")
@@ -203,7 +219,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
-    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
@@ -221,7 +237,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
-    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
@@ -242,7 +258,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
-    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
@@ -263,7 +279,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname === reusedDb)
-    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
@@ -303,7 +319,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
     assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
-    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     // assert(po0.columns === Seq("key", "value", "pid"))
     val accessType0 = AccessType(po0, operationType, isInput = true)
@@ -331,7 +347,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
     assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
-    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns === Seq("key"))
     val accessType0 = AccessType(po0, operationType, isInput = true)
@@ -351,7 +367,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
     assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
-    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns === Seq("pid"))
     val accessType0 = AccessType(po0, operationType, isInput = true)
@@ -371,7 +387,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
     assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
-    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns.isEmpty)
     val accessType0 = AccessType(po0, operationType, isInput = true)
@@ -754,7 +770,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
-    assert(po.objectName === reusedPartTable.split("\\.").last)
+    assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
     val accessType = AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.UPDATE)
@@ -842,7 +858,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
     assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
-    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     assert(po0.columns === Seq("pid"))
     val accessType0 = AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
@@ -850,17 +866,71 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 0)
   }
 
-  test("Star") {
+  test("Query: Star") {
     val plan = sql(s"SELECT * FROM $reusedTable").queryExecution.optimizedPlan
     val po = PrivilegesBuilder.build(plan)._1.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
-    assert(po.objectName equalsIgnoreCase reusedTable.toLowerCase.split("\\.").last)
+    assert(po.objectName equalsIgnoreCase reusedTableShort)
     assert(po.columns.take(2) === Seq("key", "value"))
   }
 
-  test("INNER JOIN") {
+  test("Query: Projection") {
+    checkColumns(s"SELECT key FROM $reusedTable", Seq("key"))
+  }
+
+  test("Query: Alias") {
+    checkColumns(s"select key as you from $reusedTable", Seq("key"))
+  }
+
+  test("Query: Literal") {
+    checkColumns(s"select 1 from $reusedTable", Nil)
+  }
+
+  test("Query: Function") {
+    checkColumns(
+      s"select coalesce(max(key), pid, 1) from $reusedPartTable group by pid",
+      Seq("key", "pid"))
+  }
+
+  test("Query: CTE") {
+    checkColumns(
+      s"""
+         |with t(c) as (select coalesce(max(key), pid, 1) from $reusedPartTable group by pid)
+         |select c from t where c = 1""".stripMargin,
+      Seq("key", "pid"))
+  }
+
+  test("Query: Nested query") {
+    checkColumns(s"select max(key) from (select * from $reusedPartTable) t", Seq("key"))
+  }
+
+  test("Query: Where") {
+    checkColumns(
+      s"select key from $reusedPartTable where value = 1",
+      Seq("key", "value"))
+  }
+
+  test("Query: Subquery") {
+    val plan = sql(
+      s"""
+         |SELECT key
+         |FROM $reusedTable
+         |WHERE value IN (SELECT value
+         |                FROM $reusedPartTable WHERE pid > 1)
+         |""".stripMargin).queryExecution.optimizedPlan
+
+    val (in, _) = PrivilegesBuilder.build(plan)
+
+    assert(in.size === 2)
+    assert(in.find(_.objectName equalsIgnoreCase reusedTableShort).head.columns ===
+      Seq("key", "value"))
+    assert(in.find(_.objectName equalsIgnoreCase reusedPartTableShort).head.columns ===
+      Seq("value", "pid"))
+  }
+
+  test("Query: INNER JOIN") {
     val sqlStr =
       s"""
          |SELECT t1.key, t1.value, t2.value
@@ -879,7 +949,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.dbname equalsIgnoreCase reusedDb)
-      assert(po.objectName startsWith reusedTable.toLowerCase.split("\\.").last)
+      assert(po.objectName startsWith reusedTableShort.toLowerCase)
       assert(
         po.columns === Seq("key", "value"),
         s"$reusedPartTable 'key' is the join key and 'pid' is omitted")
@@ -887,6 +957,19 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(accessType === AccessType.SELECT)
     }
     assert(tuple._2.size === 0)
+  }
+
+  test("Query: Union") {
+    val plan = sql(
+      s"""
+        |SELECT key, value
+        |FROM $reusedTable
+        |UNION
+        |SELECT pid, value
+        |FROM $reusedPartTable
+        |""".stripMargin).queryExecution.optimizedPlan
+    val (in, _) = PrivilegesBuilder.build(plan)
+    assert(in.size === 2)
   }
 }
 

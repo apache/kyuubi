@@ -24,8 +24,8 @@ import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.NamedExpression
-import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StructField
 
@@ -84,6 +84,10 @@ object PrivilegesBuilder {
     PrivilegeObject(FUNCTION, PrivilegeObjectActionType.OTHER, db, functionName)
   }
 
+  private def collectLeaves(expr: Expression): Seq[NamedExpression] = {
+    expr.collect { case p: NamedExpression if p.children.isEmpty => p }
+  }
+
   /**
    * Build PrivilegeObjects from Spark LogicalPlan
    *
@@ -96,25 +100,37 @@ object PrivilegesBuilder {
       privilegeObjects: ArrayBuffer[PrivilegeObject],
       projectionList: Seq[NamedExpression] = Nil): Unit = {
 
-    def mergeProjection(table: CatalogTable): Unit = {
+    def mergeProjection(table: CatalogTable, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table.identifier,
           table.schema.fieldNames)
       } else {
-        privilegeObjects += tablePrivileges(table.identifier, projectionList.map(_.name))
+        val cols = projectionList.flatMap(collectLeaves)
+          .filter(plan.outputSet.contains).map(_.name).distinct
+        privilegeObjects += tablePrivileges(table.identifier, cols)
       }
     }
 
     plan match {
       case p: Project => buildQuery(p.child, privilegeObjects, p.projectList)
 
+      case j: Join =>
+        val cols =
+          projectionList ++ j.condition.map(expr => collectLeaves(expr)).getOrElse(Nil)
+        buildQuery(j.left, privilegeObjects, cols)
+        buildQuery(j.right, privilegeObjects, cols)
+
+      case f: Filter =>
+        val cols = projectionList ++ collectLeaves(f.condition)
+        buildQuery(f.child, privilegeObjects, cols)
+
       case h if h.nodeName == "HiveTableRelation" =>
-        mergeProjection(getFieldVal[CatalogTable](h, "tableMeta"))
+        mergeProjection(getFieldVal[CatalogTable](h, "tableMeta"), h)
 
       case l if l.nodeName == "LogicalRelation" =>
         getFieldVal[Option[CatalogTable]](l, "catalogTable").foreach { t =>
-          mergeProjection(t)
+          mergeProjection(t, plan)
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
