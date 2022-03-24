@@ -31,8 +31,6 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.events.KyuubiEvent
 
-
-
 /**
  * This event logger logs Kyuubi engine events in JSON file format.
  * The hierarchical directory structure is:

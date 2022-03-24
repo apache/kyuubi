@@ -42,7 +42,6 @@ import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendServic
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
-
 object KyuubiServer extends Logging {
   private val zkServer = new EmbeddedZookeeper()
   private[kyuubi] var kyuubiServer: KyuubiServer = _
@@ -191,7 +190,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
             s"server-$hostName",
             SERVER_EVENT_JSON_LOG_PATH,
             hadoopConf,
-          conf)
+            conf)
 
           // register JsonLogger as a event handler for default event bus
           EventBus.register[KyuubiEvent](handler)

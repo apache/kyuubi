@@ -18,13 +18,13 @@
 package org.apache.kyuubi.events
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.reflect.{classTag, ClassTag}
 import scala.util.Try
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.events.handler.EventHandler
-import org.apache.kyuubi.util.ThreadUtils
 
 sealed trait EventBus {
   def post[T <: KyuubiEvent](event: T): Unit
@@ -51,9 +51,6 @@ object EventBus extends Logging {
   private case class EventBusLive() extends EventBus {
     private[this] val eventHandlerRegistry = new Registry
     private[this] val asyncEventHandlerRegistry = new Registry
-    implicit private[this] val ec: ExecutionContext =
-      ExecutionContext.fromExecutor(
-        ThreadUtils.newDaemonQueuedThreadPool(10, 10, 60000L, "event-bus-exec-pool"))
 
     override def post[T <: KyuubiEvent](event: T): Unit = {
       asyncEventHandlerRegistry.lookup[T](event).foreach { f =>

@@ -15,10 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.engine.spark.events.handler
 
-trait EventLogger {
+import org.apache.spark.SparkContext
+import org.apache.spark.kyuubi.SparkContextHelper
 
-  def logEvent(kyuubiEvent: KyuubiEvent): Unit
+import org.apache.kyuubi.events.KyuubiEvent
+import org.apache.kyuubi.events.handler.EventHandler
 
+class SparkHistoryLoggingEventHandler(sc: SparkContext) extends EventHandler[KyuubiEvent] {
+  override def apply(event: KyuubiEvent): Unit = {
+    SparkContextHelper.postEventToSparkListenerBus(event, sc)
+  }
 }

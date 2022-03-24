@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events.handler
+package org.apache.kyuubi.engine.spark.events.handler
 
 import org.apache.hadoop.conf.Configuration
 
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.events.handler.JsonLoggingEventHandler
 
-case class ServerJsonLoggingEventHandler(
+case class SparkJsonLoggingEventHandler(
     logName: String,
     logPath: ConfigEntry[String],
     hadoopConf: Configuration,

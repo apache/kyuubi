@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.events.handler.EventHandler
 
 class EventBusSuite extends KyuubiFunSuite {
 

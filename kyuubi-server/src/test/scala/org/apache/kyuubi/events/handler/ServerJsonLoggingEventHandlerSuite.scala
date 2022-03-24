@@ -34,8 +34,6 @@ import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
 
-
-
 class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   private val engineLogRoot = "file://" + Utils.createTempDir().toString
@@ -62,7 +60,6 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     val engineStatementEventPath =
       Paths.get(engineLogRoot, "spark_operation", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"
-
     withJdbcStatement() { statement =>
       statement.execute(sql)
       // check server statement events
