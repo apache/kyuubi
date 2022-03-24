@@ -39,10 +39,13 @@ object SchemaHelper {
     case _: DecimalType => TTypeId.DECIMAL_TYPE
     case DateType => TTypeId.DATE_TYPE
     case TimestampType => TTypeId.TIMESTAMP_TYPE
+    case tntz if tntz.simpleString.equals("timestamp_ntz") => TTypeId.TIMESTAMP_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
     case CalendarIntervalType => TTypeId.STRING_TYPE
-    case dt if dt.simpleString.startsWith("interval day") =>
+    case dt if dt.getClass.getSimpleName.equals("DayTimeIntervalType") =>
       TTypeId.INTERVAL_DAY_TIME_TYPE
+    case ym if ym.getClass.getSimpleName.equals("YearMonthIntervalType") =>
+      TTypeId.INTERVAL_YEAR_MONTH_TYPE
     case _: ArrayType => TTypeId.ARRAY_TYPE
     case _: MapType => TTypeId.MAP_TYPE
     case _: StructType => TTypeId.STRUCT_TYPE

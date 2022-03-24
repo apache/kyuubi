@@ -19,18 +19,23 @@ package org.apache.kyuubi.util
 
 import java.nio.ByteBuffer
 import java.sql.Timestamp
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
+import java.time.{Duration, Instant, LocalDate, LocalDateTime, Period, ZoneId}
 import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.{Date, Locale}
+import java.util.concurrent.TimeUnit
 
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.time.FastDateFormat
 
 private[kyuubi] object RowSetUtils {
+
+  final private val SECOND_PER_MINUTE: Long = 60L
+  final private val SECOND_PER_HOUR: Long = SECOND_PER_MINUTE * 60L
+  final private val SECOND_PER_DAY: Long = SECOND_PER_HOUR * 24L
 
   private lazy val dateFormatter = {
     createDateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
@@ -78,5 +83,28 @@ private[kyuubi] object RowSetUtils {
 
   implicit def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {
     ByteBuffer.wrap(bitSet.toByteArray)
+  }
+
+  def toDayTimeIntervalString(d: Duration): String = {
+    var rest = d.getSeconds
+    var sign = ""
+    if (d.getSeconds < 0) {
+      sign = "-"
+      rest = -rest
+    }
+    val days = TimeUnit.SECONDS.toDays(rest)
+    rest %= SECOND_PER_DAY
+    val hours = TimeUnit.SECONDS.toHours(rest)
+    rest %= SECOND_PER_HOUR
+    val minutes = TimeUnit.SECONDS.toMinutes(rest)
+    val seconds = rest % SECOND_PER_MINUTE
+    f"$sign$days $hours%02d:$minutes%02d:$seconds%02d.${d.getNano}%09d"
+  }
+
+  def toYearMonthIntervalString(d: Period): String = {
+    val years = d.getYears
+    val months = d.getMonths
+    val sign = if (years < 0 || months < 0) "-" else ""
+    s"$sign${Math.abs(years)}-${Math.abs(months)}"
   }
 }
