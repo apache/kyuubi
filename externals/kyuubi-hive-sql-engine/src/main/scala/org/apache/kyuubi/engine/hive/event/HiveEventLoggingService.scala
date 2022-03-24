@@ -19,7 +19,8 @@ package org.apache.kyuubi.engine.hive.event
 import java.net.InetAddress
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{SERVER_EVENT_JSON_LOG_PATH, SERVER_EVENT_LOGGERS}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
+import org.apache.kyuubi.engine.hive.HiveSQLEngine.kyuubiConf
 import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType, JsonEventLogger}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
@@ -27,14 +28,15 @@ class HiveEventLoggingService extends AbstractEventLoggingService {
 
   override def initialize(conf: KyuubiConf): Unit = {
     val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-    conf.get(SERVER_EVENT_LOGGERS)
+    kyuubiConf.set(ENGINE_EVENT_LOGGERS.key, "JSON")
+    conf.get(ENGINE_EVENT_LOGGERS)
       .map(EventLoggerType.withName)
       .foreach {
         case EventLoggerType.JSON =>
           val hostName = InetAddress.getLocalHost.getCanonicalHostName
           val jsonEventLogger = new JsonEventLogger(
             s"Hive-$hostName",
-            SERVER_EVENT_JSON_LOG_PATH,
+            ENGINE_EVENT_JSON_LOG_PATH,
             hadoopConf)
           jsonEventLogger.createEventLogRootDir(conf, hadoopConf)
           addService(jsonEventLogger)

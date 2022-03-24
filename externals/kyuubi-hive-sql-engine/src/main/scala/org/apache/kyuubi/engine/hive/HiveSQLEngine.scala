@@ -105,7 +105,7 @@ object HiveSQLEngine extends Logging {
           val event = HiveEngineEvent(engine).copy(diagnostic = t.getMessage)
           EventLogging.onEvent(event)
         case _ =>
-          error(t)
+          error(s"Failed to start Hive SQL engine: ${t.getMessage}.", t)
       }
     }
   }

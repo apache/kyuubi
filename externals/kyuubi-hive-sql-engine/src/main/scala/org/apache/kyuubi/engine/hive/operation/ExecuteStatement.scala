@@ -34,8 +34,6 @@ class ExecuteStatement(
     queryTimeout: Long)
   extends HiveOperation(OperationType.EXECUTE_STATEMENT, session) {
 
-  EventLogging.onEvent(HiveOperationEvent(this))
-
   override val internalHiveOperation: Operation = {
     delegatedOperationManager.newExecuteStatementOperation(
       hive,
@@ -44,4 +42,6 @@ class ExecuteStatement(
       shouldRunAsync,
       queryTimeout)
   }
+
+  EventLogging.onEvent(HiveOperationEvent(this))
 }
