@@ -123,13 +123,13 @@ private[kyuubi] class EngineRef(
    * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
    *
    * For `CONNECTION` share level:
-   *   /`serverSpace_{KYUUBI_VERSION}_CONNECTION_engineType`/`user`/`engineRefId`
+   *   /`serverSpace_version_CONNECTION_engineType`/`user`/`engineRefId`
    * For `USER` share level:
-   *   /`serverSpace_{KYUUBI_VERSION}_USER_engineType`/`user`[/`subdomain`]
+   *   /`serverSpace_version_USER_engineType`/`user`[/`subdomain`]
    * For `GROUP` share level:
-   *   /`serverSpace_{KYUUBI_VERSION}_GROUP_engineType`/`primary group name`[/`subdomain`]
+   *   /`serverSpace_version_GROUP_engineType`/`primary group name`[/`subdomain`]
    * For `SERVER` share level:
-   *   /`serverSpace_{KYUUBI_VERSION}_SERVER_engineType`/`kyuubi server user`[/`subdomain`]
+   *   /`serverSpace_version_SERVER_engineType`/`kyuubi server user`[/`subdomain`]
    */
   @VisibleForTesting
   private[kyuubi] lazy val engineSpace: String = {
