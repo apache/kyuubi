@@ -89,8 +89,22 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
+    deleteOperationLogSessionDir(sessionHandle)
     info(s"$sessionHandle is closed, current opening sessions $getOpenSessionCount")
     session.close()
+  }
+
+  private def deleteOperationLogSessionDir(sessionHandle: SessionHandle): Unit = {
+    _operationLogRoot.foreach(logRoot => {
+      val rootPath = Paths.get(logRoot, sessionHandle.identifier.toString)
+      try {
+        Files.deleteIfExists(rootPath)
+        debug(s"delete session operator log directory ${rootPath.toString}")
+      } catch {
+        case e: IOException =>
+          error(s"Failed to delete session operation log directory ${rootPath.toString}", e)
+      }
+    })
   }
 
   def getSession(sessionHandle: SessionHandle): Session = {
