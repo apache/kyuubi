@@ -24,7 +24,6 @@ import java.util.Properties
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetOperationStatusReq, TOperationState, TStatusCode}
-import org.apache.iceberg.shaded.org.apache.parquet.schema.LogicalTypeAnnotation.TimeUnit
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
