@@ -112,19 +112,22 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
         JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveOperationEvent])
       assert(createTableEvent.isInstanceOf[HiveOperationEvent])
       assert(StringUtils.equals(
-        createTableEvent.asInstanceOf[HiveOperationEvent].statement, createTableStatement))
+        createTableEvent.asInstanceOf[HiveOperationEvent].statement,
+        createTableStatement))
 
       val insertEvent =
         JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveOperationEvent])
       assert(insertEvent.isInstanceOf[HiveOperationEvent])
       assert(StringUtils.equals(
-        insertEvent.asInstanceOf[HiveOperationEvent].statement, insertStatement))
+        insertEvent.asInstanceOf[HiveOperationEvent].statement,
+        insertStatement))
 
       val queryEvent =
         JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveOperationEvent])
       assert(queryEvent.isInstanceOf[HiveOperationEvent])
       assert(StringUtils.equals(
-        queryEvent.asInstanceOf[HiveOperationEvent].statement, queryStatement))
+        queryEvent.asInstanceOf[HiveOperationEvent].statement,
+        queryStatement))
     }
   }
 }

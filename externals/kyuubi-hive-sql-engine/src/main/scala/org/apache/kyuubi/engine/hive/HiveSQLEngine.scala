@@ -100,13 +100,13 @@ object HiveSQLEngine extends Logging {
       startEngine()
     } catch {
       case t: Throwable => currentEngine match {
-        case Some(engine) =>
-          engine.stop()
-          val event = HiveEngineEvent(engine).copy(diagnostic = t.getMessage)
-          EventLogging.onEvent(event)
-        case _ =>
-          error(s"Failed to start Hive SQL engine: ${t.getMessage}.", t)
-      }
+          case Some(engine) =>
+            engine.stop()
+            val event = HiveEngineEvent(engine).copy(diagnostic = t.getMessage)
+            EventLogging.onEvent(event)
+          case _ =>
+            error(s"Failed to start Hive SQL engine: ${t.getMessage}.", t)
+        }
     }
   }
 }
