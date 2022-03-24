@@ -44,12 +44,13 @@ class KyuubiSyncThriftClient private (
   extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
-  @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
   @volatile private var _engineId: Option[String] = _
-  @volatile private var aliveProbeConnectionBroken: Boolean = false
 
   private val lock = new ReentrantLock()
 
+  @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
+  @volatile private var aliveProbeConnectionBroken = false
+  @volatile private var remoteEngineBroken: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
 
@@ -65,10 +66,15 @@ class KyuubiSyncThriftClient private (
 
           try {
             client.GetInfo(tGetInfoReq).getInfoValue.getStringValue
+            aliveProbeConnectionBroken = false
+            remoteEngineBroken = false
           } catch {
             case e: Throwable =>
-              error(s"The alive probe connection is broken, assume that the engine is not alive", e)
-              aliveProbeConnectionBroken = true
+              if (!aliveProbeConnectionBroken) {
+                error(s"The alive probe connection is broken, assume the engine is not alive", e)
+                aliveProbeConnectionBroken = true
+                remoteEngineBroken = true
+              }
           }
         }
       }
@@ -100,6 +106,7 @@ class KyuubiSyncThriftClient private (
     while (attemptCount <= maxAttempts && resp == null) {
       try {
         resp = block
+        remoteEngineBroken = false
       } catch {
         case e: TException if attemptCount < maxAttempts && isConnectionValid() =>
           warn(s"Failed to execute $request after $attemptCount/$maxAttempts times, retrying", e)
@@ -363,7 +370,7 @@ class KyuubiSyncThriftClient private (
   }
 
   def isConnectionValid(): Boolean = {
-    !aliveProbeConnectionBroken && protocol.getTransport.isOpen
+    !remoteEngineBroken && protocol.getTransport.isOpen
   }
 }
 
