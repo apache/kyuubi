@@ -32,13 +32,17 @@ class FlinkSQLEngineSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJ
 
   test("set kyuubi conf into flink conf") {
     withJdbcStatement() { statement =>
-      statement.execute("CREATE TABLE ods ( a_name STRING ) WITH ('connector' = 'datagen' )")
-      statement.execute("CREATE TABLE ads ( b_name STRING ) WITH ( 'connector' = 'print' )")
-      val resultSet = statement.executeQuery("EXPLAIN JSON_EXECUTION_PLAN " +
-        "INSERT INTO ads SELECT a_name as b_name FROM ods where ods.a_name='\\\\\\\\'")
-      assert(resultSet.next())
-      val operationPlan = resultSet.getString(1)
-      assert(operationPlan.contains("\"parallelism\" : 6"))
+      val resultSet = statement.executeQuery("SET")
+      // Flink does not support set key without value currently,
+      // thus read all rows to find the desired one
+      var success = false
+      while (resultSet.next() && success == false) {
+        if (resultSet.getString(1) == "parallelism.default" &&
+          resultSet.getString(2) == "6") {
+          success = true
+        }
+      }
+      assert(success)
     }
   }
 }
