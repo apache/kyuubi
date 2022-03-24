@@ -20,6 +20,26 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.hive.operation.HiveOperation
 import org.apache.kyuubi.events.KyuubiEvent
 
+/**
+ * A [[HiveOperationEvent]] used to tracker the lifecycle of an operation at Hive SQL Engine side.
+ * <ul>
+ *   <li>Operation Basis</li>
+ *   <li>Operation Live Status</li>
+ *   <li>Parent Session Id</li>
+ * </ul>
+ *
+ * @param statementId the unique identifier of a single operation
+ * @param statement the sql that you execute
+ * @param shouldRunAsync the flag indicating whether the query runs synchronously or not
+ * @param state the current operation state
+ * @param eventTime the time when the event created & logged
+ * @param createTime the time for changing to the current operation state
+ * @param startTime the time the query start to time of this operation
+ * @param completeTime time time the query ends
+ * @param exception: caught exception if have
+ * @param sessionId the identifier of the parent session
+ * @param sessionUser the authenticated client user
+ */
 case class HiveOperationEvent(
     statementId: String,
     statement: String,
@@ -31,8 +51,7 @@ case class HiveOperationEvent(
     completeTime: Long,
     exception: Option[Throwable],
     sessionId: String,
-    sessionUser: String,
-    executionId: Option[Long]) extends KyuubiEvent {
+    sessionUser: String) extends KyuubiEvent {
 
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
@@ -40,7 +59,7 @@ case class HiveOperationEvent(
 
 object HiveOperationEvent {
 
-  def apply(operation: HiveOperation, executionId: Option[Long] = None): HiveOperationEvent = {
+  def apply(operation: HiveOperation): HiveOperationEvent = {
     val session = operation.getSession
     val status = operation.getStatus
     new HiveOperationEvent(
@@ -54,7 +73,6 @@ object HiveOperationEvent {
       status.completed,
       status.exception,
       session.handle.identifier.toString,
-      session.user,
-      executionId)
+      session.user)
   }
 }

@@ -27,6 +27,7 @@ case class HiveEngineEvent(
     startTime: Long,
     endTime: Long,
     state: ServiceState,
+    diagnostic: String,
     settings: Map[String, String]) extends KyuubiEvent {
 
   override def partitions: Seq[(String, String)] =
@@ -53,6 +54,7 @@ object HiveEngineEvent {
       startTime = engine.getStartTime,
       endTime = -1L,
       state = engine.getServiceState,
+      diagnostic = "",
       settings = engine.getConf.getAll)
   }
 }

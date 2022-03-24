@@ -17,11 +17,15 @@
 
 package org.apache.kyuubi.engine.hive
 
+import scala.util.control.NonFatal
+
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.hive.event.{HiveEngineEvent, HiveEventLoggingService}
+import org.apache.kyuubi.events.EventLogging
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable}
@@ -48,6 +52,14 @@ object HiveSQLEngine extends Logging {
   val kyuubiConf = new KyuubiConf()
 
   def startEngine(): HiveSQLEngine = {
+    val eventLogging = new HiveEventLoggingService()
+    try {
+      eventLogging.initialize(kyuubiConf)
+      eventLogging.start()
+    } catch {
+      case NonFatal(e) =>
+        warn(s"Failed to initialize EventLoggingService: ${e.getMessage}", e)
+    }
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
@@ -72,7 +84,11 @@ object HiveSQLEngine extends Logging {
     val engine = new HiveSQLEngine()
     info(s"Starting ${engine.getName}")
     engine.initialize(kyuubiConf)
+    EventLogging.onEvent(HiveEngineEvent(engine))
     engine.start()
+    val event = HiveEngineEvent(engine)
+    info(event)
+    EventLogging.onEvent(event)
     Utils.addShutdownHook(() => engine.stop())
     currentEngine = Some(engine)
     engine
@@ -83,9 +99,14 @@ object HiveSQLEngine extends Logging {
     try {
       startEngine()
     } catch {
-      case t: Throwable =>
-        error(t)
-        currentEngine.foreach(_.stop())
+      case t: Throwable => currentEngine match {
+        case Some(engine) =>
+          engine.stop()
+          val event = HiveEngineEvent(engine).copy(diagnostic = t.getMessage)
+          EventLogging.onEvent(event)
+        case _ =>
+          error(t)
+      }
     }
   }
 }

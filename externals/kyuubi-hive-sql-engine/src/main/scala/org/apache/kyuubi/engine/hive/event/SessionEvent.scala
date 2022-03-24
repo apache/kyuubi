@@ -20,14 +20,25 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
 import org.apache.kyuubi.events.KyuubiEvent
 
-case class SessionEvent(sessionId: String,
-                        engineId: String,
-                        username: String,
-                        ip: String,
-                        serverIp: String,
-                        startTime: Long,
-                        var endTime: Long = -1L,
-                        var totalOperations: Int = 0) extends KyuubiEvent {
+/**
+ * Event Tracking for user sessions
+ * @param sessionId the identifier of a session
+ * @param engineId the engine id
+ * @param startTime Start time
+ * @param endTime End time
+ * @param ip Client IP address
+ * @param serverIp Kyuubi Server IP address
+ * @param totalOperations how many queries and meta calls
+ */
+case class SessionEvent(
+    sessionId: String,
+    engineId: String,
+    username: String,
+    ip: String,
+    serverIp: String,
+    startTime: Long,
+    var endTime: Long = -1L,
+    var totalOperations: Int = 0) extends KyuubiEvent {
 
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
@@ -42,8 +53,7 @@ object SessionEvent {
       engineId = "",
       session.user,
       session.ipAddress,
-      serverIp = "",
-      session.createTime
-    )
+      serverIp = session.serverIpAddress(),
+      session.createTime)
   }
 }

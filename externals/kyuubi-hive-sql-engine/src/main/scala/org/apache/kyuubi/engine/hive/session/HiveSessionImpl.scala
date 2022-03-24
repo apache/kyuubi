@@ -25,6 +25,9 @@ import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.cli.session.HiveSession
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.engine.hive.event.SessionEvent
+import org.apache.kyuubi.events.EventLogging
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class HiveSessionImpl(
@@ -39,13 +42,25 @@ class HiveSessionImpl(
     val hive: HiveSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
+  private val sessionEvent = SessionEvent(this)
+
+  def serverIpAddress(): String = serverIpAddress
+
   override def open(): Unit = {
     val confClone = new HashMap[String, String]()
     confClone.putAll(conf.asJava) // pass conf.asScala not support `put` method
     hive.open(confClone)
+    EventLogging.onEvent(sessionEvent)
+  }
+
+  override protected def runOperation(operation: Operation): OperationHandle = {
+    sessionEvent.totalOperations += 1
+    super.runOperation(operation)
   }
 
   override def close(): Unit = {
+    sessionEvent.endTime = System.currentTimeMillis()
+    EventLogging.onEvent(sessionEvent)
     super.close()
     try {
       hive.close()
