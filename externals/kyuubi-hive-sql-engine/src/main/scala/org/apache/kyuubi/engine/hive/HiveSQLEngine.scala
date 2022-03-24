@@ -24,6 +24,7 @@ import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
 import org.apache.kyuubi.engine.hive.event.{HiveEngineEvent, HiveEventLoggingService}
 import org.apache.kyuubi.events.EventLogging
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
@@ -50,6 +51,7 @@ object HiveSQLEngine extends Logging {
   var currentEngine: Option[HiveSQLEngine] = None
   val hiveConf = new HiveConf()
   val kyuubiConf = new KyuubiConf()
+  kyuubiConf.set(ENGINE_EVENT_LOGGERS.key, "JSON")
 
   def startEngine(): HiveSQLEngine = {
     val eventLogging = new HiveEventLoggingService()
