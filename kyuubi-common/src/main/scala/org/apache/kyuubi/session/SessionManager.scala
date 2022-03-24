@@ -99,7 +99,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       val rootPath = Paths.get(logRoot, sessionHandle.identifier.toString)
       try {
         Files.deleteIfExists(rootPath)
-        debug(s"delete session operator log directory ${rootPath.toString}")
       } catch {
         case e: IOException =>
           error(s"Failed to delete session operation log directory ${rootPath.toString}", e)
