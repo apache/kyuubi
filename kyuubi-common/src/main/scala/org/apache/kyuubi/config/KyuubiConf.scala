@@ -254,6 +254,22 @@ object KyuubiConf {
       .checkValue(t => t > 0, "must be positive integer")
       .createWithDefault(Duration.ofMinutes(1).toMillis)
 
+  val CREDENTIALS_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("credentials.check.interval")
+      .doc("The interval to check the expiration of cached <user, CredentialsRef> pairs.")
+      .version("1.6.0")
+      .timeConf
+      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+      .createWithDefault(Duration.ofMinutes(5).toMillis)
+
+  val CREDENTIALS_IDLE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("credentials.idle.timeout")
+      .doc("inactive users' credentials will be expired after a configured timeout")
+      .version("1.6.0")
+      .timeConf
+      .checkValue(_ >= Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+      .createWithDefault(Duration.ofHours(6).toMillis)
+
   val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hadoopfs.enabled")
       .doc("Whether to renew Hadoop filesystem delegation tokens")
