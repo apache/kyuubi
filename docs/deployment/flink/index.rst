@@ -13,47 +13,21 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-.. image:: ../imgs/kyuubi_logo.png
+.. image:: ../../imgs/kyuubi_logo.png
    :align: center
 
-Deploying Kyuubi
-================
+The Flink SQL Engine Configuration Guide
+========================================
 
-In this section, you will learn how to deploy Kyuubi against different platforms.
-
-Basics
-------
-
-.. toctree::
-    :maxdepth: 2
-    :numbered: 3
-    :glob:
-
-    kyuubi_on_kubernetes
-    hive_metastore
-    high_availability_guide
-
-Configurations
---------------
+Kyuubi aims to bring Flink to end-users who need not qualify with Flink or something else related to the big data area.
+End-users can write SQL queries through JDBC against Kyuubi and nothing more.
+The Kyuubi server-side or the corresponding engines could do most of the optimization.
+On the other hand, we don't wholly restrict end-users to special handling of specific cases to benefit from the following documentations.
+Even if you don't use Kyuubi, as a simple Flink user, I'm sure you'll find the next articles instructive.
 
 .. toctree::
     :maxdepth: 2
-    :numbered: 3
+    :numbered: 2
     :glob:
 
-    settings
-
-Engines
--------
-
-.. toctree::
-    :maxdepth: 2
-    :numbered: 3
-    :glob:
-
-    engine_on_yarn
-    engine_on_kubernetes
-    engine_share_level
-    engine_lifecycle
-    spark/index
-    flink/index
+    basics
