@@ -174,21 +174,6 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - select timestamp_ntz") {
-    assume(SPARK_ENGINE_MAJOR_MINOR_VERSION._1 >= 3
-      && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 > 2)
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery(
-        "SELECT make_timestamp_ntz(2022, 03, 24, 18, 08, 31.800) AS col")
-      assert(resultSet.next())
-      assert(resultSet.getTimestamp("col") === Timestamp.valueOf("2022-03-24 18:08:31.800"))
-      val metaData = resultSet.getMetaData
-      assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
-      assert(metaData.getPrecision(1) === 29)
-      assert(metaData.getScale(1) === 9)
-    }
-  }
-
   test("execute statement - select daytime interval") {
     withJdbcStatement() { statement =>
       Map(

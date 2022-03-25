@@ -241,9 +241,6 @@ object RowSet {
       case (t: Timestamp, TimestampType) =>
         formatTimestamp(t)
 
-      case (t: LocalDateTime, ntz) if ntz.simpleString.equals("timestamp_ntz") =>
-        formatLocalDateTime(t)
-
       case (i: Instant, TimestampType) =>
         formatInstant(i, Option(timeZone))
 
