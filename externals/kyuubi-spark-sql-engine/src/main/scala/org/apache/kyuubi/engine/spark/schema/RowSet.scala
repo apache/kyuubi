@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.schema
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.Timestamp
-import java.time.{Duration, Instant, LocalDate, ZoneId}
+import java.time._
 import java.util.Date
 
 import scala.collection.JavaConverters._
@@ -29,7 +29,6 @@ import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.engine.spark.schema.IntervalQualifier.{DAY, HOUR, MINUTE, SECOND}
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
@@ -255,16 +254,9 @@ object RowSet {
         // Only match string in nested type values
         "\"" + s + "\""
 
-      case (d: Duration, dt) =>
-        if (dt.simpleString == DAY.toString()) {
-          IntervalQualifier.toDayTimeIntervalString(d, DAY)
-        } else if (dt.simpleString == HOUR.toString()) {
-          IntervalQualifier.toDayTimeIntervalString(d, HOUR)
-        } else if (dt.simpleString == MINUTE.toString()) {
-          IntervalQualifier.toDayTimeIntervalString(d, MINUTE)
-        } else {
-          IntervalQualifier.toDayTimeIntervalString(d, SECOND)
-        }
+      case (d: Duration, _) => toDayTimeIntervalString(d)
+
+      case (p: Period, _) => toYearMonthIntervalString(p)
 
       case (seq: scala.collection.Seq[_], ArrayType(typ, _)) =>
         seq.map(v => (v, typ)).map(e => toHiveString(e, timeZone)).mkString("[", ",", "]")

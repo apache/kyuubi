@@ -24,9 +24,11 @@ import scala.collection.JavaConverters._
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
 
-import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 
 trait SparkQueryTests extends HiveJDBCTestHelper {
+
+  protected lazy val SPARK_ENGINE_MAJOR_MINOR_VERSION: (Int, Int) = sparkEngineMajorMinorVersion
 
   test("execute statement - select null") {
     withJdbcStatement() { statement =>
@@ -175,25 +177,70 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
   test("execute statement - select daytime interval") {
     withJdbcStatement() { statement =>
       Map(
-        "-interval 2 day" -> "-2 00:00:00.000000000",
-        "-interval 200 day" -> "-200 00:00:00.000000000",
-        "interval 1 day 1 hour" -> "1 01:00:00.000000000",
-        "interval 1 day 1 hour -60 minutes" -> "1 00:00:00.000000000",
-        "interval 1 day 1 hour -60 minutes 30 seconds" -> "1 00:00:30.000000000",
+        "interval 1 day 1 hour -60 minutes 30 seconds" ->
+          Tuple2("1 00:00:30.000000000", "1 days 30 seconds"),
+        "interval 30 seconds 12345 milliseconds" ->
+          Tuple2("0 00:00:42.345000000", "42.345 seconds"),
+        "interval 1 hour 59 minutes 30 seconds 12345 milliseconds" ->
+          Tuple2("0 01:59:42.345000000", "1 hours 59 minutes 42.345 seconds"),
+        "-interval 2 day" -> Tuple2("-2 00:00:00.000000000", "-2 days"),
+        "interval 59 minutes 30 seconds 12345 milliseconds" ->
+          Tuple2("0 00:59:42.345000000", "59 minutes 42.345 seconds"),
+        "interval 25 hour" -> Tuple2("1 01:00:00.000000000", "25 hours"),
+        "interval 1 hour 62 minutes" -> Tuple2("0 02:02:00.000000000", "2 hours 2 minutes"),
         "interval 1 day 1 hour 59 minutes 30 seconds 12345 milliseconds" ->
-          "1 01:59:42.345000000").foreach { kv => // value -> result pair
+          Tuple2("1 01:59:42.345000000", "1 days 1 hours 59 minutes 42.345 seconds"),
+        "interval 1 day 1 hour -60 minutes" -> Tuple2("1 00:00:00.000000000", "1 days"),
+        "INTERVAL 30 SECONDS" -> Tuple2("0 00:00:30.000000000", "30 seconds"),
+        "interval -60 minutes 30 seconds" ->
+          Tuple2("-0 00:59:30.000000000", "-59 minutes -30 seconds"),
+        "-interval 200 day" -> Tuple2("-200 00:00:00.000000000", "-200 days"),
+        "interval 1 hour -60 minutes 30 seconds" -> Tuple2("0 00:00:30.000000000", "30 seconds"),
+        "interval 62 minutes" -> Tuple2("0 01:02:00.000000000", "1 hours 2 minutes"),
+        "interval 1 day 1 hour" -> Tuple2("1 01:00:00.000000000", "1 days 1 hours")).foreach {
+        kv => // value -> result pair
+          val resultSet = statement.executeQuery(s"SELECT ${kv._1} AS col")
+          assert(resultSet.next())
+          val result = resultSet.getString("col")
+          val metaData = resultSet.getMetaData
+          if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3
+            && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 < 2) {
+            // for spark 3.1 and backwards
+            assert(result === kv._2._2)
+            assert(metaData.getPrecision(1) === Int.MaxValue)
+            assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.VARCHAR)
+          } else {
+            assert(result === kv._2._1)
+            assert(metaData.getPrecision(1) === 29)
+            assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.OTHER)
+          }
+          assert(metaData.getScale(1) === 0)
+      }
+    }
+  }
+
+  test("execute statement - select year/month interval") {
+    withJdbcStatement() { statement =>
+      Map(
+        "INTERVAL 2022 YEAR" -> Tuple2("2022-0", "2022 years"),
+        "INTERVAL '2021-07' YEAR TO MONTH" -> Tuple2("2021-7", "2021 years 7 months"),
+        "INTERVAL 3 MONTH" -> Tuple2("0-3", "3 months"),
+        "INTERVAL 241 MONTH" -> Tuple2("20-1", "20 years 1 months"),
+        "INTERVAL -1 year -25 MONTH" -> Tuple2("-3-1", "-3 years -1 months"),
+        "INTERVAL 3 year -25 MONTH" -> Tuple2("0-11", "11 months")).foreach { kv =>
         val resultSet = statement.executeQuery(s"SELECT ${kv._1} AS col")
         assert(resultSet.next())
         val result = resultSet.getString("col")
         val metaData = resultSet.getMetaData
-        if (result.contains("days")) {
+        if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3
+          && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 < 2) {
           // for spark 3.1 and backwards
-          assert(result.split("days").head.trim === kv._2.split(" ").head)
+          assert(result === kv._2._2)
           assert(metaData.getPrecision(1) === Int.MaxValue)
           assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.VARCHAR)
         } else {
-          assert(result === kv._2)
-          assert(metaData.getPrecision(1) === 29)
+          assert(result === kv._2._1)
+          assert(metaData.getPrecision(1) === 11)
           assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.OTHER)
         }
         assert(metaData.getScale(1) === 0)
@@ -544,5 +591,16 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       }
       assert(foundOperationLangItem)
     }
+  }
+
+  def sparkEngineMajorMinorVersion: (Int, Int) = {
+    var sparkRuntimeVer = ""
+    withJdbcStatement() { stmt =>
+      val result = stmt.executeQuery("SELECT version()")
+      assert(result.next())
+      sparkRuntimeVer = result.getString(1)
+      assert(!result.next())
+    }
+    Utils.majorMinorVersion(sparkRuntimeVer)
   }
 }
