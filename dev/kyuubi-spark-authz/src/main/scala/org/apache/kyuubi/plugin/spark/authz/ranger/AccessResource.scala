@@ -15,16 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.language.implicitConversions
 
 import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl
 
+import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject, PrivilegeObjectType}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
-class RangerAccessResource private (val objectType: ObjectType) extends RangerAccessResourceImpl {
+class AccessResource private (val objectType: ObjectType) extends RangerAccessResourceImpl {
   implicit def asString(obj: Object): String = if (obj != null) obj.asInstanceOf[String] else null
   def getDatabase: String = getValue("database")
   def getTable: String = getValue("table")
@@ -35,14 +36,14 @@ class RangerAccessResource private (val objectType: ObjectType) extends RangerAc
   }
 }
 
-object RangerAccessResource {
+object AccessResource {
 
   def apply(
       objectType: ObjectType,
       firstLevelResource: String,
       secondLevelResource: String,
-      thirdLevelResource: String): RangerAccessResource = {
-    val resource = new RangerAccessResource(objectType)
+      thirdLevelResource: String): AccessResource = {
+    val resource = new AccessResource(objectType)
 
     resource.objectType match {
       case DATABASE => resource.setValue("database", firstLevelResource)
@@ -65,17 +66,17 @@ object RangerAccessResource {
   def apply(
       objectType: ObjectType,
       firstLevelResource: String,
-      secondLevelResource: String): RangerAccessResource = {
+      secondLevelResource: String): AccessResource = {
     apply(objectType, firstLevelResource, secondLevelResource, null)
   }
 
   def apply(
       objectType: ObjectType,
-      firstLevelResource: String): RangerAccessResource = {
+      firstLevelResource: String): AccessResource = {
     apply(objectType, firstLevelResource, null)
   }
 
-  def apply(obj: PrivilegeObject): RangerAccessResource = {
+  def apply(obj: PrivilegeObject): AccessResource = {
     obj.typ match {
       case PrivilegeObjectType.DATABASE => apply(DATABASE, obj.dbname)
       case PrivilegeObjectType.TABLE_OR_VIEW =>
@@ -87,7 +88,7 @@ object RangerAccessResource {
   }
   def apply(
       obj: PrivilegeObject,
-      opType: OperationType): RangerAccessResource = {
+      opType: OperationType): AccessResource = {
     apply(ObjectType(obj, opType), obj.dbname, obj.objectName, obj.columns.mkString(","))
   }
 }

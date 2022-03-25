@@ -15,35 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 
-class RangerAccessResourceSuite extends KyuubiFunSuite {
+class AccessResourceSuite extends KyuubiFunSuite {
 
   test("generate spark ranger resources") {
-    val resource = RangerAccessResource(DATABASE, "my_db_name")
+    val resource = AccessResource(DATABASE, "my_db_name")
     assert(resource.getDatabase === "my_db_name")
     assert(resource.getTable === null)
     assert(resource.getColumn === null)
 
-    val resource1 = RangerAccessResource(DATABASE, null, "my_table_name", "my_col_1,my_col_2")
+    val resource1 = AccessResource(DATABASE, null, "my_table_name", "my_col_1,my_col_2")
     assert(resource1.getDatabase === null)
     assert(resource1.getTable === null)
     assert(resource1.getColumn === null)
 
-    val resource2 = RangerAccessResource(FUNCTION, "my_db_name", "my_func_name")
+    val resource2 = AccessResource(FUNCTION, "my_db_name", "my_func_name")
     assert(resource2.getDatabase === "my_db_name")
     assert(resource2.getTable === null)
     assert(resource2.getValue("udf") === "my_func_name")
 
-    val resource3 = RangerAccessResource(TABLE, "my_db_name", "my_table_name", "my_col_1,my_col_2")
+    val resource3 = AccessResource(TABLE, "my_db_name", "my_table_name", "my_col_1,my_col_2")
     assert(resource3.getDatabase === "my_db_name")
     assert(resource3.getTable === "my_table_name")
     assert(resource3.getColumn === null)
 
-    val resource4 = RangerAccessResource(COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2")
+    val resource4 = AccessResource(COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2")
     assert(resource4.getDatabase === "my_db_name")
     assert(resource4.getTable === "my_table_name")
     assert(resource4.getColumn === "my_col_1,my_col_2")

@@ -15,25 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.util.{Set => JSet}
 import java.util.Date
 
 import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPolicyEngine}
 
-import org.apache.kyuubi.plugin.spark.authz.AccessType._
+import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
 
-case class RangerAccessRequest(accessType: AccessType) extends RangerAccessRequestImpl
+case class AccessRequest(accessType: AccessType) extends RangerAccessRequestImpl
 
-object RangerAccessRequest {
+object AccessRequest {
   def apply(
-      resource: RangerAccessResource,
+      resource: AccessResource,
       user: String,
       groups: JSet[String],
       opType: String,
-      accessType: AccessType): RangerAccessRequest = {
-    val req = new RangerAccessRequest(accessType)
+      accessType: AccessType): AccessRequest = {
+    val req = new AccessRequest(accessType)
     req.setResource(resource)
     req.setUser(user)
     req.setUserGroups(groups)

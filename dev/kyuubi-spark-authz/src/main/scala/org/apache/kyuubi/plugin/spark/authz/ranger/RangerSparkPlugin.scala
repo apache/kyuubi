@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.ranger.plugin.service.RangerBasePlugin
 

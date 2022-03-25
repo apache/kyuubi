@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz
+package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import org.apache.kyuubi.plugin.spark.authz.{PrivilegeObject, PrivilegeObjectActionType}
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 

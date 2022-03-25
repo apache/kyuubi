@@ -21,9 +21,10 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
+import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessType, RangerSparkPlugin}
 
 abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
 
@@ -144,7 +145,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
         assert(po.dbname equalsIgnoreCase reusedDb)
         assert(Set(reusedDb + "_old", "efg").contains(po.objectName))
         assert(po.columns.isEmpty)
-        val accessType = AccessType(po, operationType, isInput = false)
+        val accessType = ranger.AccessType(po, operationType, isInput = false)
         assert(Set(AccessType.CREATE, AccessType.DROP).contains(accessType))
       }
     }
@@ -164,7 +165,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po.dbname === "CreateDatabaseCommand")
       assert(po.objectName === "CreateDatabaseCommand")
       assert(po.columns.isEmpty)
-      val accessType = AccessType(po, operationType, isInput = false)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }
   }
@@ -184,7 +185,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po.dbname === "DropDatabaseCommand")
       assert(po.objectName === "DropDatabaseCommand")
       assert(po.columns.isEmpty)
-      val accessType = AccessType(po, operationType, isInput = false)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.DROP)
     }
   }
@@ -203,7 +204,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === getClass.getSimpleName)
     assert(po.columns.head === "a")
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
 
@@ -221,7 +222,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
 
@@ -239,7 +240,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
 
@@ -260,7 +261,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
 
@@ -281,7 +282,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
 
@@ -302,7 +303,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po.dbname === reusedDb)
       assert(po.objectName === reusedTable.split("\\.").last)
       assert(po.columns.isEmpty)
-      val accessType = AccessType(po, operationType, isInput = false)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.ALTER)
     }
   }
@@ -322,7 +323,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     // assert(po0.columns === Seq("key", "value", "pid"))
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 1)
@@ -332,7 +333,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === "default")
     assert(po.objectName === "AlterViewAsCommand")
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
 
@@ -350,7 +351,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns === Seq("key"))
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -370,7 +371,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns === Seq("pid"))
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -390,7 +391,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns.isEmpty)
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -411,7 +412,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.objectName equalsIgnoreCase reusedDb)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns.isEmpty)
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -429,7 +430,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedDb)
     assert(po0.columns.isEmpty)
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -448,7 +449,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedDb)
     assert(po0.columns.isEmpty)
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.USE)
 
     assert(tuple._2.size === 0)
@@ -467,7 +468,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedDb)
       assert(po0.columns.head === "key")
-      val accessType0 = AccessType(po0, operationType, isInput = true)
+      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
       assert(accessType0 === AccessType.SELECT)
     } else {
       assert(tuple._1.isEmpty)
@@ -480,7 +481,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedDb)
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
 
@@ -501,7 +502,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     } else {
       assert(po0.columns.isEmpty)
     }
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 1)
@@ -511,7 +512,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(StringUtils.isEmpty(po.dbname))
     assert(po.objectName === "CacheTableAsSelect")
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
 
@@ -532,7 +533,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     } else {
       assert(po0.columns.isEmpty)
     }
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 1)
@@ -542,7 +543,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === "default")
     assert(po.objectName === "CreateViewCommand")
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
 
@@ -562,7 +563,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po.dbname === "default")
       assert(po.objectName === tableName)
       assert(po.columns.isEmpty)
-      val accessType = AccessType(po, operationType, isInput = false)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }
   }
@@ -581,7 +582,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === null)
     assert(po.objectName === "CreateFunctionCommand")
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
 
@@ -600,7 +601,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === null)
     assert(po.objectName === "DropFunctionCommand")
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.DROP)
   }
 
@@ -620,7 +621,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === null)
     assert(po.objectName === "RefreshFunctionCommand")
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.NONE)
   }
 
@@ -638,7 +639,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
       assert(po0.columns.isEmpty)
-      val accessType0 = AccessType(po0, operationType, isInput = true)
+      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
       assert(accessType0 === AccessType.SELECT)
 
       assert(tuple._2.size === 1)
@@ -648,7 +649,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName === "CreateTableLikeCommand")
       assert(po.columns.isEmpty)
-      val accessType = AccessType(po, operationType, isInput = false)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }
   }
@@ -669,7 +670,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname === null)
     assert(po.objectName === "CreateTempViewUsing")
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
 
@@ -685,7 +686,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po.columns === Seq("key"))
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -703,7 +704,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -721,7 +722,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedDb)
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.USE)
 
     assert(tuple._2.size === 0)
@@ -740,7 +741,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po.dbname === "spark_catalog")
       assert(po.objectName === "spark_catalog")
       assert(po.columns.isEmpty)
-      val accessType = AccessType(po, operationType, isInput = false)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.USE)
 
       val po0 = tuple._1.last
@@ -749,7 +750,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedDb)
       assert(po0.columns.isEmpty)
-      val accessType0 = AccessType(po, operationType, isInput = false)
+      val accessType0 = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType0 === AccessType.USE)
 
       assert(tuple._2.size === 0)
@@ -772,7 +773,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.UPDATE)
   }
 
@@ -788,13 +789,13 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns.isEmpty)
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
 
     assert(accessType0 === AccessType.SELECT)
     try {
       RangerSparkPlugin.getConfig
         .set("xasecure.spark.describetable.showcolumns.authorization.option", "show-all")
-      assert(AccessType(po0, operationType, isInput = true) === AccessType.USE)
+      assert(ranger.AccessType(po0, operationType, isInput = true) === AccessType.USE)
     } finally {
       RangerSparkPlugin.getConfig
         .set("xasecure.spark.describetable.showcolumns.authorization.option", "NONE")
@@ -814,7 +815,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns.isEmpty)
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -832,7 +833,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns.isEmpty)
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -860,7 +861,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     assert(po0.columns === Seq("pid"))
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 0)
@@ -953,7 +954,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(
         po.columns === Seq("key", "value"),
         s"$reusedPartTable 'key' is the join key and 'pid' is omitted")
-      val accessType = AccessType(po, operationType, isInput = true)
+      val accessType = ranger.AccessType(po, operationType, isInput = true)
       assert(accessType === AccessType.SELECT)
     }
     assert(tuple._2.size === 0)
@@ -970,6 +971,12 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
         |""".stripMargin).queryExecution.optimizedPlan
     val (in, _) = PrivilegesBuilder.build(plan)
     assert(in.size === 2)
+  }
+
+  test("Query: CASE WHEN") {
+    checkColumns(
+      s"SELECT CASE WHEN key > 0 THEN 'big' ELSE 'small' END FROM $reusedTable",
+      Seq("key"))
   }
 }
 
@@ -993,7 +1000,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
 
@@ -1012,7 +1019,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns === Seq("key", "value"))
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 1)
@@ -1026,7 +1033,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     } else {
       assert(po.columns.isEmpty)
     }
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
 }
@@ -1053,7 +1060,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po.dbname === "default")
       assert(po.objectName === t)
       assert(po.columns.head === "pid")
-      val accessType = AccessType(po, operationType, isInput = false)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.ALTER)
     }
   }
@@ -1073,7 +1080,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po.dbname === "default")
       assert(po.objectName === "CreateTableCommand")
       assert(po.columns.isEmpty)
-      val accessType = AccessType(po, operationType, isInput = false)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }
   }
@@ -1093,7 +1100,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns === Seq("key", "value"))
-    val accessType0 = AccessType(po0, operationType, isInput = true)
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
     assert(tuple._2.size === 1)
@@ -1103,7 +1110,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.dbname === "default")
     assert(po.objectName === "CreateHiveTableAsSelectCommand")
     assert(po.columns === Seq("key", "value"))
-    val accessType = AccessType(po, operationType, isInput = false)
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
 
@@ -1121,7 +1128,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po0.dbname === "default")
       assert(po0.objectName === t)
       assert(po0.columns.isEmpty)
-      val accessType0 = AccessType(po0, operationType, isInput = true)
+      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
       assert(accessType0 === AccessType.SELECT)
 
       assert(tuple._2.size === 0)
