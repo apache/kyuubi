@@ -676,18 +676,20 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val ENGINE_ALIVE_PROBE_TIMEOUT: ConfigEntry[Long] =
-    buildConf("session.engine.alive.probe.timeout")
-      .doc("The timeout for engine alive probe.")
-      .version("1.6.0")
-      .fallbackConf(ENGINE_REQUEST_TIMEOUT)
-
   val ENGINE_ALIVE_PROBE_INTERVAL: ConfigEntry[Long] =
     buildConf("session.engine.alive.probe.interval")
       .doc("The interval for engine alive probe.")
       .version("1.6.0")
       .timeConf
-      .createWithDefault(Duration.ofSeconds(60).toMillis)
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
+
+  val ENGINE_ALIVE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("session.engine.alive.timeout")
+      .doc("The timeout for engine alive. If there is no alive probe success in the last timeout" +
+        " window, the engine will be marked as no-alive.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(120).toMillis)
 
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")

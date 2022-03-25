@@ -40,7 +40,8 @@ class KyuubiSyncThriftClient private (
     protocol: TProtocol,
     maxAttempts: Int,
     engineAliveProbeProtocol: Option[TProtocol],
-    engineAliveProbeInterval: Long)
+    engineAliveProbeInterval: Long,
+    engineAliveTimeout: Long)
   extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
@@ -49,36 +50,41 @@ class KyuubiSyncThriftClient private (
   private val lock = new ReentrantLock()
 
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
-  @volatile private var aliveProbeConnectionBroken = false
   @volatile private var remoteEngineBroken: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
+  private var engineLastAlive: Long = _
 
   private def startEngineAliveProbe(): Unit = {
     engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
       "engine-alive-probe-" + _aliveProbeSessionHandle)
     val task = new Runnable {
       override def run(): Unit = {
-        engineAliveProbeClient.foreach { client =>
-          val tGetInfoReq = new TGetInfoReq()
-          tGetInfoReq.setSessionHandle(_aliveProbeSessionHandle)
-          tGetInfoReq.setInfoType(TGetInfoType.CLI_DBMS_VER)
+        if (!remoteEngineBroken) {
+          engineAliveProbeClient.foreach { client =>
+            val tGetInfoReq = new TGetInfoReq()
+            tGetInfoReq.setSessionHandle(_aliveProbeSessionHandle)
+            tGetInfoReq.setInfoType(TGetInfoType.CLI_DBMS_VER)
 
-          try {
-            client.GetInfo(tGetInfoReq).getInfoValue.getStringValue
-            aliveProbeConnectionBroken = false
-            remoteEngineBroken = false
-          } catch {
-            case e: Throwable =>
-              if (!aliveProbeConnectionBroken) {
-                error(s"The alive probe connection is broken, assume the engine is not alive", e)
-                aliveProbeConnectionBroken = true
-                remoteEngineBroken = true
-              }
+            try {
+              client.GetInfo(tGetInfoReq).getInfoValue.getStringValue
+              engineLastAlive = System.currentTimeMillis()
+              remoteEngineBroken = false
+            } catch {
+              case e: Throwable =>
+                warn(s"The engine alive probe fails", e)
+                val now = System.currentTimeMillis()
+                if (now - engineLastAlive > engineAliveTimeout) {
+                  error("Mark the engine not alive with no recent alive probe success:" +
+                    s" ${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms")
+                  remoteEngineBroken = true
+                }
+            }
           }
         }
       }
     }
+    engineLastAlive = System.currentTimeMillis()
     engineAliveThreadPool.scheduleAtFixedRate(
       task,
       engineAliveProbeInterval,
@@ -168,7 +174,7 @@ class KyuubiSyncThriftClient private (
         if (tProtocol.getTransport.isOpen) tProtocol.getTransport.close()
       }
       Option(engineAliveThreadPool).foreach(_.shutdown())
-      if (_aliveProbeSessionHandle != null) {
+      if (_aliveProbeSessionHandle != null && !remoteEngineBroken) {
         engineAliveProbeClient.foreach { client =>
           Utils.tryLogNonFatalError {
             val req = new TCloseSessionReq(_aliveProbeSessionHandle)
@@ -399,13 +405,13 @@ private[kyuubi] object KyuubiSyncThriftClient {
     val requestTimeout = conf.get(ENGINE_REQUEST_TIMEOUT).toInt
     val requestMaxAttempts = conf.get(KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS)
     val aliveProbeEnabled = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
-    val aliveProbeTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_TIMEOUT).toInt
-    val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL)
+    val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
+    val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
 
     val tProtocol = createTProtocol(user, passwd, host, port, requestTimeout, loginTimeout)
     val aliveProbeProtocol =
       if (aliveProbeEnabled) {
-        Option(createTProtocol(user, passwd, host, port, aliveProbeTimeout, loginTimeout))
+        Option(createTProtocol(user, passwd, host, port, aliveProbeInterval, loginTimeout))
       } else {
         None
       }
@@ -413,6 +419,7 @@ private[kyuubi] object KyuubiSyncThriftClient {
       tProtocol,
       requestMaxAttempts,
       aliveProbeProtocol,
-      aliveProbeInterval)
+      aliveProbeInterval,
+      aliveTimeout)
   }
 }
