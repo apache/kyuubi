@@ -43,6 +43,7 @@ class OperationLogSuite extends KyuubiFunSuite {
       "passwd",
       "localhost",
       Map.empty)
+
     val session = sessionManager.getSession(sHandle)
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT,
@@ -79,6 +80,12 @@ class OperationLogSuite extends KyuubiFunSuite {
 
     operationLog.close()
     assert(!Files.exists(logFile))
+
+
+    assert(Files.exists(Paths.get(operationLogRoot, sHandle.identifier.toString)))
+    sessionManager.closeSession(sHandle)
+    assert(!Files.exists(Paths.get(operationLogRoot, sHandle.identifier.toString)))
+
   }
 
   test("log divert appender") {
