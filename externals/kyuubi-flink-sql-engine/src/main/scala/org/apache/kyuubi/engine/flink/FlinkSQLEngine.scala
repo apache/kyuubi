@@ -26,8 +26,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.flink.client.cli.{CliFrontend, CustomCommandLine, DefaultCLI, GenericCLI}
-import org.apache.flink.configuration.DeploymentOptions
-import org.apache.flink.configuration.GlobalConfiguration
+import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration}
 import org.apache.flink.table.client.SqlClientException
 import org.apache.flink.table.client.gateway.context.DefaultContext
 import org.apache.flink.util.JarUtils
@@ -77,6 +76,8 @@ object FlinkSQLEngine extends Logging {
     try {
       val flinkConfDir = CliFrontend.getConfigurationDirectoryFromEnv
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
+      val flinkConfFromKyuubi = kyuubiConf.getAllWithPrefix("flink", "")
+      flinkConf.addAll(Configuration.fromMap(flinkConfFromKyuubi.asJava))
 
       val executionTarget = flinkConf.getString(DeploymentOptions.TARGET)
       // set cluster name for per-job and application mode
