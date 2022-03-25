@@ -60,7 +60,7 @@
 
 "module:ctl":
   - "bin/beeline"
-  - "kyuubi-common/**/*"
+  - "kyuubi-ctl/**/*"
   - "kyuubi-hive-beeline/**/*"
   - "kyuubi-hive-jdbc/**/*"
   - "kyuubi-hive-jdbc-shaded/**/*"
