@@ -99,10 +99,11 @@ class SparkProcessBuilder(
         .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
     }.orElse {
       // 3. get the main resource from dev environment
-      Option(Paths.get("externals", module, "target", jarName))
-        .filter(Files.exists(_)).orElse {
-          Some(Paths.get("..", "externals", module, "target", jarName))
-        }.map(_.toAbsolutePath.toFile.getCanonicalPath)
+      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+        .split("kyuubi-server")
+      assert(cwd.length > 1)
+      Option(Paths.get(cwd.head, "externals", module, "target", jarName))
+        .map(_.toAbsolutePath.toFile.getCanonicalPath)
     }
   }
 

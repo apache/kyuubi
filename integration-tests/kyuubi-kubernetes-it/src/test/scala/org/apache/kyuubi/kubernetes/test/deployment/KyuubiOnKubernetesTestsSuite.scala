@@ -15,13 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.kubernetes.test
+package org.apache.kyuubi.kubernetes.test.deployment
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
 
-// TODO: [KYUUBI-863] Support test Spark engine using k8s master with minikube
-class KubernetesJDBCTestsSuite extends SparkQueryTests with Logging {
+/**
+ * This test is for Kyuubi Server on Kubernetes with Spark engine:
+ *
+ *   Real World                              Kubernetes Pod
+ *  ------------         -----------------------------------------------------
+ *  |          |  JDBC   |                                                   |
+ *  |  Client  |  ---->  |  Kyuubi Server  ---->  Spark Engine (local mode)  |
+ *  |          |         |                                                   |
+ *  ------------         -----------------------------------------------------
+ */
+class KyuubiOnKubernetesTestsSuite extends SparkQueryTests with Logging {
   private lazy val _jdbcUrl: String = {
     val kubernetesclient = MiniKube.getKubernetesClient
     val kyuubiServers =

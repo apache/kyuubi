@@ -37,9 +37,9 @@
 
     <profiles>
         <profile>
-            <id>kubernetes-deployment-it</id>
+            <id>kubernetes-it</id>
             <modules>
-                <module>kyuubi-kubernetes-deployment-it</module>
+                <module>kyuubi-kubernetes-it</module>
             </modules>
         </profile>
     </profiles>
