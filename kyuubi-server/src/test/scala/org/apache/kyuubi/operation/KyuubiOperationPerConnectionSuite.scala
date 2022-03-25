@@ -216,6 +216,27 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(kyuubiConnection.isClosed)
     }
   }
+
+  test("KYUUBI #2102 - support engine alive probe to fast fail on engine broken") {
+    withSessionConf(Map(
+      KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
+      KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "100",
+      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "3000",
+      KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS.key -> "10000",
+      KyuubiConf.ENGINE_REQUEST_TIMEOUT.key -> "100"))(Map.empty)(Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setStatement("select java_method('java.lang.System', 'exit', 1)")
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(false)
+        val startTime = System.currentTimeMillis()
+        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+        assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+        val elapsedTime = System.currentTimeMillis() - startTime
+        assert(elapsedTime > 3 * 1000 && elapsedTime < 20 * 1000)
+      }
+    }
+  }
 }
 
 class TestSessionConfAdvisor extends SessionConfAdvisor {
