@@ -79,6 +79,9 @@ class OperationLogSuite extends KyuubiFunSuite {
 
     operationLog.close()
     assert(!Files.exists(logFile))
+    assert(Files.exists(Paths.get(operationLogRoot, sHandle.identifier.toString)))
+    sessionManager.closeSession(sHandle)
+    assert(!Files.exists(Paths.get(operationLogRoot, sHandle.identifier.toString)))
   }
 
   test("log divert appender") {
