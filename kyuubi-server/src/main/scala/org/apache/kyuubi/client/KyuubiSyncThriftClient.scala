@@ -170,9 +170,6 @@ class KyuubiSyncThriftClient private (
       case e: Exception =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
-        if (tProtocol.getTransport.isOpen) tProtocol.getTransport.close()
-      }
       Option(engineAliveThreadPool).foreach(_.shutdown())
       if (_aliveProbeSessionHandle != null && !remoteEngineBroken) {
         engineAliveProbeClient.foreach { client =>
@@ -182,6 +179,9 @@ class KyuubiSyncThriftClient private (
             ThriftUtils.verifyTStatus(resp.getStatus)
           }
         }
+      }
+      Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+        if (tProtocol.getTransport.isOpen) tProtocol.getTransport.close()
       }
     }
   }
