@@ -84,7 +84,7 @@
   - ".dockerignore"
   - "bin/docker-image-tool.sh"
   - "docker/**/*"
-  - "integration-tests/kyuubi-kubernetes-deployment-it/**/*"
+  - "integration-tests/kyuubi-kubernetes-it/**/*"
   - "tools/spark-block-cleaner/**/*"
 
 "module:metrics":
