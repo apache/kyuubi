@@ -22,7 +22,6 @@ import java.net.URI
 import java.security.PrivilegedExceptionAction
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
@@ -30,7 +29,7 @@ import org.apache.hadoop.hdfs.HdfsConfiguration
 import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
 
-import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.credentials.HadoopFsDelegationTokenProvider.{doAsProxyUser, validatedFsUris}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -68,7 +67,6 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
         uri -> FileSystem.get(uri, hadoopConf)
       }
 
-      val exceptionMsgList = ListBuffer[String]()
       try {
         // Renewer is not needed. But setting a renewer can avoid potential NPE.
         val renewer = UserGroupInformation.getCurrentUser.getUserName
@@ -78,17 +76,13 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
             fs.addDelegationTokens(renewer, creds)
           } catch {
             case e: Exception =>
-              exceptionMsgList +=
-                s"Failed to get token owned by $owner for $uri: ${Utils.stringifyException(e)} "
+              throw new KyuubiException(s"Failed to get token owned by $owner for: $uri", e)
           }
         }
       } finally {
         // Token renewal interval is longer than FileSystems' underlying connections' max idle time.
         // Close FileSystems won't lose efficiency.
         fileSystems.foreach(_._2.close())
-        if (exceptionMsgList.nonEmpty) {
-          throw new KyuubiException(exceptionMsgList.mkString("\n"))
-        }
       }
     }
   }
