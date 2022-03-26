@@ -222,10 +222,17 @@
                             </includes>
                         </relocation>
                         <relocation>
-                            <pattern>org.apache.hive</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive</shadedPattern>
+                            <pattern>org.apache.hive.service.rpc.thrift</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>
                             <includes>
-                                <include>org.apache.hive.**</include>
+                                <include>org.apache.hive.service.rpc.thrift.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.facebook.fb303</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.facebook.fb303</shadedPattern>
+                            <includes>
+                                <include>com.facebook.fb303.**</include>
                             </includes>
                         </relocation>
                         <relocation>
