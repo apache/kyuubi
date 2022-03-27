@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
@@ -89,16 +89,16 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
-    deleteOperationLogSessionDir(sessionHandle)
     info(s"$sessionHandle is closed, current opening sessions $getOpenSessionCount")
     session.close()
+    deleteOperationLogSessionDir(sessionHandle)
   }
 
   private def deleteOperationLogSessionDir(sessionHandle: SessionHandle): Unit = {
     _operationLogRoot.foreach(logRoot => {
       val rootPath = Paths.get(logRoot, sessionHandle.identifier.toString)
       try {
-        Files.deleteIfExists(rootPath)
+        Utils.deleteDirectoryRecursively(rootPath.toFile)
       } catch {
         case e: IOException =>
           error(s"Failed to delete session operation log directory ${rootPath.toString}", e)
