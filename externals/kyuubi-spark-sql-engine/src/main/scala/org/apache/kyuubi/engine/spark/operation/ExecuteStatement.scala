@@ -40,7 +40,8 @@ class ExecuteStatement(
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
-    incrementalCollect: Boolean)
+    incrementalCollect: Boolean,
+    resultMaxRows: Int)
   extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
@@ -86,8 +87,13 @@ class ExecuteStatement(
           info("Execute in incremental collect mode")
           new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
         } else {
-          info("Execute in full collect mode")
-          new ArrayFetchIterator(result.collect())
+          if (resultMaxRows <= 0) {
+            info("Execute in full collect mode")
+            new ArrayFetchIterator(result.collect())
+          } else {
+            info(s"Execute with max result rows[$resultMaxRows]")
+            new ArrayFetchIterator(result.take(resultMaxRows))
+          }
         }
       setState(OperationState.FINISHED)
     } catch {
