@@ -626,14 +626,6 @@ object KyuubiConf {
       .intConf
       .createWithDefault(1000000)
 
-  val ENGINE_SPARK_MAX_ROWS: ConfigEntry[Int] =
-    buildConf("session.engine.spark.max.rows")
-      .doc("Max rows of Spark query results. Rows that exceeds the limit would be ignored. " +
-        "By setting this value to 0 to disable the max rows limit.")
-      .version("1.6.0")
-      .intConf
-      .createWithDefault(0)
-
   val ENGINE_TRINO_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("session.engine.trino.main.resource")
       .doc("The package used to create Trino engine remote job. If it is undefined," +
@@ -902,6 +894,14 @@ object KyuubiConf {
       .version("1.4.0")
       .booleanConf
       .createWithDefault(false)
+
+  val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
+    buildConf("operation.result.max.rows")
+      .doc("Max rows of Spark query results. Rows that exceeds the limit would be ignored. " +
+        "By setting this value to 0 to disable the max rows limit.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(0)
 
   val SERVER_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
     buildConf("operation.log.dir.root")

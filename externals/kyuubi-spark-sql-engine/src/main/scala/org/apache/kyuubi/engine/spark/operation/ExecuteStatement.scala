@@ -26,7 +26,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAX_ROWS
+import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.events.EventLogging
@@ -87,8 +87,8 @@ class ExecuteStatement(
           info("Execute in incremental collect mode")
           new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
         } else {
-          val resultMaxRows = spark.conf.getOption(ENGINE_SPARK_MAX_ROWS.key).map(_.toInt)
-            .getOrElse(session.sessionManager.getConf.get(ENGINE_SPARK_MAX_ROWS))
+          val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
+            .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
           if (resultMaxRows <= 0) {
             info("Execute in full collect mode")
             new ArrayFetchIterator(result.collect())
