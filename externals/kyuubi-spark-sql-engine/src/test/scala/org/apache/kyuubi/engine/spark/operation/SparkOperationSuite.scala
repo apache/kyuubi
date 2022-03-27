@@ -31,6 +31,7 @@ import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.engine.spark.schema.SchemaHelper.TIMESTAMP_NTZ
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.{HiveMetadataTests, SparkQueryTests}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -76,6 +77,10 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       .add("c16", "binary", nullable = false, "16")
       .add("c17", "struct<X: string>", nullable = true, "17")
 
+    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 >= 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 > 2) {
+      schema.add("c18", "timestamp_ntz", nullable = true, "18")
+    }
+
     val ddl =
       s"""
          |CREATE TABLE IF NOT EXISTS $defaultSchema.$tableName (
@@ -110,7 +115,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           TIMESTAMP,
           STRUCT,
           BINARY,
-          STRUCT)
+          STRUCT,
+          TIMESTAMP)
 
         var pos = 0
 
@@ -137,6 +143,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
             case FloatType => assert(decimalDigits === 7)
             case DoubleType => assert(decimalDigits === 15)
             case TimestampType => assert(decimalDigits === 6)
+            case ntz if ntz.getClass.getName.equals(TIMESTAMP_NTZ) => assert(decimalDigits === 6)
             case _ => assert(decimalDigits === 0) // nulls
           }
 
@@ -154,7 +161,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           pos += 1
         }
 
-        assert(pos === 18, "all columns should have been verified")
+        assert(pos === schema.length, "all columns should have been verified")
       }
 
       val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
