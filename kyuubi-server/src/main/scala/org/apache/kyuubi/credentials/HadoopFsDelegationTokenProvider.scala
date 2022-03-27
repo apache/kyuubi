@@ -64,13 +64,13 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
   override def obtainDelegationTokens(owner: String, creds: Credentials): Unit = {
     doAsProxyUser(owner) {
       val fileSystems = fsUris.map { uri =>
-        uri -> FileSystem.get(uri, hadoopConf)
-      }
+        FileSystem.get(uri, hadoopConf) -> uri
+      }.toMap
 
       try {
         // Renewer is not needed. But setting a renewer can avoid potential NPE.
         val renewer = UserGroupInformation.getCurrentUser.getUserName
-        fileSystems.foreach { case (uri, fs) =>
+        fileSystems.foreach { case (fs, uri) =>
           info(s"getting token owned by $owner for: $uri")
           try {
             fs.addDelegationTokens(renewer, creds)
@@ -82,7 +82,7 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
       } finally {
         // Token renewal interval is longer than FileSystems' underlying connections' max idle time.
         // Close FileSystems won't lose efficiency.
-        fileSystems.foreach(_._2.close())
+        fileSystems.keys.foreach(_.close())
       }
     }
   }
