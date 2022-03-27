@@ -1321,4 +1321,12 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
+
+  val ENGINE_SPARK_SCALA_REPL_TO_OPERATION_LOG: ConfigEntry[Boolean] =
+    buildConf("session.engine.spark.scalaReplToOperationLog")
+      .doc(s"When true, enable ${OPERATION_LANGUAGE.key} to ${OperationLanguages.SCALA}, " +
+        "pass scala repl output to operation log.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
 }
