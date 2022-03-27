@@ -136,4 +136,21 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
 
     assert(r1 !== r2)
   }
+
+  test("test engine spark result max rows") {
+    withSessionConf()(Map.empty)(Map(KyuubiConf.ENGINE_SPARK_MAX_ROWS.key -> "1")) {
+      withJdbcStatement() { statement =>
+        statement.executeQuery("create temporary view va as select * from values(1),(2)")
+
+        val resultLimit1 = statement.executeQuery("select * from va")
+        assert(resultLimit1.next())
+        assert(!resultLimit1.next())
+
+        statement.executeQuery(s"set ${KyuubiConf.ENGINE_SPARK_MAX_ROWS.key}=-1")
+        val resultUnLimit = statement.executeQuery("select * from va")
+        assert(resultUnLimit.next())
+        assert(resultUnLimit.next())
+      }
+    }
+  }
 }
