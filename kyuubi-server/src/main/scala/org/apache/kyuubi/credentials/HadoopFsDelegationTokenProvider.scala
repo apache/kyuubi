@@ -29,7 +29,7 @@ import org.apache.hadoop.hdfs.HdfsConfiguration
 import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.credentials.HadoopFsDelegationTokenProvider.{doAsProxyUser, validatedFsUris}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -63,19 +63,26 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
 
   override def obtainDelegationTokens(owner: String, creds: Credentials): Unit = {
     doAsProxyUser(owner) {
-      val fileSystems = fsUris.map(FileSystem.get(_, hadoopConf)).toSet
+      val fileSystems = fsUris.map { uri =>
+        FileSystem.get(uri, hadoopConf) -> uri
+      }.toMap
 
       try {
         // Renewer is not needed. But setting a renewer can avoid potential NPE.
         val renewer = UserGroupInformation.getCurrentUser.getUserName
-        fileSystems.foreach { fs =>
-          info(s"getting token owned by $owner for: $fs")
-          fs.addDelegationTokens(renewer, creds)
+        fileSystems.foreach { case (fs, uri) =>
+          info(s"getting token owned by $owner for: $uri")
+          try {
+            fs.addDelegationTokens(renewer, creds)
+          } catch {
+            case e: Exception =>
+              throw new KyuubiException(s"Failed to get token owned by $owner for: $uri", e)
+          }
         }
       } finally {
         // Token renewal interval is longer than FileSystems' underlying connections' max idle time.
         // Close FileSystems won't lose efficiency.
-        fileSystems.foreach(_.close())
+        fileSystems.keys.foreach(_.close())
       }
     }
   }
