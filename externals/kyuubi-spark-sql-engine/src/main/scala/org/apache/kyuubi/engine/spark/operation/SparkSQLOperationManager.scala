@@ -38,7 +38,6 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY_MODE)
   private lazy val operationIncrementalCollectDefault = getConf.get(OPERATION_INCREMENTAL_COLLECT)
   private lazy val operationLanguageDefault = getConf.get(OPERATION_LANGUAGE)
-  private lazy val resultMaxRowsDefault = getConf.get(ENGINE_SPARK_MAX_ROWS)
 
   private val sessionToRepl = new ConcurrentHashMap[SessionHandle, KyuubiSparkILoop]().asScala
 
@@ -65,15 +64,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
             case NONE =>
               val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)
                 .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)
-              val resultMaxRows = spark.conf.getOption(ENGINE_SPARK_MAX_ROWS.key)
-                .map(_.toInt).getOrElse(resultMaxRowsDefault)
-              new ExecuteStatement(
-                session,
-                statement,
-                runAsync,
-                queryTimeout,
-                incrementalCollect,
-                resultMaxRows)
+              new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
             case mode =>
               new PlanOnlyStatement(session, statement, mode)
           }

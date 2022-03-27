@@ -146,7 +146,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
         assert(resultLimit1.next())
         assert(!resultLimit1.next())
 
-        statement.executeQuery(s"set ${KyuubiConf.ENGINE_SPARK_MAX_ROWS.key}=-1")
+        statement.executeQuery(s"set ${KyuubiConf.ENGINE_SPARK_MAX_ROWS.key}=0")
         val resultUnLimit = statement.executeQuery("select * from va")
         assert(resultUnLimit.next())
         assert(resultUnLimit.next())
