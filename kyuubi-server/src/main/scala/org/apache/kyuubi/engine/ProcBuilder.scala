@@ -203,12 +203,15 @@ trait ProcBuilder {
     if (error == UNCAUGHT_ERROR) {
       Thread.sleep(1000)
     }
+    val lastLogRows = lastRowsOfLog.toArray.mkString("\n")
     error match {
       case UNCAUGHT_ERROR =>
         KyuubiSQLException(s"Failed to detect the root cause, please check $engineLog at server " +
           s"side if necessary. The last $engineLogMaxLines line(s) of log are:\n" +
           s"${lastRowsOfLog.toArray.mkString("\n")}")
-      case other => other
+      case other =>
+        KyuubiSQLException(s"${Utils.stringifyException(other)}.\n" +
+          s"FYI: The last $engineLogMaxLines line(s) of log are:\n$lastLogRows")
     }
   }
 
