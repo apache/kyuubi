@@ -278,7 +278,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--user",
       user)
     assert(getZkNamespace(new ServiceControlCliArguments(arg2)) ==
-      s"/${namespace}_USER_SPARK_SQL/$user/default")
+      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
   }
 
   test("test list zk service nodes info") {
@@ -417,7 +417,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--user",
       user)
     assert(getZkNamespace(new ServiceControlCliArguments(arg1)) ==
-      s"/${namespace}_USER_SPARK_SQL/$user/default")
+      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
     val arg2 = Array(
       "list",
@@ -431,7 +431,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-type",
       "FLINK_SQL")
     assert(getZkNamespace(new ServiceControlCliArguments(arg2)) ==
-      s"/${namespace}_USER_FLINK_SQL/$user/default")
+      s"/${namespace}_${KYUUBI_VERSION}_USER_FLINK_SQL/$user/default")
 
     val arg3 = Array(
       "list",
@@ -445,7 +445,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-type",
       "TRINO")
     assert(getZkNamespace(new ServiceControlCliArguments(arg3)) ==
-      s"/${namespace}_USER_TRINO/$user/default")
+      s"/${namespace}_${KYUUBI_VERSION}_USER_TRINO/$user/default")
 
     val arg4 = Array(
       "list",
@@ -461,6 +461,6 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-subdomain",
       "sub_1")
     assert(getZkNamespace(new ServiceControlCliArguments(arg4)) ==
-      s"/${namespace}_USER_SPARK_SQL/$user/sub_1")
+      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/sub_1")
   }
 }
