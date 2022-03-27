@@ -118,6 +118,8 @@ class SparkEngineSuites extends KyuubiFunSuite {
         s" and submitted at $submitTime."
       assert(logAppender.loggingEvents.exists(
         _.getMessage.getFormattedMessage.equals(errorMsg)))
+      SparkSession.getActiveSession.foreach(_.close())
+      SparkSession.getDefaultSession.foreach(_.close())
     }
   }
 
