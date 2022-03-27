@@ -629,10 +629,10 @@ object KyuubiConf {
   val ENGINE_SPARK_MAX_ROWS: ConfigEntry[Int] =
     buildConf("session.engine.spark.max.rows")
       .doc("Max rows of Spark query results. Rows that exceeds the limit would be ignored. " +
-        "By setting this value to -1 to disable the max rows limit.")
+        "By setting this value to 0 to disable the max rows limit.")
       .version("1.6.0")
       .intConf
-      .createWithDefault(-1)
+      .createWithDefault(0)
 
   val ENGINE_TRINO_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("session.engine.trino.main.resource")
