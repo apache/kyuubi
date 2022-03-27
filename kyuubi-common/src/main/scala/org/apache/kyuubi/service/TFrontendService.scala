@@ -134,7 +134,7 @@ abstract class TFrontendService(name: String)
   private def getUserName(req: TOpenSessionReq): String = {
     val realUser: String =
       ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
-    if (req.getConfiguration == null) {
+    if (req.getConfiguration == null || !isServer()) {
       realUser
     } else {
       getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
