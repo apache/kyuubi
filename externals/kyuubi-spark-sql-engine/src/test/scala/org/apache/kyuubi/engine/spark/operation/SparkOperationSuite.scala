@@ -77,7 +77,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       .add("c16", "binary", nullable = false, "16")
       .add("c17", "struct<X: string>", nullable = true, "17")
 
-    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 >= 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 > 2) {
+    // since spark3.3.0
+    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 3) {
       schema.add("c18", "timestamp_ntz", nullable = true, "18")
     }
 

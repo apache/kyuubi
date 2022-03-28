@@ -29,7 +29,7 @@ object SchemaHelper {
   /**
    * Spark 3.3.0 DataType TimestampNTZType's class name.
    */
-  final val TIMESTAMP_NTZ = "org.apache.spark.sql.types.TimestampNTZType$"
+  final val TIMESTAMP_NTZ = "TimestampNTZType$"
 
   def toTTypeId(typ: DataType): TTypeId = typ match {
     case NullType => TTypeId.NULL_TYPE
