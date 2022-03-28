@@ -221,7 +221,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ""
     newOutput += ("Setting them in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`" +
       " supplies with default values for SQL engine application too." +
-      " These properties of `flink.` prefix will override all settings in" +
+      " You can use properties with the additional prefix `flink.` to override settings in" +
       " `$FLINK_HOME/conf/flink-conf.yaml`.")
     newOutput += ""
     newOutput += ("For example:")

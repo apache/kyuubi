@@ -129,7 +129,7 @@ When you want to deploy Kyuubi's Flink SQL engines on YARN, you'd better have co
   - Download a recent Flink distribution from the [Flink official website](https://flink.apache.org/downloads.html) and unpack it
 - An active [Apache Hadoop YARN](https://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) cluster
   - Make sure your YARN cluster is ready for accepting Flink applications by running yarn top. It should show no error messages
-- An active Apache Hadoop HDFS cluster
+- An active Object Storage cluster, e.g. [HDFS](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html), S3 and [Minio](https://min.io/) etc.
 - Setup Hadoop client configurations at the machine the Kyuubi server locates
 
 ### Yarn Session Mode

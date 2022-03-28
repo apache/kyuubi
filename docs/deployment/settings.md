@@ -404,7 +404,7 @@ Setting them in `$FLINK_HOME/conf/flink-conf.yaml` supplies with default values 
 
 ### Via kyuubi-defaults.conf
 
-Setting them in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` supplies with default values for SQL engine application too. These properties of `flink.` prefix will override all settings in `$FLINK_HOME/conf/flink-conf.yaml`.
+Setting them in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` supplies with default values for SQL engine application too. You can use properties with the additional prefix `flink.` to override settings in `$FLINK_HOME/conf/flink-conf.yaml`.
 
 For example:
 ```
