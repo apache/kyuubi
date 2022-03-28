@@ -110,7 +110,7 @@ object SchemaHelper {
     case _: DecimalType => java.sql.Types.DECIMAL
     case DateType => java.sql.Types.DATE
     case TimestampType => java.sql.Types.TIMESTAMP
-    case ntz if ntz.getClass.getName.equals(TIMESTAMP_NTZ) => java.sql.Types.TIMESTAMP
+    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => java.sql.Types.TIMESTAMP
     case BinaryType => java.sql.Types.BINARY
     case _: ArrayType => java.sql.Types.ARRAY
     case _: MapType => java.sql.Types.JAVA_OBJECT
@@ -125,7 +125,7 @@ object SchemaHelper {
    * For array, map, string, and binaries, the column size is variable, return null as unknown.
    */
   def getColumnSize(sparkType: DataType): Option[Int] = sparkType match {
-    case ntz if ntz.getClass.getName.equals(TIMESTAMP_NTZ) => Some(ntz.defaultSize)
+    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => Some(ntz.defaultSize)
     case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
         CalendarIntervalType | NullType) =>
       Some(dt.defaultSize)
@@ -153,7 +153,7 @@ object SchemaHelper {
     case DoubleType => Some(15)
     case d: DecimalType => Some(d.scale)
     case TimestampType => Some(6)
-    case ntz if ntz.getClass.getName.equals(TIMESTAMP_NTZ) => Some(6)
+    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => Some(6)
     case _ => None
   }
 

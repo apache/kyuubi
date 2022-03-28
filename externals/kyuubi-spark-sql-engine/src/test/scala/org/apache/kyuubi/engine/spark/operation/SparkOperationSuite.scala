@@ -145,7 +145,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
             case FloatType => assert(decimalDigits === 7)
             case DoubleType => assert(decimalDigits === 15)
             case TimestampType => assert(decimalDigits === 6)
-            case ntz if ntz.getClass.getName.equals(TIMESTAMP_NTZ) => assert(decimalDigits === 6)
+            case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) =>
+              assert(decimalDigits === 6)
             case _ => assert(decimalDigits === 0) // nulls
           }
 
