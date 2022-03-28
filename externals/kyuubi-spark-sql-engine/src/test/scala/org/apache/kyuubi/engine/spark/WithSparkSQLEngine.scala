@@ -63,6 +63,8 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       System.setProperty(k, v)
     }
 
+    SparkSession.getActiveSession.foreach(_.close())
+    SparkSession.getDefaultSession.foreach(_.close())
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
     SparkSQLEngine.setupConf()
