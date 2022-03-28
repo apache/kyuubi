@@ -23,7 +23,6 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_SCALA_REPL_TO_OPERATION_LOG
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -49,9 +48,6 @@ class ExecuteScala(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  private val scalaReplToOperationLog = session.sessionManager.getConf
-    .get(ENGINE_SPARK_SCALA_REPL_TO_OPERATION_LOG)
-
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
       new StructType().add("output", "string")
@@ -75,12 +71,8 @@ class ExecuteScala(
             if (result != null) {
               new ArrayFetchIterator[Row](result.collect())
             } else {
-              if (scalaReplToOperationLog) {
-                info("\n" + repl.getOutput)
-                new ArrayFetchIterator[Row](Array.empty[Row])
-              } else {
-                new ArrayFetchIterator[Row](Array(Row(repl.getOutput)))
-              }
+              info("\n" + repl.getOutput)
+              new ArrayFetchIterator[Row](Array.empty[Row])
             }
           }
         case Error =>
