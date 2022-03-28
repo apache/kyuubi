@@ -895,6 +895,14 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
+    buildConf("operation.result.max.rows")
+      .doc("Max rows of Spark query results. Rows that exceeds the limit would be ignored. " +
+        "By setting this value to 0 to disable the max rows limit.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(0)
+
   val SERVER_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
     buildConf("operation.log.dir.root")
       .doc("Root directory for query operation log at server-side.")
