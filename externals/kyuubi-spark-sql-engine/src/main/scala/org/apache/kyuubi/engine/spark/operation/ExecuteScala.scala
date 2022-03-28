@@ -71,8 +71,9 @@ class ExecuteScala(
             if (result != null) {
               new ArrayFetchIterator[Row](result.collect())
             } else {
-              info("\n" + repl.getOutput)
-              new ArrayFetchIterator[Row](Array.empty[Row])
+              val output = repl.getOutput
+              info("scala repl output:\n" + output)
+              new ArrayFetchIterator[Row](Array(Row(output)))
             }
           }
         case Error =>
