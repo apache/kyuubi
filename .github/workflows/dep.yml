@@ -48,7 +48,7 @@ jobs:
           MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
         run: >-
           build/mvn clean install
-          -Pflink-provided,spark-provided
+          -Pflink-provided,spark-provided,hive-provided
           -Dmaven.javadoc.skip=true
           -Drat.skip=true
           -Dscalastyle.skip=true
