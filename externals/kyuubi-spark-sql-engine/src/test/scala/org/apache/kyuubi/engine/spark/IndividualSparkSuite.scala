@@ -26,8 +26,10 @@ import org.apache.spark.sql.SparkSession
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class SparkEngineSuites extends KyuubiFunSuite {
@@ -77,6 +79,47 @@ class SparkEngineSuites extends KyuubiFunSuite {
             spark.sparkContext.removeSparkListener(listener)
           }
       }
+    }
+  }
+
+  test("test engine submit timeout") {
+    val timeout = 180000
+    val submitTime = System.currentTimeMillis() - timeout
+    withSystemProperty(Map(
+      s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY" -> String.valueOf(submitTime),
+      s"spark.${ENGINE_INIT_TIMEOUT.key}" -> String.valueOf(timeout))) {
+      SparkSQLEngine.setupConf()
+      SparkSQLEngine.currentEngine = None
+      val e1 = intercept[KyuubiException] {
+        SparkSQLEngine.main(Array.empty)
+      }.getMessage
+      assert(SparkSQLEngine.currentEngine.isEmpty)
+      assert(e1.startsWith("The total engine initialization time"))
+    }
+  }
+
+  test("test engine `createSpark` timeout") {
+    val timeout = 3000
+    val submitTime = System.currentTimeMillis()
+    withSystemProperty(Map(
+      s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY" -> String.valueOf(submitTime),
+      s"spark.${ENGINE_INIT_TIMEOUT.key}" -> String.valueOf(timeout),
+      s"spark.${ENGINE_INITIALIZE_SQL.key}" ->
+        "select 1 where java_method('java.lang.Thread', 'sleep', 60000L) is null")) {
+      SparkSQLEngine.setupConf()
+      SparkSQLEngine.currentEngine = None
+      val logAppender = new LogAppender("test createSpark timeout")
+      withLogAppender(logAppender) {
+        SparkSQLEngine.main(Array.empty)
+      }
+      assert(SparkSQLEngine.currentEngine.isEmpty)
+      val errorMsg = s"The Engine main thread was interrupted, possibly due to `createSpark`" +
+        s" timeout. The `kyuubi.session.engine.initialize.timeout` is ($timeout ms) " +
+        s" and submitted at $submitTime."
+      assert(logAppender.loggingEvents.exists(
+        _.getMessage.getFormattedMessage.equals(errorMsg)))
+      SparkSession.getActiveSession.foreach(_.close())
+      SparkSession.getDefaultSession.foreach(_.close())
     }
   }
 

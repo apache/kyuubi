@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.util.control.NonFatal
 
@@ -82,6 +83,8 @@ object SparkSQLEngine extends Logging {
   private lazy val user = currentUser
 
   private val countDownLatch = new CountDownLatch(1)
+
+  private val sparkSessionCreated = new AtomicBoolean(false)
 
   SignalRegister.registerLogger(logger)
   setupConf()
@@ -196,7 +199,9 @@ object SparkSQLEngine extends Logging {
     } else {
       var spark: SparkSession = null
       try {
+        startInitTimeoutChecker(submitTime, initTimeout)
         spark = createSpark()
+        sparkSessionCreated.set(true)
         try {
           startEngine(spark)
           // blocking main thread
@@ -213,6 +218,12 @@ object SparkSQLEngine extends Logging {
 
         }
       } catch {
+        case i: InterruptedException if !sparkSessionCreated.get =>
+          error(
+            s"The Engine main thread was interrupted, possibly due to `createSpark` timeout." +
+              s" The `kyuubi.session.engine.initialize.timeout` is ($initTimeout ms) " +
+              s" and submitted at $submitTime.",
+            i)
         case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
       } finally {
         if (spark != null) {
@@ -220,5 +231,19 @@ object SparkSQLEngine extends Logging {
         }
       }
     }
+  }
+
+  private def startInitTimeoutChecker(startTime: Long, timeout: Long): Unit = {
+    val mainThread = Thread.currentThread()
+    new Thread(
+      () => {
+        while (System.currentTimeMillis() - startTime < timeout && !sparkSessionCreated.get()) {
+          Thread.sleep(500)
+        }
+        if (!sparkSessionCreated.get()) {
+          mainThread.interrupt()
+        }
+      },
+      "CreateSparkTimeoutChecker").start()
   }
 }
