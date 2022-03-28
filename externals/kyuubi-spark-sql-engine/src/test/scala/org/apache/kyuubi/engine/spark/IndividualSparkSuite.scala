@@ -99,7 +99,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
   }
 
   test("test engine `createSpark` timeout") {
-    val timeout = 10000
+    val timeout = 3000
     val submitTime = System.currentTimeMillis()
     withSystemProperty(Map(
       s"spark.$KYUUBI_ENGINE_SUBMIT_TIME_KEY" -> String.valueOf(submitTime),
