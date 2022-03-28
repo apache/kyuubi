@@ -24,7 +24,7 @@ body:
     attributes:
       value: |
         Thank you for finding the time to report the problem! We really appreciate the community efforts to improve Kyuubi.
-        
+
   - type: checkboxes
     attributes:
       label: Code of Conduct
@@ -33,7 +33,7 @@ body:
         - label: >
             I agree to follow this project's [Code of Conduct](https://www.apache.org/foundation/policies/conduct)
           required: true
-          
+
   - type: checkboxes
     attributes:
       label: Search before asking
@@ -42,16 +42,26 @@ body:
             I have searched in the [issues](https://github.com/apache/incubator-kyuubi/issues?q=is%3Aissue) and found no similar
             issues.
           required: true
-          
+
   - type: textarea
     attributes:
-      label: Which parts of the document do you think need improvement?
+      label: Which parts of the documentation do you think need improvement?
       description: Please describe the details with documentation you have.
       placeholder: >
         Please include links to the documentation that you want to improve and possibly screenshots showing
         the details. Explain why do you think it needs to improve. Make sure you include view of the target
         audience of the documentation. Please explain why you think the docs are wrong.
-        
+
+  - type: input
+    id: versions
+    attributes:
+      label: Affects Version(s)
+      description: Which versions of Kyuubi Documentation are affected by this issue?
+      placeholder: >
+        e.g. master/1.5.0/1.4.1/...
+    validations:
+      required: true
+
   - type: textarea
     attributes:
       label: Imporving the documentation
@@ -61,7 +71,7 @@ body:
         documentation should be added and what kind of information should be included. Sometimes people
         writing the documentation do not realise that some assumptions they have might not be in the heads
         of the reader, so try to explain exactly what you would like to see in the docs and why.
-        
+
   - type: textarea
     attributes:
       label: Anything else
@@ -71,7 +81,7 @@ body:
         Any relevant logs to include? Put them here inside fenced
         ``` ``` blocks or inside a foldable details tag if it's long:
         <details><summary>x.log</summary> lots of stuff </details>
-        
+
   - type: checkboxes
     attributes:
       label: Are you willing to submit PR?
