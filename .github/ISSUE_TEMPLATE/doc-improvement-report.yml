@@ -45,21 +45,21 @@ body:
           
   - type: textarea
     attributes:
-      label: What do you see as an issue?
-      description: Please describe the issue with documentation you have.
+      label: Which parts of the document do you think need improvement?
+      description: Please describe the details with documentation you have.
       placeholder: >
-        Please include links to the documentation that has the problem and possibly screenshots showing
-        the problem. Explain why do you think it is an issue. Make sure you include view of the target
+        Please include links to the documentation that you want to improve and possibly screenshots showing
+        the details. Explain why do you think it needs to improve. Make sure you include view of the target
         audience of the documentation. Please explain why you think the docs are wrong.
         
   - type: textarea
     attributes:
-      label: Solving the problem
-      description: How do you think the problem can be solved?
+      label: Imporving the documentation
+      description: How do you think the documentation can be improved?
       placeholder: >
-        Please explain how you think the documentation could be fixed. Ideally specify where a new or missing
+        Please explain how you think the documentation could be improved. Ideally specify where a new or missing
         documentation should be added and what kind of information should be included. Sometimes people
-        writing the documentation do not realise that some assumptions the have might not be in the heads
+        writing the documentation do not realise that some assumptions they have might not be in the heads
         of the reader, so try to explain exactly what you would like to see in the docs and why.
         
   - type: textarea
