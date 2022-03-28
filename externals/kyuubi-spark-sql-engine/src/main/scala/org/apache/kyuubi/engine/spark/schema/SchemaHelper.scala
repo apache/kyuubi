@@ -44,7 +44,7 @@ object SchemaHelper {
     case _: DecimalType => TTypeId.DECIMAL_TYPE
     case DateType => TTypeId.DATE_TYPE
     case TimestampType => TTypeId.TIMESTAMP_TYPE
-    case ntz if ntz.getClass.getName.equals(TIMESTAMP_NTZ) => TTypeId.TIMESTAMP_TYPE
+    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => TTypeId.TIMESTAMP_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
     case CalendarIntervalType => TTypeId.STRING_TYPE
     case dt if dt.getClass.getSimpleName.equals("DayTimeIntervalType") =>
