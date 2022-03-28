@@ -26,18 +26,12 @@
 
   <property>
     <name>ranger.plugin.spark.policy.source.impl</name>
-    <value>org.apache.submarine.spark.security.RangerAdminClientImpl</value>
-    <description>
-      Policy source.
-    </description>
+    <value>org.apache.kyuubi.plugin.spark.authz.ranger.RangerLocalClient</value>
   </property>
 
   <property>
     <name>ranger.plugin.spark.policy.cache.dir</name>
-    <value>target/test-classes</value>
-    <description>
-      Directory where Ranger policies are cached after successful retrieval from the source
-    </description>
+    <value>target/tmp</value>
   </property>
 
 </configuration>

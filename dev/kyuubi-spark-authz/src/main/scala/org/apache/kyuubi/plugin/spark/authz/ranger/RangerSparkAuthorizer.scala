@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -29,7 +30,7 @@ import org.apache.spark.util.kyuubi.Utils.getCurrentUserGroups
 import org.apache.kyuubi.plugin.spark.authz.{ranger, ObjectType, OperationType, PrivilegeObject, PrivilegesBuilder}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 
-class RangerSparkAuthorizer (spark: SparkSession) extends Rule[LogicalPlan] {
+class RangerSparkAuthorizer(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     RangerSparkAuthorizer.checkPrivileges(spark, plan)
     plan
@@ -49,7 +50,7 @@ object RangerSparkAuthorizer {
     if (user != null) {
       user
     } else {
-      spark.sparkUser
+      UserGroupInformation.getCurrentUser.getShortUserName
     }
   }
 
@@ -96,15 +97,12 @@ object RangerSparkAuthorizer {
     }
   }
 
-  private def verifyAccessRequest(
-      req: AccessRequest): Unit = {
+  private def verifyAccessRequest(req: AccessRequest): Unit = {
     val ret = RangerSparkPlugin.isAccessAllowed(req, null)
     if (ret != null && !ret.getIsAllowed) {
       throw new RuntimeException(
-        s"""
-           |Permission denied: user ${req.getUser} does not have
-           |[${req.getAccessType}] privilege on
-           |[${req.getResource.getAsString}]""".stripMargin)
+        s"Permission denied: user [${req.getUser}] does not have [${req.getAccessType}] privilege" +
+          s" on [${req.getResource.getAsString}]")
     }
   }
 }

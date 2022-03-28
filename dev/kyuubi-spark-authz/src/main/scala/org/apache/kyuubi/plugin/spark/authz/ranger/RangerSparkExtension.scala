@@ -34,6 +34,8 @@ import org.apache.spark.sql.SparkSessionExtensions
  *  @since 1.6.0
  */
 class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
+  RangerSparkPlugin.init()
+
   override def apply(v1: SparkSessionExtensions): Unit = {
     v1.injectOptimizerRule(new RangerSparkAuthorizer(_))
   }

@@ -21,10 +21,10 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
-import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessType, RangerSparkPlugin}
+import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 
 abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
 
@@ -792,14 +792,6 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
 
     assert(accessType0 === AccessType.SELECT)
-    try {
-      RangerSparkPlugin.getConfig
-        .set("xasecure.spark.describetable.showcolumns.authorization.option", "show-all")
-      assert(ranger.AccessType(po0, operationType, isInput = true) === AccessType.USE)
-    } finally {
-      RangerSparkPlugin.getConfig
-        .set("xasecure.spark.describetable.showcolumns.authorization.option", "NONE")
-    }
     assert(tuple._2.size === 0)
   }
 
@@ -963,12 +955,12 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
   test("Query: Union") {
     val plan = sql(
       s"""
-        |SELECT key, value
-        |FROM $reusedTable
-        |UNION
-        |SELECT pid, value
-        |FROM $reusedPartTable
-        |""".stripMargin).queryExecution.optimizedPlan
+         |SELECT key, value
+         |FROM $reusedTable
+         |UNION
+         |SELECT pid, value
+         |FROM $reusedPartTable
+         |""".stripMargin).queryExecution.optimizedPlan
     val (in, _) = PrivilegesBuilder.build(plan)
     assert(in.size === 2)
   }

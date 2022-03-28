@@ -19,45 +19,43 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.io.InputStreamReader
 
+import com.google.gson.GsonBuilder
 import org.apache.hadoop.conf.Configuration
-import org.apache.ranger.admin.client.AbstractRangerAdminClient
-import org.apache.ranger.plugin.model.RangerPolicy
+import org.apache.ranger.admin.client.RangerAdminRESTClient
 import org.apache.ranger.plugin.util.ServicePolicies
 
-class TestRangerAdminRESTClient extends AbstractRangerAdminClient {
+class RangerLocalClient extends RangerAdminRESTClient {
+
   private var policies: ServicePolicies = _
+  private val g =
+    new GsonBuilder().setDateFormat("yyyyMMdd-HH:mm:ss.SSS-Z").setPrettyPrinting().create
+
   override def init(
       serviceName: String,
       appId: String,
       propertyPrefix: String,
       config: Configuration): Unit = {
-    super.init(serviceName, appId, propertyPrefix, config)
+    val loader = Thread.currentThread().getContextClassLoader
     val inputStream = {
-      Thread.currentThread().getContextClassLoader.getResourceAsStream("sparkSql_hive_jenkins.json")
+      loader.getResourceAsStream("sparkSql_hive_jenkins.json")
     }
-    new ServicePolicies
-    new RangerPolicy
-    policies = gson.fromJson(new InputStreamReader(inputStream), classOf[ServicePolicies])
+    policies = g.fromJson(new InputStreamReader(inputStream), classOf[ServicePolicies])
+  }
+
+  def init(
+      serviceName: String,
+      appId: String,
+      propertyPrefix: String): Unit = {
+    val loader = Thread.currentThread().getContextClassLoader
+    val inputStream = {
+      loader.getResourceAsStream("sparkSql_hive_jenkins.json")
+    }
+    policies = g.fromJson(new InputStreamReader(inputStream), classOf[ServicePolicies])
   }
 
   override def getServicePoliciesIfUpdated(
-    lastKnownVersion: Long,
-    lastActivationTimeInMillis: Long): ServicePolicies = {
+      lastKnownVersion: Long,
+      lastActivationTimeInMillis: Long): ServicePolicies = {
     policies
-  }
-}
-
-object TestRangerAdminRESTClient {
-  def main(args: Array[String]): Unit = {
-    val client = new TestRangerAdminRESTClient()
-    client.init(null, null, null, null)
-    val policies = client.getServicePoliciesIfUpdated(0, 0)
-    policies.setServiceId(1)
-  }
-}
-
-object RangerPolicy {
-  def apply(): RangerPolicy = {
-    new RangerPolicy("", )
   }
 }
