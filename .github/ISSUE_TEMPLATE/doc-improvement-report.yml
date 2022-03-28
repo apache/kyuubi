@@ -17,8 +17,8 @@
 
 name: Kyuubi Doc Improvement Report
 title: "[DOCS] "
-description: Problems and issues with docs of Apache Kyuubi
-labels: ["kind:bug", "kind:documentation"]
+description: Fix errors, or improve the content or refactor architecture of online documentation
+labels: ["kind:documentation"]
 body:
   - type: markdown
     attributes:
