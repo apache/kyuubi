@@ -136,6 +136,31 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
     }
   }
 
+  test("expire non-active users'credentials") {
+    val kyuubiConf = new KyuubiConf(false)
+      .set(KyuubiConf.CREDENTIALS_RENEWAL_INTERVAL, 1000L)
+      .set(KyuubiConf.CREDENTIALS_RENEWAL_RETRY_WAIT, 1000L)
+      .set(KyuubiConf.CREDENTIALS_CHECK_INTERVAL, 4000L)
+      .set(KyuubiConf.CREDENTIALS_IDLE_TIMEOUT, 5000L)
+
+    withStartedManager(kyuubiConf) { manager =>
+      // Trigger UserCredentialsRef's initialization
+      val userRef = manager.getOrCreateUserCredentialsRef(appUser)
+      val lastAccessTime = userRef.getLastAccessTime
+      assert(manager.userCredentialsRefMap.size == 1)
+
+      // Last access time is updated
+      Thread.sleep(1000L)
+      manager.sendCredentialsIfNeeded(sessionId, appUser, send)
+      assert(lastAccessTime < userRef.getLastAccessTime)
+
+      // Credentials are expired
+      eventually(timeout(9000.milliseconds), interval(100.milliseconds)) {
+        assert(manager.userCredentialsRefMap.size == 0)
+      }
+    }
+  }
+
   test("send credentials if needed") {
     val kyuubiConf = new KyuubiConf(false)
       .set(KyuubiConf.CREDENTIALS_RENEWAL_INTERVAL, 1000L)

@@ -32,6 +32,9 @@ class CredentialsRef(appUser: String) {
   @volatile
   private var epoch = UNSET_EPOCH
 
+  @volatile
+  private var lastAccessTime: Long = System.currentTimeMillis()
+
   private var encodedCredentials: String = _
 
   private val credentialFuture = new AtomicReference[Future[Unit]]()
@@ -39,6 +42,12 @@ class CredentialsRef(appUser: String) {
   def setFuture(future: Future[Unit]): Unit = {
     credentialFuture.set(future)
   }
+
+  def updateLastAccessTime(): Unit = {
+    lastAccessTime = System.currentTimeMillis()
+  }
+
+  def getLastAccessTime: Long = lastAccessTime
 
   def getEpoch: Long = epoch
 
