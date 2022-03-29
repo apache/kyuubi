@@ -346,6 +346,18 @@
         <dependency>
             <groupId>org.apache.hudi</groupId>
             <artifactId>hudi-spark-common_${scala.binary.version}</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
             <scope>test</scope>
         </dependency>
 
