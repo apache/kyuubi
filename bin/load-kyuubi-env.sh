@@ -80,6 +80,7 @@ fi
 
 export FLINK_HOME="${FLINK_HOME:-"${FLINK_BUILTIN}"}"
 export FLINK_ENGINE_HOME="${KYUUBI_HOME}/externals/engines/flink"
+export SPARK_ENGINE_HOME="${KYUUBI_HOME}/externals/engines/spark"
 export TRINO_ENGINE_HOME="${KYUUBI_HOME}/externals/engines/trino"
 export HIVE_ENGINE_HOME="${KYUUBI_HOME}/externals/engines/hive"
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
@@ -99,6 +100,7 @@ if [ $silent -eq 0 ]; then
 
   echo "SPARK_HOME: ${SPARK_HOME}"
   echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR:-"${SPARK_HOME}/conf"}"
+  echo "SPARK_ENGINE_HOME: ${SPARK_ENGINE_HOME}"
 
   echo "TRINO_ENGINE_HOME: ${TRINO_ENGINE_HOME}"
 
