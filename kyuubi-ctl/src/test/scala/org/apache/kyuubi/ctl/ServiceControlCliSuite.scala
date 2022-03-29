@@ -20,13 +20,12 @@ package org.apache.kyuubi.ctl
 import java.io.{OutputStream, PrintStream}
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_NAMESPACE, HA_ZK_QUORUM}
-import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo, ZooKeeperClientProvider}
+import org.apache.kyuubi.ha.client.{DiscoveryClientProvider, ServiceNodeInfo}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 trait TestPrematureExit {
@@ -86,9 +85,8 @@ trait TestPrematureExit {
 }
 
 class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
+  import DiscoveryClientProvider._
   import ServiceControlCli._
-  import ServiceDiscovery._
-  import ZooKeeperClientProvider._
 
   val zkServer = new EmbeddedZookeeper()
   val conf: KyuubiConf = KyuubiConf()
@@ -226,9 +224,9 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     System.setProperty(HA_ZK_NAMESPACE.key, uniqueNamespace)
 
-    withZkClient(conf) { framework =>
-      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+    withDiscoveryClient(conf) { framework =>
+      framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10000")
+      framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10001")
 
       val newNamespace = getUniqueNamespace()
       val args = Array(
@@ -245,7 +243,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedCreatedNodes, false))
       val znodeRoot = s"/$newNamespace"
-      val children = framework.getChildren.forPath(znodeRoot).asScala.sorted
+      val children = framework.getChildren(znodeRoot).sorted
       assert(children.size == 2)
 
       assert(children.head.startsWith(
@@ -253,7 +251,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       assert(children.last.startsWith(
         s"serviceUri=localhost:10001;version=$KYUUBI_VERSION;sequence="))
       children.foreach { child =>
-        framework.delete().forPath(s"""$znodeRoot/$child""")
+        framework.delete(s"""$znodeRoot/$child""")
       }
     }
   }
@@ -290,9 +288,9 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(HA_ZK_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
-    withZkClient(conf) { framework =>
-      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+    withDiscoveryClient(conf) { framework =>
+      framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10000")
+      framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10001")
 
       val args = Array(
         "list",
@@ -319,9 +317,9 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(HA_ZK_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
-    withZkClient(conf) { framework =>
-      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+    withDiscoveryClient(conf) { framework =>
+      framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10000")
+      framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10001")
 
       val args = Array(
         "get",
@@ -351,10 +349,10 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(HA_ZK_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
-    withZkClient(conf) { framework =>
-      withZkClient(conf) { zc =>
-        createAndGetServiceNode(conf, zc, uniqueNamespace, "localhost:10000", external = true)
-        createAndGetServiceNode(conf, zc, uniqueNamespace, "localhost:10001", external = true)
+    withDiscoveryClient(conf) { framework =>
+      withDiscoveryClient(conf) { zc =>
+        framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10000", external = true)
+        framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10001", external = true)
       }
 
       val args = Array(
@@ -385,9 +383,9 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(HA_ZK_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
-    withZkClient(conf) { framework =>
-      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+    withDiscoveryClient(conf) { framework =>
+      framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10000")
+      framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10001")
 
       val args = Array(
         "list",

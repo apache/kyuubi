@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.ha.client
 
-object ZooKeeperAuthTypes extends Enumeration {
+object AuthTypes extends Enumeration {
 
-  type ZooKeeperAuthType = Value
+  type AuthTypes = Value
 
   val NONE, KERBEROS, DIGEST = Value
 

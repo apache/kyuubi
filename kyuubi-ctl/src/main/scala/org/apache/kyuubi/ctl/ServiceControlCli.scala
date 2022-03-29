@@ -19,15 +19,14 @@ package org.apache.kyuubi.ctl
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.curator.framework.CuratorFramework
-import org.apache.curator.utils.ZKPaths
-
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging}
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TYPE
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo, ZooKeeperClientProvider}
+import org.apache.kyuubi.ha.client.{DiscoveryClientProvider, ServiceNodeInfo}
+import org.apache.kyuubi.ha.client.DiscoveryClient
+import org.apache.kyuubi.ha.client.DiscoveryPaths
 
 private[ctl] object ServiceControlAction extends Enumeration {
   type ServiceControlAction = Value
@@ -43,9 +42,8 @@ private[ctl] object ServiceControlObject extends Enumeration {
  * Main gateway of launching a Kyuubi Ctl action.
  */
 private[kyuubi] class ServiceControlCli extends Logging {
+  import DiscoveryClientProvider._
   import ServiceControlCli._
-  import ServiceDiscovery._
-  import ZooKeeperClientProvider._
 
   private var verbose: Boolean = false
 
@@ -84,21 +82,20 @@ private[kyuubi] class ServiceControlCli extends Logging {
     val kyuubiConf = args.conf
 
     kyuubiConf.setIfMissing(HA_ZK_QUORUM, args.cliArgs.zkQuorum)
-    withZkClient(kyuubiConf) { zkClient =>
-      val fromNamespace = ZKPaths.makePath(null, kyuubiConf.get(HA_ZK_NAMESPACE))
+    withDiscoveryClient(kyuubiConf) { discoveryClient =>
+      val fromNamespace = DiscoveryPaths.makePath(null, kyuubiConf.get(HA_ZK_NAMESPACE))
       val toNamespace = getZkNamespace(args)
 
-      val currentServerNodes = getServiceNodesInfo(zkClient, fromNamespace)
+      val currentServerNodes = discoveryClient.getServiceNodesInfo(fromNamespace)
       val exposedServiceNodes = ListBuffer[ServiceNodeInfo]()
 
       if (currentServerNodes.nonEmpty) {
-        def doCreate(zc: CuratorFramework): Unit = {
+        def doCreate(zc: DiscoveryClient): Unit = {
           currentServerNodes.foreach { sn =>
             info(s"Exposing server instance:${sn.instance} with version:${sn.version}" +
               s" from $fromNamespace to $toNamespace")
-            val newNodePath = createAndGetServiceNode(
+            val newNodePath = zc.createAndGetServiceNode(
               kyuubiConf,
-              zc,
               args.cliArgs.namespace,
               sn.instance,
               sn.version,
@@ -110,10 +107,10 @@ private[kyuubi] class ServiceControlCli extends Logging {
         }
 
         if (kyuubiConf.get(HA_ZK_QUORUM) == args.cliArgs.zkQuorum) {
-          doCreate(zkClient)
+          doCreate(discoveryClient)
         } else {
           kyuubiConf.set(HA_ZK_QUORUM, args.cliArgs.zkQuorum)
-          withZkClient(kyuubiConf)(doCreate)
+          withDiscoveryClient(kyuubiConf)(doCreate)
         }
       }
 
@@ -126,13 +123,13 @@ private[kyuubi] class ServiceControlCli extends Logging {
    * List Kyuubi server nodes info.
    */
   private def list(args: ServiceControlCliArguments, filterHostPort: Boolean): Unit = {
-    withZkClient(args.conf) { zkClient =>
+    withDiscoveryClient(args.conf) { discoveryClient =>
       val znodeRoot = getZkNamespace(args)
       val hostPortOpt =
         if (filterHostPort) {
           Some((args.cliArgs.host, args.cliArgs.port.toInt))
         } else None
-      val nodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
+      val nodes = getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
 
       val title = "Zookeeper service nodes"
       info(renderServiceNodesInfo(title, nodes, verbose))
@@ -140,10 +137,10 @@ private[kyuubi] class ServiceControlCli extends Logging {
   }
 
   private def getServiceNodes(
-      zkClient: CuratorFramework,
+      discoveryClient: DiscoveryClient,
       znodeRoot: String,
       hostPortOpt: Option[(String, Int)]): Seq[ServiceNodeInfo] = {
-    val serviceNodes = getServiceNodesInfo(zkClient, znodeRoot)
+    val serviceNodes = discoveryClient.getServiceNodesInfo(znodeRoot)
     hostPortOpt match {
       case Some((host, port)) => serviceNodes.filter { sn =>
           sn.host == host && sn.port == port
@@ -156,17 +153,17 @@ private[kyuubi] class ServiceControlCli extends Logging {
    * Delete zookeeper service node with specified host port.
    */
   private def delete(args: ServiceControlCliArguments): Unit = {
-    withZkClient(args.conf) { zkClient =>
+    withDiscoveryClient(args.conf) { discoveryClient =>
       val znodeRoot = getZkNamespace(args)
       val hostPortOpt = Some((args.cliArgs.host, args.cliArgs.port.toInt))
-      val nodesToDelete = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
+      val nodesToDelete = getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
 
       val deletedNodes = ListBuffer[ServiceNodeInfo]()
       nodesToDelete.foreach { node =>
         val nodePath = s"$znodeRoot/${node.nodeName}"
         info(s"Deleting zookeeper service node:$nodePath")
         try {
-          zkClient.delete().forPath(nodePath)
+          discoveryClient.delete(nodePath)
           deletedNodes += node
         } catch {
           case e: Exception =>
@@ -227,7 +224,7 @@ object ServiceControlCli extends CommandLineUtils with Logging {
   private[ctl] def getZkNamespace(args: ServiceControlCliArguments): String = {
     args.cliArgs.service match {
       case ServiceControlObject.SERVER =>
-        ZKPaths.makePath(null, args.cliArgs.namespace)
+        DiscoveryPaths.makePath(null, args.cliArgs.namespace)
       case ServiceControlObject.ENGINE =>
         val engineType = Some(args.cliArgs.engineType)
           .filter(_ != null).filter(_.nonEmpty)
@@ -237,10 +234,10 @@ object ServiceControlCli extends CommandLineUtils with Logging {
           .getOrElse(args.conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse("default"))
         // The path of the engine defined in zookeeper comes from
         // org.apache.kyuubi.engine.EngineRef#engineSpace
-        ZKPaths.makePath(
+        DiscoveryPaths.makePath(
           s"${args.cliArgs.namespace}_${KYUUBI_VERSION}_${ShareLevel.USER}_${engineType}",
           args.cliArgs.user,
-          engineSubdomain)
+          Array(engineSubdomain))
     }
   }
 

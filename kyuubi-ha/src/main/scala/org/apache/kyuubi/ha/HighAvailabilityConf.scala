@@ -22,7 +22,8 @@ import java.time.Duration
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
-import org.apache.kyuubi.ha.client.{RetryPolicies, ZooKeeperAuthTypes}
+import org.apache.kyuubi.ha.client.AuthTypes
+import org.apache.kyuubi.ha.client.RetryPolicies
 
 object HighAvailabilityConf {
 
@@ -51,16 +52,16 @@ object HighAvailabilityConf {
   val HA_ZK_AUTH_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.ha.zookeeper.auth.type")
       .doc("The type of zookeeper authentication, all candidates are " +
-        s"${ZooKeeperAuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
+        s"${AuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.3.2")
       .stringConf
-      .checkValues(ZooKeeperAuthTypes.values.map(_.toString))
-      .createWithDefault(ZooKeeperAuthTypes.NONE.toString)
+      .checkValues(AuthTypes.values.map(_.toString))
+      .createWithDefault(AuthTypes.NONE.toString)
 
   val HA_ZK_ENGINE_AUTH_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.ha.zookeeper.engine.auth.type")
       .doc("The type of zookeeper authentication for engine, all candidates are " +
-        s"${ZooKeeperAuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
+        s"${AuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.3.2")
       .fallbackConf(HA_ZK_AUTH_TYPE)
 

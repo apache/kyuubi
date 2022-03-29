@@ -30,7 +30,7 @@ import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
 import org.apache.kyuubi.ha.HighAvailabilityConf
-import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
+import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.service.ServiceUtils
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
@@ -281,7 +281,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
   test("zookeeper kerberos authentication") {
     val conf = KyuubiConf()
-    conf.set(HighAvailabilityConf.HA_ZK_AUTH_TYPE.key, ZooKeeperAuthTypes.KERBEROS.toString)
+    conf.set(HighAvailabilityConf.HA_ZK_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
     conf.set(HighAvailabilityConf.HA_ZK_AUTH_KEYTAB.key, testKeytab)
     conf.set(HighAvailabilityConf.HA_ZK_AUTH_PRINCIPAL.key, testPrincipal)
 

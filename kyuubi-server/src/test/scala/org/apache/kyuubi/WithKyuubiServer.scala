@@ -21,7 +21,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_AUTH_TYPE, HA_ZK_QUORUM}
-import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
+import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
@@ -48,7 +48,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     zkServer.initialize(conf)
     zkServer.start()
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-    conf.set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
+    conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
 
     conf.set("spark.ui.enabled", "false")
     conf.setIfMissing("spark.sql.catalogImplementation", "in-memory")

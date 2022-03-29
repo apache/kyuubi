@@ -15,13 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ha.client
+package org.apache.kyuubi.ha.client.zookeeper
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_CONN_BASE_RETRY_WAIT, HA_ZK_CONN_MAX_RETRIES, HA_ZK_CONN_MAX_RETRY_WAIT, HA_ZK_CONN_RETRY_POLICY}
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_BASE_RETRY_WAIT
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_MAX_RETRIES
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_MAX_RETRY_WAIT
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 
-class ZooKeeperClientProviderSuite extends KyuubiFunSuite {
+class ZookeeperClientProviderSuite extends KyuubiFunSuite {
 
   test("get graceful stop thread start delay") {
     val conf = KyuubiConf()
@@ -29,23 +32,23 @@ class ZooKeeperClientProviderSuite extends KyuubiFunSuite {
     val baseSleepTime = conf.get(HA_ZK_CONN_BASE_RETRY_WAIT)
     val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
     val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
-    val delay1 = ZooKeeperClientProvider.getGracefulStopThreadDelay(conf)
+    val delay1 = ZookeeperClientProvider.getGracefulStopThreadDelay(conf)
     assert(delay1 >= baseSleepTime * maxRetries)
 
     conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
-    val delay2 = ZooKeeperClientProvider.getGracefulStopThreadDelay(conf)
+    val delay2 = ZookeeperClientProvider.getGracefulStopThreadDelay(conf)
     assert(delay2 === baseSleepTime)
 
     conf.set(HA_ZK_CONN_RETRY_POLICY, "N_TIME")
-    val delay3 = ZooKeeperClientProvider.getGracefulStopThreadDelay(conf)
+    val delay3 = ZookeeperClientProvider.getGracefulStopThreadDelay(conf)
     assert(delay3 === baseSleepTime * maxRetries)
 
     conf.set(HA_ZK_CONN_RETRY_POLICY, "UNTIL_ELAPSED")
-    val delay4 = ZooKeeperClientProvider.getGracefulStopThreadDelay(conf)
+    val delay4 = ZookeeperClientProvider.getGracefulStopThreadDelay(conf)
     assert(delay4 === maxSleepTime)
 
     conf.set(HA_ZK_CONN_RETRY_POLICY, "BOUNDED_EXPONENTIAL_BACKOFF")
-    val delay5 = ZooKeeperClientProvider.getGracefulStopThreadDelay(conf)
+    val delay5 = ZookeeperClientProvider.getGracefulStopThreadDelay(conf)
     assert(delay5 >= baseSleepTime * maxRetries)
   }
 }

@@ -17,19 +17,14 @@
 
 package org.apache.kyuubi.operation
 
-import java.nio.charset.StandardCharsets
-
-import org.apache.curator.framework.recipes.nodes.PersistentNode
-import org.apache.zookeeper.CreateMode
-
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
-import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 import org.apache.kyuubi.service.authentication.{EngineSecurityAccessor, ZooKeeperEngineSecuritySecretProviderImpl}
 
 class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with HiveJDBCTestHelper {
-  import ZooKeeperClientProvider._
+  import DiscoveryClientProvider._
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -46,15 +41,9 @@ class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with HiveJDBCTe
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    withZkClient(conf) { zkClient =>
-      zkClient.create().withMode(CreateMode.PERSISTENT).forPath(engineSecretNode)
-      val secretNode = new PersistentNode(
-        zkClient,
-        CreateMode.PERSISTENT,
-        false,
-        engineSecretNode,
-        "_ENGINE_SECRET_".getBytes(StandardCharsets.UTF_8))
-      secretNode.start()
+    withDiscoveryClient(conf) { discoveryClient =>
+      discoveryClient.create(engineSecretNode, "PERSISTENT", false)
+      discoveryClient.startSecretNode("PERSISTENT", engineSecretNode, "_ENGINE_SECRET_")
     }
 
     conf.set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ha.client
+package org.apache.kyuubi.ha.client.zookeeper
 
 import org.apache.curator.framework.api.ACLProvider
 import org.apache.zookeeper.ZooDefs
@@ -23,8 +23,9 @@ import org.apache.zookeeper.data.ACL
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.AuthTypes
 
-class ZooKeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
+class ZookeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
 
   /**
    * Return the ACL list to use by default.
@@ -53,15 +54,15 @@ class ZooKeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
     nodeAcls
   }
 
-  private def enabledServerAcls(): Boolean = ZooKeeperAuthTypes
+  private def enabledServerAcls(): Boolean = AuthTypes
     .withName(conf.get(HighAvailabilityConf.HA_ZK_AUTH_TYPE)) match {
-    case ZooKeeperAuthTypes.NONE => false
+    case AuthTypes.NONE => false
     case _ => true
   }
 
-  private def enabledEngineAcls(): Boolean = ZooKeeperAuthTypes
+  private def enabledEngineAcls(): Boolean = AuthTypes
     .withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE)) match {
-    case ZooKeeperAuthTypes.NONE => false
+    case AuthTypes.NONE => false
     case _ => true
   }
 

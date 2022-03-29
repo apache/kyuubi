@@ -50,18 +50,18 @@ abstract class ShareLevelSparkEngineSuite
   }
 
   test("check discovery service is clean up with different share level") {
-    withZkClient { zkClient =>
+    withDiscoveryClient { discoveryClient =>
       assert(engine.getServiceState == ServiceState.STARTED)
-      assert(zkClient.checkExists().forPath(namespace) != null)
+      assert(discoveryClient.pathExists(namespace))
       withJdbcStatement() { _ => }
       shareLevel match {
         // Connection level, we will cleanup namespace since it's always a global unique value.
         case ShareLevel.CONNECTION =>
           assert(engine.getServiceState == ServiceState.STOPPED)
-          assert(zkClient.checkExists().forPath(namespace) == null)
+          assert(discoveryClient.pathNonExists(namespace))
         case _ =>
           assert(engine.getServiceState == ServiceState.STARTED)
-          assert(zkClient.checkExists().forPath(namespace) != null)
+          assert(discoveryClient.pathExists(namespace))
       }
     }
   }
