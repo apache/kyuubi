@@ -330,7 +330,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname === "default")
+    assert(po.dbname === (if (isSparkV2) null else "default"))
     assert(po.objectName === "AlterViewAsCommand")
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -1018,7 +1018,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname === "default")
+    assert(po.dbname === (if (isSparkV2) null else "default"))
     assert(po.objectName === "CreateDataSourceTableAsSelectCommand")
     if (catalogImpl == "hive") {
       assert(po.columns === Seq("key", "value"))

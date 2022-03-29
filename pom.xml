@@ -66,7 +66,7 @@
 
     <modules>
         <module>dev/kyuubi-codecov</module>
-        <module>dev/kyuubi-spark-authz</module>
+        <module>extensions/spark/kyuubi-spark-authz</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
         <module>externals/kyuubi-hive-sql-engine</module>
@@ -111,6 +111,7 @@
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
+        <gson.version>2.8.9</gson.version>
         <guava.version>30.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.2</hadoop.version>
@@ -1317,6 +1318,12 @@
                         <artifactId>log4j-slf4j-impl</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

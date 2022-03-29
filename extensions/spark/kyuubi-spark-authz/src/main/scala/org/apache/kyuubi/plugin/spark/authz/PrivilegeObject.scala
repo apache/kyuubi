@@ -17,21 +17,12 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-object PrivilegeObjectActionType extends Enumeration {
-  type PrivilegeObjectActionType = Value
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.PrivilegeObjectType
 
-  val OTHER, INSERT, INSERT_OVERWRITE, UPDATE, DELETE = Value
-
-  /**
-   * Initializing PrivilegeObjectActionType from spark's SaveMode
-   * @param saveMode string representation of org.apache.spark.sql.SaveMode
-   * @return PrivilegeObjectActionType enum item
-   */
-  def apply(saveMode: String): PrivilegeObjectActionType = {
-    saveMode.toLowerCase match {
-      case "append" | "ignore" | "errorifexists" => INSERT
-      case "overwrite" => INSERT_OVERWRITE
-      case _ => OTHER
-    }
-  }
-}
+case class PrivilegeObject(
+    privilegeObjectType: PrivilegeObjectType,
+    actionType: PrivilegeObjectActionType,
+    dbname: String,
+    objectName: String,
+    columns: Seq[String] = Nil)

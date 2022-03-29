@@ -121,4 +121,16 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
       doAs("admin", sql(drop0))
     }
   }
+
+  test("functions") {
+    val db = "default"
+    val func = "func"
+    val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
+    doAs(
+      "kent", {
+        val e = intercept[RuntimeException](sql(create0))
+        assert(e.getMessage === errorMessage("create", "default/func"))
+      })
+    doAs("admin", assert(Try(sql(create0)).isSuccess))
+  }
 }

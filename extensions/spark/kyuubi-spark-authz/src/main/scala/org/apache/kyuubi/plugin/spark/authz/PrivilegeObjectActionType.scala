@@ -17,13 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
-import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.PrivilegeObjectType
+object PrivilegeObjectActionType extends Enumeration {
+  type PrivilegeObjectActionType = Value
 
-case class PrivilegeObject(
-    privilegeObjectType: PrivilegeObjectType,
-    actionType: PrivilegeObjectActionType,
-    dbname: String,
-    objectName: String,
-    columns: Seq[String] = Nil) {
+  val OTHER, INSERT, INSERT_OVERWRITE, UPDATE, DELETE = Value
 }
