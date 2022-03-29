@@ -36,7 +36,7 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
   extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session) {
-  EventLogging.onEvent(KyuubiOperationEvent(this))
+  EventBus.post(KyuubiOperationEvent(this))
 
   final private val _operationLog: OperationLog =
     if (shouldRunAsync) {
