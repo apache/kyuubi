@@ -77,4 +77,38 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
       doAs("admin", sql(drop))
     }
   }
+
+  test("tables") {
+    val db = "default"
+    val table = "src"
+    val col = "key"
+
+    val create0 = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING parquet"
+    val alter0 = s"ALTER TABLE $db.$table SET TBLPROPERTIES(key='ak')"
+    val drop0 = s"DROP TABLE IF EXISTS $db.$table"
+    val select = s"SELECT * FROM $db.$table"
+//    val e = intercept[RuntimeException](sql(create0))
+//    assert(e.getMessage.startsWith(errorMessage("create")))
+
+    try {
+      doAs("bob", assert(Try {sql(create0)}.isSuccess))
+//      doAs("bob", assert(Try {sql(alter0)}.isSuccess))
+//      val e0 = intercept[RuntimeException](sql(alter0))
+//      assert(e0.getMessage.startsWith(errorMessage("alter")))
+//
+//      val e1 = intercept[RuntimeException](sql(drop0))
+//      assert(e1.getMessage.startsWith(errorMessage("drop")))
+//      doAs("bob", assert(Try {sql(alter0)}.isSuccess))
+//
+//      doAs("bob", assert(Try {sql(select).collect()}.isSuccess))
+//      doAs("kent", assert(Try {sql(select).collect()}.isSuccess))
+//      doAs("kent", assert(Try {sql(s"SELECT key FROM $db.$table").collect()}.isSuccess))
+      doAs("kent", {
+        val e = intercept[RuntimeException](sql(s"SELECT value FROM $db.$table").collect())
+        assert(e.getMessage.startsWith(errorMessage("select", "kent")))
+      })
+    } finally {
+      doAs("admin", sql(drop0))
+    }
+  }
 }

@@ -304,6 +304,7 @@ object PrivilegesBuilder {
 
       case "CreateDataSourceTableCommand" | "CreateTableCommand" =>
         val table = getPlanField[CatalogTable]("table").identifier
+        // fixme: do we need to add columns to check?
         outputObjs += tablePrivileges(table)
 
       case "CreateDataSourceTableAsSelectCommand" |
