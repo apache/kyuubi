@@ -189,16 +189,16 @@ object SparkSQLEngine extends Logging {
             EventBus.register[KyuubiEvent](new SparkHistoryLoggingEventHandler(spark.sparkContext))
           case EventLoggerType.JSON =>
             val handler = SparkJsonLoggingEventHandler(
-              spark.sparkContext.applicationAttemptId.getOrElse(spark.sparkContext.applicationId),
+              spark.sparkContext.applicationAttemptId
+                .map(id => s"${spark.sparkContext.applicationId}_$id")
+                .getOrElse(spark.sparkContext.applicationId),
               ENGINE_EVENT_JSON_LOG_PATH,
               spark.sparkContext.hadoopConfiguration,
               conf)
 
             // register JsonLogger as a event handler for default event bus
             EventBus.register[KyuubiEvent](handler)
-          case logger =>
-            // TODO: Add more implementations
-            throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
+          case _ =>
         }
 
     }

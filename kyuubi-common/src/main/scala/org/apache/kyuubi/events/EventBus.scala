@@ -26,12 +26,18 @@ import scala.util.Try
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.events.handler.EventHandler
 
+/**
+ * The [[EventBus]] is responsible for triggering Kyuubi event, registering event handlers and
+ * distributing events to the corresponding event handlers to consume it,
+ * currently offers both synchronous and asynchronous modes.
+ */
 sealed trait EventBus {
+
   def post[T <: KyuubiEvent](event: T): Unit
 
-  def register[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus
+  def register[T <: KyuubiEvent: ClassTag](eventHandler: EventHandler[T]): EventBus
 
-  def registerAsync[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus
+  def registerAsync[T <: KyuubiEvent: ClassTag](eventHandler: EventHandler[T]): EventBus
 }
 
 object EventBus extends Logging {
@@ -49,8 +55,8 @@ object EventBus extends Logging {
     defaultEventBus.registerAsync[T](et)
 
   private case class EventBusLive() extends EventBus {
-    private[this] val eventHandlerRegistry = new Registry
-    private[this] val asyncEventHandlerRegistry = new Registry
+    private[this] lazy val eventHandlerRegistry = new Registry
+    private[this] lazy val asyncEventHandlerRegistry = new Registry
 
     override def post[T <: KyuubiEvent](event: T): Unit = {
       asyncEventHandlerRegistry.lookup[T](event).foreach { f =>
@@ -79,7 +85,7 @@ object EventBus extends Logging {
   }
 
   private class Registry {
-    private[this] val eventHandlers = mutable.Map[Class[_], List[EventHandler[_]]]()
+    private[this] lazy val eventHandlers = mutable.Map[Class[_], List[EventHandler[_]]]()
 
     def register[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): Unit = {
       val clazz = classTag[T].runtimeClass
