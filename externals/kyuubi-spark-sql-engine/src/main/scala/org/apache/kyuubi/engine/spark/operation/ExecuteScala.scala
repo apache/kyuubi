@@ -71,9 +71,9 @@ class ExecuteScala(
             if (result != null) {
               new ArrayFetchIterator[Row](result.collect())
             } else {
-              // TODO (#1498): Maybe we shall pass the output through operation log
-              // but some clients may not support operation log
-              new ArrayFetchIterator[Row](Array(Row(repl.getOutput)))
+              val output = repl.getOutput
+              info("scala repl output:\n" + output)
+              new ArrayFetchIterator[Row](Array(Row(output)))
             }
           }
         case Error =>
