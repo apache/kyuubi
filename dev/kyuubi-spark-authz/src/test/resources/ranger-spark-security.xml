@@ -30,6 +30,11 @@
   </property>
 
   <property>
+    <name>ranger.plugin.spark.policy.rest.url</name>
+    <value>localhost_dummy:12345</value>
+  </property>
+
+  <property>
     <name>ranger.plugin.spark.policy.cache.dir</name>
     <value>target/tmp</value>
   </property>

@@ -20,37 +20,19 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import java.io.InputStreamReader
 
 import com.google.gson.GsonBuilder
-import org.apache.hadoop.conf.Configuration
 import org.apache.ranger.admin.client.RangerAdminRESTClient
 import org.apache.ranger.plugin.util.ServicePolicies
 
 class RangerLocalClient extends RangerAdminRESTClient {
 
-  private var policies: ServicePolicies = _
   private val g =
     new GsonBuilder().setDateFormat("yyyyMMdd-HH:mm:ss.SSS-Z").setPrettyPrinting().create
-
-  override def init(
-      serviceName: String,
-      appId: String,
-      propertyPrefix: String,
-      config: Configuration): Unit = {
+  private val policies: ServicePolicies = {
     val loader = Thread.currentThread().getContextClassLoader
     val inputStream = {
       loader.getResourceAsStream("sparkSql_hive_jenkins.json")
     }
-    policies = g.fromJson(new InputStreamReader(inputStream), classOf[ServicePolicies])
-  }
-
-  def init(
-      serviceName: String,
-      appId: String,
-      propertyPrefix: String): Unit = {
-    val loader = Thread.currentThread().getContextClassLoader
-    val inputStream = {
-      loader.getResourceAsStream("sparkSql_hive_jenkins.json")
-    }
-    policies = g.fromJson(new InputStreamReader(inputStream), classOf[ServicePolicies])
+    g.fromJson(new InputStreamReader(inputStream), classOf[ServicePolicies])
   }
 
   override def getServicePoliciesIfUpdated(

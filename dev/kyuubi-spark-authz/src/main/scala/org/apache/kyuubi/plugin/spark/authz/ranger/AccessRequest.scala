@@ -40,7 +40,19 @@ object AccessRequest {
     req.setResource(resource)
     req.setUser(userName)
     req.setUserGroups(groups)
-    req.setUserRoles(RangerSparkPlugin.getRolesFromUserAndGroups(userName, groups))
+    try {
+      val getRoles = RangerSparkPlugin.getClass.getMethod(
+        "getRolesFromUserAndGroups",
+        classOf[String],
+        classOf[java.util.Set[String]])
+      getRoles.setAccessible(true)
+      val roles = getRoles.invoke(RangerSparkPlugin, userName, groups)
+      val setRoles = req.getClass.getMethod("setUserRoles", classOf[java.util.Set[String]])
+      setRoles.setAccessible(true)
+      setRoles.invoke(req, roles)
+    } catch {
+      case _: NoSuchMethodException =>
+    }
     req.setAccessTime(new Date())
     accessType match {
       case USE => req.setAccessType(RangerPolicyEngine.ANY_ACCESS)
