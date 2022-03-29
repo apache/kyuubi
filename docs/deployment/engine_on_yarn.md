@@ -124,7 +124,7 @@ Instead, you can schedule a periodically `kinit` process via `crontab` task on t
 
 When you want to deploy Kyuubi's Flink SQL engines on YARN, you'd better have cognition upon the following things.
 
-- Knowing the basics about [Running Flink on YARN](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/yarn)
+- Knowing the basics about [Running Flink on YARN](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn)
 - A binary distribution of Flink which is built with YARN support
   - Download a recent Flink distribution from the [Flink official website](https://flink.apache.org/downloads.html) and unpack it
 - An active [Apache Hadoop YARN](https://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) cluster
@@ -177,5 +177,5 @@ $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi
 
 ### Deployment Modes Supported by Flink on YARN
 
-For experiment use, we recommend deploying Kyuubi Flink SQL engine in [Session Mode](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/yarn/#session-mode).
-At present, [Application Mode](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/yarn/#application-mode) and [Per-Job Mode (deprecated)](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/yarn/#per-job-mode-deprecated) are not supported for Flink engine.
+For experiment use, we recommend deploying Kyuubi Flink SQL engine in [Session Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#session-mode).
+At present, [Application Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#application-mode) and [Per-Job Mode (deprecated)](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#per-job-mode-deprecated) are not supported for Flink engine.

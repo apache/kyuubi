@@ -214,7 +214,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       " supplies with default values for SQL engine application." +
       " Available properties can be found at Flink official online documentation for" +
       " [Flink Configurations]" +
-      "(https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/)")
+      "(https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/)")
     newOutput += ""
 
     newOutput += ("### Via kyuubi-defaults.conf")
@@ -244,7 +244,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ("### Via SET Statements")
     newOutput += ""
     newOutput += ("Please refer to the Flink official online documentation for [SET Statements]" +
-      "(https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/set/)")
+      "(https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/set/)")
     newOutput += ""
 
     newOutput += ("## Logging")

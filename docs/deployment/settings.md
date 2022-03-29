@@ -400,7 +400,7 @@ Please refer to the Spark official online documentation for [SET Command](http:/
 
 ### Via flink-conf.yaml
 
-Setting them in `$FLINK_HOME/conf/flink-conf.yaml` supplies with default values for SQL engine application. Available properties can be found at Flink official online documentation for [Flink Configurations](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/)
+Setting them in `$FLINK_HOME/conf/flink-conf.yaml` supplies with default values for SQL engine application. Available properties can be found at Flink official online documentation for [Flink Configurations](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/)
 
 ### Via kyuubi-defaults.conf
 
@@ -420,7 +420,7 @@ Setting them in the JDBC Connection URL supplies session-specific for each SQL e
 
 ### Via SET Statements
 
-Please refer to the Flink official online documentation for [SET Statements](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/set/)
+Please refer to the Flink official online documentation for [SET Statements](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/set/)
 
 ## Logging
 

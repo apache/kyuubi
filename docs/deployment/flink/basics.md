@@ -30,10 +30,10 @@ This article assumes you have read the [Quick Start](../../quick_start/quick_sta
 ## Deployment Mode
 
 You can set the Flink
-option [`execution.target`](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/#execution-target)
+option [`execution.target`](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/#execution-target)
 to change different deployment mode.
 
-[More About Deployment Mode](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/overview/#deployment-modes)
+[More About Deployment Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/overview/#deployment-modes)
 
 ### Local Mode
 
@@ -77,7 +77,7 @@ In step `(1)`, we've started 2 processes: A JVM for the JobManager, and a JVM fo
 serving the web interface accessible at [localhost:8081](http://localhost:8081). In step `(3)`, we are starting a Flink
 Client (a short-lived JVM process) that submits an application to the JobManager.
 
-[More About Standalone Mode](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/resource-providers/standalone/overview/#standalone)
+[More About Standalone Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/standalone/overview/#standalone)
 
 ### Yarn Mode
 
@@ -88,5 +88,5 @@ Client (a short-lived JVM process) that submits an application to the JobManager
 ## Troubleshooting
 
 If you have a problem with Flink Engine when using Kyuubi, keep in mind that Kyuubi only wraps
-the [Flink SQL Client](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sqlclient/) and your problem
+the [Flink SQL Client](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sqlclient/) and your problem
 might be independent of Kyuubi and sometimes can be solved by upgrading Flink version or reconfiguring Flink.
