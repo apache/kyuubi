@@ -17,9 +17,11 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.util.{Set => JSet}
 import java.util.Date
 
+import scala.collection.JavaConverters._
+
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPolicyEngine}
 
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
@@ -29,15 +31,16 @@ case class AccessRequest(accessType: AccessType) extends RangerAccessRequestImpl
 object AccessRequest {
   def apply(
       resource: AccessResource,
-      user: String,
-      groups: JSet[String],
+      user: UserGroupInformation,
       opType: String,
       accessType: AccessType): AccessRequest = {
+    val userName = user.getShortUserName
+    val groups = user.getGroupNames.toSet.asJava
     val req = new AccessRequest(accessType)
     req.setResource(resource)
-    req.setUser(user)
+    req.setUser(userName)
     req.setUserGroups(groups)
-    req.setUserRoles(RangerSparkPlugin.getRolesFromUserAndGroups(user, groups))
+    req.setUserRoles(RangerSparkPlugin.getRolesFromUserAndGroups(userName, groups))
     req.setAccessTime(new Date())
     accessType match {
       case USE => req.setAccessType(RangerPolicyEngine.ANY_ACCESS)

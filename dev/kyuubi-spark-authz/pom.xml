@@ -38,7 +38,8 @@
             <groupId>org.apache.ranger</groupId>
             <artifactId>ranger-plugins-common</artifactId>
             <scope>compile</scope>
-            <version>2.2.0</version> <!-- fixme -->
+            <version>${ranger.version}</version>
+
         </dependency>
 
         <dependency>

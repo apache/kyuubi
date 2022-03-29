@@ -41,7 +41,7 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
   private val sql: String => DataFrame = spark.sql
 
   private def doAs[T](user: String, f: => T): T = {
-    UserGroupInformation.createRemoteUser("admin").doAs[T](
+    UserGroupInformation.createRemoteUser(user).doAs[T](
       new PrivilegedExceptionAction[T] {
         override def run(): T = f
       })
@@ -54,8 +54,9 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
 
   private def errorMessage(
       privilege: String,
+      resource: String = "default/src",
       user: String = Utils.currentUser): String = {
-    s"Permission denied: user [$user] does not have [$privilege]"
+    s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
   }
 
   test("databases") {
@@ -65,14 +66,14 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
     val drop = s"DROP DATABASE IF EXISTS $testDb"
 
     val e = intercept[RuntimeException](sql(create))
-    assert(e.getMessage.startsWith(errorMessage("create")))
+    assert(e.getMessage === errorMessage("create", "mydb"))
     try {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs("admin", assert(Try { sql(alter) }.isSuccess))
       val e1 = intercept[RuntimeException](sql(alter))
-      assert(e1.getMessage.startsWith(errorMessage("alter")))
+      assert(e1.getMessage === errorMessage("alter", "mydb"))
       val e2 = intercept[RuntimeException](sql(drop))
-      assert(e2.getMessage.startsWith(errorMessage("drop")))
+      assert(e2.getMessage === (errorMessage("drop", "mydb")))
     } finally {
       doAs("admin", sql(drop))
     }
@@ -87,26 +88,35 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
     val alter0 = s"ALTER TABLE $db.$table SET TBLPROPERTIES(key='ak')"
     val drop0 = s"DROP TABLE IF EXISTS $db.$table"
     val select = s"SELECT * FROM $db.$table"
-//    val e = intercept[RuntimeException](sql(create0))
-//    assert(e.getMessage.startsWith(errorMessage("create")))
+    val e = intercept[RuntimeException](sql(create0))
+    assert(e.getMessage === errorMessage("create"))
 
     try {
-      doAs("bob", assert(Try {sql(create0)}.isSuccess))
-//      doAs("bob", assert(Try {sql(alter0)}.isSuccess))
-//      val e0 = intercept[RuntimeException](sql(alter0))
-//      assert(e0.getMessage.startsWith(errorMessage("alter")))
-//
-//      val e1 = intercept[RuntimeException](sql(drop0))
-//      assert(e1.getMessage.startsWith(errorMessage("drop")))
-//      doAs("bob", assert(Try {sql(alter0)}.isSuccess))
-//
-//      doAs("bob", assert(Try {sql(select).collect()}.isSuccess))
-//      doAs("kent", assert(Try {sql(select).collect()}.isSuccess))
-//      doAs("kent", assert(Try {sql(s"SELECT key FROM $db.$table").collect()}.isSuccess))
-      doAs("kent", {
-        val e = intercept[RuntimeException](sql(s"SELECT value FROM $db.$table").collect())
-        assert(e.getMessage.startsWith(errorMessage("select", "kent")))
-      })
+      doAs("bob", assert(Try { sql(create0) }.isSuccess))
+      doAs("bob", assert(Try { sql(alter0) }.isSuccess))
+
+      val e1 = intercept[RuntimeException](sql(drop0))
+      assert(e1.getMessage === errorMessage("drop"))
+      doAs("bob", assert(Try { sql(alter0) }.isSuccess))
+      doAs("bob", assert(Try { sql(select).collect() }.isSuccess))
+      doAs("kent", assert(Try { sql(s"SELECT key FROM $db.$table").collect() }.isSuccess))
+
+      Seq(
+        select,
+        s"SELECT value FROM $db.$table",
+        s"SELECT value as key FROM $db.$table",
+        s"SELECT max(value) FROM $db.$table",
+        s"SELECT coalesce(max(value), 1) FROM $db.$table",
+        s"SELECT key FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
+        .foreach { q =>
+          doAs(
+            "kent", {
+              withClue(q) {
+                val e = intercept[RuntimeException](sql(q).collect())
+                assert(e.getMessage === errorMessage("select", "default/src/value", "kent"))
+              }
+            })
+        }
     } finally {
       doAs("admin", sql(drop0))
     }
