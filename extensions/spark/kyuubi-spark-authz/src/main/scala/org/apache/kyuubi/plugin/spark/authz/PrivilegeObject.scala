@@ -20,6 +20,22 @@ package org.apache.kyuubi.plugin.spark.authz
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.PrivilegeObjectType
 
+/**
+ * Build a Spark logical plan to different `PrivilegeObject`s
+ * - For queries, they may generates a list of **input** `PrivilegeObject`s, which describe
+ *   a SELECT-only privilege type for different tables or columns
+ *
+ * - For commands, they may generates a list of **out** `PrivilegeObject`s, which describe
+ * a CREATE/ALTER/DELETE-related privilege type for different objects, sometimes they also
+ * generates a list of **input** `PrivilegeObject`s if contain a child query, like `CTAS`.
+ *
+ * Then we converts all of these lists to `AccessRequest` to the apache ranger admin server.
+ * @param privilegeObjectType db, table, function
+ * @param actionType describe the action on a object
+ * @param dbname database name
+ * @param objectName object name - database, table, or function
+ * @param columns column list if any
+ */
 case class PrivilegeObject(
     privilegeObjectType: PrivilegeObjectType,
     actionType: PrivilegeObjectActionType,

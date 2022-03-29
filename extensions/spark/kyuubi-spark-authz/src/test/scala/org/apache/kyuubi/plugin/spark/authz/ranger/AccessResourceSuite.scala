@@ -27,25 +27,31 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource.getDatabase === "my_db_name")
     assert(resource.getTable === null)
     assert(resource.getColumn === null)
+    assert(resource.getColumns === null)
 
     val resource1 = AccessResource(DATABASE, null, "my_table_name", "my_col_1,my_col_2")
     assert(resource1.getDatabase === null)
     assert(resource1.getTable === null)
     assert(resource1.getColumn === null)
+    assert(resource1.getColumns === null)
 
     val resource2 = AccessResource(FUNCTION, "my_db_name", "my_func_name")
     assert(resource2.getDatabase === "my_db_name")
     assert(resource2.getTable === null)
     assert(resource2.getValue("udf") === "my_func_name")
+    assert(resource1.getColumn === null)
+    assert(resource1.getColumns === null)
 
     val resource3 = AccessResource(TABLE, "my_db_name", "my_table_name", "my_col_1,my_col_2")
     assert(resource3.getDatabase === "my_db_name")
     assert(resource3.getTable === "my_table_name")
     assert(resource3.getColumn === null)
+    assert(resource3.getColumns === null)
 
     val resource4 = AccessResource(COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2")
     assert(resource4.getDatabase === "my_db_name")
     assert(resource4.getTable === "my_table_name")
     assert(resource4.getColumn === "my_col_1,my_col_2")
+    assert(resource4.getColumns === Seq("my_col_1", "my_col_2"))
   }
 }

@@ -35,7 +35,6 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 object PrivilegesBuilder {
 
   private val versionParts = SPARK_VERSION.split('.')
-
   private val majorVersion: Int = versionParts.head.toInt
   private val minorVersion: Int = versionParts(1).toInt
 
