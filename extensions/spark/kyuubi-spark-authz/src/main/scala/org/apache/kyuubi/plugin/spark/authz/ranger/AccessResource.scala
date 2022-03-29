@@ -32,7 +32,7 @@ class AccessResource private (val objectType: ObjectType) extends RangerAccessRe
   def getColumn: String = getValue("column")
   def getColumns: Array[String] = {
     val columnStr = getColumn
-    columnStr.split(",").filter(_.nonEmpty)
+    if (columnStr == null) null else columnStr.split(",").filter(_.nonEmpty)
   }
 }
 
