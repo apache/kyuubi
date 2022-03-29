@@ -26,6 +26,11 @@ import org.apache.spark.sql.types._
 
 object SchemaHelper {
 
+  /**
+   * Spark 3.3.0 DataType TimestampNTZType's class name.
+   */
+  final val TIMESTAMP_NTZ = "TimestampNTZType$"
+
   def toTTypeId(typ: DataType): TTypeId = typ match {
     case NullType => TTypeId.NULL_TYPE
     case BooleanType => TTypeId.BOOLEAN_TYPE
@@ -39,6 +44,7 @@ object SchemaHelper {
     case _: DecimalType => TTypeId.DECIMAL_TYPE
     case DateType => TTypeId.DATE_TYPE
     case TimestampType => TTypeId.TIMESTAMP_TYPE
+    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => TTypeId.TIMESTAMP_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
     case CalendarIntervalType => TTypeId.STRING_TYPE
     case dt if dt.getClass.getSimpleName.equals("DayTimeIntervalType") =>
@@ -104,6 +110,7 @@ object SchemaHelper {
     case _: DecimalType => java.sql.Types.DECIMAL
     case DateType => java.sql.Types.DATE
     case TimestampType => java.sql.Types.TIMESTAMP
+    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => java.sql.Types.TIMESTAMP
     case BinaryType => java.sql.Types.BINARY
     case _: ArrayType => java.sql.Types.ARRAY
     case _: MapType => java.sql.Types.JAVA_OBJECT
@@ -118,6 +125,7 @@ object SchemaHelper {
    * For array, map, string, and binaries, the column size is variable, return null as unknown.
    */
   def getColumnSize(sparkType: DataType): Option[Int] = sparkType match {
+    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => Some(ntz.defaultSize)
     case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
         CalendarIntervalType | NullType) =>
       Some(dt.defaultSize)
@@ -145,6 +153,7 @@ object SchemaHelper {
     case DoubleType => Some(15)
     case d: DecimalType => Some(d.scale)
     case TimestampType => Some(6)
+    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => Some(6)
     case _ => None
   }
 
