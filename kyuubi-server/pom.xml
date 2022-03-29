@@ -362,6 +362,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hudi</groupId>
             <artifactId>hudi-spark_${scala.binary.version}</artifactId>
             <scope>test</scope>
