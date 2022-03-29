@@ -23,7 +23,7 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeO
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.PrivilegeObjectType
 
 case class PrivilegeObject(
-    typ: PrivilegeObjectType,
+    privilegeObjectType: PrivilegeObjectType,
     actionType: PrivilegeObjectActionType,
     dbname: String,
     objectName: String,
@@ -48,7 +48,7 @@ case class PrivilegeObject(
   }
 
   override def compareTo(o: PrivilegeObject): Int = {
-    var comp = typ.compareTo(o.typ)
+    var comp = privilegeObjectType.compareTo(o.privilegeObjectType)
     if (comp == 0) {
       comp = StringUtils.compare(dbname, o.dbname)
       if (comp == 0) {

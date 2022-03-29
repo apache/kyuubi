@@ -72,7 +72,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(out.isEmpty, "Queries shall not check output privileges")
     val po = in.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.columns === cols)
   }
 
@@ -119,7 +119,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.DATABASE)
+    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
@@ -141,7 +141,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._1.isEmpty)
       assert(tuple._2.size === 2)
       tuple._2.foreach { po =>
-        assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
         assert(po.dbname equalsIgnoreCase reusedDb)
         assert(Set(reusedDb + "_old", "efg").contains(po.objectName))
         assert(po.columns.isEmpty)
@@ -161,7 +161,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._2.size === 1)
       val po = tuple._2.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.typ === PrivilegeObjectType.DATABASE)
+      assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
       assert(po.dbname === "CreateDatabaseCommand")
       assert(po.objectName === "CreateDatabaseCommand")
       assert(po.columns.isEmpty)
@@ -181,7 +181,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._2.size === 1)
       val po = tuple._2.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.typ === PrivilegeObjectType.DATABASE)
+      assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
       assert(po.dbname === "DropDatabaseCommand")
       assert(po.objectName === "DropDatabaseCommand")
       assert(po.columns.isEmpty)
@@ -200,7 +200,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === getClass.getSimpleName)
     assert(po.columns.head === "a")
@@ -218,7 +218,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -236,7 +236,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -257,7 +257,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -278,7 +278,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname === reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -299,7 +299,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._2.size === 1)
       val po = tuple._2.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.dbname === reusedDb)
       assert(po.objectName === reusedTable.split("\\.").last)
       assert(po.columns.isEmpty)
@@ -318,7 +318,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
@@ -329,7 +329,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname === "default")
     assert(po.objectName === "AlterViewAsCommand")
     assert(po.columns.isEmpty)
@@ -346,7 +346,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
@@ -366,7 +366,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
@@ -386,7 +386,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
@@ -407,7 +407,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.DATABASE)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.DATABASE)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedDb)
     // ignore this check as it behaves differently across spark versions
@@ -426,7 +426,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedDb)
     assert(po0.columns.isEmpty)
@@ -445,7 +445,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.DATABASE)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.DATABASE)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedDb)
     assert(po0.columns.isEmpty)
@@ -464,7 +464,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._1.size === 1)
       val po0 = tuple._1.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedDb)
       assert(po0.columns.head === "key")
@@ -477,7 +477,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedDb)
     assert(po.columns.isEmpty)
@@ -494,7 +494,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     if (isSparkV32OrGreater) {
@@ -508,7 +508,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(StringUtils.isEmpty(po.dbname))
     assert(po.objectName === "CacheTableAsSelect")
     assert(po.columns.isEmpty)
@@ -525,7 +525,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     if (isSparkV32OrGreater) {
@@ -539,7 +539,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname === "default")
     assert(po.objectName === "CreateViewCommand")
     assert(po.columns.isEmpty)
@@ -559,7 +559,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._2.size === 1)
       val po = tuple._2.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.dbname === "default")
       assert(po.objectName === tableName)
       assert(po.columns.isEmpty)
@@ -578,7 +578,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.FUNCTION)
+    assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
     assert(po.dbname === null)
     assert(po.objectName === "CreateFunctionCommand")
     assert(po.columns.isEmpty)
@@ -597,7 +597,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.FUNCTION)
+    assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
     assert(po.dbname === null)
     assert(po.objectName === "DropFunctionCommand")
     assert(po.columns.isEmpty)
@@ -617,7 +617,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.FUNCTION)
+    assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
     assert(po.dbname === null)
     assert(po.objectName === "RefreshFunctionCommand")
     assert(po.columns.isEmpty)
@@ -635,7 +635,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._1.size === 1)
       val po0 = tuple._1.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
       assert(po0.columns.isEmpty)
@@ -645,7 +645,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._2.size === 1)
       val po = tuple._2.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName === "CreateTableLikeCommand")
       assert(po.columns.isEmpty)
@@ -666,7 +666,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname === null)
     assert(po.objectName === "CreateTempViewUsing")
     assert(po.columns.isEmpty)
@@ -682,7 +682,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po = tuple._1.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po.columns === Seq("key"))
@@ -700,7 +700,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po = tuple._1.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po.columns.isEmpty)
@@ -718,7 +718,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po = tuple._1.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.DATABASE)
+    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedDb)
     assert(po.columns.isEmpty)
@@ -737,7 +737,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       assert(tuple._1.size === 2)
       val po = tuple._1.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.typ === PrivilegeObjectType.DATABASE)
+      assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
       assert(po.dbname === "spark_catalog")
       assert(po.objectName === "spark_catalog")
       assert(po.columns.isEmpty)
@@ -746,7 +746,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
 
       val po0 = tuple._1.last
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po0.typ === PrivilegeObjectType.DATABASE)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.DATABASE)
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedDb)
       assert(po0.columns.isEmpty)
@@ -769,7 +769,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -785,7 +785,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns.isEmpty)
@@ -803,7 +803,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns.isEmpty)
@@ -821,7 +821,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns.isEmpty)
@@ -849,7 +849,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     assert(po0.columns === Seq("pid"))
@@ -863,7 +863,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     val plan = sql(s"SELECT * FROM $reusedTable").queryExecution.optimizedPlan
     val po = PrivilegesBuilder.build(plan)._1.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTableShort)
     assert(po.columns.take(2) === Seq("key", "value"))
@@ -940,7 +940,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     assert(tuple._1.size === 2)
     tuple._1.foreach { po =>
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName startsWith reusedTableShort.toLowerCase)
       assert(
@@ -988,7 +988,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.DATABASE)
+    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
@@ -1007,7 +1007,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns === Seq("key", "value"))
@@ -1017,7 +1017,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname === "default")
     assert(po.objectName === "CreateDataSourceTableAsSelectCommand")
     if (catalogImpl == "hive") {
@@ -1048,7 +1048,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(tuple._2.size === 1)
       val po = tuple._2.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.dbname === "default")
       assert(po.objectName === t)
       assert(po.columns.head === "pid")
@@ -1068,7 +1068,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(tuple._2.size === 1)
       val po = tuple._2.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po.dbname === "default")
       assert(po.objectName === "CreateTableCommand")
       assert(po.columns.isEmpty)
@@ -1088,7 +1088,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(tuple._1.size === 1)
     val po0 = tuple._1.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns === Seq("key", "value"))
@@ -1098,7 +1098,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname === "default")
     assert(po.objectName === "CreateHiveTableAsSelectCommand")
     assert(po.columns === Seq("key", "value"))
@@ -1116,7 +1116,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(tuple._1.size === 1)
       val po0 = tuple._1.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po0.typ === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assert(po0.dbname === "default")
       assert(po0.objectName === t)
       assert(po0.columns.isEmpty)

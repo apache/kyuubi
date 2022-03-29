@@ -21,7 +21,7 @@ import scala.language.implicitConversions
 
 import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl
 
-import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject, PrivilegeObjectType}
+import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
@@ -57,7 +57,6 @@ object AccessResource {
       case TABLE | VIEW => // fixme spark have added index support
         resource.setValue("database", firstLevelResource)
         resource.setValue("table", secondLevelResource)
-      case _ =>
     }
     resource.setServiceDef(RangerSparkPlugin.getServiceDef)
     resource
@@ -76,16 +75,6 @@ object AccessResource {
     apply(objectType, firstLevelResource, null)
   }
 
-  def apply(obj: PrivilegeObject): AccessResource = {
-    obj.typ match {
-      case PrivilegeObjectType.DATABASE => apply(DATABASE, obj.dbname)
-      case PrivilegeObjectType.TABLE_OR_VIEW =>
-        apply(TABLE, obj.dbname, obj.objectName)
-      case PrivilegeObjectType.COLUMN if obj.columns != null =>
-        apply(COLUMN, obj.dbname, obj.objectName, obj.columns.mkString(","))
-      case _ => null
-    }
-  }
   def apply(
       obj: PrivilegeObject,
       opType: OperationType): AccessResource = {

@@ -26,6 +26,7 @@ class PrivilegeObjectSuite extends KyuubiFunSuite {
     val db1 = PrivilegeObject(PrivilegeObjectType.DATABASE, INSERT, "default1", "default1")
     val db11 = PrivilegeObject(PrivilegeObjectType.DATABASE, INSERT, "default1", "default1")
     val db2 = PrivilegeObject(PrivilegeObjectType.DATABASE, OTHER, "default2", "default2")
+    assert(db1.compareTo(db1) === 0)
     assert(db1.compareTo(db11) === 0)
     assert(db1.compareTo(db2) === -1)
 

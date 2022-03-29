@@ -17,26 +17,22 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-import org.apache.commons.lang3.StringUtils
-
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
 object ObjectType extends Enumeration {
 
   type ObjectType = Value
 
-  val NONE, DATABASE, TABLE, VIEW, COLUMN, FUNCTION = Value
+  val DATABASE, TABLE, VIEW, COLUMN, FUNCTION = Value
 
   def apply(obj: PrivilegeObject, opType: OperationType): ObjectType = {
-    obj.typ match {
-      case PrivilegeObjectType.DATABASE | null => DATABASE
+    obj.privilegeObjectType match {
+      case PrivilegeObjectType.DATABASE => DATABASE
       case PrivilegeObjectType.TABLE_OR_VIEW if obj.columns != null && obj.columns.nonEmpty =>
         COLUMN
-      case PrivilegeObjectType.TABLE_OR_VIEW
-          if StringUtils.containsIgnoreCase(opType.toString, "view") => VIEW
+      case PrivilegeObjectType.TABLE_OR_VIEW if opType.toString.contains("VIEW") => VIEW
       case PrivilegeObjectType.TABLE_OR_VIEW => TABLE
       case PrivilegeObjectType.FUNCTION => FUNCTION
-      case _ => NONE
     }
   }
 }

@@ -30,9 +30,10 @@ object AccessType extends Enumeration {
   def apply(obj: PrivilegeObject, opType: OperationType, isInput: Boolean): AccessType = {
     obj.actionType match {
       case PrivilegeObjectActionType.OTHER => opType match {
-          case CREATEDATABASE if obj.typ == DATABASE => CREATE
-          case CREATEFUNCTION if obj.typ == FUNCTION => CREATE
-          case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT if obj.typ == TABLE_OR_VIEW =>
+          case CREATEDATABASE if obj.privilegeObjectType == DATABASE => CREATE
+          case CREATEFUNCTION if obj.privilegeObjectType == FUNCTION => CREATE
+          case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT
+              if obj.privilegeObjectType == TABLE_OR_VIEW =>
             if (isInput) SELECT else CREATE
           // new table new `CREATE` privilege here and the old table gets `DELETE` via actionType
           case ALTERTABLE_RENAME => CREATE
