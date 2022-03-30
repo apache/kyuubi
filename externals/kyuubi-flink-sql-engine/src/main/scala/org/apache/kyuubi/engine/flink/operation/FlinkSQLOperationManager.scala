@@ -144,4 +144,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       foreignTable: String): Operation = {
     throw KyuubiSQLException.featureNotSupported()
   }
+
+  override def getQueryId(operation: Operation): String = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 }

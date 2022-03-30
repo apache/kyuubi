@@ -161,4 +161,8 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
 
     rowSet.toTRowSet
   }
+
+  override def getQueryId(opHandle: OperationHandle): String = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 }

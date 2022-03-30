@@ -125,4 +125,6 @@ class NoopOperationManager extends OperationManager("noop") {
     tRow.addToColumns(tColumn)
     tRow
   }
+
+  override def getQueryId(opHandle: OperationHandle): String = ""
 }

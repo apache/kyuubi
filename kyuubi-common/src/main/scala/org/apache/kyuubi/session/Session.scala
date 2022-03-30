@@ -80,6 +80,7 @@ trait Session {
       foreignCatalog: String,
       foreignSchema: String,
       foreignTable: String): OperationHandle
+  def getQueryId(operationHandle: OperationHandle): String
 
   def cancelOperation(operationHandle: OperationHandle): Unit
   def closeOperation(operationHandle: OperationHandle): Unit
