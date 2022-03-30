@@ -540,7 +540,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname === "default")
+    assert(po.dbname === (if (isSparkV2) null else "default"))
     assert(po.objectName === "CreateViewCommand")
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -560,7 +560,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       val po = tuple._2.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-      assert(po.dbname === "default")
+      assert(po.dbname === (if (isSparkV2) null else "default"))
       assert(po.objectName === tableName)
       assert(po.columns.isEmpty)
       val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -734,23 +734,15 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
       val operationType = OperationType(plan.nodeName)
       assert(operationType === SWITCHDATABASE)
       val tuple = PrivilegesBuilder.build(plan)
-      assert(tuple._1.size === 2)
-      val po = tuple._1.head
-      assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-      assert(po.dbname === "spark_catalog")
-      assert(po.objectName === "spark_catalog")
-      assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.USE)
+      assert(tuple._1.size === 1)
 
-      val po0 = tuple._1.last
+      val po0 = tuple._1.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.DATABASE)
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedDb)
       assert(po0.columns.isEmpty)
-      val accessType0 = ranger.AccessType(po, operationType, isInput = false)
+      val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
       assert(accessType0 === AccessType.USE)
 
       assert(tuple._2.size === 0)
@@ -888,6 +880,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
   }
 
   test("Query: CTE") {
+    assume(!isSparkV2)
     checkColumns(
       s"""
          |with t(c) as (select coalesce(max(key), pid, 1) from $reusedPartTable group by pid)
@@ -1031,7 +1024,8 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 }
 
 class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
-  override protected val catalogImpl: String = "hive"
+
+  override protected val catalogImpl: String = if (isSparkV2) "in-memory" else "hive"
 
   test("AlterTableSerDePropertiesCommand") {
     assume(!isSparkV2)
@@ -1058,6 +1052,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("CreateTableCommand") {
+    assume(!isSparkV2)
     withTable("CreateTableCommand") { _ =>
       val plan = sql(s"CREATE TABLE CreateTableCommand(a int, b string) USING hive")
         .queryExecution.analyzed
@@ -1078,6 +1073,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("CreateHiveTableAsSelectCommand") {
+    assume(!isSparkV2)
     val plan = sql(s"CREATE TABLE CreateHiveTableAsSelectCommand USING hive" +
       s" AS SELECT key, value FROM $reusedTable")
       .queryExecution.analyzed
@@ -1107,6 +1103,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 
   test("ShowCreateTableAsSerdeCommand") {
+    assume(!isSparkV2)
     withTable("ShowCreateTableAsSerdeCommand") { t =>
       sql(s"CREATE TABLE $t (key int, pid int) USING hive PARTITIONED BY (pid)")
       val plan = sql(s"SHOW CREATE TABLE $t AS SERDE").queryExecution.analyzed

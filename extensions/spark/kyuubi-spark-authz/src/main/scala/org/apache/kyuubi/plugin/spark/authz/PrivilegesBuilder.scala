@@ -246,7 +246,11 @@ object PrivilegesBuilder {
 
       case "AnalyzeColumnCommand" =>
         val table = getTableIdent
-        val cols = getPlanField[Option[Seq[String]]]("columnNames").getOrElse(Nil)
+        val cols = if (majorVersion >= 3) {
+          getPlanField[Option[Seq[String]]]("columnNames").getOrElse(Nil)
+        } else {
+          getPlanField[Seq[String]]("columnNames")
+        }
         inputObjs += tablePrivileges(table, cols)
 
       case "AnalyzePartitionCommand" =>
@@ -409,8 +413,10 @@ object PrivilegesBuilder {
 
       case "SetCatalogAndNamespace" =>
         getPlanField[Option[String]]("catalogName").foreach { catalog =>
-          // fixme do we need to skip spark_catalog?
-          inputObjs += databasePrivileges(catalog)
+          // fixme do we really need to skip spark_catalog?
+          if (catalog != "spark_catalog") {
+            inputObjs += databasePrivileges(catalog)
+          }
         }
         getPlanField[Option[Seq[String]]]("namespace").foreach { nameParts =>
           inputObjs += databasePrivileges(quote(nameParts))
