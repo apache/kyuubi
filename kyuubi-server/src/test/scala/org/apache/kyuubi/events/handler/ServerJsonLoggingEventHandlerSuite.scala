@@ -81,7 +81,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       val engineTable = engineStatementEventPath.getParent
       val resultSet2 = statement.executeQuery(s"SELECT * FROM `json`.`${engineTable}`" +
         "where statement = \"" + sql + "\"")
-      val engineStates = Array(INITIALIZED, PENDING, RUNNING, COMPILED, COMPILED, FINISHED)
+      val engineStates = Array(INITIALIZED, PENDING, RUNNING, COMPILED, FINISHED)
       stateIndex = 0
       while (resultSet2.next()) {
         assert(resultSet2.getString("Event") ==

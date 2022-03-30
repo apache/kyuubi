@@ -29,9 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_SHOW_PROGRESS, ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SQL_EXECUTION_ID_KEY
-import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
-import org.apache.kyuubi.engine.spark.operation.SparkOperation
-import org.apache.kyuubi.events.EventLogging
+import org.apache.kyuubi.engine.spark.operation.ExecuteStatement
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.log.OperationLog
 
@@ -90,8 +88,8 @@ class SQLOperationListener(
         executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
           .map(_.toLong)
         operation match {
-          case sparkOperation: SparkOperation =>
-            EventLogging.onEvent(SparkOperationEvent(sparkOperation, getExecutionId))
+          case executeStatement: ExecuteStatement =>
+            executeStatement.setCompiledState()
           case _ =>
         }
       }

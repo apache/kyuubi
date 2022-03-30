@@ -79,8 +79,6 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
-      // TODO #921: COMPILED need consider eagerly executed commands
-      setState(OperationState.COMPILED)
       debug(result.queryExecution)
       iter =
         if (incrementalCollect) {
@@ -97,6 +95,9 @@ class ExecuteStatement(
             new ArrayFetchIterator(result.take(resultMaxRows))
           }
         }
+      if (getStatus.state != OperationState.COMPILED) {
+        setCompiledState()
+      }
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
@@ -157,5 +158,9 @@ class ExecuteStatement(
     super.setState(newState)
     EventBus.post(
       SparkOperationEvent(this, operationListener.getExecutionId))
+  }
+
+  def setCompiledState(): Unit = {
+    setState(OperationState.COMPILED)
   }
 }
