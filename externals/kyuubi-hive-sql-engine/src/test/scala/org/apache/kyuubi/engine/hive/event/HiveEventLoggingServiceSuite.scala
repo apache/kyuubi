@@ -28,6 +28,7 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
+import org.apache.kyuubi.engine.hive.events.{HiveEngineEvent, HiveOperationEvent, SessionEvent}
 import org.apache.kyuubi.events.JsonProtocol
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 

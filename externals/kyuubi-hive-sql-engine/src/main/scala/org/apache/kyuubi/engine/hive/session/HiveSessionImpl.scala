@@ -25,7 +25,7 @@ import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.cli.session.HiveSession
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.engine.hive.event.SessionEvent
+import org.apache.kyuubi.engine.hive.events.SessionEvent
 import org.apache.kyuubi.events.EventLogging
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}

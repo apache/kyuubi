@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.hive.event
+package org.apache.kyuubi.engine.hive.events
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
