@@ -58,7 +58,16 @@ object AccessRequest {
       case USE => req.setAccessType(RangerPolicyEngine.ANY_ACCESS)
       case _ => req.setAccessType(accessType.toString.toLowerCase)
     }
-    req.setClusterName(RangerSparkPlugin.getClusterName)
+    try {
+      val getClusterName = RangerSparkPlugin.getClass.getMethod("getClusterName")
+      getClusterName.setAccessible(true)
+      val clusterName = getClusterName.invoke(RangerSparkPlugin)
+      val setClusterName = req.getClass.getMethod("setClusterName", classOf[String])
+      setClusterName.setAccessible(true)
+      setClusterName.invoke(req, clusterName)
+    } catch {
+      case _: NoSuchMethodException =>
+    }
     req
   }
 }
