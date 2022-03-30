@@ -23,7 +23,7 @@ import com.google.gson.GsonBuilder
 import org.apache.ranger.admin.client.RangerAdminRESTClient
 import org.apache.ranger.plugin.util.ServicePolicies
 
-class RangerLocalClient extends RangerAdminRESTClient {
+class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
 
   private val g =
     new GsonBuilder().setDateFormat("yyyyMMdd-HH:mm:ss.SSS-Z").setPrettyPrinting().create
@@ -40,4 +40,27 @@ class RangerLocalClient extends RangerAdminRESTClient {
       lastActivationTimeInMillis: Long): ServicePolicies = {
     policies
   }
+
+  override def getServicePoliciesIfUpdated(
+    lastKnownVersion: Long): ServicePolicies = {
+    policies
+  }
+}
+
+/**
+ * bypass scala lang restriction `overrides nothing`
+ */
+trait RangerClientHelper {
+  /**
+   * Apache ranger 0.7.x ~
+   */
+  def getServicePoliciesIfUpdated(
+    lastKnownVersion: Long,
+    lastActivationTimeInMillis: Long): ServicePolicies
+
+  /**
+   * Apache ranger 0.6.x
+   */
+  def getServicePoliciesIfUpdated(
+    lastKnownVersion: Long): ServicePolicies
 }
