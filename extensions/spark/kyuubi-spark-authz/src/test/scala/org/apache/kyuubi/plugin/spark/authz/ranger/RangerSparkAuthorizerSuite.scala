@@ -74,6 +74,7 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
       assert(e1.getMessage === errorMessage("alter", "mydb"))
       val e2 = intercept[RuntimeException](sql(drop))
       assert(e2.getMessage === (errorMessage("drop", "mydb")))
+      doAs("kent", Try(sql("SHOW DATABASES")).isSuccess)
     } finally {
       doAs("admin", sql(drop))
     }

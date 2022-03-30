@@ -35,7 +35,7 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource1.getColumn === null)
     assert(resource1.getColumns.isEmpty)
 
-    val resource2 = AccessResource(FUNCTION, "my_db_name", "my_func_name")
+    val resource2 = AccessResource(FUNCTION, "my_db_name", "my_func_name", null)
     assert(resource2.getDatabase === "my_db_name")
     assert(resource2.getTable === null)
     assert(resource2.getValue("udf") === "my_func_name")

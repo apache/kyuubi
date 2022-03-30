@@ -62,22 +62,11 @@ object AccessResource {
     resource
   }
 
-  def apply(
-      objectType: ObjectType,
-      firstLevelResource: String,
-      secondLevelResource: String): AccessResource = {
-    apply(objectType, firstLevelResource, secondLevelResource, null)
+  def apply(objectType: ObjectType, firstLevelResource: String): AccessResource = {
+    apply(objectType, firstLevelResource, null, null)
   }
 
-  def apply(
-      objectType: ObjectType,
-      firstLevelResource: String): AccessResource = {
-    apply(objectType, firstLevelResource, null)
-  }
-
-  def apply(
-      obj: PrivilegeObject,
-      opType: OperationType): AccessResource = {
+  def apply(obj: PrivilegeObject, opType: OperationType): AccessResource = {
     apply(ObjectType(obj, opType), obj.dbname, obj.objectName, obj.columns.mkString(","))
   }
 }
