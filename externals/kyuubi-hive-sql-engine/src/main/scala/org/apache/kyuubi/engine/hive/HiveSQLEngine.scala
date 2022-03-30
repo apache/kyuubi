@@ -103,7 +103,7 @@ object HiveSQLEngine extends Logging {
       case EventLoggerType.JSON =>
         val hostName = InetAddress.getLocalHost.getCanonicalHostName
         val handler = HiveJsonLoggingEventHandler(
-          s"HIVE-$hostName",
+          s"Hive-$hostName",
           ENGINE_EVENT_JSON_LOG_PATH,
           hadoopConf,
           conf)
