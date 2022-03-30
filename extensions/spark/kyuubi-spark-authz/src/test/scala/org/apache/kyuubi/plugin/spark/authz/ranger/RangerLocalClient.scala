@@ -42,7 +42,7 @@ class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
   }
 
   override def getServicePoliciesIfUpdated(
-    lastKnownVersion: Long): ServicePolicies = {
+      lastKnownVersion: Long): ServicePolicies = {
     policies
   }
 }
@@ -51,16 +51,17 @@ class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
  * bypass scala lang restriction `overrides nothing`
  */
 trait RangerClientHelper {
+
   /**
    * Apache ranger 0.7.x ~
    */
   def getServicePoliciesIfUpdated(
-    lastKnownVersion: Long,
-    lastActivationTimeInMillis: Long): ServicePolicies
+      lastKnownVersion: Long,
+      lastActivationTimeInMillis: Long): ServicePolicies
 
   /**
    * Apache ranger 0.6.x
    */
   def getServicePoliciesIfUpdated(
-    lastKnownVersion: Long): ServicePolicies
+      lastKnownVersion: Long): ServicePolicies
 }

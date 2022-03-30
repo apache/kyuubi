@@ -246,11 +246,12 @@ object PrivilegesBuilder {
 
       case "AnalyzeColumnCommand" =>
         val table = getTableIdent
-        val cols = if (majorVersion >= 3) {
-          getPlanField[Option[Seq[String]]]("columnNames").getOrElse(Nil)
-        } else {
-          getPlanField[Seq[String]]("columnNames")
-        }
+        val cols =
+          if (majorVersion >= 3) {
+            getPlanField[Option[Seq[String]]]("columnNames").getOrElse(Nil)
+          } else {
+            getPlanField[Seq[String]]("columnNames")
+          }
         inputObjs += tablePrivileges(table, cols)
 
       case "AnalyzePartitionCommand" =>
