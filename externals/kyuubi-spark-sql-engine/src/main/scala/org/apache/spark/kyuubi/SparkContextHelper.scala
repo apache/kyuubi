@@ -29,7 +29,7 @@ import org.apache.spark.ui.SparkUI
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
-import org.apache.kyuubi.events.{EventLogger, KyuubiEvent}
+import org.apache.kyuubi.events.KyuubiEvent
 
 /**
  * A place to invoke non-public APIs of [[SparkContext]], anything to be added here need to
@@ -37,8 +37,11 @@ import org.apache.kyuubi.events.{EventLogger, KyuubiEvent}
  */
 object SparkContextHelper extends Logging {
 
-  def createSparkHistoryLogger(sc: SparkContext): EventLogger = {
-    new SparkHistoryEventLogger(sc)
+  def postEventToSparkListenerBus(event: KyuubiEvent, sc: SparkContext) {
+    event match {
+      case s: SparkListenerEvent => sc.listenerBus.post(s)
+      case _ => // ignore
+    }
   }
 
   def getKvStore(sc: SparkContext): ElementTrackingStore = {
@@ -80,17 +83,4 @@ object SparkContextHelper extends Logging {
     getLocalProperty(sc, KYUUBI_STATEMENT_ID_KEY)
   }
 
-}
-
-/**
- * A [[EventLogger]] that logs everything to SparkHistory
- * @param sc SparkContext
- */
-private class SparkHistoryEventLogger(sc: SparkContext) extends EventLogger {
-  override def logEvent(kyuubiEvent: KyuubiEvent): Unit = {
-    kyuubiEvent match {
-      case s: SparkListenerEvent => sc.listenerBus.post(s)
-      case _ => // ignore
-    }
-  }
 }

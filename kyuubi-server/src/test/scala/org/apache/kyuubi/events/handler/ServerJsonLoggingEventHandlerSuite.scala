@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.events.handler
 
 import java.net.InetAddress
 import java.nio.file.Paths
@@ -34,7 +34,7 @@ import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
 
-class KyuubiEventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper {
+class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   private val engineLogRoot = "file://" + Utils.createTempDir().toString
   private val serverLogRoot = "file://" + Utils.createTempDir().toString
@@ -60,7 +60,6 @@ class KyuubiEventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestH
     val engineStatementEventPath =
       Paths.get(engineLogRoot, "spark_operation", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"
-
     withJdbcStatement() { statement =>
       statement.execute(sql)
       // check server statement events

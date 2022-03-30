@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.events.handler
 
-import java.io.{BufferedOutputStream, FileOutputStream, IOException, PrintWriter}
+import java.io.{BufferedOutputStream, FileOutputStream, PrintWriter}
 import java.net.URI
 
 import scala.collection.mutable.HashMap
@@ -29,8 +29,7 @@ import org.apache.hadoop.fs.permission.FsPermission
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
-import org.apache.kyuubi.events.JsonEventLogger._
-import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.events.KyuubiEvent
 
 /**
  * This event logger logs Kyuubi engine events in JSON file format.
@@ -40,17 +39,31 @@ import org.apache.kyuubi.service.AbstractService
  * The ${date} is based on the time of events, e.g. engine.startTime, statement.startTime
  * @param logName the engine id formed of appId + attemptId(if any)
  */
-class JsonEventLogger(
+class JsonLoggingEventHandler(
     logName: String,
     logPath: ConfigEntry[String],
-    hadoopConf: Configuration)
-  extends AbstractService("JsonEventLogger") with EventLogger with Logging {
+    hadoopConf: Configuration,
+    kyuubiConf: KyuubiConf)
+  extends EventHandler[KyuubiEvent] with Logging {
+
+  import JsonLoggingEventHandler._
 
   type Logger = (PrintWriter, Option[FSDataOutputStream])
 
   private var logRoot: URI = _
   private var fs: FileSystem = _
   private val writers = HashMap.empty[String, Logger]
+
+  initialize(kyuubiConf)
+
+  override def apply(event: KyuubiEvent): Unit = {
+    val (writer, stream) = getOrUpdate(event)
+    // scalastyle:off println
+    writer.println(event.toJson)
+    // scalastyle:on println
+    writer.flush()
+    stream.foreach(_.hflush())
+  }
 
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
     val partitions = event.partitions.map(kv => s"${kv._1}=${kv._2}").mkString(Path.SEPARATOR)
@@ -86,47 +99,15 @@ class JsonEventLogger(
     }
   }
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
+  private def initialize(conf: KyuubiConf): Unit = synchronized {
     logRoot = URI.create(conf.get(logPath))
     fs = FileSystem.get(logRoot, hadoopConf)
+    FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
     requireLogRootWritable()
-    super.initialize(conf)
-  }
-
-  override def stop(): Unit = synchronized {
-    writers.foreach { case (name, (writer, stream)) =>
-      try {
-        writer.close()
-      } catch {
-        case e: IOException => error(s"File to close $name's event writer", e)
-      }
-    }
-    super.stop()
-  }
-
-  override def logEvent(kyuubiEvent: KyuubiEvent): Unit = {
-    val (writer, stream) = getOrUpdate(kyuubiEvent)
-    // scalastyle:off println
-    writer.println(kyuubiEvent.toJson)
-    // scalastyle:on println
-    writer.flush()
-    stream.foreach(_.hflush())
-  }
-
-  def createEventLogRootDir(conf: KyuubiConf, hadoopConf: Configuration): Unit = {
-    val logRoot: URI = URI.create(conf.get(logPath))
-    val fs: FileSystem = FileSystem.get(logRoot, hadoopConf)
-    val success: Boolean = FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
-    if (!success) {
-      val fileStatus = fs.getFileStatus(new Path(logRoot))
-      if (!fileStatus.isDirectory) {
-        throw new IllegalArgumentException(s"Log directory $logRoot is not a directory.")
-      }
-    }
   }
 }
 
-object JsonEventLogger {
+object JsonLoggingEventHandler {
   val JSON_LOG_DIR_PERM: FsPermission = new FsPermission(Integer.parseInt("770", 8).toShort)
   val JSON_LOG_FILE_PERM: FsPermission = new FsPermission(Integer.parseInt("660", 8).toShort)
 }

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server
 
+import java.net.InetAddress
 import java.util
 
 import scala.util.Properties
@@ -29,9 +30,10 @@ import org.apache.zookeeper.KeeperException.NodeExistsException
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols, SERVER_EVENT_JSON_LOG_PATH, SERVER_EVENT_LOGGERS}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
-import org.apache.kyuubi.events.{EventLogging, KyuubiServerInfoEvent}
+import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent, KyuubiServerInfoEvent}
+import org.apache.kyuubi.events.handler.ServerJsonLoggingEventHandler
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{ServiceDiscovery, ZooKeeperAuthTypes}
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
@@ -154,12 +156,11 @@ class KyuubiServer(name: String) extends Serverable(name) {
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
 
-  private val eventLoggingService = new KyuubiEventLoggingService()
-
   override def initialize(conf: KyuubiConf): Unit = synchronized {
+    initLoggerEventHandler(conf)
+
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
-    addService(eventLoggingService)
 
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
@@ -170,12 +171,34 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override def start(): Unit = {
     super.start()
     KyuubiServer.kyuubiServer = this
-    KyuubiServerInfoEvent(this, ServiceState.STARTED).foreach(EventLogging.onEvent)
+    KyuubiServerInfoEvent(this, ServiceState.STARTED).foreach(EventBus.post)
   }
 
   override def stop(): Unit = {
-    KyuubiServerInfoEvent(this, ServiceState.STOPPED).foreach(EventLogging.onEvent)
+    KyuubiServerInfoEvent(this, ServiceState.STOPPED).foreach(EventBus.post)
     super.stop()
+  }
+
+  private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
+    val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+    conf.get(SERVER_EVENT_LOGGERS)
+      .map(EventLoggerType.withName)
+      .foreach {
+        case EventLoggerType.JSON =>
+          val hostName = InetAddress.getLocalHost.getCanonicalHostName
+          val handler = ServerJsonLoggingEventHandler(
+            s"server-$hostName",
+            SERVER_EVENT_JSON_LOG_PATH,
+            hadoopConf,
+            conf)
+
+          // register JsonLogger as a event handler for default event bus
+          EventBus.register[KyuubiEvent](handler)
+        case logger =>
+          // TODO: Add more implementations
+          throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
+      }
+
   }
 
   override protected def stopServer(): Unit = {}

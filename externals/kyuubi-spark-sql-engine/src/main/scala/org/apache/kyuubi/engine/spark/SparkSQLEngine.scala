@@ -34,8 +34,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
-import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventLoggingService}
-import org.apache.kyuubi.events.EventLogging
+import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore}
+import org.apache.kyuubi.engine.spark.events.handler.{SparkHistoryLoggingEventHandler, SparkJsonLoggingEventHandler}
+import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
@@ -144,20 +145,18 @@ object SparkSQLEngine extends Logging {
   def startEngine(spark: SparkSession): Unit = {
     currentEngine = Some(new SparkSQLEngine(spark))
     currentEngine.foreach { engine =>
-      // start event logging ahead so that we can capture all statuses
-      val eventLogging = new SparkEventLoggingService(spark.sparkContext)
       try {
-        eventLogging.initialize(kyuubiConf)
-        eventLogging.start()
+        // start event logging ahead so that we can capture all statuses
+        initLoggerEventHandler(kyuubiConf)
       } catch {
         case NonFatal(e) =>
-          // Don't block the main process if the `EventLoggingService` failed to start
-          warn(s"Failed to initialize EventLoggingService: ${e.getMessage}", e)
+          // Don't block the main process if the `LoggerEventHandler` failed to start
+          warn(s"Failed to initialize LoggerEventHandler: ${e.getMessage}", e)
       }
 
       try {
         engine.initialize(kyuubiConf)
-        EventLogging.onEvent(EngineEvent(engine))
+        EventBus.post(EngineEvent(engine))
       } catch {
         case t: Throwable =>
           throw new KyuubiException(s"Failed to initialize SparkSQLEngine: ${t.getMessage}", t)
@@ -173,15 +172,37 @@ object SparkSQLEngine extends Logging {
           kyuubiConf)
         val event = EngineEvent(engine)
         info(event)
-        EventLogging.onEvent(event)
+        EventBus.post(event)
       } catch {
         case t: Throwable =>
           throw new KyuubiException(s"Failed to start SparkSQLEngine: ${t.getMessage}", t)
       }
       // Stop engine before SparkContext stopped to avoid calling a stopped SparkContext
       addShutdownHook(() => engine.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 2)
-      addShutdownHook(() => eventLogging.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 1)
     }
+
+    def initLoggerEventHandler(conf: KyuubiConf): Unit = {
+      conf.get(ENGINE_EVENT_LOGGERS)
+        .map(EventLoggerType.withName)
+        .foreach {
+          case EventLoggerType.SPARK =>
+            EventBus.register[KyuubiEvent](new SparkHistoryLoggingEventHandler(spark.sparkContext))
+          case EventLoggerType.JSON =>
+            val handler = SparkJsonLoggingEventHandler(
+              spark.sparkContext.applicationAttemptId
+                .map(id => s"${spark.sparkContext.applicationId}_$id")
+                .getOrElse(spark.sparkContext.applicationId),
+              ENGINE_EVENT_JSON_LOG_PATH,
+              spark.sparkContext.hadoopConfiguration,
+              conf)
+
+            // register JsonLogger as a event handler for default event bus
+            EventBus.register[KyuubiEvent](handler)
+          case _ =>
+        }
+
+    }
+
   }
 
   def main(args: Array[String]): Unit = {
@@ -211,7 +232,7 @@ object SparkSQLEngine extends Logging {
               case Some(engine) =>
                 engine.stop()
                 val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
-                EventLogging.onEvent(event)
+                EventBus.post(event)
                 error(event, e)
               case _ => error("Current SparkSQLEngine is not created.")
             }

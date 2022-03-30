@@ -23,7 +23,7 @@ import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TProtocolVer
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.events.{EventLogging, KyuubiOperationEvent}
+import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
@@ -36,7 +36,7 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
   extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session) {
-  EventLogging.onEvent(KyuubiOperationEvent(this))
+  EventBus.post(KyuubiOperationEvent(this))
 
   final private val _operationLog: OperationLog =
     if (shouldRunAsync) {
@@ -159,7 +159,7 @@ class ExecuteStatement(
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
-    EventLogging.onEvent(KyuubiOperationEvent(this))
+    EventBus.post(KyuubiOperationEvent(this))
   }
 
   override def close(): Unit = {

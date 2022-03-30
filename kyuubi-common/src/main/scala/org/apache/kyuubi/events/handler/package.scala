@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.events
 
-trait EventLogger {
-
-  def logEvent(kyuubiEvent: KyuubiEvent): Unit
-
+package object handler {
+  type EventHandler[T <: KyuubiEvent] = T => Unit
 }
