@@ -1897,6 +1897,13 @@
         </profile>
 
         <profile>
+            <id>hive-3.1</id>
+            <properties>
+                <hive.version>3.1.2</hive.version>
+            </properties>
+        </profile>
+
+        <profile>
             <id>spark-master</id>
             <repositories>
                 <repository>
