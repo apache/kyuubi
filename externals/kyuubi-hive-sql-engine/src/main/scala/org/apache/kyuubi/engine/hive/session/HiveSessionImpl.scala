@@ -26,7 +26,7 @@ import org.apache.hive.service.cli.session.HiveSession
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.engine.hive.events.SessionEvent
-import org.apache.kyuubi.events.EventLogging
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
@@ -50,7 +50,7 @@ class HiveSessionImpl(
     val confClone = new HashMap[String, String]()
     confClone.putAll(conf.asJava) // pass conf.asScala not support `put` method
     hive.open(confClone)
-    EventLogging.onEvent(sessionEvent)
+    EventBus.post(sessionEvent)
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
@@ -60,7 +60,7 @@ class HiveSessionImpl(
 
   override def close(): Unit = {
     sessionEvent.endTime = System.currentTimeMillis()
-    EventLogging.onEvent(sessionEvent)
+    EventBus.post(sessionEvent)
     super.close()
     try {
       hive.close()

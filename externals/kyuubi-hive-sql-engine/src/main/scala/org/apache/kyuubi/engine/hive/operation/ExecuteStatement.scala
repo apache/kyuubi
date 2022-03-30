@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.cli.operation.Operation
 
 import org.apache.kyuubi.engine.hive.events.HiveOperationEvent
-import org.apache.kyuubi.events.EventLogging
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
@@ -43,5 +43,5 @@ class ExecuteStatement(
       queryTimeout)
   }
 
-  EventLogging.onEvent(HiveOperationEvent(this))
+  EventBus.post(HiveOperationEvent(this))
 }
