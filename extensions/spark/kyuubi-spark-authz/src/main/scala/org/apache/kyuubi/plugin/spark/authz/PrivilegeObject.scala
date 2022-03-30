@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import javax.annotation.Nonnull
+
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.PrivilegeObjectType
 
@@ -41,4 +43,4 @@ case class PrivilegeObject(
     actionType: PrivilegeObjectActionType,
     dbname: String,
     objectName: String,
-    columns: Seq[String] = Nil)
+    @Nonnull columns: Seq[String] = Nil)

@@ -30,9 +30,9 @@ class AccessResource private (val objectType: ObjectType) extends RangerAccessRe
   def getDatabase: String = getValue("database")
   def getTable: String = getValue("table")
   def getColumn: String = getValue("column")
-  def getColumns: Array[String] = {
+  def getColumns: Seq[String] = {
     val columnStr = getColumn
-    if (columnStr == null) null else columnStr.split(",").filter(_.nonEmpty)
+    if (columnStr == null) Nil else columnStr.split(",").filter(_.nonEmpty)
   }
 }
 
