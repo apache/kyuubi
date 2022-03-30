@@ -57,7 +57,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
 
   test("get columns operation") {
     val tableName = "spark_get_col_operation"
-    val schema = new StructType()
+    var schema = new StructType()
       .add("c0", "boolean", nullable = false, "0")
       .add("c1", "tinyint", nullable = true, "1")
       .add("c2", "smallint", nullable = false, "2")
@@ -80,7 +80,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     // since spark3.3.0
     if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
       (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 3)) {
-      schema.add("c18", "timestamp_ntz", nullable = true, "18")
+      schema = schema.add("c18", "timestamp_ntz", nullable = true, "18")
+        .add("c19", "interval day", nullable = true, "19")
+        .add("c20", "interval year", nullable = true, "20")
     }
 
     val ddl =
@@ -118,7 +120,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           STRUCT,
           BINARY,
           STRUCT,
-          TIMESTAMP)
+          TIMESTAMP,
+          OTHER,
+          OTHER)
 
         var pos = 0
 
