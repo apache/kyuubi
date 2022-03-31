@@ -22,6 +22,7 @@ import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorServic
 import scala.collection.JavaConverters._
 
 import org.apache.spark.kyuubi.SQLOperationListener
+import org.apache.spark.sql.catalyst.QueryPlanningTracker
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
@@ -79,7 +80,6 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
-      debug(result.queryExecution)
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
@@ -95,6 +95,7 @@ class ExecuteStatement(
             new ArrayFetchIterator(result.take(resultMaxRows))
           }
         }
+      setCompiledStateIfNeeded()
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
@@ -152,12 +153,26 @@ class ExecuteStatement(
   }
 
   override def setState(newState: OperationState): Unit = {
+    setStateInt(newState)
+  }
+
+  private def setStateInt(newState: OperationState, startTime: Option[Long] = None): Unit = {
     super.setState(newState)
+    if (startTime.isDefined) {
+      this.startTime = startTime.get
+    }
     EventBus.post(
       SparkOperationEvent(this, operationListener.getExecutionId))
   }
 
-  def setCompiledState(): Unit = {
-    setState(OperationState.COMPILED)
+  def setCompiledStateIfNeeded(): Unit = {
+    if (getStatus.state != OperationState.COMPILED) {
+      val startTime = if (result != null) {
+        Some(result.queryExecution.tracker.phases(QueryPlanningTracker.PARSING).endTimeMs)
+      } else {
+        None
+      }
+      setStateInt(OperationState.COMPILED, startTime)
+    }
   }
 }
