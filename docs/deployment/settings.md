@@ -403,6 +403,32 @@ Setting them in the JDBC Connection URL supplies session-specific for each SQL e
 
 Please refer to the Spark official online documentation for [SET Command](http://spark.apache.org/docs/latest/sql-ref-syntax-aux-conf-mgmt-set.html)
 
+## Flink Configurations
+
+### Via flink-conf.yaml
+
+Setting them in `$FLINK_HOME/conf/flink-conf.yaml` supplies with default values for SQL engine application. Available properties can be found at Flink official online documentation for [Flink Configurations](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/)
+
+### Via kyuubi-defaults.conf
+
+Setting them in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` supplies with default values for SQL engine application too. You can use properties with the additional prefix `flink.` to override settings in `$FLINK_HOME/conf/flink-conf.yaml`.
+
+For example:
+```
+flink.parallelism.default 2
+flink.taskmanager.memory.process.size 5g
+```
+
+The below options in `kyuubi-defaults.conf` will set `parallelism.default: 2` and `taskmanager.memory.process.size: 5g` into flink configurations.
+
+### Via JDBC Connection URL
+
+Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: ```jdbc:hive2://localhost:10009/default;#parallelism.default=2;taskmanager.memory.process.size=5g```
+
+### Via SET Statements
+
+Please refer to the Flink official online documentation for [SET Statements](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/set/)
+
 ## Logging
 
 Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j2.properties`.
