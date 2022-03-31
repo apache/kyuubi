@@ -22,13 +22,12 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
+import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd, SparkListenerSQLExecutionStart}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_SHOW_PROGRESS, ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SQL_EXECUTION_ID_KEY
 import org.apache.kyuubi.engine.spark.operation.ExecuteStatement
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.log.OperationLog
@@ -84,15 +83,6 @@ class SQLOperationListener(
     if (sameGroupId(jobStart.properties)) {
       val jobId = jobStart.jobId
       val stageSize = jobStart.stageInfos.size
-      if (executionId.isEmpty) {
-        executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
-          .map(_.toLong)
-        operation match {
-          case executeStatement: ExecuteStatement =>
-            executeStatement.setCompiledState()
-          case _ =>
-        }
-      }
       withOperationLog {
         activeJobs.add(jobId)
         info(s"Query [$operationId]: Job $jobId started with $stageSize stages," +
@@ -161,6 +151,15 @@ class SQLOperationListener(
 
   override def onOtherEvent(event: SparkListenerEvent): Unit = {
     event match {
+      case sqlExecutionStart: SparkListenerSQLExecutionStart =>
+        if (executionId.isEmpty) {
+          executionId = Option(sqlExecutionStart.executionId)
+          operation match {
+            case executeStatement: ExecuteStatement =>
+              executeStatement.setCompiledState()
+            case _ =>
+          }
+        }
       case sqlExecutionEnd: SparkListenerSQLExecutionEnd
           if executionId.contains(sqlExecutionEnd.executionId) =>
         spark.sparkContext.removeSparkListener(this)

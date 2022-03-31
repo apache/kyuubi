@@ -95,9 +95,6 @@ class ExecuteStatement(
             new ArrayFetchIterator(result.take(resultMaxRows))
           }
         }
-      if (getStatus.state != OperationState.COMPILED) {
-        setCompiledState()
-      }
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
