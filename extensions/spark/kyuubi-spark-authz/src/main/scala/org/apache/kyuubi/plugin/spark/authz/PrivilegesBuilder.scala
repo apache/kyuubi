@@ -459,18 +459,13 @@ object PrivilegesBuilder {
       // AddArchivesCommand
       // AddFileCommand
       // AddJarCommand
-      // AnalyzeColumnCommand
       // ClearCacheCommand
-      // CreateTempViewUsing
-      // DescribeFunctionCommand
       // DescribeQueryCommand
       // ExplainCommand
       // ListArchivesCommand
       // ListFilesCommand
       // ListJarsCommand
       // RefreshResource
-      // RefreshTable
-      // RefreshTable
       // ResetCommand
       // SetCommand
       // ShowDatabasesCommand
