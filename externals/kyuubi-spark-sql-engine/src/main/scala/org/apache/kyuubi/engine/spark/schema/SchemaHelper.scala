@@ -31,6 +31,16 @@ object SchemaHelper {
    */
   final val TIMESTAMP_NTZ = "TimestampNTZType$"
 
+  /**
+   * Spark 3.2.0 DataType DayTimeIntervalType's class name.
+   */
+  final val DAY_TIME_INTERVAL = "DayTimeIntervalType"
+
+  /**
+   * Spark 3.2.0 DataType YearMonthIntervalType's class name.
+   */
+  final val YEAR_MONTH_INTERVAL = "YearMonthIntervalType"
+
   def toTTypeId(typ: DataType): TTypeId = typ match {
     case NullType => TTypeId.NULL_TYPE
     case BooleanType => TTypeId.BOOLEAN_TYPE
@@ -47,9 +57,9 @@ object SchemaHelper {
     case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => TTypeId.TIMESTAMP_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
     case CalendarIntervalType => TTypeId.STRING_TYPE
-    case dt if dt.getClass.getSimpleName.equals("DayTimeIntervalType") =>
+    case dt if dt.getClass.getSimpleName.equals(DAY_TIME_INTERVAL) =>
       TTypeId.INTERVAL_DAY_TIME_TYPE
-    case ym if ym.getClass.getSimpleName.equals("YearMonthIntervalType") =>
+    case ym if ym.getClass.getSimpleName.equals(YEAR_MONTH_INTERVAL) =>
       TTypeId.INTERVAL_YEAR_MONTH_TYPE
     case _: ArrayType => TTypeId.ARRAY_TYPE
     case _: MapType => TTypeId.MAP_TYPE
@@ -125,7 +135,9 @@ object SchemaHelper {
    * For array, map, string, and binaries, the column size is variable, return null as unknown.
    */
   def getColumnSize(sparkType: DataType): Option[Int] = sparkType match {
-    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => Some(ntz.defaultSize)
+    case dt
+        if Array(TIMESTAMP_NTZ, DAY_TIME_INTERVAL, YEAR_MONTH_INTERVAL)
+          .contains(dt.getClass.getSimpleName) => Some(dt.defaultSize)
     case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
         CalendarIntervalType | NullType) =>
       Some(dt.defaultSize)
