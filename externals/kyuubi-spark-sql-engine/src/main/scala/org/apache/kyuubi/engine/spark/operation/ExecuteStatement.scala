@@ -165,7 +165,7 @@ class ExecuteStatement(
       SparkOperationEvent(this, operationListener.getExecutionId))
   }
 
-  def setCompiledStateIfNeeded(): Unit = {
+  def setCompiledStateIfNeeded(): Unit = synchronized {
     if (getStatus.state == OperationState.RUNNING) {
       val startTime =
         if (result != null) {
