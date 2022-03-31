@@ -74,6 +74,18 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-minikdc</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-minicluster</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- for hive driver related dependency -->
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

@@ -44,8 +44,7 @@ trait WithSecuredDFSService extends KerberizedTestHelper {
     hdfsConf
   }
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
+  override def onKDCCompleted(): Unit = {
     tryWithSecurityEnabled {
       UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
       miniDFSService = new MiniDFSService(newSecuredConf())

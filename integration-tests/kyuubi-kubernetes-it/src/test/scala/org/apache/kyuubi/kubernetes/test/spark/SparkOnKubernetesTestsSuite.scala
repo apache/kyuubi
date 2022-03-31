@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.kubernetes.test.spark
 
-import org.apache.kyuubi.{Logging, WithKyuubiServer}
+import org.apache.kyuubi.{Logging, WithKyuubiServer, WithSecuredDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
@@ -45,7 +45,7 @@ abstract class SparkOnKubernetesSuiteBase
 }
 
 /**
- * This test is for Kyuubi Server with Spark engine on Kubernetes:
+ * This test is for Kyuubi Server with Spark engine Using client deploy-mode on Kubernetes:
  *
  *                        Real World                                   Kubernetes Pod
  *  -------------------------------------------------------         ---------------------
@@ -57,5 +57,24 @@ abstract class SparkOnKubernetesSuiteBase
 class SparkClientModeOnKubernetesSuite extends SparkOnKubernetesSuiteBase {
   override protected val conf: KyuubiConf = {
     sparkOnK8sConf.set("spark.submit.deployMode", "client")
+  }
+}
+
+/**
+ * This test is for Kyuubi Server with Spark engine Using cluster deploy-mode on Kubernetes:
+ *
+ *               Real World                         Kubernetes Pod                Kubernetes Pod
+ *  ----------------------------------          ---------------------         ---------------------
+ *  |          JDBC                   |         |                   |         |                   |
+ *  |  Client  ---->  Kyuubi Server   |  ---->  |    Spark Driver   |  ---->  |  Spark Executors  |
+ *  |                                 |         |                   |         |                   |
+ *  ----------------------------------          ---------------------         ---------------------
+ */
+class SparkClusterModeOnKubernetesSuite
+  extends SparkOnKubernetesSuiteBase with WithSecuredDFSService {
+  override protected lazy val conf: KyuubiConf = {
+    sparkOnK8sConf.set("spark.submit.deployMode", "cluster")
+      .set(
+        "spark.kubernetes.file.upload.path", getHadoopConf.get("fs.defaultFS") + "/spark")
   }
 }
