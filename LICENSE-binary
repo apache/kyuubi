@@ -208,6 +208,7 @@ for text of these licenses.
 Apache License Version 2.0
 --------------------------
 commons-lang:commons-lang
+commons-logging:commons-logging
 org.apache.commons:commons-lang3
 org.apache.curator:curator-client
 org.apache.curator:curator-framework
