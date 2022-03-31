@@ -166,7 +166,7 @@ class ExecuteStatement(
   }
 
   def setCompiledStateIfNeeded(): Unit = {
-    if (getStatus.state != OperationState.COMPILED) {
+    if (getStatus.state == OperationState.RUNNING) {
       val startTime =
         if (result != null) {
           Some(result.queryExecution.tracker.phases(QueryPlanningTracker.PARSING).endTimeMs)
