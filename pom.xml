@@ -180,8 +180,7 @@
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
-        <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest
-        </maven.plugin.scalatest.exclude.tags>
+        <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.spotless.version>2.17.4</maven.plugin.spotless.version>
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
@@ -1503,17 +1502,14 @@
                         <systemProperties>
                             <log4j.ignoreTCL>true</log4j.ignoreTCL>
                             <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
-                            <log4j2.configurationFile>file:src/test/resources/log4j2-test.properties
-                            </log4j2.configurationFile>
+                            <log4j2.configurationFile>file:src/test/resources/log4j2-test.properties</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
-                            <kyuubi.metrics.json.location>${project.build.directory}/metrics
-                            </kyuubi.metrics.json.location>
+                            <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
                             <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
                             <sun.security.krb5.debug>false</sun.security.krb5.debug>
                             <kyuubi.operation.log.dir.root>target/server_operation_logs</kyuubi.operation.log.dir.root>
-                            <kyuubi.engine.operation.log.dir.root>target/engine_operation_logs
-                            </kyuubi.engine.operation.log.dir.root>
+                            <kyuubi.engine.operation.log.dir.root>target/engine_operation_logs</kyuubi.engine.operation.log.dir.root>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                         <tagsToInclude>${maven.plugin.scalatest.include.tags}</tagsToInclude>
@@ -1868,9 +1864,7 @@
                 <delta.version>0.8.0</delta.version>
                 <iceberg.name>iceberg-spark3-runtime</iceberg.name>
                 <!-- Hudi 0.10.0 still support Spark 3.0, but need build by user with specific profile -->
-                <maven.plugin.scalatest.exclude.tags>
-                    org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest
-                </maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -1880,8 +1874,7 @@
                 <spark.version>3.1.3</spark.version>
                 <delta.version>1.0.1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.1_${scala.binary.version}</iceberg.name>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest
-                </maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark-common</module>
@@ -1895,9 +1888,7 @@
                 <spark.version>3.2.1</spark.version>
                 <delta.version>1.1.0</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
-                <maven.plugin.scalatest.exclude.tags>
-                    org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest
-                </maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark-common</module>
@@ -1921,9 +1912,7 @@
             </repositories>
             <properties>
                 <spark.version>3.3.0-SNAPSHOT</spark.version>
-                <maven.plugin.scalatest.exclude.tags>
-                    org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest
-                </maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
