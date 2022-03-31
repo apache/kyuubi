@@ -22,8 +22,8 @@ import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorServic
 import scala.collection.JavaConverters._
 
 import org.apache.spark.kyuubi.SQLOperationListener
-import org.apache.spark.sql.catalyst.QueryPlanningTracker
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.QueryPlanningTracker
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -167,11 +167,12 @@ class ExecuteStatement(
 
   def setCompiledStateIfNeeded(): Unit = {
     if (getStatus.state != OperationState.COMPILED) {
-      val startTime = if (result != null) {
-        Some(result.queryExecution.tracker.phases(QueryPlanningTracker.PARSING).endTimeMs)
-      } else {
-        None
-      }
+      val startTime =
+        if (result != null) {
+          Some(result.queryExecution.tracker.phases(QueryPlanningTracker.PARSING).endTimeMs)
+        } else {
+          None
+        }
       setStateInt(OperationState.COMPILED, startTime)
     }
   }
