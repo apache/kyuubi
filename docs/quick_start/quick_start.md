@@ -44,12 +44,13 @@ Components| Role | Optional | Version | Remarks
 Java | Java<br>Runtime<br>Environment | Required | Java 8/11 | Kyuubi is pre-built with Java 8
 Spark | Distributed<br>SQL<br>Engine | Optional | 3.0.0 and above | By default Kyuubi binary release is delivered without<br> a Spark tarball.
 Flink | Distributed<br>SQL<br>Engine | Optional | 1.14.0 and above | By default Kyuubi binary release is delivered without<br> a Flink tarball.
+Trino | Distributed<br>SQL<br>Engine | Optional | 363 and above | By default Kyuubi binary release is delivered without<br> a Trino tarball.
 HDFS | Distributed<br>File<br>System |  Optional | referenced<br>by<br>Spark | Hadoop Distributed File System is a <br>part of Hadoop framework, used to<br> store and process the datasets.<br> You can interact with any<br> Spark-compatible versions of HDFS.
 Hive | Metastore | Optional | referenced<br>by<br>Spark | Hive Metastore for Spark SQL to connect
 Zookeeper | Service<br>Discovery | Optional | Any<br>zookeeper<br>ensemble<br>compatible<br>with<br>curator(2.12.0) | By default, Kyuubi provides a<br> embedded Zookeeper server inside for<br> non-production use.
 
-Additionally, if you want to work with other Spark/Flink compatible systems or plugins, you only need to take care of them as using them with regular Spark/Flink applications.
-For example, you can run Spark/Flink SQL engines created by the Kyuubi on any cluster manager, including YARN, Kubernetes, Mesos, e.t.c...
+Additionally, if you want to work with other Spark/Flink/Trino compatible systems or plugins, you only need to take care of them as using them with regular Spark/Flink/Trino applications.
+For example, you can run Spark/Flink/Trino SQL engines created by the Kyuubi on any cluster manager, including YARN, Kubernetes, Mesos, e.t.c...
 Or, you can manipulate data from different data sources with the Spark Datasource/Flink Table API, e.g. Delta Lake, Apache Hudi, Apache Iceberg, Apache Kudu and e.t.c...
 
 ## Installation
@@ -99,7 +100,7 @@ From top to bottom are:
 - bin: the entry of the Kyuubi server with `kyuubi` as the startup script.
 - conf: all the defaults used by Kyuubi Server itself or creating a session with Spark applications.
 - externals
-  - engines: contains all kinds of SQL engines that we support, e.g. Apache Spark, Apache Flink, Trino(coming soon).
+  - engines: contains all kinds of SQL engines that we support, e.g. Apache Spark, Apache Flink, Trino.
 - licenses: a bunch of licenses included.
 - jars: packages needed by the Kyuubi server.
 - logs: where the logs of the Kyuubi server locates.
@@ -113,6 +114,7 @@ As mentioned above, for a quick start deployment, then only you need to be sure 
 - Java runtime environment 
 - `SPARK_HOME` for the Spark engine
 - `FLINK_HOME` and `kyuubi.engine.type` in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` for the Flink engine.
+- `kyuubi.engine.type` `session.engine.trino.connection.url` and `session.engine.trino.connection.catalog` in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` for the Trino engine
 
 ### Setup JAVA
 
@@ -168,6 +170,21 @@ To enable the Flink SQL engine, the `kyuubi.engine.type` in `$KYUUBI_HOME/conf/k
 
 ```bash
 kyuubi.engine.type FLINK_SQL
+```
+
+### Trino Engine
+
+#### Setup Trino
+Different from Spark/Flink, you must have a Trino cluster first. Trino client stored in `$KYUUBI_HOME/externals/engines/trino`.
+
+#### Setup Kyuubi Trino Configration
+
+To enable the Trino engine, the `kyuubi.engine.type` need to be set as `TRINO`. And `session.engine.trino.connection.url` and `session.engine.trino.connection.catalog` are also necessary. You can set all those configs in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, or set them in your connection parameters.
+
+```bash
+kyuubi.engine.type TRINO
+session.engine.trino.connection.url http://localhost:8080    # Your trino cluster server url
+session.engine.trino.connection.catalog hive   # The default catalog connect to.
 ```
 
 ### Starting Kyuubi
@@ -241,7 +258,7 @@ Beeline version 2.3.7 by Apache Hive
 
 In this case, the session will create for the user named 'anonymous'.
 
-Kyuubi will create a Spark/Flink SQL engine application using `kyuubi-<engine>-sql-engine_2.12-<version>.jar`.
+Kyuubi will create a Spark/Flink/Trino SQL engine application using `kyuubi-<engine>-sql-engine_2.12-<version>.jar`.
 It will cost awhile for the application to be ready before fully establishing the session.
 Otherwise, an existing application will be reused, and the time cost here is negligible.
 
@@ -253,7 +270,7 @@ bin/beeline -u 'jdbc:hive2://localhost:10009/' -n kentyao
 
 The formerly created Spark application for user 'anonymous' will not be reused in this case, while a brand new application will be submitted for user 'kentyao' instead.
 
-Then, you can see two processes running in your local environment, including one `KyuubiServer` instance, one `SparkSubmit` or `FlinkSQLEngine` instances as the SQL engines.
+Then, you can see two processes running in your local environment, including one `KyuubiServer` instance, one `SparkSubmit` `FlinkSQLEngine` or `TrinoSqlEngine` instances as the SQL engines.
 
 - Spark
 
@@ -269,6 +286,14 @@ Then, you can see two processes running in your local environment, including one
 43484 Jps
 43194 KyuubiServer
 43260 FlinkSQLEngine
+```
+
+- Trino
+
+```
+63483 Jps
+63693 KyuubiServer
+63266 TrinoSqlEngine
 ```
 
 ### Execute Statements
@@ -424,6 +449,49 @@ Additionally, some useful information about the background Flink SQL application
 For example, you can get the Flink web UI from the log for debugging or tuning.
 
 ![](../imgs/flink/flink_jobs_page.png)
+
+#### Execute Trino Statements
+
+If the beeline session is successfully connected, then you can run any query supported by Trino now. For example,
+
+```logtalk
+0: jdbc:hive2://127.0.0.1:10009/default> select timestamp '2018-11-17';
+10:33:37.663 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing yizhifeidie123's query[d059bc77-f2b6-4f95-b72b-859dbc07aacb]: INITIALIZED_STATE -> PENDING_STATE, statement: select timestamp '2018-11-17'
+10:33:37.694 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing yizhifeidie123's query[d059bc77-f2b6-4f95-b72b-859dbc07aacb]: PENDING_STATE -> RUNNING_STATE, statement: select timestamp '2018-11-17'
+10:33:37.669 INFO org.apache.kyuubi.engine.trino.operation.ExecuteStatement: Processing yizhifeidie123's query[6353e64f-94ba-4770-989b-7186d267d8be]: INITIALIZED_STATE -> PENDING_STATE, statement: select timestamp '2018-11-17'10:33:37.693 INFO org.apache.kyuubi.engine.trino.operation.ExecuteStatement: Processing yizhifeidie123's query[6353e64f-94ba-4770-989b-7186d267d8be]: PENDING_STATE -> RUNNING_STATE, statement: select timestamp '2018-11-17'10:33:37.997 INFO org.apache.kyuubi.engine.trino.operation.ExecuteStatement: Execute in full collect mode10:33:37.999 INFO org.apache.kyuubi.engine.trino.operation.ExecuteStatement: Processing yizhifeidie123's query[6353e64f-94ba-4770-989b-7186d267d8be]: RUNNING_STATE -> FINISHED_STATE, statement: select timestamp '2018-11-17', time taken: 0.305 seconds
+10:33:38.003 INFO org.apache.kyuubi.operation.ExecuteStatement: Query[d059bc77-f2b6-4f95-b72b-859dbc07aacb] in FINISHED_STATE
+10:33:38.004 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing yizhifeidie123's query[d059bc77-f2b6-4f95-b72b-859dbc07aacb]: RUNNING_STATE -> FINISHED_STATE, statement: select timestamp '2018-11-17', time taken: 0.31 seconds
++------------------------+
+|         _col0          |
++------------------------+
+| 2018-11-17 00:00:00.0  |
++------------------------+
+1 row selected (0.422 seconds)
+0: jdbc:hive2://localhost:10009/default> select * from tpch.tiny.customer limit 6;
+11:10:07.869 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing kyuubi's query[8b96ccd1-d1e2-4068-b250-c5a66950e629]: INITIALIZED_STATE -> PENDING_STATE, statement: select * from tpch.tiny.customer limit 6
+11:10:07.878 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing kyuubi's query[8b96ccd1-d1e2-4068-b250-c5a66950e629]: PENDING_STATE -> RUNNING_STATE, statement: select * from tpch.tiny.customer limit 6
+11:10:07.871 INFO org.apache.kyuubi.engine.trino.operation.ExecuteStatement: Processing kyuubi's query[d66faea0-fac8-4d3c-a38a-c84fba57d8a7]: INITIALIZED_STATE -> PENDING_STATE, statement: select * from tpch.tiny.customer limit 611:10:07.877 INFO org.apache.kyuubi.engine.trino.operation.ExecuteStatement: Processing kyuubi's query[d66faea0-fac8-4d3c-a38a-c84fba57d8a7]: PENDING_STATE -> RUNNING_STATE, statement: select * from tpch.tiny.customer limit 611:10:08.063 INFO org.apache.kyuubi.engine.trino.operation.ExecuteStatement: Execute in full collect mode11:10:08.064 INFO org.apache.kyuubi.engine.trino.operation.ExecuteStatement: Processing kyuubi's query[d66faea0-fac8-4d3c-a38a-c84fba57d8a7]: RUNNING_STATE -> FINISHED_STATE, statement: select * from tpch.tiny.customer limit 6, time taken: 0.186 seconds
+11:10:08.066 INFO org.apache.kyuubi.operation.ExecuteStatement: Query[8b96ccd1-d1e2-4068-b250-c5a66950e629] in FINISHED_STATE
+11:10:08.066 INFO org.apache.kyuubi.operation.ExecuteStatement: Processing kyuubi's query[8b96ccd1-d1e2-4068-b250-c5a66950e629]: RUNNING_STATE -> FINISHED_STATE, statement: select * from tpch.tiny.customer limit 6, time taken: 0.188 seconds
++----------+---------------------+----------------------------------+------------+------------------+----------+-------------+----------------------------------------------------+
+| custkey  |        name         |             address              | nationkey  |      phone       | acctbal  | mktsegment  |                      comment                       |
++----------+---------------------+----------------------------------+------------+------------------+----------+-------------+----------------------------------------------------+
+| 749      | Customer#000000749  | U1Dvu0r793a                      | 24         | 34-158-697-9591  | 7491.42  | MACHINERY   | accounts was. final, final requests wake. theodolites was slyly. blithely even foxes wake carefully ac |
+| 750      | Customer#000000750  | 5OyNRajjgjjbaXtI rkxvB2lX4c6u    | 8          | 18-235-587-1274  | 269.9    | BUILDING    | s. regular, regular deposits sleep carefully blithely bol |
+| 751      | Customer#000000751  | e OSrreG6sx7l1t3wAg8u11DWk D 9   | 0          | 10-658-550-2257  | 2130.98  | FURNITURE   | ges sleep furiously bold deposits. furiously regular requests cajole slyly. unusual accounts nag unusual ide |
+| 752      | Customer#000000752  | KtdEacPUecPdPLt99kwZrnH9oIxUxpw  | 8          | 18-924-993-6038  | 8363.66  | MACHINERY   | mong the ironic, final waters. regular deposits above the fluffily ironic instructions |
+| 753      | Customer#000000753  | 9k2PLlDRbMq4oSvW5Hh7Ak5iRDH      | 17         | 27-817-126-3646  | 8114.44  | HOUSEHOLD   | cies. deposits snooze. final, regular excuses wake furiously about the furiously final foxes. dependencies  |
+| 754      | Customer#000000754  | 8r5wwhhlL9MkAxOhRK               | 0          | 10-646-595-5871  | -566.86  | BUILDING    | er regular accounts against the furiously unusual somas sleep carefull |
++----------+---------------------+----------------------------------+------------+------------------+----------+-------------+----------------------------------------------------+
+6 rows selected (0.21 seconds)
+```
+
+As shown in the above case, you can retrieve all the operation logs, the result schema, and the result to your client-side in the beeline console.
+
+Additionally, some useful information about the background Trino application associated with this connection is also printed in the operation log.
+Add, you get the Trino web UI for debugging or tuning.
+
+![](../imgs/trino/trino-query-page.png)
 
 ### Closing a Connection
 
