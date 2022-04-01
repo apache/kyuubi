@@ -75,10 +75,10 @@ class SparkClusterModeOnKubernetesSuite
   override protected lazy val conf: KyuubiConf = {
     sparkOnK8sConf.set("spark.submit.deployMode", "cluster")
       .set(
-        "spark.kubernetes.file.upload.path", getHadoopConf.get("fs.defaultFS") + "/spark")
-  }
-
-  override def beforeAll(): Unit = {
-    super[WithSecuredDFSService].beforeAll();
+        "spark.kubernetes.file.upload.path",
+        getHadoopConf.get("fs.defaultFS") + "/spark")
+      .set("spark.hadoop.security.authentication", "kerberos")
+      .set("spark.kerberos.keytab", testKeytab)
+      .set("spark.kerberos.principal", testPrincipal)
   }
 }
