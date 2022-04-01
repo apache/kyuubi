@@ -22,11 +22,11 @@ import java.security.PrivilegedExceptionAction
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 
-class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
+class RangerSparkExtensionSuite extends KyuubiFunSuite {
 
   private lazy val spark: SparkSession = SparkSession.builder()
     .master("local")
@@ -59,7 +59,7 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
   }
 
-  test("databases") {
+  test("auth: databases") {
     val testDb = "mydb"
     val create = s"CREATE DATABASE IF NOT EXISTS $testDb"
     val alter = s"ALTER DATABASE $testDb SET DBPROPERTIES (abc = '123')"
@@ -73,14 +73,14 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
       val e1 = intercept[RuntimeException](sql(alter))
       assert(e1.getMessage === errorMessage("alter", "mydb"))
       val e2 = intercept[RuntimeException](sql(drop))
-      assert(e2.getMessage === (errorMessage("drop", "mydb")))
+      assert(e2.getMessage === errorMessage("drop", "mydb"))
       doAs("kent", Try(sql("SHOW DATABASES")).isSuccess)
     } finally {
       doAs("admin", sql(drop))
     }
   }
 
-  test("tables") {
+  test("auth: tables") {
     val db = "default"
     val table = "src"
     val col = "key"
@@ -123,7 +123,7 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
     }
   }
 
-  test("functions") {
+  test("auth: functions") {
     val db = "default"
     val func = "func"
     val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
@@ -133,5 +133,45 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
         assert(e.getMessage === errorMessage("create", "default/func"))
       })
     doAs("admin", assert(Try(sql(create0)).isSuccess))
+  }
+
+  test("row level filter") {
+    val db = "default"
+    val table = "src"
+    val col = "key"
+    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING parquet"
+    try {
+      doAs("admin", assert(Try { sql(create) }.isSuccess))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
+
+      doAs(
+        "kent",
+        assert(sql(s"SELECT key FROM $db.$table order by key").collect() ===
+          Seq(Row(1), Row(20), Row(30))))
+
+      Seq(
+        s"SELECT value FROM $db.$table",
+        s"SELECT value as key FROM $db.$table",
+        s"SELECT max(value) FROM $db.$table",
+        s"SELECT coalesce(max(value), 1) FROM $db.$table",
+        s"SELECT value FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
+        .foreach { q =>
+          doAs(
+            "bob", {
+              withClue(q) {
+                assert(sql(q).collect() === Seq(Row(1)))
+              }
+            })
+        }
+      doAs("bob", {
+        sql(s"CREATE TABLE $db.src2 using parquet AS SELECT value FROM $db.$table")
+        assert(sql(s"SELECT value FROM $db.${table}2").collect() === Seq(Row(1)))
+      })
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}2"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
+    }
   }
 }

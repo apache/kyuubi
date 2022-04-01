@@ -18,7 +18,6 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
@@ -31,6 +30,7 @@ import org.apache.spark.sql.types.StructField
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 object PrivilegesBuilder {
 
@@ -48,22 +48,6 @@ object PrivilegesBuilder {
 
   private def quote(parts: Seq[String]): String = {
     parts.map(quoteIfNeeded).mkString(".")
-  }
-
-  /**
-   * fixme error handling need improve here
-   */
-  private def getFieldVal[T](o: Any, name: String): T = {
-    Try {
-      val field = o.getClass.getDeclaredField(name)
-      field.setAccessible(true)
-      field.get(o)
-    } match {
-      case Success(value) => value.asInstanceOf[T]
-      case Failure(e) =>
-        val candidates = o.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$name not in $candidates", e)
-    }
   }
 
   private def databasePrivileges(db: String): PrivilegeObject = {
@@ -124,11 +108,11 @@ object PrivilegesBuilder {
         val cols = projectionList ++ collectLeaves(f.condition)
         buildQuery(f.child, privilegeObjects, cols)
 
-      case h if h.nodeName == "HiveTableRelation" =>
-        mergeProjection(getFieldVal[CatalogTable](h, "tableMeta"), h)
+      case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
+        mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation)
 
-      case l if l.nodeName == "LogicalRelation" =>
-        getFieldVal[Option[CatalogTable]](l, "catalogTable").foreach { t =>
+      case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
+        getDatasourceTable(logicalRelation).foreach { t =>
           mergeProjection(t, plan)
         }
 

@@ -15,8 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.ranger
+package org.apache.kyuubi.plugin.spark.authz.util
 
-import org.apache.ranger.plugin.service.RangerBasePlugin
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
 
-object RangerSparkPlugin extends RangerBasePlugin("spark", "sparkSql")
+class RuleEliminateRowFilterMarker extends Rule[LogicalPlan] {
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    plan.transformUp { case rf: RowFilterMarker => rf.table }
+  }
+}
