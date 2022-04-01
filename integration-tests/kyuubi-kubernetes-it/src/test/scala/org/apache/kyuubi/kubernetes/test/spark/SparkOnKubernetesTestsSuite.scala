@@ -77,4 +77,8 @@ class SparkClusterModeOnKubernetesSuite
       .set(
         "spark.kubernetes.file.upload.path", getHadoopConf.get("fs.defaultFS") + "/spark")
   }
+
+  override def beforeAll(): Unit = {
+    super[WithSecuredDFSService].beforeAll();
+  }
 }
