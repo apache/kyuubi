@@ -115,7 +115,7 @@ object EngineEvent {
       webUrl,
       sc.startTime,
       endTime = -1L,
-      state = 0,
+      state = engine.getServiceState.id,
       diagnostic = "",
       sc.getConf.getAll.toMap ++ engine.getConf.getAll)
   }
