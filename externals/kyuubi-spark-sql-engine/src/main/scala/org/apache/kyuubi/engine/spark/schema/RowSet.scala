@@ -242,7 +242,7 @@ object RowSet {
       case (t: Timestamp, TimestampType) =>
         formatTimestamp(t)
 
-      case (t: LocalDateTime, ntz) if ntz.getClass.getName.equals(TIMESTAMP_NTZ) =>
+      case (t: LocalDateTime, ntz) if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) =>
         formatLocalDateTime(t)
 
       case (i: Instant, TimestampType) =>
