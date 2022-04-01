@@ -165,10 +165,11 @@ class RangerSparkExtensionSuite extends KyuubiFunSuite {
               }
             })
         }
-      doAs("bob", {
-        sql(s"CREATE TABLE $db.src2 using parquet AS SELECT value FROM $db.$table")
-        assert(sql(s"SELECT value FROM $db.${table}2").collect() === Seq(Row(1)))
-      })
+      doAs(
+        "bob", {
+          sql(s"CREATE TABLE $db.src2 using parquet AS SELECT value FROM $db.$table")
+          assert(sql(s"SELECT value FROM $db.${table}2").collect() === Seq(Row(1)))
+        })
     } finally {
       doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}2"))
       doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
