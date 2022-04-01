@@ -39,7 +39,7 @@ import org.apache.kyuubi.engine.spark.events.handler.{SparkHistoryLoggingEventHa
 import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
-import org.apache.kyuubi.service.{Serverable, ServiceState}
+import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
@@ -156,7 +156,6 @@ object SparkSQLEngine extends Logging {
 
       try {
         engine.initialize(kyuubiConf)
-        engine.state = ServiceState.INITIALIZED
         EventBus.post(EngineEvent(engine))
       } catch {
         case t: Throwable =>
@@ -171,7 +170,6 @@ object SparkSQLEngine extends Logging {
           SparkContextHelper.getSparkUI(spark.sparkContext),
           store,
           kyuubiConf)
-        engine.state = ServiceState.STARTED
         val event = EngineEvent(engine)
         info(event)
         EventBus.post(event)
@@ -233,7 +231,6 @@ object SparkSQLEngine extends Logging {
           case e: KyuubiException => currentEngine match {
               case Some(engine) =>
                 engine.stop()
-                engine.state = ServiceState.STOPPED
                 val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
                 EventBus.post(event)
                 error(event, e)
