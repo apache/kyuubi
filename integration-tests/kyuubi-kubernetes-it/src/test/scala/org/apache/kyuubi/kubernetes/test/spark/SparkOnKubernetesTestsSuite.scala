@@ -77,7 +77,7 @@ class SparkClusterModeOnKubernetesSuite
       .set(
         "spark.kubernetes.file.upload.path",
         getHadoopConf.get("fs.defaultFS") + "/spark")
-      .set("spark.hadoop.security.authentication", "kerberos")
+      .set("spark.hadoop.hadoop.security.authentication", "kerberos")
       .set("spark.kerberos.keytab", testKeytab)
       .set("spark.kerberos.principal", testPrincipal)
   }
