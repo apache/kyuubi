@@ -889,7 +889,7 @@ object KyuubiConf {
         " with cluster mode, set to false to ensure that server can connect to engine")
       .version("1.3.0")
       .booleanConf
-      .createWithDefault(false)
+      .createWithDefault(true)
 
   val FRONTEND_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("frontend.connection.url.use.hostname")
