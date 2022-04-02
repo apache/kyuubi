@@ -179,12 +179,12 @@ Different from Spark/Flink, you must have a Trino cluster first. Trino client st
 
 #### Setup Kyuubi Trino Configration
 
-To enable the Trino engine, the `kyuubi.engine.type` need to be set as `TRINO`. And `session.engine.trino.connection.url` and `session.engine.trino.connection.catalog` are also necessary. You can set all those configs in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, or set them in your connection parameters.
+To enable the Trino engine, the `kyuubi.engine.type` need to be set as `TRINO`. And `kyuubi.session.engine.trino.connection.url` and `kyuubi.session.engine.trino.connection.catalog` are also necessary. You can set all those configs in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, or set them in your connection parameters.
 
 ```bash
 kyuubi.engine.type TRINO
-session.engine.trino.connection.url http://localhost:8080    # Your trino cluster server url
-session.engine.trino.connection.catalog hive   # The default catalog connect to.
+kyuubi.session.engine.trino.connection.url http://localhost:8080    # Your trino cluster server url
+kyuubi.session.engine.trino.connection.catalog hive   # The default catalog connect to.
 ```
 
 ### Starting Kyuubi
