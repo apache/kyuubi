@@ -22,23 +22,14 @@ import java.security.PrivilegedExceptionAction
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{Row, SparkSessionExtensions}
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 
-class RangerSparkExtensionSuite extends KyuubiFunSuite {
+abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessionProvider {
 
-  private lazy val spark: SparkSession = SparkSession.builder()
-    .master("local")
-    .withExtensions(new RangerSparkExtension)
-    .config("spark.ui.enabled", "false")
-    .config(
-      "spark.sql.warehouse.dir",
-      Utils.createTempDir(namePrefix = "spark-warehouse").toString)
-    .config("spark.sql.catalogImplementation", "in-memory")
-    .getOrCreate()
-
-  private val sql: String => DataFrame = spark.sql
+  override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
   private def doAs[T](user: String, f: => T): T = {
     UserGroupInformation.createRemoteUser(user).doAs[T](
@@ -85,7 +76,7 @@ class RangerSparkExtensionSuite extends KyuubiFunSuite {
     val table = "src"
     val col = "key"
 
-    val create0 = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING parquet"
+    val create0 = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
     val alter0 = s"ALTER TABLE $db.$table SET TBLPROPERTIES(key='ak')"
     val drop0 = s"DROP TABLE IF EXISTS $db.$table"
     val select = s"SELECT * FROM $db.$table"
@@ -139,7 +130,7 @@ class RangerSparkExtensionSuite extends KyuubiFunSuite {
     val db = "default"
     val table = "src"
     val col = "key"
-    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING parquet"
+    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
     try {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
@@ -167,7 +158,7 @@ class RangerSparkExtensionSuite extends KyuubiFunSuite {
         }
       doAs(
         "bob", {
-          sql(s"CREATE TABLE $db.src2 using parquet AS SELECT value FROM $db.$table")
+          sql(s"CREATE TABLE $db.src2 using $format AS SELECT value FROM $db.$table")
           assert(sql(s"SELECT value FROM $db.${table}2").collect() === Seq(Row(1)))
         })
     } finally {
@@ -175,4 +166,12 @@ class RangerSparkExtensionSuite extends KyuubiFunSuite {
       doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
     }
   }
+}
+
+class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+  override protected val catalogImpl: String = "in-memory"
+}
+
+class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+  override protected val catalogImpl: String = "hive"
 }
