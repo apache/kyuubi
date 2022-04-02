@@ -15,10 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.plugin.spark.authz
 
-trait EventLogger {
+import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
-  def logEvent(kyuubiEvent: KyuubiEvent): Unit
+object ObjectType extends Enumeration {
 
+  type ObjectType = Value
+
+  val DATABASE, TABLE, VIEW, COLUMN, FUNCTION = Value
+
+  def apply(obj: PrivilegeObject, opType: OperationType): ObjectType = {
+    obj.privilegeObjectType match {
+      case PrivilegeObjectType.DATABASE => DATABASE
+      case PrivilegeObjectType.TABLE_OR_VIEW if obj.columns.nonEmpty => COLUMN
+      case PrivilegeObjectType.TABLE_OR_VIEW if opType.toString.contains("VIEW") => VIEW
+      case PrivilegeObjectType.TABLE_OR_VIEW => TABLE
+      case PrivilegeObjectType.FUNCTION => FUNCTION
+    }
+  }
 }

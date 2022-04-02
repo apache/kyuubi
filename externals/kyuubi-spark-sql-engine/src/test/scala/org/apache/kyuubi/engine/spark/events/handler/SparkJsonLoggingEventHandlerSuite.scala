@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.engine.spark.events.handler
 
 import java.io.{BufferedReader, InputStreamReader}
 import java.nio.file.Paths
@@ -28,17 +28,18 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, WithSparkSQLEngine}
+import org.apache.kyuubi.engine.spark.events.{EngineEvent, SessionEvent}
 import org.apache.kyuubi.events.EventLoggerType._
 import org.apache.kyuubi.events.JsonProtocol
 import org.apache.kyuubi.operation.{HiveJDBCTestHelper, OperationHandle}
 
-class SparkEventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
+class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
   private val logRoot = "file://" + Utils.createTempDir().toString
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
 
   override def withKyuubiConf: Map[String, String] = Map(
-    KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON,$SPARK",
+    KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON",
     KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot,
     "spark.eventLog.enabled" -> "true",
     "spark.eventLog.dir" -> logRoot)
@@ -56,7 +57,6 @@ class SparkEventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTest
       "session",
       s"day=$currentDate",
       KyuubiSparkUtil.engineId + ".json")
-
     val fileSystem: FileSystem = FileSystem.get(new Configuration())
     val fs: FSDataInputStream = fileSystem.open(new Path(engineEventPath.toString))
     val engineEventReader = new BufferedReader(new InputStreamReader(fs))
@@ -64,7 +64,6 @@ class SparkEventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTest
     val readEvent =
       JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[EngineEvent])
     assert(readEvent.isInstanceOf[EngineEvent])
-
     withJdbcStatement() { statement =>
       val table = engineEventPath.getParent
       val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`$table`")

@@ -29,6 +29,7 @@ import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
+import org.apache.kyuubi.engine.spark.schema.SchemaHelper.TIMESTAMP_NTZ
 import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
@@ -240,6 +241,9 @@ object RowSet {
 
       case (t: Timestamp, TimestampType) =>
         formatTimestamp(t)
+
+      case (t: LocalDateTime, ntz) if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) =>
+        formatLocalDateTime(t)
 
       case (i: Instant, TimestampType) =>
         formatInstant(i, Option(timeZone))

@@ -20,6 +20,7 @@ package org.apache.kyuubi.credentials
 import java.util.ServiceLoader
 import java.util.concurrent._
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -81,7 +82,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
 
   def this() = this(classOf[HadoopCredentialsManager].getSimpleName)
 
-  private val userCredentialsRefMap = new ConcurrentHashMap[String, CredentialsRef]()
+  private[credentials] val userCredentialsRefMap = new ConcurrentHashMap[String, CredentialsRef]()
   private val sessionCredentialsEpochMap = new ConcurrentHashMap[String, Long]()
 
   private var providers: Map[String, HadoopDelegationTokenProvider] = _
@@ -91,6 +92,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   private var hadoopConf: Configuration = _
 
   private[credentials] var renewalExecutor: Option[ScheduledExecutorService] = None
+  private[credentials] var credentialsTimeoutChecker: Option[ScheduledExecutorService] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
@@ -127,6 +129,10 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     if (providers.nonEmpty) {
       renewalExecutor =
         Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("Delegation Token Renewal Thread"))
+
+      credentialsTimeoutChecker =
+        Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("User Credentials Timeout Checker"))
+      startTimeoutChecker()
     }
     super.start()
   }
@@ -203,6 +209,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
         info(s"Created CredentialsRef for user $appUser and scheduled a renewal task")
         ref
       })
+    ref.updateLastAccessTime()
 
     if (waitUntilCredentialsReady) {
       ref.waitUntilReady(Duration(credentialsWaitTimeout, TimeUnit.MILLISECONDS))
@@ -239,7 +246,9 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
         try {
           promise.trySuccess(updateCredentials(userRef))
 
-          scheduleRenewal(userRef, renewalInterval)
+          if (userCredentialsRefMap.containsKey(userRef.getAppUser)) {
+            scheduleRenewal(userRef, renewalInterval)
+          }
         } catch {
           case _: InterruptedException =>
           // Server is shutting down
@@ -248,7 +257,10 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
               s"Failed to update tokens for ${userRef.getAppUser}, try again in" +
                 s" $renewalRetryWait ms",
               e)
-            scheduleRenewal(userRef, renewalRetryWait)
+            if (userCredentialsRefMap.containsKey(userRef.getAppUser)) {
+              scheduleRenewal(userRef, renewalRetryWait)
+            }
+
             if (waitUntilCredentialsReady) {
               promise.tryFailure(e)
             }
@@ -262,6 +274,26 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     }
 
     promise.future
+  }
+
+  private def startTimeoutChecker(): Unit = {
+    val interval = conf.get(CREDENTIALS_CHECK_INTERVAL)
+    val timeout = conf.get(CREDENTIALS_IDLE_TIMEOUT)
+
+    val checkTask = new Runnable {
+      override def run(): Unit = {
+        val current = System.currentTimeMillis
+        for ((user, userCred) <- userCredentialsRefMap.asScala) {
+          if (userCred.getLastAccessTime + timeout <= current) {
+            userCredentialsRefMap.remove(user)
+          }
+        }
+      }
+    }
+
+    credentialsTimeoutChecker.foreach { executor =>
+      executor.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+    }
   }
 
 }

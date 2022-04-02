@@ -158,7 +158,7 @@ In general, when an exception occurs, we are able to find more information and c
 
 #### Configuring Engine Logging
 
-Please refer to Apache Flink online documentation -[Configuring Logging](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/advanced/logging) for instructions.
+Please refer to Apache Flink online documentation -[Configuring Logging](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/advanced/logging) for instructions.
 
 #### Where to Find the Engine Log
 

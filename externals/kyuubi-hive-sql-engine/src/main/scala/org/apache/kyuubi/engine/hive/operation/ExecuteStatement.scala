@@ -21,6 +21,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.operation.Operation
 
+import org.apache.kyuubi.engine.hive.events.HiveOperationEvent
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
@@ -31,6 +33,7 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
   extends HiveOperation(OperationType.EXECUTE_STATEMENT, session) {
+
   override val internalHiveOperation: Operation = {
     delegatedOperationManager.newExecuteStatementOperation(
       hive,
@@ -39,4 +42,6 @@ class ExecuteStatement(
       shouldRunAsync,
       queryTimeout)
   }
+
+  EventBus.post(HiveOperationEvent(this))
 }

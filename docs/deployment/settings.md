@@ -158,9 +158,11 @@ Key | Default | Meaning | Type | Since
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+<code>kyuubi.credentials.check.interval</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT5M</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The interval to check the expiration of cached <user, CredentialsRef> pairs.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.6.0</div>
 <code>kyuubi.credentials.hadoopfs.enabled</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Whether to renew Hadoop filesystem delegation tokens</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.4.0</div>
 <code>kyuubi.credentials.hadoopfs.uris</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'></div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Extra Hadoop filesystem URIs for which to request delegation tokens. The filesystem that hosts fs.defaultFS does not need to be listed here.</div>|<div style='width: 30pt'>seq</div>|<div style='width: 20pt'>1.4.0</div>
 <code>kyuubi.credentials.hive.enabled</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Whether to renew Hive metastore delegation token</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.4.0</div>
+<code>kyuubi.credentials.idle.timeout</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT6H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>inactive users' credentials will be expired after a configured timeout</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.6.0</div>
 <code>kyuubi.credentials.renewal.interval</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How often Kyuubi renews one user's delegation tokens</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
 <code>kyuubi.credentials.renewal.retry.wait</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How long to wait before retrying to fetch new credentials after a failure.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
 <code>kyuubi.credentials.update.wait.timeout</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How long to wait until credentials are ready.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.5.0</div>
@@ -400,6 +402,32 @@ Setting them in the JDBC Connection URL supplies session-specific for each SQL e
 ### Via SET Syntax
 
 Please refer to the Spark official online documentation for [SET Command](http://spark.apache.org/docs/latest/sql-ref-syntax-aux-conf-mgmt-set.html)
+
+## Flink Configurations
+
+### Via flink-conf.yaml
+
+Setting them in `$FLINK_HOME/conf/flink-conf.yaml` supplies with default values for SQL engine application. Available properties can be found at Flink official online documentation for [Flink Configurations](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/)
+
+### Via kyuubi-defaults.conf
+
+Setting them in `$KYUUBI_HOME/conf/kyuubi-defaults.conf` supplies with default values for SQL engine application too. You can use properties with the additional prefix `flink.` to override settings in `$FLINK_HOME/conf/flink-conf.yaml`.
+
+For example:
+```
+flink.parallelism.default 2
+flink.taskmanager.memory.process.size 5g
+```
+
+The below options in `kyuubi-defaults.conf` will set `parallelism.default: 2` and `taskmanager.memory.process.size: 5g` into flink configurations.
+
+### Via JDBC Connection URL
+
+Setting them in the JDBC Connection URL supplies session-specific for each SQL engine. For example: ```jdbc:hive2://localhost:10009/default;#parallelism.default=2;taskmanager.memory.process.size=5g```
+
+### Via SET Statements
+
+Please refer to the Flink official online documentation for [SET Statements](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/set/)
 
 ## Logging
 
