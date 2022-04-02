@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetOperationStatusReq, TOperationState, TStatusCode}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
@@ -60,19 +60,6 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         assert(getOpStatusResp.getOperationState === TOperationState.ERROR_STATE)
       }
-    }
-  }
-
-  test("submit spark app timeout with last log output") {
-    withSessionConf()(Map(
-      KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "2000",
-      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))(Map.empty) {
-      val exception = intercept[SQLException] {
-        withJdbcStatement() { _ => // no-op
-        }
-      }
-      val verboseMessage = Utils.stringifyException(exception)
-      assert(verboseMessage.contains("Failed to detect the root cause"))
     }
   }
 
