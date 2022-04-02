@@ -72,7 +72,7 @@ class TrinoProcessBuilder(
     }.getOrElse {
       throw KyuubiSQLException("TRINO_ENGINE_HOME is not set! " +
         "For more detail information on installing and configuring Trino, please visit " +
-        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
+        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
   }
 
