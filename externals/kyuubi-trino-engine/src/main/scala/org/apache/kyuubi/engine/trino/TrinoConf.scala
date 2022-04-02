@@ -27,14 +27,14 @@ object TrinoConf {
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   val DATA_PROCESSING_POOL_SIZE: ConfigEntry[Int] =
-    buildConf("trino.client.data.processing.pool.size")
+    buildConf("kyuubi.trino.client.data.processing.pool.size")
       .doc("The size of the thread pool used by the trino client to processing data")
       .version("1.5.0")
       .intConf
       .createWithDefault(3)
 
   val CLIENT_REQUEST_TIMEOUT: ConfigEntry[Long] =
-    buildConf("trino.client.request.timeout")
+    buildConf("kyuubi.trino.client.request.timeout")
       .doc("Timeout for Trino client request to trino cluster")
       .version("1.5.0")
       .timeConf

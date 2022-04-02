@@ -120,7 +120,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
   }
 
   test("fallback config entry") {
-    val origin = KyuubiConf.buildConf("origin.spark")
+    val origin = KyuubiConf.buildConf("kyuubi.origin.spark")
       .version("1.1.1")
       .stringConf.createWithDefault("origin")
     val fallback =
