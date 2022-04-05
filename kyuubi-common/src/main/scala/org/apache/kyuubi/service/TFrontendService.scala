@@ -18,6 +18,8 @@
 package org.apache.kyuubi.service
 
 import java.net.{InetAddress, ServerSocket}
+import java.nio.ByteBuffer
+import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
@@ -30,6 +32,7 @@ import org.apache.thrift.server.{ServerContext, TServerEventHandler}
 import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -153,13 +156,27 @@ abstract class TFrontendService(name: String)
     val ipAddress = authFactory.getIpAddress.orNull
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
-    val sessionHandle = be.openSession(
-      protocol,
-      userName,
-      req.getPassword,
-      ipAddress,
-      configuration)
-    sessionHandle
+
+    val sessionHandleGuid = configuration.get("kyuubi.session.handle.guid")
+    val sessionHandleSecret = configuration.get("kyuubi.session.handle.secret")
+
+    if (sessionHandleGuid.isDefined && sessionHandleSecret.isDefined) {
+      val guidBytes = Base64.getMimeDecoder.decode(sessionHandleGuid.get)
+      val secretBytes = Base64.getMimeDecoder.decode(sessionHandleSecret.get)
+      val tHandleIdentifier =
+        new THandleIdentifier(ByteBuffer.wrap(guidBytes), ByteBuffer.wrap(secretBytes))
+      val sessionHandle = new SessionHandle(HandleIdentifier(tHandleIdentifier), protocol)
+      be.sessionManager.getSession(sessionHandle)
+      sessionHandle
+    } else {
+      val sessionHandle = be.openSession(
+        protocol,
+        userName,
+        req.getPassword,
+        ipAddress,
+        configuration)
+      sessionHandle
+    }
   }
 
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {

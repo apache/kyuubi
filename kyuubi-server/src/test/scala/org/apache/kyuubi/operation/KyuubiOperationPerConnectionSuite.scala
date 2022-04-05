@@ -224,6 +224,19 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       }
     }
   }
+
+  test("support to reconnect to kyuubi server with known server host, port and session handle") {
+    withJdbcStatement() { statement =>
+      statement.executeQuery("set spark.sql.temp.key=value")
+      val reConnection = new KyuubiConnection(
+        jdbcUrlWithConf,
+        new Properties(),
+        statement.getConnection.asInstanceOf[KyuubiConnection].getKyuubiSessionRecovery)
+      val rs = reConnection.createStatement().executeQuery("set spark.sql.temp.key")
+      assert(rs.next())
+      assert(rs.getString(2).equals("value"))
+    }
+  }
 }
 
 class TestSessionConfAdvisor extends SessionConfAdvisor {

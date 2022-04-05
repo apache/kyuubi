@@ -105,8 +105,15 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private volatile boolean launchEngineOpCompleted = false;
 
   private boolean isBeeLineMode;
+  private KyuubiSessionRecovery kyuubiSessionRecovery = null;
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
+    this(uri, info, null);
+  }
+
+  public KyuubiConnection(String uri, Properties info, KyuubiSessionRecovery kyuubiSessionRecovery)
+      throws SQLException {
+    this.kyuubiSessionRecovery = kyuubiSessionRecovery;
     setupLoginTimeout();
     try {
       connParams = Utils.parseURL(uri, info);
@@ -120,8 +127,13 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     // sess_var_list -> sessConfMap
     // hive_conf_list -> hiveConfMap
     // hive_var_list -> hiveVarMap
-    host = connParams.getHost();
-    port = connParams.getPort();
+    if (kyuubiSessionRecovery == null) {
+      host = connParams.getHost();
+      port = connParams.getPort();
+    } else {
+      host = kyuubiSessionRecovery.serverHost;
+      port = kyuubiSessionRecovery.serverPort;
+    }
     sessConfMap = connParams.getSessionVars();
     isEmbeddedMode = connParams.isEmbeddedMode();
 
@@ -752,6 +764,18 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (sessVars.containsKey(HiveAuthFactory.HS2_PROXY_USER)) {
       openConf.put(HiveAuthFactory.HS2_PROXY_USER, sessVars.get(HiveAuthFactory.HS2_PROXY_USER));
     }
+
+    if (kyuubiSessionRecovery != null) {
+      String sessionHandleGuid =
+          Base64.getMimeEncoder()
+              .encodeToString(kyuubiSessionRecovery.sessionHandle.getSessionId().getGuid());
+      String sessionHandleSecret =
+          Base64.getMimeEncoder()
+              .encodeToString(kyuubiSessionRecovery.sessionHandle.getSessionId().getSecret());
+      openConf.put("kyuubi.session.handle.guid", sessionHandleGuid);
+      openConf.put("kyuubi.session.handle.secret", sessionHandleSecret);
+    }
+
     openReq.setConfiguration(openConf);
 
     // Store the user name in the open request in case no non-sasl authentication
@@ -783,6 +807,14 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           openRespConf.get("kyuubi.session.engine.launch.handle.guid");
       String launchEngineOpHandleSecret =
           openRespConf.get("kyuubi.session.engine.launch.handle.secret");
+
+      // Get kyuubi connection server host/port
+      String serverHost = openRespConf.get("kyuubi.session.server.host");
+      String serverPort = openRespConf.get("kyuubi.session.server.port");
+      if (serverHost != null && serverPort != null) {
+        kyuubiSessionRecovery =
+            new KyuubiSessionRecovery(serverHost, Integer.parseInt(serverPort), sessHandle);
+      }
 
       if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
         try {
@@ -1695,6 +1727,22 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           throw new SQLException(e.getMessage(), "08S01", e);
         }
       }
+    }
+  }
+
+  public KyuubiSessionRecovery getKyuubiSessionRecovery() {
+    return kyuubiSessionRecovery;
+  }
+
+  static class KyuubiSessionRecovery {
+    protected String serverHost;
+    protected int serverPort;
+    protected TSessionHandle sessionHandle;
+
+    public KyuubiSessionRecovery(String serverHost, int serverPort, TSessionHandle sessionHandle) {
+      this.serverHost = serverHost;
+      this.serverPort = serverPort;
+      this.sessionHandle = sessionHandle;
     }
   }
 }
