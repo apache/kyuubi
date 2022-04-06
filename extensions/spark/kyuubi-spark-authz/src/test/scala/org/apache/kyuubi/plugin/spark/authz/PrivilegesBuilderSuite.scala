@@ -18,38 +18,13 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.SPARK_VERSION
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 
-abstract class PrivilegesBuilderSuite extends KyuubiFunSuite {
-
-  protected val catalogImpl: String
-
-  protected val isSparkV2: Boolean = SPARK_VERSION.split("\\.").head == "2"
-  protected val isSparkV31OrGreater: Boolean = {
-    val parts = SPARK_VERSION.split("\\.").map(_.toInt)
-    (parts.head > 3) || (parts.head == 3 && parts(1) >= 1)
-  }
-  protected val isSparkV32OrGreater: Boolean = {
-    val parts = SPARK_VERSION.split("\\.").map(_.toInt)
-    (parts.head > 3) || (parts.head == 3 && parts(1) >= 2)
-  }
-
-  protected lazy val spark: SparkSession = SparkSession.builder()
-    .master("local")
-    .config("spark.ui.enabled", "false")
-    .config(
-      "spark.sql.warehouse.dir",
-      Utils.createTempDir(namePrefix = "spark-warehouse").toString)
-    .config("spark.sql.catalogImplementation", catalogImpl)
-    .getOrCreate()
-
-  protected val sql: String => DataFrame = spark.sql
+abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionProvider {
 
   protected def withTable(t: String)(f: String => Unit): Unit = {
     try {

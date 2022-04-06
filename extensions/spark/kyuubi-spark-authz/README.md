@@ -20,7 +20,7 @@
 ## Functions
 
 - [x] Column-level fine-grained authorization
-- [ ] Row-level fine-grained authorization, a.k.a. Row-level filtering
+- [x] Row-level fine-grained authorization, a.k.a. Row-level filtering
 - [ ] Data masking
 
 ## Build

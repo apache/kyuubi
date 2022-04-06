@@ -19,11 +19,13 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSessionExtensions
 
+import org.apache.kyuubi.plugin.spark.authz.util.RuleEliminateRowFilterMarker
+
 /**
  * ACL Management for Apache Spark SQL with Apache Ranger, enabling:
  * <ul>
  *   <li>Table/Column level authorization(yes)</li>
- *   <li>Row level filtering(no)</li>
+ *   <li>Row level filtering(yes)</li>
  *   <li>Data masking(no)</li>
  * <ul>
  *
@@ -34,9 +36,11 @@ import org.apache.spark.sql.SparkSessionExtensions
  *  @since 1.6.0
  */
 class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
-  RangerSparkPlugin.init()
+  SparkRangerAdminPlugin.init()
 
   override def apply(v1: SparkSessionExtensions): Unit = {
-    v1.injectOptimizerRule(new RangerSparkAuthorizer(_))
+    v1.injectResolutionRule(new RuleApplyRowFilter(_))
+    v1.injectPostHocResolutionRule(_ => new RuleEliminateRowFilterMarker())
+    v1.injectOptimizerRule(new RuleAuthorization(_))
   }
 }

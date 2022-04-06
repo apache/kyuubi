@@ -22,23 +22,14 @@ import java.security.PrivilegedExceptionAction
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{Row, SparkSessionExtensions}
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 
-class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
+abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessionProvider {
 
-  private lazy val spark: SparkSession = SparkSession.builder()
-    .master("local")
-    .withExtensions(new RangerSparkExtension)
-    .config("spark.ui.enabled", "false")
-    .config(
-      "spark.sql.warehouse.dir",
-      Utils.createTempDir(namePrefix = "spark-warehouse").toString)
-    .config("spark.sql.catalogImplementation", "in-memory")
-    .getOrCreate()
-
-  private val sql: String => DataFrame = spark.sql
+  override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
   private def doAs[T](user: String, f: => T): T = {
     UserGroupInformation.createRemoteUser(user).doAs[T](
@@ -59,7 +50,7 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
   }
 
-  test("databases") {
+  test("auth: databases") {
     val testDb = "mydb"
     val create = s"CREATE DATABASE IF NOT EXISTS $testDb"
     val alter = s"ALTER DATABASE $testDb SET DBPROPERTIES (abc = '123')"
@@ -73,19 +64,19 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
       val e1 = intercept[RuntimeException](sql(alter))
       assert(e1.getMessage === errorMessage("alter", "mydb"))
       val e2 = intercept[RuntimeException](sql(drop))
-      assert(e2.getMessage === (errorMessage("drop", "mydb")))
+      assert(e2.getMessage === errorMessage("drop", "mydb"))
       doAs("kent", Try(sql("SHOW DATABASES")).isSuccess)
     } finally {
       doAs("admin", sql(drop))
     }
   }
 
-  test("tables") {
+  test("auth: tables") {
     val db = "default"
     val table = "src"
     val col = "key"
 
-    val create0 = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING parquet"
+    val create0 = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
     val alter0 = s"ALTER TABLE $db.$table SET TBLPROPERTIES(key='ak')"
     val drop0 = s"DROP TABLE IF EXISTS $db.$table"
     val select = s"SELECT * FROM $db.$table"
@@ -123,7 +114,7 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
     }
   }
 
-  test("functions") {
+  test("auth: functions") {
     val db = "default"
     val func = "func"
     val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
@@ -134,4 +125,53 @@ class RangerSparkAuthorizerSuite extends KyuubiFunSuite {
       })
     doAs("admin", assert(Try(sql(create0)).isSuccess))
   }
+
+  test("row level filter") {
+    val db = "default"
+    val table = "src"
+    val col = "key"
+    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
+    try {
+      doAs("admin", assert(Try { sql(create) }.isSuccess))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
+
+      doAs(
+        "kent",
+        assert(sql(s"SELECT key FROM $db.$table order by key").collect() ===
+          Seq(Row(1), Row(20), Row(30))))
+
+      Seq(
+        s"SELECT value FROM $db.$table",
+        s"SELECT value as key FROM $db.$table",
+        s"SELECT max(value) FROM $db.$table",
+        s"SELECT coalesce(max(value), 1) FROM $db.$table",
+        s"SELECT value FROM $db.$table WHERE value in (SELECT value as key FROM $db.$table)")
+        .foreach { q =>
+          doAs(
+            "bob", {
+              withClue(q) {
+                assert(sql(q).collect() === Seq(Row(1)))
+              }
+            })
+        }
+      doAs(
+        "bob", {
+          sql(s"CREATE TABLE $db.src2 using $format AS SELECT value FROM $db.$table")
+          assert(sql(s"SELECT value FROM $db.${table}2").collect() === Seq(Row(1)))
+        })
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}2"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
+    }
+  }
+}
+
+class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+  override protected val catalogImpl: String = "in-memory"
+}
+
+class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+  override protected val catalogImpl: String = "hive"
 }
