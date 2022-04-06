@@ -24,8 +24,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.service.TFrontendService.DELEGATION_TOKEN_IS_NOT_SUPPORTED
 
 class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
 
@@ -199,6 +200,31 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
       assert(manager.getSessionCredentialsEpoch(sessionId) == CredentialsRef.UNSET_EPOCH)
     }
   }
+
+
+  test("stop renewal when delegation token is not supported") {
+    withStartedManager(new KyuubiConf(false)) { manager =>
+      // Trigger UserCredentialsRef's initialization
+      val userRef = manager.getOrCreateUserCredentialsRef(appUser)
+      eventually(interval(100.milliseconds)) {
+        assert(userRef.getEpoch == 0)
+      }
+
+      var called = false
+      manager.sendCredentialsIfNeeded(
+        sessionId,
+        appUser,
+        _ => {
+          called = true
+          throw KyuubiSQLException(DELEGATION_TOKEN_IS_NOT_SUPPORTED)
+        })
+
+      assert(called)
+      assert(manager.renewalExecutor.isEmpty)
+
+    }
+  }
+
 }
 
 private class ExceptionThrowingDelegationTokenProvider extends HadoopDelegationTokenProvider {

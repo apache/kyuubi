@@ -28,7 +28,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_BIND_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
 import org.apache.kyuubi.operation.{OperationHandle, OperationType, TClientTestUtils}
-import org.apache.kyuubi.service.TFrontendService.{FeServiceServerContext, SERVER_VERSION}
+import org.apache.kyuubi.service.TFrontendService.{DELEGATION_TOKEN_IS_NOT_SUPPORTED, FeServiceServerContext, SERVER_VERSION}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
 
 class TFrontendServiceSuite extends KyuubiFunSuite {
@@ -477,21 +477,21 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       val tGetDelegationTokenResp = client.GetDelegationToken(tGetDelegationTokenReq)
       assert(tGetDelegationTokenResp.getDelegationToken === null)
       assert(tGetDelegationTokenResp.getStatus.getErrorMessage ===
-        "Delegation token is not supported")
+        DELEGATION_TOKEN_IS_NOT_SUPPORTED)
 
       val tCancelDelegationTokenReq = new TCancelDelegationTokenReq()
       tCancelDelegationTokenReq.setSessionHandle(handle)
       tCancelDelegationTokenReq.setDelegationToken("")
       val tCancelDelegationTokenResp = client.CancelDelegationToken(tCancelDelegationTokenReq)
       assert(tCancelDelegationTokenResp.getStatus.getErrorMessage ===
-        "Delegation token is not supported")
+        DELEGATION_TOKEN_IS_NOT_SUPPORTED)
 
       val tRenewDelegationTokenReq = new TRenewDelegationTokenReq()
       tRenewDelegationTokenReq.setSessionHandle(handle)
       tRenewDelegationTokenReq.setDelegationToken("")
       val tRenewDelegationTokenResp = client.RenewDelegationToken(tRenewDelegationTokenReq)
       assert(tRenewDelegationTokenResp.getStatus.getErrorMessage ===
-        "Delegation token is not supported")
+        DELEGATION_TOKEN_IS_NOT_SUPPORTED)
     }
   }
 

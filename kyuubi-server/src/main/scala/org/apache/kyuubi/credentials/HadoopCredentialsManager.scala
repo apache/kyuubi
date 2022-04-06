@@ -34,6 +34,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.service.TFrontendService.DELEGATION_TOKEN_IS_NOT_SUPPORTED
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 /**
@@ -183,6 +184,10 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
           warn(
             s"Failed to send new credentials to SQL engine through session $sessionId",
             exception)
+          if(DELEGATION_TOKEN_IS_NOT_SUPPORTED.equals(exception.getMessage)) {
+            stop()
+            renewalExecutor = None
+          }
       }
     }
   }

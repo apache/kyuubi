@@ -32,6 +32,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOGIN_TIMEOUT, ENGINE_REQUEST_TIMEOUT}
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.service.TFrontendService.DELEGATION_TOKEN_IS_NOT_SUPPORTED
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
@@ -363,16 +364,17 @@ class KyuubiSyncThriftClient private (
     val req = new TRenewDelegationTokenReq()
     req.setSessionHandle(_remoteSessionHandle)
     req.setDelegationToken(encodedCredentials)
-    try {
-      val resp = withLockAcquired(RenewDelegationToken(req))
-      if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
-        debug(s"$req succeed on engine side")
-      } else {
-        warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
+
+    val resp = withLockAcquired(RenewDelegationToken(req))
+    if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
+      debug(s"$req succeed on engine side")
+    } else {
+      warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
+      if(DELEGATION_TOKEN_IS_NOT_SUPPORTED.equals(resp.getStatus.getErrorMessage)) {
+        throw KyuubiSQLException(resp.getStatus.getErrorMessage)
       }
-    } catch {
-      case e: Exception => warn(s"$req failed on engine side", e)
     }
+
   }
 
   def isConnectionValid(): Boolean = {
