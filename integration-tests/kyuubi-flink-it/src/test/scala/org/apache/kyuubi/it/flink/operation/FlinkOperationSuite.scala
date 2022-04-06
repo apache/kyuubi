@@ -18,7 +18,7 @@
 package org.apache.kyuubi.it.flink.operation
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TYPE, FRONTEND_THRIFT_BINARY_BIND_PORT}
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_TYPE
 import org.apache.kyuubi.it.flink.WithKyuubiServerAndFlinkMiniCluster
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
@@ -27,7 +27,7 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJ
   override val conf: KyuubiConf = KyuubiConf()
     .set(ENGINE_TYPE, "FLINK_SQL")
     .set("flink.parallelism.default", "6")
-  
+
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("get catalogs for flink sql") {
