@@ -17,14 +17,18 @@
 
 package org.apache.kyuubi.engine.hive
 
+import java.io.File
 import java.net.URI
 import java.nio.file.{Files, Paths}
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, SCALA_COMPILE_VERSION, Utils}
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.Set
+
+import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_HIVE_MAIN_RESOURCE
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
-import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_ENGINE_BINARY_FILE
 import org.apache.kyuubi.operation.log.OperationLog
 
 class HiveProcessBuilder(
@@ -33,25 +37,14 @@ class HiveProcessBuilder(
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
-  override protected def executable: String = {
-    val hiveHomeOpt = env.get("HIVE_ENGINE_HOME").orElse {
-      val cwd = Utils.getCodeSourceLocation(getClass)
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve(module)
-          .toFile)
-        .map(_.getAbsolutePath)
-    }
+  private val hiveHome: String = getEngineHome("hive")
 
-    hiveHomeOpt.map { dir =>
-      Paths.get(dir, "bin", HIVE_ENGINE_BINARY_FILE).toAbsolutePath.toFile.getCanonicalPath
-    }.getOrElse {
-      throw KyuubiSQLException("HIVE_ENGINE_HOME is not set! " +
-        "For more detail information on installing and configuring Hive, please visit " +
-        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
+  override protected def executable: String = {
+    val javaHome = env.get("JAVA_HOME")
+    if (javaHome.isEmpty) {
+      throw validateEnv("JAVA_HOME")
+    } else {
+      Paths.get(javaHome.get, "bin", "java").toString
     }
   }
 
@@ -69,7 +62,7 @@ class HiveProcessBuilder(
     }.orElse {
       // 2. get the main resource jar from system build default
       env.get(KyuubiConf.KYUUBI_HOME)
-        .map { Paths.get(_, "externals", "engines", "hive", "jars", jarName) }
+        .map { Paths.get(_, "externals", "engines", "hive", jarName) }
         .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
     }.orElse {
       // 3. get the main resource from dev environment
@@ -80,21 +73,37 @@ class HiveProcessBuilder(
     }
   }
 
-  override protected def childProcEnv: Map[String, String] = conf.getEnvs +
-    ("HIVE_ENGINE_JAR" -> mainResource.get) +
-    ("HIVE_ENGINE_DYNAMIC_ARGS" ->
-      conf.getAll.map { case (k, v) => s"-D$k=$v" }.mkString(" "))
-
   override protected def module: String = "kyuubi-hive-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.hive.HiveSQLEngine"
 
-  override protected def commands: Array[String] = Array(executable)
+  override protected def commands: Array[String] = {
+    val buffer = new ArrayBuffer[String]()
+    buffer += executable
 
-}
+    // TODO: How shall we deal with proxyUser,
+    // user.name
+    // kyuubi.session.user
+    // or just leave it, because we can handle it at operation layer
+    buffer += s"-D$KYUUBI_SESSION_USER_KEY=$proxyUser"
 
-object HiveProcessBuilder {
+    // TODO: add Kyuubi.engineEnv.HIVE_ENGINE_MEMORY or kyuubi.engine.hive.memory to configure
+    // -Xmx5g
+    // java options
+    for ((k, v) <- conf.getAll) {
+      buffer += s"-D$k=$v"
+    }
 
-  val HIVE_ENGINE_BINARY_FILE = "hive-sql-engine.sh"
+    buffer += "-cp"
+    val classpathEntries = Set.empty[String]
+    mainResource.foreach(classpathEntries.add)
+    classpathEntries.add(env.getOrElse("HIVE_CONF_DIR", s"$hiveHome${File.separator}conf"))
+    env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
+    env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
+    classpathEntries.add(s"$hiveHome${File.separator}lib${File.separator}*")
 
+    buffer += classpathEntries.mkString(File.pathSeparator)
+    buffer += mainClass
+    buffer.toArray
+  }
 }

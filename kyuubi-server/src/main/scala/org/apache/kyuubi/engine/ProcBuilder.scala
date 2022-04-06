@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.{File, IOException}
+import java.io.{File, FilenameFilter, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
@@ -227,6 +227,53 @@ trait ProcBuilder {
         case arg => arg
       }.mkString(" ")
     }
+  }
+
+  /**
+   * Get the home directly that contains binary distributions of engines.
+   *
+   * Take Spark as an example, we first lookup the SPARK_HOME from user specified environments.
+   * If not found, we assume that it is a dev environment and lookup the kyuubi-download's output
+   * directly. If not found again, a `KyuubiSQLException` will be raised.
+   * In summarize, we walk through
+   *   `kyuubi.engineEnv.SPARK_HOME` ->
+   *   System.env("SPARK_HOME") ->
+   *   kyuubi-download/target/spark-* ->
+   *   error.
+   *
+   * @param shortName the short name of engine, e.g. spark
+   * @return SPARK_HOME, HIVE_HOME, etc.
+   */
+  protected def getEngineHome(shortName: String): String = {
+    val homeKey = s"${shortName.toUpperCase}_HOME"
+    val homeVal = env.get(homeKey).orElse {
+      val cwd = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")
+      assert(cwd.length > 1)
+      Option(
+        Paths.get(cwd.head)
+          .resolve("externals")
+          .resolve("kyuubi-download")
+          .resolve("target")
+          .toFile
+          .listFiles(new FilenameFilter {
+            override def accept(dir: File, name: String): Boolean = {
+              dir.isDirectory && name.contains(s"$shortName-")
+            }
+          }))
+        .flatMap(_.headOption)
+        .map(_.getAbsolutePath)
+    }
+    if (homeVal.isEmpty) {
+      throw validateEnv(homeKey)
+    } else {
+      homeVal.get
+    }
+  }
+
+  protected def validateEnv(requiredEnv: String): Throwable = {
+    KyuubiSQLException(s"$requiredEnv is not set! For more information on installing and " +
+      s"configuring $requiredEnv, please visit https://kyuubi.apache.org/docs/latest/" +
+      s"deployment/settings.html#environments")
   }
 }
 

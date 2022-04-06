@@ -262,9 +262,7 @@ chmod a+x "$DISTDIR/externals/engines/trino/bin/trino-engine.sh"
 cp "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/kyuubi-trino-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/trino/jars"
 
 # Copy hive engines
-cp -r "$KYUUBI_HOME/externals/kyuubi-hive-sql-engine/bin/" "$DISTDIR/externals/engines/hive/bin/"
-chmod a+x "$DISTDIR/externals/engines/hive/bin/hive-sql-engine.sh"
-cp "$KYUUBI_HOME/externals/kyuubi-hive-sql-engine/target/kyuubi-hive-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/hive/jars"
+cp "$KYUUBI_HOME/externals/kyuubi-hive-sql-engine/target/kyuubi-hive-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/hive"
 
 # Copy kyuubi tools
 if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" ]]; then

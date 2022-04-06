@@ -132,6 +132,7 @@
                         <include>org.apache.curator:curator-recipes</include>
                         <include>org.apache.hive:hive-service-rpc</include>
                         <include>org.apache.thrift:*</include>
+                        <include>org.scala-lang:scala-library</include>
                     </includes>
                 </artifactSet>
                 <filters>

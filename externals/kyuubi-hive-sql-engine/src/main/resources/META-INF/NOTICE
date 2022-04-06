@@ -22,3 +22,7 @@ Copyright 2019 The Apache Software Foundation
 
 Apache Thrift
 Copyright 2006-2010 The Apache Software Foundation.
+
+org.scala-lang:scala-library
+Copyright (c) 2002-2022 EPFL
+Copyright (c) 2011-2022 Lightbend, Inc.

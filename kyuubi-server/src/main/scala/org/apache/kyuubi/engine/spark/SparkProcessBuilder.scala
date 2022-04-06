@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.io.{File, FilenameFilter, IOException}
+import java.io.IOException
 import java.net.URI
 import java.nio.file.{Files, Paths}
 
@@ -50,32 +50,8 @@ class SparkProcessBuilder(
   def getYarnClient: YarnClient = YarnClient.createYarnClient
 
   override protected val executable: String = {
-    val sparkHomeOpt = env.get("SPARK_HOME").orElse {
-      val cwd = Utils.getCodeSourceLocation(getClass)
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve("kyuubi-download")
-          .resolve("target")
-          .toFile
-          .listFiles(new FilenameFilter {
-            override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.startsWith("spark-")
-            }
-          }))
-        .flatMap(_.headOption)
-        .map(_.getAbsolutePath)
-    }
-
-    sparkHomeOpt.map { dir =>
-      Paths.get(dir, "bin", SPARK_SUBMIT_FILE).toAbsolutePath.toFile.getCanonicalPath
-    }.getOrElse {
-      throw KyuubiSQLException("SPARK_HOME is not set! " +
-        "For more detail information on installing and configuring Spark, please visit " +
-        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
-    }
+    val sparkHome = getEngineHome("spark")
+    Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toFile.getCanonicalPath
   }
 
   override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"

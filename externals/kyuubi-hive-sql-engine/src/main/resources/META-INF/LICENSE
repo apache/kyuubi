@@ -213,3 +213,4 @@ org.apache.curator:curator-recipes
 org.apache.hive:hive-service-rpc
 org.apache.thrift:fb303
 org.apache.thrift:libthrift
+org.scala-lang:scala-library
