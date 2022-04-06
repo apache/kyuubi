@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.kubernetes.test.spark
 
-import org.apache.kyuubi.{Logging, WithKyuubiServer, WithSecuredDFSService}
+import org.apache.kyuubi.{Logging, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
@@ -71,14 +71,11 @@ class SparkClientModeOnKubernetesSuite extends SparkOnKubernetesSuiteBase {
  *  ----------------------------------          ---------------------         ---------------------
  */
 class SparkClusterModeOnKubernetesSuite
-  extends SparkOnKubernetesSuiteBase with WithSecuredDFSService {
+  extends SparkOnKubernetesSuiteBase with WithSimpleDFSService {
   override protected lazy val conf: KyuubiConf = {
     sparkOnK8sConf.set("spark.submit.deployMode", "cluster")
       .set(
         "spark.kubernetes.file.upload.path",
         getHadoopConf.get("fs.defaultFS") + "/spark")
-      .set("spark.hadoop.hadoop.security.authentication", "kerberos")
-      .set("spark.kerberos.keytab", testKeytab)
-      .set("spark.kerberos.principal", testPrincipal)
   }
 }
