@@ -25,24 +25,21 @@ import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
-  import KyuubiConf._
 
   private val settings = new ConcurrentHashMap[String, String]()
   private lazy val reader: ConfigProvider = new ConfigProvider(settings)
-
-  if (loadSysDefault) {
-    loadFromMap(Utils.getSystemProperties.filter(_._1.startsWith("kyuubi.")))
+  private def loadFromMap(props: Map[String, String]): Unit = {
+    settings.putAll(props.asJava)
   }
 
-  private def loadFromMap(props: Map[String, String]): KyuubiConf = {
-    for (case (k, v) <- props) {
-      set(k, v)
-    }
-    this
+  if (loadSysDefault) {
+    val fromSysDefaults = Utils.getSystemProperties.filterKeys(_.startsWith("kyuubi."))
+    loadFromMap(fromSysDefaults)
   }
 
   def loadFileDefaults(): KyuubiConf = {
