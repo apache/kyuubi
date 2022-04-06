@@ -286,6 +286,8 @@ io.swagger.core.v3:swagger-integration
 io.swagger.core.v3:swagger-jaxrs2
 io.swagger.core.v3:swagger-models
 org.apache.zookeeper:zookeeper
+org.scala-lang:scala-library
+
 
 kyuubi-server/src/main/resources/org/apache/kyuubi/ui/swagger/*
 
@@ -293,10 +295,6 @@ BSD
 ------------
 jline:jline
 com.thoughtworks.paranamer:paranamer
-
-BSD 3-Clause
-------------
-org.scala-lang:scala-library
 
 Eclipse Distribution License - v 1.0
 ------------------------------------
