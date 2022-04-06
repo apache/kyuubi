@@ -20,9 +20,10 @@ package org.apache.kyuubi.engine.hive
 import java.io.File
 import java.net.URI
 import java.nio.file.{Files, Paths}
+import java.util.LinkedHashSet
 
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.Set
+import scala.collection.JavaConverters._
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -95,14 +96,14 @@ class HiveProcessBuilder(
     }
 
     buffer += "-cp"
-    val classpathEntries = Set.empty[String]
+    val classpathEntries = new LinkedHashSet[String]
     mainResource.foreach(classpathEntries.add)
     classpathEntries.add(env.getOrElse("HIVE_CONF_DIR", s"$hiveHome${File.separator}conf"))
     env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
     classpathEntries.add(s"$hiveHome${File.separator}lib${File.separator}*")
 
-    buffer += classpathEntries.mkString(File.pathSeparator)
+    buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass
     buffer.toArray
   }
