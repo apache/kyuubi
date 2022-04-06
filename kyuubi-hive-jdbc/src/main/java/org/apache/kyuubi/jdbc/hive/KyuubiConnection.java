@@ -46,6 +46,8 @@ import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.cli.thrift.*;
 import org.apache.hive.service.rpc.thrift.*;
+import org.apache.hive.service.rpc.thrift.TSetClientInfoReq;
+import org.apache.hive.service.rpc.thrift.TSetClientInfoResp;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -103,7 +105,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private Thread engineLogThread;
   private boolean engineLogInflight = true;
   private volatile boolean launchEngineOpCompleted = false;
-
+  private Properties clientInfo;
   private boolean isBeeLineMode;
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
@@ -1119,8 +1121,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   @Override
   public Properties getClientInfo() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
+    return clientInfo == null ? new Properties() : clientInfo;
   }
 
   /*
@@ -1131,8 +1132,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   @Override
   public String getClientInfo(String name) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
+    if (clientInfo == null) return null;
+    return clientInfo.getProperty(name);
   }
 
   /*
@@ -1463,8 +1464,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   @Override
   public void setClientInfo(Properties properties) throws SQLClientInfoException {
-    // TODO Auto-generated method stub
-    throw new SQLClientInfoException("Method not supported", null);
+    clientInfo = properties;
+    sendClientInfo();
   }
 
   /*
@@ -1475,8 +1476,30 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   @Override
   public void setClientInfo(String name, String value) throws SQLClientInfoException {
-    // TODO Auto-generated method stub
-    throw new SQLClientInfoException("Method not supported", null);
+    if (clientInfo == null) {
+      clientInfo = new Properties();
+    }
+    clientInfo.put(name, value);
+    sendClientInfo();
+  }
+
+  private void sendClientInfo() throws SQLClientInfoException {
+    TSetClientInfoReq req = new TSetClientInfoReq(sessHandle);
+    Map<String, String> map = new HashMap<>();
+    if (clientInfo != null) {
+      for (Entry<Object, Object> e : clientInfo.entrySet()) {
+        if (e.getKey() == null || e.getValue() == null) continue;
+        map.put(e.getKey().toString(), e.getValue().toString());
+      }
+    }
+    req.setConfiguration(map);
+    try {
+      TSetClientInfoResp openResp = client.SetClientInfo(req);
+      Utils.verifySuccess(openResp.getStatus());
+    } catch (TException | SQLException e) {
+      LOG.error("Error sending client info", e);
+      throw new SQLClientInfoException("Error sending client info", null, e);
+    }
   }
 
   /*
