@@ -26,8 +26,8 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJDBCTestHelper {
   override val conf: KyuubiConf = KyuubiConf()
     .set(ENGINE_TYPE, "FLINK_SQL")
-    .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 10019)
-
+    .set("flink.parallelism.default", "6")
+  
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("get catalogs for flink sql") {
@@ -48,6 +48,22 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJ
       val resultSet = statement.executeQuery("select 'tmp.hello'")
       assert(resultSet.next())
       assert(resultSet.getString(1) === "tmp.hello")
+    }
+  }
+
+  test("set kyuubi conf into flink conf") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SET")
+      // Flink does not support set key without value currently,
+      // thus read all rows to find the desired one
+      var success = false
+      while (resultSet.next() && !success) {
+        if (resultSet.getString(1) == "parallelism.default" &&
+          resultSet.getString(2) == "6") {
+          success = true
+        }
+      }
+      assert(success)
     }
   }
 }
