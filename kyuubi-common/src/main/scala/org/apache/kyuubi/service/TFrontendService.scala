@@ -18,6 +18,7 @@
 package org.apache.kyuubi.service
 
 import java.net.{InetAddress, ServerSocket}
+import java.util
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
@@ -532,9 +533,27 @@ abstract class TFrontendService(name: String)
   }
 
   override def SetClientInfo(req: TSetClientInfoReq): TSetClientInfoResp = {
+    // TODO: We don't do anything for now, just log this for debugging.
+    //       We may be able to make use of this later, e.g. for workload management.
     debug(req.toString)
     val resp = new TSetClientInfoResp
-    resp.setStatus(KyuubiSQLException.featureNotSupported().toTStatus)
+    if (req.isSetConfiguration) {
+      val sessionHandle = SessionHandle(req.getSessionHandle)
+      val stringBuilder = new StringBuilder("Client information for ")
+        .append(sessionHandle)
+        .append(": ")
+      def processEntry(e: util.Map.Entry[String, String]): Unit = {
+        stringBuilder.append(e.getKey).append(" = ").append(e.getValue)
+      }
+      val entries = req.getConfiguration.entrySet.asScala.toSeq
+      entries.headOption.foreach(processEntry)
+      entries.tail.foreach { e =>
+        stringBuilder.append(", ")
+        processEntry(e)
+      }
+      info(stringBuilder.toString())
+    }
+    resp.setStatus(OK_STATUS)
     resp
   }
 
