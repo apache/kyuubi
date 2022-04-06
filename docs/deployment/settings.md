@@ -313,7 +313,6 @@ Key | Default | Meaning | Type | Since
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-<code>kyuubi.server.conf.ignore.prefix.list</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>java,sun,os,jdk</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>A comma separated list of ignored keys prefix. If kyuubi conf contains any of them, the key and the corresponding value will be removed silently during server setup. Note that this rule is for server-side protection defined via administrators to prevent some essential configs from tampering but will not forbid users to set dynamic configurations via SET syntax.</div>|<div style='width: 30pt'>seq</div>|<div style='width: 20pt'>1.6.0</div>
 <code>kyuubi.server.name</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The name of Kyuubi Server.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.5.0</div>
 
 
