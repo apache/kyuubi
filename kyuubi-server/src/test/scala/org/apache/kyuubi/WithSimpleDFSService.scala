@@ -29,7 +29,7 @@ trait WithSimpleDFSService extends KyuubiFunSuite {
   def newSimpleConf(): Configuration = {
     val hdfsConf = new Configuration()
     hdfsConf.set("ignore.secure.ports.for.testing", "true")
-
+    hdfsConf.set("hadoop.security.authentication", "simple")
     hdfsConf
   }
 

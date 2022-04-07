@@ -60,8 +60,6 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   protected var testPrincipal: String = _
   protected var testSpnegoPrincipal: String = _
 
-  protected def onKDCCompleted(): Unit = {}
-
   override def beforeAll(): Unit = {
     eventually(timeout(60.seconds), interval(1.second)) {
       try {
