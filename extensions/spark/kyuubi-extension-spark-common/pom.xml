@@ -116,8 +116,8 @@
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-2.12/classes</outputDirectory>
-        <testOutputDirectory>target/scala-2.12/test-classes</testOutputDirectory>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
 
         <plugins>
             <plugin>
@@ -125,7 +125,7 @@
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <configuration>
                     <visitor>true</visitor>
-                    <sourceDirectory>src/main/antlr4</sourceDirectory>
+                    <sourceDirectory>${project.basedir}/src/main/antlr4</sourceDirectory>
                 </configuration>
             </plugin>
 
