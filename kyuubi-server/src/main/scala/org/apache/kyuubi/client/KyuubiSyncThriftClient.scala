@@ -370,7 +370,7 @@ class KyuubiSyncThriftClient private (
       debug(s"$req succeed on engine side")
     } else {
       warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
-      if(DELEGATION_TOKEN_IS_NOT_SUPPORTED.equals(resp.getStatus.getErrorMessage)) {
+      if (DELEGATION_TOKEN_IS_NOT_SUPPORTED.equals(resp.getStatus.getErrorMessage)) {
         throw KyuubiSQLException(resp.getStatus.getErrorMessage)
       }
     }

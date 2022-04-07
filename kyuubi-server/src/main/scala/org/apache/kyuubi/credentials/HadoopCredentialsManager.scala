@@ -184,7 +184,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
           warn(
             s"Failed to send new credentials to SQL engine through session $sessionId",
             exception)
-          if(DELEGATION_TOKEN_IS_NOT_SUPPORTED.equals(exception.getMessage)) {
+          if (DELEGATION_TOKEN_IS_NOT_SUPPORTED.equals(exception.getMessage)) {
             stop()
             renewalExecutor = None
           }

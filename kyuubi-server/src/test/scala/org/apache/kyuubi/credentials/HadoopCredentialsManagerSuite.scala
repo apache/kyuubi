@@ -201,7 +201,6 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
     }
   }
 
-
   test("stop renewal when delegation token is not supported") {
     withStartedManager(new KyuubiConf(false)) { manager =>
       // Trigger UserCredentialsRef's initialization
