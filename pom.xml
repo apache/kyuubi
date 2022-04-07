@@ -66,6 +66,7 @@
 
     <modules>
         <module>dev/kyuubi-codecov</module>
+        <module>extensions/kyuubi-server/kyuubi-server-plugin</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
@@ -82,7 +83,6 @@
         <module>kyuubi-hive-jdbc-shaded</module>
         <module>kyuubi-metrics</module>
         <module>kyuubi-server</module>
-        <module>extensions/kyuubi-server/kyuubi-server-plugin</module>
         <module>kyuubi-zookeeper</module>
     </modules>
 
