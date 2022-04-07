@@ -25,27 +25,21 @@ import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
-  import KyuubiConf._
 
   private val settings = new ConcurrentHashMap[String, String]()
   private lazy val reader: ConfigProvider = new ConfigProvider(settings)
-
-  if (loadSysDefault) {
-    loadFromMap()
+  private def loadFromMap(props: Map[String, String]): Unit = {
+    settings.putAll(props.asJava)
   }
 
-  private def loadFromMap(props: Map[String, String] = Utils.getSystemProperties): KyuubiConf = {
-
-    val ignorePrefixList = props.get(SERVER_CONF_IGNORE_PREFIX_LIST.key)
-      .map(_.split(",").map(_.trim).toSeq).getOrElse(get(SERVER_CONF_IGNORE_PREFIX_LIST))
-
-    props.withFilter { case (key, _) => !ignorePrefixList.contains(key.split("\\.").apply(0).trim) }
-      .foreach { case (key, value) => set(key, value) }
-    this
+  if (loadSysDefault) {
+    val fromSysDefaults = Utils.getSystemProperties.filterKeys(_.startsWith("kyuubi."))
+    loadFromMap(fromSysDefaults)
   }
 
   def loadFileDefaults(): KyuubiConf = {
@@ -1315,19 +1309,6 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .createOptional
-
-  val SERVER_CONF_IGNORE_PREFIX_LIST: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.server.conf.ignore.prefix.list")
-      .doc("A comma separated list of ignored keys prefix. If kyuubi conf contains any of" +
-        " them, the key and the corresponding value will be removed silently during server" +
-        " setup." +
-        " Note that this rule is for server-side protection defined via administrators to" +
-        " prevent some essential configs from tampering but will not forbid users to set dynamic" +
-        " configurations via SET syntax.")
-      .version("1.6.0")
-      .stringConf
-      .toSequence()
-      .createWithDefault(Seq("java", "sun", "os", "jdk"))
 
   val ENGINE_SPARK_SHOW_PROGRESS: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.spark.showProgress")

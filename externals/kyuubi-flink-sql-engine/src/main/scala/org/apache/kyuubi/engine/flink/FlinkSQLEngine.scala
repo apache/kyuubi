@@ -31,9 +31,8 @@ import org.apache.flink.table.client.SqlClientException
 import org.apache.flink.table.client.gateway.context.DefaultContext
 import org.apache.flink.util.JarUtils
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.Utils.{addShutdownHook, FLINK_ENGINE_SHUTDOWN_PRIORITY}
-import org.apache.kyuubi.Utils.currentUser
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.service.Serverable
@@ -76,8 +75,10 @@ object FlinkSQLEngine extends Logging {
     try {
       val flinkConfDir = CliFrontend.getConfigurationDirectoryFromEnv
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
-      val flinkConfFromKyuubi = kyuubiConf.getAllWithPrefix("flink", "")
-      flinkConf.addAll(Configuration.fromMap(flinkConfFromKyuubi.asJava))
+      val flinkConfFromSys =
+        Utils.getSystemProperties.filterKeys(_.startsWith("flink."))
+          .map { case (k, v) => (k.stripPrefix("flink."), v) }
+      flinkConf.addAll(Configuration.fromMap(flinkConfFromSys.asJava))
 
       val executionTarget = flinkConf.getString(DeploymentOptions.TARGET)
       // set cluster name for per-job and application mode
