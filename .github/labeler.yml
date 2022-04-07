@@ -99,7 +99,7 @@
 "module:server":
   - "bin/kyuubi"
   - "kyuubi-server/**/*"
-  - "kyuubi-server-plugin/**/*"
+  - "extension/kyuubi-server/kyuubi-server-plugin/**/*"
 
 "module:spark":
   - "externals/kyuubi-spark-sql-engine/**/*" 
@@ -107,4 +107,4 @@
   - "tools/spark-block-cleaner/**/*"
 
 "module:plugin":
-  - "kyuubi-server-plugin/**/*"
+  - "extension/kyuubi-server/kyuubi-server-plugin/**/*"
