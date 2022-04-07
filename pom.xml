@@ -1886,8 +1886,8 @@
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
-                <module>dev/kyuubi-extension-spark-common</module>
-                <module>dev/kyuubi-extension-spark-3-1</module>
+                <module>extensions/spark/kyuubi-extension-spark-common</module>
+                <module>extensions/spark/kyuubi-extension-spark-3-1</module>
             </modules>
         </profile>
 
@@ -1900,8 +1900,8 @@
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
-                <module>dev/kyuubi-extension-spark-common</module>
-                <module>dev/kyuubi-extension-spark-3-2</module>
+                <module>extensions/spark/kyuubi-extension-spark-common</module>
+                <module>extensions/spark/kyuubi-extension-spark-3-2</module>
             </modules>
         </profile>
 

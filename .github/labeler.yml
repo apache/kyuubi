@@ -29,7 +29,7 @@
   - "docs/requirements"
   - "kyuubi-assembly/**/*"
   - "scalastyle-config.xml"
-  - any: ["dev/**/*", "!dev/kyuubi-codecov/**/*", "!dev/kyuubi-extension-spark*/**/*", "!dev/kyuubi-tpcds/**/*"]
+  - any: ["dev/**/*", "!dev/kyuubi-codecov/**/*", "!dev/kyuubi-tpcds/**/*"]
 
 "kind:deploy":
   - any: ["bin/**/*", "!bin/beeline", "!bin/docker-image-tool.sh"]
@@ -103,7 +103,7 @@
 
 "module:spark":
   - "externals/kyuubi-spark-sql-engine/**/*" 
-  - "dev/kyuubi-extension-spark*/**/*"
+  - "extensions/spark/kyuubi-extension-spark*/**/*"
   - "tools/spark-block-cleaner/**/*"
 
 "module:plugin":
