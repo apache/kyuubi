@@ -204,7 +204,8 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
             assert(resultSet.getString(FUNCTION_SCHEM) === null)
             assert(resultSet.getString(FUNCTION_NAME) === func)
             assert(resultSet.getString(REMARKS).isEmpty)
-            assert(resultSet.getString(SPECIFIC_NAME) === classOf[FunctionInfo].getName)
+            assert(resultSet.getString(SPECIFIC_NAME) ===
+              "org.apache.hadoop.hive.ql.exec.FunctionInfo")
           }
       }
     }
