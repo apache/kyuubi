@@ -60,7 +60,7 @@ class FlinkProcessBuilder(
     } getOrElse {
       throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
         "For more detail information on installing and configuring Flink, please visit " +
-        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
+        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
   }
 
@@ -155,7 +155,7 @@ class FlinkProcessBuilder(
     } getOrElse {
       throw KyuubiSQLException("FLINK_HOME is not set! " +
         "For more detail information on installing and configuring Flink, please visit " +
-        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
+        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
   }
 

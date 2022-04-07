@@ -19,49 +19,31 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
-import org.apache.kyuubi.plugin.spark.authz.{ranger, ObjectType, OperationType, PrivilegeObject, PrivilegesBuilder}
+import org.apache.kyuubi.plugin.spark.authz.{ObjectType, _}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
-class RangerSparkAuthorizer(spark: SparkSession) extends Rule[LogicalPlan] {
+class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    RangerSparkAuthorizer.checkPrivileges(spark, plan)
+    RuleAuthorization.checkPrivileges(spark, plan)
     plan
   }
 }
 
-object RangerSparkAuthorizer {
+object RuleAuthorization {
 
-  /**
-   * Get the active session user
-   * @param spark spark context instance
-   * @return the user name
-   */
-  private def getAuthzUgi(spark: SparkContext): UserGroupInformation = {
-    // kyuubi.session.user is only used by kyuubi
-    val user = spark.getLocalProperty("kyuubi.session.user")
-    if (user != null) {
-      UserGroupInformation.createRemoteUser(user)
-    } else {
-      UserGroupInformation.getCurrentUser
-    }
-  }
-
-  def checkPrivileges(
-      spark: SparkSession,
-      plan: LogicalPlan): Unit = {
+  def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = OperationType(plan.nodeName)
     val (inputs, outputs) = PrivilegesBuilder.build(plan)
     val requests = new ArrayBuffer[AccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
       val resource = AccessResource(DATABASE, null)
-      requests += AccessRequest(resource, ugi, opType.toString, AccessType.USE)
+      requests += AccessRequest(resource, ugi, opType, AccessType.USE)
     }
 
     def addAccessRequest(objects: Seq[PrivilegeObject], isInput: Boolean): Unit = {
@@ -70,7 +52,7 @@ object RangerSparkAuthorizer {
         val accessType = ranger.AccessType(obj, opType, isInput)
         if (accessType != AccessType.NONE && !requests.exists(o =>
             o.accessType == accessType && o.getResource == resource)) {
-          requests += AccessRequest(resource, ugi, opType.toString, accessType)
+          requests += AccessRequest(resource, ugi, opType, accessType)
         }
       }
     }
@@ -84,7 +66,7 @@ object RangerSparkAuthorizer {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
           resource.getColumns.foreach { col =>
             val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
-            val req = AccessRequest(cr, ugi, opType.toString, request.accessType)
+            val req = AccessRequest(cr, ugi, opType, request.accessType)
             verify(req)
           }
         case _ => verify(request)
@@ -93,7 +75,7 @@ object RangerSparkAuthorizer {
   }
 
   private def verify(req: AccessRequest): Unit = {
-    val ret = RangerSparkPlugin.isAccessAllowed(req, null)
+    val ret = SparkRangerAdminPlugin.isAccessAllowed(req, null)
     if (ret != null && !ret.getIsAllowed) {
       throw new RuntimeException(
         s"Permission denied: user [${req.getUser}] does not have [${req.getAccessType}] privilege" +

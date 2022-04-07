@@ -65,7 +65,7 @@ case class SparkOperationEvent(
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 
   def duration: Long = {
-    if (completeTime == -1L) {
+    if (completeTime <= 0L) {
       System.currentTimeMillis - createTime
     } else {
       completeTime - createTime
