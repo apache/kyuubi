@@ -22,8 +22,8 @@ import java.net.URI
 import java.nio.file.{Files, Paths}
 import java.util.LinkedHashSet
 
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf

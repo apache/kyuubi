@@ -15,22 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.hive
+package org.apache.kyuubi.operation.hive
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{HiveEngineTests, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 
-class HiveProcessBuilderSuite extends KyuubiFunSuite {
+class KyuubiOperationWithHiveEngineSuite extends WithKyuubiServer with HiveEngineTests {
+  override protected val conf: KyuubiConf = KyuubiConf()
+    .set(ENGINE_TYPE, "HIVE_SQL")
 
-  private def conf = KyuubiConf().set("kyuubi.on", "off")
-
-  test("hive process builder") {
-    val builder = new HiveProcessBuilder("kyuubi", conf)
-    val commands = builder.toString.split(' ')
-    assert(commands.head.endsWith("bin/java"), "wrong exec")
-    assert(commands.contains("-Dkyuubi.session.user=kyuubi"))
-    assert(commands.contains("-Dkyuubi.on=off"))
-    assert(commands.exists(ss => ss.contains("kyuubi-hive-sql-engine")), "wrong classpath")
-  }
-
+  override protected def jdbcUrl: String = getJdbcUrl
 }
