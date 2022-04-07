@@ -22,6 +22,7 @@ import java.nio.file.{Files, Paths}
 import java.util.concurrent.{ConcurrentHashMap, Future, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -227,25 +228,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       } else {
         conf.get(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
       }
-    timeoutChecker.shutdown()
-    try {
-      timeoutChecker.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)
-    } catch {
-      case i: InterruptedException =>
-        warn(s"Exceeded to shutdown session timeout checker ", i)
-    }
 
-    if (execPool != null) {
-      execPool.shutdown()
-      try {
-        execPool.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)
-      } catch {
-        case e: InterruptedException =>
-          warn(
-            s"Exceeded timeout($shutdownTimeout ms) to wait the exec-pool shutdown gracefully",
-            e)
-      }
-    }
+    ThreadUtils.shutdown(timeoutChecker, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
+    ThreadUtils.shutdown(execPool, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
   }
 
   private def startTimeoutChecker(): Unit = {
