@@ -84,7 +84,6 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
     info(s"KerberizedTest Principal: $testPrincipal")
     info(s"KerberizedTest SPNEGO Principal: $testSpnegoPrincipal")
     info(s"KerberizedTest Keytab: $testKeytab")
-    onKDCCompleted()
     super.beforeAll()
   }
 
