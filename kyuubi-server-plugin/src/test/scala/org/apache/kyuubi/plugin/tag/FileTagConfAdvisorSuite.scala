@@ -48,14 +48,14 @@ class FileTagConfAdvisorSuite extends KyuubiFunSuite {
       "kyuubi.user.b" -> "user01_b"))
 
     // tag
-    checkTagConf("user", Map("kyuubi.session.tags" -> "tag01"))(Map(
+    checkTagConf("user", Map(KyuubiConf.SESSION_TAGS.key -> "tag01"))(Map(
       "kyuubi.system.a" -> "system_a",
       "kyuubi.system.b" -> "system_b",
       "kyuubi.tag.a" -> "tag01_a",
       "kyuubi.tag.b" -> "tag01_b"))
 
     // override tag conf
-    checkTagConf("user", Map("kyuubi.session.tags" -> "tag01,tag02"))(Map(
+    checkTagConf("user", Map(KyuubiConf.SESSION_TAGS.key -> "tag01,tag02"))(Map(
       "kyuubi.system.a" -> "system_a",
       "kyuubi.system.b" -> "system_b",
       "kyuubi.tag.a" -> "tag02_a",

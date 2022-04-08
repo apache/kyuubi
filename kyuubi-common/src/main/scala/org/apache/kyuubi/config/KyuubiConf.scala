@@ -1331,4 +1331,11 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
+
+  val SESSION_TAGS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.session.tags")
+      .doc("The session tags can be used for tag-based configurations.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 }

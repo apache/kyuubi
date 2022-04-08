@@ -47,7 +47,7 @@ abstract class TagConfAdvisor extends SessionConfAdvisor {
     confProvider.get(UserTag(user)).foreach(tagConf ++= _)
 
     // tag conf
-    Option.apply(sessionConf.get("kyuubi.session.tags")).toSeq
+    Option.apply(sessionConf.get(KyuubiConf.SESSION_TAGS.key)).toSeq
       .flatMap(_.split(","))
       .foreach(tag => confProvider.get(OriginTag(tag)).foreach(tagConf ++= _))
 
