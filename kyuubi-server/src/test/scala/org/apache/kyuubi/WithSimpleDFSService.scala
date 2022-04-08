@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi
 
+import java.net.InetAddress
+
 import org.apache.hadoop.conf.Configuration
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -46,4 +48,10 @@ trait WithSimpleDFSService extends KyuubiFunSuite {
   }
 
   def getHadoopConf: Configuration = miniDFSService.getHadoopConf
+
+  def getUri: String = {
+    miniDFSService.getHadoopConf.get("fs.defaultFS").replace(
+      "localhost",
+      InetAddress.getLocalHost.getHostAddress)
+  }
 }
