@@ -15,24 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation.log
+package org.apache.kyuubi.engine.hive
 
-import org.slf4j.impl.StaticLoggerBinder
+import java.net.{URL, URLClassLoader}
 
-import org.apache.kyuubi.Logging
+class EngineJarFirstClassLoader private (urls: Array[URL], shared: ClassLoader)
+  extends URLClassLoader(urls, null) {
 
-object LogDivertAppender extends Logging {
-  def initialize(skip: Boolean = false): Unit = {
-    if (!skip) {
-      if (Logging.isLog4j2) {
-        Log4j2DivertAppender.initialize()
-      } else if (Logging.isLog4j12) {
-        Log4j12DivertAppender.initialize()
-      } else {
-        warn(s"Unsupported SLF4J binding" +
-          s" ${StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr}")
-      }
+  override protected def loadClass(name: String): Class[_] = {
+    try {
+      super.loadClass(name)
+    } catch {
+      case _: ClassNotFoundException =>
+        shared.loadClass(name)
     }
+  }
+}
 
+object EngineJarFirstClassLoader {
+  def apply(shared: ClassLoader): EngineJarFirstClassLoader = {
+    val url = getClass.getProtectionDomain.getCodeSource.getLocation
+    new EngineJarFirstClassLoader(Array(url), shared)
   }
 }

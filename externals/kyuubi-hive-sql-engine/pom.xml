@@ -130,9 +130,10 @@
                         <include>org.apache.curator:curator-client</include>
                         <include>org.apache.curator:curator-framework</include>
                         <include>org.apache.curator:curator-recipes</include>
-                        <include>org.apache.hive:hive-service-rpc</include>
-                        <include>org.apache.thrift:*</include>
+                        <include>org.apache.hadoop:hadoop-client-api</include>
+                        <include>org.apache.hadoop:hadoop-client-runtime</include>
                         <include>org.scala-lang:scala-library</include>
+                        <include>com.fasterxml.jackson.module:jackson-module-scala_2.12</include>
                     </includes>
                 </artifactSet>
                 <filters>
@@ -159,27 +160,6 @@
                         <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>
                         <includes>
                             <include>org.apache.curator.**</include>
-                        </includes>
-                    </relocation>
-                    <relocation>
-                        <pattern>org.apache.hive.service.rpc.thrift</pattern>
-                        <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>
-                        <includes>
-                            <include>org.apache.hive.service.rpc.thrift.**</include>
-                        </includes>
-                    </relocation>
-                    <relocation>
-                        <pattern>com.facebook.fb303</pattern>
-                        <shadedPattern>${kyuubi.shade.packageName}.com.facebook.fb303</shadedPattern>
-                        <includes>
-                            <include>com.facebook.fb303.**</include>
-                        </includes>
-                    </relocation>
-                    <relocation>
-                        <pattern>org.apache.thrift</pattern>
-                        <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
-                        <includes>
-                            <include>org.apache.thrift.**</include>
                         </includes>
                     </relocation>
                 </relocations>

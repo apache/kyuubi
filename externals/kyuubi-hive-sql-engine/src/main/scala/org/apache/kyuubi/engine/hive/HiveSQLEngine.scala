@@ -23,6 +23,7 @@ import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
+import org.apache.hadoop.hive.ql.session.SessionState
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -51,14 +52,20 @@ class HiveSQLEngine extends Serverable("HiveSQLEngine") {
 }
 
 object HiveSQLEngine extends Logging {
+//  private val original = Thread.currentThread().getContextClassLoader
+//  private val newClassloader = EngineJarFirstClassLoader(original)
+//  Thread.currentThread().setContextClassLoader(newClassloader)
+
   var currentEngine: Option[HiveSQLEngine] = None
   val hiveConf = new HiveConf()
+//  hiveConf.setClassLoader(newClassloader)
   val kyuubiConf = new KyuubiConf()
   kyuubiConf.set(ENGINE_EVENT_LOGGERS.key, "JSON")
 
   def startEngine(): HiveSQLEngine = {
     try {
-      initLoggerEventHandler(kyuubiConf)
+      // TODO: hive 2.3.x has scala 2.11 deps.
+      // initLoggerEventHandler(kyuubiConf)
     } catch {
       case NonFatal(e) =>
         warn(s"Failed to initialize Logger EventHandler: ${e.getMessage}", e)
@@ -82,7 +89,14 @@ object HiveSQLEngine extends Logging {
       hiveConf.set(
         "hive.metastore.warehouse.dir",
         Utils.createTempDir(namePrefix = "kyuubi_hive_warehouse").toString)
+      hiveConf.set("hive.metastore.fastpath", "true")
+      val metastore = Utils.createTempDir("hms_temp")
+      metastore.toFile.delete()
+      hiveConf.set(
+        "javax.jdo.option.ConnectionURL",
+        s"jdbc:derby:;databaseName=$metastore;create=true")
     }
+    SessionState.start(hiveConf)
 
     val engine = new HiveSQLEngine()
     info(s"Starting ${engine.getName}")
@@ -91,6 +105,9 @@ object HiveSQLEngine extends Logging {
     engine.start()
     val event = HiveEngineEvent(engine)
     info(event)
+    System.getProperty("java.class.path").split(":").filter(_.contains("derby")).foreach {
+      a => info("classpath ==>>> " + a)
+    }
     EventBus.post(event)
     Utils.addShutdownHook(() => engine.stop())
     currentEngine = Some(engine)

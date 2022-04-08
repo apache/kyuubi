@@ -17,13 +17,18 @@
 
 package org.apache.kyuubi.operation.hive
 
-import org.apache.kyuubi.{HiveEngineTests, WithKyuubiServer}
+import org.apache.kyuubi.{HiveEngineTests, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
 class KyuubiOperationWithHiveEngineSuite extends WithKyuubiServer with HiveEngineTests {
-  override protected val conf: KyuubiConf = KyuubiConf()
-    .set(ENGINE_TYPE, "HIVE_SQL")
+  override protected val conf: KyuubiConf = {
+    val metastore = Utils.createTempDir("hms_temp")
+    metastore.toFile.delete()
+    KyuubiConf()
+      .set(ENGINE_TYPE, "HIVE_SQL")
+      .set("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
+  }
 
   override protected def jdbcUrl: String = getJdbcUrl
 }

@@ -107,4 +107,6 @@ class HiveProcessBuilder(
     buffer += mainClass
     buffer.toArray
   }
+
+  override def toString: String = commands.mkString("\n")
 }

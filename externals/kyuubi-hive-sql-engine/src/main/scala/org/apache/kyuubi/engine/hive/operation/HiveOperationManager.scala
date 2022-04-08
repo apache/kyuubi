@@ -32,6 +32,9 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
 
 class HiveOperationManager() extends OperationManager("HiveOperationManager") {
+  // we use hive's operation log
+  override protected def skipOperationLog: Boolean = true
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,

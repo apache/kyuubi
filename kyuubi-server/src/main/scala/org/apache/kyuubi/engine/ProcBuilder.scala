@@ -275,6 +275,7 @@ trait ProcBuilder {
       s"configuring $requiredEnv, please visit https://kyuubi.apache.org/docs/latest/" +
       s"deployment/settings.html#environments")
   }
+
 }
 
 object ProcBuilder extends Logging {
