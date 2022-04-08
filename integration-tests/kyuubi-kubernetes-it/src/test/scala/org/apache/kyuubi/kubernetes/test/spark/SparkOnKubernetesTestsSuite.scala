@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.kubernetes.test.spark
 
-import org.apache.kyuubi.{Logging, WithKyuubiServer, WithSecuredDFSService, WithSimpleDFSService}
+import org.apache.kyuubi.{Logging, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
