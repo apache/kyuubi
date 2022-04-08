@@ -21,7 +21,7 @@ This folder contains plugins/extension for kyuubi server and different engine ty
 
 
 - ext
-  - server
+  - kyuubi-server
   - spark
   - flink
   - trino
