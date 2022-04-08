@@ -323,4 +323,18 @@ class HiveOperationSuite extends HiveJDBCTestHelper {
       assert(metaData.getScale(1) === 0)
     }
   }
+
+  test("test clientInfo") {
+    withJdbcStatement() { statement =>
+      val res = statement.getConnection.getMetaData.getClientInfoProperties
+      assert(res.next())
+      assert(res.getString(1) === "ApplicationName")
+      assert(res.getInt("MAX_LEN") === 1000);
+      assert(!res.next());
+
+      val connection = statement.getConnection
+      connection.setClientInfo("ApplicationName", "test kyuubi hive jdbc")
+      assert(connection.getClientInfo("ApplicationName") == "test kyuubi hive jdbc")
+    }
+  }
 }
