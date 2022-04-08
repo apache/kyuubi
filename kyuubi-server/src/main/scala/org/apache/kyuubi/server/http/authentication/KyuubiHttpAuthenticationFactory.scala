@@ -61,7 +61,6 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
             } else {
               handler.handle(target, baseRequest, request, response)
             }
-
           } finally {
             AuthenticationFilter.HTTP_CLIENT_USER_NAME.remove()
             AuthenticationFilter.HTTP_CLIENT_IP_ADDRESS.remove()
