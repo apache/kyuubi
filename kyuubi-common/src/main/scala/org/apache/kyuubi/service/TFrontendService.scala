@@ -53,7 +53,8 @@ abstract class TFrontendService(name: String)
   protected lazy val serverAddr: InetAddress =
     serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
   protected lazy val serverSocket = new ServerSocket(portNum, -1, serverAddr)
-  protected lazy val authFactory: KyuubiAuthenticationFactory = KyuubiAuthenticationFactory.get()
+  protected lazy val authFactory: KyuubiAuthenticationFactory =
+    new KyuubiAuthenticationFactory(conf, isServer())
 
   /**
    * Start the service itself(FE) and its composited (Discovery service, DS) in the order of:
@@ -536,6 +537,8 @@ abstract class TFrontendService(name: String)
     resp.setStatus(KyuubiSQLException.featureNotSupported().toTStatus)
     resp
   }
+
+  protected def isServer(): Boolean = false
 
   class FeTServerEventHandler extends TServerEventHandler {
     implicit def toFeServiceServerContext(context: ServerContext): FeServiceServerContext = {

@@ -121,18 +121,6 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
 object KyuubiAuthenticationFactory {
   val HS2_PROXY_USER = "hive.server2.proxy.user"
 
-  @volatile private var _authenticationFactory: KyuubiAuthenticationFactory = _
-
-  def initialized(conf: KyuubiConf, isServer: Boolean): Unit = {
-    if (_authenticationFactory == null) {
-      _authenticationFactory = new KyuubiAuthenticationFactory(conf, isServer)
-    }
-  }
-
-  def get(): KyuubiAuthenticationFactory = {
-    _authenticationFactory
-  }
-
   @throws[KyuubiSQLException]
   def verifyProxyAccess(
       realUser: String,

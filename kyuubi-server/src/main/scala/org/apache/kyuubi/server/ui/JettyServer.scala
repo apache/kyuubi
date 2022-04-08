@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.server.ui
 
-import org.eclipse.jetty.server.{Handler, HttpConfiguration, HttpConnectionFactory, Request, Server, ServerConnector}
-import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler, HandlerWrapper}
+import org.eclipse.jetty.server.{Handler, HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
+import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
 import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
