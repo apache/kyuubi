@@ -161,8 +161,4 @@ class ExecuteStatement(
     super.setState(newState)
     EventBus.post(KyuubiOperationEvent(this))
   }
-
-  override def close(): Unit = {
-    super.close()
-  }
 }
