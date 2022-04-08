@@ -212,6 +212,12 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS.key -> "10000",
       KyuubiConf.ENGINE_REQUEST_TIMEOUT.key -> "100"))(Map.empty)(Map.empty) {
       withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("select engine_name()")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        client.ExecuteStatement(preReq)
+
         val executeStmtReq = new TExecuteStatementReq()
         executeStmtReq.setStatement("select java_method('java.lang.System', 'exit', 1)")
         executeStmtReq.setSessionHandle(handle)
