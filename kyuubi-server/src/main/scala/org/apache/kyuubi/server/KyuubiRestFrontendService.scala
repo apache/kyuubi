@@ -27,7 +27,7 @@ import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.v1.ApiRootResource
-import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
+import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 
@@ -58,7 +58,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val contextHandler = ApiRootResource.getServletHandler(this)
     val holder = new FilterHolder(new AuthenticationFilter(conf))
     contextHandler.addFilter(holder, "/*", EnumSet.allOf(classOf[DispatcherType]))
-    server.addHandler(contextHandler)
+    val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
+    server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
 
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
     server.addRedirectHandler("/", "/static")

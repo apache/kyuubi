@@ -19,6 +19,7 @@ package org.apache.kyuubi.service
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState.LATENT
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 
 /**
  * A [[AbstractFrontendService]] is an abstraction for fronted service.
@@ -39,5 +40,8 @@ abstract class AbstractFrontendService(name: String)
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     discoveryService.foreach(addService)
     super.initialize(conf)
+    KyuubiAuthenticationFactory.initialized(conf, isServer())
   }
+
+  protected def isServer(): Boolean = false
 }
