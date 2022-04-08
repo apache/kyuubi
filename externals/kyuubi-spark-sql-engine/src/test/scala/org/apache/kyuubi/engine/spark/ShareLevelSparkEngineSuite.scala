@@ -19,7 +19,12 @@ package org.apache.kyuubi.engine.spark
 
 import java.util.UUID
 
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_CHECK_INTERVAL
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAX_LIFETIME
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel.ShareLevel
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -33,7 +38,10 @@ abstract class ShareLevelSparkEngineSuite
   extends WithDiscoverySparkSQLEngine with HiveJDBCTestHelper {
   def shareLevel: ShareLevel
   override def withKyuubiConf: Map[String, String] = {
-    super.withKyuubiConf ++ Map(ENGINE_SHARE_LEVEL.key -> shareLevel.toString)
+    super.withKyuubiConf ++ Map(
+      ENGINE_SHARE_LEVEL.key -> shareLevel.toString,
+      ENGINE_SPARK_MAX_LIFETIME.key -> "PT20s",
+      ENGINE_CHECK_INTERVAL.key -> "PT5s")
   }
   override protected def jdbcUrl: String = getJdbcUrl
   override val namespace: String = {
@@ -54,6 +62,25 @@ abstract class ShareLevelSparkEngineSuite
         case _ =>
           assert(engine.getServiceState == ServiceState.STARTED)
           assert(zkClient.checkExists().forPath(namespace) != null)
+      }
+    }
+  }
+
+  test("test spark engine max life-time") {
+    withZkClient { zkClient =>
+      assert(engine.getServiceState == ServiceState.STARTED)
+      assert(zkClient.checkExists().forPath(namespace) != null)
+      withJdbcStatement() { _ => }
+
+      eventually(Timeout(30.seconds)) {
+        shareLevel match {
+          case ShareLevel.CONNECTION =>
+            assert(engine.getServiceState == ServiceState.STOPPED)
+            assert(zkClient.checkExists().forPath(namespace) == null)
+          case _ =>
+            assert(engine.getServiceState == ServiceState.STOPPED)
+            assert(zkClient.checkExists().forPath(namespace) != null)
+        }
       }
     }
   }
