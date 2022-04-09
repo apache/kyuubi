@@ -119,13 +119,14 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
     if (!isClosedOrCanceled) {
       setState(OperationState.CLOSED)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName)))
+      try {
+        // For launch engine operation, we use OperationLog to pass engine submit log but
+        // at that time we do not have remoteOpHandle
+        getOperationLog.foreach(_.close())
+      } catch {
+        case e: IOException => error(e.getMessage, e)
+      }
       if (_remoteOpHandle != null) {
-        try {
-          getOperationLog.foreach(_.close())
-        } catch {
-          case e: IOException => error(e.getMessage, e)
-        }
-
         try {
           client.closeOperation(_remoteOpHandle)
         } catch {
