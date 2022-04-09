@@ -83,10 +83,10 @@ object OperationLog extends Logging {
 
 class OperationLog(path: Path) {
 
-  private val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
-  private val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
+  private lazy val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
+  private lazy val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
 
-  private val extraReaders: ListBuffer[BufferedReader] = ListBuffer()
+  private lazy val extraReaders: ListBuffer[BufferedReader] = ListBuffer()
 
   def addExtraLog(path: Path): Unit = synchronized {
     try {
@@ -151,11 +151,23 @@ class OperationLog(path: Path) {
   }
 
   def close(): Unit = synchronized {
-    try {
-      closeExtraReaders()
+    closeExtraReaders()
+
+    trySafely {
       reader.close()
+    }
+    trySafely {
       writer.close()
+    }
+
+    trySafely {
       Files.delete(path)
+    }
+  }
+
+  private def trySafely(f: => Unit): Unit = {
+    try {
+      f
     } catch {
       case e: IOException =>
         // Printing log here may cause a deadlock. The lock order of OperationLog.write

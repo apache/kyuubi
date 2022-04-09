@@ -57,7 +57,8 @@ class OperationLogSuite extends KyuubiFunSuite {
     val operationLog = OperationLog.createOperationLog(session, oHandle)
     val logFile =
       Paths.get(operationLogRoot, sHandle.identifier.toString, oHandle.identifier.toString)
-    assert(Files.exists(logFile))
+    // lazy create
+    assert(!Files.exists(logFile))
 
     OperationLog.setCurrentOperationLog(operationLog)
     assert(OperationLog.getCurrentOperationLog === operationLog)
@@ -66,6 +67,8 @@ class OperationLogSuite extends KyuubiFunSuite {
     assert(OperationLog.getCurrentOperationLog === null)
 
     operationLog.write(msg1 + "\n")
+    assert(Files.exists(logFile))
+
     val tRowSet1 = operationLog.read(1)
     assert(tRowSet1.getColumns.get(0).getStringVal.getValues.get(0) === msg1)
     val tRowSet2 = operationLog.read(1)
@@ -145,8 +148,10 @@ class OperationLogSuite extends KyuubiFunSuite {
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT,
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
-    val log = OperationLog.createOperationLog(session, oHandle)
-    assert(log === null)
+    intercept[Exception] {
+      val log = OperationLog.createOperationLog(session, oHandle)
+      log.read(1)
+    }
     logRoot.delete()
 
     OperationLog.createOperationLogRootDirectory(session)
