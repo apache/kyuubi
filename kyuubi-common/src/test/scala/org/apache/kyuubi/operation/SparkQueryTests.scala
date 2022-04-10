@@ -175,8 +175,8 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select timestamp_ntz") {
-    assume(SPARK_ENGINE_MAJOR_MINOR_VERSION._1 >= 3
-      && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 > 2)
+    assume(SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
+      (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 4))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT make_timestamp_ntz(2022, 03, 24, 18, 08, 31.800) AS col")

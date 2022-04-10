@@ -27,7 +27,7 @@ import org.apache.spark.sql.types._
 object SchemaHelper {
 
   /**
-   * Spark 3.3.0 DataType TimestampNTZType's class name.
+   * Spark 3.4.0 DataType TimestampNTZType's class name.
    */
   final val TIMESTAMP_NTZ = "TimestampNTZType$"
 
