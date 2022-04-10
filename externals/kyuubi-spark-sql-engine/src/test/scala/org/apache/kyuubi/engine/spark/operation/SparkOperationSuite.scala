@@ -80,9 +80,13 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     // since spark3.3.0
     if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
       (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 3)) {
-      schema = schema.add("c18", "timestamp_ntz", nullable = true, "18")
-        .add("c19", "interval day", nullable = true, "19")
-        .add("c20", "interval year", nullable = true, "20")
+      schema = schema.add("c18", "interval day", nullable = true, "18")
+        .add("c19", "interval year", nullable = true, "19")
+    }
+    // since spark3.4.0
+    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
+      (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 4)) {
+      schema = schema.add("c20", "timestamp_ntz", nullable = true, "20")
     }
 
     val ddl =
@@ -120,9 +124,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           STRUCT,
           BINARY,
           STRUCT,
-          TIMESTAMP,
           OTHER,
-          OTHER)
+          OTHER,
+          TIMESTAMP)
 
         var pos = 0
 
