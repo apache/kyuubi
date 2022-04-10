@@ -34,8 +34,8 @@
     <url>https://kyuubi.apache.org/</url>
 
     <properties>
-        <jna.version>5.7.0</jna.version>
         <gethostname4j.version>1.0.0</gethostname4j.version>
+        <jna.version>5.7.0</jna.version>
     </properties>
 
     <dependencies>
