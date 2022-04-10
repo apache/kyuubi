@@ -240,21 +240,22 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("kill application") {
+    val engineRefId = "cf51ba6d-b019-4f8a-a2a2-4e479aa95112"
     val pb1 = new FakeSparkProcessBuilder(conf) {
       override protected def env: Map[String, String] = Map()
       override def getYarnClient: YarnClient = mock[YarnClient]
     }
-    val exit1 = pb1.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
-      "Application report for application_1593587619692_20149 (state: ACCEPTED)")
-    assert(exit1.contains("Killed Application application_1593587619692_20149 successfully."))
+    pb1.conf.set("spark.master", "yarn")
+    val exit1 = pb1.killApplication(engineRefId)
+    assert(exit1.equals(s"There are no Application tagged with $engineRefId"))
 
     val pb2 = new FakeSparkProcessBuilder(conf) {
       override protected def env: Map[String, String] = Map()
       override def getYarnClient: YarnClient = null
     }
-    val exit2 = pb2.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
-      "Application report for application_1593587619692_20149 (state: ACCEPTED)")
-    assert(exit2.contains("Failed to kill Application application_1593587619692_20149")
+    pb2.conf.set("spark.master", "yarn")
+    val exit2 = pb2.killApplication(engineRefId)
+    assert(exit2.contains(s"Failed to kill Application null tagged with $engineRefId")
       && exit2.contains("Caused by"))
 
     val pb3 = new FakeSparkProcessBuilder(conf) {

@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
+import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.NamedThreadFactory
 
@@ -236,6 +237,12 @@ trait ProcBuilder {
     logCaptureThread.start()
     process
   }
+
+  def killApplicationWrap(engineRefId: String): String =
+    EngineType.withName(conf.get(KyuubiConf.ENGINE_TYPE)) match {
+      case SPARK_SQL => killApplication(engineRefId)
+      case _ => killApplication()
+    }
 
   def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String = ""
 

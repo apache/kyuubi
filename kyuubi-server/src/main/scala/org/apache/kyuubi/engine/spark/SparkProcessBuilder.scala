@@ -23,6 +23,7 @@ import java.nio.file.Paths
 import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
 
+import collection.JavaConverters._
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.client.api.YarnClient
@@ -141,27 +142,32 @@ class SparkProcessBuilder(
     }
   }
 
-  override def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String =
-    YARN_APP_NAME_REGEX.findFirstIn(line) match {
-      case Some(appId) =>
-        try {
-          val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
-          yarnClient.init(yarnConf)
-          yarnClient.start()
-          val applicationId = ApplicationId.fromString(appId)
-          yarnClient.killApplication(applicationId)
-          s"Killed Application $appId successfully."
-        } catch {
-          case e: Throwable =>
-            s"Failed to kill Application $appId, please kill it manually." +
-              s" Caused by ${e.getMessage}."
-        } finally {
-          if (yarnClient != null) {
-            yarnClient.stop()
-          }
+  override def killApplication(engineRefId: String): String = {
+    val master = conf.getOption("spark.master").getOrElse("local")
+    if (master.equals("yarn")) {
+      var applicationId: ApplicationId = null
+      try {
+        val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+        yarnClient.init(hadoopConf)
+        yarnClient.start()
+        val apps = yarnClient.getApplications(null, null, Set(engineRefId).asJava)
+        if (apps.isEmpty) return s"There are no Application tagged with $engineRefId"
+        applicationId = apps.asScala.head.getApplicationId
+        yarnClient.killApplication(applicationId)
+        s"Killed Application $applicationId successfully."
+      } catch {
+        case e: Throwable =>
+          s"Failed to kill Application $applicationId tagged with $engineRefId," +
+            s" please kill it manually. Caused by ${e.getMessage}."
+      } finally {
+        if (yarnClient != null) {
+          yarnClient.stop()
         }
-      case None => ""
+      }
+    } else {
+      ""
     }
+  }
 
   override protected def shortName: String = "spark"
 
