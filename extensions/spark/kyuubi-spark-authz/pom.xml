@@ -33,6 +33,11 @@
     <packaging>jar</packaging>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <jna.version>5.7.0</jna.version>
+        <gethostname4j.version>1.0.0</gethostname4j.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.ranger</groupId>
@@ -79,7 +84,37 @@
                     <groupId>org.codehaus.jackson</groupId>
                     <artifactId>jackson-mapper-asl</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.kstruct</groupId>
+                    <artifactId>gethostname4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna-platform</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.kstruct</groupId>
+            <artifactId>gethostname4j</artifactId>
+            <version>${gethostname4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>${jna.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>${jna.version}</version>
         </dependency>
 
         <dependency>
