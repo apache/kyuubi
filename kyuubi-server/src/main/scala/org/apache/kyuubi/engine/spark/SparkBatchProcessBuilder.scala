@@ -36,7 +36,7 @@ class SparkBatchProcessBuilder(
   import SparkProcessBuilder._
 
   private val batchJobTag = batchRequest.conf.get(TAG_KEY).map(_ + ",").getOrElse("") +
-    "kyuubi-spark-" + UUID.randomUUID()
+    "KYUUBI-BATCH-" + UUID.randomUUID()
 
   override def mainClass: String = batchRequest.className
 
