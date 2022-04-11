@@ -107,11 +107,11 @@ class HiveProcessBuilder(
     // jars from hive distribution
     classpathEntries.add(s"$hiveHome${File.separator}lib${File.separator}*")
     val hadoopCp = env.get("HIVE_HADOOP_CLASSPATH").orElse(env.get("HADOOP_CLASSPATH"))
-    hadoopCp.foreach(classpathEntries.add)
+    hadoopCp.foreach(path => classpathEntries.add(s"$path${File.separator}*"))
     if (hadoopCp.isEmpty) {
       mainResource.foreach { path =>
         val devHadoopJars = Paths.get(path).getParent
-          .resolve(s"scala_${SCALA_COMPILE_VERSION}")
+          .resolve(s"scala-$SCALA_COMPILE_VERSION")
           .resolve("jars")
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }

@@ -58,7 +58,7 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
     "jdbc:hive2://" + HiveSQLEngine.currentEngine.get.frontendServices.head.connectionUrl + "/;"
   }
 
-  ignore("test engine event logging") {
+  test("test engine event logging") {
     val engineEventPath = Paths.get(
       logRoot,
       "hive_engine",
@@ -72,7 +72,7 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
     assert(readEvent.isInstanceOf[HiveEngineEvent])
   }
 
-  ignore("test session event logging") {
+  test("test session event logging") {
     withJdbcStatement() { statement =>
       val catalogs = statement.getConnection.getMetaData.getCatalogs
       assert(!catalogs.next())
@@ -90,7 +90,7 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
     }
   }
 
-  ignore("test operation event logging") {
+  test("test operation event logging") {
     withJdbcStatement("hive_engine_test") { statement =>
       val createTableStatement = "CREATE TABLE hive_engine_test(id int, value string) stored as orc"
       statement.execute(createTableStatement)
