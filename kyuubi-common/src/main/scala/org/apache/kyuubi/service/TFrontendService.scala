@@ -498,30 +498,29 @@ abstract class TFrontendService(name: String)
     resp
   }
 
-  private def notSupportTokenErrorStatus = {
-    val errorStatus = new TStatus(TStatusCode.ERROR_STATUS)
-    errorStatus.setErrorMessage(DELEGATION_TOKEN_IS_NOT_SUPPORTED)
-    errorStatus
+  private def supportTokenStatus = {
+    val successStatus = new TStatus(TStatusCode.SUCCESS_STATUS)
+    successStatus
   }
 
   override def GetDelegationToken(req: TGetDelegationTokenReq): TGetDelegationTokenResp = {
     debug(req.toString)
     val resp = new TGetDelegationTokenResp()
-    resp.setStatus(notSupportTokenErrorStatus)
+    resp.setStatus(supportTokenStatus)
     resp
   }
 
   override def CancelDelegationToken(req: TCancelDelegationTokenReq): TCancelDelegationTokenResp = {
     debug(req.toString)
     val resp = new TCancelDelegationTokenResp
-    resp.setStatus(notSupportTokenErrorStatus)
+    resp.setStatus(supportTokenStatus)
     resp
   }
 
   override def RenewDelegationToken(req: TRenewDelegationTokenReq): TRenewDelegationTokenResp = {
     debug(req.toString)
     val resp = new TRenewDelegationTokenResp
-    resp.setStatus(notSupportTokenErrorStatus)
+    resp.setStatus(supportTokenStatus)
     resp
   }
 
@@ -577,8 +576,6 @@ private[kyuubi] object TFrontendService {
   final val CURRENT_SERVER_CONTEXT = new ThreadLocal[FeServiceServerContext]()
 
   final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
-
-  final val DELEGATION_TOKEN_IS_NOT_SUPPORTED = "Delegation token is not supported"
 
   class FeServiceServerContext extends ServerContext {
     private var sessionHandle: SessionHandle = _
