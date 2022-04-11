@@ -64,7 +64,7 @@ body:
 
   - type: textarea
     attributes:
-      label: Imporving the documentation
+      label: Improving the documentation
       description: How do you think the documentation can be improved?
       placeholder: >
         Please explain how you think the documentation could be improved. Ideally specify where a new or missing
