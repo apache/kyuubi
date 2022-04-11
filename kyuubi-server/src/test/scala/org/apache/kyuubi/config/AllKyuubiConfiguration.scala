@@ -23,7 +23,7 @@ import java.nio.file.{Files, Path, Paths}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.kyuubi.{KyuubiFunSuite, TestUtils}
+import org.apache.kyuubi.{KyuubiFunSuite, TestUtils, Utils}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.metrics.MetricsConf
 import org.apache.kyuubi.zookeeper.ZookeeperConf
@@ -45,8 +45,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  */
 // scalastyle:on line.size.limit
 class AllKyuubiConfiguration extends KyuubiFunSuite {
-  private val kyuubiHome: String =
-    getClass.getProtectionDomain.getCodeSource.getLocation.getPath.split("kyuubi-server")(0)
+  private val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")(0)
   private val markdown = Paths.get(kyuubiHome, "docs", "deployment", "settings.md")
     .toAbsolutePath
 

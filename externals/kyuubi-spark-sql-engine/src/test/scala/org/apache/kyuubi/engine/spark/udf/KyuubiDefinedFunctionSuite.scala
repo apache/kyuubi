@@ -21,7 +21,7 @@ import java.nio.file.Paths
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.kyuubi.{KyuubiFunSuite, TestUtils}
+import org.apache.kyuubi.{KyuubiFunSuite, TestUtils, Utils}
 
 // scalastyle:off line.size.limit
 /**
@@ -41,8 +41,8 @@ import org.apache.kyuubi.{KyuubiFunSuite, TestUtils}
 // scalastyle:on line.size.limit
 class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
 
-  private val kyuubiHome: String = getClass.getProtectionDomain.getCodeSource
-    .getLocation.getPath.split("kyuubi-spark-sql-engine")(0)
+  private val kyuubiHome: String = Utils.getCodeSourceLocation(getClass)
+    .split("kyuubi-spark-sql-engine")(0)
   private val markdown = Paths.get(kyuubiHome, "..", "docs", "sql", "functions.md")
     .toAbsolutePath
 

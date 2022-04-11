@@ -35,7 +35,7 @@ import org.scalatest.time.SpanSugar._
 
 trait KerberizedTestHelper extends KyuubiFunSuite {
   val baseDir: File = Utils.createTempDir(
-    this.getClass.getProtectionDomain.getCodeSource.getLocation.getPath,
+    Utils.getCodeSourceLocation(getClass),
     "kyuubi-kdc").toFile
   val kdcConf = MiniKdc.createConf()
   val hostName = "localhost"

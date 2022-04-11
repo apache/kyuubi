@@ -44,7 +44,7 @@ class FlinkProcessBuilder(
 
   override protected def executable: String = {
     val flinkEngineHomeOpt = env.get("FLINK_ENGINE_HOME").orElse {
-      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+      val cwd = Utils.getCodeSourceLocation(getClass)
         .split("kyuubi-server")
       assert(cwd.length > 1)
       Option(
@@ -132,7 +132,7 @@ class FlinkProcessBuilder(
   def FLINK_HOME: String = {
     // prepare FLINK_HOME
     val flinkHomeOpt = env.get("FLINK_HOME").orElse {
-      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+      val cwd = Utils.getCodeSourceLocation(getClass)
         .split("kyuubi-server")
       assert(cwd.length > 1)
       Option(
