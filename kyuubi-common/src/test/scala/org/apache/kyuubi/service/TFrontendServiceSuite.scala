@@ -476,19 +476,19 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       tGetDelegationTokenReq.setRenewer(Utils.currentUser)
       val tGetDelegationTokenResp = client.GetDelegationToken(tGetDelegationTokenReq)
       assert(tGetDelegationTokenResp.getDelegationToken === null)
-      assert(tGetDelegationTokenResp.getStatus === TStatusCode.SUCCESS_STATUS)
+      assert(tGetDelegationTokenResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
 
       val tCancelDelegationTokenReq = new TCancelDelegationTokenReq()
       tCancelDelegationTokenReq.setSessionHandle(handle)
       tCancelDelegationTokenReq.setDelegationToken("")
       val tCancelDelegationTokenResp = client.CancelDelegationToken(tCancelDelegationTokenReq)
-      assert(tCancelDelegationTokenResp.getStatus === TStatusCode.SUCCESS_STATUS)
+      assert(tCancelDelegationTokenResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
 
       val tRenewDelegationTokenReq = new TRenewDelegationTokenReq()
       tRenewDelegationTokenReq.setSessionHandle(handle)
       tRenewDelegationTokenReq.setDelegationToken("")
       val tRenewDelegationTokenResp = client.RenewDelegationToken(tRenewDelegationTokenReq)
-      assert(tRenewDelegationTokenResp.getStatus === TStatusCode.SUCCESS_STATUS)
+      assert(tRenewDelegationTokenResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
 
