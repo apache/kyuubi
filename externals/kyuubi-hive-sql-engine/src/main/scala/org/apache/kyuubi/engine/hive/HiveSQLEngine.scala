@@ -86,7 +86,7 @@ object HiveSQLEngine extends Logging {
       hiveConf.set("hive.metastore.fastpath", "true")
 
       // TODO: Move this to test phase after #2021 resolved
-      val metastore = Utils.createTempDir("hms_temp")
+      val metastore = Utils.createTempDir(namePrefix = "hms_temp")
       metastore.toFile.delete()
       hiveConf.set(
         "javax.jdo.option.ConnectionURL",
