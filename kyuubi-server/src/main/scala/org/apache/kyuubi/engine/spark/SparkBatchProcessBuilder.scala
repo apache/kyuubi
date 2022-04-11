@@ -17,12 +17,15 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.util.UUID
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.api.v1.BatchRequest
+import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class SparkBatchProcessBuilder(
     override val proxyUser: String,
@@ -32,7 +35,8 @@ class SparkBatchProcessBuilder(
   extends SparkProcessBuilder(proxyUser, conf, extraEngineLog) {
   import SparkProcessBuilder._
 
-  private var appIdAndTrackingUrl: Option[(String, String)] = None
+  private val batchJobTag = batchRequest.conf.get(TAG_KEY).map(_ + ",").getOrElse("") +
+    "kyuubi-spark-" + UUID.randomUUID()
 
   override def mainClass: String = batchRequest.className
 
@@ -44,7 +48,9 @@ class SparkBatchProcessBuilder(
     buffer += CLASS
     buffer += mainClass
 
-    batchRequest.conf.foreach { case (k, v) =>
+    val allConf = batchRequest.conf ++ Map(TAG_KEY -> batchJobTag)
+
+    allConf.foreach { case (k, v) =>
       buffer += CONF
       buffer += s"$k=$v"
     }
@@ -61,18 +67,23 @@ class SparkBatchProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-batch-submit"
 
-  val YARN_APP_TRACKING_REGEX =
-    ".*tracking URL: (http[:/a-zA-Z0-9._-]*)(application_\\d+_\\d+).*".r("urlPrefix", "appId")
+  private[kyuubi] def getApplicationIdAndUrl(): Option[(String, String)] = {
+    batchRequest.conf.get("spark.master") match {
+      case Some("yarn") =>
+        val yarnClient = getYarnClient
+        val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf, engineEnv = true)
+        yarnClient.init(hadoopConf)
+        yarnClient.start()
+        try {
+          val apps = yarnClient.getApplications(null, null, Set(batchJobTag).asJava)
+          apps.asScala.headOption.map { applicationReport =>
+            applicationReport.getApplicationId.toString -> applicationReport.getTrackingUrl
+          }
+        } finally {
+          yarnClient.stop()
+        }
 
-  def getAppIdAndTrackingUrl(): Option[(String, String)] = appIdAndTrackingUrl
-
-  override protected def captureLogLine(line: String): Unit = {
-    if (appIdAndTrackingUrl.isEmpty) {
-      line match {
-        case YARN_APP_TRACKING_REGEX(urlPrefix, appId) =>
-          appIdAndTrackingUrl = Some((appId, urlPrefix + appId))
-        case _ => // TODO: Support other resource manager applicationId tracking
-      }
+      case _ => None // TODO: Support other resource manager
     }
   }
 }

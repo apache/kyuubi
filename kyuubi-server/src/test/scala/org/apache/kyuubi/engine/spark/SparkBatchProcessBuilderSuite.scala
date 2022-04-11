@@ -65,9 +65,10 @@ class SparkBatchProcessBuilderSuite extends KyuubiFunSuite {
     val proc = builder.start
 
     eventually(timeout(3.minutes), interval(500.milliseconds)) {
-      assert(builder.getAppIdAndTrackingUrl().isDefined)
-      assert(builder.getAppIdAndTrackingUrl().exists(_._1.startsWith("application_")))
-      assert(builder.getAppIdAndTrackingUrl().exists(_._2.nonEmpty))
+      val applicationIdAndUrl = builder.getApplicationIdAndUrl()
+      assert(applicationIdAndUrl.isDefined)
+      assert(applicationIdAndUrl.exists(_._1.startsWith("application_")))
+      assert(applicationIdAndUrl.exists(_._2.nonEmpty))
     }
     proc.destroyForcibly()
   }

@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.util
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream, File}
 import java.util.{Base64, Map => JMap}
 
 import scala.collection.JavaConverters._
@@ -42,8 +42,16 @@ object KyuubiHadoopUtils {
 
   def newHadoopConf(
       conf: KyuubiConf,
-      loadDefaults: Boolean = true): Configuration = {
+      loadDefaults: Boolean = true,
+      engineEnv: Boolean = false): Configuration = {
     val hadoopConf = new Configuration(loadDefaults)
+    if (engineEnv) {
+      conf.getEnvs.get("HADOOP_CONF_DIR").foreach { hadoopConfDir =>
+        new File(hadoopConfDir).listFiles().foreach { confFile =>
+          hadoopConf.addResource(confFile.toURI.toURL)
+        }
+      }
+    }
     conf.getAll
       .foreach { case (k, v) => hadoopConf.set(k, v) }
     hadoopConf
