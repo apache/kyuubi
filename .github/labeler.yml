@@ -66,8 +66,8 @@
   - "kyuubi-hive-jdbc-shaded/**/*"
 
 "module:flink":
-  - "kyuubi-flink-it/**/*"
-  - "externals/kyuubi-flink-sql-engine/**/*" 
+  - "externals/kyuubi-flink-sql-engine/**/*"
+  - "integration-tests/kyuubi-flink-it/**/*"
 
 "module:ha":
   - "kyuubi-ha/**/*"
@@ -104,7 +104,9 @@
 "module:spark":
   - "externals/kyuubi-spark-sql-engine/**/*" 
   - "extensions/spark/kyuubi-extension-spark*/**/*"
+  - "extensions/spark/kyuubi-spark-authz/**/*"
+  - "integration-tests/kyuubi-kubernetes-it/**/*"
   - "tools/spark-block-cleaner/**/*"
 
-"module:plugin":
-  - "extension/kyuubi-server/kyuubi-server-plugin/**/*"
+"module:extensions":
+  - "extension/**/*"
