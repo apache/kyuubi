@@ -84,6 +84,13 @@ object HiveSQLEngine extends Logging {
         "hive.metastore.warehouse.dir",
         Utils.createTempDir(namePrefix = "kyuubi_hive_warehouse").toString)
       hiveConf.set("hive.metastore.fastpath", "true")
+
+      // TODO: Move this to test phase after #2021 resolved
+      val metastore = Utils.createTempDir("hms_temp")
+      metastore.toFile.delete()
+      hiveConf.set(
+        "javax.jdo.option.ConnectionURL",
+        s"jdbc:derby:;databaseName=$metastore;create=true")
     }
 
     val engine = new HiveSQLEngine()
