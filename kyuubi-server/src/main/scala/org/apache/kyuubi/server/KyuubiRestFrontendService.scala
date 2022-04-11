@@ -21,15 +21,18 @@ import java.util.EnumSet
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.servlet.DispatcherType
 
+import org.apache.hadoop.conf.Configuration
 import org.eclipse.jetty.servlet.FilterHolder
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
-import org.apache.kyuubi.server.api.v1.ApiRootResource
-import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
+import org.apache.kyuubi.server.api.v1.{ApiRootResource, SessionOpenRequest}
+import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.JettyServer
-import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
+import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
+import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -41,6 +44,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private var server: JettyServer = _
 
   private val isStarted = new AtomicBoolean(false)
+
+  private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
@@ -58,7 +63,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val contextHandler = ApiRootResource.getServletHandler(this)
     val holder = new FilterHolder(new AuthenticationFilter(conf))
     contextHandler.addFilter(holder, "/*", EnumSet.allOf(classOf[DispatcherType]))
-    server.addHandler(contextHandler)
+    val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
+    server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
 
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
     server.addRedirectHandler("/", "/static")
@@ -85,6 +91,26 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       server.stop()
     }
     super.stop()
+  }
+
+  def getUserName(req: SessionOpenRequest): String = {
+    val realUser: String =
+      ServiceUtils.getShortName(Option(AuthenticationFilter.getUserName).getOrElse(req.user))
+    if (req.configs == null) {
+      realUser
+    } else {
+      getProxyUser(req.configs, Option(AuthenticationFilter.getUserIpAddress).orNull, realUser)
+    }
+  }
+
+  private def getProxyUser(
+      sessionConf: Map[String, String],
+      ipAddress: String,
+      realUser: String): String = {
+    sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).map { proxyUser =>
+      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+      proxyUser
+    }.getOrElse(realUser)
   }
 
   override val discoveryService: Option[Service] = None

@@ -19,13 +19,16 @@ package org.apache.kyuubi.operation
 
 import java.util.Base64
 import javax.servlet.http.HttpServletResponse
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.MediaType
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KerberizedTestHelper, RestFrontendTestHelper}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.api.v1.SessionOpenCount
+import org.apache.kyuubi.server.api.v1.{SessionOpenCount, SessionOpenRequest}
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
@@ -143,6 +146,24 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
 
   test("test with non-authentication path") {
     val response = webTarget.path("swagger").request().get()
+    assert(HttpServletResponse.SC_OK == response.getStatus)
+  }
+
+  test("test with ugi wrapped open session") {
+    UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
+    val token = generateToken(hostName)
+    val sessionOpenRequest = SessionOpenRequest(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11.getValue,
+      "kyuubi",
+      "pass",
+      "localhost",
+      Map.empty[String, String])
+
+    val response = webTarget.path("api/v1/sessions")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"NEGOTIATE $token")
+      .post(Entity.entity(sessionOpenRequest, MediaType.APPLICATION_JSON_TYPE))
+
     assert(HttpServletResponse.SC_OK == response.getStatus)
   }
 }

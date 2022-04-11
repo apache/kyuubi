@@ -31,6 +31,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 
@@ -130,12 +131,14 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): SessionHandle = {
+    val userName = fe.getUserName(request)
+    val ipAddress = AuthenticationFilter.getUserIpAddress
     fe.be.openSession(
       TProtocolVersion.findByValue(request.protocolVersion),
-      request.user,
+      userName,
       request.password,
-      request.ipAddr,
-      request.configs)
+      ipAddress,
+      Option(request.configs).getOrElse(Map.empty[String, String]))
   }
 
   @ApiResponse(
