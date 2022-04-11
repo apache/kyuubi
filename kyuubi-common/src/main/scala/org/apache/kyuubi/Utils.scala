@@ -268,4 +268,8 @@ object Utils extends Logging {
         error(s"Uncaught exception in thread ${Thread.currentThread().getName}", t)
     }
   }
+
+  def getCodeSourceLocation(clazz: Class[_]): String = {
+    new File(clazz.getProtectionDomain.getCodeSource.getLocation.toURI).getPath
+  }
 }

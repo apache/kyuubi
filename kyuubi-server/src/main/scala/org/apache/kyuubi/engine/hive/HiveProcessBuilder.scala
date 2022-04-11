@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.hive
 import java.net.URI
 import java.nio.file.{Files, Paths}
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, SCALA_COMPILE_VERSION}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_HIVE_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
@@ -35,7 +35,7 @@ class HiveProcessBuilder(
 
   override protected def executable: String = {
     val hiveHomeOpt = env.get("HIVE_ENGINE_HOME").orElse {
-      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+      val cwd = Utils.getCodeSourceLocation(getClass)
         .split("kyuubi-server")
       assert(cwd.length > 1)
       Option(

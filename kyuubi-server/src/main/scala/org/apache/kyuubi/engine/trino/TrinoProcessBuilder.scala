@@ -21,10 +21,7 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Paths
 
-import org.apache.kyuubi.KYUUBI_VERSION
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.SCALA_COMPILE_VERSION
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_URL
@@ -56,7 +53,7 @@ class TrinoProcessBuilder(
 
   override protected val executable: String = {
     val trinoHomeOpt = env.get("TRINO_ENGINE_HOME").orElse {
-      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+      val cwd = Utils.getCodeSourceLocation(getClass)
         .split("kyuubi-server")
       assert(cwd.length > 1)
       Option(
