@@ -65,7 +65,7 @@ class HiveSessionImpl(
     try {
       hive.close()
     } catch {
-      case e: HiveSQLException =>
+      case e: Exception =>
         error(s"Failed to close hive runtime session: ${e.getMessage}")
     }
   }
