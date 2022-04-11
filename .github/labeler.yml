@@ -99,7 +99,7 @@
 "module:server":
   - "bin/kyuubi"
   - "kyuubi-server/**/*"
-  - "extension/kyuubi-server/kyuubi-server-plugin/**/*"
+  - "extension/server/kyuubi-server-plugin/**/*"
 
 "module:spark":
   - "externals/kyuubi-spark-sql-engine/**/*" 
