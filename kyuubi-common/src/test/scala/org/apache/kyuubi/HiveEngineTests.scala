@@ -214,7 +214,7 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
   test("get table types") {
     withJdbcStatement() { statement =>
       val resultSet = statement.getConnection.getMetaData.getTableTypes
-      val expected = Set("TABLE", "VIEW", "INDEX_TABLE", "MATERIALIZED_VIEW")
+      val expected = Set("TABLE", "VIEW", "MATERIALIZED_VIEW")
       var tableTypes = Set[String]()
       while (resultSet.next()) {
         assert(expected.contains(resultSet.getString(TABLE_TYPE)))

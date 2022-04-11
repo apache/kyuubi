@@ -143,7 +143,8 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
     val rowSet = RowSetFactory.create(getLogSchema, operation.getProtocolVersion, false)
     val operationLog = internalHiveOperation.getOperationLog
     if (operationLog == null) {
-      throw KyuubiSQLException("Couldn't find log associated with operation handle: " + opHandle)
+      return rowSet.toTRowSet
+//      throw KyuubiSQLException("Couldn't find log associated with operation handle: " + opHandle)
     }
 
     try {
