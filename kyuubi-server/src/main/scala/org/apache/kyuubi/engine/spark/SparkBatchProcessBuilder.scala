@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.kyuubi.engine.spark
 
 import scala.collection.JavaConverters._
@@ -45,7 +44,6 @@ class SparkBatchProcessBuilder(
     buffer += CLASS
     buffer += mainClass
 
-
     batchRequest.conf.foreach { case (k, v) =>
       buffer += CONF
       buffer += s"$k=$v"
@@ -65,7 +63,6 @@ class SparkBatchProcessBuilder(
 
   val YARN_APP_TRACKING_REGEX =
     ".*tracking URL: (http[:/a-zA-Z0-9._-]*)(application_\\d+_\\d+).*".r("urlPrefix", "appId")
-  val NORMAL_APP_TRACKING_REGEX = ".*Application Id: ([a-zA-Z0-9_-]*).*".r("appId")
 
   def getAppIdAndTrackingUrl(): Option[(String, String)] = appIdAndTrackingUrl
 
@@ -74,9 +71,7 @@ class SparkBatchProcessBuilder(
       line match {
         case YARN_APP_TRACKING_REGEX(urlPrefix, appId) =>
           appIdAndTrackingUrl = Some((appId, urlPrefix + appId))
-        case NORMAL_APP_TRACKING_REGEX(appId) =>
-          appIdAndTrackingUrl = Some((appId, ""))
-        case _ =>
+        case _ => // TODO: Support other resource manager applicationId tracking
       }
     }
   }

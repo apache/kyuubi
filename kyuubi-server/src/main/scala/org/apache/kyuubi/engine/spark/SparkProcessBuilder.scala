@@ -228,5 +228,5 @@ object SparkProcessBuilder {
   final private[spark] val PRINCIPAL = "spark.kerberos.principal"
   final private[spark] val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
-  final private[spark] val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
+  final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
 }
