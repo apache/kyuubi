@@ -151,6 +151,14 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     addOperation(operation)
   }
 
+  override def getQueryId(operation: Operation): String = {
+    val kyuubiOperation = operation.asInstanceOf[KyuubiOperation]
+    val client = kyuubiOperation.client
+    val handle = kyuubiOperation.remoteOpHandle()
+    val queryId = client.getQueryId(handle).getQueryId
+    queryId
+  }
+
   def newLaunchEngineOperation(session: KyuubiSessionImpl, shouldRunAsync: Boolean): Operation = {
     val operation = new LaunchEngine(session, shouldRunAsync)
     addOperation(operation)

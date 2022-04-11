@@ -356,6 +356,17 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
+  test("get query id") {
+    withSessionHandle { (client, handle) =>
+      val opHandle =
+        OperationHandle(OperationType.EXECUTE_STATEMENT, SERVER_VERSION)
+      val req = new TGetQueryIdReq(opHandle)
+      // TODO:fix this test case
+      val resp = client.GetQueryId(req)
+      assert(resp.getQueryId != null)
+    }
+  }
+
   test("get operation status") {
     withSessionHandle { (client, handle) =>
       val opHandle =

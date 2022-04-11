@@ -201,7 +201,8 @@ abstract class AbstractSession(
   }
 
   override def getQueryId(operationHandle: OperationHandle): String = {
-    val queryId = sessionManager.operationManager.getQueryId(operationHandle);
+    val operation = sessionManager.operationManager.getOperation(operationHandle)
+    val queryId = sessionManager.operationManager.getQueryId(operation)
     queryId
   }
 

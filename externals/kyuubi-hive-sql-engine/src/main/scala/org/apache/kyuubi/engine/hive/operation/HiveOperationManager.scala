@@ -22,6 +22,7 @@ import java.util.List
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hadoop.hive.metastore.api.{FieldSchema, Schema}
 import org.apache.hive.service.cli.{RowSetFactory, TableSchema}
 import org.apache.hive.service.rpc.thrift.TRowSet
@@ -162,7 +163,9 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
     rowSet.toTRowSet
   }
 
-  override def getQueryId(opHandle: OperationHandle): String = {
-    throw KyuubiSQLException.featureNotSupported()
+  override def getQueryId(operation: Operation): String = {
+    val hiveOperation = operation.asInstanceOf[HiveOperation]
+    val internalHiveOperation = hiveOperation.internalHiveOperation
+    internalHiveOperation.getParentSession.getHiveConf.getVar(ConfVars.HIVEQUERYID)
   }
 }

@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_INCREMENTAL_COLLECT
-import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationManager}
+import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
 class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
@@ -117,7 +117,7 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
     throw KyuubiSQLException.featureNotSupported()
   }
 
-  override def getQueryId(opHandle: OperationHandle): String = {
+  override def getQueryId(operation: Operation): String = {
     throw KyuubiSQLException.featureNotSupported()
   }
 }

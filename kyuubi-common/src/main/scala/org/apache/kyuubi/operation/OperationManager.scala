@@ -85,6 +85,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       foreignCatalog: String,
       foreignSchema: String,
       foreignTable: String): Operation
+  def getQueryId(operation: Operation): String
 
   final def addOperation(operation: Operation): Operation = synchronized {
     handleToOperation.put(operation.getHandle, operation)
