@@ -221,12 +221,12 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
 
-  final private val CONF = "--conf"
-  final private val CLASS = "--class"
-  final private val PROXY_USER = "--proxy-user"
-  final private val SPARK_FILES = "spark.files"
-  final private val PRINCIPAL = "spark.kerberos.principal"
-  final private val KEYTAB = "spark.kerberos.keytab"
+  final private[spark] val CONF = "--conf"
+  final private[spark] val CLASS = "--class"
+  final private[spark] val PROXY_USER = "--proxy-user"
+  final private[spark] val SPARK_FILES = "spark.files"
+  final private[spark] val PRINCIPAL = "spark.kerberos.principal"
+  final private[spark] val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
-  final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
+  final private[spark] val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
 }

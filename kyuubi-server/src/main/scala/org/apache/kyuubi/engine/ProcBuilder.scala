@@ -139,6 +139,8 @@ trait ProcBuilder {
     file
   }
 
+  protected def captureLogLine(line: String): Unit = {}
+
   final def start: Process = synchronized {
     process = processBuilder.start()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
@@ -164,6 +166,7 @@ trait ProcBuilder {
 
               error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
             } else if (line != null) {
+              captureLogLine(line)
               lastRowsOfLog.add(line)
             }
           } else {
