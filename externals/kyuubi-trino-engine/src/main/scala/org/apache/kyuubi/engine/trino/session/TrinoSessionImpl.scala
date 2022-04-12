@@ -28,10 +28,10 @@ import io.airlift.units.Duration
 import io.trino.client.ClientSession
 import okhttp3.OkHttpClient
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.KyuubiSQLException
+
 import org.apache.kyuubi.Utils.currentUser
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.trino.TrinoConf
 import org.apache.kyuubi.engine.trino.TrinoContext
 import org.apache.kyuubi.session.AbstractSession
@@ -71,7 +71,8 @@ class TrinoSessionImpl(
       throw KyuubiSQLException("Trino server url can not be null!"))
     val catalog = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG).getOrElse(
       throw KyuubiSQLException("Trino default catalog can not be null!"))
-    val user = sessionConf.getOption("kyuubi.trino.user").getOrElse(currentUser)
+    val user = sessionConf
+      .getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY).getOrElse(currentUser)
     val clientRequestTimeout = sessionConf.get(TrinoConf.CLIENT_REQUEST_TIMEOUT)
 
     new ClientSession(

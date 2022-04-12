@@ -56,33 +56,6 @@ class SparkProcessBuilder(
 
   override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
 
-  override def mainResource: Option[String] = {
-    // 1. get the main resource jar for user specified config first
-    // TODO use SPARK_SCALA_VERSION instead of SCALA_COMPILE_VERSION
-    val jarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
-    conf.get(ENGINE_SPARK_MAIN_RESOURCE).filter { userSpecified =>
-      // skip check exist if not local file.
-      val uri = new URI(userSpecified)
-      val schema = if (uri.getScheme != null) uri.getScheme else "file"
-      schema match {
-        case "file" => Files.exists(Paths.get(userSpecified))
-        case _ => true
-      }
-    }.orElse {
-      // 2. get the main resource jar from system build default
-      env.get(KyuubiConf.KYUUBI_HOME)
-        .map { Paths.get(_, "externals", "engines", "spark", jarName) }
-        .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
-    }.orElse {
-      // 3. get the main resource from dev environment
-      val cwd = Utils.getCodeSourceLocation(getClass)
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(Paths.get(cwd.head, "externals", module, "target", jarName))
-        .map(_.toAbsolutePath.toFile.getCanonicalPath)
-    }
-  }
-
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
@@ -191,6 +164,7 @@ class SparkProcessBuilder(
       case None => ""
     }
 
+  override protected def shortName: String = "spark"
 }
 
 object SparkProcessBuilder {
