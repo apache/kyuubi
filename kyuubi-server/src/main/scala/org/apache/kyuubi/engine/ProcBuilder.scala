@@ -44,8 +44,7 @@ trait ProcBuilder {
   protected def shortName: String
 
   /**
-   * executable, by default it is `JAVA_HOME/bin/java`
-   * @return
+   * executable, it is `JAVA_HOME/bin/java` by default
    */
   protected def executable: String = {
     val javaHome = env.get("JAVA_HOME")
@@ -59,7 +58,7 @@ trait ProcBuilder {
   /**
    * The engine jar or other runnable jar containing the main method
    */
-  protected def mainResource: Option[String] = {
+  def mainResource: Option[String] = {
     // 1. get the main resource jar for user specified config first
     // TODO use SPARK_SCALA_VERSION instead of SCALA_COMPILE_VERSION
     val jarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
