@@ -23,10 +23,12 @@ import org.apache.kyuubi.config.KyuubiConf._
 
 class KyuubiOperationWithHiveEngineSuite extends WithKyuubiServer with HiveEngineTests {
   override protected val conf: KyuubiConf = {
-    val metastore = Utils.createTempDir("hms_temp")
+    val metastore = Utils.createTempDir(namePrefix = getClass.getSimpleName)
     metastore.toFile.delete()
     KyuubiConf()
       .set(ENGINE_TYPE, "HIVE_SQL")
+      // increase this to 30s as hive session state and metastore client is slow initializing
+      .setIfMissing(ENGINE_IDLE_TIMEOUT, 30000L)
       .set("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
   }
 

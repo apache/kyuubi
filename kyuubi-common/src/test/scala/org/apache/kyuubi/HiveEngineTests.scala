@@ -315,7 +315,7 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
   test("basic execute statements, create, insert query") {
     assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
     withJdbcStatement("hive_engine_test") { statement =>
-      statement.execute("CREATE TABLE hive_engine_test(id int, value string) stored as orc")
+      statement.execute("CREATE TABLE hive_engine_test(id int, value string) stored as textfile")
       statement.execute("INSERT INTO hive_engine_test SELECT 1, '2'")
 
       val resultSet = statement.executeQuery("SELECT ID, VALUE FROM hive_engine_test")
