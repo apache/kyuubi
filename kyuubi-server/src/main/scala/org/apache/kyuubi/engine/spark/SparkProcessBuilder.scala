@@ -27,6 +27,7 @@ import scala.util.matching.Regex
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.client.api.YarnClient
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -173,8 +174,8 @@ class SparkProcessBuilder(
     YARN_APP_NAME_REGEX.findFirstIn(line) match {
       case Some(appId) =>
         try {
-          val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-          yarnClient.init(hadoopConf)
+          val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
+          yarnClient.init(yarnConf)
           yarnClient.start()
           val applicationId = ApplicationId.fromString(appId)
           yarnClient.killApplication(applicationId)
@@ -197,12 +198,12 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
 
-  final private val CONF = "--conf"
-  final private val CLASS = "--class"
-  final private val PROXY_USER = "--proxy-user"
-  final private val SPARK_FILES = "spark.files"
-  final private val PRINCIPAL = "spark.kerberos.principal"
-  final private val KEYTAB = "spark.kerberos.keytab"
+  final private[spark] val CONF = "--conf"
+  final private[spark] val CLASS = "--class"
+  final private[spark] val PROXY_USER = "--proxy-user"
+  final private[spark] val SPARK_FILES = "spark.files"
+  final private[spark] val PRINCIPAL = "spark.kerberos.principal"
+  final private[spark] val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
   final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
 }
