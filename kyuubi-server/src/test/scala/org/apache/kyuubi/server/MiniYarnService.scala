@@ -18,7 +18,7 @@
 package org.apache.kyuubi.server
 
 import java.io.{File, FileWriter}
-import java.net.InetAddress
+import java.net.{InetAddress, URLClassLoader}
 
 import scala.collection.JavaConverters._
 
@@ -39,6 +39,8 @@ class MiniYarnService(name: String) extends AbstractService(name) {
   private var hadoopConfDir: File = _
   private var yarnConf: YarnConfiguration = _
   private var yarnCluster: MiniYARNCluster = _
+
+  private val classLoader = Thread.currentThread().getContextClassLoader
 
   private def newYarnConfig(): YarnConfiguration = {
     val yarnConfig = new YarnConfiguration()
@@ -93,12 +95,16 @@ class MiniYarnService(name: String) extends AbstractService(name) {
     info(s"RM address in configuration is ${config.get(YarnConfiguration.RM_ADDRESS)}")
     saveHadoopConf()
     super.start()
+
+    val hadoopConfClassLoader = new URLClassLoader(Array(hadoopConfDir.toURI.toURL), classLoader)
+    Thread.currentThread().setContextClassLoader(hadoopConfClassLoader)
   }
 
   override def stop(): Unit = {
     if (yarnCluster != null) yarnCluster.stop()
     if (hadoopConfDir != null) hadoopConfDir.delete()
     super.stop()
+    Thread.currentThread().setContextClassLoader(classLoader)
   }
 
   private def saveHadoopConf(): Unit = {

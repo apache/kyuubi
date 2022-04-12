@@ -197,7 +197,7 @@ class SparkProcessBuilder(
     YARN_APP_NAME_REGEX.findFirstIn(line) match {
       case Some(appId) =>
         try {
-          val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf, engineEnv = true)
+          val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
           yarnClient.init(hadoopConf)
           yarnClient.start()
           val applicationId = ApplicationId.fromString(appId)

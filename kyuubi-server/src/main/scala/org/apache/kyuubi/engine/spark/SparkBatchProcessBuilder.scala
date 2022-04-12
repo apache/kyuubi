@@ -71,7 +71,7 @@ class SparkBatchProcessBuilder(
     batchRequest.conf.get("spark.master") match {
       case Some("yarn") =>
         val yarnClient = getYarnClient
-        val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf, engineEnv = true)
+        val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
         yarnClient.init(hadoopConf)
         yarnClient.start()
         try {
