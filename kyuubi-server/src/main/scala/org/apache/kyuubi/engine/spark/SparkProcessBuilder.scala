@@ -27,6 +27,7 @@ import scala.util.matching.Regex
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.client.api.YarnClient
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -197,8 +198,8 @@ class SparkProcessBuilder(
     YARN_APP_NAME_REGEX.findFirstIn(line) match {
       case Some(appId) =>
         try {
-          val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-          yarnClient.init(hadoopConf)
+          val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
+          yarnClient.init(yarnConf)
           yarnClient.start()
           val applicationId = ApplicationId.fromString(appId)
           yarnClient.killApplication(applicationId)
