@@ -468,7 +468,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
-  test("Delegation token is not supported") {
+  test("Delegation token is supported by default") {
     withSessionHandle { (client, handle) =>
       val tGetDelegationTokenReq = new TGetDelegationTokenReq()
       tGetDelegationTokenReq.setSessionHandle(handle)
@@ -490,8 +490,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       tRenewDelegationTokenReq.setSessionHandle(handle)
       tRenewDelegationTokenReq.setDelegationToken("")
       val tRenewDelegationTokenResp = client.RenewDelegationToken(tRenewDelegationTokenReq)
-      assert(tRenewDelegationTokenResp.getStatus.getErrorMessage ===
-        "Delegation token is not supported")
+      assert(tRenewDelegationTokenResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
 

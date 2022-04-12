@@ -498,7 +498,7 @@ abstract class TFrontendService(name: String)
     resp
   }
 
-  private def notSupportTokenErrorStatus = {
+  protected def notSupportTokenErrorStatus = {
     val errorStatus = new TStatus(TStatusCode.ERROR_STATUS)
     errorStatus.setErrorMessage("Delegation token is not supported")
     errorStatus
@@ -521,7 +521,7 @@ abstract class TFrontendService(name: String)
   override def RenewDelegationToken(req: TRenewDelegationTokenReq): TRenewDelegationTokenResp = {
     debug(req.toString)
     val resp = new TRenewDelegationTokenResp
-    resp.setStatus(notSupportTokenErrorStatus)
+    resp.setStatus(OK_STATUS)
     resp
   }
 
