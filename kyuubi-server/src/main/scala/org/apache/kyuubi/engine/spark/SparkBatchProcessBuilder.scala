@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.util.UUID
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -32,12 +30,11 @@ import org.apache.kyuubi.util.KyuubiHadoopUtils
 class SparkBatchProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
+    batchId: String,
     batchRequest: BatchRequest,
     override val extraEngineLog: Option[OperationLog] = None)
   extends SparkProcessBuilder(proxyUser, conf, extraEngineLog) {
   import SparkProcessBuilder._
-
-  private val uniqueBatchJobTag = "KYUUBI-BATCH-" + UUID.randomUUID()
 
   override def mainClass: String = batchRequest.className
 
@@ -49,7 +46,7 @@ class SparkBatchProcessBuilder(
     buffer += CLASS
     buffer += mainClass
 
-    val batchJobTag = batchRequest.conf.get(TAG_KEY).map(_ + ",").getOrElse("") + uniqueBatchJobTag
+    val batchJobTag = batchRequest.conf.get(TAG_KEY).map(_ + ",").getOrElse("") + batchId
     val allConf = batchRequest.conf ++ Map(TAG_KEY -> batchJobTag)
 
     allConf.foreach { case (k, v) =>
@@ -77,7 +74,7 @@ class SparkBatchProcessBuilder(
         yarnClient.init(yarnConf)
         yarnClient.start()
         try {
-          val apps = yarnClient.getApplications(null, null, Set(uniqueBatchJobTag).asJava)
+          val apps = yarnClient.getApplications(null, null, Set(batchId).asJava)
           apps.asScala.headOption.map { applicationReport =>
             applicationReport.getApplicationId.toString -> applicationReport.getTrackingUrl
           }

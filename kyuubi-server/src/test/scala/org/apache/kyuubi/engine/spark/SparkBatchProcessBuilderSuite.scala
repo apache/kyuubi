@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.util.UUID
+
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
@@ -61,7 +63,11 @@ class SparkBatchProcessBuilderSuite extends KyuubiFunSuite {
       Map("spark.master" -> "yarn"),
       List.empty[String].asJava)
 
-    val builder = new SparkBatchProcessBuilder(batchRequest.proxyUser, conf, batchRequest)
+    val builder = new SparkBatchProcessBuilder(
+      batchRequest.proxyUser,
+      conf,
+      UUID.randomUUID().toString,
+      batchRequest)
     val proc = builder.start
 
     eventually(timeout(3.minutes), interval(500.milliseconds)) {
