@@ -21,8 +21,8 @@ import java.io.File
 import java.nio.file.Paths
 import java.util.LinkedHashSet
 
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
@@ -41,9 +41,11 @@ class TrinoProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.trino.TrinoSqlEngine"
 
   override protected def commands: Array[String] = {
-    require(conf.get(ENGINE_TRINO_CONNECTION_URL).nonEmpty,
+    require(
+      conf.get(ENGINE_TRINO_CONNECTION_URL).nonEmpty,
       s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}")
-    require(conf.get(ENGINE_TRINO_CONNECTION_CATALOG).nonEmpty,
+    require(
+      conf.get(ENGINE_TRINO_CONNECTION_CATALOG).nonEmpty,
       s"Trino default catalog can not be null! Please set ${ENGINE_TRINO_CONNECTION_CATALOG.key}")
     val buffer = new ArrayBuffer[String]()
     buffer += executable
