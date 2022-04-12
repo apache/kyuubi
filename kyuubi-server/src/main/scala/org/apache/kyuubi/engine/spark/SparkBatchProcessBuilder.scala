@@ -22,6 +22,8 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.hadoop.yarn.conf.YarnConfiguration
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.api.v1.BatchRequest
@@ -71,8 +73,8 @@ class SparkBatchProcessBuilder(
     batchRequest.conf.get("spark.master") match {
       case Some("yarn") =>
         val yarnClient = getYarnClient
-        val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-        yarnClient.init(hadoopConf)
+        val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
+        yarnClient.init(yarnConf)
         yarnClient.start()
         try {
           val apps = yarnClient.getApplications(null, null, Set(batchJobTag).asJava)
