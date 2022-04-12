@@ -18,11 +18,12 @@
 package org.apache.kyuubi.config
 
 import java.time.Duration
-import java.util.Locale
+import java.util.{Locale, UUID}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf._
@@ -805,6 +806,21 @@ object KyuubiConf {
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
+
+  val SESSION_BATCH_STATIC_SECRET_ID: OptionalConfigEntry[String] =
+    buildConf("kyuubi.session.batch.static.secret.id")
+      .doc("The static session secret UUID used for batch session handle.")
+      .version("1.6.0")
+      .stringConf
+      .checkValue(id => Try(UUID.fromString(id)).isSuccess, "should be an UUID string")
+      .createOptional
+
+  val SESSION_BATCH_APPLICATION_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.session.batch.application.check.interval")
+      .doc("The interval to check batch job application information.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefaultString("PT5S")
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")

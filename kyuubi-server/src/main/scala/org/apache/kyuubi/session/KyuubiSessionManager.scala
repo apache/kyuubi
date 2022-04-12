@@ -17,10 +17,13 @@
 
 package org.apache.kyuubi.session
 
+import java.util.UUID
+
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
+import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
@@ -37,6 +40,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   val credentialsManager = new HadoopCredentialsManager()
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
+  lazy val staticBatchSessionSecretId: UUID = conf.get(SESSION_BATCH_STATIC_SECRET_ID)
+    .map(UUID.fromString).getOrElse(UUID.randomUUID())
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(credentialsManager)
@@ -82,6 +87,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}",
           e)
     }
+  }
+
+  def genBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
+    SessionHandle(HandleIdentifier(UUID.randomUUID(), staticBatchSessionSecretId), protocol)
   }
 
   override def start(): Unit = synchronized {
