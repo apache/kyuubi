@@ -17,12 +17,16 @@
 
 package org.apache.kyuubi.kubernetes.test.spark
 
-import org.apache.kyuubi.{Logging, WithKyuubiServer, WithSimpleDFSService}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.net.NetUtils
+
+import org.apache.kyuubi.{Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
+import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
 
-// TODO Support Spark Cluster mode
 abstract class SparkOnKubernetesSuiteBase
   extends WithKyuubiServer with SparkQueryTests with Logging {
   private val apiServerAddress = {
@@ -36,9 +40,10 @@ abstract class SparkOnKubernetesSuiteBase
       .set("spark.kubernetes.container.image", "apache/spark:v3.2.1")
       .set("spark.kubernetes.container.image.pullPolicy", "IfNotPresent")
       .set("spark.executor.instances", "1")
-      .set("spark.executor.cores", "1")
       .set("spark.executor.memory", "512M")
       .set("spark.driver.memory", "512M")
+      .set("spark.kubernetes.driver.request.cores", "250m")
+      .set("spark.kubernetes.executor.request.cores", "250m")
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -72,10 +77,30 @@ class SparkClientModeOnKubernetesSuite extends SparkOnKubernetesSuiteBase {
  */
 class SparkClusterModeOnKubernetesSuite
   extends SparkOnKubernetesSuiteBase with WithSimpleDFSService {
+  private val localhostAddress = Utils.findLocalInetAddress.getHostAddress
+  private val driverTemplate =
+    Thread.currentThread().getContextClassLoader.getResource("driver.yml")
+
+  override val hadoopConf: Configuration = {
+    val hdfsConf: Configuration = new Configuration()
+    hdfsConf.set("dfs.namenode.rpc-bind-host", "0.0.0.0")
+    hdfsConf.set("dfs.namenode.servicerpc-bind-host", "0.0.0.0")
+    hdfsConf.set("dfs.datanode.hostname", localhostAddress)
+    hdfsConf.set("dfs.datanode.address", s"0.0.0.0:${NetUtils.getFreeSocketPort}")
+    // spark use 185 as userid in docker
+    hdfsConf.set("hadoop.proxyuser.185.groups", "*")
+    hdfsConf.set("hadoop.proxyuser.185.hosts", "*")
+    hdfsConf
+  }
+
   override protected lazy val conf: KyuubiConf = {
     sparkOnK8sConf.set("spark.submit.deployMode", "cluster")
-      .set(
-        "spark.kubernetes.file.upload.path",
-        getUri + "/spark")
+      .set("spark.kubernetes.file.upload.path", s"hdfs://$localhostAddress:$getDFSPort/spark")
+      .set("spark.hadoop.dfs.client.use.datanode.hostname", "true")
+      .set("spark.kubernetes.authenticate.driver.serviceAccountName", "spark")
+      .set("spark.kubernetes.driver.podTemplateFile", driverTemplate.getPath)
+      .set(ZK_CLIENT_PORT_ADDRESS.key, localhostAddress)
+      .set(FRONTEND_CONNECTION_URL_USE_HOSTNAME.key, "false")
+      .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, localhostAddress)
   }
 }

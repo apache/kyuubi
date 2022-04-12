@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi
 
-import java.net.InetAddress
-
 import org.apache.hadoop.conf.Configuration
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -28,15 +26,10 @@ trait WithSimpleDFSService extends KyuubiFunSuite {
 
   private var miniDFSService: MiniDFSService = _
 
-  def newSimpleConf(): Configuration = {
-    val hdfsConf = new Configuration()
-    hdfsConf.set("ignore.secure.ports.for.testing", "true")
-    hdfsConf.set("hadoop.security.authentication", "simple")
-    hdfsConf
-  }
+  def hadoopConf: Configuration = new Configuration()
 
   override def beforeAll(): Unit = {
-    miniDFSService = new MiniDFSService(newSimpleConf())
+    miniDFSService = new MiniDFSService(hadoopConf)
     miniDFSService.initialize(new KyuubiConf(false))
     miniDFSService.start()
     super.beforeAll()
@@ -49,9 +42,6 @@ trait WithSimpleDFSService extends KyuubiFunSuite {
 
   def getHadoopConf: Configuration = miniDFSService.getHadoopConf
 
-  def getUri: String = {
-    miniDFSService.getHadoopConf.get("fs.defaultFS").replace(
-      "localhost",
-      InetAddress.getLocalHost.getHostAddress)
-  }
+  def getDefaultFS: String = miniDFSService.getHadoopConf.get("fs.defaultFS")
+  def getDFSPort: Int = miniDFSService.getDFSPort
 }

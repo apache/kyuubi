@@ -37,7 +37,7 @@ class MiniDFSService(name: String, hdfsConf: Configuration)
 
   override def initialize(conf: KyuubiConf): Unit = {
     // Set bind host to localhost to avoid java.net.BindException
-    hdfsConf.set("dfs.namenode.rpc-bind-host", "localhost")
+    hdfsConf.setIfUnset("dfs.namenode.rpc-bind-host", "localhost")
 
     // enable proxy
     val currentUser = UserGroupInformation.getCurrentUser.getShortUserName
@@ -49,6 +49,7 @@ class MiniDFSService(name: String, hdfsConf: Configuration)
   override def start(): Unit = {
     hdfsCluster = new MiniDFSCluster.Builder(hdfsConf)
       .checkDataNodeAddrConfig(true)
+      .checkDataNodeHostConfig(true)
       .build()
     info(
       s"NameNode address in configuration is " +
@@ -62,4 +63,5 @@ class MiniDFSService(name: String, hdfsConf: Configuration)
   }
 
   def getHadoopConf: Configuration = hdfsConf
+  def getDFSPort: Int = hdfsCluster.getNameNodePort
 }
