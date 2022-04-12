@@ -476,13 +476,15 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       tGetDelegationTokenReq.setRenewer(Utils.currentUser)
       val tGetDelegationTokenResp = client.GetDelegationToken(tGetDelegationTokenReq)
       assert(tGetDelegationTokenResp.getDelegationToken === null)
-      assert(tGetDelegationTokenResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tGetDelegationTokenResp.getStatus.getErrorMessage ===
+        "Delegation token is not supported")
 
       val tCancelDelegationTokenReq = new TCancelDelegationTokenReq()
       tCancelDelegationTokenReq.setSessionHandle(handle)
       tCancelDelegationTokenReq.setDelegationToken("")
       val tCancelDelegationTokenResp = client.CancelDelegationToken(tCancelDelegationTokenReq)
-      assert(tCancelDelegationTokenResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tCancelDelegationTokenResp.getStatus.getErrorMessage ===
+        "Delegation token is not supported")
 
       val tRenewDelegationTokenReq = new TRenewDelegationTokenReq()
       tRenewDelegationTokenReq.setSessionHandle(handle)

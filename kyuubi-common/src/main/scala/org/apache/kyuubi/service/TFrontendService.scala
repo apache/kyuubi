@@ -498,29 +498,31 @@ abstract class TFrontendService(name: String)
     resp
   }
 
-  private def supportTokenStatus = {
-    val successStatus = new TStatus(TStatusCode.SUCCESS_STATUS)
-    successStatus
+  protected def notSupportTokenErrorStatus = {
+    val errorStatus = new TStatus(TStatusCode.ERROR_STATUS)
+    errorStatus.setErrorMessage("Delegation token is not supported")
+    errorStatus
   }
 
   override def GetDelegationToken(req: TGetDelegationTokenReq): TGetDelegationTokenResp = {
     debug(req.toString)
     val resp = new TGetDelegationTokenResp()
-    resp.setStatus(supportTokenStatus)
+    resp.setStatus(notSupportTokenErrorStatus)
     resp
   }
 
   override def CancelDelegationToken(req: TCancelDelegationTokenReq): TCancelDelegationTokenResp = {
     debug(req.toString)
     val resp = new TCancelDelegationTokenResp
-    resp.setStatus(supportTokenStatus)
+    resp.setStatus(notSupportTokenErrorStatus)
     resp
   }
 
   override def RenewDelegationToken(req: TRenewDelegationTokenReq): TRenewDelegationTokenResp = {
     debug(req.toString)
     val resp = new TRenewDelegationTokenResp
-    resp.setStatus(supportTokenStatus)
+    val successStatus = new TStatus(TStatusCode.SUCCESS_STATUS)
+    resp.setStatus(successStatus)
     resp
   }
 
