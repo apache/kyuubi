@@ -210,6 +210,8 @@ Apache License Version 2.0
 org.apache.curator:curator-client
 org.apache.curator:curator-framework
 org.apache.curator:curator-recipes
-org.apache.hive:hive-service-rpc
-org.apache.thrift:fb303
-org.apache.thrift:libthrift
+org.scala-lang:scala-library
+com.fasterxml.jackson.core:jackson-annotations
+com.fasterxml.jackson.core:jackson-core
+com.fasterxml.jackson.core:jackson-databind
+com.fasterxml.jackson.module:jackson-module-scala_2.12

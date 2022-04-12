@@ -20,7 +20,7 @@ import java.io.{BufferedReader, InputStreamReader}
 import java.net.InetAddress
 import java.nio.file.Paths
 
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{JavaVersion, StringUtils, SystemUtils}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataInputStream, Path}
 
@@ -59,6 +59,8 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
   }
 
   test("test engine event logging") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
+
     val engineEventPath = Paths.get(
       logRoot,
       "hive_engine",
@@ -73,6 +75,8 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
   }
 
   test("test session event logging") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
+
     withJdbcStatement() { statement =>
       val catalogs = statement.getConnection.getMetaData.getCatalogs
       assert(!catalogs.next())
@@ -91,6 +95,8 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
   }
 
   test("test operation event logging") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
+
     withJdbcStatement("hive_engine_test") { statement =>
       val createTableStatement = "CREATE TABLE hive_engine_test(id int, value string) stored as orc"
       statement.execute(createTableStatement)

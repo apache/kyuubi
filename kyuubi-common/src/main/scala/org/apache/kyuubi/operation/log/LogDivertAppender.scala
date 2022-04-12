@@ -22,13 +22,17 @@ import org.slf4j.impl.StaticLoggerBinder
 import org.apache.kyuubi.Logging
 
 object LogDivertAppender extends Logging {
-  def initialize(): Unit = {
-    if (Logging.isLog4j2) {
-      Log4j2DivertAppender.initialize()
-    } else if (Logging.isLog4j12) {
-      Log4j12DivertAppender.initialize()
-    } else {
-      warn(s"Unsupported SLF4J binding ${StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr}")
+  def initialize(skip: Boolean = false): Unit = {
+    if (!skip) {
+      if (Logging.isLog4j2) {
+        Log4j2DivertAppender.initialize()
+      } else if (Logging.isLog4j12) {
+        Log4j12DivertAppender.initialize()
+      } else {
+        warn(s"Unsupported SLF4J binding" +
+          s" ${StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr}")
+      }
     }
+
   }
 }

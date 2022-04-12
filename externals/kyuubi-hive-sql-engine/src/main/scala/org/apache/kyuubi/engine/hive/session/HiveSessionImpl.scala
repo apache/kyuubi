@@ -21,7 +21,6 @@ import java.util.HashMap
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.cli.session.HiveSession
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -65,7 +64,7 @@ class HiveSessionImpl(
     try {
       hive.close()
     } catch {
-      case e: HiveSQLException =>
+      case e: Exception =>
         error(s"Failed to close hive runtime session: ${e.getMessage}")
     }
   }

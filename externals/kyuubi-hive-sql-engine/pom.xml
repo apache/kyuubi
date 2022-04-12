@@ -48,8 +48,43 @@
 
         <dependency>
             <groupId>org.apache.hive</groupId>
+            <artifactId>hive-service-rpc</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libfb303</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>failureaccess</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
             <artifactId>hive-service</artifactId>
-            <version>${hive.version}</version>
+            <version>${hive.engine.hive.version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -74,7 +109,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
-            <version>${hive.version}</version>
+            <version>${hive.engine.hive.version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -125,13 +160,16 @@
                 <shadedArtifactAttached>false</shadedArtifactAttached>
                 <artifactSet>
                     <includes>
+                        <include>org.scala-lang:scala-library</include>
+                        <include>com.fasterxml.jackson.core:jackson-annotations</include>
+                        <include>com.fasterxml.jackson.core:jackson-core</include>
+                        <include>com.fasterxml.jackson.core:jackson-databind</include>
+                        <include>com.fasterxml.jackson.module:jackson-module-scala_2.12</include>
                         <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
                         <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
                         <include>org.apache.curator:curator-client</include>
                         <include>org.apache.curator:curator-framework</include>
                         <include>org.apache.curator:curator-recipes</include>
-                        <include>org.apache.hive:hive-service-rpc</include>
-                        <include>org.apache.thrift:*</include>
                     </includes>
                 </artifactSet>
                 <filters>
@@ -158,27 +196,6 @@
                         <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>
                         <includes>
                             <include>org.apache.curator.**</include>
-                        </includes>
-                    </relocation>
-                    <relocation>
-                        <pattern>org.apache.hive.service.rpc.thrift</pattern>
-                        <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>
-                        <includes>
-                            <include>org.apache.hive.service.rpc.thrift.**</include>
-                        </includes>
-                    </relocation>
-                    <relocation>
-                        <pattern>com.facebook.fb303</pattern>
-                        <shadedPattern>${kyuubi.shade.packageName}.com.facebook.fb303</shadedPattern>
-                        <includes>
-                            <include>com.facebook.fb303.**</include>
-                        </includes>
-                    </relocation>
-                    <relocation>
-                        <pattern>org.apache.thrift</pattern>
-                        <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
-                        <includes>
-                            <include>org.apache.thrift.**</include>
                         </includes>
                     </relocation>
                 </relocations>

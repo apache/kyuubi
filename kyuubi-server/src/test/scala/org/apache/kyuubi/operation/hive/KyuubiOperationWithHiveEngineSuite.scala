@@ -15,19 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.hive.operation
+package org.apache.kyuubi.operation.hive
 
-import org.apache.kyuubi.HiveEngineTests
-import org.apache.kyuubi.engine.hive.HiveSQLEngine
+import org.apache.kyuubi.{HiveEngineTests, Utils, WithKyuubiServer}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 
-class HiveOperationSuite extends HiveEngineTests {
-
-  override def beforeAll(): Unit = {
-    HiveSQLEngine.startEngine()
-    super.beforeAll()
+class KyuubiOperationWithHiveEngineSuite extends WithKyuubiServer with HiveEngineTests {
+  override protected val conf: KyuubiConf = {
+    val metastore = Utils.createTempDir(namePrefix = getClass.getSimpleName)
+    metastore.toFile.delete()
+    KyuubiConf()
+      .set(ENGINE_TYPE, "HIVE_SQL")
+      // increase this to 30s as hive session state and metastore client is slow initializing
+      .setIfMissing(ENGINE_IDLE_TIMEOUT, 30000L)
+      .set("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
   }
 
-  override protected def jdbcUrl: String = {
-    "jdbc:hive2://" + HiveSQLEngine.currentEngine.get.frontendServices.head.connectionUrl + "/;"
-  }
+  override protected def jdbcUrl: String = getJdbcUrl
 }

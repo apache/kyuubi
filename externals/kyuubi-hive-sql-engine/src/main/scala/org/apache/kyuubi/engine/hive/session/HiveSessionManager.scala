@@ -44,7 +44,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
      * Avoid unnecessary hive initialization
      */
     override def init(hiveConf: HiveConf): Unit = {
-      this.hiveConf = hiveConf
+      // this.hiveConf = hiveConf
     }
 
     /**
@@ -80,7 +80,8 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       user,
       password,
       HiveSQLEngine.hiveConf,
-      ipAddress)
+      ipAddress,
+      null)
     hive.setSessionManager(internalSessionManager)
     hive.setOperationManager(internalSessionManager.getOperationManager)
     operationLogRoot.foreach(dir => hive.setOperationLogSessionDir(new File(dir)))

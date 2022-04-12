@@ -24,7 +24,6 @@ import scala.collection.JavaConverters._
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.{Filter, LogEvent, StringLayout}
 import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, WriterManager}
-import org.apache.logging.log4j.core.config.Property
 import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
 
@@ -41,7 +40,7 @@ class Log4j2DivertAppender(
     filter,
     ignoreExceptions,
     immediateFlush,
-    Property.EMPTY_ARRAY,
+    null,
     new WriterManager(writer, name, layout, true)) {
   def this() = this(
     "KyuubiEngineLogDivertAppender",

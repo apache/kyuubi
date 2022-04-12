@@ -32,6 +32,9 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
 
 class HiveOperationManager() extends OperationManager("HiveOperationManager") {
+  // we use hive's operation log
+  override protected def skipOperationLog: Boolean = true
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
@@ -140,7 +143,9 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
     val rowSet = RowSetFactory.create(getLogSchema, operation.getProtocolVersion, false)
     val operationLog = internalHiveOperation.getOperationLog
     if (operationLog == null) {
-      throw KyuubiSQLException("Couldn't find log associated with operation handle: " + opHandle)
+      // TODO: #2029 Operation Log support: set and read hive one directly
+      // throw KyuubiSQLException("Couldn't find log associated with operation handle: " + opHandle)
+      return rowSet.toTRowSet
     }
 
     try {

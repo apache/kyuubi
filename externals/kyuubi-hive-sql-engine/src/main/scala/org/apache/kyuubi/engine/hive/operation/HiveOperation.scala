@@ -58,6 +58,8 @@ abstract class HiveOperation(opType: OperationType, session: Session)
   }
   override def runInternal(): Unit = {
     internalHiveOperation.run()
+    val hasResultSet = internalHiveOperation.getStatus.getHasResultSet
+    setHasResultSet(hasResultSet)
   }
 
   override def getBackgroundHandle: Future[_] = {
@@ -73,7 +75,6 @@ abstract class HiveOperation(opType: OperationType, session: Session)
   }
 
   override def getStatus: OperationStatus = {
-    super.getStatus
     val status = internalHiveOperation.getStatus
     val state = OperationState.withName(status.getState.name().stripSuffix("_STATE"))
 
@@ -83,7 +84,7 @@ abstract class HiveOperation(opType: OperationType, session: Session)
       status.getOperationStarted,
       lastAccessTime,
       status.getOperationCompleted,
-      status.getHasResultSet,
+      hasResultSet,
       Option(status.getOperationException).map(KyuubiSQLException(_)))
   }
 

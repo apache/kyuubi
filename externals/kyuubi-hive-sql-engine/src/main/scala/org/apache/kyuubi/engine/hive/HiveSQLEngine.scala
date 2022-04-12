@@ -58,6 +58,7 @@ object HiveSQLEngine extends Logging {
 
   def startEngine(): HiveSQLEngine = {
     try {
+      // TODO: hive 2.3.x has scala 2.11 deps.
       initLoggerEventHandler(kyuubiConf)
     } catch {
       case NonFatal(e) =>
@@ -82,6 +83,14 @@ object HiveSQLEngine extends Logging {
       hiveConf.set(
         "hive.metastore.warehouse.dir",
         Utils.createTempDir(namePrefix = "kyuubi_hive_warehouse").toString)
+      hiveConf.set("hive.metastore.fastpath", "true")
+
+      // TODO: Move this to test phase after #2021 resolved
+      val metastore = Utils.createTempDir(namePrefix = "hms_temp")
+      metastore.toFile.delete()
+      hiveConf.set(
+        "javax.jdo.option.ConnectionURL",
+        s"jdbc:derby:;databaseName=$metastore;create=true")
     }
 
     val engine = new HiveSQLEngine()
