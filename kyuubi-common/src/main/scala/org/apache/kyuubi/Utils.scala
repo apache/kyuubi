@@ -18,7 +18,7 @@
 package org.apache.kyuubi
 
 import java.io.{File, InputStreamReader, IOException, PrintWriter, StringWriter}
-import java.net.{Inet4Address, InetAddress, NetworkInterface}
+import java.net.{Inet4Address, InetAddress, NetworkInterface, URI, URISyntaxException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, TimeZone, UUID}
@@ -271,5 +271,33 @@ object Utils extends Logging {
 
   def getCodeSourceLocation(clazz: Class[_]): String = {
     new File(clazz.getProtectionDomain.getCodeSource.getLocation.toURI).getPath
+  }
+
+  /**
+   * Return a well-formed URI for the file described by a user input string.
+   *
+   * If the supplied path does not contain a scheme, or is a relative path, it will be
+   * converted into an absolute path with a file:// scheme.
+   */
+  def resolveURI(path: String): URI = {
+    try {
+      val uri = new URI(path)
+      if (uri.getScheme() != null) {
+        return uri
+      }
+      // make sure to handle if the path has a fragment (applies to yarn
+      // distributed cache)
+      if (uri.getFragment() != null) {
+        val absoluteURI = new File(uri.getPath()).getAbsoluteFile().toURI()
+        return new URI(
+          absoluteURI.getScheme(),
+          absoluteURI.getHost(),
+          absoluteURI.getPath(),
+          uri.getFragment())
+      }
+    } catch {
+      case e: URISyntaxException =>
+    }
+    new File(path).getCanonicalFile().toURI()
   }
 }
