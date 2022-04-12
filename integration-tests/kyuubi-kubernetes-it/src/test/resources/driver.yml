@@ -1,0 +1,7 @@
+apiVersio: v1
+kind: Pod
+metadata:
+  name: driver
+spec:
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
