@@ -521,8 +521,7 @@ abstract class TFrontendService(name: String)
   override def RenewDelegationToken(req: TRenewDelegationTokenReq): TRenewDelegationTokenResp = {
     debug(req.toString)
     val resp = new TRenewDelegationTokenResp
-    val successStatus = new TStatus(TStatusCode.SUCCESS_STATUS)
-    resp.setStatus(successStatus)
+    resp.setStatus(OK_STATUS)
     resp
   }
 
