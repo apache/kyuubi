@@ -51,12 +51,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   private lazy val singleSparkSession = conf.get(ENGINE_SINGLE_SPARK_SESSION)
 
-  override def openSession(
+  override def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
+      conf: Map[String, String]): Session = {
     val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
     info(s"Opening session for $user@$clientIp")
     val sparkSession =
@@ -80,7 +80,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         case e: Exception => throw KyuubiSQLException(e)
       }
 
-    val session = new SparkSessionImpl(
+    new SparkSessionImpl(
       protocol,
       user,
       password,
@@ -89,18 +89,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       conf,
       this,
       sparkSession)
-    try {
-      val handle = session.handle
-      session.open()
-      setSession(handle, session)
-      info(s"$user's session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
-      handle
-    } catch {
-      case e: Exception =>
-        session.close()
-        throw KyuubiSQLException(e)
-    }
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

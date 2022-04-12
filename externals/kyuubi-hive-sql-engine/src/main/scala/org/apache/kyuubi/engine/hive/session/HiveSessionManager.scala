@@ -25,13 +25,12 @@ import org.apache.hive.service.cli.{SessionHandle => ImportedSessionHandle}
 import org.apache.hive.service.cli.session.{HiveSessionImpl => ImportedHiveSessionImpl, SessionManager => ImportedHiveSessionManager}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.engine.hive.operation.HiveOperationManager
 import org.apache.kyuubi.operation.OperationManager
-import org.apache.kyuubi.session.{CLIENT_IP_KEY, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{CLIENT_IP_KEY, Session, SessionHandle, SessionManager}
 
 class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSessionManager") {
   override protected def isServer: Boolean = false
@@ -65,12 +64,12 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
     }
   }
 
-  override def openSession(
+  override def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
+      conf: Map[String, String]): Session = {
     val sessionHandle = SessionHandle(protocol)
     val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
     info(s"Opening session for $user@$clientIp")
@@ -84,7 +83,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
     hive.setSessionManager(internalSessionManager)
     hive.setOperationManager(internalSessionManager.getOperationManager)
     operationLogRoot.foreach(dir => hive.setOperationLogSessionDir(new File(dir)))
-    val session = new HiveSessionImpl(
+    new HiveSessionImpl(
       protocol,
       user,
       password,
@@ -94,17 +93,6 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       this,
       sessionHandle,
       hive)
-    try {
-      session.open()
-      setSession(sessionHandle, session)
-      info(s"$user's session with $sessionHandle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
-      sessionHandle
-    } catch {
-      case e: Exception =>
-        session.close()
-        throw KyuubiSQLException(e)
-    }
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

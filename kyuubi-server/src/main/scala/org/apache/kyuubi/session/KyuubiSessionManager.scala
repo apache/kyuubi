@@ -45,42 +45,38 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     super.initialize(conf)
   }
 
+  override def createSession(
+      protocol: TProtocolVersion,
+      user: String,
+      password: String,
+      ipAddress: String,
+      conf: Map[String, String]): Session = {
+    // inject client ip into session conf
+    val newConf = conf + (CLIENT_IP_KEY -> ipAddress)
+    new KyuubiSessionImpl(
+      protocol,
+      user,
+      password,
+      ipAddress,
+      newConf,
+      this,
+      this.getConf.getUserDefaults(user))
+  }
+
   override def openSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
-
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    // inject client ip into session conf
-    val newConf = conf + (CLIENT_IP_KEY -> ipAddress)
-    val sessionImpl = new KyuubiSessionImpl(
-      protocol,
-      username,
-      password,
-      ipAddress,
-      newConf,
-      this,
-      this.getConf.getUserDefaults(user))
     try {
-      sessionImpl.open()
-      val handle = sessionImpl.handle
-      setSession(handle, sessionImpl)
-      info(s"$username's session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
-      handle
+      super.openSession(protocol, username, password, ipAddress, conf)
     } catch {
       case e: Throwable =>
         MetricsSystem.tracing { ms =>
           ms.incCount(CONN_FAIL)
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
-        }
-        try {
-          sessionImpl.close()
-        } catch {
-          case t: Throwable =>
-            warn(s"Error closing session for $username client ip: $ipAddress", t)
         }
         throw KyuubiSQLException(
           s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}",

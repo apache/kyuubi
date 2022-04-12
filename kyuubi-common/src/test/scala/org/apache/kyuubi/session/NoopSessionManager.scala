@@ -35,18 +35,16 @@ class NoopSessionManager extends SessionManager("noop") {
     super.initialize(conf)
   }
 
-  override def openSession(
+  override def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
+      conf: Map[String, String]): Session = {
     if (conf.get("kyuubi.test.should.fail").exists(_.toBoolean)) {
       throw KyuubiSQLException("Asked to fail")
     }
-    val session = new NoopSessionImpl(protocol, user, password, ipAddress, conf, this)
-    setSession(session.handle, session)
-    session.handle
+    new NoopSessionImpl(protocol, user, password, ipAddress, conf, this)
   }
 
   override protected def isServer: Boolean = true
