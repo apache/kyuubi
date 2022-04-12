@@ -19,8 +19,7 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
 import java.lang.ProcessBuilder.Redirect
-import java.net.URI
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 
 import scala.collection.JavaConverters._
 
@@ -28,7 +27,6 @@ import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_FLINK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder.FLINK_ENGINE_BINARY_FILE
 import org.apache.kyuubi.operation.log.OperationLog
@@ -133,8 +131,6 @@ class FlinkProcessBuilder(
         "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
   }
-
-  private def useKeytab(): Boolean = false
 
   override protected def shortName: String = "flink"
 }

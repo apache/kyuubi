@@ -27,9 +27,9 @@ import scala.collection.JavaConverters._
 import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, SCALA_COMPILE_VERSION, Utils}
+import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_MAIN_RESOURCE, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.NamedThreadFactory
 
@@ -63,7 +63,7 @@ trait ProcBuilder {
     // 1. get the main resource jar for user specified config first
     // TODO use SPARK_SCALA_VERSION instead of SCALA_COMPILE_VERSION
     val jarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
-    conf.get(ENGINE_SPARK_MAIN_RESOURCE).filter { userSpecified =>
+    conf.getOption(s"kyuubi.session.engine.$shortName.main.resource").filter { userSpecified =>
       // skip check exist if not local file.
       val uri = new URI(userSpecified)
       val schema = if (uri.getScheme != null) uri.getScheme else "file"

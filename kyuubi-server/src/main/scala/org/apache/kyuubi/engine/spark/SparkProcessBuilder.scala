@@ -18,8 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.IOException
-import java.net.URI
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
@@ -30,7 +29,6 @@ import org.apache.hadoop.yarn.client.api.YarnClient
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
