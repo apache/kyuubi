@@ -18,23 +18,25 @@
 package org.apache.kyuubi.engine.trino
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_URL
+import org.apache.kyuubi.config.KyuubiConf._
 
 class TrinoProcessBuilderSuite extends KyuubiFunSuite {
-  private def conf = KyuubiConf().set("kyuubi.on", "off")
 
   test("trino process builder") {
+    val conf = KyuubiConf()
+      .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
+      .set(ENGINE_TRINO_CONNECTION_CATALOG, "dumm_catalog")
     val builder = new TrinoProcessBuilder("kyuubi", conf)
     val commands = builder.toString.split("\n")
     assert(commands.head.endsWith("java"))
+    assert(commands.contains(s"-D${ENGINE_TRINO_CONNECTION_URL.key}=dummy_url"))
   }
 
   test("capture error from trino process builder") {
-    val e1 = intercept[KyuubiSQLException](
-      new TrinoProcessBuilder("kyuubi", conf).processBuilder)
-    assert(e1.getMessage ===
+    val e1 = intercept[IllegalArgumentException](
+      new TrinoProcessBuilder("kyuubi", KyuubiConf()).processBuilder)
+    assert(e1.getMessage contains
       s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}")
   }
 }
