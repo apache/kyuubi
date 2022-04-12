@@ -28,8 +28,8 @@ import io.airlift.units.Duration
 import io.trino.client.ClientSession
 import okhttp3.OkHttpClient
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
-import org.apache.kyuubi.KyuubiSQLException
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils.currentUser
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.trino.TrinoConf
