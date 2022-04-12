@@ -67,19 +67,19 @@ abstract class ShareLevelSparkEngineSuite
   }
 
   test("test spark engine max life-time") {
-    withZkClient { zkClient =>
+    withDiscoveryClient { discoveryClient =>
       assert(engine.getServiceState == ServiceState.STARTED)
-      assert(zkClient.checkExists().forPath(namespace) != null)
+      assert(discoveryClient.pathExists(namespace))
       withJdbcStatement() { _ => }
 
       eventually(Timeout(30.seconds)) {
         shareLevel match {
           case ShareLevel.CONNECTION =>
             assert(engine.getServiceState == ServiceState.STOPPED)
-            assert(zkClient.checkExists().forPath(namespace) == null)
+            assert(discoveryClient.pathNonExists(namespace))
           case _ =>
             assert(engine.getServiceState == ServiceState.STOPPED)
-            assert(zkClient.checkExists().forPath(namespace) != null)
+            assert(discoveryClient.pathExists(namespace))
         }
       }
     }
