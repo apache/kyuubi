@@ -27,12 +27,13 @@ class TrinoProcessBuilderSuite extends KyuubiFunSuite {
 
   test("trino process builder") {
     val builder = new TrinoProcessBuilder("kyuubi", conf)
-    val commands = builder.toString.split(' ')
-    assert(commands.exists(_.endsWith("trino-engine.sh")))
+    val commands = builder.toString.split("\n")
+    assert(commands.head.endsWith("java"))
   }
 
   test("capture error from trino process builder") {
-    val e1 = intercept[KyuubiSQLException](new TrinoProcessBuilder("kyuubi", conf).trinoConf)
+    val e1 = intercept[KyuubiSQLException](
+      new TrinoProcessBuilder("kyuubi", conf).processBuilder)
     assert(e1.getMessage ===
       s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}")
   }
