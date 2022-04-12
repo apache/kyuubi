@@ -37,8 +37,7 @@ class SparkBatchProcessBuilder(
   extends SparkProcessBuilder(proxyUser, conf, extraEngineLog) {
   import SparkProcessBuilder._
 
-  private val batchJobTag = batchRequest.conf.get(TAG_KEY).map(_ + ",").getOrElse("") +
-    "KYUUBI-BATCH-" + UUID.randomUUID()
+  private val uniqueBatchJobTag = "KYUUBI-BATCH-" + UUID.randomUUID()
 
   override def mainClass: String = batchRequest.className
 
@@ -50,6 +49,7 @@ class SparkBatchProcessBuilder(
     buffer += CLASS
     buffer += mainClass
 
+    val batchJobTag = batchRequest.conf.get(TAG_KEY).map(_ + ",").getOrElse("") + uniqueBatchJobTag
     val allConf = batchRequest.conf ++ Map(TAG_KEY -> batchJobTag)
 
     allConf.foreach { case (k, v) =>
@@ -77,7 +77,7 @@ class SparkBatchProcessBuilder(
         yarnClient.init(yarnConf)
         yarnClient.start()
         try {
-          val apps = yarnClient.getApplications(null, null, Set(batchJobTag).asJava)
+          val apps = yarnClient.getApplications(null, null, Set(uniqueBatchJobTag).asJava)
           apps.asScala.headOption.map { applicationReport =>
             applicationReport.getApplicationId.toString -> applicationReport.getTrackingUrl
           }
