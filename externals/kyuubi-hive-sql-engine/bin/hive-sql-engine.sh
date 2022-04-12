@@ -39,7 +39,7 @@ else
 fi
 
 if [ -n "$HIVE_CLIENT_JAR" ]; then
-  exec $RUNNER ${HIVE_ENGINE_DYNAMIC_ARGS} -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.hive.HiveSQLEngine "$@"
+  exec $RUNNER ${HIVE_SQL_ENGINE_JAVA_OPTS} ${HIVE_ENGINE_DYNAMIC_ARGS} -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.hive.HiveSQLEngine "$@"
 else
   (>&2 echo "[ERROR] HIVE Engine JAR file 'kyuubi-hive-sql-engine*.jar' should be located in $HIVE_ENGINE_HOME/jars.")
   exit 1

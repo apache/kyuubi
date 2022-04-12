@@ -61,7 +61,7 @@ log_setting=(
 )
 
 if [ -n "$FLINK_SQL_ENGINE_JAR" ]; then
-  exec $JAVA_RUN ${FLINK_SQL_ENGINE_DYNAMIC_ARGS} "${log_setting[@]}" -cp ${FULL_CLASSPATH} \
+  exec $JAVA_RUN ${FLINK_SQL_ENGINE_JAVA_OPTS} ${FLINK_SQL_ENGINE_DYNAMIC_ARGS} "${log_setting[@]}" -cp ${FULL_CLASSPATH} \
     org.apache.kyuubi.engine.flink.FlinkSQLEngine "$@"
 else
   (>&2 echo "[ERROR] Flink SQL Engine JAR file 'kyuubi-flink-sql-engine*.jar' should be located in $FLINK_SQL_ENGINE_LIB_DIR.")

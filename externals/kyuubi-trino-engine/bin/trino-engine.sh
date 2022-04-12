@@ -35,7 +35,7 @@ TRINO_CLIENT_CLASSPATH="$TRINO_CLIENT_JARS_DIR/*"
 FULL_CLASSPATH="$TRINO_CLIENT_CLASSPATH:$TRINO_CLIENT_JAR"
 
 if [ -n "$TRINO_CLIENT_JAR" ]; then
-  exec $RUNNER ${TRINO_ENGINE_DYNAMIC_ARGS} -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.trino.TrinoSqlEngine "$@"
+  exec $RUNNER ${TRINO_ENGINE_JAVA_OPTS} ${TRINO_ENGINE_DYNAMIC_ARGS} -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.trino.TrinoSqlEngine "$@"
 else
   (>&2 echo "[ERROR] TRINO Engine JAR file 'kyuubi-trino-engine*.jar' should be located in $TRINO_ENGINE_HOME/jars.")
   exit 1
