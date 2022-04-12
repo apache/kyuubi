@@ -24,4 +24,5 @@ Client Documentation
     :numbered: 2
 
     hive_jdbc
+    kyuubi_jdbc
     kerberized_kyuubi
