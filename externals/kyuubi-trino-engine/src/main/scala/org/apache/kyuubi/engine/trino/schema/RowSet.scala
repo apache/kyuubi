@@ -48,7 +48,6 @@ import org.apache.hive.service.rpc.thrift.TRowSet
 import org.apache.hive.service.rpc.thrift.TStringColumn
 import org.apache.hive.service.rpc.thrift.TStringValue
 
-import org.apache.kyuubi.engine.trino.util.PreconditionsWrapper._
 import org.apache.kyuubi.util.RowSetUtils.bitSetToBuffer
 
 object RowSet {
