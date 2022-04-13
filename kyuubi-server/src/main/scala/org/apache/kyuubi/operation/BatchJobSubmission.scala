@@ -98,7 +98,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
     }
 
     try {
-      info(s"Submitting batch job: $builder")
+      info(s"Submitting ${batchRequest.batchType} batch job: $builder")
       val process = builder.start
       startApplicationChecker()
       process.waitFor()

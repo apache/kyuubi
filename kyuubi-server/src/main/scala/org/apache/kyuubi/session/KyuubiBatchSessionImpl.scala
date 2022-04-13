@@ -39,7 +39,7 @@ class KyuubiBatchSessionImpl(
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
   override val handle: SessionHandle = sessionManager.genBatchSessionHandle(protocol)
 
-  private lazy val batchJobSubmissionOp = sessionManager.operationManager
+  private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(this, batchRequest)
 
   private val sessionEvent = KyuubiSessionEvent(this)
@@ -55,7 +55,7 @@ class KyuubiBatchSessionImpl(
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
 
-    // we should call super.open before running launch engine operation
+    // we should call super.open before running batch job submission operation
     super.open()
 
     runOperation(batchJobSubmissionOp)
