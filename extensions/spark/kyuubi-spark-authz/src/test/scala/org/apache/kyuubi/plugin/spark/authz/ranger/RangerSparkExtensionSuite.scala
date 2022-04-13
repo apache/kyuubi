@@ -201,7 +201,7 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
         s"SELECT value1 as key, value2, value3, value4 FROM $db.$table",
         s"SELECT max(value1), max(value2), max(value3), max(value4) FROM $db.$table",
         s"SELECT coalesce(max(value1), 1), coalesce(max(value2), 1), coalesce(max(value3), 1), " +
-          s"coalesce(max(value4), timestamp 'now') FROM $db.$table",
+          s"coalesce(max(value4), timestamp '2018-01-01 22:33:44') FROM $db.$table",
         s"SELECT value1, value2, value3, value4 FROM $db.$table WHERE value2 in" +
           s" (SELECT value2 as key FROM $db.$table)")
         .foreach { q =>
