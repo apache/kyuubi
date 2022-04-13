@@ -30,7 +30,6 @@ import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
-import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.NamedThreadFactory
 
