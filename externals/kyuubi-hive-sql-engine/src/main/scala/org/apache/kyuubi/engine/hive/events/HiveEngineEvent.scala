@@ -34,7 +34,16 @@ case class HiveEngineEvent(
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 
   override def toString: String = {
-    super.toString
+    s"""
+       |HiveEngineEvent: {
+       |connectionUrl: $connectionUrl,
+       |startTime: $startTime,
+       |endTime: $endTime,
+       |state: $state,
+       |diagnostic: $diagnostic,
+       |settings: ${settings.mkString("<", ",", ">")}
+       |}
+       |""".stripMargin
   }
 }
 
