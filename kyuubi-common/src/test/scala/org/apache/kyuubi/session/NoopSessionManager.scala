@@ -35,7 +35,7 @@ class NoopSessionManager extends SessionManager("noop") {
     super.initialize(conf)
   }
 
-  override def createSession(
+  override protected def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,

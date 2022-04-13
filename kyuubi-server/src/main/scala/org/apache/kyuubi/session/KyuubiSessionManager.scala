@@ -45,7 +45,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     super.initialize(conf)
   }
 
-  override def createSession(
+  override protected def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,

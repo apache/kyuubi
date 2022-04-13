@@ -64,7 +64,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
     }
   }
 
-  override def createSession(
+  override protected def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
@@ -72,7 +72,6 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       conf: Map[String, String]): Session = {
     val sessionHandle = SessionHandle(protocol)
     val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
-    info(s"Opening session for $user@$clientIp")
     val hive = new ImportedHiveSessionImpl(
       new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
       protocol,

@@ -51,14 +51,13 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   private lazy val singleSparkSession = conf.get(ENGINE_SINGLE_SPARK_SESSION)
 
-  override def createSession(
+  override protected def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
     val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
-    info(s"Opening session for $user@$clientIp")
     val sparkSession =
       try {
         if (singleSparkSession) {

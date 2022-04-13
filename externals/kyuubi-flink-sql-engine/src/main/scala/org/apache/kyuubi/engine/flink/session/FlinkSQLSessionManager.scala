@@ -38,7 +38,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
     executor.start()
   }
 
-  override def createSession(
+  override protected def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,

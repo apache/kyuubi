@@ -39,13 +39,12 @@ class TrinoSessionManager
     super.initialize(conf)
   }
 
-  override def createSession(
+  override protected def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    info(s"Opening session for $user@$ipAddress")
     new TrinoSessionImpl(protocol, user, password, ipAddress, conf, this)
   }
 
