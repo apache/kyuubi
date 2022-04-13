@@ -151,6 +151,7 @@ trait ProcBuilder {
   private val engineLogMaxLines = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
   private val waitCompletion = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
   protected val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
+
   // Visible for test
   @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
   private var logCaptureThread: Thread = _
@@ -238,13 +239,11 @@ trait ProcBuilder {
     process
   }
 
-  def killApplicationWrap(engineRefId: String): String =
-    EngineType.withName(conf.get(KyuubiConf.ENGINE_TYPE)) match {
-      case SPARK_SQL => killApplication(engineRefId)
-      case _ => killApplication()
-    }
-
-  def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String = ""
+  /**
+   * Use Left to represent engineRefId and Right to represent line.
+   */
+  def killApplication(clue: Either[String, String] = Right(lastRowsOfLog.toArray.mkString("\n")))
+      : String = ""
 
   def close(): Unit = synchronized {
     if (logCaptureThread != null) {

@@ -22,7 +22,6 @@ import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
 
-import org.apache.hadoop.yarn.client.api.YarnClient
 import org.scalatest.time.SpanSugar._
 import org.scalatestplus.mockito.MockitoSugar
 
@@ -237,33 +236,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     conf.set(ENGINE_SPARK_MAIN_RESOURCE, jarPath.toString)
     val b2 = new SparkProcessBuilder("test", conf)
     assert(b2.mainResource.getOrElse("") != jarPath.toString)
-  }
-
-  test("kill application") {
-    val engineRefId = "cf51ba6d-b019-4f8a-a2a2-4e479aa95112"
-    val pb1 = new FakeSparkProcessBuilder(conf) {
-      override protected def env: Map[String, String] = Map()
-      override def getYarnClient: YarnClient = mock[YarnClient]
-    }
-    pb1.conf.set("spark.master", "yarn")
-    val exit1 = pb1.killApplication(engineRefId)
-    assert(exit1.equals(s"There are no Application tagged with $engineRefId"))
-
-    val pb2 = new FakeSparkProcessBuilder(conf) {
-      override protected def env: Map[String, String] = Map()
-      override def getYarnClient: YarnClient = null
-    }
-    pb2.conf.set("spark.master", "yarn")
-    val exit2 = pb2.killApplication(engineRefId)
-    assert(exit2.contains(s"Failed to kill Application null tagged with $engineRefId")
-      && exit2.contains("Caused by"))
-
-    val pb3 = new FakeSparkProcessBuilder(conf) {
-      override protected def env: Map[String, String] = Map()
-      override def getYarnClient: YarnClient = mock[YarnClient]
-    }
-    val exit3 = pb3.killApplication("unknow")
-    assert(exit3.equals(""))
   }
 
   test("add spark prefix for conf") {
