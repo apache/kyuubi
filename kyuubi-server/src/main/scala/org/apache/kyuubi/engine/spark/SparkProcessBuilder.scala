@@ -49,7 +49,7 @@ class SparkProcessBuilder(
 
   def getYarnClient: YarnClient = YarnClient.createYarnClient
 
-  private val sparkHome = getEngineHome("spark")
+  private val sparkHome = getEngineHome(shortName)
 
   override protected val executable: String = {
     Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toFile.getCanonicalPath
