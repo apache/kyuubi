@@ -99,7 +99,7 @@ class SparkBatchProcessBuilder(
   override protected def module: String = "kyuubi-spark-batch-submit"
 
   private[kyuubi] def getApplicationIdAndUrl(): Option[(String, String)] = {
-    batchRequest.conf.get(MASTER_KEY).getOrElse(getSparkDefaultsConf().get(MASTER_KEY)) match {
+    batchRequest.conf.get(MASTER_KEY).orElse(getSparkDefaultsConf().get(MASTER_KEY)) match {
       case Some("yarn") =>
         val yarnClient = getYarnClient
         val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))

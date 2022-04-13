@@ -31,6 +31,7 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.server.api.v1.BatchRequest
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
@@ -89,7 +90,50 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  def genBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
+  def openBatchSession(
+      protocol: TProtocolVersion,
+      user: String,
+      password: String,
+      ipAddress: String,
+      conf: Map[String, String],
+      batchRequest: BatchRequest): SessionHandle = {
+    val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
+    val batchSession = new KyuubiBatchSessionImpl(
+      protocol,
+      user,
+      password,
+      ipAddress,
+      conf,
+      this,
+      // TODO: user defaults conf for batch session
+      this.getConf.getUserDefaults(user),
+      batchRequest)
+    try {
+      val handle = batchSession.handle
+      batchSession.open()
+      setSession(handle, batchSession)
+      info(s"$user's batch session with $handle is opened, current opening sessions" +
+        s" $getOpenSessionCount")
+      handle
+    } catch {
+      case e: Exception =>
+        try {
+          batchSession.close()
+        } catch {
+          case t: Throwable =>
+            warn(s"Error closing batch session for $user client ip: $ipAddress", t)
+        }
+        MetricsSystem.tracing { ms =>
+          ms.incCount(CONN_FAIL)
+          ms.incCount(MetricRegistry.name(CONN_FAIL, user))
+        }
+        throw KyuubiSQLException(
+          s"Error opening batch session for $username client ip $ipAddress, due to ${e.getMessage}",
+          e)
+    }
+  }
+
+  def newBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
     SessionHandle(HandleIdentifier(UUID.randomUUID(), staticBatchSessionSecretId), protocol)
   }
 

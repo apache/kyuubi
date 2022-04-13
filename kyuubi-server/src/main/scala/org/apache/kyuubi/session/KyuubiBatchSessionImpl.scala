@@ -37,7 +37,7 @@ class KyuubiBatchSessionImpl(
     val sessionConf: KyuubiConf,
     batchRequest: BatchRequest)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-  override val handle: SessionHandle = sessionManager.genBatchSessionHandle(protocol)
+  override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(this, batchRequest)

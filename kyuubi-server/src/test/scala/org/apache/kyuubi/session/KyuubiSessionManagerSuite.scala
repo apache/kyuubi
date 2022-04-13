@@ -23,16 +23,32 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.SESSION_BATCH_STATIC_SECRET_ID
 
 class KyuubiSessionManagerSuite extends KyuubiFunSuite {
-  test("static batch session secret id") {
-    val staticSecretId = UUID.randomUUID()
-    val conf = KyuubiConf().set(KyuubiConf.SESSION_BATCH_STATIC_SECRET_ID, staticSecretId.toString)
-    val protocolVersion = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1
-    val sessionManager = new KyuubiSessionManager()
-    sessionManager.initialize(conf)
+  private val staticSecretId = UUID.randomUUID()
+  private val conf = KyuubiConf().set(SESSION_BATCH_STATIC_SECRET_ID, staticSecretId.toString)
+  private var sessionManager: KyuubiSessionManager = _
 
-    val batchSessionHandle = sessionManager.genBatchSessionHandle(protocolVersion)
+  override def beforeAll(): Unit = {
+    sessionManager = new KyuubiSessionManager()
+    sessionManager.initialize(conf)
+    sessionManager.start()
+    super.beforeAll()
+  }
+
+  override def afterAll(): Unit = {
+    sessionManager.stop()
+    super.afterAll()
+  }
+
+  test("static batch session secret id") {
+    val protocolVersion = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1
+    val batchSessionHandle = sessionManager.newBatchSessionHandle(protocolVersion)
     assert(batchSessionHandle.identifier.secretId === staticSecretId)
+  }
+
+  test("open batch session") {
+    val batchSession = sessionManager
   }
 }
