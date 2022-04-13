@@ -15,29 +15,31 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service.authentication
+package org.apache.kyuubi.ha.client
 
-import java.nio.charset.StandardCharsets
+import java.io.IOException
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SECURE_SECRET_NODE
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider
+import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient
 
-class ZooKeeperEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvider {
-  import DiscoveryClientProvider._
+object DiscoveryClientProvider extends Logging {
 
-  private var conf: KyuubiConf = _
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    this.conf = conf
-  }
-
-  override def getSecret(): String = {
-    conf.get(HA_ZK_ENGINE_SECURE_SECRET_NODE).map { zkNode =>
-      withDiscoveryClient[String](conf) { discoveryClient =>
-        new String(discoveryClient.getData(zkNode), StandardCharsets.UTF_8)
+  /**
+   * Creates a zookeeper client before calling `f` and close it after calling `f`.
+   */
+  def withDiscoveryClient[T](conf: KyuubiConf)(f: DiscoveryClient => T): T = {
+    val discoveryClient = new ZookeeperDiscoveryClient(conf)
+    try {
+      discoveryClient.createClient()
+      f(discoveryClient)
+    } finally {
+      try {
+        discoveryClient.closeClient()
+      } catch {
+        case e: IOException => error("Failed to release the zkClient", e)
       }
-    }.getOrElse(
-      throw new IllegalArgumentException(s"${HA_ZK_ENGINE_SECURE_SECRET_NODE.key} is not defined"))
+    }
   }
+
 }

@@ -22,9 +22,7 @@ import java.util
 
 import scala.util.Properties
 
-import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NodeExistsException
 
@@ -35,8 +33,10 @@ import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
 import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent, KyuubiServerInfoEvent}
 import org.apache.kyuubi.events.handler.ServerJsonLoggingEventHandler
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{ServiceDiscovery, ZooKeeperAuthTypes}
-import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
+import org.apache.kyuubi.ha.client.AuthTypes
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
+import org.apache.kyuubi.ha.client.DiscoveryPaths
+import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
@@ -51,7 +51,7 @@ object KyuubiServer extends Logging {
       zkServer.initialize(conf)
       zkServer.start()
       conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-      conf.set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
+      conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
     } else {
       // create chroot path if necessary
       val connectionStr = conf.get(HA_ZK_QUORUM)
@@ -71,15 +71,11 @@ object KyuubiServer extends Logging {
       chrootOption.foreach { chroot =>
         val zkConnectionForChrootCreation = connectionStr.substring(0, chrootIndex)
         val overrideQuorumConf = conf.clone.set(HA_ZK_QUORUM, zkConnectionForChrootCreation)
-        withZkClient(overrideQuorumConf) { zkClient =>
-          if (zkClient.checkExists().forPath(chroot) == null) {
-            val chrootPath = ZKPaths.makePath(null, chroot)
+        withDiscoveryClient(overrideQuorumConf) { discoveryClient =>
+          if (discoveryClient.pathNonExists(chroot)) {
+            val chrootPath = DiscoveryPaths.makePath(null, chroot)
             try {
-              zkClient
-                .create()
-                .creatingParentsIfNeeded()
-                .withMode(PERSISTENT)
-                .forPath(chrootPath)
+              discoveryClient.create(chrootPath, "PERSISTENT")
             } catch {
               case _: NodeExistsException => // do nothing
               case e: KeeperException =>

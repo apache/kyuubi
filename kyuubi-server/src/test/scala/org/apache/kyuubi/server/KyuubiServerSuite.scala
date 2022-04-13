@@ -20,7 +20,7 @@ package org.apache.kyuubi.server
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
-import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 import org.apache.kyuubi.service.ServiceState._
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
@@ -116,16 +116,16 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     val chrootPath = "/lake"
     conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkConnection)
     // chroot path does not exist before server start
-    ZooKeeperClientProvider.withZkClient(conf) { client =>
-      assert(client.checkExists().forPath(chrootPath) == null)
+    DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+      assert(client.pathNonExists(chrootPath))
     }
 
     val zkWithChroot = zkConnection + chrootPath
     val chrootConf = conf.clone.set(HighAvailabilityConf.HA_ZK_QUORUM, zkWithChroot)
     server = KyuubiServer.startServer(chrootConf)
     // chroot path exists after server started
-    ZooKeeperClientProvider.withZkClient(conf) { client =>
-      assert(client.checkExists().forPath(chrootPath) != null)
+    DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+      assert(client.pathExists(chrootPath))
     }
   }
 }

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ha.client
+package org.apache.kyuubi.ha.client.zookeeper
 
 import java.io.{File, IOException}
 import java.net.InetAddress
@@ -33,11 +33,16 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
+import org.apache.kyuubi.ha.client.AuthTypes
+import org.apache.kyuubi.ha.client.DiscoveryClient
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider
+import org.apache.kyuubi.ha.client.EngineServiceDiscovery
+import org.apache.kyuubi.ha.client.KyuubiServiceDiscovery
 import org.apache.kyuubi.service._
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
-class ServiceDiscoverySuite extends KerberizedTestHelper {
-  import ZooKeeperClientProvider._
+class ZookeeperDiscoveryClientSuite extends KerberizedTestHelper {
+  import DiscoveryClientProvider._
 
   val zkServer = new EmbeddedZookeeper()
   val conf: KyuubiConf = KyuubiConf()
@@ -80,17 +85,17 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     server.initialize(conf)
     server.start()
     val znodeRoot = s"/$namespace"
-    withZkClient(conf) { framework =>
+    withDiscoveryClient(conf) { framework =>
       try {
-        assert(framework.checkExists().forPath("/abc") === null)
-        assert(framework.checkExists().forPath(znodeRoot) !== null)
-        val children = framework.getChildren.forPath(znodeRoot).asScala
+        assert(framework.pathNonExists("/abc"))
+        assert(framework.pathExists(znodeRoot))
+        val children = framework.getChildren(znodeRoot)
         assert(children.head ===
           s"serviceUri=${server.frontendServices.head.connectionUrl};" +
           s"version=$KYUUBI_VERSION;sequence=0000000000")
 
         children.foreach { child =>
-          framework.delete().forPath(s"""$znodeRoot/$child""")
+          framework.delete(s"""$znodeRoot/$child""")
         }
         eventually(timeout(5.seconds), interval(100.millis)) {
           assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
@@ -112,21 +117,21 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       assert(actual === expected)
     }
 
-    val acl = new ZooKeeperACLProvider(conf).getDefaultAcl
+    val acl = new ZookeeperACLProvider(conf).getDefaultAcl
     assertACL(expectedNoACL, acl)
 
-    val serverConf = conf.clone.set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.KERBEROS.toString)
-    val serverACL = new ZooKeeperACLProvider(serverConf).getDefaultAcl
+    val serverConf = conf.clone.set(HA_ZK_AUTH_TYPE, AuthTypes.KERBEROS.toString)
+    val serverACL = new ZookeeperACLProvider(serverConf).getDefaultAcl
     assertACL(expectedEnableACL, serverACL)
 
     val engineConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
-    engineConf.set(HA_ZK_ENGINE_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
-    val engineACL = new ZooKeeperACLProvider(engineConf).getDefaultAcl
+    engineConf.set(HA_ZK_ENGINE_AUTH_TYPE, AuthTypes.NONE.toString)
+    val engineACL = new ZookeeperACLProvider(engineConf).getDefaultAcl
     assertACL(expectedNoACL, engineACL)
 
     val enableEngineACLConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
-    enableEngineACLConf.set(HA_ZK_ENGINE_AUTH_TYPE, ZooKeeperAuthTypes.KERBEROS.toString)
-    val enableEngineACL = new ZooKeeperACLProvider(enableEngineACLConf).getDefaultAcl
+    enableEngineACLConf.set(HA_ZK_ENGINE_AUTH_TYPE, AuthTypes.KERBEROS.toString)
+    val enableEngineACL = new ZookeeperACLProvider(enableEngineACLConf).getDefaultAcl
     assertACL(expectedEnableACL, enableEngineACL)
   }
 
@@ -137,9 +142,9 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
 
       conf.set(HA_ZK_AUTH_KEYTAB.key, keytab.getCanonicalPath)
       conf.set(HA_ZK_AUTH_PRINCIPAL.key, principal)
-      conf.set(HA_ZK_AUTH_TYPE.key, ZooKeeperAuthTypes.KERBEROS.toString)
+      conf.set(HA_ZK_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
 
-      ZooKeeperClientProvider.setUpZooKeeperAuth(conf)
+      ZookeeperClientProvider.setUpZooKeeperAuth(conf)
       val configuration = Configuration.getConfiguration
       val entries = configuration.getAppConfigurationEntry("KyuubiZooKeeperClient")
 
@@ -151,7 +156,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       assert(options("useKeyTab").toString.toBoolean)
 
       conf.set(HA_ZK_AUTH_KEYTAB.key, s"${keytab.getName}")
-      val e = intercept[IOException](ZooKeeperClientProvider.setUpZooKeeperAuth(conf))
+      val e = intercept[IOException](ZookeeperClientProvider.setUpZooKeeperAuth(conf))
       assert(e.getMessage === s"${HA_ZK_AUTH_KEYTAB.key} does not exists")
     }
   }
@@ -167,7 +172,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         .set(HA_ZK_QUORUM, zkServer.getConnectString)
         .set(HA_ZK_NAMESPACE, namespace)
         .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-        .set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
+        .set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
 
       var serviceDiscovery: KyuubiServiceDiscovery = null
       val server: Serverable = new NoopTBinaryFrontendServer() {
@@ -183,18 +188,18 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       server.start()
 
       val znodeRoot = s"/$namespace"
-      withZkClient(conf) { framework =>
+      withDiscoveryClient(conf) { framework =>
         try {
 
-          assert(framework.checkExists().forPath("/abc") === null)
-          assert(framework.checkExists().forPath(znodeRoot) !== null)
-          val children = framework.getChildren.forPath(znodeRoot).asScala
+          assert(framework.pathNonExists("/abc"))
+          assert(framework.pathExists(znodeRoot))
+          val children = framework.getChildren(znodeRoot)
           assert(children.head ===
             s"serviceUri=${server.frontendServices.head.connectionUrl};" +
             s"version=$KYUUBI_VERSION;sequence=0000000000")
 
           children.foreach { child =>
-            framework.delete().forPath(s"""$znodeRoot/$child""")
+            framework.delete(s"""$znodeRoot/$child""")
           }
           eventually(timeout(5.seconds), interval(100.millis)) {
             assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
@@ -216,7 +221,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     val host = "127.0.0.1"
     val port = 10009
     val instance1 = s"$host:$port"
-    val (host1, port1) = ServiceDiscovery.parseInstanceHostPort(instance1)
+    val (host1, port1) = DiscoveryClient.parseInstanceHostPort(instance1)
     assert(host === host1)
     assert(port === port1)
 
@@ -224,7 +229,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       s"hive.server2.transport.mode=binary;hive.server2.authentication=KERBEROS;" +
       s"hive.server2.thrift.port=$port;" +
       s"hive.server2.authentication.kerberos.principal=test/_HOST@apache.org"
-    val (host2, port2) = ServiceDiscovery.parseInstanceHostPort(instance2)
+    val (host2, port2) = DiscoveryClient.parseInstanceHostPort(instance2)
     assert(host === host2)
     assert(port === port2)
   }

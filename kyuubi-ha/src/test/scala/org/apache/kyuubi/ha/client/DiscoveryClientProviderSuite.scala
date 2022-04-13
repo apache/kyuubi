@@ -15,29 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service.authentication
+package org.apache.kyuubi.ha.client
 
-import java.nio.charset.StandardCharsets
-
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SECURE_SECRET_NODE
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 
-class ZooKeeperEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvider {
-  import DiscoveryClientProvider._
-
-  private var conf: KyuubiConf = _
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    this.conf = conf
-  }
-
-  override def getSecret(): String = {
-    conf.get(HA_ZK_ENGINE_SECURE_SECRET_NODE).map { zkNode =>
-      withDiscoveryClient[String](conf) { discoveryClient =>
-        new String(discoveryClient.getData(zkNode), StandardCharsets.UTF_8)
-      }
-    }.getOrElse(
-      throw new IllegalArgumentException(s"${HA_ZK_ENGINE_SECURE_SECRET_NODE.key} is not defined"))
+class DiscoveryClientProviderSuite extends KyuubiFunSuite {
+  test("discovery") {
+    val conf = KyuubiConf()
+    DiscoveryClientProvider.withDiscoveryClient(conf) { discoveryClient =>
+      discoveryClient.getServerHost("/kyuubi")
+    }
+    DiscoveryClientProvider.withDiscoveryClient(conf) { discoveryClient =>
+      discoveryClient.getServerHost("/kyuubi")
+    }
   }
 }

@@ -28,7 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.events.{EventBus, KyuubiEvent, KyuubiSessionEvent}
-import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationState}
@@ -93,8 +93,8 @@ class KyuubiSessionImpl(
   }
 
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
-    withZkClient(sessionConf) { zkClient =>
-      val (host, port) = engine.getOrCreate(zkClient, extraEngineLog)
+    withDiscoveryClient(sessionConf) { discoveryClient =>
+      val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
       val passwd =
         if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
           EngineSecurityAccessor.get().issueToken()

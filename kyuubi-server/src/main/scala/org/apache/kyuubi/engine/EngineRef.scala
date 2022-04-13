@@ -24,9 +24,6 @@ import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
-import org.apache.curator.framework.CuratorFramework
-import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
-import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
@@ -41,8 +38,8 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
-import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineByRefId
-import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
+import org.apache.kyuubi.ha.client.DiscoveryClient
+import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
@@ -135,8 +132,8 @@ private[kyuubi] class EngineRef(
   private[kyuubi] lazy val engineSpace: String = {
     val commonParent = s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
     shareLevel match {
-      case CONNECTION => ZKPaths.makePath(commonParent, appUser, engineRefId)
-      case _ => ZKPaths.makePath(commonParent, appUser, subdomain)
+      case CONNECTION => DiscoveryPaths.makePath(commonParent, appUser, Array(engineRefId))
+      case _ => DiscoveryPaths.makePath(commonParent, appUser, Array(subdomain))
     }
   }
 
@@ -144,38 +141,23 @@ private[kyuubi] class EngineRef(
    * The distributed lock path used to ensure only once engine being created for non-CONNECTION
    * share level.
    */
-  private def tryWithLock[T](zkClient: CuratorFramework)(f: => T): T = shareLevel match {
-    case CONNECTION => f
-    case _ =>
-      val lockPath =
-        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subdomain)
-      var lock: InterProcessSemaphoreMutex = null
-      try {
-        try {
-          lock = new InterProcessSemaphoreMutex(zkClient, lockPath)
-          // Acquire a lease. If no leases are available, this method blocks until either the
-          // maximum number of leases is increased or another client/process closes a lease
-          lock.acquire(timeout, TimeUnit.MILLISECONDS)
-        } catch {
-          case e: Exception => throw KyuubiSQLException(s"Lock failed on path [$lockPath]", e)
-        }
-        f
-      } finally {
-        try {
-          if (lock != null) {
-            lock.release()
-          }
-        } catch {
-          case _: Exception =>
-        }
-      }
-  }
+  private def tryWithLock[T](discoveryClient: DiscoveryClient)(f: => T): T =
+    shareLevel match {
+      case CONNECTION => f
+      case _ =>
+        val lockPath =
+          DiscoveryPaths.makePath(
+            s"${serverSpace}_$shareLevel",
+            "lock",
+            Array(appUser, subdomain))
+        discoveryClient.tryWithLock(lockPath, timeout, TimeUnit.MILLISECONDS)(f)
+    }
 
   private def create(
-      zkClient: CuratorFramework,
-      extraEngineLog: Option[OperationLog]): (String, Int) = tryWithLock(zkClient) {
+      discoveryClient: DiscoveryClient,
+      extraEngineLog: Option[OperationLog]): (String, Int) = tryWithLock(discoveryClient) {
     // Get the engine address ahead if another process has succeeded
-    var engineRef = getServerHost(zkClient, engineSpace)
+    var engineRef = discoveryClient.getServerHost(engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
 
     conf.set(HA_ZK_NAMESPACE, engineSpace)
@@ -228,7 +210,7 @@ private[kyuubi] class EngineRef(
             s"Timeout($timeout ms) to launched $engineType engine with $builder. $killMessage",
             builder.getError)
         }
-        engineRef = getEngineByRefId(zkClient, engineSpace, engineRefId)
+        engineRef = discoveryClient.getEngineByRefId(engineSpace, engineRefId)
       }
       engineRef.get
     } finally {
@@ -241,15 +223,15 @@ private[kyuubi] class EngineRef(
   /**
    * Get the engine ref from engine space first or create a new one
    *
-   * @param zkClient the zookeeper client to get or create engine instance
+   * @param discoveryClient the zookeeper client to get or create engine instance
    * @param extraEngineLog the launch engine operation log, used to inject engine log into it
    */
   def getOrCreate(
-      zkClient: CuratorFramework,
+      discoveryClient: DiscoveryClient,
       extraEngineLog: Option[OperationLog] = None): (String, Int) = {
-    getServerHost(zkClient, engineSpace)
+    discoveryClient.getServerHost(engineSpace)
       .getOrElse {
-        create(zkClient, extraEngineLog)
+        create(discoveryClient, extraEngineLog)
       }
   }
 }

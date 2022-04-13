@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ha.client
+package org.apache.kyuubi.ha.client.zookeeper
 
 import java.io.{File, IOException}
 import javax.security.auth.login.Configuration
@@ -30,15 +30,16 @@ import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManage
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
+import org.apache.kyuubi.ha.client.AuthTypes
+import org.apache.kyuubi.ha.client.RetryPolicies
+import org.apache.kyuubi.ha.client.RetryPolicies._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-object ZooKeeperClientProvider extends Logging {
-
-  import RetryPolicies._
+object ZookeeperClientProvider extends Logging {
 
   /**
    * Create a [[CuratorFramework]] instance to be used as the ZooKeeper client
-   * Use the [[ZooKeeperACLProvider]] to create appropriate ACLs
+   * Use the [[ZookeeperACLProvider]] to create appropriate ACLs
    */
   def buildZookeeperClient(conf: KyuubiConf): CuratorFramework = {
     setUpZooKeeperAuth(conf)
@@ -61,7 +62,7 @@ object ZooKeeperClientProvider extends Logging {
       .connectString(connectionStr)
       .sessionTimeoutMs(sessionTimeout)
       .connectionTimeoutMs(connectionTimeout)
-      .aclProvider(new ZooKeeperACLProvider(conf))
+      .aclProvider(new ZookeeperACLProvider(conf))
       .retryPolicy(retryPolicy)
 
     conf.get(HA_ZK_AUTH_DIGEST) match {
@@ -95,23 +96,6 @@ object ZooKeeperClientProvider extends Logging {
   }
 
   /**
-   * Creates a zookeeper client before calling `f` and close it after calling `f`.
-   */
-  def withZkClient[T](conf: KyuubiConf)(f: CuratorFramework => T): T = {
-    val zkClient = buildZookeeperClient(conf)
-    try {
-      zkClient.start()
-      f(zkClient)
-    } finally {
-      try {
-        zkClient.close()
-      } catch {
-        case e: IOException => error("Failed to release the zkClient", e)
-      }
-    }
-  }
-
-  /**
    * For a kerberized cluster, we dynamically set up the client's JAAS conf.
    *
    * @param conf SparkConf
@@ -136,10 +120,10 @@ object ZooKeeperClientProvider extends Logging {
     }
 
     if (conf.get(HA_ZK_ENGINE_REF_ID).isEmpty
-      && ZooKeeperAuthTypes.withName(conf.get(HA_ZK_AUTH_TYPE)) == ZooKeeperAuthTypes.KERBEROS) {
+      && AuthTypes.withName(conf.get(HA_ZK_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth()
-    } else if (conf.get(HA_ZK_ENGINE_REF_ID).nonEmpty && ZooKeeperAuthTypes
-        .withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == ZooKeeperAuthTypes.KERBEROS) {
+    } else if (conf.get(HA_ZK_ENGINE_REF_ID).nonEmpty && AuthTypes
+        .withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth()
     }
 
