@@ -151,8 +151,8 @@ class SparkProcessBuilder(
       case Some("yarn") =>
         var applicationId: ApplicationId = null
         try {
-          val hadoopConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
-          yarnClient.init(hadoopConf)
+          val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
+          yarnClient.init(yarnConf)
           yarnClient.start()
           val apps = yarnClient.getApplications(null, null, Set(engineRefId).asJava)
           if (apps.isEmpty) return s"There are no Application tagged with $engineRefId," +
