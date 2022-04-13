@@ -85,10 +85,24 @@ bin/beeline -u 'jdbc:hive2://10.242.189.214:2181/;serviceDiscoveryMode=zooKeeper
 
 ## How to Hot Upgrade Kyuubi Server
 
-Kyuubi supports hot upgrade one of server in a HA cluster which is transparent to users. For example, if you want to upgrade a Kyuubi server at host `kyuubi.host` with port `10009`, you can run the following cmd using `bin/kyuubi-ctl`:
+Kyuubi supports hot upgrade one of server in a HA cluster which is transparent to users.
 
-```shell
-./bin/kyuubi-ctl delete server --host "kyuubi.host" --port "10009"
-```
+- If you have specified a custom port for Kyuubi server 
 
-Kyuubi server will stop until all session closed, and then you can start a new Kyuubi server.
+  For example, the Kyuubi server started at host `kyuubi.host` with port `10009`, you can run the following cmd using `bin/kyuubi-ctl`:
+  
+  ```shell
+  ./bin/kyuubi-ctl delete server --host "kyuubi.host" --port "10009"
+  ```
+  
+  Kyuubi server will stop until all session closed, and then you can start a new Kyuubi server.
+
+- If you use a random port for Kyuubi server
+
+  You can just start the new Kyuubi Server, then runing cmd using `bin/kyuubi-ctl`:
+
+  ```shell
+  ./bin/kyuubi-ctl delete server --host "kyuubi.host" --port "${port_for_old_Kyuubi_server}"
+  ```
+
+  Note that, you do not need to care when the old Kyuubi server actually stooped since the new comming session are routed to the new Kyuubi server and others.
