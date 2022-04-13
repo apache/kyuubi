@@ -35,6 +35,7 @@ import io.trino.client.StatementClient
 import io.trino.client.StatementClientFactory
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.trino.TrinoConf.DATA_PROCESSING_POOL_SIZE
 import org.apache.kyuubi.engine.trino.TrinoStatement._
@@ -42,7 +43,10 @@ import org.apache.kyuubi.engine.trino.TrinoStatement._
 /**
  * Trino client communicate with trino cluster.
  */
-class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: String) {
+class TrinoStatement(
+    trinoContext: TrinoContext,
+    kyuubiConf: KyuubiConf,
+    sql: String) extends Logging {
 
   private lazy val trino = StatementClientFactory
     .newStatementClient(trinoContext.httpClient, trinoContext.clientSession.get, sql)
@@ -61,6 +65,7 @@ class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: St
       val results = trino.currentStatusInfo()
       val columns = results.getColumns()
       if (columns != null) {
+        info(s"Execute with Trino query id: ${results.getId}")
         return columns.asScala.toList
       }
       trino.advance()
