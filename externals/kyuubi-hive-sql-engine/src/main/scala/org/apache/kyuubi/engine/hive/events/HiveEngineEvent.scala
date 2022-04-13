@@ -35,15 +35,15 @@ case class HiveEngineEvent(
 
   override def toString: String = {
     s"""
-      |HiveEngineEvent: {
-      |connectionUrl: $connectionUrl,
-      |startTime: $startTime,
-      |endTime: $endTime,
-      |state: $state,
-      |diagnostic: $diagnostic,
-      |settings: ${settings.mkString("<", ",", ">")}
-      |}
-      |""".stripMargin
+       |HiveEngineEvent: {
+       |connectionUrl: $connectionUrl,
+       |startTime: $startTime,
+       |endTime: $endTime,
+       |state: $state,
+       |diagnostic: $diagnostic,
+       |settings: ${settings.mkString("<", ",", ">")}
+       |}
+       |""".stripMargin
   }
 }
 
