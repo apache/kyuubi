@@ -72,8 +72,8 @@ object HiveSQLEngine extends Logging {
     }
 
     val isEmbeddedMetaStore = {
-      val msUri = hiveConf.getVar(ConfVars.METASTOREURIS)
-      val msConnUrl = hiveConf.getVar(ConfVars.METASTORECONNECTURLKEY)
+      val msUri = hiveConf.get("hive.metastore.uris")
+      val msConnUrl = hiveConf.get("javax.jdo.option.ConnectionURL")
       (msUri == null || msUri.trim().isEmpty) &&
       (msConnUrl != null && msConnUrl.startsWith("jdbc:derby"))
     }
