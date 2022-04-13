@@ -82,3 +82,13 @@ For example,
 ```shell
 bin/beeline -u 'jdbc:hive2://10.242.189.214:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi' -n kentyao
 ```
+
+## How to Hot Upgrade Kyuubi Server
+
+Kyuubi supports hot upgrade one of server in a HA cluster which is transparent to users. For example, if you want to upgrade a Kyuubi server at host `kyuubi.host` with port `10009`, you can run the following cmd using `bin/kyuubi-ctl`:
+
+```shell
+./bin/kyuubi-ctl delete server --host "kyuubi.host" --port "10009"
+```
+
+Kyuubi server will stop until all session closed, and then you can start a new Kyuubi server.
