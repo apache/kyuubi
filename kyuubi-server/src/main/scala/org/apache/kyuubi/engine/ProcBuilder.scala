@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine
 
 import java.io.{File, FilenameFilter, IOException}
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
@@ -26,8 +27,9 @@ import scala.collection.JavaConverters._
 import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.NamedThreadFactory
 
@@ -35,12 +37,58 @@ trait ProcBuilder {
 
   import ProcBuilder._
 
-  protected def executable: String
+  /**
+   * The short name of the engine process builder, we use this for form the engine jar paths now
+   * see `mainResource`
+   */
+  protected def shortName: String
 
-  protected def mainResource: Option[String]
+  /**
+   * executable, it is `JAVA_HOME/bin/java` by default
+   */
+  protected def executable: String = {
+    val javaHome = env.get("JAVA_HOME")
+    if (javaHome.isEmpty) {
+      throw validateEnv("JAVA_HOME")
+    } else {
+      Paths.get(javaHome.get, "bin", "java").toString
+    }
+  }
+
+  /**
+   * The engine jar or other runnable jar containing the main method
+   */
+  def mainResource: Option[String] = {
+    // 1. get the main resource jar for user specified config first
+    // TODO use SPARK_SCALA_VERSION instead of SCALA_COMPILE_VERSION
+    val jarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
+    conf.getOption(s"kyuubi.session.engine.$shortName.main.resource").filter { userSpecified =>
+      // skip check exist if not local file.
+      val uri = new URI(userSpecified)
+      val schema = if (uri.getScheme != null) uri.getScheme else "file"
+      schema match {
+        case "file" => Files.exists(Paths.get(userSpecified))
+        case _ => true
+      }
+    }.orElse {
+      // 2. get the main resource jar from system build default
+      env.get(KYUUBI_HOME)
+        .map { Paths.get(_, "externals", "engines", shortName, jarName) }
+        .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+    }.orElse {
+      // 3. get the main resource from dev environment
+      val cwd = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")
+      assert(cwd.length > 1)
+      Option(Paths.get(cwd.head, "externals", module, "target", jarName))
+        .map(_.toAbsolutePath.toFile.getCanonicalPath)
+    }
+  }
 
   protected def module: String
 
+  /**
+   * The class containing the main method
+   */
   protected def mainClass: String
 
   protected def proxyUser: String

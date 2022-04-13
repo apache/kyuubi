@@ -19,8 +19,7 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
 import java.lang.ProcessBuilder.Redirect
-import java.net.URI
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 
 import scala.collection.JavaConverters._
 
@@ -28,7 +27,6 @@ import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_FLINK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder.FLINK_ENGINE_BINARY_FILE
 import org.apache.kyuubi.operation.log.OperationLog
@@ -61,31 +59,6 @@ class FlinkProcessBuilder(
       throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
         "For more detail information on installing and configuring Flink, please visit " +
         "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
-    }
-  }
-
-  override protected def mainResource: Option[String] = {
-    val jarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
-    // 1. get the main resource jar for user specified config first
-    conf.get(ENGINE_FLINK_MAIN_RESOURCE).filter { userSpecified =>
-      // skip check exist if not local file.
-      val uri = new URI(userSpecified)
-      val schema = if (uri.getScheme != null) uri.getScheme else "file"
-      schema match {
-        case "file" => Files.exists(Paths.get(userSpecified))
-        case _ => true
-      }
-    }.orElse {
-      // 2. get the main resource jar from system build default
-      env.get(KyuubiConf.KYUUBI_HOME)
-        .map { Paths.get(_, "externals", "engines", "flink", jarName) }
-        .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
-    }.orElse {
-      // 3. get the main resource from dev environment
-      Option(Paths.get("externals", module, "target", jarName))
-        .filter(Files.exists(_)).orElse {
-          Some(Paths.get("..", "externals", module, "target", jarName))
-        }.map(_.toAbsolutePath.toFile.getCanonicalPath)
     }
   }
 
@@ -159,7 +132,7 @@ class FlinkProcessBuilder(
     }
   }
 
-  private def useKeytab(): Boolean = false
+  override protected def shortName: String = "flink"
 }
 
 object FlinkProcessBuilder {

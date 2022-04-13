@@ -48,7 +48,6 @@ import org.apache.hive.service.rpc.thrift.TRowSet
 import org.apache.hive.service.rpc.thrift.TStringColumn
 import org.apache.hive.service.rpc.thrift.TStringValue
 
-import org.apache.kyuubi.engine.trino.util.PreconditionsWrapper._
 import org.apache.kyuubi.util.RowSetUtils.bitSetToBuffer
 
 object RowSet {
@@ -262,7 +261,7 @@ object RowSet {
         "\"" + s + "\""
 
       case (list: java.util.List[_], ARRAY) =>
-        checkArgument(
+        require(
           typ.getArgumentsAsTypeSignatures.asScala.nonEmpty,
           "Missing ARRAY argument type")
         val listType = typ.getArgumentsAsTypeSignatures.get(0)
@@ -271,7 +270,7 @@ object RowSet {
           .mkString("[", ",", "]")
 
       case (m: java.util.Map[_, _], MAP) =>
-        checkArgument(
+        require(
           typ.getArgumentsAsTypeSignatures.size() == 2,
           "Mismatched number of MAP argument types")
         val keyType = typ.getArgumentsAsTypeSignatures.get(0)
@@ -281,7 +280,7 @@ object RowSet {
         }.toSeq.sorted.mkString("{", ",", "}")
 
       case (row: Row, ROW) =>
-        checkArgument(
+        require(
           row.getFields.size() == typ.getArguments.size(),
           "Mismatched data values and ROW type")
         row.getFields.asScala.zipWithIndex.map { case (r, index) =>

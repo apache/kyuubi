@@ -18,8 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.IOException
-import java.net.URI
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
@@ -31,7 +30,6 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
@@ -56,33 +54,6 @@ class SparkProcessBuilder(
   }
 
   override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
-
-  override def mainResource: Option[String] = {
-    // 1. get the main resource jar for user specified config first
-    // TODO use SPARK_SCALA_VERSION instead of SCALA_COMPILE_VERSION
-    val jarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
-    conf.get(ENGINE_SPARK_MAIN_RESOURCE).filter { userSpecified =>
-      // skip check exist if not local file.
-      val uri = new URI(userSpecified)
-      val schema = if (uri.getScheme != null) uri.getScheme else "file"
-      schema match {
-        case "file" => Files.exists(Paths.get(userSpecified))
-        case _ => true
-      }
-    }.orElse {
-      // 2. get the main resource jar from system build default
-      env.get(KyuubiConf.KYUUBI_HOME)
-        .map { Paths.get(_, "externals", "engines", "spark", jarName) }
-        .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
-    }.orElse {
-      // 3. get the main resource from dev environment
-      val cwd = Utils.getCodeSourceLocation(getClass)
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(Paths.get(cwd.head, "externals", module, "target", jarName))
-        .map(_.toAbsolutePath.toFile.getCanonicalPath)
-    }
-  }
 
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
@@ -192,6 +163,7 @@ class SparkProcessBuilder(
       case None => ""
     }
 
+  override protected def shortName: String = "spark"
 }
 
 object SparkProcessBuilder {

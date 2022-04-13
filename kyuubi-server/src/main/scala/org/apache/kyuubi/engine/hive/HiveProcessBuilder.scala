@@ -18,8 +18,7 @@
 package org.apache.kyuubi.engine.hive
 
 import java.io.File
-import java.net.URI
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 import java.util.LinkedHashSet
 
 import scala.collection.JavaConverters._
@@ -27,7 +26,6 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_HIVE_MAIN_RESOURCE
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.operation.log.OperationLog
@@ -39,40 +37,6 @@ class HiveProcessBuilder(
   extends ProcBuilder with Logging {
 
   private val hiveHome: String = getEngineHome("hive")
-
-  override protected def executable: String = {
-    val javaHome = env.get("JAVA_HOME")
-    if (javaHome.isEmpty) {
-      throw validateEnv("JAVA_HOME")
-    } else {
-      Paths.get(javaHome.get, "bin", "java").toString
-    }
-  }
-
-  override protected def mainResource: Option[String] = {
-    val jarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
-    // 1. get the main resource jar for user specified config first
-    conf.get(ENGINE_HIVE_MAIN_RESOURCE).filter { userSpecified =>
-      // skip check exist if not local file.
-      val uri = new URI(userSpecified)
-      val schema = if (uri.getScheme != null) uri.getScheme else "file"
-      schema match {
-        case "file" => Files.exists(Paths.get(userSpecified))
-        case _ => true
-      }
-    }.orElse {
-      // 2. get the main resource jar from system build default
-      env.get(KyuubiConf.KYUUBI_HOME)
-        .map { Paths.get(_, "externals", "engines", "hive", jarName) }
-        .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
-    }.orElse {
-      // 3. get the main resource from dev environment
-      Option(Paths.get("externals", module, "target", jarName))
-        .filter(Files.exists(_)).orElse {
-          Some(Paths.get("..", "externals", module, "target", jarName))
-        }.map(_.toAbsolutePath.toFile.getCanonicalPath)
-    }
-  }
 
   override protected def module: String = "kyuubi-hive-sql-engine"
 
@@ -123,4 +87,6 @@ class HiveProcessBuilder(
   }
 
   override def toString: String = commands.mkString("\n")
+
+  override protected def shortName: String = "hive"
 }
