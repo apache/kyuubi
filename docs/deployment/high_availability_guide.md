@@ -102,7 +102,12 @@ Kyuubi supports hot upgrade one of server in a HA cluster which is transparent t
   You can just start the new Kyuubi Server, then runing cmd using `bin/kyuubi-ctl`:
 
   ```shell
-  ./bin/kyuubi-ctl delete server --host "kyuubi.host" --port "${port_for_old_Kyuubi_server}"
+  ./bin/kyuubi-ctl delete server --host "kyuubi.host" --port "${PORT_FPR_OLD_KYUUBI_SERVER}"
   ```
 
+  The `${PORT_FPR_OLD_KYUUBI_SERVER}` can be found by:
+
+  ```shell
+  grep "server.KyuubiThriftBinaryFrontendService: Starting and exposing JDBC connection at" logs/kyuubi-*.out
+  ```
   Note that, you do not need to care when the old Kyuubi server actually stooped since the new comming session are routed to the new Kyuubi server and others.
