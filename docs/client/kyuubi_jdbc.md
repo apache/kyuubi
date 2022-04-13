@@ -25,7 +25,7 @@
 
 ## Install Kyuubi JDBC
 
-For programing, the easiest way to get `kyuubi-hive-jdbc-shaded` is from [the maven central](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc). For example,
+For programing, the easiest way to get `kyuubi-hive-jdbc-shaded` is from [the maven central](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-hive-jdbc-shaded). For example,
 
 - **maven**
 ```xml
