@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.security.PrivilegedExceptionAction
+import java.sql.Timestamp
 
 import scala.util.Try
 
@@ -26,6 +27,7 @@ import org.apache.spark.sql.{Row, SparkSessionExtensions}
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessionProvider {
 
@@ -160,6 +162,66 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
         "bob", {
           sql(s"CREATE TABLE $db.src2 using $format AS SELECT value FROM $db.$table")
           assert(sql(s"SELECT value FROM $db.${table}2").collect() === Seq(Row(1)))
+        })
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}2"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
+    }
+  }
+
+  test("data masking") {
+    val db = "default"
+    val table = "src"
+    val col = "key"
+    val create =
+      s"CREATE TABLE IF NOT EXISTS $db.$table" +
+        s" ($col int, value1 int, value2 string, value3 string, value4 timestamp) USING $format"
+    try {
+      doAs("admin", assert(Try { sql(create) }.isSuccess))
+      doAs(
+        "admin",
+        sql(
+          s"INSERT INTO $db.$table SELECT 1, 1, 'hello', 'world', timestamp'2018-11-17 12:34:56'"))
+      doAs(
+        "admin",
+        sql(
+          s"INSERT INTO $db.$table SELECT 20, 2, 'kyuubi', 'y', timestamp'2018-11-17 12:34:56'"))
+      doAs(
+        "admin",
+        sql(
+          s"INSERT INTO $db.$table SELECT 30, 3, 'spark', 'a', timestamp'2018-11-17 12:34:56'"))
+
+      doAs(
+        "kent",
+        assert(sql(s"SELECT key FROM $db.$table order by key").collect() ===
+          Seq(Row(1), Row(20), Row(30))))
+
+      Seq(
+        s"SELECT value1, value2, value3, value4 FROM $db.$table",
+        s"SELECT value1 as key, value2, value3, value4 FROM $db.$table",
+        s"SELECT max(value1), max(value2), max(value3), max(value4) FROM $db.$table",
+        s"SELECT coalesce(max(value1), 1), coalesce(max(value2), 1), coalesce(max(value3), 1), " +
+          s"coalesce(max(value4), timestamp 'now') FROM $db.$table",
+        s"SELECT value1, value2, value3, value4 FROM $db.$table WHERE value2 in" +
+          s" (SELECT value2 as key FROM $db.$table)")
+        .foreach { q =>
+          doAs(
+            "bob", {
+              withClue(q) {
+                assert(sql(q).collect() ===
+                  Seq(
+                    Row(
+                      hash("1"),
+                      mask("hello"),
+                      mask_show_first_n("world"),
+                      Timestamp.valueOf("2018-01-01 00:00:00"))))
+              }
+            })
+        }
+      doAs(
+        "bob", {
+          sql(s"CREATE TABLE $db.src2 using $format AS SELECT value1 FROM $db.$table")
+          assert(sql(s"SELECT value1 FROM $db.${table}2").collect() === Seq(Row(hash("1"))))
         })
     } finally {
       doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}2"))

@@ -28,4 +28,33 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
       .map(_.getFilterExpr)
       .filter(fe => fe != null && fe.nonEmpty)
   }
+
+  def getMaskingExpr(req: AccessRequest): Option[String] = {
+    val col = req.getResource.asInstanceOf[AccessResource].getColumn
+    val result = evalDataMaskPolicies(req, null)
+    Option(result).filter(_.isMaskEnabled).map { res =>
+      if ("MASK_NULL".equalsIgnoreCase(res.getMaskType)) {
+        "NULL"
+      } else if ("CUSTOM".equalsIgnoreCase(result.getMaskType)) {
+        val maskVal = res.getMaskedValue
+        if (maskVal == null) {
+          "NULL"
+        } else {
+          s"${maskVal.replace("{col}", col)}"
+        }
+      } else if (result.getMaskTypeDef != null) {
+
+        result.getMaskTypeDef.getName match {
+          case "MASK_DATE_SHOW_YEAR" => s"date_trunc('YEAR', $col)"
+          case _ => result.getMaskTypeDef.getTransformer match {
+              case transformer if transformer != null && transformer.nonEmpty =>
+                s"${transformer.replace("{col}", col)}"
+              case _ => null
+            }
+        }
+      } else {
+        null
+      }
+    }
+  }
 }
