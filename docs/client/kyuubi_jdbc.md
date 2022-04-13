@@ -21,29 +21,29 @@
 
 </div>
 
-# Access Kyuubi with Kyuubi JDBC and ODBC Drivers
+# Access Kyuubi with Kyuubi JDBC Drivers
 
 ## Install Kyuubi JDBC
 
-For programing, the easiest way to get `kyuubi-hive-jdbc` is from [the maven central](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc). For example,
+For programing, the easiest way to get `kyuubi-hive-jdbc-shaded` is from [the maven central](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc). For example,
 
 - **maven**
 ```xml
 <dependency>
     <groupId>org.apache.kyuubi</groupId>
-    <artifactId>kyuubi-hive-jdbc</artifactId>
+    <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
     <version>1.5.0-incubating</version>
 </dependency>
 ```
 
 - **sbt**
 ```scala
-libraryDependencies += "org.apache.kyuubi" % "kyuubi-hive-jdbc" % "1.5.0-incubating"
+libraryDependencies += "org.apache.kyuubi" % "kyuubi-hive-jdbc-shaded" % "1.5.0-incubating"
 ```
 
 - **gradle**
 ```gradle
-implementation group: 'org.apache.kyuubi', name: 'kyuubi-hive-jdbc', version: '1.5.0-incubating'
+implementation group: 'org.apache.kyuubi', name: 'kyuubi-hive-jdbc-shaded', version: '1.5.0-incubating'
 ```
 
 For BI tools, please refer to [Quick Start](../quick_start/index.html) to check the guide for the BI tool used.
@@ -71,4 +71,31 @@ kyuubiConfs | Optional `Semicolon(;)` separated `key=value` parameters for Kyuub
 
 ```
 jdbc:hive2://localhost:10009/default;hive.server2.proxy.user=proxy_user?kyuubi.engine.share.level=CONNECTION;spark.ui.enabled=false#var_x=y
+```
+
+## Alert
+
+If you already have `hadoop-common` dependency in your classpath, you should exclude `hadoop-client-api` from `kyuubi-hive-jdbc-shaded` to avoid class confliction. For example:
+
+- **maven**
+```xml
+<dependency>
+    <groupId>org.apache.kyuubi</groupId>
+    <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+    <version>1.5.0-incubating</version>
+    <exclusion>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-client-api</artifactId>
+    </exclusion>
+</dependency>
+```
+
+- **sbt**
+```scala
+libraryDependencies += "org.apache.kyuubi" % "kyuubi-hive-jdbc-shaded" % "1.5.0-incubating" exclude("org.apache.hadoop", "hadoop-client-api")
+```
+
+- **gradle**
+```gradle
+implementation (group: 'org.apache.kyuubi', name: 'kyuubi-hive-jdbc-shaded', version: '1.5.0-incubating') { exclude group: 'org.apache.hadoop', module: 'hadoop-client-api' }
 ```
