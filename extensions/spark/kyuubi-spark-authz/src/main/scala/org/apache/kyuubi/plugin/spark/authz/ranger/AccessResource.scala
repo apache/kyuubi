@@ -58,9 +58,7 @@ object AccessResource {
         resource.setValue("database", firstLevelResource)
         resource.setValue("table", secondLevelResource)
     }
-    val serviceDef = SparkRangerAdminPlugin.getServiceDef
-    serviceDef.getDataMaskDef.getMaskTypes
-    resource.setServiceDef(serviceDef)
+    resource.setServiceDef(SparkRangerAdminPlugin.getServiceDef)
     resource
   }
 

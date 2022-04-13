@@ -43,7 +43,6 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
           s"${maskVal.replace("{col}", col)}"
         }
       } else if (result.getMaskTypeDef != null) {
-
         result.getMaskTypeDef.getName match {
           case "MASK_DATE_SHOW_YEAR" => s"date_trunc('YEAR', $col)"
           case _ => result.getMaskTypeDef.getTransformer match {
