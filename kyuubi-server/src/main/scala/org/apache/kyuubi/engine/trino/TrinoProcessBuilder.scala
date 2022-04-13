@@ -24,7 +24,7 @@ import java.util.LinkedHashSet
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION}
+import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, ENGINE_TRINO_CONNECTION_URL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
@@ -69,11 +69,17 @@ class TrinoProcessBuilder(
     mainResource.foreach(classpathEntries.add)
 
     mainResource.foreach { path =>
-      classpathEntries.add(s"$path${File.separator}*")
-      val trinoDeps = Paths.get(path).getParent
-        .resolve(s"scala-$SCALA_COMPILE_VERSION")
-        .resolve("jars")
-      classpathEntries.add(s"$trinoDeps${File.separator}*")
+      val parent = Paths.get(path).getParent
+      if (Utils.isTesting) {
+        // add dev classpath
+        val trinoDeps = parent
+          .resolve(s"scala-$SCALA_COMPILE_VERSION")
+          .resolve("jars")
+        classpathEntries.add(s"$trinoDeps${File.separator}*")
+      } else {
+        // add prod classpath
+        classpathEntries.add(s"$parent${File.separator}*")
+      }
     }
 
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)

@@ -26,7 +26,7 @@ class TrinoProcessBuilderSuite extends KyuubiFunSuite {
   test("trino process builder") {
     val conf = KyuubiConf()
       .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
-      .set(ENGINE_TRINO_CONNECTION_CATALOG, "dumm_catalog")
+      .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
     val builder = new TrinoProcessBuilder("kyuubi", conf)
     val commands = builder.toString.split("\n")
     assert(commands.head.endsWith("java"))
