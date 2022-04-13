@@ -110,4 +110,4 @@ Kyuubi supports hot upgrade one of server in a HA cluster which is transparent t
   ```shell
   grep "server.KyuubiThriftBinaryFrontendService: Starting and exposing JDBC connection at" logs/kyuubi-*.out
   ```
-  Note that, you do not need to care when the old Kyuubi server actually stooped since the new comming session are routed to the new Kyuubi server and others.
+  Note that, you do not need to care when the old Kyuubi server actually stopped since the new coming session are routed to the new Kyuubi server and others.
