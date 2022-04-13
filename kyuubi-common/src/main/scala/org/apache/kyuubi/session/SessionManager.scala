@@ -77,12 +77,39 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def operationManager: OperationManager
 
+  protected def createSession(
+      protocol: TProtocolVersion,
+      user: String,
+      password: String,
+      ipAddress: String,
+      conf: Map[String, String]): Session
+
   def openSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): SessionHandle
+      conf: Map[String, String]): SessionHandle = {
+    info(s"Opening session for $user@$ipAddress")
+    val session = createSession(protocol, user, password, ipAddress, conf)
+    try {
+      val handle = session.handle
+      session.open()
+      setSession(handle, session)
+      info(s"$user's session with $handle is opened, current opening sessions" +
+        s" $getOpenSessionCount")
+      handle
+    } catch {
+      case e: Exception =>
+        try {
+          session.close()
+        } catch {
+          case t: Throwable =>
+            warn(s"Error closing session for $user client ip: $ipAddress", t)
+        }
+        throw KyuubiSQLException(e)
+    }
+  }
 
   def closeSession(sessionHandle: SessionHandle): Unit = {
     _latestLogoutTime = System.currentTimeMillis()

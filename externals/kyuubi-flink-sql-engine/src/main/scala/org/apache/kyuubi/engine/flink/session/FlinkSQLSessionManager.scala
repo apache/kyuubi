@@ -21,10 +21,9 @@ import org.apache.flink.table.client.gateway.context.DefaultContext
 import org.apache.flink.table.client.gateway.local.LocalExecutor
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
-import org.apache.kyuubi.session.{SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 
 class FlinkSQLSessionManager(engineContext: DefaultContext)
   extends SessionManager("FlinkSQLSessionManager") {
@@ -39,12 +38,12 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
     executor.start()
   }
 
-  override def openSession(
+  override protected def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
+      conf: Map[String, String]): Session = {
 
     val sessionHandle = SessionHandle(protocol)
     val sessionId = sessionHandle.identifier.toString
@@ -52,7 +51,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
     executor.openSession(sessionId)
     val sessionContext = FlinkEngineUtils.getSessionContext(executor, sessionId)
 
-    val sessionImpl = new FlinkSessionImpl(
+    new FlinkSessionImpl(
       protocol,
       user,
       password,
@@ -61,18 +60,6 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
       this,
       sessionHandle,
       sessionContext)
-
-    try {
-      sessionImpl.open()
-      setSession(sessionHandle, sessionImpl)
-      info(s"$user's session with $sessionHandle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
-      sessionHandle
-    } catch {
-      case e: Exception =>
-        sessionImpl.close()
-        throw KyuubiSQLException(e)
-    }
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

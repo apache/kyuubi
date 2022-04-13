@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.trino.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_OPERATION_LOG_DIR_ROOT
@@ -27,8 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.trino.TrinoSqlEngine
 import org.apache.kyuubi.engine.trino.operation.TrinoOperationManager
-import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.session.SessionManager
+import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 
 class TrinoSessionManager
   extends SessionManager("TrinoSessionManager") {
@@ -41,28 +39,13 @@ class TrinoSessionManager
     super.initialize(conf)
   }
 
-  override def openSession(
+  override protected def createSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
-    info(s"Opening session for $user@$ipAddress")
-    val sessionImpl =
-      new TrinoSessionImpl(protocol, user, password, ipAddress, conf, this)
-
-    try {
-      val handle = sessionImpl.handle
-      sessionImpl.open()
-      setSession(handle, sessionImpl)
-      info(s"$user's trino session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
-      handle
-    } catch {
-      case e: Exception =>
-        sessionImpl.close()
-        throw KyuubiSQLException(e)
-    }
+      conf: Map[String, String]): Session = {
+    new TrinoSessionImpl(protocol, user, password, ipAddress, conf, this)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
