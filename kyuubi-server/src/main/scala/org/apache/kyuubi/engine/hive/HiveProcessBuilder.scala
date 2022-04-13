@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.hive
 
 import java.io.File
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 import java.util.LinkedHashSet
 
 import scala.collection.JavaConverters._
@@ -66,17 +66,26 @@ class HiveProcessBuilder(
     // classpath contains hive configurations, default to hive.home/conf
     classpathEntries.add(env.getOrElse("HIVE_CONF_DIR", s"$hiveHome${File.separator}conf"))
     // classpath contains hadoop configurations
-    env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
+    val hadoopConfDir = env.get("HADOOP_CONF_DIR")
+    if (hadoopConfDir.isEmpty) {
+      warn(s"HADOOP_CONF_DIR does not export.")
+    } else {
+      classpathEntries.add(hadoopConfDir.get)
+    }
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
     // jars from hive distribution
     classpathEntries.add(s"$hiveHome${File.separator}lib${File.separator}*")
     val hadoopCp = env.get("HIVE_HADOOP_CLASSPATH").orElse(env.get("HADOOP_CLASSPATH"))
     hadoopCp.foreach(path => classpathEntries.add(s"$path${File.separator}*"))
     if (hadoopCp.isEmpty) {
+      warn(s"HIVE_HADOOP_CLASSPATH or HADOOP_CLASSPATH don't export.")
       mainResource.foreach { path =>
         val devHadoopJars = Paths.get(path).getParent
           .resolve(s"scala-$SCALA_COMPILE_VERSION")
           .resolve("jars")
+        if (!Files.exists(devHadoopJars)) {
+          throw new KyuubiException(s"The path $devHadoopJars does not exists. ")
+        }
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }
 
