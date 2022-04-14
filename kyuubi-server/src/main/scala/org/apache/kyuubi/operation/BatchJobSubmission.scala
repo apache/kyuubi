@@ -80,8 +80,6 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
       val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
     } catch onError("submitting batch job submission operation in background, request rejected")
-
-    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   private def submitBatchJob(): Unit = {
