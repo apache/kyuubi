@@ -122,4 +122,4 @@ case class BatchRequest(
     className: String,
     name: String,
     conf: Map[String, String],
-    args: java.util.List[String])
+    args: Seq[String])

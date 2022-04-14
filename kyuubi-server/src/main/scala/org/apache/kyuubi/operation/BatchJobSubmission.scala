@@ -83,8 +83,8 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   }
 
   private def submitBatchJob(): Unit = {
-    builder = batchRequest.batchType.toUpperCase(Locale.ROOT) match {
-      case "SPARK" =>
+    builder = Option(batchRequest.batchType).map(_.toUpperCase(Locale.ROOT)) match {
+      case Some("SPARK") =>
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,

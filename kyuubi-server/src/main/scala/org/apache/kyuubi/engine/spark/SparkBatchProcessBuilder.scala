@@ -60,7 +60,7 @@ class SparkBatchProcessBuilder(
 
     mainResource.foreach { r => buffer += r }
 
-    batchRequest.args.asScala.foreach { arg => buffer += arg }
+    batchRequest.args.foreach { arg => buffer += arg }
 
     buffer.toArray
   }

@@ -62,7 +62,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
         "spark.master" -> "yarn",
         s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
         s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
-      List.empty[String].asJava)
+      Seq.empty[String])
 
     val sessionHandle = sessionManager.openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
