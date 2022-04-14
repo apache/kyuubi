@@ -76,7 +76,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
 
     eventually(timeout(3.minutes), interval(500.milliseconds)) {
-      val applicationIdAndUrl = session.batchJobSubmissionOp.appIdAndTrackingUrl
+      val applicationIdAndUrl = session.batchJobSubmissionOp.appIdAndUrl
       assert(applicationIdAndUrl.isDefined)
       assert(applicationIdAndUrl.exists(_._1.startsWith("application_")))
       assert(applicationIdAndUrl.exists(_._2.nonEmpty))

@@ -46,7 +46,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   private var builder: ProcBuilder = _
 
   @volatile
-  private[kyuubi] var appIdAndTrackingUrl: Option[(String, String)] = None
+  private[kyuubi] var appIdAndUrl: Option[(String, String)] = None
 
   private var resultFetched: Boolean = _
 
@@ -113,12 +113,12 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   private def startApplicationChecker(): Unit = {
     val checker = new Runnable {
       override def run(): Unit = {
-        if (appIdAndTrackingUrl.isEmpty) {
+        if (appIdAndUrl.isEmpty) {
           try {
             builder match {
               case sparkBatchProcessBuilder: SparkBatchProcessBuilder =>
                 sparkBatchProcessBuilder.getApplicationIdAndUrl() match {
-                  case Some(appInfo) => appIdAndTrackingUrl = Some(appInfo)
+                  case Some(appInfo) => appIdAndUrl = Some(appInfo)
                   case _ =>
                 }
 
@@ -172,7 +172,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private lazy val resultSet: TRowSet = {
     val tRow = new TRowSet(0, new JArrayList[TRow](1))
-    val (appId, url) = appIdAndTrackingUrl.toSeq.unzip
+    val (appId, url) = appIdAndUrl.toSeq.unzip
 
     val tAppIdColumn = TColumn.stringVal(new TStringColumn(
       appId.asJava,
