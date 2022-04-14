@@ -55,10 +55,6 @@ class HiveProcessBuilder(
     // TODO: add Kyuubi.engineEnv.HIVE_ENGINE_MEMORY or kyuubi.engine.hive.memory to configure
     // -Xmx5g
     // java options
-    for ((k, v) <- conf.getAll) {
-      buffer += s"-D$k=$v"
-    }
-
     buffer += "-cp"
     val classpathEntries = new LinkedHashSet[String]
     // hive engine runtime jar
@@ -92,6 +88,10 @@ class HiveProcessBuilder(
     }
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass
+    for ((k, v) <- conf.getAll) {
+      buffer += "--conf"
+      buffer += s"$k=$v"
+    }
     buffer.toArray
   }
 

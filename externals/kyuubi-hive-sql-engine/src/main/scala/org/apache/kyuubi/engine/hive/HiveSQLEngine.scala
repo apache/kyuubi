@@ -32,7 +32,7 @@ import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable}
-import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
+import org.apache.kyuubi.util.{ArgsParser, KyuubiHadoopUtils, SignalRegister}
 
 class HiveSQLEngine extends Serverable("HiveSQLEngine") {
   override val backendService: AbstractBackendService = new HiveBackendService(this)
@@ -125,6 +125,7 @@ object HiveSQLEngine extends Logging {
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
     try {
+      ArgsParser.fromCommandLineArgs(args, kyuubiConf)
       startEngine()
     } catch {
       case t: Throwable => currentEngine match {
