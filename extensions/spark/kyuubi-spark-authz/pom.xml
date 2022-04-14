@@ -247,21 +247,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jul-to-slf4j</artifactId>
             <scope>test</scope>
@@ -291,4 +276,15 @@
         </testResources>
     </build>
 
+    <profiles>
+        <profile>
+            <id>spark-authz-scala_2.11</id>
+            <properties>
+                <scala.binary.version>2.11</scala.binary.version>
+                <scala.version>2.11.12</scala.version>
+                <skipTests>true</skipTests>
+                <spark.version>2.4.8</spark.version>
+            </properties>
+        </profile>
+    </profiles>
 </project>

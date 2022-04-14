@@ -19,12 +19,18 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 
-abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionProvider {
+abstract class PrivilegesBuilderSuite extends AnyFunSuite
+  with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
+// scalastyle:on
 
   protected def withTable(t: String)(f: String => Unit): Unit = {
     try {
@@ -581,7 +587,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
   }
 
   test("RefreshFunctionCommand") {
-    assume(isSparkV31OrGreater)
+    assume(AuthZUtils.isSparkVersionAtLeast("3.1"))
     sql(s"CREATE FUNCTION RefreshFunctionCommand AS '${getClass.getCanonicalName}'")
     val plan = sql("REFRESH FUNCTION RefreshFunctionCommand")
       .queryExecution.analyzed

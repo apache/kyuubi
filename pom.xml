@@ -1463,7 +1463,7 @@
                             <arg>-Yno-adapted-args</arg>
                             <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
                             <arg>-Xfatal-warnings</arg>
-                            <arg>-Ywarn-unused:imports</arg>
+                            <arg>-Ywarn-unused</arg>
                         </args>
                         <jvmArgs>
                             <jvmArg>-Xms1024m</jvmArg>
