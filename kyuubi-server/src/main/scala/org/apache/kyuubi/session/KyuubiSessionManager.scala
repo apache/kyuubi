@@ -41,7 +41,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   val credentialsManager = new HadoopCredentialsManager()
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
-  lazy val staticBatchSessionSecretId: UUID = conf.get(SESSION_BATCH_STATIC_SECRET_ID)
+  lazy val staticBatchSecretId: UUID = conf.get(BATCH_STATIC_SECRET_ID)
     .map(UUID.fromString).getOrElse(UUID.randomUUID())
 
   override def initialize(conf: KyuubiConf): Unit = {
@@ -134,7 +134,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def newBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(UUID.randomUUID(), staticBatchSessionSecretId), protocol)
+    SessionHandle(HandleIdentifier(UUID.randomUUID(), staticBatchSecretId), protocol)
   }
 
   override def start(): Unit = synchronized {

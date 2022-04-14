@@ -807,16 +807,16 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val SESSION_BATCH_STATIC_SECRET_ID: OptionalConfigEntry[String] =
-    buildConf("kyuubi.session.batch.static.secret.id")
+  val BATCH_STATIC_SECRET_ID: OptionalConfigEntry[String] =
+    buildConf("kyuubi.batch.static.secret.id")
       .doc("The static session secret UUID used for batch session handle.")
       .version("1.6.0")
       .stringConf
       .checkValue(id => Try(UUID.fromString(id)).isSuccess, "should be an UUID string")
       .createOptional
 
-  val SESSION_BATCH_APPLICATION_CHECK_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.session.batch.application.check.interval")
+  val BATCH_APPLICATION_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.application.check.interval")
       .doc("The interval to check batch job application information.")
       .version("1.6.0")
       .timeConf

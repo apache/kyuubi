@@ -43,6 +43,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   override def shouldRunAsync: Boolean = true
 
   private lazy val _operationLog = OperationLog.createOperationLog(session, getHandle)
+
   private var builder: ProcBuilder = _
 
   @volatile
@@ -51,7 +52,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   private var resultFetched: Boolean = _
 
   private val applicationCheckInterval =
-    session.sessionConf.get(KyuubiConf.SESSION_BATCH_APPLICATION_CHECK_INTERVAL)
+    session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL)
   private val applicationCheckExecutor =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"application-checker-${session.batchId}")
 

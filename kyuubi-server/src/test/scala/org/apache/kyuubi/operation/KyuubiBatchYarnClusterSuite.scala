@@ -26,7 +26,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.WithKyuubiServerOnYarn
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.SESSION_BATCH_STATIC_SECRET_ID
+import org.apache.kyuubi.config.KyuubiConf.BATCH_STATIC_SECRET_ID
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
@@ -38,7 +38,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
 
   override protected val kyuubiServerConf: KyuubiConf = {
     // TODO KYUUBI #745
-    KyuubiConf().set(SESSION_BATCH_STATIC_SECRET_ID, staticSecretId.toString)
+    KyuubiConf().set(BATCH_STATIC_SECRET_ID, staticSecretId.toString)
   }
 
   private def sessionManager(): KyuubiSessionManager =
