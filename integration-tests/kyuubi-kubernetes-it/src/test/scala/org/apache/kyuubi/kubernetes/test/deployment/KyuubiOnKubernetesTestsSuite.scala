@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.kubernetes.test.deployment
 
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.kubernetes.test.WithKyuubiServerOnKubernetes
 import org.apache.kyuubi.operation.SparkQueryTests
 
