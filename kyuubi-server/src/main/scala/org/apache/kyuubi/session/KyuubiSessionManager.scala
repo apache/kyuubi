@@ -47,6 +47,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(credentialsManager)
     val absPath = Utils.getAbsolutePathFromWork(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
     _operationLogRoot = Some(absPath.toAbsolutePath.toString)
+    creatSessionLimiter(conf).foreach(setSessionLimiter(_))
     super.initialize(conf)
   }
 
@@ -146,6 +147,17 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   override protected def isServer: Boolean = true
+
+  private def creatSessionLimiter(conf: KyuubiConf): Option[SessionLimiter] = {
+    val userLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER).getOrElse(0)
+    val ipAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
+    val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
+    if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
+      Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
+    } else {
+      None
+    }
+  }
 }
 
 object KyuubiSessionManager {
