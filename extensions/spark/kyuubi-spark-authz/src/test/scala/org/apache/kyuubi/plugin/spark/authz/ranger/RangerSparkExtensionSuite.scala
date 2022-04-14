@@ -28,6 +28,7 @@ import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
+
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite

@@ -21,12 +21,12 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
 abstract class PrivilegesBuilderSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {

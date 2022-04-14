@@ -22,7 +22,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 
-// scalastyle:off
 class AccessResourceSuite extends AnyFunSuite {
 // scalastyle:on
 
