@@ -20,7 +20,6 @@ package org.apache.kyuubi.plugin.spark.authz
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
