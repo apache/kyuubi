@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -33,10 +32,6 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 object PrivilegesBuilder {
-
-  private val versionParts = SPARK_VERSION.split('.')
-  private val majorVersion: Int = versionParts.head.toInt
-  private val minorVersion: Int = versionParts(1).toInt
 
   private def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
@@ -231,7 +226,7 @@ object PrivilegesBuilder {
       case "AnalyzeColumnCommand" =>
         val table = getTableIdent
         val cols =
-          if (majorVersion >= 3) {
+          if (isSparkVersionAtLeast("3.0")) {
             getPlanField[Option[Seq[String]]]("columnNames").getOrElse(Nil)
           } else {
             getPlanField[Seq[String]]("columnNames")
@@ -263,7 +258,7 @@ object PrivilegesBuilder {
         buildQuery(query, inputObjs)
 
       case "CacheTableCommand" =>
-        if (majorVersion == 3 && minorVersion == 1) {
+        if (isSparkVersionEqualTo("3.1")) {
           outputObjs += tablePrivileges(getMultipartIdentifier)
         } else {
           outputObjs += tablePrivileges(getTableIdent)
@@ -281,7 +276,7 @@ object PrivilegesBuilder {
         val view = getPlanField[TableIdentifier]("name")
         outputObjs += tablePrivileges(view)
         val query =
-          if (majorVersion < 3 || (majorVersion == 3 && minorVersion <= 1)) {
+          if (isSparkVersionAtMost("3.1")) {
             getPlanField[LogicalPlan]("child")
           } else {
             getPlanField[LogicalPlan]("plan")
