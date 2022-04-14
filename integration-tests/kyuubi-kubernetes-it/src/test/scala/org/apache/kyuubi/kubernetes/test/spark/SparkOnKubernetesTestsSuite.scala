@@ -19,12 +19,11 @@ package org.apache.kyuubi.kubernetes.test.spark
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
-
 import org.apache.kyuubi.{Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
-import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
+import org.apache.kyuubi.server.MiniKube
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
 
 abstract class SparkOnKubernetesSuiteBase
