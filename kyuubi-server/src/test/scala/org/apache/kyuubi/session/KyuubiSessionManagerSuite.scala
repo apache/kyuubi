@@ -19,11 +19,16 @@ package org.apache.kyuubi.session
 
 import java.util.UUID
 
+import scala.collection.JavaConverters._
+import scala.concurrent.duration._
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_BATCH_STATIC_SECRET_ID
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.server.api.v1.BatchRequest
 
 class KyuubiSessionManagerSuite extends KyuubiFunSuite {
   private val staticSecretId = UUID.randomUUID()
@@ -49,6 +54,36 @@ class KyuubiSessionManagerSuite extends KyuubiFunSuite {
   }
 
   test("open batch session") {
-    val batchSession = sessionManager
+    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
+
+    val batchRequest = BatchRequest(
+      "spark",
+      sparkProcessBuilder.mainResource.get,
+      "kyuubi",
+      sparkProcessBuilder.mainClass,
+      List.empty[String].asJava,
+      List.empty[String].asJava,
+      "spark-batch-submission",
+      Map("spark.master" -> "yarn"),
+      List.empty[String].asJava)
+
+    val sessionHandle = sessionManager.openBatchSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
+      batchRequest.proxyUser,
+      "passwd",
+      "localhost",
+      batchRequest.conf,
+      batchRequest)
+
+    assert(sessionHandle.identifier.secretId === staticSecretId)
+    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+
+    eventually(timeout(3.minutes), interval(500.milliseconds)) {
+      val applicationIdAndUrl = session.batchJobSubmissionOp.appIdAndTrackingUrl
+      assert(applicationIdAndUrl.isDefined)
+      assert(applicationIdAndUrl.exists(_._1.startsWith("application_")))
+      assert(applicationIdAndUrl.exists(_._2.nonEmpty))
+    }
+    sessionManager.closeSession(sessionHandle)
   }
 }

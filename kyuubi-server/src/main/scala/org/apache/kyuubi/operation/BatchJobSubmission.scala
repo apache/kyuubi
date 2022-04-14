@@ -46,7 +46,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   private var builder: ProcBuilder = _
 
   @volatile
-  private var appIdAndTrackingUrl: Option[(String, String)] = None
+  private[kyuubi] var appIdAndTrackingUrl: Option[(String, String)] = None
 
   private var resultFetched: Boolean = _
 
