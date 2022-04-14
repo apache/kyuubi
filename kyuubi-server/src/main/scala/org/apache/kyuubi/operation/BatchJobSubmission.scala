@@ -53,7 +53,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   private val applicationCheckInterval =
     session.sessionConf.get(KyuubiConf.SESSION_BATCH_APPLICATION_CHECK_INTERVAL)
   private val applicationCheckExecutor =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor("application-checker")
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"application-checker-${session.batchId}")
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
