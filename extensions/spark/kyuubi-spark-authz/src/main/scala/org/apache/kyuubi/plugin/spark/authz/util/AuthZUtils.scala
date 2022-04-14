@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz.util
 
 import scala.util.{Failure, Success, Try}
 
-import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
@@ -72,49 +71,5 @@ private[authz] object AuthZUtils {
 
   def getDatasourceTable(plan: LogicalPlan): Option[CatalogTable] = {
     getFieldVal[Option[CatalogTable]](plan, "catalogTable")
-  }
-
-  def hash(value: String): String = {
-    if (value == null) {
-      null
-    } else {
-      DigestUtils.md2Hex(value)
-    }
-  }
-
-  private def doMask(value: String): String = {
-    value.map { c =>
-      Character.getType(c) match {
-        case Character.UPPERCASE_LETTER => 'X'
-        case Character.LOWERCASE_LETTER => 'x'
-        case Character.DECIMAL_DIGIT_NUMBER => 'n'
-        case _ => c
-      }
-    }
-  }
-  def mask(value: String): String = {
-    if (value == null) {
-      null
-    } else {
-      doMask(value)
-    }
-  }
-
-  def mask_show_first_n(value: String): String = {
-    if (value == null) {
-      null
-    } else {
-      val (l, r) = value.splitAt(4)
-      l + doMask(r)
-    }
-  }
-
-  def mask_show_last_n(value: String): String = {
-    if (value == null) {
-      null
-    } else {
-      val (l, r) = value.splitAt(value.length - 4)
-      l + doMask(r)
-    }
   }
 }

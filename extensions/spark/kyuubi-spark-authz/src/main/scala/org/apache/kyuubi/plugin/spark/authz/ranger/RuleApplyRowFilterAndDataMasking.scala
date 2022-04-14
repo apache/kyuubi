@@ -29,33 +29,22 @@ import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
-  spark.udf.register("mask", (value: String) => mask(value))
-  spark.udf.register("mask_hash", (value: String) => hash(value))
-  spark.udf.register(
-    "mask_show_first_n",
-    (value: String, _: Int, _: String, _: String, _: String, _: Int, _: String) =>
-      mask_show_first_n(value))
-  spark.udf.register(
-    "mask_show_last_n",
-    (value: String, _: Int, _: String, _: String, _: String, _: Int, _: String) =>
-      mask_show_last_n(value))
-
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan transformUp {
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
-        applyFilterAndMaster(hiveTableRelation, table, spark)
+        applyFilterAndMasking(hiveTableRelation, table, spark)
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         val table = getDatasourceTable(logicalRelation)
         if (table.isEmpty) {
           logicalRelation
         } else {
-          applyFilterAndMaster(logicalRelation, table.get, spark)
+          applyFilterAndMasking(logicalRelation, table.get, spark)
         }
     }
   }
 
-  private def applyFilterAndMaster(
+  private def applyFilterAndMasking(
       plan: LogicalPlan,
       table: CatalogTable,
       spark: SparkSession): LogicalPlan = {
@@ -75,7 +64,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         attr
       } else {
         val maskExpr = parse(maskExprStr.get)
-        Alias(maskExpr, attr.name)(attr.exprId)
+        Alias(maskExpr, attr.name)()
       }
     }
 

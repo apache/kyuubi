@@ -44,6 +44,25 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
         }
       } else if (result.getMaskTypeDef != null) {
         result.getMaskTypeDef.getName match {
+          case "MASK" =>
+            "regexp_replace(" +
+              s"regexp_replace(" +
+              s"regexp_replace($col, '[A-Z]', 'X'), " +
+              s"'[a-z]', 'x'), " +
+              s"'[0-9]', 'n')"
+          case "MASK_SHOW_FIRST_4" =>
+            "regexp_replace(" +
+              s"regexp_replace(" +
+              s"regexp_replace($col, '[A-Z]', 'X', 5), " +
+              s"'[a-z]', 'x', 5), " +
+              s"'[0-9]', 'n', 5)"
+          case "MASK_SHOW_LAST_4" =>
+            "reverse(regexp_replace(" +
+              s"regexp_replace(" +
+              s"regexp_replace(reverse($col), '[A-Z]', 'X', 5), " +
+              s"'[a-z]', 'x', 5), " +
+              s"'[0-9]', 'n', 5))"
+          case "MASK_HASH" => s"md5(cast($col as string))"
           case "MASK_DATE_SHOW_YEAR" => s"date_trunc('YEAR', $col)"
           case _ => result.getMaskTypeDef.getTransformer match {
               case transformer if transformer != null && transformer.nonEmpty =>

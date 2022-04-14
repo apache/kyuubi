@@ -46,12 +46,17 @@ class SparkRangerAdminPluginSuite extends KyuubiFunSuite {
       val are = AccessResource(ObjectType.COLUMN, "default", "src", column)
       AccessRequest(are, ugi, OperationType.QUERY, AccessType.SELECT)
     }
-    assert(getMaskingExpr(buildAccessRequest(bob, "value1")).get === "mask_hash(value1)")
-    assert(getMaskingExpr(buildAccessRequest(bob, "value2")).get === "mask(value2)")
+    assert(getMaskingExpr(buildAccessRequest(bob, "value1")).get === "md5(cast(value1 as string))")
+    assert(getMaskingExpr(buildAccessRequest(bob, "value2")).get ===
+      "regexp_replace(regexp_replace(regexp_replace(value2, '[A-Z]', 'X'), '[a-z]', 'x')," +
+      " '[0-9]', 'n')")
     assert(getMaskingExpr(buildAccessRequest(bob, "value3")).get ===
-      "mask_show_first_n(value3, 4, 'x', 'x', 'x', -1, '1')")
+      "regexp_replace(regexp_replace(regexp_replace(value3, '[A-Z]', 'X', 5), '[a-z]', 'x', 5)," +
+      " '[0-9]', 'n', 5)")
     assert(getMaskingExpr(buildAccessRequest(bob, "value4")).get === "date_trunc('YEAR', value4)")
-
+    assert(getMaskingExpr(buildAccessRequest(bob, "value5")).get ===
+      "reverse(regexp_replace(regexp_replace(regexp_replace(reverse(value5), '[A-Z]', 'X', 5)," +
+      " '[a-z]', 'x', 5), '[0-9]', 'n', 5))")
     Seq("admin", "alice").foreach { user =>
       val ugi = UserGroupInformation.createRemoteUser(user)
       val maybeString = getMaskingExpr(buildAccessRequest(ugi, "value1"))
