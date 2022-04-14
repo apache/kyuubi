@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.lang3.{JavaVersion, SystemUtils}
 
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{COLUMN_NAME, FUNCTION_CAT, FUNCTION_NAME, FUNCTION_SCHEM, REMARKS, SPECIFIC_NAME, TABLE_CAT, TABLE_CATALOG, TABLE_NAME, TABLE_SCHEM, TABLE_TYPE, TYPE_NAME}
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 /**
  * hive tests disabled for JAVA 11
@@ -327,6 +327,104 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
       assert(metaData.getColumnType(1) === java.sql.Types.INTEGER)
       assert(metaData.getPrecision(1) === 10)
       assert(metaData.getScale(1) === 0)
+    }
+  }
+
+  test("test getTypeInfo") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
+    withJdbcStatement() { statement =>
+      val typeInfo = statement.getConnection.getMetaData.getTypeInfo
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "VOID")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.NULL)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "BOOLEAN")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.BOOLEAN)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "TINYINT")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TINYINT)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "SMALLINT")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.SMALLINT)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "INT")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.INTEGER)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "BIGINT")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.BIGINT)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "FLOAT")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.FLOAT)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "DOUBLE")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.DOUBLE)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "STRING")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.VARCHAR)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "CHAR")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.CHAR)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "VARCHAR")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.VARCHAR)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "DATE")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.DATE)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "TIMESTAMP")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TIMESTAMP)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "TIMESTAMP WITH LOCAL TIME ZONE")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "INTERVAL_YEAR_MONTH")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "INTERVAL_DAY_TIME")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "BINARY")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.BINARY)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "DECIMAL")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.DECIMAL)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "ARRAY")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.ARRAY)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "MAP")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.JAVA_OBJECT)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "STRUCT")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.STRUCT)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "UNIONTYPE")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === "USER_DEFINED")
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
     }
   }
 }
