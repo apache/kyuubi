@@ -19,6 +19,7 @@ package org.apache.kyuubi.kubernetes.test.spark
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
+
 import org.apache.kyuubi.{Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
