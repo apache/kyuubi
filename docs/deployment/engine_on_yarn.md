@@ -179,3 +179,10 @@ $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi
 
 For experiment use, we recommend deploying Kyuubi Flink SQL engine in [Session Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#session-mode).
 At present, [Application Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#application-mode) and [Per-Job Mode (deprecated)](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#per-job-mode-deprecated) are not supported for Flink engine.
+
+### Kerberos
+
+As Kyuubi Flink SQL engine wraps the Flink SQL client that currently does not support [Flink Kerberos Configuration](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/#security-kerberos-login-keytab),
+so `security.kerberos.login.keytab` and `security.kerberos.login.principal` should not use now.
+
+Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](settings.html#kinit).
