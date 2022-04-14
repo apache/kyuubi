@@ -61,7 +61,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
       List.empty[String].asJava,
       List.empty[String].asJava,
       "spark-batch-submission",
-      Map("spark.master" -> "yarn"),
+      Map("spark.master" -> "yarn", KyuubiConf.ENGINE_SPARK_MAX_LIFETIME.key -> "5000"),
       List.empty[String].asJava)
 
     val sessionHandle = sessionManager.openBatchSession(
