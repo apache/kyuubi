@@ -31,7 +31,7 @@ import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.api.v1.{BatchRequest, BatchType}
+import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThreadUtils
 
@@ -83,8 +83,8 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   }
 
   private def submitBatchJob(): Unit = {
-    builder = BatchType.withName(batchRequest.batchType.toUpperCase(Locale.ROOT)) match {
-      case BatchType.SPARK =>
+    builder = batchRequest.batchType.toUpperCase(Locale.ROOT) match {
+      case "SPARK" =>
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
