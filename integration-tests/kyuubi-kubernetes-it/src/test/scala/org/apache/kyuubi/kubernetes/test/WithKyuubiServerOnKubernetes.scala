@@ -57,8 +57,6 @@ trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
     val kyuubiServerIp = MiniKube.getIp
     val kyuubiServerPort =
       kyuubiServer.getSpec.getContainers.get(0).getPorts.get(0).getHostPort
-    val _jdbcUrl = s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;"
-    assert(_jdbcUrl != null, "Failed to get Kyuubi server")
-    _jdbcUrl
+    s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;"
   }
 }
