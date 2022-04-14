@@ -24,7 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.{EventBus, KyuubiEvent, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
+import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.api.v1.BatchRequest
 
 class KyuubiBatchSessionImpl(
@@ -38,6 +38,7 @@ class KyuubiBatchSessionImpl(
     batchRequest: BatchRequest)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
   override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
+  val batchId: String = handle.identifier.toString
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(this, batchRequest)

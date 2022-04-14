@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.operation
 
 import java.util.UUID
 
@@ -24,28 +24,25 @@ import scala.concurrent.duration._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.WithKyuubiServerOnYarn
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_BATCH_STATIC_SECRET_ID
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.server.api.v1.BatchRequest
+import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 
-class KyuubiSessionManagerSuite extends KyuubiFunSuite {
+class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
   private val staticSecretId = UUID.randomUUID()
-  private val conf = KyuubiConf().set(SESSION_BATCH_STATIC_SECRET_ID, staticSecretId.toString)
-  private var sessionManager: KyuubiSessionManager = _
 
-  override def beforeAll(): Unit = {
-    sessionManager = new KyuubiSessionManager()
-    sessionManager.initialize(conf)
-    sessionManager.start()
-    super.beforeAll()
+  override protected val connectionConf: Map[String, String] = Map.empty
+
+  override protected val kyuubiServerConf: KyuubiConf = {
+    // TODO KYUUBI #745
+    KyuubiConf().set(SESSION_BATCH_STATIC_SECRET_ID, staticSecretId.toString)
   }
 
-  override def afterAll(): Unit = {
-    sessionManager.stop()
-    super.afterAll()
-  }
+  private def sessionManager(): KyuubiSessionManager =
+    server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   test("static batch session secret id") {
     val protocolVersion = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1

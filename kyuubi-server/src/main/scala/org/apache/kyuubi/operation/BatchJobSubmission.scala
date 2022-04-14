@@ -18,7 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.nio.ByteBuffer
-import java.util.{ArrayList => JArrayList}
+import java.util.{ArrayList => JArrayList, Locale}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
@@ -84,12 +84,12 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   }
 
   private def submitBatchJob(): Unit = {
-    builder = BatchType.withName(batchRequest.batchType) match {
+    builder = BatchType.withName(batchRequest.batchType.toUpperCase(Locale.ROOT)) match {
       case BatchType.SPARK =>
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
-          session.handle.identifier.toString,
+          session.batchId,
           batchRequest,
           getOperationLog)
 
