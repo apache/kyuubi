@@ -22,7 +22,7 @@
     <parent>
         <artifactId>integration-tests</artifactId>
         <groupId>org.apache.kyuubi</groupId>
-        <version>1.5.1-SNAPSHOT</version>
+        <version>1.5.1-incubating</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
