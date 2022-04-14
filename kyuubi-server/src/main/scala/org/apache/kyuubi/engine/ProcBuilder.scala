@@ -148,12 +148,12 @@ trait ProcBuilder {
         val maxErrorSize = conf.get(KyuubiConf.ENGINE_ERROR_MAX_SIZE)
         while (true) {
           if (reader.ready()) {
-            var line: String = reader.readLine.trim
+            var line: String = reader.readLine()
             if (containsException(line) &&
               !line.contains("at ") && !line.startsWith("Caused by:")) {
               val sb = new StringBuilder(line)
               error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
-              line = reader.readLine().trim
+              line = reader.readLine()
               while (sb.length < maxErrorSize && line != null &&
                 (containsException(line) ||
                   line.startsWith("\tat ") ||
