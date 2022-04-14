@@ -19,7 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.plugin.spark.authz.util.RuleEliminateRowFilterMarker
+import org.apache.kyuubi.plugin.spark.authz.util.RuleEliminateMarker
 
 /**
  * ACL Management for Apache Spark SQL with Apache Ranger, enabling:
@@ -39,8 +39,8 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
   SparkRangerAdminPlugin.init()
 
   override def apply(v1: SparkSessionExtensions): Unit = {
-    v1.injectResolutionRule(new RuleApplyRowFilter(_))
-    v1.injectPostHocResolutionRule(_ => new RuleEliminateRowFilterMarker())
+    v1.injectResolutionRule(new RuleApplyRowFilterAndDataMasking(_))
+    v1.injectPostHocResolutionRule(_ => new RuleEliminateMarker())
     v1.injectOptimizerRule(new RuleAuthorization(_))
   }
 }

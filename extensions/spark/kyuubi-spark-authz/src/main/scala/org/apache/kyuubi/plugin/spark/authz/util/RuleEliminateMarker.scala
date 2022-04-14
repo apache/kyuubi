@@ -20,8 +20,8 @@ package org.apache.kyuubi.plugin.spark.authz.util
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
-class RuleEliminateRowFilterMarker extends Rule[LogicalPlan] {
+class RuleEliminateMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp { case rf: RowFilterMarker => rf.table }
+    plan.transformUp { case rf: RowFilterAndDataMaskingMarker => rf.table }
   }
 }

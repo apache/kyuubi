@@ -21,7 +21,7 @@
 
 - [x] Column-level fine-grained authorization
 - [x] Row-level fine-grained authorization, a.k.a. Row-level filtering
-- [ ] Data masking
+- [x] Data masking
 
 ## Build
 

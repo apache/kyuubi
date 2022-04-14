@@ -39,4 +39,25 @@ class SparkRangerAdminPluginSuite extends KyuubiFunSuite {
       assert(maybeString.isEmpty)
     }
   }
+
+  test("get data masker") {
+    val bob = UserGroupInformation.createRemoteUser("bob")
+    def buildAccessRequest(ugi: UserGroupInformation, column: String): AccessRequest = {
+      val are = AccessResource(ObjectType.COLUMN, "default", "src", column)
+      AccessRequest(are, ugi, OperationType.QUERY, AccessType.SELECT)
+    }
+    assert(getMaskingExpr(buildAccessRequest(bob, "value1")).get === "md5(cast(value1 as string))")
+    assert(getMaskingExpr(buildAccessRequest(bob, "value2")).get ===
+      "regexp_replace(regexp_replace(regexp_replace(value2, '[A-Z]', 'X'), '[a-z]', 'x')," +
+      " '[0-9]', 'n')")
+    assert(getMaskingExpr(buildAccessRequest(bob, "value3")).get contains "regexp_replace")
+    assert(getMaskingExpr(buildAccessRequest(bob, "value4")).get === "date_trunc('YEAR', value4)")
+    assert(getMaskingExpr(buildAccessRequest(bob, "value5")).get contains "regexp_replace")
+
+    Seq("admin", "alice").foreach { user =>
+      val ugi = UserGroupInformation.createRemoteUser(user)
+      val maybeString = getMaskingExpr(buildAccessRequest(ugi, "value1"))
+      assert(maybeString.isEmpty)
+    }
+  }
 }

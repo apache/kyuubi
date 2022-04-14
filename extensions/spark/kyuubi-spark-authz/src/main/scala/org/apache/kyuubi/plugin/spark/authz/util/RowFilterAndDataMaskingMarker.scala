@@ -20,6 +20,6 @@ package org.apache.kyuubi.plugin.spark.authz.util
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 
-case class RowFilterMarker(table: LogicalPlan) extends LeafNode {
+case class RowFilterAndDataMaskingMarker(table: LogicalPlan) extends LeafNode {
   override def output: Seq[Attribute] = table.output
 }
