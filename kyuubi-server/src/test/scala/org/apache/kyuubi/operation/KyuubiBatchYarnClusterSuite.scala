@@ -26,7 +26,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.WithKyuubiServerOnYarn
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.BATCH_STATIC_SECRET_ID
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
@@ -37,7 +37,6 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
   override protected val connectionConf: Map[String, String] = Map.empty
 
   override protected val kyuubiServerConf: KyuubiConf = {
-    // TODO KYUUBI #745
     KyuubiConf().set(BATCH_STATIC_SECRET_ID, staticSecretId.toString)
   }
 
@@ -61,7 +60,10 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
       List.empty[String].asJava,
       List.empty[String].asJava,
       "spark-batch-submission",
-      Map("spark.master" -> "yarn", KyuubiConf.ENGINE_SPARK_MAX_LIFETIME.key -> "5000"),
+      Map(
+        "spark.master" -> "yarn",
+        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
+        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
       List.empty[String].asJava)
 
     val sessionHandle = sessionManager.openBatchSession(
@@ -74,12 +76,21 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
 
     assert(sessionHandle.identifier.secretId === staticSecretId)
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(500.milliseconds)) {
-      val applicationIdAndUrl = session.batchJobSubmissionOp.appIdAndUrl
+      val applicationIdAndUrl = batchJobSubmissionOp.appIdAndUrl
       assert(applicationIdAndUrl.isDefined)
       assert(applicationIdAndUrl.exists(_._1.startsWith("application_")))
       assert(applicationIdAndUrl.exists(_._2.nonEmpty))
+
+      assert(batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
+      val resultColumns = batchJobSubmissionOp.getNextRowSet(FetchOrientation.FETCH_NEXT, 1)
+        .getColumns.asScala
+      val appId = resultColumns.apply(0).getStringVal.getValues.asScala.apply(0)
+      val url = resultColumns.apply(1).getStringVal.getValues.asScala.apply(0)
+      assert(appId === batchJobSubmissionOp.appIdAndUrl.get._1)
+      assert(url === batchJobSubmissionOp.appIdAndUrl.get._2)
     }
     sessionManager.closeSession(sessionHandle)
   }
