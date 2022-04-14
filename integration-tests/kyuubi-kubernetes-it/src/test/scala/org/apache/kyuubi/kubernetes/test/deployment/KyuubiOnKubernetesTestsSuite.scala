@@ -32,7 +32,6 @@ import org.apache.kyuubi.operation.SparkQueryTests
  *  ------------         -----------------------------------------------------
  */
 class KyuubiOnKubernetesTestsSuite extends WithKyuubiServerOnKubernetes with SparkQueryTests {
-  override protected val kyuubiServerConf: KyuubiConf = KyuubiConf()
   override protected val connectionConf: Map[String, String] = Map(
     "spark.master" -> "local",
     "spark.executor.instances" -> "1")
