@@ -72,9 +72,13 @@ trait ProcBuilder {
       }
     }.orElse {
       // 2. get the main resource jar from system build default
-      env.get(KYUUBI_HOME)
-        .map { Paths.get(_, "externals", "engines", shortName, jarName) }
-        .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+      env.get(KYUUBI_HOME).toSeq
+        .flatMap { p =>
+          Seq(
+            Paths.get(p, "externals", "engines", shortName, jarName),
+            Paths.get(p, "externals", module, "target", jarName))
+        }
+        .find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
     }.orElse {
       // 3. get the main resource from dev environment
       val cwd = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")
