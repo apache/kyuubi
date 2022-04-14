@@ -111,8 +111,6 @@ case class Field(dataType: String, value: Any)
  * @param resource the main resource jar, required.
  * @param proxyUser the proxy user, optional.
  * @param className the main class name, required.
- * @param jars comma-separated list of jars to include, optional.
- * @param files comma-separated list of files to include, optional.
  * @param name a name of your batch job, optional.
  * @param conf arbitrary configuration properties, optional.
  * @param args comma-separated list of batch job arguments, optional.
@@ -122,8 +120,6 @@ case class BatchRequest(
     resource: String,
     proxyUser: String,
     className: String,
-    jars: java.util.List[String],
-    files: java.util.List[String],
     name: String,
     conf: Map[String, String],
     args: java.util.List[String])

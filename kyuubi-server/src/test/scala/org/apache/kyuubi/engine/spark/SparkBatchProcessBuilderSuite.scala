@@ -57,8 +57,6 @@ class SparkBatchProcessBuilderSuite extends KyuubiFunSuite {
       sparkProcessBuilder.mainResource.get,
       "kyuubi",
       sparkProcessBuilder.mainClass,
-      List.empty[String].asJava,
-      List.empty[String].asJava,
       "spark-batch-submission",
       Map("spark.master" -> "yarn"),
       List.empty[String].asJava)
