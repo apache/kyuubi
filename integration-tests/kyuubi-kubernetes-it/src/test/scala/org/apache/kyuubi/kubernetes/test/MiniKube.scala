@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server
+package org.apache.kyuubi.kubernetes.test
 
 import io.fabric8.kubernetes.client.{Config, DefaultKubernetesClient}
 

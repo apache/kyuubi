@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi
+package org.apache.kyuubi.kubernetes.test
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.MiniKube
 
 trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
   protected val kyuubiServerConf: KyuubiConf

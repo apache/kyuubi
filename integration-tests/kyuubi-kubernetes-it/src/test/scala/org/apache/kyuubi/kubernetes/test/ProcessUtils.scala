@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server
+package org.apache.kyuubi.kubernetes.test
 
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
