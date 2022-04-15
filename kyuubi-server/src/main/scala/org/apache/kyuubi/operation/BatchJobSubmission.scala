@@ -19,7 +19,6 @@ package org.apache.kyuubi.operation
 
 import java.nio.ByteBuffer
 import java.util.{ArrayList => JArrayList, Locale}
-import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
@@ -33,7 +32,7 @@ import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FE
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.ThriftUtils
 
 class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest)
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
@@ -53,8 +52,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private val applicationCheckInterval =
     session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL)
-  private val applicationCheckExecutor =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"application-checker-${session.batchId}")
+  private var applicationCheckerThread: Thread = _
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
@@ -110,9 +108,9 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   }
 
   private def startApplicationChecker(): Unit = {
-    val checker = new Runnable {
+    applicationCheckerThread = new Thread(s"application-checker-${session.batchId}") {
       override def run(): Unit = {
-        if (appIdAndUrl.isEmpty) {
+        while (appIdAndUrl.isEmpty) {
           try {
             builder match {
               case sparkBatchProcessBuilder: SparkBatchProcessBuilder =>
@@ -126,35 +124,24 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
           } catch {
             case e: Exception => error(s"Failed to check batch application", e)
           }
+          Thread.sleep(applicationCheckInterval)
         }
       }
     }
-
-    applicationCheckExecutor.scheduleAtFixedRate(
-      checker,
-      applicationCheckInterval,
-      applicationCheckInterval,
-      TimeUnit.MILLISECONDS)
+    applicationCheckerThread.start()
   }
 
   override def getResultSetSchema: TTableSchema = {
-    val tAppIdColumnDesc = new TColumnDesc()
-    tAppIdColumnDesc.setColumnName("ApplicationId")
-    val appIdDesc = new TTypeDesc
-    appIdDesc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(TTypeId.STRING_TYPE)))
-    tAppIdColumnDesc.setTypeDesc(appIdDesc)
-    tAppIdColumnDesc.setPosition(0)
-
-    val tUrlColumnDesc = new TColumnDesc()
-    tUrlColumnDesc.setColumnName("URL")
-    val urlDesc = new TTypeDesc
-    urlDesc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(TTypeId.STRING_TYPE)))
-    tUrlColumnDesc.setTypeDesc(urlDesc)
-    tUrlColumnDesc.setPosition(1)
-
     val schema = new TTableSchema()
-    schema.addToColumns(tAppIdColumnDesc)
-    schema.addToColumns(tUrlColumnDesc)
+    Seq("ApplicationId", "URL").zipWithIndex.foreach { case (colName, position) =>
+      val tColumnDesc = new TColumnDesc()
+      tColumnDesc.setColumnName(colName)
+      val tTypeDesc = new TTypeDesc()
+      tTypeDesc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(TTypeId.STRING_TYPE)))
+      tColumnDesc.setTypeDesc(tTypeDesc)
+      tColumnDesc.setPosition(position)
+      schema.addToColumns(tColumnDesc)
+    }
     schema
   }
 
@@ -191,7 +178,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
       resultFetched = true
       resultSet
     } else {
-      new TRowSet(0, new JArrayList[TRow](0))
+      ThriftUtils.EMPTY_ROW_SET
     }
   }
 
@@ -200,7 +187,10 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
       if (builder != null) {
         builder.close()
       }
-      ThreadUtils.shutdown(applicationCheckExecutor)
+      if (applicationCheckerThread != null) {
+        applicationCheckerThread.interrupt()
+        applicationCheckerThread = null
+      }
     }
     super.close()
   }

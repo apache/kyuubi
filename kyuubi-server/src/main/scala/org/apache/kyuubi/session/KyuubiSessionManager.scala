@@ -149,6 +149,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 }
 
 object KyuubiSessionManager {
+
   /**
    * The static session secret UUID used for batch session handle.
    * To keep compatibility, please do not change it.
