@@ -21,8 +21,9 @@ arch: arm64-graviton2
 group: edge
 virt: vm
 env:
-  - SPARK_LOCAL_IP=localhost
-  - JAVA_HOME=/usr/lib/jvm/adoptopenjdk-8-hotspot-arm64
+  global:
+    - SPARK_LOCAL_IP=localhost
+    - JAVA_HOME=/usr/lib/jvm/adoptopenjdk-8-hotspot-arm64
 
 branches:
   only:
