@@ -43,11 +43,12 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
     val user = userIpAddress.user
     val ipAddress = userIpAddress.ipAddress
     // increment userIpAddress count
-    if (ipAddressLimit > 0 && StringUtils.isNotBlank(user) && StringUtils.isNotBlank(ipAddress)) {
+    if (userIpAddressLimit > 0 && StringUtils.isNotBlank(user) &&
+      StringUtils.isNotBlank(ipAddress)) {
       incrLimitCount(
         s"$user:$ipAddress",
         userIpAddressLimit,
-        s"Connection limit per user:ipaddress reached" +
+        "Connection limit per user:ipaddress reached" +
           s" (user:ipaddress: $user:$ipAddress limit: $userIpAddressLimit)")
     }
     // increment user count
@@ -78,7 +79,8 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
       decrLimitCount(ipAddress)
     }
     // decrement userIpAddress count
-    if (ipAddressLimit > 0 && StringUtils.isNotBlank(user) && StringUtils.isNotBlank(ipAddress)) {
+    if (userIpAddressLimit > 0 && StringUtils.isNotBlank(user) &&
+      StringUtils.isNotBlank(ipAddress)) {
       decrLimitCount(s"$user:$ipAddress")
     }
   }
