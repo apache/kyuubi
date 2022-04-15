@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.LongAdder
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
-import org.apache.kyuubi.config.KyuubiConf
 
 class SessionLimiterSuite extends KyuubiFunSuite {
 
@@ -33,7 +32,10 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     val ipAddressLimit = 20
     val userIpAddressLimit = 10
     val threadPool = Executors.newFixedThreadPool(10)
-    def checkLimit(session: Session, expectedIndex: Int, expectedErrorMsg: String): Unit = {
+    def checkLimit(
+        userIpAddress: UserIpAddress,
+        expectedIndex: Int,
+        expectedErrorMsg: String): Unit = {
       val limiter = SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit)
       val successAdder = new LongAdder
       val expectedErrorAdder = new LongAdder
@@ -42,7 +44,7 @@ class SessionLimiterSuite extends KyuubiFunSuite {
       for (i <- 0 until count) {
         threadPool.execute(() => {
           try {
-            limiter.incrSession(session)
+            limiter.increment(userIpAddress)
             successAdder.increment()
           } catch {
             case e: KyuubiSQLException if e.getMessage === expectedErrorMsg =>
@@ -60,19 +62,19 @@ class SessionLimiterSuite extends KyuubiFunSuite {
 
     // user limit
     checkLimit(
-      UserIpSession(user, null),
+      UserIpAddress(user, null),
       userLimit,
       s"Connection limit per user reached (user: $user limit: $userLimit)")
 
     // ipAddress limit
     checkLimit(
-      UserIpSession(null, ipAddress),
+      UserIpAddress(null, ipAddress),
       ipAddressLimit,
       s"Connection limit per ipaddress reached (ipaddress: $ipAddress limit: $ipAddressLimit)")
 
     // userIpAddress limit
     checkLimit(
-      UserIpSession(user, ipAddress),
+      UserIpAddress(user, ipAddress),
       userIpAddressLimit,
       s"Connection limit per user:ipaddress reached" +
         s" (user:ipaddress: $user:$ipAddress limit: $userIpAddressLimit)")
@@ -87,20 +89,11 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     val userIpAddressLimit = 10
     val limiter = SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit)
     for (i <- 0 until 50) {
-      val session = UserIpSession(user, ipAddress)
-      limiter.incrSession(session)
-      limiter.decrSession(session)
+      val userIpAddress = UserIpAddress(user, ipAddress)
+      limiter.increment(userIpAddress)
+      limiter.decrement(userIpAddress)
     }
     limiter.asInstanceOf[SessionLimiterImpl].counters().asScala.values
       .foreach(c => assert(c.get() == 0))
-  }
-
-  private object UserIpSession {
-    private val sessionManager = new NoopSessionManager
-    sessionManager.initialize(KyuubiConf())
-
-    def apply(user: String, ipAddress: String): Session = {
-      new NoopSessionImpl(null, user, null, ipAddress, Map.empty, sessionManager)
-    }
   }
 }

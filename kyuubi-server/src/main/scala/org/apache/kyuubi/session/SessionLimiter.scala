@@ -25,9 +25,11 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.kyuubi.KyuubiSQLException
 
 trait SessionLimiter {
-  def incrSession(session: Session): Unit
-  def decrSession(session: Session): Unit
+  def increment(userIpAddress: UserIpAddress): Unit
+  def decrement(userIpAddress: UserIpAddress): Unit
 }
+
+case class UserIpAddress(user: String, ipAddress: String)
 
 class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit: Int)
   extends SessionLimiter {
@@ -37,9 +39,9 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
 
   private[session] def counters(): java.util.Map[String, AtomicInteger] = _counters
 
-  override def incrSession(session: Session): Unit = {
-    val user = session.user
-    val ipAddress = session.ipAddress
+  override def increment(userIpAddress: UserIpAddress): Unit = {
+    val user = userIpAddress.user
+    val ipAddress = userIpAddress.ipAddress
     // increment userIpAddress count
     if (ipAddressLimit > 0 && StringUtils.isNotBlank(user) && StringUtils.isNotBlank(ipAddress)) {
       incrLimitCount(
@@ -64,9 +66,9 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
     }
   }
 
-  override def decrSession(session: Session): Unit = {
-    val user = session.user
-    val ipAddress = session.ipAddress
+  override def decrement(userIpAddress: UserIpAddress): Unit = {
+    val user = userIpAddress.user
+    val ipAddress = userIpAddress.ipAddress
     // decrement user count
     if (userLimit > 0 && StringUtils.isNotBlank(user)) {
       decrLimitCount(user)

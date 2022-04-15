@@ -69,12 +69,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   private val timeoutChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
 
-  @volatile private var _limiter: Option[SessionLimiter] = None
-
-  protected def setSessionLimiter(limiter: SessionLimiter): Unit = {
-    _limiter = Some(limiter)
-  }
-
   protected def isServer: Boolean
 
   private var execPool: ThreadPoolExecutor = _
@@ -98,7 +92,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       conf: Map[String, String]): SessionHandle = {
     info(s"Opening session for $user@$ipAddress")
     val session = createSession(protocol, user, password, ipAddress, conf)
-    _limiter.foreach(_.incrSession(session))
     try {
       val handle = session.handle
       session.open()
@@ -127,7 +120,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     info(s"$sessionHandle is closed, current opening sessions $getOpenSessionCount")
     session.close()
     deleteOperationLogSessionDir(sessionHandle)
-    _limiter.foreach(_.decrSession(session))
   }
 
   private def deleteOperationLogSessionDir(sessionHandle: SessionHandle): Unit = {
