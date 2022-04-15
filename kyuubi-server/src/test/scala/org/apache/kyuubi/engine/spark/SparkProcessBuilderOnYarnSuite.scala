@@ -34,7 +34,7 @@ class SparkProcessBuilderOnYarnSuite extends WithKyuubiServerOnYarn {
     "spark.master" -> "yarn",
     "spark.executor.instances" -> "1")
 
-  test("kill application") {
+  test("test kill application") {
     val engineRefId = UUID.randomUUID().toString
 
     conf.set(
