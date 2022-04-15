@@ -60,5 +60,5 @@ trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
     s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;"
   }
 
-  def getMiniKubeApiMaster : String = miniKubernetesClient.getMasterUrl.toString
+  def getMiniKubeApiMaster: String = miniKubernetesClient.getMasterUrl.toString
 }
