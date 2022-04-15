@@ -34,6 +34,7 @@ import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.api.v1.BatchRequest
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
+  import KyuubiSessionManager._
 
   def this() = this(classOf[KyuubiSessionManager].getSimpleName)
 
@@ -41,8 +42,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   val credentialsManager = new HadoopCredentialsManager()
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
-  lazy val staticBatchSecretId: UUID = conf.get(BATCH_STATIC_SECRET_ID)
-    .map(UUID.fromString).getOrElse(UUID.randomUUID())
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(credentialsManager)
@@ -134,7 +133,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def newBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(UUID.randomUUID(), staticBatchSecretId), protocol)
+    SessionHandle(HandleIdentifier(UUID.randomUUID(), STATIC_BATCH_SECRET_UUID), protocol)
   }
 
   override def start(): Unit = synchronized {
@@ -147,4 +146,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   override protected def isServer: Boolean = true
+}
+
+object KyuubiSessionManager {
+  /**
+   * The static session secret UUID used for batch session handle.
+   * To keep compatibility, please do not change it.
+   */
+  val STATIC_BATCH_SECRET_UUID: UUID = UUID.fromString("c2ee5b97-3ea0-41fc-ac16-9bd708ed8f38")
 }

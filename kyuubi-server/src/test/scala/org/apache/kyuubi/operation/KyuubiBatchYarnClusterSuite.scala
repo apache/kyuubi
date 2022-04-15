@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.UUID
-
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
@@ -32,22 +30,12 @@ import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 
 class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
-  private val staticSecretId = UUID.randomUUID()
-
   override protected val connectionConf: Map[String, String] = Map.empty
 
-  override protected val kyuubiServerConf: KyuubiConf = {
-    KyuubiConf().set(BATCH_STATIC_SECRET_ID, staticSecretId.toString)
-  }
+  override protected val kyuubiServerConf: KyuubiConf = KyuubiConf()
 
   private def sessionManager(): KyuubiSessionManager =
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
-
-  test("static batch session secret id") {
-    val protocolVersion = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1
-    val batchSessionHandle = sessionManager.newBatchSessionHandle(protocolVersion)
-    assert(batchSessionHandle.identifier.secretId === staticSecretId)
-  }
 
   test("open batch session") {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
@@ -72,7 +60,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
       batchRequest.conf,
       batchRequest)
 
-    assert(sessionHandle.identifier.secretId === staticSecretId)
+    assert(sessionHandle.identifier.secretId === KyuubiSessionManager.STATIC_BATCH_SECRET_UUID)
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
