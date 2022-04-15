@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.nio.file.Paths
 
 import scala.collection.mutable.ArrayBuffer
@@ -164,11 +164,20 @@ class SparkProcessBuilder(
     }
 
   override protected def shortName: String = "spark"
+
+  protected def getSparkDefaultsConf(): Map[String, String] = {
+    val sparkDefaultsConfFile = env.get(SPARK_CONF_DIR)
+      .orElse(env.get(SPARK_HOME).map(_ + File.separator + "conf"))
+      .map(_ + File.separator + SPARK_CONF_FILE_NAME)
+      .map(new File(_)).filter(_.exists())
+    Utils.getPropertiesFromFile(sparkDefaultsConfFile)
+  }
 }
 
 object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
+  final val MASTER_KEY = "spark.master"
 
   final private[spark] val CONF = "--conf"
   final private[spark] val CLASS = "--class"
@@ -178,4 +187,7 @@ object SparkProcessBuilder {
   final private[spark] val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
   final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
+  final private val SPARK_HOME = "SPARK_HOME"
+  final private val SPARK_CONF_DIR = "SPARK_CONF_DIR"
+  final private val SPARK_CONF_FILE_NAME = "spark-defaults.conf"
 }
