@@ -60,7 +60,7 @@ to format the Java and Scala code.
 You can run `dev/reformat` to format all Java and Scala code.
 
 
-## Append descriptions of  new configurations to settings.md
+## Append descriptions of new configurations to settings.md
 
 Kyuubi uses settings.md to explain available configurations.
 
