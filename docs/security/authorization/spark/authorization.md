@@ -15,7 +15,10 @@
  - limitations under the License.
  -->
 
-# ACL Management Guide
+# Kyuubi Authorization Plugin For Spark SQL
+
+<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" width="50%" align="right" />
+
 
 - [Authorization Modes](#1)
     - [Storage-Based Authorization](#1.1)

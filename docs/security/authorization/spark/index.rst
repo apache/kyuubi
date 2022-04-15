@@ -17,16 +17,13 @@
    :align: center
    :width: 25%
 
-Kyuubi Security Overview
-========================
-
-Securing Kyuubi involves enabling authentication(authn), authorization(authz) and encryption, etc.
+Kyuubi Spark AuthZ Plugin
+=========================
 
 .. toctree::
     :maxdepth: 2
 
-    Authentication <authentication>
-    Authorization <authorization/index>
-    kinit
-    hadoop_credentials_manager
-
+    Overview <overview>
+    Building <build>
+    Installing <install>
+    Authorization Plugin for Spark SQL <authorization>
