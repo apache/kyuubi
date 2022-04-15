@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import java.nio.file.Files
 
-import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils

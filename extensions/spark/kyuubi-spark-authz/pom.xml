@@ -240,10 +240,10 @@
         </dependency>
 
         <dependency>
+            <!-- for hive related test only -->
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-hive_${scala.binary.version}</artifactId>
             <scope>test</scope>
-            <!-- for hive related test only -->
         </dependency>
 
         <dependency>
@@ -283,6 +283,7 @@
                 <scala.binary.version>2.11</scala.binary.version>
                 <scala.version>2.11.12</scala.version>
                 <skipTests>true</skipTests>
+                <maven.plugin.scala.warn-unused>none</maven.plugin.scala.warn-unused>
                 <spark.version>2.4.8</spark.version>
             </properties>
         </profile>
