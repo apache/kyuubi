@@ -427,4 +427,19 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
       assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
     }
   }
+
+  test("test setClientInfo") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
+    withJdbcStatement() { statement =>
+      val res = statement.getConnection.getMetaData.getClientInfoProperties
+      assert(res.next())
+      assert(res.getString(1) === "ApplicationName")
+      assert(res.getInt("MAX_LEN") === 1000);
+      assert(!res.next());
+
+      val connection = statement.getConnection
+      connection.setClientInfo("ApplicationName", "test kyuubi hive jdbc")
+      assert(connection.getClientInfo("ApplicationName") == "test kyuubi hive jdbc")
+    }
+  }
 }

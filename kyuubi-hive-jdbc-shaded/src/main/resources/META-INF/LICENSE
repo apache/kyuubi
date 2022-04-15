@@ -219,6 +219,7 @@ com.google.guava:failureaccess
 com.google.guava:guava
 commons-codec:commons-codec
 commons-lang:commons-lang
+org.apache.commons:commons-lang3
 org.apache.curator:curator-framework
 org.apache.curator:curator-client
 org.apache.httpcomponents:httpclient
