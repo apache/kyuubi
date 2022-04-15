@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.hive.operation
 
+import org.apache.commons.lang3.{JavaVersion, SystemUtils}
+
 import org.apache.kyuubi.{HiveEngineTests, Utils}
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
@@ -38,6 +40,7 @@ class HiveOperationSuite extends HiveEngineTests {
   }
 
   test("test get query id") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
     withJdbcStatement("hive_engine_test") { statement =>
       statement.execute("CREATE TABLE hive_engine_test(id int, value string) stored as orc")
       statement.execute("INSERT INTO hive_engine_test SELECT 1, '2'")
