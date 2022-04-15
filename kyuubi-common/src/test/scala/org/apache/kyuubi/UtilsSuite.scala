@@ -22,8 +22,8 @@ import java.net.InetAddress
 import java.nio.file.{Files, Paths}
 import java.security.PrivilegedExceptionAction
 import java.util.Properties
-
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.config.KyuubiConf
 
 class UtilsSuite extends KyuubiFunSuite {
 
@@ -139,5 +139,13 @@ class UtilsSuite extends KyuubiFunSuite {
 
     val path2 = "/tmp/path2"
     assert(Utils.getAbsolutePathFromWork(path2).toString === path2)
+  }
+
+  test("test args parser") {
+    val args = Array[String]("--conf", "k1=v1", "--conf", " k2 = v2")
+    val conf = new KyuubiConf()
+    Utils.fromCommandLineArgs(args, conf)
+    assert(conf.getOption("k1").get == "v1")
+    assert(conf.getOption("k2").get == "v2")
   }
 }
