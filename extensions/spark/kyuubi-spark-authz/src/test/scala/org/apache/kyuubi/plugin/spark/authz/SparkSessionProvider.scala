@@ -31,10 +31,16 @@ trait SparkSessionProvider {
 
   protected val extension: SparkSessionExtensions => Unit = _ => Unit
   protected lazy val spark: SparkSession = {
+    val metastore = {
+      val path = Files.createTempDirectory("hms")
+      Files.delete(path)
+      path
+    }
     SparkSession.builder()
       .master("local")
       .config("spark.ui.enabled", "false")
       .config("spark.sql.catalogImplementation", catalogImpl)
+      .config("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
       .config(
         "spark.sql.warehouse.dir",
         Files.createTempDirectory("spark-warehouse").toString)
