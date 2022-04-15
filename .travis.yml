@@ -20,7 +20,9 @@ dist: focal
 arch: arm64-graviton2
 group: edge
 virt: vm
-env: SPARK_LOCAL_IP=localhost
+env:
+  - SPARK_LOCAL_IP=localhost
+  - JAVA_HOME=/usr/lib/jvm/java-8-oracle
 
 branches:
   only:
