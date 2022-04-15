@@ -82,11 +82,12 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   private def submitBatchJob(): Unit = {
     builder = Option(batchRequest.batchType).map(_.toUpperCase(Locale.ROOT)) match {
       case Some("SPARK") =>
+        val batchSparkConf = session.sessionConf.getBatchConf("spark")
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
           session.batchId,
-          batchRequest,
+          batchRequest.copy(conf = batchSparkConf ++ batchRequest.conf),
           getOperationLog)
 
       case _ =>
