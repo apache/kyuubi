@@ -26,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, ENGINE_TRINO_CONNECTION_URL}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, ENGINE_TRINO_CONNECTION_URL, ENGINE_TRINO_EXTRA_CLASSPATH, ENGINE_TRINO_JAVA_OPTIONS, ENGINE_TRINO_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.operation.log.OperationLog
@@ -56,7 +56,12 @@ class TrinoProcessBuilder(
     // or just leave it, because we can handle it at operation layer
     buffer += s"-D$KYUUBI_SESSION_USER_KEY=$proxyUser"
 
-    // TODO: add Kyuubi.engineEnv.TRINO_ENGINE_MEMORY or kyuubi.engine.trino.memory to configure
+    val memory = conf.get(ENGINE_TRINO_MEMORY)
+    buffer += s"-Xmx$memory"
+    val javaOptions = conf.get(ENGINE_TRINO_JAVA_OPTIONS)
+    if (javaOptions.isDefined) {
+      buffer += javaOptions.get
+    }
     // -Xmx5g
     // java options
     for ((k, v) <- conf.getAll) {
@@ -81,6 +86,9 @@ class TrinoProcessBuilder(
         classpathEntries.add(s"$parent${File.separator}*")
       }
     }
+
+    val extraCp = conf.get(ENGINE_TRINO_EXTRA_CLASSPATH)
+    extraCp.foreach(classpathEntries.add)
 
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass
