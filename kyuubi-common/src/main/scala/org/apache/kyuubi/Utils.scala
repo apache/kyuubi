@@ -17,17 +17,20 @@
 
 package org.apache.kyuubi
 
-import java.io.{File, IOException, InputStreamReader, PrintWriter, StringWriter}
+import java.io.{File, InputStreamReader, IOException, PrintWriter, StringWriter}
 import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, TimeZone, UUID}
+
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
+
 import org.apache.commons.lang3.SystemUtils
 import org.apache.commons.lang3.time.DateFormatUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.util.ShutdownHookManager
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
@@ -273,7 +276,8 @@ object Utils extends Logging {
 
   def fromCommandLineArgs(args: Array[String], conf: KyuubiConf): Unit = {
     for (i <- args.indices by 2) {
-      require(args(i) == "--conf" && i + 1 <= args.length,
+      require(
+        args(i) == "--conf" && i + 1 <= args.length,
         s"Unrecognized main arguments prefix ${args(i)}," +
           s"the argument format is '--conf k=v'.")
 

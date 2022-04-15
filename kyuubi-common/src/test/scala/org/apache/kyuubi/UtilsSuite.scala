@@ -22,7 +22,9 @@ import java.net.InetAddress
 import java.nio.file.{Files, Paths}
 import java.security.PrivilegedExceptionAction
 import java.util.Properties
+
 import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.kyuubi.config.KyuubiConf
 
 class UtilsSuite extends KyuubiFunSuite {
