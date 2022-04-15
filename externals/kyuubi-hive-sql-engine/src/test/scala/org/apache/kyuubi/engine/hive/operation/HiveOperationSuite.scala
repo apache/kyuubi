@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.hive.operation
 
 import org.apache.kyuubi.{HiveEngineTests, Utils}
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 
 class HiveOperationSuite extends HiveEngineTests {
 
@@ -34,5 +35,15 @@ class HiveOperationSuite extends HiveEngineTests {
 
   override protected def jdbcUrl: String = {
     "jdbc:hive2://" + HiveSQLEngine.currentEngine.get.frontendServices.head.connectionUrl + "/;"
+  }
+
+  test("test get query id") {
+    withJdbcStatement("hive_engine_test") { statement =>
+      statement.execute("CREATE TABLE hive_engine_test(id int, value string) stored as orc")
+      statement.execute("INSERT INTO hive_engine_test SELECT 1, '2'")
+      statement.executeQuery("SELECT ID, VALUE FROM hive_engine_test")
+      val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
+      assert(kyuubiStatement.getQueryId != null)
+    }
   }
 }

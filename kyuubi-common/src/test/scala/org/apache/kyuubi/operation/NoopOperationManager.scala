@@ -127,8 +127,7 @@ class NoopOperationManager extends OperationManager("noop") {
   }
 
   override def getQueryId(operation: Operation): String = {
-    // TODO: maybe should refined this later
-    val queryId = "testQueryId"
+    val queryId = "noop_query_id"
     queryId
   }
 }
