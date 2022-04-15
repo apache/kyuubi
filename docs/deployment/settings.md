@@ -159,7 +159,6 @@ Key | Default | Meaning | Type | Since
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
 <code>kyuubi.batch.application.check.interval</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The interval to check batch job application information.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.6.0</div>
-<code>kyuubi.batch.static.secret.id</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The static session secret UUID used for batch session handle.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
 
 
 ### Credentials
