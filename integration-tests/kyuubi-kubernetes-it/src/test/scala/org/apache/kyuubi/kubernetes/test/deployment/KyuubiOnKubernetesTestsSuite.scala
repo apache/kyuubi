@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.kubernetes.test.deployment
 
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.kubernetes.test.MiniKube
+import org.apache.kyuubi.kubernetes.test.WithKyuubiServerOnKubernetes
 import org.apache.kyuubi.operation.SparkQueryTests
 
 /**
@@ -31,34 +30,11 @@ import org.apache.kyuubi.operation.SparkQueryTests
  *  |          |         |                                                   |
  *  ------------         -----------------------------------------------------
  */
-class KyuubiOnKubernetesTestsSuite extends SparkQueryTests with Logging {
-  private lazy val _jdbcUrl: String = {
-    val kubernetesclient = MiniKube.getKubernetesClient
-    val kyuubiServers =
-      kubernetesclient
-        .pods()
-        .list()
-        .getItems
-    assert(kyuubiServers.size() == 1)
-    val kyuubiServer = kyuubiServers.get(0)
-    // Kyuubi server state should be running since mvn compile is quite slowly..
-    if (!"running".equalsIgnoreCase(kyuubiServer.getStatus.getPhase)) {
-      val log =
-        kubernetesclient
-          .pods()
-          .withName(kyuubiServer.getMetadata.getName)
-          .getLog
-      throw new IllegalStateException(
-        s"Kyuubi server pod state error: ${kyuubiServer.getStatus.getPhase}, log:\n$log")
-    }
-    val kyuubiServerIp = MiniKube.getIp
-    val kyuubiServerPort =
-      kyuubiServer.getSpec.getContainers.get(0).getPorts.get(0).getHostPort
-    s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;"
-  }
+class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKubernetes
+  with SparkQueryTests {
+  override protected val connectionConf: Map[String, String] = Map(
+    "spark.master" -> "local",
+    "spark.executor.instances" -> "1")
 
-  override protected def jdbcUrl: String = {
-    assert(_jdbcUrl != null, "Failed to get Kyuubi server")
-    _jdbcUrl
-  }
+  override protected def jdbcUrl: String = getJdbcUrl
 }
