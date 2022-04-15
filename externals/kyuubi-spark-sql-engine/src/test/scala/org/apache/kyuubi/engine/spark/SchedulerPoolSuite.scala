@@ -96,13 +96,15 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
         })
       }
       threads.shutdown()
+      // wait for all jobs to finish
       eventually(Timeout(20.seconds)) {
-        // We can not ensure that job1 is started before job2 so here using abs.
-        assert(Math.abs(job1StartTime - job2StartTime) < 1000)
-        // Job1 minShare is 2(total resource) so that job2 should be allocated tasks after
-        // job1 finished.
-        assert(job2FinishTime - job1FinishTime >= 1000)
+        assert(job2FinishTime > 0 && job1FinishTime > 0 && job1StartTime > 0 && job2StartTime > 0)
       }
+      // We can not ensure that job1 is started before job2 so here using abs.
+      assert(Math.abs(job1StartTime - job2StartTime) < 1000)
+      // Job1 minShare is 2(total resource) so that job2 should be allocated tasks after
+      // job1 finished.
+      assert(Math.abs(job2FinishTime - job1FinishTime) >= 1000)
     } finally {
       spark.sparkContext.removeSparkListener(listener)
     }
