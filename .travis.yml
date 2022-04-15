@@ -22,7 +22,7 @@ group: edge
 virt: vm
 env:
   - SPARK_LOCAL_IP=localhost
-  - JAVA_HOME=/usr/lib/jvm/java-8-oracle
+  - JAVA_HOME=/usr/lib/jvm/adoptopenjdk-8-hotspot-arm64
 
 branches:
   only:
