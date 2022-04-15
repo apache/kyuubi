@@ -52,7 +52,6 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private val applicationCheckInterval =
     session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL)
-  private var applicationCheckerThread: Thread = _
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
@@ -97,7 +96,22 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
     try {
       info(s"Submitting ${batchRequest.batchType} batch job: $builder")
       val process = builder.start
-      startApplicationChecker()
+      while (appIdAndUrl.isEmpty) {
+        try {
+          builder match {
+            case sparkBatchProcessBuilder: SparkBatchProcessBuilder =>
+              sparkBatchProcessBuilder.getApplicationIdAndUrl() match {
+                case Some(appInfo) => appIdAndUrl = Some(appInfo)
+                case _ =>
+              }
+
+            case _ =>
+          }
+        } catch {
+          case e: Exception => error(s"Failed to check batch application", e)
+        }
+        Thread.sleep(applicationCheckInterval)
+      }
       process.waitFor()
       if (process.exitValue() != 0) {
         throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
@@ -105,30 +119,6 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
     } finally {
       builder.close()
     }
-  }
-
-  private def startApplicationChecker(): Unit = {
-    applicationCheckerThread = new Thread(s"application-checker-${session.batchId}") {
-      override def run(): Unit = {
-        while (appIdAndUrl.isEmpty) {
-          try {
-            builder match {
-              case sparkBatchProcessBuilder: SparkBatchProcessBuilder =>
-                sparkBatchProcessBuilder.getApplicationIdAndUrl() match {
-                  case Some(appInfo) => appIdAndUrl = Some(appInfo)
-                  case _ =>
-                }
-
-              case _ =>
-            }
-          } catch {
-            case e: Exception => error(s"Failed to check batch application", e)
-          }
-          Thread.sleep(applicationCheckInterval)
-        }
-      }
-    }
-    applicationCheckerThread.start()
   }
 
   override def getResultSetSchema: TTableSchema = {
@@ -186,10 +176,6 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
     if (!isClosedOrCanceled) {
       if (builder != null) {
         builder.close()
-      }
-      if (applicationCheckerThread != null) {
-        applicationCheckerThread.interrupt()
-        applicationCheckerThread = null
       }
     }
     super.close()
