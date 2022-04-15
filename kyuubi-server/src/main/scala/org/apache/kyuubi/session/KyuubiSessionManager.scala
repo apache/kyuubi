@@ -43,7 +43,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
 
-  @volatile private var _limiter: Option[SessionLimiter] = None
+  @volatile private var limiter: Option[SessionLimiter] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(credentialsManager)
@@ -78,7 +78,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    _limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
+    limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
     try {
       super.openSession(protocol, username, password, ipAddress, conf)
     } catch {
@@ -96,7 +96,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     val session = getSession(sessionHandle)
     super.closeSession(sessionHandle)
-    _limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+    limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
   }
 
   def openBatchSession(
@@ -162,7 +162,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val ipAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
     if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
-      _limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
+      limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
     }
   }
 }
