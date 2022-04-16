@@ -19,7 +19,6 @@ package org.apache.kyuubi.session
 
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
-import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationHandle
 
@@ -38,7 +37,6 @@ trait Session {
   def lastAccessTime: Long
   def lastIdleTime: Long
   def getNoOperationTime: Long
-  def getSessionEvent: Option[KyuubiEvent]
 
   def sessionManager: SessionManager
 

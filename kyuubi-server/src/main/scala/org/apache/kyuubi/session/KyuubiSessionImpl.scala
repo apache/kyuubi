@@ -71,7 +71,7 @@ class KyuubiSessionImpl(
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
 
-  override def getSessionEvent: Option[KyuubiEvent] = {
+  def getSessionEvent: Option[KyuubiEvent] = {
     Option(sessionEvent)
   }
 
