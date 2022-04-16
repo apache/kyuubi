@@ -24,3 +24,4 @@ Tools
     :numbered: 3
 
     spark_block_cleaner
+    kyuubi-ctl
