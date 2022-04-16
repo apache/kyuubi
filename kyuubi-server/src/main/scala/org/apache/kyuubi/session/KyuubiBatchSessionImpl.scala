@@ -21,7 +21,7 @@ import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.events.{EventBus, KyuubiEvent, KyuubiSessionEvent}
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState

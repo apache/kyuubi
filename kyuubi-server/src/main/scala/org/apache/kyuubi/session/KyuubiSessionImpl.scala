@@ -27,7 +27,7 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
-import org.apache.kyuubi.events.{EventBus, KyuubiEvent, KyuubiSessionEvent}
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
