@@ -405,6 +405,19 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>spark-3.2</id>
+            <dependencies>
+                <dependency>
+                    <groupId>io.delta</groupId>
+                    <artifactId>delta-storage</artifactId>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
     <build>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>

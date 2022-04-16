@@ -30,7 +30,7 @@ trait DeltaSuiteMixin extends DataLakeSuiteMixin {
   override protected def extraJars: String = {
     System.getProperty("java.class.path")
       .split(":")
-      .filter(_.contains("delta-core")).head
+      .filter(_.contains("io/delta/delta")).mkString(",")
   }
 
   override protected def extraConfigs = Map(
