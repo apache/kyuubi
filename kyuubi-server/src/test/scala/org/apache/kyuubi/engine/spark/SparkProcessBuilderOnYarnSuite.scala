@@ -18,7 +18,8 @@
 package org.apache.kyuubi.engine.spark
 
 import java.util.UUID
-import java.util.concurrent.TimeUnit
+
+import scala.concurrent.duration.DurationInt
 
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -43,9 +44,10 @@ class SparkProcessBuilderOnYarnSuite extends WithKyuubiServerOnYarn {
         "KYUUBI," + engineRefId)
     val builder = new SparkProcessBuilder(Utils.currentUser, conf)
     val proc = builder.start
-    proc.waitFor(30, TimeUnit.SECONDS)
-    val killMsg = builder.killApplication(Left(engineRefId))
-    assert(killMsg.contains(s"tagged with $engineRefId successfully."))
+    eventually(timeout(3.minutes), interval(1.seconds)) {
+      val killMsg = builder.killApplication(Left(engineRefId))
+      assert(killMsg.contains(s"tagged with $engineRefId successfully."))
+    }
     proc.destroyForcibly()
 
     val pb1 = new FakeSparkProcessBuilder(conf.clone) {

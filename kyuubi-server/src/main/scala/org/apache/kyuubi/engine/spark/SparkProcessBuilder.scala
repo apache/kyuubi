@@ -45,8 +45,6 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
-  val yarnClient = getYarnClient
-
   def getYarnClient: YarnClient = YarnClient.createYarnClient
 
   private val sparkHome = getEngineHome(shortName)
@@ -150,6 +148,7 @@ class SparkProcessBuilder(
     conf.getOption(MASTER_KEY).orElse(getSparkDefaultsConf().get(MASTER_KEY)) match {
       case Some("yarn") =>
         var applicationId: ApplicationId = null
+        val yarnClient = getYarnClient
         try {
           val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
           yarnClient.init(yarnConf)
