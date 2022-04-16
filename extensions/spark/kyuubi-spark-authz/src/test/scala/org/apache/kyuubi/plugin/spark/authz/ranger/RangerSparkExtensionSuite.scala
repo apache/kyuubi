@@ -244,14 +244,13 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
     try {
       doAs("admin", sql(create))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
+      // scalastyle: off
       doAs(
         "bob", {
-          (0 until 3).foreach { _ =>
-            assert(sql(s"select * from $db.$table").collect() ===
-              Seq(Row(1, DigestUtils.md5Hex("1"))))
-          }
+          assert(sql(s"select * from $db.$table").collect() ===
+            Seq(Row(1, DigestUtils.md5Hex("1"))))
+          assert(Try(sql(s"select * from $db.$table").show(1)).isSuccess)
         })
-
     } finally {
       doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
     }
