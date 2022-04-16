@@ -147,7 +147,7 @@ class SparkProcessBuilder(
   }
 
   private def killApplicationByTag(engineRefId: String): String = {
-    conf.getOption(MASTER_KEY).orElse(getSparkDefaultsConf.get(MASTER_KEY)) match {
+    conf.getOption(MASTER_KEY).orElse(getSparkDefaultsConf().get(MASTER_KEY)) match {
       case Some("yarn") =>
         var applicationId: ApplicationId = null
         try {
@@ -177,7 +177,7 @@ class SparkProcessBuilder(
 
   override protected def shortName: String = "spark"
 
-  protected def getSparkDefaultsConf: Map[String, String] = {
+  protected def getSparkDefaultsConf(): Map[String, String] = {
     val sparkDefaultsConfFile = env.get(SPARK_CONF_DIR)
       .orElse(Option(s"$sparkHome${File.separator}conf"))
       .map(_ + File.separator + SPARK_CONF_FILE_NAME)
