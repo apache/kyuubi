@@ -39,4 +39,45 @@ class TrinoProcessBuilderSuite extends KyuubiFunSuite {
     assert(e1.getMessage contains
       s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}")
   }
+
+  test("default engine memory") {
+    val conf = KyuubiConf()
+      .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
+      .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
+    val builder = new TrinoProcessBuilder("kyuubi", conf)
+    val commands = builder.toString.split("\n")
+    assert(commands.contains("-Xmx1g"))
+  }
+
+  test("set engine memory") {
+    val conf = KyuubiConf()
+      .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
+      .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
+      .set(ENGINE_TRINO_MEMORY, "5g")
+    val builder = new TrinoProcessBuilder("kyuubi", conf)
+    val commands = builder.toString.split("\n")
+    assert(commands.contains("-Xmx5g"))
+  }
+
+  test("set engine java options") {
+    val conf = KyuubiConf()
+      .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
+      .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
+      .set(
+        ENGINE_TRINO_JAVA_OPTIONS,
+        "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
+    val builder = new TrinoProcessBuilder("kyuubi", conf)
+    val commands = builder.toString.split("\n")
+    assert(commands.contains("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"))
+  }
+
+  test("set extra classpath") {
+    val conf = KyuubiConf()
+      .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
+      .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
+      .set(ENGINE_TRINO_EXTRA_CLASSPATH, "/dummy_classpath/*")
+    val builder = new TrinoProcessBuilder("kyuubi", conf)
+    val commands = builder.toString
+    assert(commands.contains("/dummy_classpath/*"))
+  }
 }

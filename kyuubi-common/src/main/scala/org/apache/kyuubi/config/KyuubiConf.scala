@@ -1346,4 +1346,26 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
+
+  val ENGINE_TRINO_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.memory")
+      .doc("The heap memory for the trino query engine")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_TRINO_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.java.options")
+      .doc("The extra java options for the trino query engine")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.extra.classpath")
+      .doc("The extra classpath for the trino query engine, " +
+        "for configuring other libs which may need by the trino engine ")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 }
