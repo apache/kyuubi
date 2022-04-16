@@ -40,8 +40,12 @@ class KyuubiBatchSessionImpl(
   override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
   val batchId: String = handle.identifier.toString
 
+  // TODO: Support batch conf advisor
+  override val normalizedConf: Map[String, String] =
+    sessionManager.validateBatchConf(Option(batchRequest.conf).getOrElse(Map.empty))
+
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
-    .newBatchJobSubmissionOperation(this, batchRequest)
+    .newBatchJobSubmissionOperation(this, batchRequest.copy(conf = normalizedConf))
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
