@@ -43,7 +43,7 @@ class KyuubiSessionImpl(
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   private[kyuubi] val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
@@ -67,13 +67,6 @@ class KyuubiSessionImpl(
   val engine: EngineRef = new EngineRef(sessionConf, user)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
-
-  private val sessionEvent = KyuubiSessionEvent(this)
-  EventBus.post(sessionEvent)
-
-  def getSessionEvent: Option[KyuubiEvent] = {
-    Option(sessionEvent)
-  }
 
   private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client

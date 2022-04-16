@@ -36,19 +36,12 @@ class KyuubiBatchSessionImpl(
     sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
     batchRequest: BatchRequest)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
   override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
   val batchId: String = handle.identifier.toString
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(this, batchRequest)
-
-  private val sessionEvent = KyuubiSessionEvent(this)
-  EventBus.post(sessionEvent)
-
-  override def getSessionEvent: Option[KyuubiEvent] = {
-    Option(sessionEvent)
-  }
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>

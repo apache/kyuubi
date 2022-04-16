@@ -32,7 +32,7 @@ import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
-import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 
 @Tag(name = "Session")
@@ -70,7 +70,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiEvent = {
     try {
       fe.be.sessionManager.getSession(parseSessionHandle(sessionHandleStr))
-        .asInstanceOf[KyuubiSessionImpl].getSessionEvent.get
+        .asInstanceOf[KyuubiSession].getSessionEvent.get
     } catch {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)
