@@ -920,6 +920,63 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assert(tuple._2.size === 0)
   }
 
+  test("Query: WHERE Without Project") {
+    val sqlStr =
+      s"""
+         |SELECT t1.key, t1.value
+         |    FROM $reusedTable t1
+         |    WHERE key < 1
+         |    """.stripMargin
+
+    val plan = sql(sqlStr).queryExecution.optimizedPlan
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+
+    assert(tuple._1.size === 1)
+    tuple._1.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname equalsIgnoreCase reusedDb)
+      assert(po.objectName startsWith reusedTableShort.toLowerCase)
+      assert(
+        po.columns === Seq("key", "value"),
+        s"$reusedPartTable both 'key' and 'value' should be authenticated")
+      val accessType = ranger.AccessType(po, operationType, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+    assert(tuple._2.size === 0)
+  }
+
+  test("Query: JOIN Without Project") {
+    val sqlStr =
+      s"""
+         |SELECT t1.key, t1.value, t2.key, t2.value
+         |    FROM $reusedTable t1
+         |    INNER JOIN $reusedPartTable t2
+         |    ON t1.key = t2.key
+         |    """.stripMargin
+
+    val plan = sql(sqlStr).queryExecution.optimizedPlan
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+
+    assert(tuple._1.size === 2)
+    tuple._1.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname equalsIgnoreCase reusedDb)
+      assert(po.objectName startsWith reusedTableShort.toLowerCase)
+      assert(
+        po.columns === Seq("key", "value"),
+        s"$reusedPartTable both 'key' and 'value' should be authenticated")
+      val accessType = ranger.AccessType(po, operationType, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+    assert(tuple._2.size === 0)
+  }
+
   test("Query: Union") {
     val plan = sql(
       s"""
