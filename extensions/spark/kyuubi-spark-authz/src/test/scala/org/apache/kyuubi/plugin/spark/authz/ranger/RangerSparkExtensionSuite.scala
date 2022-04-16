@@ -235,6 +235,27 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
       doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
     }
   }
+
+  test("KYUUBI #2390: RuleEliminateMarker stays in analyze phase for data masking") {
+    val db = "default"
+    val table = "src"
+    val create =
+      s"CREATE TABLE IF NOT EXISTS $db.$table (key int, value1 int) USING $format"
+    try {
+      doAs("admin", sql(create))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
+      doAs(
+        "bob", {
+          (0 until 3).foreach { _ =>
+            assert(sql(s"select * from $db.$table").collect() ===
+              Seq(Row(1, DigestUtils.md5Hex("1"))))
+          }
+        })
+
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
+    }
+  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
