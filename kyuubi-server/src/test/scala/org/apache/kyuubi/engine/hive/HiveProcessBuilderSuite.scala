@@ -62,5 +62,4 @@ class HiveProcessBuilderSuite extends KyuubiFunSuite {
     val commands = builder.toString
     assert(commands.contains("/dummy_classpath/*"))
   }
-
 }
