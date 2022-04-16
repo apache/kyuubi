@@ -460,5 +460,23 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "sub_1")
     assert(getZkNamespace(new ServiceControlCliArguments(arg4)) ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/sub_1")
+
+    val arg5 = Array(
+      "list",
+      "engine",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      namespace,
+      "--version",
+      "1.5.0",
+      "--user",
+      user,
+      "--engine-type",
+      "SPARK_SQL",
+      "--engine-subdomain",
+      "sub_1")
+    assert(getZkNamespace(new ServiceControlCliArguments(arg5)) ==
+      s"/${namespace}_1.5.0_USER_SPARK_SQL/$user/sub_1")
   }
 }
