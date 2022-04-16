@@ -22,19 +22,32 @@
 
 ## Pre-install
 
+- [Apache Ranger](https://ranger.apache.org/)
+
+  This plugin works as a ranger rest client with Apache Ranger admin server to do privilege check.
+  Thus, a ranger server need to be installed ahead and available to use.
+
+- Building(optional)
+
+  If your ranger admin or spark distribution is not compatible with the official pre-built [artifact](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-authz) in maven central.
+  You need to [build](build.md) the plugin targeting the spark/ranger you are using by yourself.
+
 ## Install
+
+With the `kyuubi-spark-authz_*.jar` and its transitive dependencies available for spark runtime classpath, such as
+- Copied to `$SPARK_HOME/jars`, or
+- Specified to `spark.jars` configuration
 
 ## Configure
 
 ### Settings for Connecting Ranger Admin
 
-Create `ranger-spark-security.xml` in `$SPARK_HOME/conf` and add the following configurations
+#### ranger-spark-security.xml
+- Create `ranger-spark-security.xml` in `$SPARK_HOME/conf` and add the following configurations
 for pointing to the right Ranger admin server.
-
 
 ```xml
 <configuration>
-
     <property>
         <name>ranger.plugin.spark.policy.rest.url</name>
         <value>ranger admin address like http://ranger-admin.org:6080</value>
@@ -62,6 +75,8 @@ for pointing to the right Ranger admin server.
 
 </configuration>
 ```
+
+#### ranger-spark-audit.xml
 
 Create `ranger-spark-audit.xml` in `$SPARK_HOME/conf` and add the following configurations
 to enable/disable auditing.
@@ -104,6 +119,8 @@ to enable/disable auditing.
 
 ### Settings for Spark Session Extensions
 
+Add `org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension` to the spark configuration `spark.sql.extensions`.
 
-
-
+```properties
+spark.sql.extensions=org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
+```

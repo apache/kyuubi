@@ -26,7 +26,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.RuleEliminateMarker
  * <ul>
  *   <li>Table/Column level authorization(yes)</li>
  *   <li>Row level filtering(yes)</li>
- *   <li>Data masking(no)</li>
+ *   <li>Data masking(yes)</li>
  * <ul>
  *
  * To work with Spark SQL, we need to enable it via spark extensions

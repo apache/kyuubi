@@ -25,16 +25,23 @@ storage-based authorization is enabled by default, which only provides file-leve
 When row/column-level fine-grained access control is required,
 we can enhance the data access model with the Kyuubi Spark AuthZ plugin.
 
+## Authorization in Kyuubi
 
-## Storage-Based Authorization
+### Storage-based Authorization
 
-Enabling Storage Based Authorization in the `Hive Metastore Server` uses the HDFS permissions to act as the main source for verification and allows for consistent data and metadata authorization policy.
-This allows control over metadata access by verifying if the user has permission to access corresponding directories on the HDFS.
-Similar with `HiveServer2`, files and directories will be mapping to hive metadata objects, such as databases, tables, partitions, and be protected from end user's queries through Kyuubi.
+As Kyuubi supports multi tenancy, a tenant can only visit authorized resources,
+including computing resources, data, etc.
+Most file systems, such as HDFS, support ACL management based on files and directories.
 
-Storage-Based Authorization offers users with Database, Table and Partition-level coarse-gained access control.
+A so called Storage-based authorization mode is supported by Kyuubi by default.
+In this model, all objects, such as databases, tables, partitions, in meta layer are mapping to folders or files in the storage layer,
+as well as their permissions.
 
-## SQL-Standard Based Authorization with Ranger
+Storage-based authorization offers users with database, table and partition-level coarse-gained access control.
+
+### SQL-standard authorization with Ranger
+
+A SQL-standard authorization usually offers a row/colum-level fine-grained access control to meet the real-world data security need.
 
 [Apache Ranger](https://ranger.apache.org/) is a framework to enable, monitor and manage comprehensive data security across the Hadoop platform. 
 This plugin enables Kyuubi with data and metadata control access ability for Spark SQL Engines, including,
@@ -42,3 +49,9 @@ This plugin enables Kyuubi with data and metadata control access ability for Spa
 - Column-level fine-grained authorization
 - Row-level fine-grained authorization, a.k.a. Row-level filtering
 - Data masking
+
+## The Plugin Itself
+
+Kyuubi Spark Authz Plugin itself provides general purpose for ACL management for data & metadata while using Spark SQL.
+It is not necessary to deploy it with the Kyuubi server and engine, and can be used as an extension for any Spark SQL jobs.
+However, the authorization always requires a robust authentication layer and multi tenancy support, so Kyuubi is a perfect match.

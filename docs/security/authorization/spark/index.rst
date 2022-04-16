@@ -26,4 +26,3 @@ Kyuubi Spark AuthZ Plugin
     Overview <overview>
     Building <build>
     Installing <install>
-    Authorization Plugin for Spark SQL <authorization>
