@@ -46,9 +46,25 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   private val applicationManager =
     session.sessionManager.asInstanceOf[KyuubiSessionManager].applicationManager
 
-  private var builder: ProcBuilder = _
+  private[kyuubi] val batchId: String = session.handle.identifier.toString
 
-  private val batchId: String = session.handle.identifier.toString
+  private[kyuubi] val batchType: String = batchRequest.batchType
+
+  private val builder: ProcBuilder = {
+    Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
+      case Some("SPARK") =>
+        val batchSparkConf = session.sessionConf.getBatchConf("spark")
+        new SparkBatchProcessBuilder(
+          session.user,
+          session.sessionConf,
+          batchId,
+          batchRequest.copy(conf = batchSparkConf ++ batchRequest.conf),
+          getOperationLog)
+
+      case _ =>
+        throw new UnsupportedOperationException(s"Batch type ${batchRequest.batchType} unsupported")
+    }
+  }
 
   private[kyuubi] def currentApplicationState: Option[Map[String, String]] = {
     applicationManager.getApplicationInfo(builder.clusterManager(), batchId)
@@ -84,20 +100,6 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   }
 
   private def submitBatchJob(): Unit = {
-    builder = Option(batchRequest.batchType).map(_.toUpperCase(Locale.ROOT)) match {
-      case Some("SPARK") =>
-        val batchSparkConf = session.sessionConf.getBatchConf("spark")
-        new SparkBatchProcessBuilder(
-          session.user,
-          session.sessionConf,
-          batchId,
-          batchRequest.copy(conf = batchSparkConf ++ batchRequest.conf),
-          getOperationLog)
-
-      case _ =>
-        throw new UnsupportedOperationException(s"Batch type ${batchRequest.batchType} unsupported")
-    }
-
     try {
       info(s"Submitting ${batchRequest.batchType} batch job: $builder")
       val process = builder.start

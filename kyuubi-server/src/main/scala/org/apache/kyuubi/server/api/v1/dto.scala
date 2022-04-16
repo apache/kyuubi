@@ -123,3 +123,9 @@ case class BatchRequest(
     name: String,
     conf: Map[String, String],
     args: Seq[String])
+
+case class Batch(
+    id: String,
+    batchType: String,
+    batchInfo: Map[String, String],
+    state: String)

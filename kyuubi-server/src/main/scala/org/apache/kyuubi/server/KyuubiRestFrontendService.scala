@@ -27,7 +27,7 @@ import org.eclipse.jetty.servlet.FilterHolder
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
-import org.apache.kyuubi.server.api.v1.{ApiRootResource, SessionOpenRequest}
+import org.apache.kyuubi.server.api.v1.{ApiRootResource, BatchRequest, SessionOpenRequest}
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
@@ -100,6 +100,19 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       realUser
     } else {
       getProxyUser(req.configs, Option(AuthenticationFilter.getUserIpAddress).orNull, realUser)
+    }
+  }
+
+  def getUserName(req: BatchRequest): String = {
+    val realUser: String =
+      ServiceUtils.getShortName(Option(AuthenticationFilter.getUserName).getOrElse("anonymous"))
+    if (req.proxyUser == null) {
+      realUser
+    } else {
+      getProxyUser(
+        Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> req.proxyUser),
+        Option(AuthenticationFilter.getUserIpAddress).orNull,
+        realUser)
     }
   }
 

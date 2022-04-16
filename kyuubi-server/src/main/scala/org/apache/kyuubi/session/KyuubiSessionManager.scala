@@ -120,7 +120,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress,
       conf,
       this,
-      // TODO: user defaults conf for batch session
       this.getConf.getUserDefaults(user),
       batchRequest)
     try {
@@ -180,4 +179,10 @@ object KyuubiSessionManager {
    * To keep compatibility, please do not change it.
    */
   val STATIC_BATCH_SECRET_UUID: UUID = UUID.fromString("c2ee5b97-3ea0-41fc-ac16-9bd708ed8f38")
+
+  /**
+   * The batch TProtocolVersion used for batch session handle.
+   * To keep compatibility, please do not change it.
+   */
+  val BATCH_PROTOCOL_VERSION: TProtocolVersion = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
 }
