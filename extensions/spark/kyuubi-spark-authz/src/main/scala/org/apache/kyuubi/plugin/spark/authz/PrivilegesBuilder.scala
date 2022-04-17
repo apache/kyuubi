@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
-import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project, Sort, Window}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StructField
 
@@ -103,6 +103,17 @@ object PrivilegesBuilder {
       case f: Filter =>
         val cols = conditionList ++ collectLeaves(f.condition)
         buildQuery(f.child, privilegeObjects, projectionList, cols)
+
+      case w: Window =>
+        val orderCols = w.orderSpec.flatMap(orderSpec => collectLeaves(orderSpec))
+        val partitionCols = w.partitionSpec.flatMap(partitionSpec => collectLeaves(partitionSpec))
+        val cols = conditionList ++ orderCols ++ partitionCols
+        buildQuery(w.child, privilegeObjects, projectionList, cols)
+
+      case s: Sort =>
+        val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
+        val cols = conditionList ++ sortCols
+        buildQuery(s.child, privilegeObjects, projectionList, cols)
 
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation)
