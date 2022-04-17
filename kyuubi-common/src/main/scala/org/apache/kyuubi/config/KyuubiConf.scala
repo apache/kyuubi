@@ -1389,4 +1389,26 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createOptional
+
+  val ENGINE_HIVE_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.hive.memory")
+      .doc("The heap memory for the hive query engine")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_HIVE_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.hive.java.options")
+      .doc("The extra java options for the hive query engine")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_HIVE_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.hive.extra.classpath")
+      .doc("The extra classpath for the hive query engine, for configuring location" +
+        " of hadoop client jars, etc")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 }
