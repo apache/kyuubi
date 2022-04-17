@@ -165,24 +165,6 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     }
   }
 
-  test("AlterTableAddColumnsCommand") {
-    val plan = sql(s"ALTER TABLE $reusedTable" +
-      s" ADD COLUMNS (a int)").queryExecution.analyzed
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === ALTERTABLE_ADDCOLS)
-    val tuple = PrivilegesBuilder.build(plan)
-    assert(tuple._1.isEmpty)
-    assert(tuple._2.size === 1)
-    val po = tuple._2.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname equalsIgnoreCase reusedDb)
-    assert(po.objectName === getClass.getSimpleName)
-    assert(po.columns.head === "a")
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
-  }
-
   test("AlterTableAddPartitionCommand") {
     val plan = sql(s"ALTER TABLE $reusedPartTable ADD IF NOT EXISTS PARTITION (pid=1)")
       .queryExecution.analyzed
@@ -891,6 +873,58 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       Seq("value", "pid"))
   }
 
+  test("Query: Subquery With Window") {
+    val plan = sql(
+      s"""
+         |SELECT value, rank FROM(
+         |SELECT *,
+         |RANK() OVER (PARTITION BY key ORDER BY pid) AS rank
+         |FROM $reusedPartTable)
+         |""".stripMargin).queryExecution.optimizedPlan
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    tuple._1.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname equalsIgnoreCase reusedDb)
+      assert(po.objectName startsWith reusedTableShort.toLowerCase)
+      assert(
+        po.columns === Seq("value", "pid", "key"),
+        s"$reusedPartTable both 'key', 'value' and 'pid' should be authenticated")
+      val accessType = ranger.AccessType(po, operationType, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+    assert(tuple._2.size === 0)
+  }
+
+  test("Query: Subquery With Order") {
+    val plan = sql(
+      s"""
+         |SELECT value FROM(
+         |SELECT *
+         |FROM $reusedPartTable
+         |ORDER BY key, pid)
+         |""".stripMargin).queryExecution.optimizedPlan
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    tuple._1.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname equalsIgnoreCase reusedDb)
+      assert(po.objectName startsWith reusedTableShort.toLowerCase)
+      assert(
+        po.columns === Seq("value", "key", "pid"),
+        s"$reusedPartTable both 'key', 'value' and 'pid' should be authenticated")
+      val accessType = ranger.AccessType(po, operationType, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+    assert(tuple._2.size === 0)
+  }
+
   test("Query: INNER JOIN") {
     val sqlStr =
       s"""
@@ -971,6 +1005,56 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       assert(
         po.columns === Seq("key", "value"),
         s"$reusedPartTable both 'key' and 'value' should be authenticated")
+      val accessType = ranger.AccessType(po, operationType, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+    assert(tuple._2.size === 0)
+  }
+
+  test("Query: Window Without Project") {
+    val plan = sql(
+      s"""
+         |SELECT key,
+         |RANK() OVER (PARTITION BY key ORDER BY value) AS rank
+         |FROM $reusedTable
+         |""".stripMargin).queryExecution.optimizedPlan
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    tuple._1.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname equalsIgnoreCase reusedDb)
+      assert(po.objectName startsWith reusedTableShort.toLowerCase)
+      assert(
+        po.columns === Seq("key", "value"),
+        s"$reusedPartTable both 'key' and 'value' should be authenticated")
+      val accessType = ranger.AccessType(po, operationType, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+    assert(tuple._2.size === 0)
+  }
+
+  test("Query: Order By Without Project") {
+    val plan = sql(
+      s"""
+         |SELECT key
+         |FROM $reusedPartTable
+         |ORDER BY key, value, pid
+         |""".stripMargin).queryExecution.optimizedPlan
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    tuple._1.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname equalsIgnoreCase reusedDb)
+      assert(po.objectName startsWith reusedTableShort.toLowerCase)
+      assert(
+        po.columns === Seq("key", "value", "pid"),
+        s"$reusedPartTable both 'key', 'value' and 'pid' should be authenticated")
       val accessType = ranger.AccessType(po, operationType, isInput = true)
       assert(accessType === AccessType.SELECT)
     }
@@ -1154,5 +1238,24 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
       assert(tuple._2.size === 0)
     }
+  }
+// ALTER TABLE ADD COLUMNS It should be run at end
+// to prevent affecting the cases that rely on the $reusedTable's table structure
+  test("AlterTableAddColumnsCommand") {
+    val plan = sql(s"ALTER TABLE $reusedTable" +
+      s" ADD COLUMNS (a int)").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERTABLE_ADDCOLS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName === getClass.getSimpleName)
+    assert(po.columns.head === "a")
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
   }
 }
