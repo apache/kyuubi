@@ -21,7 +21,8 @@ import org.apache.kyuubi.engine.trino.operation.TrinoOperation
 import org.apache.kyuubi.events.KyuubiEvent
 
 /**
- * A [[TrinoOperationEvent()]] used to tracker the lifecycle of an operation at Hive SQL Engine side.
+ * A [[TrinoOperationEvent()]] used to tracker the lifecycle of an operation
+ * at Trino SQL Engine side.
  * <ul>
  *   <li>Operation Basis</li>
  *   <li>Operation Live Status</li>
