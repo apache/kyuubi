@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.{KYUUBI_VERSION, Logging}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TYPE
 import org.apache.kyuubi.engine.ShareLevel
@@ -235,7 +235,7 @@ object ServiceControlCli extends CommandLineUtils with Logging {
         // The path of the engine defined in zookeeper comes from
         // org.apache.kyuubi.engine.EngineRef#engineSpace
         DiscoveryPaths.makePath(
-          s"${args.cliArgs.namespace}_${KYUUBI_VERSION}_${ShareLevel.USER}_${engineType}",
+          s"${args.cliArgs.namespace}_${args.cliArgs.version}_${ShareLevel.USER}_${engineType}",
           args.cliArgs.user,
           Array(engineSubdomain))
     }
