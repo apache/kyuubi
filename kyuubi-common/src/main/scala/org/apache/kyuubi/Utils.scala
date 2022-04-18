@@ -275,9 +275,10 @@ object Utils extends Logging {
   }
 
   def fromCommandLineArgs(args: Array[String], conf: KyuubiConf): Unit = {
+    require(args.length % 2 == 0, s"Illegal size of arguments.")
     for (i <- args.indices by 2) {
       require(
-        args(i) == "--conf" && i + 1 <= args.length,
+        args(i) == "--conf",
         s"Unrecognized main arguments prefix ${args(i)}," +
           s"the argument format is '--conf k=v'.")
 
