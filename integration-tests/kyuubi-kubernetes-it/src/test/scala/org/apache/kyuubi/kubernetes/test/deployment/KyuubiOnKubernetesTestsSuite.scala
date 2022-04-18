@@ -38,7 +38,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
  */
 class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKubernetes
   with SparkQueryTests {
-  override protected val connectionConf: Map[String, String] = Map(
+  override protected var connectionConf: Map[String, String] = Map(
     "spark.master" -> "local",
     "spark.executor.instances" -> "1")
 
@@ -47,7 +47,7 @@ class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKuber
 
 class KyuubiOnKubernetesWithSparkOnKubernetesTestsBase extends WithKyuubiServerOnKubernetes
   with SparkQueryTests {
-  override protected val connectionConf: Map[String, String] = Map(
+  override protected var connectionConf: Map[String, String] = Map(
     "spark.master" -> s"k8s://$getMiniKubeApiMaster",
     "spark.kubernetes.container.image" -> "apache/spark:v3.2.1",
     "spark.executor.memory" -> "512M",
