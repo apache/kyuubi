@@ -1241,7 +1241,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   test("InsertIntoHiveTableCommand") {
     assume(!isSparkV2)
     val tableName = "InsertIntoHiveTable"
-    withTable(tableName) {_ =>
+    withTable(tableName) { _ =>
       sql(s"CREATE TABLE $tableName (a int, b string) USING hive")
       val sqlStr =
         s"""
@@ -1256,15 +1256,15 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
       assert(outputs.size === 1)
       outputs.foreach { po =>
-      assert(po.actionType === PrivilegeObjectActionType. INSERT)
-      assert (po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-      assert(po.dbname equalsIgnoreCase "default")
-      assert(po.objectName equalsIgnoreCase tableName)
-      assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.UPDATE)
+        assert(po.actionType === PrivilegeObjectActionType.INSERT)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.dbname equalsIgnoreCase "default")
+        assert(po.objectName equalsIgnoreCase tableName)
+        assert(po.columns.isEmpty)
+        val accessType = ranger.AccessType(po, operationType, isInput = false)
+        assert(accessType === AccessType.UPDATE)
+      }
     }
-  }
   }
 
   test("ShowCreateTableAsSerdeCommand") {
