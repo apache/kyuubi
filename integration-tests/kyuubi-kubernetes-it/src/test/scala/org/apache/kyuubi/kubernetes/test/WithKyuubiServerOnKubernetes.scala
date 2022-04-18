@@ -25,19 +25,12 @@ import org.apache.kyuubi.config.KyuubiConf
 trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
   protected val kyuubiServerConf: KyuubiConf = KyuubiConf()
   protected val connectionConf: Map[String, String]
-  private var miniKubernetesClient: DefaultKubernetesClient = _
+  private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
   final override protected lazy val conf: KyuubiConf = {
     connectionConf.foreach { case (k, v) => kyuubiServerConf.set(k, v) }
     kyuubiServerConf
   }
-
-  override def beforeAll(): Unit = {
-    miniKubernetesClient = MiniKube.getKubernetesClient
-    super.beforeAll()
-  }
-
-  override def afterAll(): Unit = super.afterAll()
 
   override protected def getJdbcUrl: String = {
     val kyuubiServers =
@@ -59,4 +52,6 @@ trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
       kyuubiServer.getSpec.getContainers.get(0).getPorts.get(0).getHostPort
     s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;"
   }
+
+  def getMiniKubeApiMaster: String = miniKubernetesClient.getMasterUrl.toString
 }

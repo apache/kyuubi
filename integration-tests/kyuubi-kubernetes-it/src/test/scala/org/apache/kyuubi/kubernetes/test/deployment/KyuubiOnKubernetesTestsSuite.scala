@@ -21,7 +21,7 @@ import org.apache.kyuubi.kubernetes.test.WithKyuubiServerOnKubernetes
 import org.apache.kyuubi.operation.SparkQueryTests
 
 /**
- * This test is for Kyuubi Server on Kubernetes with Spark engine:
+ * This test is for Kyuubi Server on Kubernetes with Spark engine local deploy-mode:
  *
  *   Real World                              Kubernetes Pod
  *  ------------         -----------------------------------------------------
@@ -34,6 +34,31 @@ class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKuber
   with SparkQueryTests {
   override protected val connectionConf: Map[String, String] = Map(
     "spark.master" -> "local",
+    "spark.executor.instances" -> "1")
+
+  override protected def jdbcUrl: String = getJdbcUrl
+}
+
+/**
+ * This test is for Kyuubi Server on Kubernetes with Spark engine On Kubernetes client deploy-mode:
+ *
+ *   Real World                              Kubernetes Pod
+ *  ------------       -------------------------------------------------      ---------------------
+ *  |          | JDBC  |                                               |      |                   |
+ *  |  Client  | ----> | Kyuubi Server  --> Spark Engine (client mode) |  --> |  Spark Executors  |
+ *  |          |       |                                               |      |                   |
+ *  ------------       -------------------------------------------------      ---------------------
+ */
+class KyuubiOnKubernetesWithClientSparkOnKubernetesTestsSuite extends WithKyuubiServerOnKubernetes
+  with SparkQueryTests {
+  override protected val connectionConf: Map[String, String] = Map(
+    "spark.master" -> s"k8s://$getMiniKubeApiMaster",
+    "spark.submit.deployMode" -> "client",
+    "spark.kubernetes.container.image" -> "apache/spark:v3.2.1",
+    "spark.executor.memory" -> "512M",
+    "spark.driver.memory" -> "512M",
+    "spark.kubernetes.driver.request.cores" -> "250m",
+    "spark.kubernetes.executor.request.cores" -> "250m",
     "spark.executor.instances" -> "1")
 
   override protected def jdbcUrl: String = getJdbcUrl
