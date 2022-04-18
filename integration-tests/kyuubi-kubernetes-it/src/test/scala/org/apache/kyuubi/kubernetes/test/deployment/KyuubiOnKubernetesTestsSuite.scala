@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.kubernetes.test.deployment
 
-import scala.collection.mutable
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
 
@@ -40,28 +38,25 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
  */
 class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKubernetes
   with SparkQueryTests {
-  override protected var connectionConf: mutable.Map[String, String] = mutable.Map(
-    "spark.master" -> "local",
-    "spark.executor.instances" -> "1")
+  override protected def setConnectionSparkConf(): Unit = {
+    connectionConf += "spark.master" -> "local"
+    connectionConf += "spark.executor.instances" -> "1"
+  }
 
   override protected def jdbcUrl: String = getJdbcUrl
 }
 
 class KyuubiOnKubernetesWithSparkOnKubernetesTestsBase extends WithKyuubiServerOnKubernetes
   with SparkQueryTests {
-  override protected var connectionConf: mutable.Map[String, String] = mutable.Map(
-    "spark.master" -> s"k8s://$getMiniKubeApiMaster",
-    "spark.kubernetes.container.image" -> "apache/spark:v3.2.1",
-    "spark.executor.memory" -> "512M",
-    "spark.driver.memory" -> "512M",
-    "spark.kubernetes.driver.request.cores" -> "250m",
-    "spark.kubernetes.executor.request.cores" -> "250m",
-    "spark.executor.instances" -> "1")
-
   override protected def jdbcUrl: String = getJdbcUrl
 
-  def setConnectionSparkConf(conf: Map[String, String]): Unit = {
-    connectionConf += conf
+  override def setConnectionSparkConf(): Unit = {
+    connectionConf += "spark.master" -> s"k8s://$getMiniKubeApiMaster"
+    connectionConf += "spark.executor.memory" -> "512M"
+    connectionConf += "spark.driver.memory" -> "512M"
+    connectionConf += "spark.kubernetes.driver.request.cores" -> "250m"
+    connectionConf += "spark.kubernetes.executor.request.cores" -> "250m"
+    connectionConf += "spark.executor.instances" -> "1"
   }
 }
 
@@ -77,7 +72,10 @@ class KyuubiOnKubernetesWithSparkOnKubernetesTestsBase extends WithKyuubiServerO
  */
 class KyuubiOnKubernetesWithClientSparkOnKubernetesTestsSuite
   extends KyuubiOnKubernetesWithSparkOnKubernetesTestsBase {
-  setConnectionSparkConf(Map("spark.submit.deployMode" -> "client"))
+  override def setConnectionSparkConf(): Unit = {
+    super.setConnectionSparkConf()
+    connectionConf += "spark.submit.deployMode" -> "client"
+  }
 }
 
 /**
@@ -92,20 +90,9 @@ class KyuubiOnKubernetesWithClientSparkOnKubernetesTestsSuite
  */
 class KyuubiOnKubernetesWithClusterSparkOnKubernetesTestsSuite
   extends KyuubiOnKubernetesWithSparkOnKubernetesTestsBase with WithSimpleDFSService {
-
   private val localhostAddress = Utils.findLocalInetAddress.getHostAddress
   private val driverTemplate =
     Thread.currentThread().getContextClassLoader.getResource("driver.yml")
-
-  setConnectionSparkConf(Map(
-    "spark.submit.deployMode" -> "cluster",
-    "spark.kubernetes.file.upload.path" -> s"hdfs://$localhostAddress:$getDFSPort/spark",
-    "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
-    "spark.kubernetes.authenticate.driver.serviceAccountName" -> "spark",
-    "spark.kubernetes.driver.podTemplateFile" -> driverTemplate.getPath,
-    ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress,
-    FRONTEND_CONNECTION_URL_USE_HOSTNAME.key -> "false",
-    FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress))
 
   override val hadoopConf: Configuration = {
     val hdfsConf: Configuration = new Configuration()
@@ -117,5 +104,18 @@ class KyuubiOnKubernetesWithClusterSparkOnKubernetesTestsSuite
     hdfsConf.set("hadoop.proxyuser.185.groups", "*")
     hdfsConf.set("hadoop.proxyuser.185.hosts", "*")
     hdfsConf
+  }
+
+  override def setConnectionSparkConf(): Unit = {
+    super.setConnectionSparkConf()
+    connectionConf += "spark.submit.deployMode" -> "client"
+    connectionConf +=
+      "spark.kubernetes.file.upload.path" -> s"hdfs://$localhostAddress:$getDFSPort/spark"
+    connectionConf += "spark.hadoop.dfs.client.use.datanode.hostname" -> "true"
+    connectionConf += "spark.kubernetes.authenticate.driver.serviceAccountName" -> "spark"
+    connectionConf += "spark.kubernetes.driver.podTemplateFile" -> driverTemplate.getPath
+    connectionConf += ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress
+    connectionConf += FRONTEND_CONNECTION_URL_USE_HOSTNAME.key -> "false"
+    connectionConf += FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress
   }
 }
