@@ -19,12 +19,12 @@ package org.apache.kyuubi.engine.hive
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
 
 class HiveProcessBuilderSuite extends KyuubiFunSuite {
 
-  private def conf = KyuubiConf().set("kyuubi.on", "off")
-
   test("hive process builder") {
+    val conf = KyuubiConf().set("kyuubi.on", "off")
     val builder = new HiveProcessBuilder("kyuubi", conf)
     val commands = builder.toString.split('\n')
     assert(commands.head.endsWith("bin/java"), "wrong exec")
@@ -33,4 +33,33 @@ class HiveProcessBuilderSuite extends KyuubiFunSuite {
     assert(commands.exists(ss => ss.contains("kyuubi-hive-sql-engine")), "wrong classpath")
   }
 
+  test("default engine memory") {
+    val conf = KyuubiConf()
+    val builder = new HiveProcessBuilder("kyuubi", conf)
+    val commands = builder.toString.split('\n')
+    assert(commands.contains("-Xmx1g"))
+  }
+
+  test("set engine memory") {
+    val conf = KyuubiConf().set(ENGINE_HIVE_MEMORY, "5g")
+    val builder = new HiveProcessBuilder("kyuubi", conf)
+    val commands = builder.toString.split('\n')
+    assert(commands.contains("-Xmx5g"))
+  }
+
+  test("set engine java opts") {
+    val conf = KyuubiConf().set(
+      ENGINE_HIVE_JAVA_OPTIONS,
+      "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
+    val builder = new HiveProcessBuilder("kyuubi", conf)
+    val commands = builder.toString.split('\n')
+    assert(commands.contains("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"))
+  }
+
+  test("set engine extra classpath") {
+    val conf = KyuubiConf().set(ENGINE_HIVE_EXTRA_CLASSPATH, "/dummy_classpath/*")
+    val builder = new HiveProcessBuilder("kyuubi", conf)
+    val commands = builder.toString
+    assert(commands.contains("/dummy_classpath/*"))
+  }
 }

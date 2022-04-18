@@ -32,7 +32,10 @@ import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
   override protected val connectionConf: Map[String, String] = Map.empty
 
-  override protected val kyuubiServerConf: KyuubiConf = KyuubiConf()
+  override protected val kyuubiServerConf: KyuubiConf = {
+    KyuubiConf().set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.master", "yarn")
+      .set(BATCH_CONF_IGNORE_LIST, Seq("spark.master"))
+  }
 
   private def sessionManager(): KyuubiSessionManager =
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -47,7 +50,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
       sparkProcessBuilder.mainClass,
       "spark-batch-submission",
       Map(
-        "spark.master" -> "yarn",
+        "spark.master" -> "local",
         s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
         s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
       Seq.empty[String])

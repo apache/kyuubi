@@ -171,4 +171,12 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, path)
     assert(kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).get == path)
   }
+
+  test("get pre-defined batch conf for different batch types") {
+    val kyuubiConf = KyuubiConf()
+    kyuubiConf.set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.yarn.tags", "kyuubi")
+    kyuubiConf.set(s"$KYUUBI_BATCH_CONF_PREFIX.flink.yarn.tags", "kyuubi")
+    assert(kyuubiConf.getBatchConf("spark") == Map("spark.yarn.tags" -> "kyuubi"))
+    assert(kyuubiConf.getBatchConf("flink") == Map("yarn.tags" -> "kyuubi"))
+  }
 }

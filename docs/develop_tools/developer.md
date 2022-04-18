@@ -58,3 +58,11 @@ with [google-java-format](https://github.com/google/google-java-format) and [Sca
 to format the Java and Scala code.
 
 You can run `dev/reformat` to format all Java and Scala code.
+
+
+## Append descriptions of new configurations to settings.md
+
+Kyuubi uses settings.md to explain available configurations.
+
+You can run `KYUUBI_UPDATE=1 build/mvn clean install -Pflink-provided,spark-provided,hive-provided -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration`
+to append descriptions of new configurations to settings.md.

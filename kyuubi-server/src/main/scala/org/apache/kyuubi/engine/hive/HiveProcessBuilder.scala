@@ -26,6 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.operation.log.OperationLog
@@ -52,7 +53,12 @@ class HiveProcessBuilder(
     // or just leave it, because we can handle it at operation layer
     buffer += s"-D$KYUUBI_SESSION_USER_KEY=$proxyUser"
 
-    // TODO: add Kyuubi.engineEnv.HIVE_ENGINE_MEMORY or kyuubi.engine.hive.memory to configure
+    val memory = conf.get(ENGINE_HIVE_MEMORY)
+    buffer += s"-Xmx$memory"
+    val javaOptions = conf.get(ENGINE_HIVE_JAVA_OPTIONS)
+    if (javaOptions.isDefined) {
+      buffer += javaOptions.get
+    }
     // -Xmx5g
     // java options
     for ((k, v) <- conf.getAll) {
@@ -75,20 +81,21 @@ class HiveProcessBuilder(
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
     // jars from hive distribution
     classpathEntries.add(s"$hiveHome${File.separator}lib${File.separator}*")
-    val hadoopCp = env.get("HIVE_HADOOP_CLASSPATH").orElse(env.get("HADOOP_CLASSPATH"))
-    hadoopCp.foreach(path => classpathEntries.add(s"$path${File.separator}*"))
-    if (hadoopCp.isEmpty) {
-      warn(s"HIVE_HADOOP_CLASSPATH or HADOOP_CLASSPATH don't export.")
+    val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
+    extraCp.foreach(classpathEntries.add)
+    if (extraCp.isEmpty) {
+      warn(s"The conf of kyuubi.engine.hive.extra.classpath is empty.")
       mainResource.foreach { path =>
         val devHadoopJars = Paths.get(path).getParent
           .resolve(s"scala-$SCALA_COMPILE_VERSION")
           .resolve("jars")
         if (!Files.exists(devHadoopJars)) {
-          throw new KyuubiException(s"The path $devHadoopJars does not exists. ")
+          throw new KyuubiException(s"The path $devHadoopJars does not exists. Please set " +
+            s"kyuubi.engine.hive.extra.classpath for configuring location of " +
+            s"hadoop client jars, etc")
         }
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }
-
     }
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass

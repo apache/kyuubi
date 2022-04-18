@@ -103,6 +103,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     sys.env ++ getAllWithPrefix(KYUUBI_ENGINE_ENV_PREFIX, "")
   }
 
+  /** Get all batch conf as map */
+  def getBatchConf(batchType: String): Map[String, String] = {
+    getAllWithPrefix(s"$KYUUBI_BATCH_CONF_PREFIX.${batchType.toLowerCase(Locale.ROOT)}", "")
+  }
+
   /**
    * Retrieve key-value pairs from [[KyuubiConf]] starting with `dropped.remainder`, and put them to
    * the result map with the `dropped` of key being dropped.
@@ -813,6 +818,21 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT5S")
 
+  val BATCH_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.batch.conf.ignore.list")
+      .doc("A comma separated list of ignored keys for batch conf. If the batch conf contains" +
+        " any of them, the key and the corresponding value will be removed silently during batch" +
+        " job submission." +
+        " Note that this rule is for server-side protection defined via administrators to" +
+        " prevent some essential configs from tampering." +
+        " You can also pre-define some config for batch job submission with prefix:" +
+        " kyuubi.batchConf.[batchType]. For example, you can pre-define `spark.master`" +
+        " for spark batch job with key `kyuubi.batchConf.spark.spark.master`.")
+      .version("1.6.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
@@ -1346,6 +1366,50 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
+
+  val ENGINE_TRINO_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.memory")
+      .doc("The heap memory for the trino query engine")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_TRINO_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.java.options")
+      .doc("The extra java options for the trino query engine")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.extra.classpath")
+      .doc("The extra classpath for the trino query engine, " +
+        "for configuring other libs which may need by the trino engine ")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_HIVE_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.hive.memory")
+      .doc("The heap memory for the hive query engine")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_HIVE_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.hive.java.options")
+      .doc("The extra java options for the hive query engine")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_HIVE_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.hive.extra.classpath")
+      .doc("The extra classpath for the hive query engine, for configuring location" +
+        " of hadoop client jars, etc")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 
   val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.connections.per.user")

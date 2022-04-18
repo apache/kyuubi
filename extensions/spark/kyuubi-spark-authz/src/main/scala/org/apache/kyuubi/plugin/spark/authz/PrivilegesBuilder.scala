@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
-import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project, Sort, Window}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StructField
 
@@ -76,7 +76,8 @@ object PrivilegesBuilder {
   private def buildQuery(
       plan: LogicalPlan,
       privilegeObjects: ArrayBuffer[PrivilegeObject],
-      projectionList: Seq[NamedExpression] = Nil): Unit = {
+      projectionList: Seq[NamedExpression] = Nil,
+      conditionList: Seq[NamedExpression] = Nil): Unit = {
 
     def mergeProjection(table: CatalogTable, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
@@ -84,24 +85,35 @@ object PrivilegesBuilder {
           table.identifier,
           table.schema.fieldNames)
       } else {
-        val cols = projectionList.flatMap(collectLeaves)
+        val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
         privilegeObjects += tablePrivileges(table.identifier, cols)
       }
     }
 
     plan match {
-      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList)
+      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList)
 
       case j: Join =>
         val cols =
-          projectionList ++ j.condition.map(expr => collectLeaves(expr)).getOrElse(Nil)
-        buildQuery(j.left, privilegeObjects, cols)
-        buildQuery(j.right, privilegeObjects, cols)
+          conditionList ++ j.condition.map(expr => collectLeaves(expr)).getOrElse(Nil)
+        buildQuery(j.left, privilegeObjects, projectionList, cols)
+        buildQuery(j.right, privilegeObjects, projectionList, cols)
 
       case f: Filter =>
-        val cols = projectionList ++ collectLeaves(f.condition)
-        buildQuery(f.child, privilegeObjects, cols)
+        val cols = conditionList ++ collectLeaves(f.condition)
+        buildQuery(f.child, privilegeObjects, projectionList, cols)
+
+      case w: Window =>
+        val orderCols = w.orderSpec.flatMap(orderSpec => collectLeaves(orderSpec))
+        val partitionCols = w.partitionSpec.flatMap(partitionSpec => collectLeaves(partitionSpec))
+        val cols = conditionList ++ orderCols ++ partitionCols
+        buildQuery(w.child, privilegeObjects, projectionList, cols)
+
+      case s: Sort =>
+        val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
+        val cols = conditionList ++ sortCols
+        buildQuery(s.child, privilegeObjects, projectionList, cols)
 
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation)
@@ -119,7 +131,7 @@ object PrivilegesBuilder {
 
       case p =>
         for (child <- p.children) {
-          buildQuery(child, privilegeObjects, projectionList)
+          buildQuery(child, privilegeObjects, projectionList, conditionList)
         }
     }
   }

@@ -17,8 +17,8 @@
 # under the License.
 #
 
-sphinx==4.3.1
-sphinx_rtd_theme==0.5.2
+sphinx==4.5.0
+sphinx_rtd_theme==1.0.0
 sphinx-markdown-tables==0.0.15
 recommonmark==0.7.1
-sphinx-notfound-page==0.6
+sphinx-notfound-page==0.8
