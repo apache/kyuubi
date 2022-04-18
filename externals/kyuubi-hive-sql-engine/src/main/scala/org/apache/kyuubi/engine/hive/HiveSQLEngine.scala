@@ -46,7 +46,12 @@ class HiveSQLEngine extends Serverable("HiveSQLEngine") {
     backendService.sessionManager.startTerminatingChecker(() => stop())
   }
 
-  override protected def stopServer(): Unit = {}
+  override protected def stopServer(): Unit = {
+    // #2351
+    // https://issues.apache.org/jira/browse/HIVE-23164
+    // Server is not properly terminated because of non-daemon threads
+    System.exit(0)
+  }
 }
 
 object HiveSQLEngine extends Logging {
@@ -100,7 +105,9 @@ object HiveSQLEngine extends Logging {
     val event = HiveEngineEvent(engine)
     info(event)
     EventBus.post(event)
-    Utils.addShutdownHook(() => engine.stop())
+    Utils.addShutdownHook(() => {
+      engine.getServices.foreach(_.stop())
+    })
     currentEngine = Some(engine)
     engine
   }
