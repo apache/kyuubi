@@ -86,6 +86,13 @@ Command: list engine
 
 ## Manage kyuubi servers
 You can specify the zookeeper address(`--zk-quorum`) and namespace(`--namespace`), version(`--version`) parameters to query a specific kyuubi server cluster.
+
+### List server
+List all the service nodes for a particular domain.
+```shell
+bin/kyuubi-ctl list server
+```
+
 ### Create server
 Expose Kyuubi server instance to another domain.
 
@@ -93,11 +100,13 @@ First read `kyuubi.ha.zookeeper.namespace` in `conf/kyuubi-defaults.conf`, if th
 ```shell
 bin/kyuubi-ctl create server --namespace XXX
 ```
+
 ### Get server
 Get Kyuubi server info of domain.
 ```shell
 bin/kyuubi-ctl get server --host XXX --port YYY
 ```
+
 ### Delete server
 Delete the specified service node for a domain.
 
@@ -105,12 +114,7 @@ After the server node is deleted, the kyuubi server stops opening new sessions a
 ```shell
 bin/kyuubi-ctl delete server --host XXX --port YYY
 ```
-### List server
-List all the service nodes for a particular domain.
 
-```shell
-bin/kyuubi-ctl list server
-```
 ## Manage kyuubi engines
 You can also specify the engine type(`--engine-type`), and the engine share level subdomain(`--engine-subdomain`).
 
@@ -118,20 +122,22 @@ If not specified, the configuration item `kyuubi.engine.type` of `kyuubi-default
 
 If the engine pool mode is enabled through `kyuubi.engine.pool.size`, the subdomain consists of `kyuubi.engine.pool.name` and a number below size, e.g. `engine-pool-0` .
 
+### List engine
+List all the engine nodes for a user.
+```shell
+bin/kyuubi-ctl list egnine --user AAA
+```
+
 ### Get engine
 Get Kyuubi engine info belong to a user.
 ```shell
 bin/kyuubi-ctl get egnine --user AAA --host XXX --port YYY
 ```
+
 ### Delete engine
 Delete the specified engine node for user.
 
 After the engine node is deleted, the kyuubi engine stops opening new sessions and waits for all currently open sessions to be closed before the process exits.
 ```shell
 bin/kyuubi-ctl delete egnine --user AAA --host XXX --port YYY
-```
-### List engine
-List all the engine nodes for a user.
-```shell
-bin/kyuubi-ctl list egnine --user AAA
 ```
