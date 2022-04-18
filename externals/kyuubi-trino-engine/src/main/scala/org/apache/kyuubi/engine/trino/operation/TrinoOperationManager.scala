@@ -35,7 +35,8 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val incrementalCollect = session.sessionManager.getConf.get(OPERATION_INCREMENTAL_COLLECT)
-    val operation = new ExecuteStatement(session, statement, runAsync, incrementalCollect)
+    val operation =
+      new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
     addOperation(operation)
   }
 

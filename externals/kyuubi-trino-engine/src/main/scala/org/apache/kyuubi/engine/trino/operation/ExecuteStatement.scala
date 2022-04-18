@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.trino.operation
 
-import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
@@ -28,13 +28,17 @@ import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
     session: Session,
     override val statement: String,
     override val shouldRunAsync: Boolean,
+    queryTimeout: Long,
     incrementalCollect: Boolean)
   extends TrinoOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
+
+  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
@@ -50,6 +54,7 @@ class ExecuteStatement(
   }
 
   override protected def runInternal(): Unit = {
+    addTimeoutMonitor()
     val trinoStatement = TrinoStatement(trinoContext, session.sessionManager.getConf, statement)
     trino = trinoStatement.getTrinoClient
     if (shouldRunAsync) {
@@ -93,6 +98,18 @@ class ExecuteStatement(
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
+    } finally {
+      statementTimeoutCleaner.foreach(_.shutdown())
+    }
+  }
+
+  private def addTimeoutMonitor(): Unit = {
+    if (queryTimeout > 0) {
+      val timeoutExecutor =
+        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
+      val action: Runnable = () => cleanup(OperationState.TIMEOUT)
+      timeoutExecutor.schedule(action, queryTimeout, TimeUnit.SECONDS)
+      statementTimeoutCleaner = Some(timeoutExecutor)
     }
   }
 }
