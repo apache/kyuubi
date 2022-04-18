@@ -303,8 +303,7 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(table)
 
       case "CreateDataSourceTableAsSelectCommand" |
-          "OptimizedCreateHiveTableAsSelectCommand" |
-          "InsertIntoHiveTable" =>
+          "OptimizedCreateHiveTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("table").identifier
         outputObjs += tablePrivileges(table)
         buildQuery(getQuery, inputObjs)
@@ -381,6 +380,13 @@ object PrivilegesBuilder {
           "InsertIntoHadoopFsRelationCommand" |
           "InsertIntoHiveDirCommand" =>
         // TODO: Should get the table via datasource options?
+        buildQuery(getQuery, inputObjs)
+
+      case "InsertIntoHiveTable" =>
+        val table = getPlanField[CatalogTable]("table").identifier
+        val overwrite = getPlanField[Boolean]("overwrite")
+        val actionType = if (overwrite) INSERT_OVERWRITE else INSERT
+        outputObjs += tablePrivileges(table, actionType = actionType)
         buildQuery(getQuery, inputObjs)
 
       case "LoadDataCommand" =>

@@ -1079,6 +1079,26 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       s"SELECT CASE WHEN key > 0 THEN 'big' ELSE 'small' END FROM $reusedTable",
       Seq("key"))
   }
+
+  // ALTER TABLE ADD COLUMNS It should be run at end
+  // to prevent affecting the cases that rely on the $reusedTable's table structure
+  test("AlterTableAddColumnsCommand") {
+    val plan = sql(s"ALTER TABLE $reusedTable" +
+      s" ADD COLUMNS (a int)").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERTABLE_ADDCOLS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName === getClass.getSimpleName)
+    assert(po.columns.head === "a")
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
@@ -1218,6 +1238,35 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(accessType === AccessType.CREATE)
   }
 
+  test("InsertIntoHiveTableCommand") {
+    assume(!isSparkV2)
+    val tableName = "InsertIntoHiveTable"
+    withTable(tableName) {_ =>
+      sql(s"CREATE TABLE $tableName (a int, b string) USING hive")
+      val sqlStr =
+        s"""
+           |INSERT INTO $tableName VALUES (1, "KYUUBI")
+           |""".stripMargin
+      val plan = sql(sqlStr).queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === QUERY)
+      val (inputs, outputs) = PrivilegesBuilder.build(plan)
+
+      assert(inputs.isEmpty)
+
+      assert(outputs.size === 1)
+      outputs.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType. INSERT)
+      assert (po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname equalsIgnoreCase "default")
+      assert(po.objectName equalsIgnoreCase tableName)
+      assert(po.columns.isEmpty)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.UPDATE)
+    }
+  }
+  }
+
   test("ShowCreateTableAsSerdeCommand") {
     assume(!isSparkV2)
     withTable("ShowCreateTableAsSerdeCommand") { t =>
@@ -1238,24 +1287,5 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
       assert(tuple._2.size === 0)
     }
-  }
-// ALTER TABLE ADD COLUMNS It should be run at end
-// to prevent affecting the cases that rely on the $reusedTable's table structure
-  test("AlterTableAddColumnsCommand") {
-    val plan = sql(s"ALTER TABLE $reusedTable" +
-      s" ADD COLUMNS (a int)").queryExecution.analyzed
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === ALTERTABLE_ADDCOLS)
-    val tuple = PrivilegesBuilder.build(plan)
-    assert(tuple._1.isEmpty)
-    assert(tuple._2.size === 1)
-    val po = tuple._2.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname equalsIgnoreCase reusedDb)
-    assert(po.objectName === getClass.getSimpleName)
-    assert(po.columns.head === "a")
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
   }
 }
