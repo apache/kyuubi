@@ -27,7 +27,7 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
-import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -67,6 +67,13 @@ class KyuubiSessionImpl(
   val engine: EngineRef = new EngineRef(sessionConf, user)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
+
+  private val sessionEvent = KyuubiSessionEvent(this)
+  EventBus.post(sessionEvent)
+
+  override def getSessionEvent: Option[KyuubiSessionEvent] = {
+    Option(sessionEvent)
+  }
 
   private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client

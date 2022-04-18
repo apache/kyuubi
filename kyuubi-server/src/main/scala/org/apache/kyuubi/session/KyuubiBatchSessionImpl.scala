@@ -21,7 +21,7 @@ import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState
@@ -42,6 +42,13 @@ class KyuubiBatchSessionImpl(
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(this, batchRequest)
+
+  private val sessionEvent = KyuubiSessionEvent(this)
+  EventBus.post(sessionEvent)
+
+  override def getSessionEvent: Option[KyuubiSessionEvent] = {
+    Option(sessionEvent)
+  }
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
