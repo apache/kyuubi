@@ -31,6 +31,7 @@ import org.apache.commons.lang3.time.DateFormatUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.util.ShutdownHookManager
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
 object Utils extends Logging {
@@ -271,5 +272,20 @@ object Utils extends Logging {
 
   def getCodeSourceLocation(clazz: Class[_]): String = {
     new File(clazz.getProtectionDomain.getCodeSource.getLocation.toURI).getPath
+  }
+
+  def fromCommandLineArgs(args: Array[String], conf: KyuubiConf): Unit = {
+    require(args.length % 2 == 0, s"Illegal size of arguments.")
+    for (i <- args.indices by 2) {
+      require(
+        args(i) == "--conf",
+        s"Unrecognized main arguments prefix ${args(i)}," +
+          s"the argument format is '--conf k=v'.")
+
+      args(i + 1).split("=", 2).map(_.trim) match {
+        case seq if seq.length == 2 => conf.set(seq.head, seq.last)
+        case _ => throw new IllegalArgumentException(s"Illegal argument: ${args(i + 1)}.")
+      }
+    }
   }
 }

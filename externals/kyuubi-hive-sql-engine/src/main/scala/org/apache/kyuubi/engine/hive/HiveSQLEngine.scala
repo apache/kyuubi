@@ -125,6 +125,7 @@ object HiveSQLEngine extends Logging {
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
     try {
+      Utils.fromCommandLineArgs(args, kyuubiConf)
       startEngine()
     } catch {
       case t: Throwable => currentEngine match {
