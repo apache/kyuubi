@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.trino
 
 import java.util.concurrent.CountDownLatch
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.TRINO_ENGINE_SHUTDOWN_PRIORITY
 import org.apache.kyuubi.Utils.addShutdownHook
 import org.apache.kyuubi.config.KyuubiConf
@@ -72,6 +72,7 @@ object TrinoSqlEngine extends Logging {
     SignalRegister.registerLogger(logger)
 
     try {
+      Utils.fromCommandLineArgs(args, kyuubiConf)
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
       kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
