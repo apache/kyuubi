@@ -153,27 +153,23 @@ class ExecuteStatement(
   }
 
   override def setState(newState: OperationState): Unit = {
-    setStateInt(newState)
-  }
-
-  private def setStateInt(newState: OperationState, startTime: Option[Long] = None): Unit = {
     super.setState(newState)
-    if (startTime.isDefined) {
-      this.startTime = startTime.get
-    }
     EventBus.post(
       SparkOperationEvent(this, operationListener.getExecutionId))
   }
 
   def setCompiledStateIfNeeded(): Unit = synchronized {
     if (getStatus.state == OperationState.RUNNING) {
-      val startTime =
-        if (result != null) {
-          Some(result.queryExecution.tracker.phases(QueryPlanningTracker.PARSING).endTimeMs)
-        } else {
-          None
+      super.setState(OperationState.COMPILED)
+      if (result != null) {
+        val phase = result.queryExecution.tracker.phases
+        if (phase.contains("parsing") && phase.contains("planning")) {
+          val compiledTime = phase("planning").endTimeMs - phase("parsing").startTimeMs
+          lastAccessTime = lastAccessTime + compiledTime
         }
-      setStateInt(OperationState.COMPILED, startTime)
+      }
+      EventBus.post(
+        SparkOperationEvent(this, operationListener.getExecutionId))
     }
   }
 }
