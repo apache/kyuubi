@@ -71,7 +71,7 @@ object FlinkSQLEngine extends Logging {
     SignalRegister.registerLogger(logger)
 
     FlinkEngineUtils.checkFlinkVersion()
-
+    executeConfigShell()
     try {
       val flinkConfDir = CliFrontend.getConfigurationDirectoryFromEnv
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
@@ -79,7 +79,6 @@ object FlinkSQLEngine extends Logging {
         Utils.getSystemProperties.filterKeys(_.startsWith("flink."))
           .map { case (k, v) => (k.stripPrefix("flink."), v) }
       flinkConf.addAll(Configuration.fromMap(flinkConfFromSys.asJava))
-
       val executionTarget = flinkConf.getString(DeploymentOptions.TARGET)
       // set cluster name for per-job and application mode
       executionTarget match {
@@ -122,6 +121,19 @@ object FlinkSQLEngine extends Logging {
         }
       case t: Throwable =>
         error("Create FlinkSQL Engine Failed", t)
+    }
+  }
+
+  def executeConfigShell(): Unit = {
+    val flinkHome = System.getenv("FLINK_HOME")
+    val commands = Seq("/bin/bash", s"$flinkHome/bin/config.sh")
+    val pb = new ProcessBuilder(commands: _*)
+    val process = pb.start()
+    if (process.waitFor() == 0) {
+      info(s"Successfully execute ${commands.mkString(" ")}")
+    } else {
+      error(s"Failed to execute ${commands.mkString(" ")}, will exit...")
+      System.exit(-1)
     }
   }
 

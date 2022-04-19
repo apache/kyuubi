@@ -26,7 +26,10 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   test("flink engine process builder") {
     val builder = new FlinkProcessBuilder("vinoyang", conf)
     val commands = builder.toString.split(' ')
-    assert(commands.exists(_ endsWith "flink-sql-engine.sh"))
+    assert(commands.head.endsWith("bin/java"), "wrong exec")
+    assert(commands.contains("-Dkyuubi.session.user=vinoyang"))
+    assert(commands.contains("-Dkyuubi.on=off"))
+    assert(commands.exists(ss => ss.contains("kyuubi-flink-sql-engine")), "wrong classpath")
   }
 
   test("kill application") {
