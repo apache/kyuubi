@@ -17,13 +17,18 @@
 
 package org.apache.kyuubi.engine.hive.operation
 
-import org.apache.kyuubi.HiveEngineTests
+import org.apache.kyuubi.{HiveEngineTests, Utils}
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 
 class HiveOperationSuite extends HiveEngineTests {
 
   override def beforeAll(): Unit = {
-    HiveSQLEngine.startEngine()
+    val metastore = Utils.createTempDir(namePrefix = getClass.getSimpleName)
+    metastore.toFile.delete()
+    val args = Array(
+      "--conf",
+      s"javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=$metastore;create=true")
+    HiveSQLEngine.main(args)
     super.beforeAll()
   }
 
