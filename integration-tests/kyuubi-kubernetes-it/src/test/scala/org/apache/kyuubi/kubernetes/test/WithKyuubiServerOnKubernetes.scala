@@ -26,13 +26,12 @@ import org.apache.kyuubi.config.KyuubiConf
 
 trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
   protected val kyuubiServerConf: KyuubiConf = KyuubiConf()
-  protected var connectionConf: mutable.Map[String, String] = mutable.Map.empty[String, String]
+  protected lazy val connectionConf: mutable.Map[String, String] = setConnectionSparkConf()
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
-  protected def setConnectionSparkConf(): Unit = {}
+  protected def setConnectionSparkConf(): mutable.Map[String, String] = mutable.Map.empty
 
   final override protected lazy val conf: KyuubiConf = {
-    setConnectionSparkConf()
     connectionConf.foreach { case (k, v) => kyuubiServerConf.set(k, v) }
     kyuubiServerConf
   }
