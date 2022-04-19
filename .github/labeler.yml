@@ -65,6 +65,9 @@
   - "kyuubi-hive-jdbc/**/*"
   - "kyuubi-hive-jdbc-shaded/**/*"
 
+"module:events":
+  - "kyuubi-events/**/*"
+
 "module:flink":
   - "externals/kyuubi-flink-sql-engine/**/*"
   - "integration-tests/kyuubi-flink-it/**/*"
