@@ -59,8 +59,7 @@ spark-warehouse/
 metastore_db
 derby.log
 ldap
-*/dependency-reduced-pom.xml
-*/*/dependency-reduced-pom.xml
+**/dependency-reduced-pom.xml
 metrics/report.json
 metrics/.report.json.crc
 /kyuubi-ha/embedded_zookeeper/
