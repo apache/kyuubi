@@ -18,17 +18,17 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
+import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
+import scala.reflect.io.File
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
-import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
-import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
-import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
-
-import scala.reflect.io.File
 
 abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionProvider {
 
@@ -814,26 +814,6 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assert(tuple._2.size === 0)
   }
 
-//  test("InsertIntoDataSourceCommand") {
-//
-//    val plan = sql(s" INSERT INTO TABLE $reusedPartTable VALUES (1, 'KYUUBI', '2022')")
-//      .queryExecution.analyzed
-//    val operationType = OperationType(plan.nodeName)
-//    assert(operationType === QUERY)
-//    val tuple = PrivilegesBuilder.build(plan)
-//    assert(tuple._1.isEmpty)
-//
-//    assert(tuple._2.size === 1)
-//    val po0 = tuple._2.head
-//    assert(po0.actionType === PrivilegeObjectActionType.INSERT)
-//    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-//    assert(po0.dbname equalsIgnoreCase reusedDb)
-//    assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
-//    assert(po0.columns === Seq("pid"))
-//    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-//    assert(accessType0 === AccessType.SELECT)
-//  }
-
   test("RepairTableCommand") {
     assume(isSparkV32OrGreater)
     val tableName = reusedDb + "." + "TableToRepair"
@@ -1380,8 +1360,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     withTable(tableName) { _ =>
       // sql(s"CREATE TABLE $tableName (a int, b string) USING parquet")
       val schema = new StructType()
-        .add("key", IntegerType, true)
-        .add("value", StringType, true)
+        .add("key", IntegerType, nullable = true)
+        .add("value", StringType, nullable = true)
       val newTable = CatalogTable(
         identifier = TableIdentifier(tableName, None),
         tableType = CatalogTableType.MANAGED,
@@ -1395,7 +1375,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         schema = schema,
         provider = Some(classOf[SimpleInsertSource].getName))
 
-      spark.sessionState.catalog.createTable(newTable, false)
+      spark.sessionState.catalog.createTable(newTable, ignoreIfExists = false)
       val sqlStr =
         s"""
            |INSERT INTO TABLE $tableName
