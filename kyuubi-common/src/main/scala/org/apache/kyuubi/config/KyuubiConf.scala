@@ -1411,4 +1411,28 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createOptional
+
+  val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.limit.connections.per.user")
+      .doc("Maximum kyuubi server connections per user." +
+        " Any user exceeding this limit will not be allowed to connect.")
+      .version("1.6.0")
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.limit.connections.per.ipaddress")
+      .doc("Maximum kyuubi server connections per ipaddress." +
+        " Any user exceeding this limit will not be allowed to connect.")
+      .version("1.6.0")
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.limit.connections.per.user.ipaddress")
+      .doc("Maximum kyuubi server connections per user:ipaddress combination." +
+        " Any user-ipaddress exceeding this limit will not be allowed to connect.")
+      .version("1.6.0")
+      .intConf
+      .createOptional
 }

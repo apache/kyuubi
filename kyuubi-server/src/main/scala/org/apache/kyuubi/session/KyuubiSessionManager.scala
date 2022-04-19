@@ -43,10 +43,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
 
+  private var limiter: Option[SessionLimiter] = None
+
   override def initialize(conf: KyuubiConf): Unit = {
     addService(credentialsManager)
     val absPath = Utils.getAbsolutePathFromWork(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
     _operationLogRoot = Some(absPath.toAbsolutePath.toString)
+    initSessionLimiter(conf)
     super.initialize(conf)
   }
 
@@ -75,6 +78,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
+    limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
     try {
       super.openSession(protocol, username, password, ipAddress, conf)
     } catch {
@@ -87,6 +91,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}",
           e)
     }
+  }
+
+  override def closeSession(sessionHandle: SessionHandle): Unit = {
+    val session = getSession(sessionHandle)
+    super.closeSession(sessionHandle)
+    limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
   }
 
   def openBatchSession(
@@ -146,6 +156,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   override protected def isServer: Boolean = true
+
+  private def initSessionLimiter(conf: KyuubiConf): Unit = {
+    val userLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER).getOrElse(0)
+    val ipAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
+    val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
+    if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
+      limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
+    }
+  }
 }
 
 object KyuubiSessionManager {

@@ -331,6 +331,9 @@ Key | Default | Meaning | Type | Since
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+<code>kyuubi.server.limit.connections.per.ipaddress</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Maximum kyuubi server connections per ipaddress. Any user exceeding this limit will not be allowed to connect.</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.6.0</div>
+<code>kyuubi.server.limit.connections.per.user</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Maximum kyuubi server connections per user. Any user exceeding this limit will not be allowed to connect.</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.6.0</div>
+<code>kyuubi.server.limit.connections.per.user.ipaddress</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Maximum kyuubi server connections per user:ipaddress combination. Any user-ipaddress exceeding this limit will not be allowed to connect.</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.6.0</div>
 <code>kyuubi.server.name</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The name of Kyuubi Server.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.5.0</div>
 
 
