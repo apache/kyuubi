@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.trino
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 
 class TrinoProcessBuilderSuite extends KyuubiFunSuite {
 
@@ -30,7 +31,10 @@ class TrinoProcessBuilderSuite extends KyuubiFunSuite {
     val builder = new TrinoProcessBuilder("kyuubi", conf)
     val commands = builder.toString.split("\n")
     assert(commands.head.endsWith("java"))
-    assert(commands.contains(s"-D${ENGINE_TRINO_CONNECTION_URL.key}=dummy_url"))
+    assert(builder.toString.contains(s"--conf\n${KYUUBI_SESSION_USER_KEY}=kyuubi"))
+    assert(builder.toString.contains(s"--conf\n${ENGINE_TRINO_CONNECTION_URL.key}=dummy_url"))
+    assert(builder.toString.contains(
+      s"--conf\n${ENGINE_TRINO_CONNECTION_CATALOG.key}=dummy_catalog"))
   }
 
   test("capture error from trino process builder") {
