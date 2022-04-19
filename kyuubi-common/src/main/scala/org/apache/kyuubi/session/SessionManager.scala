@@ -118,8 +118,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
     info(s"$sessionHandle is closed, current opening sessions $getOpenSessionCount")
-    session.close()
-    deleteOperationLogSessionDir(sessionHandle)
+    try {
+      session.close()
+    } finally {
+      deleteOperationLogSessionDir(sessionHandle)
+    }
   }
 
   private def deleteOperationLogSessionDir(sessionHandle: SessionHandle): Unit = {
