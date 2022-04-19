@@ -21,29 +21,30 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.trino.session.TrinoSessionImpl
 import org.apache.kyuubi.events.KyuubiEvent
 
-case class SessionEvent(sessionId: String,
-                         username: String,
-                         ip: String,
-                         connectionUrl: String,
-                         catalog: String,
-                         startTime: Long,
-                         var endTime: Long = -1L,
-                         var totalOperations: Int = 0) extends KyuubiEvent {
+case class TrinoSessionEvent(
+    sessionId: String,
+    username: String,
+    ip: String,
+    connectionUrl: String,
+    catalog: String,
+    startTime: Long,
+    var endTime: Long = -1L,
+    var totalOperations: Int = 0) extends KyuubiEvent {
 
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 
 }
 
-object SessionEvent {
+object TrinoSessionEvent {
 
-  def apply(session: TrinoSessionImpl): SessionEvent = {
+  def apply(session: TrinoSessionImpl): TrinoSessionEvent = {
     val sessionConf = session.sessionManager.getConf
     val connectionUrl = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_URL).getOrElse(
       throw KyuubiSQLException("Trino server url can not be null!"))
     val catalog = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG).getOrElse(
       throw KyuubiSQLException("Trino default catalog can not be null!"))
-    new SessionEvent(
+    new TrinoSessionEvent(
       session.handle.identifier.toString,
       session.user,
       session.ipAddress,

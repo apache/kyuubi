@@ -20,7 +20,6 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.trino.operation.TrinoOperation
 import org.apache.kyuubi.events.KyuubiEvent
 
-
 /**
  * A [[TrinoOperationEvent()]] used to tracker the lifecycle of an operation at Hive SQL Engine side.
  * <ul>
@@ -42,23 +41,23 @@ import org.apache.kyuubi.events.KyuubiEvent
  * @param sessionUser the authenticated client user
  */
 case class TrinoOperationEvent(
-                               statementId: String,
-                               statement: String,
-                               shouldRunAsync: Boolean,
-                               state: String,
-                               eventTime: Long,
-                               createTime: Long,
-                               startTime: Long,
-                               completeTime: Long,
-                               exception: Option[Throwable],
-                               sessionId: String,
-                               sessionUser: String) extends KyuubiEvent {
+    statementId: String,
+    statement: String,
+    shouldRunAsync: Boolean,
+    state: String,
+    eventTime: Long,
+    createTime: Long,
+    startTime: Long,
+    completeTime: Long,
+    exception: Option[Throwable],
+    sessionId: String,
+    sessionUser: String) extends KyuubiEvent {
 
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 }
 
-object HiveOperationEvent {
+object TrinoOperationEvent {
 
   def apply(operation: TrinoOperation): TrinoOperationEvent = {
     val session = operation.getSession

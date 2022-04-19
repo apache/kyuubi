@@ -23,25 +23,39 @@ import org.apache.kyuubi.service.ServiceState
 import org.apache.kyuubi.service.ServiceState.ServiceState
 
 case class TrinoEngineEvent(
-                            connectionUrl: String,
-                            startTime: Long,
-                            endTime: Long,
-                            state: ServiceState,
-                            diagnostic: String,
-                            settings: Map[String, String]) extends KyuubiEvent {
+    connectionUrl: String,
+    startTime: Long,
+    endTime: Long,
+    state: ServiceState,
+    diagnostic: String,
+    settings: Map[String, String]) extends KyuubiEvent {
 
-  override def partitions: Seq[(String, String)] =
-    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
+  override def partitions: Seq[(String, String)] = {
+    // before engine is started, the start time is 0L, the partition use current day.
+    if (startTime == 0) {
+      ("day", Utils.getDateFromTimestamp(System.currentTimeMillis())) :: Nil
+    } else {
+      ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
+    }
+  }
 
   override def toString: String = {
-    super.toString
+    s"""
+       |TrinoEngineEvent: {
+       |connectionUrl: $connectionUrl,
+       |startTime: $startTime,
+       |endTime: $endTime,
+       |state: $state,
+       |diagnostic: $diagnostic,
+       |settings: ${settings.mkString("<", ",", ">")}
+       |}
+       |""".stripMargin
   }
 }
 
 object TrinoEngineEvent {
 
   def apply(engine: TrinoSqlEngine): TrinoEngineEvent = {
-    engine.getStartTime
     val connectionUrl =
       if (engine.getServiceState.equals(ServiceState.LATENT)) {
         null

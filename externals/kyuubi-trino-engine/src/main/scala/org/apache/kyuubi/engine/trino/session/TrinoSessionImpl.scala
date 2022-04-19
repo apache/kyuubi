@@ -23,16 +23,18 @@ import java.util.Collections
 import java.util.Locale
 import java.util.Optional
 import java.util.concurrent.TimeUnit
+
 import io.airlift.units.Duration
 import io.trino.client.ClientSession
 import okhttp3.OkHttpClient
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils.currentUser
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.trino.TrinoConf
 import org.apache.kyuubi.engine.trino.TrinoContext
-import org.apache.kyuubi.engine.trino.event.SessionEvent
+import org.apache.kyuubi.engine.trino.event.TrinoSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.AbstractSession
@@ -50,7 +52,7 @@ class TrinoSessionImpl(
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
 
-  private val sessionEvent = SessionEvent(this)
+  private val sessionEvent = TrinoSessionEvent(this)
 
   override def open(): Unit = {
     normalizedConf.foreach {
