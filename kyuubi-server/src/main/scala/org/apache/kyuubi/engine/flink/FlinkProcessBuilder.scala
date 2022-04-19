@@ -46,6 +46,10 @@ class FlinkProcessBuilder(
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
+  override protected def childProcEnv: Map[String, String] = conf.getEnvs +
+    ("FLINK_HOME" -> FLINK_HOME)
+
+
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
