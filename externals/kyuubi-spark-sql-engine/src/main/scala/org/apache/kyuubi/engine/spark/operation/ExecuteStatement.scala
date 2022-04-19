@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.QueryPlanningTracker
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
