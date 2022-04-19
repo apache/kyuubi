@@ -237,7 +237,11 @@ trait ProcBuilder {
     process
   }
 
-  def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String = ""
+  /**
+   * Use Left to represent engineRefId and Right to represent line.
+   */
+  def killApplication(clue: Either[String, String] = Right(lastRowsOfLog.toArray.mkString("\n")))
+      : String = ""
 
   def close(): Unit = synchronized {
     if (logCaptureThread != null) {

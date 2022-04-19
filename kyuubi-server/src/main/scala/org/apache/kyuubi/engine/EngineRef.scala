@@ -170,7 +170,8 @@ private[kyuubi] class EngineRef(
         // tag is a seq type with comma-separated
         conf.set(
           SparkProcessBuilder.TAG_KEY,
-          conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
+          conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") +
+            "KYUUBI," + engineRefId)
         new SparkProcessBuilder(appUser, conf, extraEngineLog)
       case FLINK_SQL =>
         conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
@@ -203,7 +204,10 @@ private[kyuubi] class EngineRef(
           }
         }
         if (started + timeout <= System.currentTimeMillis()) {
-          val killMessage = builder.killApplication()
+          val killMessage = engineType match {
+            case SPARK_SQL => builder.killApplication(Left(engineRefId))
+            case _ => builder.killApplication()
+          }
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(

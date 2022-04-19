@@ -20,8 +20,8 @@ package org.apache.kyuubi.engine.spark
 import java.io.{File, IOException}
 import java.nio.file.Paths
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import scala.util.matching.Regex
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.ApplicationId
@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INIT_TIMEOUT, ENGINE_TYPE}
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
@@ -44,12 +45,11 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
-  val yarnClient = getYarnClient
-
   def getYarnClient: YarnClient = YarnClient.createYarnClient
 
+  private val sparkHome = getEngineHome(shortName)
+
   override protected val executable: String = {
-    val sparkHome = getEngineHome("spark")
     Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toFile.getCanonicalPath
   }
 
@@ -101,8 +101,6 @@ class SparkProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
-  val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
-
   private def useKeytab(): Boolean = {
     val principal = conf.getOption(PRINCIPAL)
     val keytab = conf.getOption(KEYTAB)
@@ -141,33 +139,46 @@ class SparkProcessBuilder(
     }
   }
 
-  override def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String =
-    YARN_APP_NAME_REGEX.findFirstIn(line) match {
-      case Some(appId) =>
+  override def killApplication(clue: Either[String, String]): String = clue match {
+    case Left(engineRefId) => killApplicationByTag(engineRefId)
+    case Right(_) => ""
+  }
+
+  private def killApplicationByTag(engineRefId: String): String = {
+    conf.getOption(MASTER_KEY).orElse(getSparkDefaultsConf().get(MASTER_KEY)) match {
+      case Some("yarn") =>
+        var applicationId: ApplicationId = null
+        val yarnClient = getYarnClient
         try {
           val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
           yarnClient.init(yarnConf)
           yarnClient.start()
-          val applicationId = ApplicationId.fromString(appId)
-          yarnClient.killApplication(applicationId)
-          s"Killed Application $appId successfully."
+          val apps = yarnClient.getApplications(null, null, Set(engineRefId).asJava)
+          if (apps.isEmpty) return s"There are no Application tagged with $engineRefId," +
+            s" please kill it manually."
+          applicationId = apps.asScala.head.getApplicationId
+          yarnClient.killApplication(
+            applicationId,
+            s"Kyuubi killed this caused by: Timeout(${conf.get(ENGINE_INIT_TIMEOUT)} ms) to" +
+              s" launched ${conf.get(ENGINE_TYPE)} engine with $this.")
+          s"Killed Application $applicationId tagged with $engineRefId successfully."
         } catch {
           case e: Throwable =>
-            s"Failed to kill Application $appId, please kill it manually." +
-              s" Caused by ${e.getMessage}."
+            s"Failed to kill Application $applicationId tagged with $engineRefId," +
+              s" please kill it manually. Caused by ${e.getMessage}."
         } finally {
-          if (yarnClient != null) {
-            yarnClient.stop()
-          }
+          yarnClient.stop()
         }
-      case None => ""
+      case _ => "Kill Application only works with YARN, please kill it manually." +
+          s" Application tagged with $engineRefId"
     }
+  }
 
   override protected def shortName: String = "spark"
 
   protected def getSparkDefaultsConf(): Map[String, String] = {
     val sparkDefaultsConfFile = env.get(SPARK_CONF_DIR)
-      .orElse(env.get(SPARK_HOME).map(_ + File.separator + "conf"))
+      .orElse(Option(s"$sparkHome${File.separator}conf"))
       .map(_ + File.separator + SPARK_CONF_FILE_NAME)
       .map(new File(_)).filter(_.exists())
     Utils.getPropertiesFromFile(sparkDefaultsConfFile)
@@ -187,7 +198,6 @@ object SparkProcessBuilder {
   final private[spark] val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
   final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
-  final private val SPARK_HOME = "SPARK_HOME"
   final private val SPARK_CONF_DIR = "SPARK_CONF_DIR"
   final private val SPARK_CONF_FILE_NAME = "spark-defaults.conf"
 }

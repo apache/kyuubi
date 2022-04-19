@@ -78,7 +78,12 @@ class FlinkProcessBuilder(
 
   override protected def commands: Array[String] = Array(executable)
 
-  override def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String = {
+  override def killApplication(clue: Either[String, String]): String = clue match {
+    case Left(_) => ""
+    case Right(line) => killApplicationByLog(line)
+  }
+
+  def killApplicationByLog(line: String = lastRowsOfLog.toArray.mkString("\n")): String = {
     "Job ID: .*".r.findFirstIn(line) match {
       case Some(jobIdLine) =>
         val jobId = jobIdLine.split("Job ID: ")(1).trim
