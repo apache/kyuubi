@@ -816,41 +816,38 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
 
   test("RepairTableCommand") {
     // only spark 3.2 or greater has RepairTableCommand
-    if (isSparkV32OrGreater) {
-      val tableName = reusedDb + "." + "TableToRepair"
-      withTable(tableName) { _ =>
-        sql(
-          s"""
-             |CREATE TABLE $tableName
-             |(key int, value string, pid string)
-             |USING parquet
-             |PARTITIONED BY (pid)""".stripMargin)
-        val sqlStr =
-          s"""
-             |MSCK REPAIR TABLE $tableName
-             |""".stripMargin
-        val plan = sql(sqlStr).queryExecution.analyzed
-        val operationType = OperationType(plan.nodeName)
-        assert(operationType === MSCK)
-        val (inputs, outputs) = PrivilegesBuilder.build(plan)
+    assume(isSparkV32OrGreater)
+    val tableName = reusedDb + "." + "TableToRepair"
+    withTable(tableName) { _ =>
+      sql(
+        s"""
+           |CREATE TABLE $tableName
+           |(key int, value string, pid string)
+           |USING parquet
+           |PARTITIONED BY (pid)""".stripMargin)
+      val sqlStr =
+        s"""
+           |MSCK REPAIR TABLE $tableName
+           |""".stripMargin
+      val plan = sql(sqlStr).queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === MSCK)
+      val (inputs, outputs) = PrivilegesBuilder.build(plan)
 
-        assert(inputs.isEmpty)
+      assert(inputs.isEmpty)
 
-        assert(outputs.size === 1)
-        outputs.foreach { po =>
-          assert(po.actionType === PrivilegeObjectActionType.INSERT)
-          assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-          assert(po.dbname equalsIgnoreCase reusedDb)
-          assert(po.objectName equalsIgnoreCase tableName.split("\\.").last)
-          assert(po.columns.isEmpty)
-          val accessType = ranger.AccessType(po, operationType, isInput = false)
-          assert(accessType === AccessType.UPDATE)
-        }
+      assert(outputs.size === 1)
+      outputs.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.INSERT)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.dbname equalsIgnoreCase reusedDb)
+        assert(po.objectName equalsIgnoreCase tableName.split("\\.").last)
+        assert(po.columns.isEmpty)
+        val accessType = ranger.AccessType(po, operationType, isInput = false)
+        assert(accessType === AccessType.UPDATE)
       }
     }
   }
-
-
 
   test("Query: Star") {
     val plan = sql(s"SELECT * FROM $reusedTable").queryExecution.optimizedPlan
