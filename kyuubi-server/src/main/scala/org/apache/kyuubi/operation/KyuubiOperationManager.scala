@@ -19,6 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.TimeUnit
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.TRowSet
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -154,9 +155,13 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   override def getQueryId(operation: Operation): String = {
     val kyuubiOperation = operation.asInstanceOf[KyuubiOperation]
     val client = kyuubiOperation.client
-    val handle = kyuubiOperation.remoteOpHandle()
-    val queryId = client.getQueryId(handle).getQueryId
-    queryId
+    val remoteHandle = kyuubiOperation.remoteOpHandle()
+    if (remoteHandle != null) {
+      val queryId = client.getQueryId(remoteHandle).getQueryId
+      queryId
+    } else {
+      null
+    }
   }
 
   def newLaunchEngineOperation(session: KyuubiSessionImpl, shouldRunAsync: Boolean): Operation = {
