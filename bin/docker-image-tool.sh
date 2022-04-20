@@ -208,12 +208,12 @@ Examples:
     $0 -r docker.io/myrepo -t v1.4.0 build
     $0 -r docker.io/myrepo -t v1.4.0 push
 
-  - Build and push with tag "v3.0.0" and Spark-3.2.1 as base image to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v3.0.0 -b BASE_IMAGE=repo/spark:3.2.1 build
-    $0 -r docker.io/myrepo -t v3.0.0 push
+  - Build and push with tag "v1.4.0" and Spark-3.2.1 as base image to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v1.4.0 -b BASE_IMAGE=repo/spark:3.2.1 build
+    $0 -r docker.io/myrepo -t v1.4.0 push
 
   - Build and push for multiple archs to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v3.0.0 -X build
+    $0 -r docker.io/myrepo -t v1.4.0 -X build
 
     # Note: buildx, which does cross building, needs to do the push during build
     # So there is no separate push step with -X
