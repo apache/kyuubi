@@ -95,8 +95,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     val session = getSession(sessionHandle)
-    super.closeSession(sessionHandle)
-    limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+    try {
+      super.closeSession(sessionHandle)
+    } finally {
+      limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+    }
   }
 
   def openBatchSession(
