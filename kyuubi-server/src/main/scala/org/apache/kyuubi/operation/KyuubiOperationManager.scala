@@ -19,7 +19,6 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.TimeUnit
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.TRowSet
 
 import org.apache.kyuubi.config.KyuubiConf
