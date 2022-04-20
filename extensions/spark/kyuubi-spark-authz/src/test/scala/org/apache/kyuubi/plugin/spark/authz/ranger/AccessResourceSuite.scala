@@ -21,8 +21,7 @@ import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.{OperationType, PrivilegesBuilder, SparkSessionProvider}
 
-class AccessResourceSuite extends KyuubiFunSuite with SparkSessionProvider{
-  override protected val catalogImpl: String = "in-memory"
+class AccessResourceSuite extends KyuubiFunSuite {
 
   test("generate spark ranger resources") {
     val resource = AccessResource(DATABASE, "my_db_name")
@@ -56,6 +55,15 @@ class AccessResourceSuite extends KyuubiFunSuite with SparkSessionProvider{
     assert(resource4.getColumn === "my_col_1,my_col_2")
     assert(resource4.getColumns === Seq("my_col_1", "my_col_2"))
   }
+}
+abstract class AccessResourceWithSparkSessionSuite
+  extends KyuubiFunSuite
+  with SparkSessionProvider {
+
+  override def afterAll(): Unit = {
+    spark.stop()
+    super.afterAll()
+  }
 
   test("get database name from spark catalog when privilegeObject's dbname is null") {
     val tableName = "table_to_describe"
@@ -82,6 +90,7 @@ class AccessResourceSuite extends KyuubiFunSuite with SparkSessionProvider{
       } finally {
         sql(s"DROP TABLE IF EXISTS $tableName")
         sql(s"DROP DATABASE IF EXISTS $dbName")
+        sql(s"USE default")
       }
     } else {
       try {
@@ -105,8 +114,16 @@ class AccessResourceSuite extends KyuubiFunSuite with SparkSessionProvider{
       } finally {
         sql(s"DROP TABLE IF EXISTS $tableName")
         sql(s"DROP DATABASE IF EXISTS $dbName")
+        sql(s"USE default")
       }
     }
-
   }
+}
+
+class HiveCatalogAccessResourceSuite extends AccessResourceWithSparkSessionSuite {
+  override protected val catalogImpl: String = if (isSparkV2) "in-memory" else "hive"
+}
+
+class InMemoryCatalogAccessResourceSuite extends AccessResourceWithSparkSessionSuite {
+  override protected val catalogImpl: String = "in-memory"
 }
