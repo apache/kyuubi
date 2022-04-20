@@ -17,14 +17,15 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import scala.reflect.io.File
+
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
-import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
-import scala.reflect.io.File
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
@@ -1301,7 +1302,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assume(!isSparkV2)
     val dataPath = getClass.getResource("/data.txt").getPath
     val tableName = reusedDb + "." + "LoadDataToTable"
-    withTable(tableName) {_ =>
+    withTable(tableName) { _ =>
       sql(
         s"""
            |CREATE TABLE $tableName
@@ -1416,10 +1417,10 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     withTable(tableName) { _ =>
       sql(s"CREATE TABLE $tableName (a int, b string) USING parquet")
       val sqlStr =
-      s"""
-         |INSERT INTO TABLE $tableName
-         |SELECT key, value FROM $reusedTable
-         |""".stripMargin
+        s"""
+           |INSERT INTO TABLE $tableName
+           |SELECT key, value FROM $reusedTable
+           |""".stripMargin
       val plan = sql(sqlStr).queryExecution.analyzed
       val operationType = OperationType(plan.nodeName)
       assert(operationType === QUERY)
@@ -1518,8 +1519,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   }
 }
 
-case class SimpleInsert(userSpecifiedSchema: StructType)
-                       (@transient val sparkSession: SparkSession)
+case class SimpleInsert(userSpecifiedSchema: StructType)(@transient val sparkSession: SparkSession)
   extends BaseRelation with InsertableRelation {
 
   override def sqlContext: SQLContext = sparkSession.sqlContext
@@ -1533,9 +1533,9 @@ case class SimpleInsert(userSpecifiedSchema: StructType)
 
 class SimpleInsertSource extends SchemaRelationProvider {
   override def createRelation(
-                               sqlContext: SQLContext,
-                               parameters: Map[String, String],
-                               schema: StructType): BaseRelation = {
+      sqlContext: SQLContext,
+      parameters: Map[String, String],
+      schema: StructType): BaseRelation = {
     SimpleInsert(schema)(sqlContext.sparkSession)
   }
 }
