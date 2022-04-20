@@ -19,8 +19,10 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
+import org.apache.kyuubi.plugin.spark.authz.{OperationType, PrivilegesBuilder, SparkSessionProvider}
 
-class AccessResourceSuite extends KyuubiFunSuite {
+class AccessResourceSuite extends KyuubiFunSuite with SparkSessionProvider{
+  override protected val catalogImpl: String = "in-memory"
 
   test("generate spark ranger resources") {
     val resource = AccessResource(DATABASE, "my_db_name")
@@ -53,5 +55,58 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource4.getTable === "my_table_name")
     assert(resource4.getColumn === "my_col_1,my_col_2")
     assert(resource4.getColumns === Seq("my_col_1", "my_col_2"))
+  }
+
+  test("get database name from spark catalog when privilegeObject's dbname is null") {
+    val tableName = "table_to_describe"
+    val dbName = "database_for_describe"
+    if (isSparkV2) {
+      try {
+        sql(s"CREATE DATABASE $dbName")
+        sql(s"CREATE TABLE $dbName.$tableName (key int, value string) USING parquet")
+        sql(s"USE $dbName")
+        val plan = sql(s"DESC TABLE $tableName").queryExecution.analyzed
+        val operationType = OperationType(plan.nodeName)
+        val tuple = PrivilegesBuilder.build(plan)
+
+        val resourceWithoutSparkSession = AccessResource(tuple._1.head, operationType)
+        assert(resourceWithoutSparkSession.objectType === TABLE)
+        assert(resourceWithoutSparkSession.getDatabase === null)
+        assert(resourceWithoutSparkSession.getTable equalsIgnoreCase tableName)
+
+        val resourceWithSparkSession = AccessResource(tuple._1.head, operationType, spark = spark)
+        assert(resourceWithSparkSession.objectType === TABLE)
+        assert(resourceWithSparkSession.getDatabase === dbName)
+        assert(resourceWithSparkSession.getTable equalsIgnoreCase tableName)
+
+      } finally {
+        sql(s"DROP TABLE IF EXISTS $tableName")
+        sql(s"DROP DATABASE IF EXISTS $dbName")
+      }
+    } else {
+      try {
+        sql(s"CREATE DATABASE $dbName")
+        sql(s"CREATE TABLE $dbName.$tableName (key int, value string) USING parquet")
+        sql(s"USE $dbName")
+        val plan = sql(s"DESC TABLE $tableName").queryExecution.analyzed
+        val operationType = OperationType(plan.nodeName)
+        val tuple = PrivilegesBuilder.build(plan)
+
+        val resourceWithoutSparkSession = AccessResource(tuple._1.head, operationType)
+        assert(resourceWithoutSparkSession.objectType === TABLE)
+        assert(resourceWithoutSparkSession.getDatabase === dbName)
+        assert(resourceWithoutSparkSession.getTable equalsIgnoreCase tableName)
+
+        val resourceWithSparkSession = AccessResource(tuple._1.head, operationType, spark = spark)
+        assert(resourceWithSparkSession.objectType === TABLE)
+        assert(resourceWithSparkSession.getDatabase === dbName)
+        assert(resourceWithSparkSession.getTable equalsIgnoreCase tableName)
+
+      } finally {
+        sql(s"DROP TABLE IF EXISTS $tableName")
+        sql(s"DROP DATABASE IF EXISTS $dbName")
+      }
+    }
+
   }
 }

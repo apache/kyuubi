@@ -42,13 +42,13 @@ object RuleAuthorization {
     val (inputs, outputs) = PrivilegesBuilder.build(plan)
     val requests = new ArrayBuffer[AccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
-      val resource = AccessResource(DATABASE, null)
+      val resource = AccessResource(DATABASE, null, spark = spark)
       requests += AccessRequest(resource, ugi, opType, AccessType.USE)
     }
 
     def addAccessRequest(objects: Seq[PrivilegeObject], isInput: Boolean): Unit = {
       objects.foreach { obj =>
-        val resource = AccessResource(obj, opType)
+        val resource = AccessResource(obj, opType, spark = spark)
         val accessType = ranger.AccessType(obj, opType, isInput)
         if (accessType != AccessType.NONE && !requests.exists(o =>
             o.accessType == accessType && o.getResource == resource)) {
@@ -65,7 +65,11 @@ object RuleAuthorization {
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
           resource.getColumns.foreach { col =>
-            val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
+            val cr = AccessResource(COLUMN,
+              resource.getDatabase,
+              resource.getTable,
+              col,
+              spark = spark)
             val req = AccessRequest(cr, ugi, opType, request.accessType)
             verify(req)
           }
