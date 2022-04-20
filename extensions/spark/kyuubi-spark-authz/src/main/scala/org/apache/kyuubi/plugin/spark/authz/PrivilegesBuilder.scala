@@ -206,6 +206,10 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(oldTable, actionType = PrivilegeObjectActionType.DELETE)
         outputObjs += tablePrivileges(newTable)
 
+      case "AlterTableRecoverPartitionsCommand" =>
+        val table = getTableName
+        outputObjs += tablePrivileges(table)
+
       case "AlterTableRenamePartitionCommand" =>
         val table = getTableName
         val cols = getPlanField[TablePartitionSpec]("oldPartition").keySet.toSeq
