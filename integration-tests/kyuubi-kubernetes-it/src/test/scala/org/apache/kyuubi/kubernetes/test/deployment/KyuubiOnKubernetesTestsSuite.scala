@@ -38,21 +38,25 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
  */
 class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKubernetes
   with SparkQueryTests {
-  connectionConf ++= Map("spark.master" -> "local", "spark.executor.instances" -> "1")
+  override protected def connectionConf: Map[String, String] = {
+    super.connectionConf ++ Map("spark.master" -> "local", "spark.executor.instances" -> "1")
+  }
 
   override protected def jdbcUrl: String = getJdbcUrl
 }
 
 class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
   with SparkQueryTests {
-  connectionConf ++=
-    Map(
-      "spark.master" -> s"k8s://$getMiniKubeApiMaster",
-      "spark.executor.memory" -> "512M",
-      "spark.driver.memory" -> "512M",
-      "spark.kubernetes.driver.request.cores" -> "250m",
-      "spark.kubernetes.executor.request.cores" -> "250m",
-      "spark.executor.instances" -> "1")
+  override protected def connectionConf: Map[String, String] = {
+    super.connectionConf ++
+      Map(
+        "spark.master" -> s"k8s://$getMiniKubeApiMaster",
+        "spark.executor.memory" -> "512M",
+        "spark.driver.memory" -> "512M",
+        "spark.kubernetes.driver.request.cores" -> "250m",
+        "spark.kubernetes.executor.request.cores" -> "250m",
+        "spark.executor.instances" -> "1")
+  }
 
   override protected def jdbcUrl: String = getJdbcUrl
 }
@@ -69,7 +73,9 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
  */
 class KyuubiOnKubernetesWithClientSparkTestsSuite
   extends KyuubiOnKubernetesWithSparkTestsBase {
-  connectionConf ++= Map("spark.submit.deployMode" -> "client")
+  override protected def connectionConf: Map[String, String] = {
+    super.connectionConf ++ Map("spark.submit.deployMode" -> "client")
+  }
 }
 
 /**
@@ -99,14 +105,17 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
     hdfsConf.set("hadoop.proxyuser.185.hosts", "*")
     hdfsConf
   }
-  connectionConf ++=
-    Map(
-      "spark.submit.deployMode" -> "cluster",
-      "spark.kubernetes.file.upload.path" -> s"hdfs://$localhostAddress:$getDFSPort/spark",
-      "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
-      "spark.kubernetes.authenticate.driver.serviceAccountName" -> "spark",
-      "spark.kubernetes.driver.podTemplateFile" -> driverTemplate.getPath,
-      ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress,
-      FRONTEND_CONNECTION_URL_USE_HOSTNAME.key -> "false",
-      FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
+
+  override protected def connectionConf: Map[String, String] = {
+    super.connectionConf ++
+      Map(
+        "spark.submit.deployMode" -> "cluster",
+        "spark.kubernetes.file.upload.path" -> s"hdfs://$localhostAddress:$getDFSPort/spark",
+        "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
+        "spark.kubernetes.authenticate.driver.serviceAccountName" -> "spark",
+        "spark.kubernetes.driver.podTemplateFile" -> driverTemplate.getPath,
+        ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress,
+        FRONTEND_CONNECTION_URL_USE_HOSTNAME.key -> "false",
+        FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
+  }
 }

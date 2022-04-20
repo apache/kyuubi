@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.kubernetes.test
 
-import scala.collection.mutable
-
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 
 import org.apache.kyuubi.WithKyuubiServer
@@ -26,7 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
   protected val kyuubiServerConf: KyuubiConf = KyuubiConf()
-  protected val connectionConf: mutable.Map[String, String] = mutable.Map.empty
+  protected def connectionConf: Map[String, String] = Map.empty
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
   final override protected lazy val conf: KyuubiConf = {
