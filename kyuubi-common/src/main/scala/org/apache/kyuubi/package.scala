@@ -48,6 +48,8 @@ package object kyuubi {
     val spark_version: String = props.getProperty("kyuubi_spark_version", unknown)
     val hive_version: String = props.getProperty("kyuubi_hive_version", unknown)
     val hadoop_version: String = props.getProperty("kyuubi_hadoop_version", unknown)
+    val flink_version: String = props.getProperty("kyuubi_flink_version", unknown)
+    val trino_client_version: String = props.getProperty("kyuubi_trino_client_version", unknown)
     val branch: String = props.getProperty("branch", unknown)
     val revision: String = props.getProperty("revision", unknown)
     val user: String = props.getProperty("user", unknown)
@@ -61,6 +63,8 @@ package object kyuubi {
   val SPARK_COMPILE_VERSION: String = BuildInfo.spark_version
   val HIVE_COMPILE_VERSION: String = BuildInfo.hive_version
   val HADOOP_COMPILE_VERSION: String = BuildInfo.hadoop_version
+  val FLINK_COMPILE_VERSION: String = BuildInfo.flink_version
+  val TRINO_CLIENT_COMPILE_VERSION: String = BuildInfo.trino_client_version
   val BRANCH: String = BuildInfo.branch
   val REVISION: String = BuildInfo.revision
   val BUILD_USER: String = BuildInfo.user

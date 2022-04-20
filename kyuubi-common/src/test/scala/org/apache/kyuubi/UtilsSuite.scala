@@ -42,6 +42,8 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(props.getProperty("kyuubi_spark_version") === SPARK_COMPILE_VERSION)
     assert(props.getProperty("kyuubi_hive_version") === HIVE_COMPILE_VERSION)
     assert(props.getProperty("kyuubi_hadoop_version") === HADOOP_COMPILE_VERSION)
+    assert(props.getProperty("kyuubi_flink_version") === FLINK_COMPILE_VERSION)
+    assert(props.getProperty("kyuubi_trino_client_version") === TRINO_CLIENT_COMPILE_VERSION)
     assert(props.getProperty("branch") === BRANCH)
     assert(props.getProperty("revision") === REVISION)
     assert(props.getProperty("user") === BUILD_USER)

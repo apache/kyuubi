@@ -122,7 +122,8 @@ object KyuubiServer extends Logging {
     info(s"Version: $KYUUBI_VERSION, Revision: $REVISION, Branch: $BRANCH," +
       s" Java: $JAVA_COMPILE_VERSION, Scala: $SCALA_COMPILE_VERSION," +
       s" Spark: $SPARK_COMPILE_VERSION, Hadoop: $HADOOP_COMPILE_VERSION," +
-      s" Hive: $HIVE_COMPILE_VERSION")
+      s" Hive: $HIVE_COMPILE_VERSION, Flink: $FLINK_COMPILE_VERSION," +
+      s" Trino Client: $TRINO_CLIENT_COMPILE_VERSION")
     info(s"Using Scala ${Properties.versionString}, ${Properties.javaVmName}," +
       s" ${Properties.javaVersion}")
     SignalRegister.registerLogger(logger)
