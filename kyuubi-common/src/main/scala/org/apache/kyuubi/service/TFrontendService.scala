@@ -30,6 +30,7 @@ import org.apache.thrift.server.{ServerContext, TServerEventHandler}
 import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -423,7 +424,7 @@ abstract class TFrontendService(name: String)
       operationStatus.exception.foreach { e =>
         resp.setSqlState(e.getSQLState)
         resp.setErrorCode(e.getErrorCode)
-        resp.setErrorMessage(e.getMessage)
+        resp.setErrorMessage(stringifyException(e))
       }
       resp.setStatus(OK_STATUS)
     } catch {
