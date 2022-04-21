@@ -225,13 +225,13 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
 
       assert(outputs.size === 1)
       outputs.foreach { po =>
-        assert(po.actionType === PrivilegeObjectActionType.INSERT)
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
         assert(po.dbname equalsIgnoreCase reusedDb)
         assert(po.objectName equalsIgnoreCase tableName.split("\\.").last)
         assert(po.columns.isEmpty)
         val accessType = ranger.AccessType(po, operationType, isInput = false)
-        assert(accessType === AccessType.UPDATE)
+        assert(accessType === AccessType.ALTER)
       }
     }
   }
