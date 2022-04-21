@@ -180,6 +180,8 @@
                                     <arg value="${spark.version}"/>
                                     <arg value="${hive.version}"/>
                                     <arg value="${hadoop.version}"/>
+                                    <arg value="${flink.version}"/>
+                                    <arg value="${trino.client.version}"/>
                                 </exec>
                             </target>
                         </configuration>

@@ -50,22 +50,11 @@ class TrinoProcessBuilder(
     val buffer = new ArrayBuffer[String]()
     buffer += executable
 
-    // TODO: How shall we deal with proxyUser,
-    // user.name
-    // kyuubi.session.user
-    // or just leave it, because we can handle it at operation layer
-    buffer += s"-D$KYUUBI_SESSION_USER_KEY=$proxyUser"
-
     val memory = conf.get(ENGINE_TRINO_MEMORY)
     buffer += s"-Xmx$memory"
     val javaOptions = conf.get(ENGINE_TRINO_JAVA_OPTIONS)
     if (javaOptions.isDefined) {
       buffer += javaOptions.get
-    }
-    // -Xmx5g
-    // java options
-    for ((k, v) <- conf.getAll) {
-      buffer += s"-D$k=$v"
     }
 
     buffer += "-cp"
@@ -92,6 +81,18 @@ class TrinoProcessBuilder(
 
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass
+
+    // TODO: How shall we deal with proxyUser,
+    // user.name
+    // kyuubi.session.user
+    // or just leave it, because we can handle it at operation layer
+    buffer += "--conf"
+    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+
+    for ((k, v) <- conf.getAll) {
+      buffer += "--conf"
+      buffer += s"$k=$v"
+    }
     buffer.toArray
   }
 
