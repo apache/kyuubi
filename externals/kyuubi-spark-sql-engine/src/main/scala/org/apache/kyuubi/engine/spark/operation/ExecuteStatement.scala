@@ -159,13 +159,21 @@ class ExecuteStatement(
 
   def setCompiledStateIfNeeded(): Unit = synchronized {
     if (getStatus.state == OperationState.RUNNING) {
-      super.setState(OperationState.COMPILED)
-      if (result != null) {
-        val phase = result.queryExecution.tracker.phases
-        if (phase.contains("parsing") && phase.contains("planning")) {
-          val compiledTime = phase("planning").endTimeMs - phase("parsing").startTimeMs
-          lastAccessTime = lastAccessTime + compiledTime
+      val lastAccessCompiledTime =
+        if (result != null) {
+          val phase = result.queryExecution.tracker.phases
+          if (phase.contains("parsing") && phase.contains("planning")) {
+            val compiledTime = phase("planning").endTimeMs - phase("parsing").startTimeMs
+            lastAccessTime + compiledTime
+          } else {
+            0L
+          }
+        } else {
+          0L
         }
+      super.setState(OperationState.COMPILED)
+      if (lastAccessCompiledTime > 0L) {
+        lastAccessTime = lastAccessCompiledTime
       }
       EventBus.post(
         SparkOperationEvent(this, operationListener.getExecutionId))
