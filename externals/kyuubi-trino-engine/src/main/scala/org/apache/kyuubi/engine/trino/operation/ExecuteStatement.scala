@@ -22,6 +22,8 @@ import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorServic
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.trino.TrinoStatement
+import org.apache.kyuubi.engine.trino.event.TrinoOperationEvent
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.OperationState
@@ -112,4 +114,6 @@ class ExecuteStatement(
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
   }
+
+  EventBus.post(TrinoOperationEvent(this))
 }
