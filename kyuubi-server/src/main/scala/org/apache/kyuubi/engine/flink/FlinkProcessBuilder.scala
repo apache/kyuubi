@@ -86,7 +86,6 @@ class FlinkProcessBuilder(
     classpathEntries.add(s"$FLINK_HOME${File.separator}lib${File.separator}*")
 
     // classpath contains flink configurations, default to flink.home/conf
-    classpathEntries.add(s"$FLINK_HOME")
     classpathEntries.add(env.getOrElse("FLINK_CONF_DIR", s"$FLINK_HOME${File.separator}conf"))
     // classpath contains hadoop configurations
     env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)

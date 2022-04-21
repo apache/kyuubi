@@ -71,8 +71,8 @@ object FlinkSQLEngine extends Logging {
     SignalRegister.registerLogger(logger)
 
     FlinkEngineUtils.checkFlinkVersion()
-    executeConfigShell()
     try {
+      executeConfigShell()
       val flinkConfDir = CliFrontend.getConfigurationDirectoryFromEnv
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
       val flinkConfFromSys =
@@ -126,6 +126,7 @@ object FlinkSQLEngine extends Logging {
 
   def executeConfigShell(): Unit = {
     val flinkHome = System.getenv("FLINK_HOME")
+    require(flinkHome != null, s"FLINK_HOME is null")
     val commands = Seq("/bin/bash", s"$flinkHome/bin/config.sh")
     val pb = new ProcessBuilder(commands: _*)
     val process = pb.start()
