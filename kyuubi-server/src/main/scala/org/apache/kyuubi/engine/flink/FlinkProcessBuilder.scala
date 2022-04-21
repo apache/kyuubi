@@ -91,19 +91,13 @@ class FlinkProcessBuilder(
     env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
     env.get("HBASE_CONF_DIR").foreach(classpathEntries.add)
-
-    val hadoopCp = env.get("HADOOP_CLASSPATH")
-    hadoopCp.foreach(path => classpathEntries.add(s"$path${File.separator}*"))
-    if (hadoopCp.isEmpty) {
-      mainResource.foreach { path =>
-        val devHadoopJars = Paths.get(path).getParent
-          .resolve(s"scala-$SCALA_COMPILE_VERSION")
-          .resolve("jars")
-        classpathEntries.add(s"$devHadoopJars${File.separator}*")
-      }
-
+    val hadoopClasspath = env.get("HADOOP_CLASSPATH")
+    if (hadoopClasspath.isEmpty) {
+      throw KyuubiSQLException("HADOOP_CLASSPATH is not set! " +
+        "For more detail information on installing and configuring Flink, please visit " +
+        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
-
+    classpathEntries.add(hadoopClasspath.get)
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass
     buffer.toArray
