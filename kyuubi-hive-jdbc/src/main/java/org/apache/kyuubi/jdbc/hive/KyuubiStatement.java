@@ -25,7 +25,6 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.util.*;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
@@ -980,10 +979,9 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
   }
 
   /**
-   * Returns the Query ID if it is running. This method is a public API for
-   * usage outside of Hive, although it is not part of the interface
-   * java.sql.Statement.
-   * 
+   * Returns the Query ID if it is running. This method is a public API for usage outside of Hive,
+   * although it is not part of the interface java.sql.Statement.
+   *
    * @return Valid query ID if it is running else returns NULL.
    * @throws SQLException If any internal failures.
    */
@@ -993,7 +991,7 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
       // If query is not running or already closed.
       return null;
     }
-    
+
     try {
       final String queryId = client.GetQueryId(new TGetQueryIdReq(stmtHandle)).getQueryId();
 
