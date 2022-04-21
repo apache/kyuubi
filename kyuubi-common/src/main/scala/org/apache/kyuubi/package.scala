@@ -64,7 +64,7 @@ package object kyuubi {
   val HIVE_COMPILE_VERSION: String = BuildInfo.hive_version
   val HADOOP_COMPILE_VERSION: String = BuildInfo.hadoop_version
   val FLINK_COMPILE_VERSION: String = BuildInfo.flink_version
-  val TRINO_CLIENT_COMPILE_VERSION: String = BuildInfo.trino_client_version
+  val TRINO_COMPILE_VERSION: String = BuildInfo.trino_client_version
   val BRANCH: String = BuildInfo.branch
   val REVISION: String = BuildInfo.revision
   val BUILD_USER: String = BuildInfo.user
