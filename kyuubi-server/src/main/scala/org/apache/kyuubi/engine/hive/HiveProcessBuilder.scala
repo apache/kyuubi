@@ -39,6 +39,8 @@ class HiveProcessBuilder(
 
   private val hiveHome: String = getEngineHome("hive")
 
+  private val HIVE_HADOOP_CLASSPATH: String = "HIVE_HADOOP_CLASSPATH"
+
   override protected def module: String = "kyuubi-hive-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.hive.HiveSQLEngine"
@@ -77,18 +79,21 @@ class HiveProcessBuilder(
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
     // jars from hive distribution
     classpathEntries.add(s"$hiveHome${File.separator}lib${File.separator}*")
+    val hadoopCp = env.get(HIVE_HADOOP_CLASSPATH)
+    hadoopCp.foreach(classpathEntries.add)
     val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
-    if (extraCp.isEmpty) {
-      warn(s"The conf of kyuubi.engine.hive.extra.classpath is empty.")
+    if (hadoopCp.isEmpty && extraCp.isEmpty) {
+      warn(s"The conf of ${HIVE_HADOOP_CLASSPATH} or ${ENGINE_HIVE_EXTRA_CLASSPATH} is empty.")
+      debug("Detected development environment")
       mainResource.foreach { path =>
         val devHadoopJars = Paths.get(path).getParent
           .resolve(s"scala-$SCALA_COMPILE_VERSION")
           .resolve("jars")
         if (!Files.exists(devHadoopJars)) {
-          throw new KyuubiException(s"The path $devHadoopJars does not exists. Please set " +
-            s"kyuubi.engine.hive.extra.classpath for configuring location of " +
-            s"hadoop client jars, etc")
+          throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
+            s"Please set ${HIVE_HADOOP_CLASSPATH} or ${ENGINE_HIVE_EXTRA_CLASSPATH} for " +
+            s"configuring location of hadoop client jars, etc")
         }
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }
