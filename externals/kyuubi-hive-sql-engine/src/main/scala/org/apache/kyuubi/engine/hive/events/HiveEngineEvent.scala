@@ -30,8 +30,14 @@ case class HiveEngineEvent(
     diagnostic: String,
     settings: Map[String, String]) extends KyuubiEvent {
 
-  override def partitions: Seq[(String, String)] =
-    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
+  override def partitions: Seq[(String, String)] = {
+    // before engine is started, the start time is 0L, the partition use current day.
+    if (startTime == 0) {
+      ("day", Utils.getDateFromTimestamp(System.currentTimeMillis())) :: Nil
+    } else {
+      ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
+    }
+  }
 
   override def toString: String = {
     s"""
@@ -50,7 +56,6 @@ case class HiveEngineEvent(
 object HiveEngineEvent {
 
   def apply(engine: HiveSQLEngine): HiveEngineEvent = {
-    engine.getStartTime
     val connectionUrl =
       if (engine.getServiceState.equals(ServiceState.LATENT)) {
         null

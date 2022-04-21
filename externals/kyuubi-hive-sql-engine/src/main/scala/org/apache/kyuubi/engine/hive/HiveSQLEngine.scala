@@ -18,11 +18,8 @@
 package org.apache.kyuubi.engine.hive
 
 import java.net.InetAddress
-
 import scala.util.control.NonFatal
-
 import org.apache.hadoop.hive.conf.HiveConf
-
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
@@ -31,7 +28,7 @@ import org.apache.kyuubi.engine.hive.events.handler.HiveJsonLoggingEventHandler
 import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
-import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable}
+import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 
 class HiveSQLEngine extends Serverable("HiveSQLEngine") {
@@ -100,6 +97,9 @@ object HiveSQLEngine extends Logging {
     EventBus.post(event)
     Utils.addShutdownHook(() => {
       engine.getServices.foreach(_.stop())
+      val event = HiveEngineEvent(engine)
+        .copy(state = ServiceState.STOPPED, endTime = System.currentTimeMillis())
+      EventBus.post(event)
     })
     currentEngine = Some(engine)
     engine
@@ -131,7 +131,8 @@ object HiveSQLEngine extends Logging {
       case t: Throwable => currentEngine match {
           case Some(engine) =>
             engine.stop()
-            val event = HiveEngineEvent(engine).copy(diagnostic = t.getMessage)
+            val event = HiveEngineEvent(engine)
+              .copy(endTime = System.currentTimeMillis(), diagnostic = t.getMessage)
             EventBus.post(event)
           case _ =>
             error(s"Failed to start Hive SQL engine: ${t.getMessage}.", t)

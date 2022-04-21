@@ -28,9 +28,10 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
-import org.apache.kyuubi.engine.hive.events.{HiveEngineEvent, HiveOperationEvent, SessionEvent}
+import org.apache.kyuubi.engine.hive.events.{HiveEngineEvent, HiveOperationEvent, HiveSessionEvent}
 import org.apache.kyuubi.events.JsonProtocol
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.service.ServiceState
 
 class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
 
@@ -69,9 +70,13 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
     val fileSystem: FileSystem = FileSystem.get(new Configuration())
     val fs: FSDataInputStream = fileSystem.open(new Path(engineEventPath.toString))
     val engineEventReader = new BufferedReader(new InputStreamReader(fs))
-    val readEvent =
+    val initializedEvent =
       JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveEngineEvent])
-    assert(readEvent.isInstanceOf[HiveEngineEvent])
+    assert(initializedEvent.asInstanceOf[HiveEngineEvent].state.equals(ServiceState.INITIALIZED))
+
+    val startedEvent =
+      JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveEngineEvent])
+    assert(startedEvent.asInstanceOf[HiveEngineEvent].state.equals(ServiceState.STARTED))
   }
 
   test("test session event logging") {
@@ -82,15 +87,15 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
       assert(!catalogs.next())
       val sessionEventPath = Paths.get(
         logRoot,
-        "session",
+        "hive_session",
         s"day=$currentDate",
         s"Hive-$hostName.json")
       val fileSystem: FileSystem = FileSystem.get(new Configuration())
       val fs: FSDataInputStream = fileSystem.open(new Path(sessionEventPath.toString))
       val engineEventReader = new BufferedReader(new InputStreamReader(fs))
       val readEvent =
-        JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[SessionEvent])
-      assert(readEvent.isInstanceOf[SessionEvent])
+        JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveSessionEvent])
+      assert(readEvent.isInstanceOf[HiveSessionEvent])
     }
   }
 

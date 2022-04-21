@@ -30,7 +30,7 @@ import org.apache.kyuubi.events.KyuubiEvent
  * @param serverIp Kyuubi Server IP address
  * @param totalOperations how many queries and meta calls
  */
-case class SessionEvent(
+case class HiveSessionEvent(
     sessionId: String,
     engineId: String,
     username: String,
@@ -45,10 +45,10 @@ case class SessionEvent(
 
 }
 
-object SessionEvent {
+object HiveSessionEvent {
 
-  def apply(session: HiveSessionImpl): SessionEvent = {
-    new SessionEvent(
+  def apply(session: HiveSessionImpl): HiveSessionEvent = {
+    new HiveSessionEvent(
       session.handle.identifier.toString,
       engineId = "",
       session.user,
