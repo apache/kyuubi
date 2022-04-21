@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink
 
+import java.io.File
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -24,12 +26,19 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
 
   test("flink engine process builder") {
-    val builder = new FlinkProcessBuilder("vinoyang", conf)
-    val commands = builder.toString.split(' ')
-    assert(commands.head.endsWith("bin/java"), "wrong exec")
-    assert(commands.contains("-Dkyuubi.session.user=vinoyang"))
-    assert(commands.contains("-Dkyuubi.on=off"))
-    assert(commands.exists(ss => ss.contains("kyuubi-flink-sql-engine")), "wrong classpath")
+    val builder = new FlinkProcessBuilder("vinoyang", conf) {
+      override protected def env: Map[String, String] = Map(
+        "JAVA_HOME" -> s"${File.separator}jdk1.8.0_181",
+        "HADOOP_CLASSPATH" -> s"${File.separator}hadoop"
+      )
+    }
+    val commands = builder.toString
+    assert(commands.equals(s"${File.separator}jdk1.8.0_181${File.separator}bin" +
+      s"${File.separator}java -Dkyuubi.session.user=vinoyang -Dkyuubi.testing=true " +
+      s"-Dkyuubi.on=off -cp ${builder.mainResource.get};${builder.FLINK_HOME}${File.separator}" +
+      s"opt${File.separator}flink-sql-client_2.12-1.14.4.jar;${builder.FLINK_HOME}" +
+      s"${File.separator}lib${File.separator}*;${builder.FLINK_HOME}${File.separator}conf;" +
+      s"${File.separator}hadoop${File.separator}* org.apache.kyuubi.engine.flink.FlinkSQLEngine"))
   }
 
   test("kill application") {
