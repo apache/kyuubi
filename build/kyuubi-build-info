@@ -29,7 +29,7 @@ echo_build_properties() {
   echo kyuubi_hive_version="$6"
   echo kyuubi_hadoop_version="$7"
   echo kyuubi_flink_version="$8"
-  echo kyuubi_trino_client_version="$9"
+  echo kyuubi_trino_version="$9"
   echo user="$USER"
   echo revision=$(git rev-parse HEAD)
   echo branch=$(git rev-parse --abbrev-ref HEAD)
