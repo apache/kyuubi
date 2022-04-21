@@ -25,9 +25,9 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{Logging, Utils}
 
-object KyuubiSparkUtil {
+object KyuubiSparkUtil extends Logging {
 
   type KVIndexParam = KVIndex @getter
 
@@ -35,6 +35,21 @@ object KyuubiSparkUtil {
   final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
 
   def globalSparkContext: SparkContext = SparkSession.active.sparkContext
+
+  def initializeSparkSession(spark: SparkSession, initializationSQLs: Seq[String]): Unit = {
+    initializationSQLs.foreach { sql =>
+      spark.sparkContext.setJobGroup(
+        "initialization sql queries",
+        sql,
+        interruptOnCancel = true)
+      debug(s"Execute initialization sql: $sql")
+      try {
+        spark.sql(sql).isEmpty
+      } finally {
+        spark.sparkContext.clearJobGroup()
+      }
+    }
+  }
 
   def engineId: String = globalSparkContext.applicationId
 

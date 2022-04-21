@@ -77,7 +77,13 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
   }
 
   def withThriftClient[T](f: TCLIService.Iface => T): T = {
-    TClientTestUtils.withThriftClient(jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head)(f)
+    withThriftClient()(f)
+  }
+
+  def withThriftClient[T](user: Option[String] = None)(f: TCLIService.Iface => T): T = {
+    TClientTestUtils.withThriftClient(
+      jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head,
+      user)(f)
   }
 
   def withSessionHandle[T](f: (TCLIService.Iface, TSessionHandle) => T): T = {

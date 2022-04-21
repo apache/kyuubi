@@ -183,16 +183,9 @@ object SparkSQLEngine extends Logging {
 
   def createSpark(): SparkSession = {
     val session = SparkSession.builder.config(_sparkConf).getOrCreate
-    (kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
-      .foreach { sqlStr =>
-        session.sparkContext.setJobGroup(
-          "engine_initializing_queries",
-          sqlStr,
-          interruptOnCancel = true)
-        debug(s"Execute session initializing sql: $sqlStr")
-        session.sql(sqlStr).isEmpty
-        session.sparkContext.clearJobGroup()
-      }
+    KyuubiSparkUtil.initializeSparkSession(
+      session,
+      kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
     session
   }
 

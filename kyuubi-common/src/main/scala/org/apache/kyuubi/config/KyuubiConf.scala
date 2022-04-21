@@ -1143,6 +1143,16 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val ENGINE_USER_ISOLATED_SPARK_SESSION: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.user.isolated.spark.session")
+      .doc("When set to true, if the engine is running in a group or server share level, " +
+        "all the JDBC/ODBC connections will be isolated against the user. Including: " +
+        "the temporary views, function registries, SQL configuration and the current database. " +
+        "Note that, it does not affect if the share level is connection or user.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val SERVER_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("kyuubi.backend.server.event.json.log.path")
       .doc("The location of server events go for the builtin JSON logger")

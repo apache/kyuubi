@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import java.util.concurrent.ConcurrentHashMap
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
@@ -24,7 +26,8 @@ import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel
-import org.apache.kyuubi.engine.spark.SparkSQLEngine
+import org.apache.kyuubi.engine.ShareLevel._
+import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
 
@@ -50,6 +53,39 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   val operationManager = new SparkSQLOperationManager()
 
   private lazy val singleSparkSession = conf.get(ENGINE_SINGLE_SPARK_SESSION)
+  private lazy val shareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
+
+  private lazy val userIsolatedSparkSession = conf.get(ENGINE_USER_ISOLATED_SPARK_SESSION)
+  private lazy val userIsolatedSparkSessionCache = new ConcurrentHashMap[String, SparkSession]()
+
+  private def getOrNewSparkSession(user: String): SparkSession = {
+    if (singleSparkSession) {
+      spark
+    } else {
+      shareLevel match {
+        // it's unnecessary to create a new spark session in connection share level
+        // since the session is only one
+        case CONNECTION => spark
+        case USER => newSparkSession(spark)
+        case GROUP | SERVER if userIsolatedSparkSession =>
+          if (userIsolatedSparkSessionCache.containsKey(user)) {
+            userIsolatedSparkSessionCache.get(user)
+          } else {
+            val newSession = newSparkSession(spark)
+            userIsolatedSparkSessionCache.put(user, newSession)
+            newSession
+          }
+        case GROUP | SERVER => newSparkSession(spark)
+        case _ => throw new IllegalStateException(s"Unrecognized share level: $shareLevel")
+      }
+    }
+  }
+
+  private def newSparkSession(rootSparkSession: SparkSession): SparkSession = {
+    val newSparkSession = rootSparkSession.newSession()
+    KyuubiSparkUtil.initializeSparkSession(newSparkSession, conf.get(ENGINE_SESSION_INITIALIZE_SQL))
+    newSparkSession
+  }
 
   override protected def createSession(
       protocol: TProtocolVersion,
@@ -60,21 +96,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
     val sparkSession =
       try {
-        if (singleSparkSession) {
-          spark
-        } else {
-          val ss = spark.newSession()
-          this.conf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sqlStr =>
-            ss.sparkContext.setJobGroup(
-              "engine_initializing_queries",
-              sqlStr,
-              interruptOnCancel = true)
-            debug(s"Execute session initializing sql: $sqlStr")
-            ss.sql(sqlStr).isEmpty
-            ss.sparkContext.clearJobGroup()
-          }
-          ss
-        }
+        getOrNewSparkSession(user)
       } catch {
         case e: Exception => throw KyuubiSQLException(e)
       }
@@ -92,7 +114,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     super.closeSession(sessionHandle)
-    if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
+    if (shareLevel == ShareLevel.CONNECTION) {
       info("Session stopped due to shared level is Connection.")
       stopSession()
     }
