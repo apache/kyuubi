@@ -18,8 +18,11 @@
 package org.apache.kyuubi.engine.hive
 
 import java.net.InetAddress
+
 import scala.util.control.NonFatal
+
 import org.apache.hadoop.hive.conf.HiveConf
+
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
