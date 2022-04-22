@@ -35,7 +35,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     .asScala.filter(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation]))
   private val jps = operations.head
 
-  test("JpsApplicationOperation") {
+  test("JpsApplicationOperation with jstat") {
     val operations = ServiceLoader.load(classOf[ApplicationOperation])
       .asScala.filter(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation]))
     val jps = operations.head
@@ -83,7 +83,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     }
 
     val response = jps.killApplicationByTag(id)
-    assert(response._1)
+    assert(response._1, response._2)
     assert(response._2 startsWith "Succeeded to terminate:")
 
     val desc2 = jps.getApplicationInfoByTag(id)
