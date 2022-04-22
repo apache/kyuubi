@@ -28,7 +28,7 @@ class UserIsolatedSessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelpe
   override def withKyuubiConf: Map[String, String] = {
     Map(
       ENGINE_SHARE_LEVEL.key -> "GROUP",
-      ENGINE_USER_ISOLATED_SPARK_SESSION.key -> "true")
+      ENGINE_USER_ISOLATED_SPARK_SESSION.key -> "false")
   }
 
   override protected def jdbcUrl: String =

@@ -67,7 +67,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         // since the session is only one
         case CONNECTION => spark
         case USER => newSparkSession(spark)
-        case GROUP | SERVER if userIsolatedSparkSession =>
+        case GROUP | SERVER if userIsolatedSparkSession => newSparkSession(spark)
+        case GROUP | SERVER =>
           if (userIsolatedSparkSessionCache.containsKey(user)) {
             userIsolatedSparkSessionCache.get(user)
           } else {
@@ -75,8 +76,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
             userIsolatedSparkSessionCache.put(user, newSession)
             newSession
           }
-        case GROUP | SERVER => newSparkSession(spark)
-        case _ => throw new IllegalStateException(s"Unrecognized share level: $shareLevel")
       }
     }
   }
