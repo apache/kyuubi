@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
@@ -30,6 +30,7 @@ import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
@@ -56,7 +57,42 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   private lazy val shareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
   private lazy val userIsolatedSparkSession = conf.get(ENGINE_USER_ISOLATED_SPARK_SESSION)
-  private lazy val userIsolatedSparkSessionCache = new ConcurrentHashMap[String, SparkSession]()
+  private lazy val userIsolatedIdleInterval =
+    conf.get(ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_INTERVAL)
+  private lazy val userIsolatedIdleTimeout =
+    conf.get(ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_TIMEOUT)
+  private val userIsolatedCacheLock = new Object
+  private lazy val userIsolatedCache = new java.util.HashMap[String, SparkSession]()
+  private lazy val userIsolatedCacheCount =
+    new java.util.HashMap[String, (Integer, java.lang.Long)]()
+
+  private def startUserIsolatedCacheChecker(): Unit = {
+    if (!userIsolatedSparkSession) {
+      ThreadUtils.newDaemonSingleThreadScheduledExecutor("user-isolated-cache-checker")
+        .scheduleWithFixedDelay(
+          () => {
+            userIsolatedCacheLock.synchronized {
+              val iter = userIsolatedCacheCount.entrySet().iterator()
+              while (iter.hasNext) {
+                val kv = iter.next()
+                if (kv.getValue._1 == 0 &&
+                  kv.getValue._2 + userIsolatedIdleTimeout < System.currentTimeMillis()) {
+                  userIsolatedCache.remove(kv.getKey)
+                  iter.remove()
+                }
+              }
+            }
+          },
+          userIsolatedIdleInterval,
+          userIsolatedIdleInterval,
+          TimeUnit.MILLISECONDS)
+    }
+  }
+
+  override def start(): Unit = {
+    startUserIsolatedCacheChecker()
+    super.start()
+  }
 
   private def getOrNewSparkSession(user: String): SparkSession = {
     if (singleSparkSession) {
@@ -69,12 +105,17 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         case USER => newSparkSession(spark)
         case GROUP | SERVER if userIsolatedSparkSession => newSparkSession(spark)
         case GROUP | SERVER =>
-          if (userIsolatedSparkSessionCache.containsKey(user)) {
-            userIsolatedSparkSessionCache.get(user)
-          } else {
-            val newSession = newSparkSession(spark)
-            userIsolatedSparkSessionCache.put(user, newSession)
-            newSession
+          userIsolatedCacheLock.synchronized {
+            if (userIsolatedCache.containsKey(user)) {
+              val (count, _) = userIsolatedCacheCount.get(user)
+              userIsolatedCacheCount.put(user, (count + 1, System.currentTimeMillis()))
+              userIsolatedCache.get(user)
+            } else {
+              userIsolatedCacheCount.put(user, (1, System.currentTimeMillis()))
+              val newSession = newSparkSession(spark)
+              userIsolatedCache.put(user, newSession)
+              newSession
+            }
           }
       }
     }
@@ -112,6 +153,17 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
+    if (!userIsolatedSparkSession) {
+      val session = getSession(sessionHandle)
+      if (session != null) {
+        userIsolatedCacheLock.synchronized {
+          if (userIsolatedCacheCount.containsKey(session.user)) {
+            val (count, _) = userIsolatedCacheCount.get(session.user)
+            userIsolatedCacheCount.put(session.user, (count - 1, System.currentTimeMillis()))
+          }
+        }
+      }
+    }
     super.closeSession(sessionHandle)
     if (shareLevel == ShareLevel.CONNECTION) {
       info("Session stopped due to shared level is Connection.")

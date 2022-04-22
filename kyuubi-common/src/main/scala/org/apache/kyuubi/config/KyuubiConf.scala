@@ -1153,6 +1153,21 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.user.isolated.spark.session.idle.timeout")
+      .doc(s"If ${ENGINE_USER_ISOLATED_SPARK_SESSION.key} is false, we will release the " +
+        s"spark session if its corresponding user is inactive after this configured timeout.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofHours(6).toMillis)
+
+  val ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.user.isolated.spark.session.idle.interval")
+      .doc(s"The interval to check if the user isolated spark session is timeout.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(1).toMillis)
+
   val SERVER_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("kyuubi.backend.server.event.json.log.path")
       .doc("The location of server events go for the builtin JSON logger")

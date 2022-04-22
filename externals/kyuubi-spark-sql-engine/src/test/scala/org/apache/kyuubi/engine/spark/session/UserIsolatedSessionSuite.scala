@@ -28,35 +28,37 @@ class UserIsolatedSessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelpe
   override def withKyuubiConf: Map[String, String] = {
     Map(
       ENGINE_SHARE_LEVEL.key -> "GROUP",
-      ENGINE_USER_ISOLATED_SPARK_SESSION.key -> "false")
+      ENGINE_USER_ISOLATED_SPARK_SESSION.key -> "false",
+      ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_INTERVAL.key -> "100",
+      ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_TIMEOUT.key -> "5000")
   }
 
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;#spark.ui.enabled=false"
 
-  test("isolated user spark session") {
-    def executeSetStatement(user: String, statement: String): String = {
-      withThriftClient(Some(user)) { client =>
-        val req = new TOpenSessionReq()
-        req.setUsername(user)
-        req.setPassword("anonymous")
-        val tOpenSessionResp = client.OpenSession(req)
-        val tExecuteStatementReq = new TExecuteStatementReq()
-        tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
-        tExecuteStatementReq.setStatement(statement)
-        tExecuteStatementReq.setRunAsync(false)
-        val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+  private def executeSetStatement(user: String, statement: String): String = {
+    withThriftClient(Some(user)) { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername(user)
+      req.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(req)
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement(statement)
+      tExecuteStatementReq.setRunAsync(false)
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
 
-        val operationHandle = tExecuteStatementResp.getOperationHandle
-        val tFetchResultsReq = new TFetchResultsReq()
-        tFetchResultsReq.setOperationHandle(operationHandle)
-        tFetchResultsReq.setFetchType(0)
-        tFetchResultsReq.setMaxRows(1)
-        val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
-        tFetchResultsResp.getResults.getColumns.get(1).getStringVal.getValues.get(0)
-      }
+      val operationHandle = tExecuteStatementResp.getOperationHandle
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(operationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getResults.getColumns.get(1).getStringVal.getValues.get(0)
     }
+  }
 
+  test("isolated user spark session") {
     executeSetStatement("user1", "set a=1")
     assert(executeSetStatement("user1", "set a") == "1")
     assert(executeSetStatement("user1", "set a") == "1")
@@ -64,5 +66,9 @@ class UserIsolatedSessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelpe
     executeSetStatement("user2", "set a=2")
     assert(executeSetStatement("user1", "set a") == "1")
     assert(executeSetStatement("user2", "set a") == "2")
+
+    Thread.sleep(6000)
+    assert(executeSetStatement("user1", "set a") == "<undefined>")
+    assert(executeSetStatement("user2", "set a") == "<undefined>")
   }
 }
