@@ -237,12 +237,6 @@ trait ProcBuilder {
     process
   }
 
-  /**
-   * Use Left to represent engineRefId and Right to represent line.
-   */
-  def killApplication(clue: Either[String, String] = Right(lastRowsOfLog.toArray.mkString("\n")))
-      : String = ""
-
   def close(): Unit = synchronized {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
@@ -331,6 +325,8 @@ trait ProcBuilder {
       s"configuring $requiredEnv, please visit https://kyuubi.apache.org/docs/latest/" +
       s"deployment/settings.html#environments")
   }
+
+  def clusterManager(): Option[String] = None
 
 }
 

@@ -15,27 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi
 
-import org.apache.kyuubi.WithKyuubiServerOnYarn
+package object engine {
 
-class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with SparkQueryTests {
-
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  test("KYUUBI #527- Support test with mini yarn cluster") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("""SELECT "${spark.app.id}" as id""")
-      assert(resultSet.next())
-      assert(resultSet.getString("id").startsWith("application_"))
-    }
-  }
-
-  test("session_user shall work on yarn") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT SESSION_USER() as su")
-      assert(resultSet.next())
-      assert(resultSet.getString("su") === user)
-    }
-  }
+  /**
+   * (killed or not, hint message)
+   */
+  type KillResponse = (Boolean, String)
 }

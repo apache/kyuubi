@@ -20,22 +20,16 @@ package org.apache.kyuubi.engine.spark
 import java.io.{File, IOException}
 import java.nio.file.Paths
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.yarn.api.records.ApplicationId
-import org.apache.hadoop.yarn.client.api.YarnClient
-import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INIT_TIMEOUT, ENGINE_TYPE}
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -44,8 +38,6 @@ class SparkProcessBuilder(
   extends ProcBuilder with Logging {
 
   import SparkProcessBuilder._
-
-  def getYarnClient: YarnClient = YarnClient.createYarnClient
 
   private val sparkHome = getEngineHome(shortName)
 
@@ -139,49 +131,28 @@ class SparkProcessBuilder(
     }
   }
 
-  override def killApplication(clue: Either[String, String]): String = clue match {
-    case Left(engineRefId) => killApplicationByTag(engineRefId)
-    case Right(_) => ""
-  }
-
-  private def killApplicationByTag(engineRefId: String): String = {
-    conf.getOption(MASTER_KEY).orElse(getSparkDefaultsConf().get(MASTER_KEY)) match {
-      case Some("yarn") =>
-        var applicationId: ApplicationId = null
-        val yarnClient = getYarnClient
-        try {
-          val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
-          yarnClient.init(yarnConf)
-          yarnClient.start()
-          val apps = yarnClient.getApplications(null, null, Set(engineRefId).asJava)
-          if (apps.isEmpty) return s"There are no Application tagged with $engineRefId," +
-            s" please kill it manually."
-          applicationId = apps.asScala.head.getApplicationId
-          yarnClient.killApplication(
-            applicationId,
-            s"Kyuubi killed this caused by: Timeout(${conf.get(ENGINE_INIT_TIMEOUT)} ms) to" +
-              s" launched ${conf.get(ENGINE_TYPE)} engine with $this.")
-          s"Killed Application $applicationId tagged with $engineRefId successfully."
-        } catch {
-          case e: Throwable =>
-            s"Failed to kill Application $applicationId tagged with $engineRefId," +
-              s" please kill it manually. Caused by ${e.getMessage}."
-        } finally {
-          yarnClient.stop()
-        }
-      case _ => "Kill Application only works with YARN, please kill it manually." +
-          s" Application tagged with $engineRefId"
-    }
-  }
-
   override protected def shortName: String = "spark"
 
-  protected def getSparkDefaultsConf(): Map[String, String] = {
-    val sparkDefaultsConfFile = env.get(SPARK_CONF_DIR)
-      .orElse(Option(s"$sparkHome${File.separator}conf"))
-      .map(_ + File.separator + SPARK_CONF_FILE_NAME)
-      .map(new File(_)).filter(_.exists())
-    Utils.getPropertiesFromFile(sparkDefaultsConfFile)
+  protected lazy val defaultMaster: Option[String] = {
+    val confDir = env.getOrElse(SPARK_CONF_DIR, s"$sparkHome${File.separator}conf")
+    val defaults =
+      try {
+        val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
+        if (confFile.exists()) {
+          Utils.getPropertiesFromFile(Some(confFile))
+        } else {
+          Map.empty[String, String]
+        }
+      } catch {
+        case _: Exception =>
+          warn(s"Failed to load spark configurations from $confDir")
+          Map.empty[String, String]
+      }
+    defaults.get(MASTER_KEY)
+  }
+
+  override def clusterManager(): Option[String] = {
+    conf.getOption(MASTER_KEY).orElse(defaultMaster)
   }
 }
 

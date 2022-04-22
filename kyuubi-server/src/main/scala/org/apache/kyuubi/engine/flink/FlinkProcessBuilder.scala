@@ -18,10 +18,7 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
-import java.lang.ProcessBuilder.Redirect
 import java.nio.file.Paths
-
-import scala.collection.JavaConverters._
 
 import com.google.common.annotations.VisibleForTesting
 
@@ -77,34 +74,6 @@ class FlinkProcessBuilder(
       }.map { case (k, v) => s"-D$k=$v" }.mkString(" "))
 
   override protected def commands: Array[String] = Array(executable)
-
-  override def killApplication(clue: Either[String, String]): String = clue match {
-    case Left(_) => ""
-    case Right(line) => killApplicationByLog(line)
-  }
-
-  def killApplicationByLog(line: String = lastRowsOfLog.toArray.mkString("\n")): String = {
-    "Job ID: .*".r.findFirstIn(line) match {
-      case Some(jobIdLine) =>
-        val jobId = jobIdLine.split("Job ID: ")(1).trim
-        env.get("FLINK_HOME") match {
-          case Some(flinkHome) =>
-            val pb = new ProcessBuilder("/bin/sh", s"$flinkHome/bin/flink", "stop", jobId)
-            pb.environment()
-              .putAll(childProcEnv.asJava)
-            pb.redirectError(Redirect.appendTo(engineLog))
-            pb.redirectOutput(Redirect.appendTo(engineLog))
-            val process = pb.start()
-            process.waitFor() match {
-              case id if id != 0 => s"Failed to kill Application $jobId, please kill it manually. "
-              case _ => s"Killed Application $jobId successfully. "
-            }
-          case None =>
-            s"FLINK_HOME is not set! Failed to kill Application $jobId, please kill it manually."
-        }
-      case None => ""
-    }
-  }
 
   @VisibleForTesting
   def FLINK_HOME: String = {
