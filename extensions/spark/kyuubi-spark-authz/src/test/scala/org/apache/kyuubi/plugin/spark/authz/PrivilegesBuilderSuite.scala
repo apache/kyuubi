@@ -208,6 +208,41 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assert(accessType === AccessType.ALTER)
   }
 
+  test("AlterTableRecoverPartitionsCommand") {
+    // AlterTableRecoverPartitionsCommand exists in the version below 3.2
+    assume(!isSparkV32OrGreater)
+    val tableName = reusedDb + "." + "TableToMsck"
+    withTable(tableName) { _ =>
+      sql(
+        s"""
+           |CREATE TABLE $tableName
+           |(key int, value string, pid string)
+           |USING parquet
+           |PARTITIONED BY (pid)""".stripMargin)
+      val sqlStr =
+        s"""
+           |MSCK REPAIR TABLE $tableName
+           |""".stripMargin
+      val plan = sql(sqlStr).queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === MSCK)
+      val (inputs, outputs) = PrivilegesBuilder.build(plan)
+
+      assert(inputs.isEmpty)
+
+      assert(outputs.size === 1)
+      outputs.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.dbname equalsIgnoreCase reusedDb)
+        assert(po.objectName equalsIgnoreCase tableName.split("\\.").last)
+        assert(po.columns.isEmpty)
+        val accessType = ranger.AccessType(po, operationType, isInput = false)
+        assert(accessType === AccessType.ALTER)
+      }
+    }
+  }
+
   // ALTER TABLE default.StudentInfo PARTITION (age='10') RENAME TO PARTITION (age='15');
   test("AlterTableRenamePartitionCommand") {
     sql(s"ALTER TABLE $reusedPartTable ADD IF NOT EXISTS PARTITION (pid=1)")
