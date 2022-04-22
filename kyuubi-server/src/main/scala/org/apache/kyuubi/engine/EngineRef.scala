@@ -165,24 +165,21 @@ private[kyuubi] class EngineRef(
     val builder = engineType match {
       case SPARK_SQL =>
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-        // tag is a seq type with comma-separated
-        conf.set(
-          SparkProcessBuilder.TAG_KEY,
-          conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") +
-            "KYUUBI," + engineRefId)
         new SparkProcessBuilder(appUser, conf, extraEngineLog)
       case FLINK_SQL =>
         conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
-        // tag is a seq type with comma-separated
-        conf.set(
-          FlinkProcessBuilder.TAG_KEY,
-          conf.getOption(FlinkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
         new FlinkProcessBuilder(appUser, conf, extraEngineLog)
       case TRINO =>
         new TrinoProcessBuilder(appUser, conf, extraEngineLog)
       case HIVE_SQL =>
         new HiveProcessBuilder(appUser, conf, extraEngineLog)
     }
+    // TODO: Better to do this inside ProcBuilder
+    KyuubiApplicationManager.tagApplication(
+      engineRefId,
+      builder.shortName,
+      builder.clusterManager(),
+      builder.conf)
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {

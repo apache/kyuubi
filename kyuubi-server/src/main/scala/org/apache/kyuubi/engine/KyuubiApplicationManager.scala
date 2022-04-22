@@ -55,6 +55,34 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
     super.stop()
   }
 
+  def killApplication(resourceManager: Option[String], tag: String): KillResponse = {
+    var (killed, lastMessage): KillResponse = (false, null)
+    for (operation <- operations if !killed) {
+      if (operation.isSupported(resourceManager)) {
+        val (k, m) = operation.killApplicationByTag(tag)
+        killed = k
+        lastMessage = m
+      }
+    }
+
+    val finalMessage =
+      if (lastMessage == null) {
+        s"No ${classOf[ApplicationOperation]} Service found in ServiceLoader" +
+          s" for $resourceManager"
+      } else {
+        lastMessage
+      }
+    (killed, finalMessage)
+  }
+
+  def getApplicationInfo(
+      clusterManager: Option[String],
+      tag: String): Option[Map[String, String]] = {
+    operations.find(_.isSupported(clusterManager)).map(_.getApplicationInfoByTag(tag))
+  }
+}
+
+object KyuubiApplicationManager {
   private def setupSparkYarnTag(tag: String, conf: KyuubiConf): Unit = {
     val originalTag = conf.getOption("spark.yarn.tags").map(_ + ",").getOrElse("")
     val newTag = s"${originalTag}KYUUBI,$tag"
@@ -82,11 +110,11 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
   def tagApplication(
       applicationTag: String,
       applicationType: String,
-      resourceManager: String,
+      resourceManager: Option[String],
       conf: KyuubiConf): Unit = {
-    (applicationType.toUpperCase, resourceManager.toUpperCase) match {
-      case ("SPARK", "YARN") => setupSparkYarnTag(applicationTag, conf)
-      case ("SPARK", "K8S") => setupSparkK8sTag(applicationTag, conf)
+    (applicationType.toUpperCase, resourceManager.map(_.toUpperCase())) match {
+      case ("SPARK", Some("YARN")) => setupSparkYarnTag(applicationTag, conf)
+      case ("SPARK", Some("K8S")) => setupSparkK8sTag(applicationTag, conf)
       case ("SPARK", _) =>
         // if the master is not identified ahead, add all tags
         setupSparkYarnTag(applicationTag, conf)
@@ -97,31 +125,5 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
       // other engine types are running locally yet
       case _ =>
     }
-  }
-
-  def killApplication(resourceManager: Option[String], tag: String): KillResponse = {
-    var (killed, lastMessage): KillResponse = (false, null)
-    for (operation <- operations if !killed) {
-      if (operation.isSupported(resourceManager)) {
-        val (k, m) = operation.killApplicationByTag(tag)
-        killed = k
-        lastMessage = m
-      }
-    }
-
-    val finalMessage =
-      if (lastMessage == null) {
-        s"No ${classOf[ApplicationOperation]} Service found in ServiceLoader" +
-          s" for $resourceManager"
-      } else {
-        lastMessage
-      }
-    (killed, finalMessage)
-  }
-
-  def getApplicationInfo(
-      clusterManager: Option[String],
-      tag: String): Option[Map[String, String]] = {
-    operations.find(_.isSupported(clusterManager)).map(_.getApplicationInfoByTag(tag))
   }
 }

@@ -106,7 +106,7 @@ class FlinkProcessBuilder(
     }
   }
 
-  override protected def shortName: String = "flink"
+  override def shortName: String = "flink"
 }
 
 object FlinkProcessBuilder {

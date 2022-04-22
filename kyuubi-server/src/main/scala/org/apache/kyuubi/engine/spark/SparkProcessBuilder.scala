@@ -131,7 +131,7 @@ class SparkProcessBuilder(
     }
   }
 
-  override protected def shortName: String = "spark"
+  override def shortName: String = "spark"
 
   protected lazy val defaultMaster: Option[String] = {
     val confDir = env.getOrElse(SPARK_CONF_DIR, s"$sparkHome${File.separator}conf")

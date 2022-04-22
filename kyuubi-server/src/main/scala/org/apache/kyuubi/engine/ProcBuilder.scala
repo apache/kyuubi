@@ -41,7 +41,7 @@ trait ProcBuilder {
    * The short name of the engine process builder, we use this for form the engine jar paths now
    * see `mainResource`
    */
-  protected def shortName: String
+  def shortName: String
 
   /**
    * executable, it is `JAVA_HOME/bin/java` by default
@@ -99,7 +99,7 @@ trait ProcBuilder {
 
   protected def commands: Array[String]
 
-  protected def conf: KyuubiConf
+  def conf: KyuubiConf
 
   protected def env: Map[String, String] = conf.getEnvs
 
