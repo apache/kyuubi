@@ -31,7 +31,7 @@
 Currently, Apache Kyuubi maintains all its releases on our official [website](https://kyuubi.apache.org/releases.html).
 You can get the most recent stable release of Apache Kyuubi here:
 
-<a class="github-button" href="https://kyuubi.apache.org/releases.html" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-download" data-size="large" aria-label="Download Kyuubi">Download</a>
+<p><a class="btn btn-neutral" href="https://kyuubi.apache.org/releases.html" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-download" data-size="large" aria-label="Download Kyuubi"><span class="fa fa-arrow-circle-down" aria-hidden="true"></span>Download</a></p>
 
 ## Requirements
 
