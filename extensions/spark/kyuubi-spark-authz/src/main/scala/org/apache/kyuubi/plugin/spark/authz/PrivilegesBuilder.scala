@@ -205,8 +205,8 @@ object PrivilegesBuilder {
         val newTable = getPlanField[TableIdentifier]("newName")
         outputObjs += tablePrivileges(oldTable, actionType = PrivilegeObjectActionType.DELETE)
         outputObjs += tablePrivileges(newTable)
-      
-      // this is for spark 3.1 or below 
+
+      // this is for spark 3.1 or below
       case "AlterTableRecoverPartitionsCommand" =>
         val table = getTableName
         outputObjs += tablePrivileges(table)
