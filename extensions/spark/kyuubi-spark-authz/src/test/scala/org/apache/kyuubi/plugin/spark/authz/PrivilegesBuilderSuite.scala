@@ -17,8 +17,15 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import scala.reflect.io.File
+
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
+import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
@@ -808,6 +815,41 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assert(tuple._2.size === 0)
   }
 
+  test("RepairTableCommand") {
+    // only spark 3.2 or greater has RepairTableCommand
+    assume(isSparkV32OrGreater)
+    val tableName = reusedDb + "." + "TableToRepair"
+    withTable(tableName) { _ =>
+      sql(
+        s"""
+           |CREATE TABLE $tableName
+           |(key int, value string, pid string)
+           |USING parquet
+           |PARTITIONED BY (pid)""".stripMargin)
+      val sqlStr =
+        s"""
+           |MSCK REPAIR TABLE $tableName
+           |""".stripMargin
+      val plan = sql(sqlStr).queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === MSCK)
+      val (inputs, outputs) = PrivilegesBuilder.build(plan)
+
+      assert(inputs.isEmpty)
+
+      assert(outputs.size === 1)
+      outputs.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.INSERT)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.dbname equalsIgnoreCase reusedDb)
+        assert(po.objectName equalsIgnoreCase tableName.split("\\.").last)
+        assert(po.columns.isEmpty)
+        val accessType = ranger.AccessType(po, operationType, isInput = false)
+        assert(accessType === AccessType.UPDATE)
+      }
+    }
+  }
+
   test("Query: Star") {
     val plan = sql(s"SELECT * FROM $reusedTable").queryExecution.optimizedPlan
     val po = PrivilegesBuilder.build(plan)._1.head
@@ -1099,6 +1141,24 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
+
+  test("AlterTableChangeColumnsCommand") {
+    val plan = sql(s"ALTER TABLE $reusedTable" +
+      s" ALTER COLUMN value COMMENT 'alter column'").queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === ALTERTABLE_REPLACECOLS)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.isEmpty)
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname equalsIgnoreCase reusedDb)
+    assert(po.objectName === getClass.getSimpleName)
+    assert(po.columns.head === "value")
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.ALTER)
+  }
 }
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
@@ -1238,6 +1298,175 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(accessType === AccessType.CREATE)
   }
 
+  test("LoadDataCommand") {
+    assume(!isSparkV2)
+    val dataPath = getClass.getResource("/data.txt").getPath
+    val tableName = reusedDb + "." + "LoadDataToTable"
+    withTable(tableName) { _ =>
+      sql(
+        s"""
+           |CREATE TABLE $tableName
+           |(key int, value string, pid string)
+           |USING hive
+           |""".stripMargin)
+      val plan = sql(s"LOAD DATA INPATH '$dataPath' OVERWRITE INTO TABLE $tableName")
+        .queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === LOAD)
+      val tuple = PrivilegesBuilder.build(plan)
+      assert(tuple._1.isEmpty)
+
+      assert(tuple._2.size === 1)
+      val po0 = tuple._2.head
+      assert(po0.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.dbname equalsIgnoreCase reusedDb)
+      assert(po0.objectName equalsIgnoreCase tableName.split("\\.").last)
+      assert(po0.columns.isEmpty)
+      val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
+      assert(accessType0 === AccessType.UPDATE)
+    }
+  }
+
+  test("InsertIntoDatasourceDirCommand") {
+    assume(!isSparkV2)
+    val tableDirectory = getClass.getResource("/").getPath + "table_directory"
+    val directory = File(tableDirectory).createDirectory()
+    val plan = sql(
+      s"""
+         |INSERT OVERWRITE DIRECTORY '$directory.path'
+         |USING parquet
+         |SELECT * FROM $reusedPartTable""".stripMargin)
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.columns === Seq("key", "value", "pid"))
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.isEmpty)
+  }
+
+  test("InsertIntoDataSourceCommand") {
+    assume(!isSparkV2)
+    val tableName = "InsertIntoDataSourceTable"
+    withTable(tableName) { _ =>
+      // sql(s"CREATE TABLE $tableName (a int, b string) USING parquet")
+      val schema = new StructType()
+        .add("key", IntegerType, nullable = true)
+        .add("value", StringType, nullable = true)
+      val newTable = CatalogTable(
+        identifier = TableIdentifier(tableName, None),
+        tableType = CatalogTableType.MANAGED,
+        storage = CatalogStorageFormat(
+          locationUri = None,
+          inputFormat = None,
+          outputFormat = None,
+          serde = None,
+          compressed = false,
+          properties = Map.empty),
+        schema = schema,
+        provider = Some(classOf[SimpleInsertSource].getName))
+
+      spark.sessionState.catalog.createTable(newTable, ignoreIfExists = false)
+      val sqlStr =
+        s"""
+           |INSERT INTO TABLE $tableName
+           |SELECT key, value FROM $reusedTable
+           |""".stripMargin
+      val plan = sql(sqlStr).queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === QUERY)
+      val (inputs, outputs) = PrivilegesBuilder.build(plan)
+
+      assert(inputs.size == 1)
+      inputs.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.dbname equalsIgnoreCase reusedDb)
+        assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+        assert(po.columns === Seq("key", "value"))
+        val accessType = ranger.AccessType(po, operationType, isInput = true)
+        assert(accessType === AccessType.SELECT)
+      }
+
+      assert(outputs.size === 1)
+      outputs.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.INSERT)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.dbname equalsIgnoreCase "default")
+        assert(po.objectName equalsIgnoreCase tableName)
+        assert(po.columns.isEmpty)
+        val accessType = ranger.AccessType(po, operationType, isInput = false)
+        assert(accessType === AccessType.UPDATE)
+
+      }
+    }
+  }
+
+  test("InsertIntoHadoopFsRelationCommand") {
+    assume(!isSparkV2)
+    val tableName = "InsertIntoHadoopFsRelationTable"
+    withTable(tableName) { _ =>
+      sql(s"CREATE TABLE $tableName (a int, b string) USING parquet")
+      val sqlStr =
+        s"""
+           |INSERT INTO TABLE $tableName
+           |SELECT key, value FROM $reusedTable
+           |""".stripMargin
+      val plan = sql(sqlStr).queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === QUERY)
+      val (inputs, outputs) = PrivilegesBuilder.build(plan)
+
+      assert(inputs.size == 1)
+      inputs.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.dbname equalsIgnoreCase reusedDb)
+        assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+        assert(po.columns === Seq("key", "value"))
+        val accessType = ranger.AccessType(po, operationType, isInput = false)
+        assert(accessType === AccessType.SELECT)
+      }
+
+      assert(outputs.isEmpty)
+    }
+  }
+
+  test("InsertIntoHiveDirCommand") {
+    assume(!isSparkV2)
+    val tableDirectory = getClass.getResource("/").getPath + "table_directory"
+    val directory = File(tableDirectory).createDirectory()
+    val plan = sql(
+      s"""
+         |INSERT OVERWRITE DIRECTORY '$directory.path'
+         |USING parquet
+         |SELECT * FROM $reusedPartTable""".stripMargin)
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === QUERY)
+    val tuple = PrivilegesBuilder.build(plan)
+    assert(tuple._1.size === 1)
+    val po0 = tuple._1.head
+    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po0.dbname equalsIgnoreCase reusedDb)
+    assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
+    assert(po0.columns === Seq("key", "value", "pid"))
+    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+    assert(accessType0 === AccessType.SELECT)
+
+    assert(tuple._2.isEmpty)
+  }
+
   test("InsertIntoHiveTableCommand") {
     assume(!isSparkV2)
     val tableName = "InsertIntoHiveTable"
@@ -1287,5 +1516,26 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
       assert(tuple._2.size === 0)
     }
+  }
+}
+
+case class SimpleInsert(userSpecifiedSchema: StructType)(@transient val sparkSession: SparkSession)
+  extends BaseRelation with InsertableRelation {
+
+  override def sqlContext: SQLContext = sparkSession.sqlContext
+
+  override def schema: StructType = userSpecifiedSchema
+
+  override def insert(input: DataFrame, overwrite: Boolean): Unit = {
+    input.collect
+  }
+}
+
+class SimpleInsertSource extends SchemaRelationProvider {
+  override def createRelation(
+      sqlContext: SQLContext,
+      parameters: Map[String, String],
+      schema: StructType): BaseRelation = {
+    SimpleInsert(schema)(sqlContext.sparkSession)
   }
 }
