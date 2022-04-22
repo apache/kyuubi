@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
@@ -65,11 +65,13 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   private lazy val userIsolatedCache = new java.util.HashMap[String, SparkSession]()
   private lazy val userIsolatedCacheCount =
     new java.util.HashMap[String, (Integer, java.lang.Long)]()
+  private var userIsolatedSparkSessionThread: Option[ScheduledExecutorService] = None
 
   private def startUserIsolatedCacheChecker(): Unit = {
     if (!userIsolatedSparkSession) {
-      ThreadUtils.newDaemonSingleThreadScheduledExecutor("user-isolated-cache-checker")
-        .scheduleWithFixedDelay(
+      userIsolatedSparkSessionThread =
+        Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("user-isolated-cache-checker"))
+      userIsolatedSparkSessionThread.foreach { _.scheduleWithFixedDelay(
           () => {
             userIsolatedCacheLock.synchronized {
               val iter = userIsolatedCacheCount.entrySet().iterator()
@@ -86,12 +88,18 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
           userIsolatedIdleInterval,
           userIsolatedIdleInterval,
           TimeUnit.MILLISECONDS)
+      }
     }
   }
 
   override def start(): Unit = {
     startUserIsolatedCacheChecker()
     super.start()
+  }
+
+  override def stop(): Unit = {
+    super.stop()
+    userIsolatedSparkSessionThread.foreach(_.shutdown())
   }
 
   private def getOrNewSparkSession(user: String): SparkSession = {
