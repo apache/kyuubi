@@ -21,7 +21,6 @@
 .travis.yml export-ignore
 _config.yml export-ignore
 codecov.yml export-ignore
-dev/kyuubi-tpcds/ export-ignore
 licenses-binary/ export-ignore
 LICENSE-binary export-ignore
 NOTICE-binary export-ignore
