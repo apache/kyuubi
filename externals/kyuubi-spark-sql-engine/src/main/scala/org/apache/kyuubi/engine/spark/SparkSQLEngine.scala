@@ -153,6 +153,10 @@ object SparkSQLEngine extends Logging {
     _sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     _sparkConf.setIfMissing("spark.master", "local")
     _sparkConf.setIfMissing("spark.ui.port", "0")
+    _sparkConf.set(
+      "spark.redaction.regex",
+      _sparkConf.get("spark.redaction.regex", "(?i)secret|password|token|access[.]key")
+        + "|zookeeper.auth.digest")
     // register the repl's output dir with the file server.
     // see also `spark.repl.classdir`
     _sparkConf.set("spark.repl.class.outputDir", outputDir.toFile.getAbsolutePath)
