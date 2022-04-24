@@ -249,7 +249,8 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     }
 
     try {
-      cliArgs = cliArgs.copy(host = InetAddress.getByName(cliArgs.host).getCanonicalHostName)
+      InetAddress.getByName(cliArgs.host)
+      cliArgs = cliArgs.copy(host = cliArgs.host)
     } catch {
       case _: Exception =>
         fail(s"Unknown host: ${cliArgs.host}")
