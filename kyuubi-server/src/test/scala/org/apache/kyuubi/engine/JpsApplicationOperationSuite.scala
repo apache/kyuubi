@@ -73,7 +73,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     val conf = new KyuubiConf()
       .set("spark.abc", id)
       .set("spark.master", "local")
-      .set(SESSION_IDLE_TIMEOUT, Duration.ofMillis(3).toMillis)
+      .set(SESSION_IDLE_TIMEOUT, Duration.ofMinutes(3).toMillis)
     val builder = new SparkProcessBuilder(user, conf)
     builder.start
 

@@ -26,19 +26,19 @@ import org.apache.kyuubi.engine.ApplicationOperation.NOT_FOUND
 
 class JpsApplicationOperation extends ApplicationOperation {
 
-  private val runner = {
+  private var runner: String = _
+
+  override def initialize(conf: KyuubiConf): Unit = {
     val jps = sys.env.get("JAVA_HOME").orElse(sys.props.get("java.home"))
       .map(Paths.get(_, "bin", "jps").toString)
       .getOrElse("jps")
-    try {
-      jps.!!
-      jps
-    } catch {
-      case _: Throwable => null
-    }
+    runner =
+      try {
+        jps.!!
+      } catch {
+        case _: Throwable => null
+      }
   }
-
-  override def initialize(conf: KyuubiConf): Unit = {}
 
   override def isSupported(clusterManager: Option[String]): Boolean = {
     runner != null && clusterManager.isEmpty || clusterManager.get == "local"
