@@ -77,6 +77,10 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
       .action((v, c) => c.copy(engineSubdomain = v))
       .text("The engine subdomain this engine belong to.")
 
+    val engineShareLevelOps = opt[String]("engine-share-level").abbr("esl")
+      .action((v, c) => c.copy(engineShareLevel = v))
+      .text("The engine share level this engine belong to.")
+
     val serverCmd =
       cmd("server").action((_, c) => c.copy(service = ServiceControlObject.SERVER))
     val engineCmd =
@@ -102,6 +106,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
               .children(userOps)
               .children(engineTypeOps)
               .children(engineSubdomainOps)
+              .children(engineShareLevelOps)
               .text("\tGet Kyuubi engine info belong to a user.")),
         note(""),
         cmd("delete")
@@ -113,6 +118,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
               .children(userOps)
               .children(engineTypeOps)
               .children(engineSubdomainOps)
+              .children(engineShareLevelOps)
               .text("\tDelete the specified engine node for user.")),
         note(""),
         cmd("list")
@@ -124,6 +130,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
               .children(userOps)
               .children(engineTypeOps)
               .children(engineSubdomainOps)
+              .children(engineShareLevelOps)
               .text("\tList all the engine nodes for a user")),
         checkConfig(f => {
           if (f.action == null) failure("Must specify action command: [create|get|delete|list].")

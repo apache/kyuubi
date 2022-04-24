@@ -479,4 +479,74 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     assert(getZkNamespace(new ServiceControlCliArguments(arg5)) ==
       s"/${namespace}_1.5.0_USER_SPARK_SQL/$user/sub_1")
   }
+
+  test("test get zk namespace for different share level engines") {
+    val arg1 = Array(
+      "list",
+      "engine",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      namespace,
+      "--user",
+      user)
+    assert(getZkNamespace(new ServiceControlCliArguments(arg1)) ==
+      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
+
+    val arg2 = Array(
+      "list",
+      "engine",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      namespace,
+      "--user",
+      user,
+      "--engine-share-level",
+      "CONNECTION")
+    assert(getZkNamespace(new ServiceControlCliArguments(arg2)) ==
+      s"/${namespace}_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL/$user/default")
+
+    val arg3 = Array(
+      "list",
+      "engine",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      namespace,
+      "--user",
+      user,
+      "--engine-share-level",
+      "USER")
+    assert(getZkNamespace(new ServiceControlCliArguments(arg3)) ==
+      s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
+
+    val arg4 = Array(
+      "list",
+      "engine",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      namespace,
+      "--user",
+      user,
+      "--engine-share-level",
+      "GROUP")
+    assert(getZkNamespace(new ServiceControlCliArguments(arg4)) ==
+      s"/${namespace}_${KYUUBI_VERSION}_GROUP_SPARK_SQL/$user/default")
+
+    val arg5 = Array(
+      "list",
+      "engine",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      namespace,
+      "--user",
+      user,
+      "--engine-share-level",
+      "SERVER")
+    assert(getZkNamespace(new ServiceControlCliArguments(arg5)) ==
+      s"/${namespace}_${KYUUBI_VERSION}_SERVER_SPARK_SQL/$user/default")
+  }
 }
