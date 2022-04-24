@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine
 
 import java.lang.management.ManagementFactory
+import java.time.Duration
 import java.util.{ServiceLoader, UUID}
 
 import scala.collection.JavaConverters._
@@ -28,6 +29,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.SESSION_IDLE_TIMEOUT
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 
 class JpsApplicationOperationSuite extends KyuubiFunSuite {
@@ -71,6 +73,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     val conf = new KyuubiConf()
       .set("spark.abc", id)
       .set("spark.master", "local")
+      .set(SESSION_IDLE_TIMEOUT, Duration.ofMillis(3).toMillis)
     val builder = new SparkProcessBuilder(user, conf)
     builder.start
 

@@ -88,7 +88,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
-          statementId,
+          session.handle.identifier.toString,
           batchRequest.copy(conf = batchSparkConf ++ batchRequest.conf),
           getOperationLog)
 
