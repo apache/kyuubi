@@ -71,7 +71,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     if (!userIsolatedSparkSession) {
       userIsolatedSparkSessionThread =
         Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("user-isolated-cache-checker"))
-      userIsolatedSparkSessionThread.foreach { _.scheduleWithFixedDelay(
+      userIsolatedSparkSessionThread.foreach {
+        _.scheduleWithFixedDelay(
           () => {
             userIsolatedCacheLock.synchronized {
               val iter = userIsolatedCacheCount.entrySet().iterator()
