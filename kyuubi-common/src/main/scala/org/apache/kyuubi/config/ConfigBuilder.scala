@@ -137,8 +137,7 @@ private[kyuubi] case class TypedConfigBuilder[T](
   def checkValue(validator: T => Boolean, errMsg: String): TypedConfigBuilder[T] = {
     transform { v =>
       if (!validator(v)) {
-        throw new IllegalArgumentException(s"The value of ${parent.key} is invalid," +
-          s"error message: $errMsg")
+        throw new IllegalArgumentException(s"'$v' in ${parent.key} is invalid. $errMsg")
       }
       v
     }
