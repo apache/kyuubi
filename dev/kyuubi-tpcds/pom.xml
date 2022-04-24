@@ -51,8 +51,13 @@
         </dependency>
 
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
+            <groupId>io.trino.tpcds</groupId>
+            <artifactId>tpcds</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
     </dependencies>
 
@@ -72,6 +77,25 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <shadedArtifactAttached>false</shadedArtifactAttached>
+                    <artifactSet>
+                        <includes>
+                            <include>com.github.scopt:scopt_${scala.binary.version}</include>
+                            <include>io.trino.tpcds:tpcds</include>
+                            <include>com.google.guava:guava</include>
+                        </includes>
+                    </artifactSet>
+                    <relocations>
+                        <relocation>
+                            <pattern>com.google.common</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.common</shadedPattern>
+                            <includes>
+                                <include>com.google.common.**</include>
+                            </includes>
+                        </relocation>
+                    </relocations>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>package</phase>
