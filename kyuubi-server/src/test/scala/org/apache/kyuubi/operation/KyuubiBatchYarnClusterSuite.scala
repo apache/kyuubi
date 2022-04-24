@@ -73,11 +73,11 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
       assert(state.exists(_("id").startsWith("application_")))
     }
 
-    val killResponse = yarnOperation.killApplicationByTag(batchJobSubmissionOp.statementId)
+    val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(killResponse._1)
     assert(killResponse._2 startsWith "Succeeded to terminate:")
 
-    val appInfo = yarnOperation.getApplicationInfoByTag(batchJobSubmissionOp.statementId)
+    val appInfo = yarnOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
 
     assert(appInfo("state") === "KILLED")
     assert(batchJobSubmissionOp.getStatus.state === ERROR)
