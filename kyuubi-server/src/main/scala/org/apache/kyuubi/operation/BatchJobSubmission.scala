@@ -48,8 +48,10 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private var builder: ProcBuilder = _
 
+  private val batchId: String = session.handle.identifier.toString
+
   private[kyuubi] def currentApplicationState: Option[Map[String, String]] = {
-    applicationManager.getApplicationInfo(builder.clusterManager(), statementId)
+    applicationManager.getApplicationInfo(builder.clusterManager(), batchId)
   }
 
   private val applicationCheckInterval =
@@ -88,7 +90,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
-          session.handle.identifier.toString,
+          batchId,
           batchRequest.copy(conf = batchSparkConf ++ batchRequest.conf),
           getOperationLog)
 
