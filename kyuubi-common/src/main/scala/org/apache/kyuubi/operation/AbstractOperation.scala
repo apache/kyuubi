@@ -174,6 +174,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   override def getHandle: OperationHandle = handle
 
   override def getStatus: OperationStatus = {
+    lastAccessTime = System.currentTimeMillis()
     OperationStatus(
       state,
       createTime,
