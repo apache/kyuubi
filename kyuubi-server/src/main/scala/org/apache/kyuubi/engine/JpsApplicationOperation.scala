@@ -41,7 +41,7 @@ class JpsApplicationOperation extends ApplicationOperation {
   }
 
   override def isSupported(clusterManager: Option[String]): Boolean = {
-    runner != null && clusterManager.isEmpty || clusterManager.get == "local"
+    runner != null && (clusterManager.isEmpty || clusterManager.get == "local")
   }
 
   private def getEngine(tag: String): Option[String] = {

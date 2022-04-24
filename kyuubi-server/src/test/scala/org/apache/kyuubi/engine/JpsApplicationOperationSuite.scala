@@ -36,11 +36,9 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
   private val operations = ServiceLoader.load(classOf[ApplicationOperation])
     .asScala.filter(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation]))
   private val jps = operations.head
+  jps.initialize(null)
 
   test("JpsApplicationOperation with jstat") {
-    val operations = ServiceLoader.load(classOf[ApplicationOperation])
-      .asScala.filter(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation]))
-    val jps = operations.head
     assert(jps.isSupported(None))
     assert(jps.isSupported(Some("local")))
     assert(!jps.killApplicationByTag(null)._1)
