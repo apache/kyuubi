@@ -102,4 +102,13 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
       connection.close()
     }
   }
+
+  test("wrapable KyuubiConnection") {
+    val driver = new KyuubiHiveDriver()
+    val connection = driver.connect(getJdbcUrl, new Properties())
+    assert(connection.isWrapperFor(classOf[KyuubiConnection]))
+    val kyuubiConnection = connection.unwrap(classOf[KyuubiConnection])
+    assert(kyuubiConnection != null)
+    connection.close()
+  }
 }
