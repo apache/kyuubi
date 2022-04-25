@@ -154,9 +154,6 @@ class KyuubiSessionImpl(
   }
 
   override def close(): Unit = {
-    if (!OperationState.isTerminal(launchEngineOp.getStatus.state)) {
-      closeOperation(launchEngineOp.getHandle)
-    }
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {

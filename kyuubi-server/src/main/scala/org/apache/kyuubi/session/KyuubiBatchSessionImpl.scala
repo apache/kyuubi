@@ -67,9 +67,6 @@ class KyuubiBatchSessionImpl(
   }
 
   override def close(): Unit = {
-    if (!OperationState.isTerminal(batchJobSubmissionOp.getStatus.state)) {
-      closeOperation(batchJobSubmissionOp.getHandle)
-    }
     super.close()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
