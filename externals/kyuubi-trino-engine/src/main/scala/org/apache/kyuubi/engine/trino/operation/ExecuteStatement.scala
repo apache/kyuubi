@@ -35,8 +35,6 @@ class ExecuteStatement(
     incrementalCollect: Boolean)
   extends TrinoOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
 
-  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
-
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
