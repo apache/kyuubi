@@ -39,7 +39,7 @@ import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore}
 import org.apache.kyuubi.engine.spark.events.handler.{SparkHistoryLoggingEventHandler, SparkJsonLoggingEventHandler}
 import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies}
+import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
 
@@ -48,8 +48,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   override val backendService = new SparkSQLBackendService(spark)
   override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
 
-  @volatile private var shutdown = false
-  @volatile private var deregistered = false
+  private val shutdown = new AtomicBoolean(false)
+  private val deregistered = new AtomicBoolean(false)
 
   private val lifetimeTerminatingChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-lifetime-checker")
@@ -78,10 +78,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     })
   }
 
-  override def stop(): Unit = synchronized {
+  override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
     super.stop()
-
-    shutdown = true
     val shutdownTimeout = conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
     ThreadUtils.shutdown(
       lifetimeTerminatingChecker,
@@ -96,23 +94,18 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     val interval = conf.get(ENGINE_CHECK_INTERVAL)
     val maxLifetime = conf.get(ENGINE_SPARK_MAX_LIFETIME)
     if (maxLifetime > 0) {
-      val checkTask = new Runnable {
-        override def run(): Unit = {
-          if (!shutdown && System.currentTimeMillis() - getStartTime > maxLifetime) {
-            if (!deregistered) {
-              info(s"Spark engine has been running for more than $maxLifetime ms," +
-                s" deregistering from engine discovery space.")
-              frontendServices.flatMap(_.discoveryService).map {
-                case engineServiceDiscovery: EngineServiceDiscovery => engineServiceDiscovery.stop()
-              }
-              deregistered = true
-            }
+      val checkTask: Runnable = () => {
+        if (!shutdown.get && System.currentTimeMillis() - getStartTime > maxLifetime) {
+          if (deregistered.compareAndSet(false, true)) {
+            info(s"Spark engine has been running for more than $maxLifetime ms," +
+              s" deregistering from engine discovery space.")
+            frontendServices.flatMap(_.discoveryService).foreach(_.stop())
+          }
 
-            if (backendService.sessionManager.getOpenSessionCount <= 0) {
-              info(s"Spark engine has been running for more than $maxLifetime ms" +
-                s" and no open session now, terminating")
-              stop()
-            }
+          if (backendService.sessionManager.getOpenSessionCount <= 0) {
+            info(s"Spark engine has been running for more than $maxLifetime ms" +
+              s" and no open session now, terminating")
+            stop()
           }
         }
       }
