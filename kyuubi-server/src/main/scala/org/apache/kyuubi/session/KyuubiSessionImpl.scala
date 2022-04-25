@@ -31,7 +31,7 @@ import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationState}
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.EngineSecurityAccessor
 
@@ -155,9 +155,6 @@ class KyuubiSessionImpl(
   }
 
   override def close(): Unit = {
-    if (!OperationState.isTerminal(launchEngineOp.getStatus.state)) {
-      closeOperation(launchEngineOp.getHandle)
-    }
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {

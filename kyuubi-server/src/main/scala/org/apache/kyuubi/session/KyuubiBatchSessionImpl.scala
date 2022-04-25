@@ -24,7 +24,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.api.v1.BatchRequest
 
 class KyuubiBatchSessionImpl(
@@ -66,9 +65,6 @@ class KyuubiBatchSessionImpl(
   }
 
   override def close(): Unit = {
-    if (!OperationState.isTerminal(batchJobSubmissionOp.getStatus.state)) {
-      closeOperation(batchJobSubmissionOp.getHandle)
-    }
     super.close()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
