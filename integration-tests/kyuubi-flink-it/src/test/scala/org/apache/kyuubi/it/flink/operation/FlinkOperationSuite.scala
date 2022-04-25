@@ -20,7 +20,7 @@ package org.apache.kyuubi.it.flink.operation
 import java.io.File
 import java.nio.file.Paths
 
-import org.apache.kyuubi.{SCALA_COMPILE_VERSION, Utils}
+import org.apache.kyuubi.{HADOOP_COMPILE_VERSION, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX}
 import org.apache.kyuubi.it.flink.WithKyuubiServerAndFlinkMiniCluster
@@ -28,15 +28,22 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 
 class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJDBCTestHelper {
-  val targetHome: String = Utils.getCodeSourceLocation(getClass).split("test-classes")(0)
-  val hadoopClasspath = Paths.get(
-    targetHome,
+  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests")(0)
+  val hadoopClasspath: String = Paths.get(
+    kyuubiHome,
+    "externals",
+    "kyuubi-flink-sql-engine",
+    "target",
     s"scala-$SCALA_COMPILE_VERSION",
     "jars").toAbsolutePath.toString
   override val conf: KyuubiConf = KyuubiConf()
     .set(ENGINE_TYPE, "FLINK_SQL")
     .set("flink.parallelism.default", "6")
-    .set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CLASSPATH", s"$hadoopClasspath${File.separator}*")
+    .set(
+      s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CLASSPATH",
+      s"$hadoopClasspath${File.separator}" +
+        s"hadoop-client-api-$HADOOP_COMPILE_VERSION.jar${File.pathSeparator}" +
+        s"$hadoopClasspath${File.separator}hadoop-client-runtime-$HADOOP_COMPILE_VERSION.jar")
 
   override protected def jdbcUrl: String = getJdbcUrl
 

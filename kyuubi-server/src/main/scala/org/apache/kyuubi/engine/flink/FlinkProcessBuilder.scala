@@ -47,17 +47,23 @@ class FlinkProcessBuilder(
 
   override protected def childProcEnv: Map[String, String] = conf.getEnvs +
     ("FLINK_HOME" -> FLINK_HOME) +
-    ("FLINK_CONF_DIR" -> s"$FLINK_HOME/conf")
+    ("FLINK_CONF_DIR" -> s"$FLINK_HOME/conf") +
+    ("_FLINK_HOME_DETERMINED" -> s"1")
 
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
-    buffer += executable
+    buffer += s"bash"
+    buffer += s"-c"
+    val commandStr = new StringBuilder()
+
+    commandStr.append(s"source $FLINK_HOME${File.separator}bin" +
+      s"${File.separator}config.sh && $executable")
 
     // TODO: How shall we deal with proxyUser,
     // user.name
     // kyuubi.session.user
     // or just leave it, because we can handle it at operation layer
-    buffer += s"-D$KYUUBI_SESSION_USER_KEY=$proxyUser"
+    commandStr.append(s" -D$KYUUBI_SESSION_USER_KEY=$proxyUser ")
 
     // TODO: add Kyuubi.engineEnv.FLINK_ENGINE_MEMORY or kyuubi.engine.flink.memory to configure
     // -Xmx5g
@@ -66,9 +72,9 @@ class FlinkProcessBuilder(
       k.startsWith("kyuubi.") || k.startsWith("flink.") ||
         k.startsWith("hadoop.") || k.startsWith("yarn.")
     }.map { case (k, v) => s"-D$k=$v" }.mkString(" ")
-    buffer += confStr
+    commandStr.append(confStr)
 
-    buffer += "-cp"
+    commandStr.append(" -cp ")
     val classpathEntries = new LinkedHashSet[String]
     // flink engine runtime jar
     mainResource.foreach(classpathEntries.add)
@@ -99,8 +105,9 @@ class FlinkProcessBuilder(
         "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
     classpathEntries.add(hadoopClasspath.get)
-    buffer += classpathEntries.asScala.mkString(File.pathSeparator)
-    buffer += mainClass
+    commandStr.append(classpathEntries.asScala.mkString(File.pathSeparator))
+    commandStr.append(s" $mainClass")
+    buffer += commandStr.toString()
     buffer.toArray
   }
 

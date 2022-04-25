@@ -44,7 +44,8 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def compareActualAndExpected(builder: FlinkProcessBuilder) = {
     val actualCommands = builder.toString
     val classpathStr: String = constructClasspathStr(builder)
-    val expectedCommands = s"$javaPath " +
+    val expectedCommands = s"bash -c source ${builder.FLINK_HOME}" +
+      s"${File.separator}bin${File.separator}config.sh && $javaPath " +
       s"-Dkyuubi.session.user=vinoyang $confStr" +
       s" -cp $classpathStr $mainClassStr"
     info(s"\n\n actualCommands $actualCommands")
