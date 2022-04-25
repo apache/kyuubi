@@ -44,7 +44,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   protected var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
-  protected def cleanup(targetState: OperationState): Unit
+  protected def cleanup(targetState: OperationState): Unit = {}
 
   protected def addTimeoutMonitor(queryTimeout: Long): Unit = {
     if (queryTimeout > 0) {
