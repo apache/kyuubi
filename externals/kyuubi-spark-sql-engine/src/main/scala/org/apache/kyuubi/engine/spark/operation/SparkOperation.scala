@@ -59,7 +59,7 @@ abstract class SparkOperation(opType: OperationType, session: Session)
   override def redactedStatement: String =
     redact(spark.sessionState.conf.stringRedactionPattern, statement)
 
-  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
+  override def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))

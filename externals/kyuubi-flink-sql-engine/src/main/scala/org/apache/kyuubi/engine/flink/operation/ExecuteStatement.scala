@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -35,7 +35,6 @@ import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
     session: Session,
@@ -47,8 +46,6 @@ class ExecuteStatement(
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session, getHandle)
-
-  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
@@ -70,7 +67,7 @@ class ExecuteStatement(
   }
 
   override protected def runInternal(): Unit = {
-    addTimeoutMonitor()
+    addTimeoutMonitor(queryTimeout)
     if (shouldRunAsync) {
       val asyncOperation = new Runnable {
         override def run(): Unit = {
@@ -179,16 +176,6 @@ class ExecuteStatement(
     } catch {
       case t: Throwable =>
         warn(s"Failed to clean result set $resultId in session $sessionId", t)
-    }
-  }
-
-  private def addTimeoutMonitor(): Unit = {
-    if (queryTimeout > 0) {
-      val timeoutExecutor =
-        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
-      val action: Runnable = () => cleanup(OperationState.TIMEOUT)
-      timeoutExecutor.schedule(action, queryTimeout, TimeUnit.SECONDS)
-      statementTimeoutCleaner = Some(timeoutExecutor)
     }
   }
 }

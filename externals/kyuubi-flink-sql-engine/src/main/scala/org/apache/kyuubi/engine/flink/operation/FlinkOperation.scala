@@ -111,7 +111,7 @@ abstract class FlinkOperation(
 
   override def shouldRunAsync: Boolean = false
 
-  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
+  override def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))
