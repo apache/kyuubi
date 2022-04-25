@@ -22,7 +22,7 @@ import java.util.Properties
 import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiStatement}
 import org.apache.kyuubi.tags.IcebergTest
 
 @IcebergTest
