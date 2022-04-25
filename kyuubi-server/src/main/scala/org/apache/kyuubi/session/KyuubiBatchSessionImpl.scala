@@ -38,7 +38,6 @@ class KyuubiBatchSessionImpl(
     batchRequest: BatchRequest)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
   override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
-  val batchId: String = handle.identifier.toString
 
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] =

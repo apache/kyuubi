@@ -79,9 +79,6 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
-      // TODO #921: COMPILED need consider eagerly executed commands
-      setState(OperationState.COMPILED)
-      debug(result.queryExecution)
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
@@ -97,6 +94,7 @@ class ExecuteStatement(
             new ArrayFetchIterator(result.take(resultMaxRows))
           }
         }
+      setCompiledStateIfNeeded()
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
@@ -157,5 +155,28 @@ class ExecuteStatement(
     super.setState(newState)
     EventBus.post(
       SparkOperationEvent(this, operationListener.getExecutionId))
+  }
+
+  def setCompiledStateIfNeeded(): Unit = synchronized {
+    if (getStatus.state == OperationState.RUNNING) {
+      val lastAccessCompiledTime =
+        if (result != null) {
+          val phase = result.queryExecution.tracker.phases
+          if (phase.contains("parsing") && phase.contains("planning")) {
+            val compiledTime = phase("planning").endTimeMs - phase("parsing").startTimeMs
+            lastAccessTime + compiledTime
+          } else {
+            0L
+          }
+        } else {
+          0L
+        }
+      super.setState(OperationState.COMPILED)
+      if (lastAccessCompiledTime > 0L) {
+        lastAccessTime = lastAccessCompiledTime
+      }
+      EventBus.post(
+        SparkOperationEvent(this, operationListener.getExecutionId))
+    }
   }
 }

@@ -90,8 +90,8 @@ abstract class AbstractSession(
   protected def runOperation(operation: Operation): OperationHandle = {
     try {
       val opHandle = operation.getHandle
-      operation.run()
       opHandleSet.add(opHandle)
+      operation.run()
       opHandle
     } catch {
       case e: KyuubiSQLException =>

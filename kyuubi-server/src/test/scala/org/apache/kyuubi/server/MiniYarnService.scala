@@ -18,7 +18,7 @@
 package org.apache.kyuubi.server
 
 import java.io.{File, FileWriter}
-import java.net.{InetAddress, URLClassLoader}
+import java.net.InetAddress
 
 import scala.collection.JavaConverters._
 
@@ -26,23 +26,15 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
-import org.scalatest.concurrent.Eventually._
-import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 
-class MiniYarnService(name: String) extends AbstractService(name) {
-  def this() = this(classOf[MiniYarnService].getSimpleName)
+class MiniYarnService extends AbstractService("TestMiniYarnService") {
 
-  private var hadoopConfDir: File = _
-  private var yarnConf: YarnConfiguration = _
-  private var yarnCluster: MiniYARNCluster = _
-
-  private val classLoader = Thread.currentThread().getContextClassLoader
-
-  private def newYarnConfig(): YarnConfiguration = {
+  private val hadoopConfDir: File = Utils.createTempDir().toFile
+  private val yarnConf: YarnConfiguration = {
     val yarnConfig = new YarnConfiguration()
     // Disable the disk utilization check to avoid the test hanging when people's disks are
     // getting full.
@@ -77,41 +69,32 @@ class MiniYarnService(name: String) extends AbstractService(name) {
     yarnConfig.set(s"hadoop.proxyuser.$currentUser.hosts", "*")
     yarnConfig
   }
+  private val yarnCluster: MiniYARNCluster = new MiniYARNCluster(getName, 1, 1, 1)
 
   override def initialize(conf: KyuubiConf): Unit = {
-    hadoopConfDir = Utils.createTempDir().toFile
-    yarnConf = newYarnConfig()
-    yarnCluster = new MiniYARNCluster(name, 1, 1, 1)
     yarnCluster.init(yarnConf)
     super.initialize(conf)
   }
 
   override def start(): Unit = {
     yarnCluster.start()
-    val config = yarnCluster.getConfig
-    eventually(timeout(10.seconds), interval(100.milliseconds)) {
-      config.get(YarnConfiguration.RM_ADDRESS).split(":")(1) != "0"
-    }
-    info(s"RM address in configuration is ${config.get(YarnConfiguration.RM_ADDRESS)}")
     saveHadoopConf()
     super.start()
-
-    val hadoopConfClassLoader = new URLClassLoader(Array(hadoopConfDir.toURI.toURL), classLoader)
-    Thread.currentThread().setContextClassLoader(hadoopConfClassLoader)
   }
 
   override def stop(): Unit = {
     if (yarnCluster != null) yarnCluster.stop()
-    if (hadoopConfDir != null) hadoopConfDir.delete()
     super.stop()
-    Thread.currentThread().setContextClassLoader(classLoader)
   }
 
   private def saveHadoopConf(): Unit = {
     val configToWrite = new Configuration(false)
     val hostName = InetAddress.getLocalHost.getHostName
     yarnCluster.getConfig.iterator().asScala.foreach { kv =>
-      configToWrite.set(kv.getKey, kv.getValue.replaceAll(hostName, "localhost"))
+      val key = kv.getKey
+      val value = kv.getValue.replaceAll(hostName, "localhost")
+      configToWrite.set(key, value)
+      getConf.set(key, value)
     }
     val writer = new FileWriter(new File(hadoopConfDir, "yarn-site.xml"))
     configToWrite.writeXml(writer)

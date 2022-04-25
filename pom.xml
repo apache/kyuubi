@@ -157,6 +157,7 @@
         <swagger.version>2.1.11</swagger.version>
         <testcontainers.version>0.39.12</testcontainers.version>
         <trino.client.version>363</trino.client.version>
+        <trino.tpcds.version>1.4</trino.tpcds.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
@@ -516,6 +517,18 @@
                 <groupId>io.trino</groupId>
                 <artifactId>trino-jdbc</artifactId>
                 <version>${trino.client.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino.tpcds</groupId>
+                <artifactId>tpcds</artifactId>
+                <version>${trino.tpcds.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>

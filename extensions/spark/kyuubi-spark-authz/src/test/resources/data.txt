@@ -14,22 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.spark
-
-import java.io.File
-
-import org.apache.spark.util.Utils
-
-object KyuubiSparkUtils {
-
-  def getLocalDir(conf: SparkConf): String = {
-    org.apache.spark.util.Utils.getLocalDir(conf)
-  }
-
-  def createTempDir(conf: SparkConf): File = {
-    val root = Utils.getLocalDir(conf)
-    Utils.createTempDir(root, "tpcds")
-  }
-
-}
+1 kyuubi 2018
+2 kyuubi 2019

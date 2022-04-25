@@ -15,18 +15,5 @@
 # limitations under the License.
 #
 
-.github/ export-ignore
-.idea/ export-ignore
-.readthedocs.yml export-ignore
-.travis.yml export-ignore
-_config.yml export-ignore
-codecov.yml export-ignore
-licenses-binary/ export-ignore
-LICENSE-binary export-ignore
-NOTICE-binary export-ignore
-*.bat text eol=crlf
-*.cmd text eol=crlf
-*.java text eol=lf
-*.scala text eol=lf
-*.xml text eol=lf
-*.py text eol=lf
+org.apache.kyuubi.engine.YarnApplicationOperation
+org.apache.kyuubi.engine.JpsApplicationOperation

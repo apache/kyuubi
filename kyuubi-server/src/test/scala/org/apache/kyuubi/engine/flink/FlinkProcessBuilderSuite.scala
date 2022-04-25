@@ -21,7 +21,6 @@ import java.io.File
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
-import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{FLINK_COMPILE_VERSION, KyuubiFunSuite, KyuubiSQLException, SCALA_COMPILE_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
@@ -37,11 +36,10 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def envWithAllHadoop: ListMap[String, String] = envWithoutHadoopCLASSPATH +
     ("HADOOP_CLASSPATH" -> s"${File.separator}hadoop")
   private def confStr: String = {
-    val configBuffer = new ArrayBuffer[String]()
-    for ((k, v) <- conf.getAll) {
-      configBuffer += s"-D$k=$v"
-    }
-    configBuffer.toArray.mkString(" ")
+    conf.getAll.filter { case (k, _) =>
+      k.startsWith("kyuubi.") || k.startsWith("flink.") ||
+        k.startsWith("hadoop.") || k.startsWith("yarn.")
+    }.map { case (k, v) => s"-D$k=$v" }.mkString(" ")
   }
   private def compareActualAndExpected(builder: FlinkProcessBuilder) = {
     val actualCommands = builder.toString
@@ -104,25 +102,4 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     }
     compareActualAndExpected(builder)
   }
-
-  test("kill application") {
-    val processBuilder = new FakeFlinkProcessBuilder(conf) {
-      override protected def env: Map[String, String] = Map("FLINK_HOME" -> "")
-    }
-    val exit1 = processBuilder.killApplication(
-      Right("""
-              |[INFO] SQL update statement has been successfully submitted to the cluster:
-              |Job ID: 6b1af540c0c0bb3fcfcad50ac037c862
-              |""".stripMargin))
-    assert(exit1.contains("6b1af540c0c0bb3fcfcad50ac037c862")
-      && !exit1.contains("FLINK_HOME is not set!"))
-
-    val exit2 = processBuilder.killApplication(Right("unknow"))
-    assert(exit2.equals(""))
-  }
-}
-
-class FakeFlinkProcessBuilder(config: KyuubiConf)
-  extends FlinkProcessBuilder("fake", config) {
-  override protected def commands: Array[String] = Array("ls")
 }

@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
-import java.lang.ProcessBuilder.Redirect
 import java.nio.file.Paths
 import java.util.LinkedHashSet
 
@@ -63,9 +62,11 @@ class FlinkProcessBuilder(
     // TODO: add Kyuubi.engineEnv.FLINK_ENGINE_MEMORY or kyuubi.engine.flink.memory to configure
     // -Xmx5g
     // java options
-    for ((k, v) <- conf.getAll) {
-      buffer += s"-D$k=$v"
-    }
+    val confStr = conf.getAll.filter { case (k, _) =>
+      k.startsWith("kyuubi.") || k.startsWith("flink.") ||
+        k.startsWith("hadoop.") || k.startsWith("yarn.")
+    }.map { case (k, v) => s"-D$k=$v" }.mkString(" ")
+    buffer += confStr
 
     buffer += "-cp"
     val classpathEntries = new LinkedHashSet[String]
@@ -102,33 +103,6 @@ class FlinkProcessBuilder(
     buffer += mainClass
     buffer.toArray
   }
-  override def killApplication(clue: Either[String, String]): String = clue match {
-    case Left(_) => ""
-    case Right(line) => killApplicationByLog(line)
-  }
-
-  def killApplicationByLog(line: String = lastRowsOfLog.toArray.mkString("\n")): String = {
-    "Job ID: .*".r.findFirstIn(line) match {
-      case Some(jobIdLine) =>
-        val jobId = jobIdLine.split("Job ID: ")(1).trim
-        env.get("FLINK_HOME") match {
-          case Some(flinkHome) =>
-            val pb = new ProcessBuilder("/bin/sh", s"$flinkHome/bin/flink", "stop", jobId)
-            pb.environment()
-              .putAll(childProcEnv.asJava)
-            pb.redirectError(Redirect.appendTo(engineLog))
-            pb.redirectOutput(Redirect.appendTo(engineLog))
-            val process = pb.start()
-            process.waitFor() match {
-              case id if id != 0 => s"Failed to kill Application $jobId, please kill it manually. "
-              case _ => s"Killed Application $jobId successfully. "
-            }
-          case None =>
-            s"FLINK_HOME is not set! Failed to kill Application $jobId, please kill it manually."
-        }
-      case None => ""
-    }
-  }
 
   @VisibleForTesting
   def FLINK_HOME: String = {
@@ -161,7 +135,7 @@ class FlinkProcessBuilder(
     }
   }
 
-  override protected def shortName: String = "flink"
+  override def shortName: String = "flink"
 }
 
 object FlinkProcessBuilder {

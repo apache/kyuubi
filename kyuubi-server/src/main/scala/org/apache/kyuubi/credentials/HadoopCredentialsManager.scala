@@ -91,6 +91,9 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   private var credentialsWaitTimeout: Long = _
   private var hadoopConf: Configuration = _
 
+  private var credentialsCheckInterval: Long = _
+  private var credentialsTimeout: Long = _
+
   private[credentials] var renewalExecutor: Option[ScheduledExecutorService] = None
   private[credentials] var credentialsTimeoutChecker: Option[ScheduledExecutorService] = None
 
@@ -122,6 +125,10 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     renewalInterval = conf.get(CREDENTIALS_RENEWAL_INTERVAL)
     renewalRetryWait = conf.get(CREDENTIALS_RENEWAL_RETRY_WAIT)
     credentialsWaitTimeout = conf.get(CREDENTIALS_UPDATE_WAIT_TIMEOUT)
+
+    credentialsCheckInterval = conf.get(CREDENTIALS_CHECK_INTERVAL)
+    credentialsTimeout = conf.get(CREDENTIALS_IDLE_TIMEOUT)
+
     super.initialize(conf)
   }
 
@@ -140,12 +147,10 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   override def stop(): Unit = {
     providers.values.foreach(_.close())
     renewalExecutor.foreach { executor =>
-      executor.shutdownNow()
-      try {
-        executor.awaitTermination(10, TimeUnit.SECONDS)
-      } catch {
-        case _: InterruptedException =>
-      }
+      ThreadUtils.shutdown(executor, Duration(10, TimeUnit.SECONDS))
+    }
+    credentialsTimeoutChecker.foreach { executor =>
+      ThreadUtils.shutdown(executor, Duration(10, TimeUnit.SECONDS))
     }
     super.stop()
   }
@@ -246,7 +251,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
         try {
           promise.trySuccess(updateCredentials(userRef))
 
-          if (userCredentialsRefMap.containsKey(userRef.getAppUser)) {
+          if (userRef.getNoOperationTime < credentialsTimeout) {
             scheduleRenewal(userRef, renewalInterval)
           }
         } catch {
@@ -257,7 +262,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
               s"Failed to update tokens for ${userRef.getAppUser}, try again in" +
                 s" $renewalRetryWait ms",
               e)
-            if (userCredentialsRefMap.containsKey(userRef.getAppUser)) {
+            if (userRef.getNoOperationTime < credentialsTimeout) {
               scheduleRenewal(userRef, renewalRetryWait)
             }
 
@@ -277,14 +282,10 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   }
 
   private def startTimeoutChecker(): Unit = {
-    val interval = conf.get(CREDENTIALS_CHECK_INTERVAL)
-    val timeout = conf.get(CREDENTIALS_IDLE_TIMEOUT)
-
     val checkTask = new Runnable {
       override def run(): Unit = {
-        val current = System.currentTimeMillis
         for ((user, userCred) <- userCredentialsRefMap.asScala) {
-          if (userCred.getLastAccessTime + timeout <= current) {
+          if (userCred.getNoOperationTime >= credentialsTimeout) {
             userCredentialsRefMap.remove(user)
           }
         }
@@ -292,7 +293,11 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     }
 
     credentialsTimeoutChecker.foreach { executor =>
-      executor.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+      executor.scheduleWithFixedDelay(
+        checkTask,
+        credentialsCheckInterval,
+        credentialsCheckInterval,
+        TimeUnit.MILLISECONDS)
     }
   }
 
