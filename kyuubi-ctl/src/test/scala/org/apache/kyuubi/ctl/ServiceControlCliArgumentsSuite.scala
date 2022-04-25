@@ -379,6 +379,8 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
          |                           The engine type this engine belong to.
          |  -es, --engine-subdomain <value>
          |                           The engine subdomain this engine belong to.
+         |  -esl, --engine-share-level <value>
+         |                           The engine share level this engine belong to.
          |
          |Command: delete [server|engine] [options]
          |${"\t"}Delete the specified service/engine node, host and port needed.
@@ -391,6 +393,8 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
          |                           The engine type this engine belong to.
          |  -es, --engine-subdomain <value>
          |                           The engine subdomain this engine belong to.
+         |  -esl, --engine-share-level <value>
+         |                           The engine share level this engine belong to.
          |
          |Command: list [server|engine] [options]
          |${"\t"}List all the service/engine nodes for a particular domain.
@@ -403,6 +407,8 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
          |                           The engine type this engine belong to.
          |  -es, --engine-subdomain <value>
          |                           The engine subdomain this engine belong to.
+         |  -esl, --engine-share-level <value>
+         |                           The engine share level this engine belong to.
          |
          |  -h, --help               Show help message and exit.""".stripMargin
 

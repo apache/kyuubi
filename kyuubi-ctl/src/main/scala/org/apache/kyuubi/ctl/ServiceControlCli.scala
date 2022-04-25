@@ -20,9 +20,7 @@ package org.apache.kyuubi.ctl
 import scala.collection.mutable.ListBuffer
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_TYPE
-import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SHARE_LEVEL_SUBDOMAIN, ENGINE_TYPE}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{DiscoveryClientProvider, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClient
@@ -232,10 +230,13 @@ object ServiceControlCli extends CommandLineUtils with Logging {
         val engineSubdomain = Some(args.cliArgs.engineSubdomain)
           .filter(_ != null).filter(_.nonEmpty)
           .getOrElse(args.conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse("default"))
+        val engineShareLevel = Some(args.cliArgs.engineShareLevel)
+          .filter(_ != null).filter(_.nonEmpty)
+          .getOrElse(args.conf.get(ENGINE_SHARE_LEVEL))
         // The path of the engine defined in zookeeper comes from
         // org.apache.kyuubi.engine.EngineRef#engineSpace
         DiscoveryPaths.makePath(
-          s"${args.cliArgs.namespace}_${args.cliArgs.version}_${ShareLevel.USER}_${engineType}",
+          s"${args.cliArgs.namespace}_${args.cliArgs.version}_${engineShareLevel}_${engineType}",
           args.cliArgs.user,
           Array(engineSubdomain))
     }

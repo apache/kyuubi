@@ -38,7 +38,8 @@ abstract private[kyuubi] class ServiceControlCliArgumentsParser {
       version: String = null,
       verbose: Boolean = false,
       engineType: String = null,
-      engineSubdomain: String = null)
+      engineSubdomain: String = null,
+      engineShareLevel: String = null)
 
   /**
    * Cli arguments parse rules.

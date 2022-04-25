@@ -56,6 +56,8 @@ Command: get engine
                            The engine type this engine belong to.
   -es, --engine-subdomain <value>
                            The engine subdomain this engine belong to.
+  -esl, --engine-share-level <value>
+                           The engine share level this engine belong to.
 
 Command: delete [server|engine] [options]
 	Delete the specified service/engine node, host and port needed.
@@ -68,6 +70,8 @@ Command: delete engine
                            The engine type this engine belong to.
   -es, --engine-subdomain <value>
                            The engine subdomain this engine belong to.
+  -esl, --engine-share-level <value>
+                           The engine share level this engine belong to.
 
 Command: list [server|engine] [options]
 	List all the service/engine nodes for a particular domain.
@@ -80,6 +84,8 @@ Command: list engine
                            The engine type this engine belong to.
   -es, --engine-subdomain <value>
                            The engine subdomain this engine belong to.
+  -esl, --engine-share-level <value>
+                           The engine share level this engine belong to.
 
   -h, --help               Show help message and exit.
 ```
@@ -116,22 +122,40 @@ bin/kyuubi-ctl delete server --host XXX --port YYY
 ```
 
 ## Manage kyuubi engines
-You can also specify the engine type(`--engine-type`), and the engine share level subdomain(`--engine-subdomain`).
+You can also specify the engine type(`--engine-type`), engine share level subdomain(`--engine-subdomain`) and engine share level(`--engine-share-level`).
 
-If not specified, the configuration item `kyuubi.engine.type` of `kyuubi-defaults.conf` read, the default value is `SPARK_SQL`, `kyuubi.engine.share.level.subdomain`, the default value is `default`.
+If not specified, the configuration item `kyuubi.engine.type` of `kyuubi-defaults.conf` read, the default value is `SPARK_SQL`, `kyuubi.engine.share.level.subdomain`, the default value is `default`, `kyuubi.engine.share.level`, the default value is `USER`.
 
 If the engine pool mode is enabled through `kyuubi.engine.pool.size`, the subdomain consists of `kyuubi.engine.pool.name` and a number below size, e.g. `engine-pool-0` .
+
+`--engine-share-level` supports the following enum values.
+* CONNECTION
+
+  The engine Ref Id (UUID) must be specified via `--engine-subdomain`.
+* USER:
+  
+  Default Value.
+* GROUP:
+
+  The `--user` parameter is the group name corresponding to the user.
+* SERVER:
+
+  The `--user` parameter is the user who started the kyuubi server.
 
 ### List engine
 List all the engine nodes for a user.
 ```shell
-bin/kyuubi-ctl list egnine --user AAA
+bin/kyuubi-ctl list engine --user AAA
+```
+The management share level is SERVER, the user who starts the kyuubi server is A, the engine is TRINO, and the subdomain is adhoc.
+```shell
+bin/kyuubi-ctl list engine --user A --engine-type TRINO --engine-subdomain adhoc --engine-share-level SERVER
 ```
 
 ### Get engine
 Get Kyuubi engine info belong to a user.
 ```shell
-bin/kyuubi-ctl get egnine --user AAA --host XXX --port YYY
+bin/kyuubi-ctl get engine --user AAA --host XXX --port YYY
 ```
 
 ### Delete engine
@@ -139,5 +163,5 @@ Delete the specified engine node for user.
 
 After the engine node is deleted, the kyuubi engine stops opening new sessions and waits for all currently open sessions to be closed before the process exits.
 ```shell
-bin/kyuubi-ctl delete egnine --user AAA --host XXX --port YYY
+bin/kyuubi-ctl delete engine --user AAA --host XXX --port YYY
 ```
