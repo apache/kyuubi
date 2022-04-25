@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.trino.operation
 
-import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService}
+import java.util.concurrent.RejectedExecutionException
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.trino.TrinoStatement
