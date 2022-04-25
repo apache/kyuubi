@@ -81,6 +81,10 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # - FLINK_HOME              Flink distribution which you would like to use in Kyuubi.
 # - FLINK_CONF_DIR          Optional directory where the Flink configuration lives.
 #                           (Default: $FLINK_HOME/conf)
+# - HIVE_HOME               Hive distribution which you would like to use in Kyuubi.
+# - HIVE_CONF_DIR           Optional directory where the Hive configuration lives.
+#                           (Default: $HIVE_HOME/conf)
+# - HIVE_HADOOP_CLASSPATH   Required hadoop jars when you use Kyuubi Hive engine on Yarn.
 #
 
 
@@ -89,6 +93,8 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
 # export SPARK_HOME=/opt/spark
 # export FLINK_HOME=/opt/flink
+# export HIVE_HOME=/opt/hive
+# export HIVE_HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/common/lib/commons-collections-3.2.2.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-runtime-3.1.0.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-api-3.1.0.jar:${HADOOP_HOME}/share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar
 # export HADOOP_CONF_DIR=/usr/ndp/current/mapreduce_client/conf
 # export YARN_CONF_DIR=/usr/ndp/current/yarn/conf
 # export KYUUBI_JAVA_OPTS="-Xmx10g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark -XX:MaxDirectMemorySize=1024m  -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:./logs/kyuubi-server-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=5M -XX:NewRatio=3 -XX:MetaspaceSize=512m"
