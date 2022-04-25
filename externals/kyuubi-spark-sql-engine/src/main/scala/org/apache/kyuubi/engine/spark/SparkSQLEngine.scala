@@ -289,7 +289,8 @@ object SparkSQLEngine extends Logging {
           case e: KyuubiException => currentEngine match {
               case Some(engine) =>
                 engine.stop()
-                val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
+                val event = EngineEvent(engine)
+                  .copy(endTime = System.currentTimeMillis(), diagnostic = e.getMessage)
                 EventBus.post(event)
                 error(event, e)
               case _ => error("Current SparkSQLEngine is not created.")
