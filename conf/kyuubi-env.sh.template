@@ -49,7 +49,7 @@
 # - HIVE_HOME               Hive distribution which you would like to use in Kyuubi.
 # - HIVE_CONF_DIR           Optional directory where the Hive configuration lives.
 #                           (Default: $HIVE_HOME/conf)
-# - HIVE_HADOOP_CLASSPATH   Required hadoop jars when you use Kyuubi Hive engine on Yarn.
+# - HIVE_HADOOP_CLASSPATH   Required Hadoop jars when you use the Kyuubi Hive engine.
 #
 
 
