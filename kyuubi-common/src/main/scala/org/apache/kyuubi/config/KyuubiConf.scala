@@ -1435,4 +1435,47 @@ object KyuubiConf {
       .version("1.6.0")
       .intConf
       .createOptional
+
+  val ENGINE_JDBC_DRIVER_CLASS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.driver.class")
+      .doc("The driver class for jdbc engine connection")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_URL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.url")
+      .doc("The server url that engine will connect to")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.user")
+      .doc("The user is used for connecting to server")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.password")
+      .doc("The password is used for connecting to server")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_PROPERTIES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.jdbc.connection.properties")
+      .doc("The additional properties are used for connecting to server")
+      .version("1.6.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
+  val ENGINE_JDBC_CONNECTION_PROVIDER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.provider")
+      .doc("The connection provider is used for getting a connection from server")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 }

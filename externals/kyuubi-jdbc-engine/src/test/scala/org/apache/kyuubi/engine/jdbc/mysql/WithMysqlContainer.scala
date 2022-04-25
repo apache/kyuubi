@@ -14,14 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc.mysql
 
-package org.apache.kyuubi.engine
+import com.dimafeng.testcontainers.MySQLContainer
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, MYSQL = Value
+trait WithMysqlContainer extends WithJdbcServerContainer {
+
+  override val container: MySQLContainer = new MySQLContainer(
+    databaseName = Some("kyuubi"),
+    mysqlUsername = Some("kyuubi_user"),
+    mysqlPassword = Some("kyuubi_password"))
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    container.close()
+  }
+
 }

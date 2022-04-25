@@ -14,14 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc.mysql
 
-package org.apache.kyuubi.engine
+class StatementSuite extends WithMysqlEngine {
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+  test("test update") {
+    withJdbcStatement("test1") { statement =>
+      statement.execute("create table test1(id bigint, name varchar(255), age int)")
+      statement.execute("insert into test1 values(1, 'a', 11)")
+      statement.executeQuery(
+        "update test1 set name = 'test', age = 12 where id = 1")
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, MYSQL = Value
+      val resultSet1 = statement.executeQuery("select * from test1")
+      while (resultSet1.next()) {
+        val id = resultSet1.getObject(1)
+        assert(id == 1)
+        val name = resultSet1.getObject(2)
+        assert(name == "test")
+        val age = resultSet1.getObject(3)
+        assert(age == 12)
+      }
+    }
+  }
+
 }

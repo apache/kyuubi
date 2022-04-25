@@ -14,14 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc.operation
 
-package org.apache.kyuubi.engine
+class MysqlJdbcOperationManager extends JdbcOperationManager {
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+  override def name(): String = "mysql"
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, MYSQL = Value
 }

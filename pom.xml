@@ -70,6 +70,7 @@
         <module>extensions/spark/kyuubi-spark-authz</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
+        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-hive-sql-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
@@ -136,6 +137,7 @@
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <log4j.version>2.17.2</log4j.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
+        <mysql5.jdbc.version>5.1.49</mysql5.jdbc.version>
         <netty.version>4.1.73.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
         <prometheus.version>0.14.1</prometheus.version>
@@ -155,7 +157,7 @@
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.1.11</swagger.version>
-        <testcontainers.version>0.39.12</testcontainers.version>
+        <testcontainers.version>0.40.7</testcontainers.version>
         <trino.client.version>363</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <zookeeper.version>3.4.14</zookeeper.version>
@@ -534,6 +536,12 @@
             <dependency>
                 <groupId>com.dimafeng</groupId>
                 <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-mysql_${scala.binary.version}</artifactId>
                 <version>${testcontainers.version}</version>
             </dependency>
 

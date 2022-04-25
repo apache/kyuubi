@@ -14,14 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc.mysql
 
-package org.apache.kyuubi.engine
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+trait WithMysqlEngine extends WithJdbcEngine with WithMysqlContainer {
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, MYSQL = Value
+  override def withKyuubiConf: Map[String, String] = Map(
+    ENGINE_SHARE_LEVEL.key -> "SERVER",
+    ENGINE_JDBC_CONNECTION_URL.key -> container.jdbcUrl,
+    ENGINE_JDBC_CONNECTION_USER.key -> container.username,
+    ENGINE_JDBC_CONNECTION_PASSWORD.key -> container.password,
+    ENGINE_TYPE.key -> "mysql")
 }
