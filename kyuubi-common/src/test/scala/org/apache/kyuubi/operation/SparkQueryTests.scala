@@ -608,6 +608,21 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
     }
   }
 
+  test("scala code with loading external package at runtime ") {
+    withJdbcStatement() { statement =>
+      statement.execute("SET kyuubi.operation.language=scala")
+      val jarPath = getClass.getClassLoader.getResource("test-function.jar").getPath
+      val code0 = """spark.sql("SET kyuubi.operation.language").show(false)"""
+      val code1 = s"""spark.sql("add jar ${jarPath}")"""
+      val code2 = """val x = test.utils.Math.add(1,2)"""
+      statement.execute(code0)
+      statement.execute(code1)
+      val rs = statement.executeQuery(code2)
+      rs.next()
+      assert(rs.getString(1) == "x: Int = 3")
+    }
+  }
+
   def sparkEngineMajorMinorVersion: (Int, Int) = {
     var sparkRuntimeVer = ""
     withJdbcStatement() { stmt =>
