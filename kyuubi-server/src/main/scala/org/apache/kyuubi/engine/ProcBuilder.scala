@@ -41,7 +41,7 @@ trait ProcBuilder {
    * The short name of the engine process builder, we use this for form the engine jar paths now
    * see `mainResource`
    */
-  protected def shortName: String
+  def shortName: String
 
   /**
    * executable, it is `JAVA_HOME/bin/java` by default
@@ -99,7 +99,7 @@ trait ProcBuilder {
 
   protected def commands: Array[String]
 
-  protected def conf: KyuubiConf
+  def conf: KyuubiConf
 
   protected def env: Map[String, String] = conf.getEnvs
 
@@ -237,12 +237,6 @@ trait ProcBuilder {
     process
   }
 
-  /**
-   * Use Left to represent engineRefId and Right to represent line.
-   */
-  def killApplication(clue: Either[String, String] = Right(lastRowsOfLog.toArray.mkString("\n")))
-      : String = ""
-
   def close(): Unit = synchronized {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
@@ -331,6 +325,8 @@ trait ProcBuilder {
       s"configuring $requiredEnv, please visit https://kyuubi.apache.org/docs/latest/" +
       s"deployment/settings.html#environments")
   }
+
+  def clusterManager(): Option[String] = None
 
 }
 

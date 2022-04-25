@@ -17,15 +17,11 @@
 
 package org.apache.kyuubi.engine.spark
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-
-import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.api.v1.BatchRequest
-import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class SparkBatchProcessBuilder(
     override val proxyUser: String,
@@ -73,23 +69,7 @@ class SparkBatchProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-batch-submit"
 
-  private[kyuubi] def getApplicationIdAndUrl(): Option[(String, String)] = {
-    batchRequest.conf.get(MASTER_KEY).orElse(getSparkDefaultsConf().get(MASTER_KEY)) match {
-      case Some("yarn") =>
-        val yarnClient = getYarnClient
-        val yarnConf = new YarnConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
-        yarnClient.init(yarnConf)
-        yarnClient.start()
-        try {
-          val apps = yarnClient.getApplications(null, null, Set(batchId).asJava)
-          apps.asScala.headOption.map { applicationReport =>
-            applicationReport.getApplicationId.toString -> applicationReport.getTrackingUrl
-          }
-        } finally {
-          yarnClient.stop()
-        }
-
-      case _ => None // TODO: Support other resource manager
-    }
+  override def clusterManager(): Option[String] = {
+    batchRequest.conf.get(MASTER_KEY).orElse(defaultMaster)
   }
 }

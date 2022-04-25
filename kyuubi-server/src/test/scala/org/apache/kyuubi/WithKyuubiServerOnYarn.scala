@@ -19,6 +19,7 @@ package org.apache.kyuubi
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
+import org.apache.kyuubi.engine.YarnApplicationOperation
 import org.apache.kyuubi.server.MiniYarnService
 
 /**
@@ -27,28 +28,35 @@ import org.apache.kyuubi.server.MiniYarnService
  * may be thrown `/bin/bash: /bin/java: No such file or directory`.
  */
 trait WithKyuubiServerOnYarn extends WithKyuubiServer {
-  protected val kyuubiServerConf: KyuubiConf
-  protected val connectionConf: Map[String, String]
-  private var miniYarnService: MiniYarnService = _
+  override protected val conf: KyuubiConf = new KyuubiConf()
 
-  final override protected lazy val conf: KyuubiConf = {
-    connectionConf.foreach { case (k, v) => kyuubiServerConf.set(k, v) }
-    kyuubiServerConf
+  protected lazy val yarnOperation: YarnApplicationOperation = {
+    val operation = new YarnApplicationOperation()
+    operation.initialize(miniYarnService.getConf)
+    operation
   }
 
+  protected var miniYarnService: MiniYarnService = _
+
   override def beforeAll(): Unit = {
+    conf.set("spark.master", "yarn")
+      .set("spark.executor.instances", "1")
     miniYarnService = new MiniYarnService()
-    miniYarnService.initialize(new KyuubiConf(false))
+    miniYarnService.initialize(conf)
     miniYarnService.start()
     conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CONF_DIR", miniYarnService.getHadoopConfDir)
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
+    // stop kyuubi server
+    // stop yarn operation client
+    // stop yarn cluster
+    super.afterAll()
+    yarnOperation.stop()
     if (miniYarnService != null) {
       miniYarnService.stop()
       miniYarnService = null
     }
-    super.afterAll()
   }
 }

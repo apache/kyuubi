@@ -65,7 +65,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     Seq(None, Some("suffix")).foreach { domain =>
       conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
       domain.foreach(conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, _))
-      val engine = new EngineRef(conf, user, id)
+      val engine = new EngineRef(conf, user, id, null)
       assert(engine.engineSpace ===
         DiscoveryPaths.makePath(
           s"kyuubi_${KYUUBI_VERSION}_${CONNECTION}_${engineType}",
@@ -79,7 +79,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
     conf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
-    val appName = new EngineRef(conf, user, id)
+    val appName = new EngineRef(conf, user, id, null)
     assert(appName.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${USER}_$FLINK_SQL",
@@ -91,7 +91,7 @@ class EngineRefSuite extends KyuubiFunSuite {
       k =>
         conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
         conf.set(k.key, "abc")
-        val appName2 = new EngineRef(conf, user, id)
+        val appName2 = new EngineRef(conf, user, id, null)
         assert(appName2.engineSpace ===
           DiscoveryPaths.makePath(
             s"kyuubi_${KYUUBI_VERSION}_${USER}_${FLINK_SQL}",
@@ -105,7 +105,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, GROUP.toString)
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
-    val engineRef = new EngineRef(conf, user, id)
+    val engineRef = new EngineRef(conf, user, id, null)
     val primaryGroupName = UserGroupInformation.createRemoteUser(user).getPrimaryGroupName
     assert(engineRef.engineSpace ===
       DiscoveryPaths.makePath(
@@ -119,7 +119,7 @@ class EngineRefSuite extends KyuubiFunSuite {
       k =>
         conf.unset(k)
         conf.set(k.key, "abc")
-        val engineRef2 = new EngineRef(conf, user, id)
+        val engineRef2 = new EngineRef(conf, user, id, null)
         assert(engineRef2.engineSpace ===
           DiscoveryPaths.makePath(
             s"kyuubi_${KYUUBI_VERSION}_${GROUP}_${SPARK_SQL}",
@@ -132,7 +132,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     val userName = "Iamauserwithoutgroup"
     val newUGI = UserGroupInformation.createRemoteUser(userName)
     assert(newUGI.getGroupNames.isEmpty)
-    val engineRef3 = new EngineRef(conf, userName, id)
+    val engineRef3 = new EngineRef(conf, userName, id, null)
     assert(engineRef3.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
@@ -145,7 +145,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER.toString)
     conf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
-    val appName = new EngineRef(conf, user, id)
+    val appName = new EngineRef(conf, user, id, null)
     assert(appName.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER}_${FLINK_SQL}",
@@ -154,7 +154,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     assert(appName.defaultEngineName === s"kyuubi_${SERVER}_${FLINK_SQL}_${user}_default_$id")
 
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    val appName2 = new EngineRef(conf, user, id)
+    val appName2 = new EngineRef(conf, user, id, null)
     assert(appName2.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER}_${FLINK_SQL}",
@@ -169,31 +169,31 @@ class EngineRefSuite extends KyuubiFunSuite {
     // set subdomain and disable engine pool
     conf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
     conf.set(ENGINE_POOL_SIZE, -1)
-    val engine1 = new EngineRef(conf, user, id)
+    val engine1 = new EngineRef(conf, user, id, null)
     assert(engine1.subdomain === "abc")
 
     // unset subdomain and disable engine pool
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
     conf.set(ENGINE_POOL_SIZE, -1)
-    val engine2 = new EngineRef(conf, user, id)
+    val engine2 = new EngineRef(conf, user, id, null)
     assert(engine2.subdomain === "default")
 
     // set subdomain and 1 <= engine pool size < threshold
     conf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
     conf.set(ENGINE_POOL_SIZE, 1)
-    val engine3 = new EngineRef(conf, user, id)
+    val engine3 = new EngineRef(conf, user, id, null)
     assert(engine3.subdomain === "abc")
 
     // unset subdomain and 1 <= engine pool size < threshold
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
     conf.set(ENGINE_POOL_SIZE, 3)
-    val engine4 = new EngineRef(conf, user, id)
+    val engine4 = new EngineRef(conf, user, id, null)
     assert(engine4.subdomain.startsWith("engine-pool-"))
 
     // unset subdomain and engine pool size > threshold
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
     conf.set(ENGINE_POOL_SIZE, 100)
-    val engine5 = new EngineRef(conf, user, id)
+    val engine5 = new EngineRef(conf, user, id, null)
     val engineNumber = Integer.parseInt(engine5.subdomain.substring(12))
     val threshold = ENGINE_POOL_SIZE_THRESHOLD.defaultVal.get
     assert(engineNumber <= threshold)
@@ -203,7 +203,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     val enginePoolName = "test-pool"
     conf.set(ENGINE_POOL_NAME, enginePoolName)
     conf.set(ENGINE_POOL_SIZE, 3)
-    val engine6 = new EngineRef(conf, user, id)
+    val engine6 = new EngineRef(conf, user, id, null)
     assert(engine6.subdomain.startsWith(s"$enginePoolName-"))
   }
 
@@ -214,7 +214,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test")
     conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)
-    val engine = new EngineRef(conf, user, id)
+    val engine = new EngineRef(conf, user, id, null)
 
     var port1 = 0
     var port2 = 0

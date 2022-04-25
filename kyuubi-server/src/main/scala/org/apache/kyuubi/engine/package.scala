@@ -15,17 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink
+package org.apache.kyuubi
 
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.config.KyuubiConf
+package object engine {
 
-class FlinkProcessBuilderSuite extends KyuubiFunSuite {
-  private def conf = KyuubiConf().set("kyuubi.on", "off")
-
-  test("flink engine process builder") {
-    val builder = new FlinkProcessBuilder("vinoyang", conf)
-    val commands = builder.toString.split(' ')
-    assert(commands.exists(_ endsWith "flink-sql-engine.sh"))
-  }
+  /**
+   * (killed or not, hint message)
+   */
+  type KillResponse = (Boolean, String)
 }

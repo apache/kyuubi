@@ -26,14 +26,14 @@ import org.apache.kyuubi.WithKyuubiServerOnYarn
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.operation.OperationState.ERROR
 import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 
 class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
-  override protected val connectionConf: Map[String, String] = Map.empty
 
-  override protected val kyuubiServerConf: KyuubiConf = {
-    KyuubiConf().set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.master", "yarn")
+  override protected val conf: KyuubiConf = {
+    new KyuubiConf().set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.master", "yarn")
       .set(BATCH_CONF_IGNORE_LIST, Seq("spark.master"))
   }
 
@@ -55,7 +55,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
         s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
       Seq.empty[String])
 
-    val sessionHandle = sessionManager.openBatchSession(
+    val sessionHandle = sessionManager().openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
       batchRequest.proxyUser,
       "passwd",
@@ -67,20 +67,39 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
-    eventually(timeout(3.minutes), interval(500.milliseconds)) {
-      val applicationIdAndUrl = batchJobSubmissionOp.appIdAndUrl
-      assert(applicationIdAndUrl.isDefined)
-      assert(applicationIdAndUrl.exists(_._1.startsWith("application_")))
-      assert(applicationIdAndUrl.exists(_._2.nonEmpty))
-
-      assert(batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
-      val resultColumns = batchJobSubmissionOp.getNextRowSet(FetchOrientation.FETCH_NEXT, 1)
-        .getColumns.asScala
-      val appId = resultColumns.apply(0).getStringVal.getValues.asScala.apply(0)
-      val url = resultColumns.apply(1).getStringVal.getValues.asScala.apply(0)
-      assert(appId === batchJobSubmissionOp.appIdAndUrl.get._1)
-      assert(url === batchJobSubmissionOp.appIdAndUrl.get._2)
+    eventually(timeout(3.minutes), interval(50.milliseconds)) {
+      val state = batchJobSubmissionOp.currentApplicationState
+      assert(state.nonEmpty)
+      assert(state.exists(_("id").startsWith("application_")))
     }
+
+    val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    assert(killResponse._1)
+    assert(killResponse._2 startsWith "Succeeded to terminate:")
+
+    val appInfo = yarnOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+
+    assert(appInfo("state") === "KILLED")
+    assert(batchJobSubmissionOp.getStatus.state === ERROR)
+
+    val resultColumns = batchJobSubmissionOp.getNextRowSet(FetchOrientation.FETCH_NEXT, 10)
+      .getColumns.asScala
+
+    val keys = resultColumns.head.getStringVal.getValues.asScala
+    val values = resultColumns.apply(1).getStringVal.getValues.asScala
+    val rows = keys.zip(values).toMap
+    val appId = rows("id")
+    val appName = rows("name")
+    val appState = rows("state")
+    val appUrl = rows("url")
+    val appError = rows("error")
+
+    val state2 = batchJobSubmissionOp.currentApplicationState.get
+    assert(appId === state2("id"))
+    assert(appName === state2("name"))
+    assert(appState === state2("state"))
+    assert(appUrl === state2("url"))
+    assert(appError === state2("error"))
     sessionManager.closeSession(sessionHandle)
   }
 }

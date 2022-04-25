@@ -18,21 +18,10 @@
 package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.WithKyuubiServerOnYarn
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
 
 class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with SparkQueryTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
-
-  override protected val kyuubiServerConf: KyuubiConf = {
-    // TODO KYUUBI #745
-    KyuubiConf().set(ENGINE_INIT_TIMEOUT, 600000L)
-  }
-
-  override protected val connectionConf: Map[String, String] = Map(
-    "spark.master" -> "yarn",
-    "spark.executor.instances" -> "1")
 
   test("KYUUBI #527- Support test with mini yarn cluster") {
     withJdbcStatement() { statement =>

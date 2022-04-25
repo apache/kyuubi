@@ -104,5 +104,5 @@ class HiveProcessBuilder(
 
   override def toString: String = commands.mkString("\n")
 
-  override protected def shortName: String = "hive"
+  override def shortName: String = "hive"
 }
