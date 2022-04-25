@@ -30,10 +30,13 @@ import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 object TClientTestUtils extends Logging {
 
-  def withThriftClient[T](url: String)(f: Iface => T): T = {
+  def withThriftClient[T](url: String, user: Option[String] = None)(f: Iface => T): T = {
     val hostport = url.split(':')
     val socket = new TSocket(hostport.head, hostport.last.toInt)
-    val transport = PlainSASLHelper.getPlainTransport(Utils.currentUser, "anonymous", socket)
+    val transport = PlainSASLHelper.getPlainTransport(
+      user.getOrElse(Utils.currentUser),
+      "anonymous",
+      socket)
     val protocol = new TBinaryProtocol(transport)
     val client = new TCLIService.Client(protocol)
     transport.open()
