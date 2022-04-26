@@ -49,7 +49,6 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
 
   private val shutdown = new AtomicBoolean(false)
-  private val deregistered = new AtomicBoolean(false)
 
   private val lifetimeTerminatingChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-lifetime-checker")
@@ -93,6 +92,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   private[kyuubi] def startLifetimeTerminatingChecker(stop: () => Unit): Unit = {
     val interval = conf.get(ENGINE_CHECK_INTERVAL)
     val maxLifetime = conf.get(ENGINE_SPARK_MAX_LIFETIME)
+    val deregistered = new AtomicBoolean(false)
     if (maxLifetime > 0) {
       val checkTask: Runnable = () => {
         if (!shutdown.get && System.currentTimeMillis() - getStartTime > maxLifetime) {
