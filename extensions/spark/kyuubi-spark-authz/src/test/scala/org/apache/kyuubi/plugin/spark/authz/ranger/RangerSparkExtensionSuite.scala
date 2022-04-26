@@ -256,7 +256,6 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
     }
   }
 
-
   test("show tables") {
     val db = "default2"
     val table = "src"
