@@ -22,10 +22,10 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.{LeafRunnableCommand, RunnableCommand}
+import org.apache.spark.sql.execution.command.RunnableCommand
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
+import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, WithInternalChild}
 
 class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
@@ -34,7 +34,8 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   }
 }
 
-case class FilteredShowTablesCommand(delegated: RunnableCommand) extends LeafRunnableCommand {
+case class FilteredShowTablesCommand(delegated: RunnableCommand)
+  extends RunnableCommand with WithInternalChild {
 
   override val output: Seq[Attribute] = delegated.output
 
@@ -54,4 +55,6 @@ case class FilteredShowTablesCommand(delegated: RunnableCommand) extends LeafRun
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
+
+  override def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = this
 }
