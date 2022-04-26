@@ -58,7 +58,7 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
   test("AuthType Other") {
     val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("INVALID"))
     val e = intercept[IllegalArgumentException](new KyuubiAuthenticationFactory(conf))
-    assert(e.getMessage === "the authentication type should be one or more of" +
+    assert(e.getMessage contains "the authentication type should be one or more of" +
       " NOSASL,NONE,LDAP,KERBEROS,CUSTOM")
   }
 

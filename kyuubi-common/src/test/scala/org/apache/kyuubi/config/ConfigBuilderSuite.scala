@@ -81,4 +81,16 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     val e = intercept[IllegalArgumentException](kyuubiConf.get(timeConf))
     assert(e.getMessage startsWith "The formats accepted are 1) based on the ISO-8601")
   }
+
+  test("invalid config") {
+    val intConf = ConfigBuilder("kyuubi.invalid.config")
+      .intConf
+      .checkValue(t => t > 0, "must be positive integer")
+      .createWithDefault(3)
+    assert(intConf.key === "kyuubi.invalid.config")
+    assert(intConf.defaultVal.get === 3)
+    val kyuubiConf = KyuubiConf().set(intConf.key, "-1")
+    val e = intercept[IllegalArgumentException](kyuubiConf.get(intConf))
+    assert(e.getMessage equals "'-1' in kyuubi.invalid.config is invalid. must be positive integer")
+  }
 }

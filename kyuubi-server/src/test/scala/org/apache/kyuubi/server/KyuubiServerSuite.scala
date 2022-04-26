@@ -92,7 +92,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
   test("invalid port") {
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 100)
     val e = intercept[IllegalArgumentException](new KyuubiServer().initialize(conf))
-    assert(e.getMessage === "Invalid Port number")
+    assert(e.getMessage contains "Invalid Port number")
   }
 
   test("invalid zookeeper quorum") {
