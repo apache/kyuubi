@@ -149,7 +149,13 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   override def close(): Unit = {
     if (!isClosedOrCanceled) {
       if (builder != null) {
-        builder.close()
+        try {
+          builder.shutdown()
+          applicationManager.killApplication(builder.clusterManager(), batchId)
+        } catch {
+          case e: Exception =>
+            warn(s"Error closing batch job builder, batchId: $batchId", e)
+        }
       }
     }
     super.close()

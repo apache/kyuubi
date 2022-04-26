@@ -237,12 +237,20 @@ trait ProcBuilder {
     process
   }
 
-  def close(): Unit = synchronized {
+  def close(): Unit = {
+    close(!waitCompletion)
+  }
+
+  def shutdown(): Unit = {
+    close(true)
+  }
+
+  private def close(destroyProcess: Boolean): Unit = synchronized {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
       logCaptureThread = null
     }
-    if (!waitCompletion && process != null) {
+    if (destroyProcess && process != null) {
       info("Destroy the process, since waitCompletion is false.")
       process.destroyForcibly()
       process = null

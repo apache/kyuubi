@@ -160,6 +160,7 @@ class KyuubiSessionImpl(
     try {
       if (_client != null) _client.closeSession()
     } finally {
+      if (engine != null) engine.close()
       sessionEvent.endTime = System.currentTimeMillis()
       EventBus.post(sessionEvent)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
