@@ -103,7 +103,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       val error1 = pb3.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
-      assert(error1.getMessage.contains("Exception in thread"))
+      assert(error1.getMessage.contains("Only one of --proxy-user or --principal can be provided"))
     }
   }
 
