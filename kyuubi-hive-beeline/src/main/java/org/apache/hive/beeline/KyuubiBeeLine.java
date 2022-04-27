@@ -20,7 +20,15 @@ package org.apache.hive.beeline;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.Driver;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 public class KyuubiBeeLine extends BeeLine {
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER =
@@ -96,5 +104,98 @@ public class KyuubiBeeLine extends BeeLine {
           pack.getImplementationVersion() == null ? "???" : pack.getImplementationVersion(),
           "Apache Kyuubi (Incubating)",
         });
+  }
+
+  @Override
+  int initArgs(String[] args) {
+    List<String> commands = Collections.emptyList();
+
+    CommandLine cl;
+    BeelineParser beelineParser;
+    boolean connSuccessful;
+    boolean exit;
+    Field exitField;
+
+    try {
+      Field optionsField = BeeLine.class.getDeclaredField("options");
+      optionsField.setAccessible(true);
+      Options options = (Options) optionsField.get(this);
+
+      beelineParser = new BeelineParser();
+      cl = beelineParser.parse(options, args);
+
+      Method connectUsingArgsMethod =
+          BeeLine.class.getDeclaredMethod(
+              "connectUsingArgs", BeelineParser.class, CommandLine.class);
+      connectUsingArgsMethod.setAccessible(true);
+      connSuccessful = (boolean) connectUsingArgsMethod.invoke(this, beelineParser, cl);
+
+      exitField = BeeLine.class.getDeclaredField("exit");
+      exitField.setAccessible(true);
+      exit = (boolean) exitField.get(this);
+
+    } catch (ParseException e1) {
+      output(e1.getMessage());
+      usage();
+      return -1;
+    } catch (Exception t) {
+      error(t.getMessage());
+      return 1;
+    }
+
+    // checks if default hs2 connection configuration file is present
+    // and uses it to connect if found
+    // no-op if the file is not present
+    if (!connSuccessful && !exit) {
+      try {
+        Method defaultBeelineConnectMethod =
+            BeeLine.class.getDeclaredMethod("defaultBeelineConnect");
+        defaultBeelineConnectMethod.setAccessible(true);
+        connSuccessful = (boolean) defaultBeelineConnectMethod.invoke(this);
+
+      } catch (Exception t) {
+        error(t.getMessage());
+        return 1;
+      }
+    }
+
+    int code = 0;
+    if (cl.getOptionValues('e') != null) {
+      commands = Arrays.asList(cl.getOptionValues('e'));
+      try {
+        Field optsField = BeeLine.class.getDeclaredField("opts");
+        optsField.setAccessible(true);
+        BeeLineOpts opts = (BeeLineOpts) optsField.get(this);
+        opts.setAllowMultiLineCommand(false);
+      } catch (Exception t) {
+        error(t.getMessage());
+        return 1;
+      }
+    }
+
+    if (!commands.isEmpty() && getOpts().getScriptFile() != null) {
+      error("The '-e' and '-f' options cannot be specified simultaneously");
+      return 1;
+    } else if (!commands.isEmpty() && !connSuccessful) {
+      error("Cannot run commands specified using -e. No current connection");
+      return 1;
+    }
+    if (!commands.isEmpty()) {
+      for (Iterator<String> i = commands.iterator(); i.hasNext(); ) {
+        String command = i.next().toString();
+        debug(loc("executing-command", command));
+        if (!dispatch(command)) {
+          code++;
+        }
+      }
+      try {
+        exit = true;
+        exitField.set(this, exit);
+      } catch (Exception e) {
+        error(e.getMessage());
+        return 1;
+      }
+    }
+    return code;
   }
 }
