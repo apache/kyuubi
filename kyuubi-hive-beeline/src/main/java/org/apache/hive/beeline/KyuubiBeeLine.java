@@ -115,6 +115,7 @@ public class KyuubiBeeLine extends BeeLine {
     boolean connSuccessful;
     boolean exit;
     Field exitField;
+
     try {
       Field optionsField = BeeLine.class.getDeclaredField("options");
       optionsField.setAccessible(true);
