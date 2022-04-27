@@ -31,7 +31,7 @@ please refer to the [ScalaTest documentation](http://www.scalatest.org/user_guid
 The following is an example of a command to run all the tests:
 
 ```bash
-./build/mvn clean test
+./build/mvn clean install
 ```
 
 ## Running Tests for a Module
