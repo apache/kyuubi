@@ -37,7 +37,7 @@ The following is an example of a command to run all the tests:
 ## Running Tests for a Module
 
 ```bash
-./build/mvn clean test -pl kyuubi-common
+./build/mvn clean install -pl kyuubi-common
 ```
 
 ## Running Tests for a Single Test
