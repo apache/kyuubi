@@ -23,6 +23,7 @@ import org.apache.http.util.EntityUtils
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.session.SessionHandle
 
 class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = Map(
@@ -161,6 +162,32 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
       // check redacted sql
       assert(resp.contains("redacted"))
+    }
+  }
+
+  test("session properties for engine tab") {
+    assert(spark.sparkContext.ui.nonEmpty)
+    val redactKey = "kyuubi.test.password"
+    val redactValue = "testPassword"
+    val testKey = "kyuubi.test.key"
+    val testValue = "testValue"
+    withSessionConf(Map(
+      redactKey -> redactValue,
+      testKey -> testValue))(Map.empty)(Map.empty) {
+      withSessionHandle { (_, handle) =>
+        val kyuubiHandle = SessionHandle(handle)
+        val httpClient = HttpClients.createDefault()
+        val req = new HttpGet(spark.sparkContext.uiWebUrl.get +
+          s"/kyuubi/session/?id=${kyuubiHandle.identifier}")
+        val response = httpClient.execute(req)
+        assert(response.getStatusLine.getStatusCode === 200)
+        val resp = EntityUtils.toString(response.getEntity)
+        assert(resp.contains("Session Properties"))
+        assert(resp.contains(redactKey))
+        assert(!resp.contains(redactValue))
+        assert(resp.contains(testKey))
+        assert(resp.contains(testValue))
+      }
     }
   }
 

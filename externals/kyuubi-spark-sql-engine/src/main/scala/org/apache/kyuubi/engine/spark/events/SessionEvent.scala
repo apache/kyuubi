@@ -43,6 +43,7 @@ case class SessionEvent(
     username: String,
     ip: String,
     serverIp: String,
+    conf: Map[String, String],
     startTime: Long,
     var endTime: Long = -1L,
     var totalOperations: Int = 0) extends KyuubiEvent with SparkListenerEvent {
@@ -70,6 +71,7 @@ object SessionEvent {
       session.user,
       session.ipAddress,
       session.serverIpAddress,
+      session.conf,
       session.createTime)
   }
 }
