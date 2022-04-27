@@ -55,7 +55,7 @@ case class EngineSessionPage(parent: EngineTab)
           val table = UIUtils.listingTable(
             propertyHeader,
             propertyRow,
-            Utils.redact(redactionPattern, sessionStat.conf.toArray),
+            Utils.redact(redactionPattern, sessionStat.conf.toSeq.sorted),
             fixedWidth = true,
             headerClasses = headerClasses)
           <span class="collapse-aggregated-kyuubiSessioinProperties collapse-table"
