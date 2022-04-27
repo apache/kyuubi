@@ -200,6 +200,12 @@ abstract class AbstractSession(
     runOperation(operation)
   }
 
+  override def getQueryId(operationHandle: OperationHandle): String = {
+    val operation = sessionManager.operationManager.getOperation(operationHandle)
+    val queryId = sessionManager.operationManager.getQueryId(operation)
+    queryId
+  }
+
   override def cancelOperation(operationHandle: OperationHandle): Unit = withAcquireRelease() {
     sessionManager.operationManager.cancelOperation(operationHandle)
   }

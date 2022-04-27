@@ -529,6 +529,8 @@ abstract class TFrontendService(name: String)
   override def GetQueryId(req: TGetQueryIdReq): TGetQueryIdResp = {
     debug(req.toString)
     val resp = new TGetQueryIdResp
+    val queryId = be.getQueryId(OperationHandle(req.getOperationHandle))
+    resp.setQueryId(queryId)
     resp
   }
 

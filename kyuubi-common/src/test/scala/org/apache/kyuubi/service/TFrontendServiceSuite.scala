@@ -356,6 +356,20 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
+  test("get query id") {
+    withSessionHandle { (client, handle) =>
+      val req = new TExecuteStatementReq()
+      req.setStatement("select 1")
+      req.setSessionHandle(handle)
+      req.setRunAsync(false)
+      val resp = client.ExecuteStatement(req)
+      val opHandle = resp.getOperationHandle
+      val req1 = new TGetQueryIdReq(opHandle)
+      val resp1 = client.GetQueryId(req1)
+      assert(resp1.getQueryId === "noop_query_id")
+    }
+  }
+
   test("get operation status") {
     withSessionHandle { (client, handle) =>
       val opHandle =
