@@ -37,7 +37,7 @@ The following is an example of a command to run all the tests:
 ## Running Tests for a Module
 
 ```bash
-./build/mvn clean test -pl :kyuubi-common
+./build/mvn clean test -pl kyuubi-common
 ```
 
 ## Running Tests for a Single Test
@@ -47,10 +47,11 @@ When developing locally, it’s convenient to run one single test, or a couple o
 With Maven, you can use the -DwildcardSuites flag to run individual Scala tests:
 
 ```bash
-./build/mvn test -Dtest=none -DwildcardSuites=org.apache.kyuubi.service.FrontendServiceSuite
+./build/mvn clean install -Dtest=none -DwildcardSuites=org.apache.kyuubi.service.FrontendServiceSuite
 ```
 
-If you want to make a single test that need to integrate with kyuubi-spark-sql-engine module, please build the package for kyuubi-spark-sql-engine module at first.
+If you want to make a single test that need to integrate with kyuubi-spark-sql-engine module, please build the package
+for kyuubi-spark-sql-engine module at first.
 
 You can leverage the ready-made tool for creating a binary distribution.
 
