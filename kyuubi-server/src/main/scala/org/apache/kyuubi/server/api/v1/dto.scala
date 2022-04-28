@@ -128,4 +128,5 @@ case class Batch(
     id: String,
     batchType: String,
     batchInfo: Map[String, String],
+    kyuubiInstance: String,
     state: String)

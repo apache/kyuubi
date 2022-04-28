@@ -26,7 +26,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("open batch session") {
-    val sparkProcessBuilder = new SparkProcessBuilder(null, conf)
+    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val requestObj = BatchRequest(
       "spark",
       sparkProcessBuilder.mainResource.get,
@@ -44,5 +44,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
     assert(200 == response.getStatus)
+
+    val batch = response.readEntity(classOf[Batch])
+    assert(batch.kyuubiInstance === fe.connectionUrl)
   }
 }
