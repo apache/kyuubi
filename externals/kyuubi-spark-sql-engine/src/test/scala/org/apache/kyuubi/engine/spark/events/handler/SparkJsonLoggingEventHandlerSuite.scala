@@ -46,6 +46,16 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
 
   override protected def jdbcUrl: String = getJdbcUrl
 
+  override def afterAll(): Unit = {
+    super.afterAll()
+    val fileSystem: FileSystem = FileSystem.get(new Configuration())
+    val logPath = new Path(logRoot)
+    if (fileSystem.exists(logPath)) {
+      fileSystem.delete(logPath, true)
+    }
+    fileSystem.close()
+  }
+
   test("round-trip for event logging service") {
     val engineEventPath = Paths.get(
       logRoot,
