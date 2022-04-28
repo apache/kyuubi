@@ -1910,7 +1910,7 @@
             <id>spark-3.2</id>
             <properties>
                 <spark.version>3.2.1</spark.version>
-                <delta.version>1.2.0</delta.version>
+                <delta.version>1.2.1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
