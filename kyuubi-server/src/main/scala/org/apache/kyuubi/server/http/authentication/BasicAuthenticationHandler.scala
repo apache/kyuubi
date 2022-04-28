@@ -72,7 +72,7 @@ class BasicAuthenticationHandler(basicAuthType: AuthType)
     val creds = new String(inputToken, Charset.forName("UTF-8")).split(":")
 
     if (allowAnonymous) {
-      authUser = creds.take(1).headOption.filterNot(_.isEmpty).getOrElse("anonymous")
+      authUser = creds.take(1).headOption.getOrElse("anonymous")
     } else {
       if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
         response.setHeader(WWW_AUTHENTICATE, authScheme.toString)

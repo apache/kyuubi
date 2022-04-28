@@ -104,8 +104,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   def getUserName(req: BatchRequest): String = {
-    val realUser: String =
-      ServiceUtils.getShortName(Option(AuthenticationFilter.getUserName).getOrElse("anonymous"))
+    val realUser: String = ServiceUtils.getShortName(
+      Option(AuthenticationFilter.getUserName).filter(_.nonEmpty).getOrElse("anonymous"))
     if (req.proxyUser == null) {
       realUser
     } else {
