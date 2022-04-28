@@ -50,7 +50,7 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
     val fileSystem: FileSystem = FileSystem.get(new Configuration())
     val logPath = new Path(logRoot)
     if (fileSystem.exists(logPath)) {
-//      fileSystem.delete(logPath, true)
+      fileSystem.delete(logPath, true)
     }
     fileSystem.close()
   }
