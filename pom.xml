@@ -105,7 +105,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
-        <delta.version>1.2.0</delta.version>
+        <delta.version>1.2.1</delta.version>
         <fb303.version>0.9.3</fb303.version>
         <flink.version>1.14.4</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
@@ -1910,7 +1910,7 @@
             <id>spark-3.2</id>
             <properties>
                 <spark.version>3.2.1</spark.version>
-                <delta.version>1.2.0</delta.version>
+                <delta.version>1.2.1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
