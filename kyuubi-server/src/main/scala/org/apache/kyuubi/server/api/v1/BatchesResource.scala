@@ -50,7 +50,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val sessionHandle = sessionManager.openBatchSession(
       REST_BATCH_PROTOCOL,
       userName,
-      "",
+      "anonymous",
       ipAddress,
       Option(request.conf).getOrElse(Map()),
       request)
