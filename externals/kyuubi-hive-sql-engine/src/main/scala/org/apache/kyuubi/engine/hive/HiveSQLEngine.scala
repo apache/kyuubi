@@ -26,6 +26,7 @@ import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
+import org.apache.kyuubi.engine.hive.HiveSQLEngine.currentEngine
 import org.apache.kyuubi.engine.hive.events.HiveEngineEvent
 import org.apache.kyuubi.engine.hive.events.handler.HiveJsonLoggingEventHandler
 import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
@@ -47,6 +48,12 @@ class HiveSQLEngine extends Serverable("HiveSQLEngine") {
   }
 
   override protected def stopServer(): Unit = {
+    currentEngine.foreach { engine =>
+      val event = HiveEngineEvent(engine)
+        .copy(state = ServiceState.STOPPED, endTime = System.currentTimeMillis())
+      EventBus.post(event)
+    }
+
     // #2351
     // https://issues.apache.org/jira/browse/HIVE-23164
     // Server is not properly terminated because of non-daemon threads
@@ -100,9 +107,6 @@ object HiveSQLEngine extends Logging {
     EventBus.post(event)
     Utils.addShutdownHook(() => {
       engine.getServices.foreach(_.stop())
-      val event = HiveEngineEvent(engine)
-        .copy(state = ServiceState.STOPPED, endTime = System.currentTimeMillis())
-      EventBus.post(event)
     })
     currentEngine = Some(engine)
     engine
