@@ -31,12 +31,7 @@ case class HiveEngineEvent(
     settings: Map[String, String]) extends KyuubiEvent {
 
   override def partitions: Seq[(String, String)] = {
-    // before engine is started, the start time is 0L, the partition use current day.
-    if (startTime == 0) {
-      ("day", Utils.getDateFromTimestamp(System.currentTimeMillis())) :: Nil
-    } else {
-      ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
-    }
+    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
   }
 
   override def toString: String = {
@@ -65,7 +60,7 @@ object HiveEngineEvent {
 
     new HiveEngineEvent(
       connectionUrl = connectionUrl,
-      startTime = engine.getStartTime,
+      startTime = engine.engineStartTime,
       endTime = -1L,
       state = engine.getServiceState,
       diagnostic = "",

@@ -39,6 +39,7 @@ class HiveSQLEngine extends Serverable("HiveSQLEngine") {
   override val backendService: AbstractBackendService = new HiveBackendService(this)
   override val frontendServices: Seq[AbstractFrontendService] =
     Seq(new HiveTBinaryFrontendService(this))
+  private[hive] val engineStartTime = System.currentTimeMillis()
 
   override def start(): Unit = {
     super.start()
