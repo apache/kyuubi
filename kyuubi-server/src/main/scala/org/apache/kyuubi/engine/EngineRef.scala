@@ -71,6 +71,8 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
+  private var builder: ProcBuilder = _
+
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
     case Some(_subdomain) => _subdomain
@@ -162,7 +164,7 @@ private[kyuubi] class EngineRef(
     conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
     val started = System.currentTimeMillis()
     conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
-    val builder = engineType match {
+    builder = engineType match {
       case SPARK_SQL =>
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
         new SparkProcessBuilder(appUser, conf, extraEngineLog)
@@ -229,5 +231,18 @@ private[kyuubi] class EngineRef(
       .getOrElse {
         create(discoveryClient, extraEngineLog)
       }
+  }
+
+  def close(): Unit = {
+    if (shareLevel == CONNECTION && builder != null) {
+      try {
+        val clusterManager = builder.clusterManager()
+        builder.close(true)
+        engineManager.killApplication(clusterManager, engineRefId)
+      } catch {
+        case e: Exception =>
+          warn(s"Error closing engine builder, engineRefId: $engineRefId", e)
+      }
+    }
   }
 }
