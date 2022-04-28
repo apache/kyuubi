@@ -236,8 +236,9 @@ private[kyuubi] class EngineRef(
   def close(): Unit = {
     if (shareLevel == CONNECTION && builder != null) {
       try {
-        builder.shutdown()
-        engineManager.killApplication(builder.clusterManager(), engineRefId)
+        val clusterManager = builder.clusterManager()
+        builder.close(true)
+        engineManager.killApplication(clusterManager, engineRefId)
       } catch {
         case e: Exception =>
           warn(s"Error closing engine builder, engineRefId: $engineRefId", e)
