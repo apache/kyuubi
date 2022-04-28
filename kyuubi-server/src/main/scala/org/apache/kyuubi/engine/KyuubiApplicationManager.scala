@@ -78,7 +78,9 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
   def getApplicationInfo(
       clusterManager: Option[String],
       tag: String): Option[Map[String, String]] = {
-    operations.find(_.isSupported(clusterManager)).map(_.getApplicationInfoByTag(tag))
+    operations.find(_.isSupported(clusterManager)).flatMap { m =>
+      Option(m.getApplicationInfoByTag(tag))
+    }
   }
 }
 
