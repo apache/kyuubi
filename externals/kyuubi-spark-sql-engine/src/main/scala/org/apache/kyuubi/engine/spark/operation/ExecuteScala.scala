@@ -17,13 +17,10 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.io.File
-
 import scala.tools.nsc.interpreter.Results.{Error, Incomplete, Success}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.util.MutableURLClassLoader
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
@@ -67,11 +64,7 @@ class ExecuteScala(
       if (legacyOutput.nonEmpty) {
         warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
       }
-
-      val classLoader = Thread.currentThread()
-        .getContextClassLoader.asInstanceOf[MutableURLClassLoader]
-      val jars = classLoader.getURLs
-        .filter(u => u.getProtocol == "file" && new File(u.getPath).isFile)
+      val jars = spark.sharedState.jarClassLoader.getURLs
       repl.addUrlsToClassPath(jars: _*)
 
       repl.interpretWithRedirectOutError(statement) match {

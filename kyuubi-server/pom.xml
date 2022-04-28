@@ -409,6 +409,12 @@
             <artifactId>mysql-connector-java</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

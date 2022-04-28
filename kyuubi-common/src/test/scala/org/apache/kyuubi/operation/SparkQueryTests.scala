@@ -17,10 +17,15 @@
 
 package org.apache.kyuubi.operation
 
+import java.io.{File, FileOutputStream}
+import java.nio.file.Files
 import java.sql.{Date, SQLException, SQLTimeoutException, Timestamp}
+import java.util.jar.{JarEntry, JarOutputStream}
 
 import scala.collection.JavaConverters._
+import scala.tools.nsc._
 
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
 
@@ -609,10 +614,26 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
   }
 
   test("scala code with loading external package at runtime ") {
+    val jarDir = Utils.createTempDir().toFile
+
     withJdbcStatement() { statement =>
       statement.execute("SET kyuubi.operation.language=scala")
-      val jarPath =
-        Thread.currentThread().getContextClassLoader.getResource("test-function.jar").getPath
+      val udfCode =
+        """
+          |package test.utils
+          |
+          |object Math {
+          |def add(x: Int, y: Int): Int = x + y
+          |
+          |def main(args: Array[String]): Unit = {
+          |println(add(1, 2))
+          |}
+          |}
+          |
+          |""".stripMargin
+
+      val jarFile = createJarFile(udfCode, "test-function.jar", jarDir.toString)
+      val jarPath = jarFile.getAbsolutePath
       val code0 = """spark.sql("SET kyuubi.operation.language").show(false)"""
       val code1 = s"""spark.sql("add jar ${jarPath}")"""
       val code2 = """val x = test.utils.Math.add(1,2)"""
@@ -621,6 +642,41 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       val rs = statement.executeQuery(code2)
       rs.next()
       assert(rs.getString(1) == "x: Int = 3")
+    }
+  }
+
+  def createJarFile(codeText: String, jarName: String, outputDir: String): File = {
+    val codeFile = new File(outputDir, "test.scala")
+    FileUtils.writeStringToFile(codeFile, codeText, "UTF-8")
+
+    val settings = new Settings
+    settings.outputDirs.setSingleOutput(outputDir)
+    settings.usejavacp.value = true
+    val global = new Global(settings)
+    val runner = new global.Run
+    runner.compile(List(codeFile.getAbsolutePath))
+    val jarFile = new File(outputDir, jarName)
+    val targetJar = new JarOutputStream(new FileOutputStream(jarFile))
+    add(outputDir + "/test", targetJar, outputDir + "/")
+    targetJar.close
+    jarFile
+  }
+
+  private def add(folder: String, target: JarOutputStream, replacement: String): Unit = {
+    val source = new File(folder)
+    if (source.isDirectory) {
+      for (nestedFile <- source.listFiles) {
+        add(nestedFile.getAbsolutePath, target, replacement)
+      }
+    } else {
+      val entry = new JarEntry(source.getPath
+        .replace("\\", "/")
+        .replace(replacement, ""))
+      entry.setTime(source.lastModified)
+      target.putNextEntry(entry)
+      val byteArray = Files.readAllBytes(source.toPath)
+      target.write(byteArray)
+      target.closeEntry()
     }
   }
 
