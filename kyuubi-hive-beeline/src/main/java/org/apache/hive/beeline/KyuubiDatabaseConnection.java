@@ -41,6 +41,11 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
     this.driver = driver;
     this.url = url;
     this.info = info;
+    if (beeLine.kyuubiBatchRequest != null) {
+      this.info.setProperty(
+          KyuubiConnection.KYUUBI_BATCH_REQUEST_PROPERTY, beeLine.kyuubiBatchRequest);
+      beeLine.kyuubiBatchRequest = null;
+    }
   }
 
   @Override
@@ -140,9 +145,9 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
         new Thread(beeLine.commands.createLogRunnable(kyuubiConnection, eventNotifier));
     logThread.setDaemon(true);
     logThread.start();
-    kyuubiConnection.setEngineLogThread(logThread);
+    kyuubiConnection.setCompanionOpLogThread(logThread);
 
-    kyuubiConnection.waitLaunchEngineToComplete();
+    kyuubiConnection.waitCompanionOpToComplete();
     logThread.interrupt();
     kyuubiConnection.executeInitSql();
 

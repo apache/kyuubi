@@ -132,7 +132,7 @@ abstract class TFrontendService(name: String)
     }
   }
 
-  private def getUserName(req: TOpenSessionReq): String = {
+  protected def getUserName(req: TOpenSessionReq): String = {
     val realUser: String =
       ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
     if (req.getConfiguration == null) {
@@ -142,7 +142,7 @@ abstract class TFrontendService(name: String)
     }
   }
 
-  private def getMinVersion(versions: TProtocolVersion*): TProtocolVersion = {
+  protected def getMinVersion(versions: TProtocolVersion*): TProtocolVersion = {
     versions.minBy(_.getValue)
   }
 

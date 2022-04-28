@@ -19,17 +19,24 @@ package org.apache.kyuubi.server
 
 import java.util.Base64
 
+import scala.collection.JavaConverters._
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
-import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
-import org.apache.kyuubi.session.KyuubiSessionImpl
+import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS, SERVER_VERSION}
+import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 
 final class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)
   extends TBinaryFrontendService("KyuubiTBinaryFrontend") {
+
+  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   override lazy val discoveryService: Option[Service] = {
     if (ServiceDiscovery.supportServiceDiscovery(conf)) {
@@ -39,24 +46,63 @@ final class KyuubiTBinaryFrontendService(
     }
   }
 
+  @throws[KyuubiSQLException]
+  override protected def getSessionHandle(
+      req: TOpenSessionReq,
+      res: TOpenSessionResp): SessionHandle = {
+    val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
+    res.setServerProtocolVersion(protocol)
+    val ipAddress = authFactory.getIpAddress.orNull
+    val configuration =
+      Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
+    configuration.get("kyuubi.batch.request").map { requestBody =>
+      val batchRequest = mapper.readValue(requestBody, classOf[BatchRequest])
+      if (batchRequest.conf != null) {
+        Option(req.getConfiguration.putAll(batchRequest.conf.asJava))
+      }
+      val userName = getUserName(req)
+      be.sessionManager.asInstanceOf[KyuubiSessionManager].openBatchSession(
+        protocol,
+        userName,
+        req.getPassword,
+        ipAddress,
+        Option(batchRequest.conf).getOrElse(Map()),
+        batchRequest)
+    }.getOrElse {
+      val userName = getUserName(req)
+      be.openSession(protocol, userName, req.getPassword, ipAddress, configuration)
+    }
+  }
+
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
     debug(req.toString)
     info("Client protocol version: " + req.getClient_protocol)
     val resp = new TOpenSessionResp
     try {
       val sessionHandle = getSessionHandle(req, resp)
-
       val respConfiguration = new java.util.HashMap[String, String]()
-      val launchEngineOp = be.sessionManager.getSession(sessionHandle)
-        .asInstanceOf[KyuubiSessionImpl].launchEngineOp
 
-      val opHandleIdentifier = launchEngineOp.getHandle.identifier.toTHandleIdentifier
-      respConfiguration.put(
-        "kyuubi.session.engine.launch.handle.guid",
-        Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getGuid))
-      respConfiguration.put(
-        "kyuubi.session.engine.launch.handle.secret",
-        Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getSecret))
+      be.sessionManager.getSession(sessionHandle) match {
+        case ks: KyuubiSessionImpl =>
+          val launchEngineOp = ks.launchEngineOp
+          val opHandleIdentifier = launchEngineOp.getHandle.identifier.toTHandleIdentifier
+          respConfiguration.put(
+            "kyuubi.session.engine.launch.handle.guid",
+            Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getGuid))
+          respConfiguration.put(
+            "kyuubi.session.engine.launch.handle.secret",
+            Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getSecret))
+
+        case kbs: KyuubiBatchSessionImpl =>
+          val batchOp = kbs.batchJobSubmissionOp
+          val opHandleIdentifier = batchOp.getHandle.identifier.toTHandleIdentifier
+          respConfiguration.put(
+            "kyuubi.batch.handle.guid",
+            Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getGuid))
+          respConfiguration.put(
+            "kyuubi.batch.handle.secret",
+            Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getSecret))
+      }
 
       resp.setSessionHandle(sessionHandle.toTSessionHandle)
       resp.setConfiguration(respConfiguration)

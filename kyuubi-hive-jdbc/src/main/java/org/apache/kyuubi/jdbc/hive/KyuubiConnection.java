@@ -77,7 +77,8 @@ import org.slf4j.LoggerFactory;
 public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
-  public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
+  public static final String KYUUBI_BATCH_REQUEST_PROPERTY = "kyuubi.batch.request";
+  public static int COMPANION_OPERATION_LOG_THREAD_TIMEOUT = 10 * 1000;
 
   private String jdbcUriString;
   private String host;
@@ -99,13 +100,16 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private String initFile = null;
   private boolean initFileCompleted = false;
 
-  private TOperationHandle launchEngineOpHandle = null;
-  private Thread engineLogThread;
-  private boolean engineLogInflight = true;
-  private volatile boolean launchEngineOpCompleted = false;
+  private TOperationHandle companionOpHandle = null;
+  private Thread companionOpLogThread;
+  private boolean companionOpLogInflight = true;
+  private volatile boolean companionOpCompleted = false;
 
   private boolean isBeeLineMode;
   private Properties clientInfo;
+
+  private String batchRequest;
+  private boolean isBatchMode = false;
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
     setupLoginTimeout();
@@ -115,6 +119,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
       throw new SQLException(e);
     }
     isBeeLineMode = Boolean.parseBoolean(info.getProperty(BEELINE_MODE_PROPERTY));
+    batchRequest = info.getProperty(KYUUBI_BATCH_REQUEST_PROPERTY);
     jdbcUriString = connParams.getJdbcUriString();
     // JDBC URL: jdbc:hive2://<host>:<port>/dbName;sess_var_list?hive_conf_list#hive_var_list
     // each list: <key1>=<val1>;<key2>=<val2> and so on
@@ -153,8 +158,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
       client = newSynchronizedClient(_client);
       // open client session
       openSession();
-      showLaunchEngineLog();
-      waitLaunchEngineToComplete();
+      showCompanionOpLog();
+      waitCompanionOpToComplete();
       executeInitSql();
     } else {
       int maxRetries = 1;
@@ -177,8 +182,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           // open client session
           openSession();
           if (!isBeeLineMode) {
-            showLaunchEngineLog();
-            waitLaunchEngineToComplete();
+            showCompanionOpLog();
+            waitCompanionOpToComplete();
             executeInitSql();
           }
           break;
@@ -213,22 +218,22 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   }
 
   /**
-   * Check whether launch engine operation might be producing more logs to be fetched. This method
+   * Check whether the companion operation might be producing more logs to be fetched. This method
    * is a public API for usage outside of Kyuubi, although it is not part of the interface
    * java.sql.Connection.
    *
-   * @return true if launch engine operation might be producing more logs. It does not indicate if
-   *     last log lines have been fetched by getEngineLog.
+   * @return true if companion operation might be producing more logs. It does not indicate if last
+   *     log lines have been fetched by getExecLog.
    */
   public boolean hasMoreLogs() {
-    return launchEngineOpHandle != null && (engineLogInflight || !launchEngineOpCompleted);
+    return companionOpHandle != null && (companionOpLogInflight || !companionOpCompleted);
   }
 
   /**
-   * Get the launch engine operation logs of current connection. This method is a public API for
-   * usage outside of Kyuubi, although it is not part of the interface java.sql.Connection. This
-   * method gets the incremental logs during launching engine, and uses fetchSize holden by
-   * KyuubiStatement object.
+   * Get the companion operation logs of current connection. This method is a public API for usage
+   * outside of Kyuubi, although it is not part of the interface java.sql.Connection. This method
+   * gets the incremental logs of companion operation, and uses fetchSize holden by KyuubiStatement
+   * object.
    *
    * @return a list of logs. It can be empty if there are no new logs to be retrieved at that time.
    * @throws SQLException
@@ -240,12 +245,12 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           "Method getExecLog() failed. The " + "connection has been closed.");
     }
 
-    if (launchEngineOpHandle == null) {
+    if (companionOpHandle == null) {
       return Collections.emptyList();
     }
 
     TFetchResultsReq fetchResultsReq =
-        new TFetchResultsReq(launchEngineOpHandle, TFetchOrientation.FETCH_NEXT, fetchSize);
+        new TFetchResultsReq(companionOpHandle, TFetchOrientation.FETCH_NEXT, fetchSize);
     fetchResultsReq.setFetchType((short) 1);
 
     List<String> logs = new ArrayList<>();
@@ -258,15 +263,15 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     } catch (TException e) {
       throw new SQLException("Error building result set for query log", e);
     }
-    engineLogInflight = !logs.isEmpty();
+    companionOpLogInflight = !logs.isEmpty();
     return Collections.unmodifiableList(logs);
   }
 
-  private void showLaunchEngineLog() {
-    if (launchEngineOpHandle != null) {
-      LOG.info("Starting to get launch engine log.");
-      engineLogThread =
-          new Thread("engine-launch-log") {
+  private void showCompanionOpLog() {
+    if (companionOpHandle != null) {
+      LOG.info("Starting to get companion operation log.");
+      companionOpLogThread =
+          new Thread("companion-operation-log") {
 
             @Override
             public void run() {
@@ -281,15 +286,15 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
               } catch (Exception e) {
                 // do nothing
               }
-              LOG.info("Finished to get launch engine log.");
+              LOG.info("Finished to get companion operation log.");
             }
           };
-      engineLogThread.start();
+      companionOpLogThread.start();
     }
   }
 
-  public void setEngineLogThread(Thread logThread) {
-    this.engineLogThread = logThread;
+  public void setCompanionOpLogThread(Thread logThread) {
+    this.companionOpLogThread = logThread;
   }
 
   public void executeInitSql() throws SQLException {
@@ -753,6 +758,10 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (sessVars.containsKey(HiveAuthFactory.HS2_PROXY_USER)) {
       openConf.put(HiveAuthFactory.HS2_PROXY_USER, sessVars.get(HiveAuthFactory.HS2_PROXY_USER));
     }
+    // set the batch request
+    if (batchRequest != null) {
+      openConf.put(KYUUBI_BATCH_REQUEST_PROPERTY, batchRequest);
+    }
     openReq.setConfiguration(openConf);
 
     // Store the user name in the open request in case no non-sasl authentication
@@ -779,22 +788,39 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         fetchSize = Integer.parseInt(serverFetchSize);
       }
 
+      String companionOpHandleGuid = null;
+      String companionOpHandleSecret = null;
+
       // Get launch engine operation handle
       String launchEngineOpHandleGuid =
           openRespConf.get("kyuubi.session.engine.launch.handle.guid");
       String launchEngineOpHandleSecret =
           openRespConf.get("kyuubi.session.engine.launch.handle.secret");
 
+      // Get batch operation handle
+      String batchOpHandleGuid = openRespConf.get("kyuubi.batch.handle.guid");
+      String batchOpHandleSecret = openRespConf.get("kyuubi.batch.handle.secret");
+
       if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
+        companionOpHandleGuid = launchEngineOpHandleGuid;
+        companionOpHandleSecret = launchEngineOpHandleSecret;
+        LOG.info("The companion operation is launch engine operation");
+      } else if (batchOpHandleGuid != null && batchOpHandleSecret != null) {
+        companionOpHandleGuid = batchOpHandleGuid;
+        companionOpHandleSecret = batchOpHandleSecret;
+        isBatchMode = true;
+        LOG.info("The companion operation is batch submission operation");
+      }
+
+      if (companionOpHandleGuid != null && companionOpHandleSecret != null) {
         try {
-          byte[] guidBytes = Base64.getMimeDecoder().decode(launchEngineOpHandleGuid);
-          byte[] secretBytes = Base64.getMimeDecoder().decode(launchEngineOpHandleSecret);
+          byte[] guidBytes = Base64.getMimeDecoder().decode(companionOpHandleGuid);
+          byte[] secretBytes = Base64.getMimeDecoder().decode(companionOpHandleSecret);
           THandleIdentifier handleIdentifier =
               new THandleIdentifier(ByteBuffer.wrap(guidBytes), ByteBuffer.wrap(secretBytes));
-          launchEngineOpHandle =
-              new TOperationHandle(handleIdentifier, TOperationType.UNKNOWN, false);
+          companionOpHandle = new TOperationHandle(handleIdentifier, TOperationType.UNKNOWN, false);
         } catch (Exception e) {
-          LOG.error("Failed to decode launch engine operation handle from open session resp", e);
+          LOG.error("Failed to decode companion operation handle from open session resp", e);
         }
       }
     } catch (TException e) {
@@ -943,15 +969,15 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  private void closeOnLaunchEngineFailure() throws SQLException {
-    if (engineLogThread != null && engineLogThread.isAlive()) {
-      engineLogThread.interrupt();
+  private void closeOnCompanionOpFailure() throws SQLException {
+    if (companionOpLogThread != null && companionOpLogThread.isAlive()) {
+      companionOpLogThread.interrupt();
       try {
-        engineLogThread.join(DEFAULT_ENGINE_LOG_THREAD_TIMEOUT);
+        companionOpLogThread.join(COMPANION_OPERATION_LOG_THREAD_TIMEOUT);
       } catch (Exception e) {
       }
     }
-    engineLogThread = null;
+    companionOpLogThread = null;
     close();
   }
 
@@ -1667,20 +1693,20 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  public void waitLaunchEngineToComplete() throws SQLException {
-    if (launchEngineOpHandle == null) return;
+  public void waitCompanionOpToComplete() throws SQLException {
+    if (companionOpHandle == null) return;
 
-    TGetOperationStatusReq statusReq = new TGetOperationStatusReq(launchEngineOpHandle);
+    TGetOperationStatusReq statusReq = new TGetOperationStatusReq(companionOpHandle);
     TGetOperationStatusResp statusResp = null;
 
     // Poll on the operation status, till the operation is complete
-    while (!launchEngineOpCompleted) {
+    while (!companionOpCompleted) {
       try {
         try {
           statusResp = client.GetOperationStatus(statusReq);
         } catch (Exception e) {
-          LOG.debug("Failed to get launch engine operation status, assume it has completed", e);
-          launchEngineOpCompleted = true;
+          LOG.debug("Failed to get companion operation status, assume it has completed", e);
+          companionOpCompleted = true;
           break;
         }
         Utils.verifySuccessWithInfo(statusResp.getStatus());
@@ -1688,14 +1714,14 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           switch (statusResp.getOperationState()) {
             case CLOSED_STATE:
             case FINISHED_STATE:
-              launchEngineOpCompleted = true;
-              engineLogInflight = false;
+              companionOpCompleted = true;
+              companionOpLogInflight = false;
               break;
             case CANCELED_STATE:
               // 01000 -> warning
-              throw new SQLException("Launch engine was cancelled", "01000");
+              throw new SQLException("Companion operation was cancelled", "01000");
             case TIMEDOUT_STATE:
-              throw new SQLTimeoutException("Launch engine timeout");
+              throw new SQLTimeoutException("Companion operation timeout");
             case ERROR_STATE:
               // Get the error details from the underlying exception
               throw new SQLException(
@@ -1711,14 +1737,19 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           }
         }
       } catch (Exception e) {
-        engineLogInflight = false;
-        closeOnLaunchEngineFailure();
+        companionOpLogInflight = false;
+        closeOnCompanionOpFailure();
         if (e instanceof SQLException) {
           throw e;
         } else {
           throw new SQLException(e.getMessage(), "08S01", e);
         }
       }
+    }
+
+    // for batch mode, close the session when batch operation completed
+    if (isBatchMode) {
+      close();
     }
   }
 }

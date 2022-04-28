@@ -23,15 +23,19 @@ import java.util.Properties
 
 import scala.collection.JavaConverters._
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetOperationStatusReq, TOperationState, TStatusCode}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_CHECK_INTERVAL, ENGINE_SPARK_MAX_LIFETIME, SESSION_CONF_ADVISOR}
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection
 import org.apache.kyuubi.plugin.SessionConfAdvisor
+import org.apache.kyuubi.server.api.v1.BatchRequest
 
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
@@ -199,7 +203,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val prop = new Properties()
       prop.setProperty(KyuubiConnection.BEELINE_MODE_PROPERTY, "true")
       val kyuubiConnection = new KyuubiConnection(jdbcUrlWithConf, prop)
-      intercept[SQLException](kyuubiConnection.waitLaunchEngineToComplete())
+      intercept[SQLException](kyuubiConnection.waitCompanionOpToComplete())
       assert(kyuubiConnection.isClosed)
     }
   }
@@ -229,6 +233,28 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         assert(elapsedTime > 3 * 1000 && elapsedTime < 20 * 1000)
       }
     }
+  }
+
+  test("submit batch job with kyuubi connection") {
+    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
+    val batchRequest = BatchRequest(
+      "spark",
+      sparkProcessBuilder.mainResource.get,
+      sparkProcessBuilder.mainClass,
+      "spark-batch-submission",
+      Map(
+        "spark.master" -> "local",
+        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
+        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
+      Seq.empty[String])
+
+    val batchRequestBody = new ObjectMapper().registerModule(DefaultScalaModule)
+      .writeValueAsString(batchRequest)
+    val prop = new Properties()
+    prop.setProperty(KyuubiConnection.KYUUBI_BATCH_REQUEST_PROPERTY, batchRequestBody)
+    val kyuubiConnection = new KyuubiConnection(jdbcUrlWithConf, prop)
+    kyuubiConnection.waitCompanionOpToComplete()
+    assert(kyuubiConnection.isClosed)
   }
 }
 
