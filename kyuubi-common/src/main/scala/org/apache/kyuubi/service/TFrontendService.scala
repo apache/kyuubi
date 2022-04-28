@@ -32,7 +32,7 @@ import org.apache.thrift.transport.TTransport
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
-import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
+import org.apache.kyuubi.operation.{FetchOrientation, KyuubiProgressMonitorStatusMapper, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, NamedThreadFactory}
@@ -425,6 +425,15 @@ abstract class TFrontendService(name: String)
         resp.setSqlState(e.getSQLState)
         resp.setErrorCode(e.getErrorCode)
         resp.setErrorMessage(stringifyException(e))
+      }
+      operationStatus.jobProgressUpdate.foreach { p =>
+        resp.setProgressUpdateResponse(new TProgressUpdateResp(
+          p.headers,
+          p.rows,
+          p.progressedPercentage,
+          KyuubiProgressMonitorStatusMapper.forStatus(p.status),
+          p.footerSummary,
+          p.startTimeMillis))
       }
       resp.setStatus(OK_STATUS)
     } catch {

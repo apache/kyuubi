@@ -49,6 +49,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   @volatile protected var lastAccessTime: Long = createTime
 
   @volatile protected var operationException: KyuubiSQLException = _
+  @volatile protected var operationJobProgress: JobProgressUpdate = _
+
   @volatile protected var hasResultSet: Boolean = false
 
   @volatile private var _backgroundHandle: Future[_] = _
@@ -70,6 +72,10 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   protected def setOperationException(opEx: KyuubiSQLException): Unit = {
     this.operationException = opEx
+  }
+
+  def setOperationJobProgress(opJobProgress: JobProgressUpdate): Unit = {
+    this.operationJobProgress = opJobProgress
   }
 
   protected def setState(newState: OperationState): Unit = {
@@ -182,7 +188,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
       lastAccessTime,
       completedTime,
       hasResultSet,
-      Option(operationException))
+      Option(operationException),
+      Option(operationJobProgress))
   }
 
   override def shouldRunAsync: Boolean

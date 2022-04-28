@@ -29,8 +29,9 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
+import org.apache.kyuubi.engine.spark.operation.progress.SparkProgressFetcher
 import org.apache.kyuubi.events.EventBus
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationStatus, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -50,6 +51,8 @@ class ExecuteStatement(
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
+
+  private val progressFetcher = new SparkProgressFetcher(spark, statementId)
 
   EventBus.post(SparkOperationEvent(this))
 
@@ -155,6 +158,11 @@ class ExecuteStatement(
     super.setState(newState)
     EventBus.post(
       SparkOperationEvent(this, operationListener.getExecutionId))
+  }
+
+  override def getStatus: OperationStatus = {
+    setOperationJobProgress(progressFetcher.getJobProgressUpdate(startTime))
+    super.getStatus
   }
 
   def setCompiledStateIfNeeded(): Unit = synchronized {

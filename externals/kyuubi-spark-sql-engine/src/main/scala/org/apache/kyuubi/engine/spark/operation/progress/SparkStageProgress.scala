@@ -14,18 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.spark.operation.progress
 
-package org.apache.kyuubi.operation
+case class SparkStage(stageId: Int, attemptId: Int) extends Comparable[SparkStage] {
+  override def compareTo(o: SparkStage): Int = {
+    if (stageId == o.stageId) {
+      attemptId - o.attemptId
+    } else {
+      stageId - o.stageId
+    }
+  }
+}
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.operation.OperationState.OperationState
-
-case class OperationStatus(
-    state: OperationState,
-    create: Long,
-    start: Long,
-    lastModified: Long,
-    completed: Long,
-    hasResultSet: Boolean,
-    exception: Option[KyuubiSQLException] = None,
-    jobProgressUpdate: Option[JobProgressUpdate] = None)
+case class SparkStageProgress(
+    totalTaskCount: Int,
+    succeededTaskCount: Int,
+    runningTaskCount: Int,
+    failedTaskCount: Int)

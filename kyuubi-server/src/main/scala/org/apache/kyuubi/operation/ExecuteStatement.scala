@@ -81,6 +81,15 @@ class ExecuteStatement(
       while (!isComplete) {
         fetchQueryLog()
         verifyTStatus(statusResp.getStatus)
+        if (statusResp.getProgressUpdateResponse != null) {
+          setOperationJobProgress(JobProgressUpdate(
+            statusResp.getProgressUpdateResponse.getHeaderNames,
+            statusResp.getProgressUpdateResponse.getRows,
+            statusResp.getProgressUpdateResponse.getFooterSummary,
+            statusResp.getProgressUpdateResponse.getProgressedPercentage,
+            statusResp.getProgressUpdateResponse.getStartTime,
+            statusResp.getProgressUpdateResponse.getStatus.toString))
+        }
         val remoteState = statusResp.getOperationState
         info(s"Query[$statementId] in ${remoteState.name()}")
         isComplete = true
