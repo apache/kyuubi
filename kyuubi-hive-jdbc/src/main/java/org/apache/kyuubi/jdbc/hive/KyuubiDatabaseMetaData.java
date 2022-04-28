@@ -132,8 +132,6 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
 
     private static final Object[][] DATA = {
       {"ApplicationName", 1000, null, null},
-      // Note: other standard ones include e.g. ClientUser and ClientHostname,
-      //       but we don't need them for now.
     };
     private int index = -1;
 
@@ -162,8 +160,6 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
 
     @SuppressWarnings("unchecked")
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-      // TODO: perhaps this could use a better implementation... for now even the Hive query result
-      //       set doesn't support this, so assume the user knows what he's doing when calling us.
       return (T) super.getObject(columnIndex);
     }
   }

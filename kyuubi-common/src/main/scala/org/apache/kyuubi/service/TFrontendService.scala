@@ -535,8 +535,6 @@ abstract class TFrontendService(name: String)
   }
 
   override def SetClientInfo(req: TSetClientInfoReq): TSetClientInfoResp = {
-    // TODO: We don't do anything for now, just log this for debugging.
-    //       We may be able to make use of this later, e.g. for workload management.
     debug(req.toString)
     val resp = new TSetClientInfoResp
     if (req.isSetConfiguration) {
