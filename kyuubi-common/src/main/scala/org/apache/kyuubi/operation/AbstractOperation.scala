@@ -195,4 +195,11 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
       lastAccessTime + operationTimeout <= System.currentTimeMillis()
     }
   }
+
+  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
+    if (!isTerminalState(state)) {
+      setState(targetState)
+      Option(getBackgroundHandle).foreach(_.cancel(true))
+    }
+  }
 }

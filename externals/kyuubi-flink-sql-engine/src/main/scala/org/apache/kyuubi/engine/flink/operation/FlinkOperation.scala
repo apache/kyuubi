@@ -111,13 +111,6 @@ abstract class FlinkOperation(
 
   override def shouldRunAsync: Boolean = false
 
-  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
-    if (!isTerminalState(state)) {
-      setState(targetState)
-      Option(getBackgroundHandle).foreach(_.cancel(true))
-    }
-  }
-
   protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
