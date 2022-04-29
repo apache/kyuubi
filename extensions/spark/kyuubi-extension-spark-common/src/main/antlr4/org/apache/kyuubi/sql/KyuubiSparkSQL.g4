@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-grammar ZorderSqlExtensions;
+grammar KyuubiSparkSQL;
 
 @members {
    /**

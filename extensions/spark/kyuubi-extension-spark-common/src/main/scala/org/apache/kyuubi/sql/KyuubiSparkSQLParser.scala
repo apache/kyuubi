@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.sql.zorder
+package org.apache.kyuubi.sql
 
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
@@ -28,9 +28,9 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.types.{DataType, StructType}
 
-abstract class ZorderSparkSqlExtensionsParserBase extends ParserInterface {
+abstract class KyuubiSparkSQLParserBase extends ParserInterface {
   def delegate: ParserInterface
-  def astBuilder: ZorderSqlAstBuilderBase
+  def astBuilder: KyuubiSparkSQLAstBuilderBase
 
   override def parsePlan(sqlText: String): LogicalPlan = parse(sqlText) { parser =>
     astBuilder.visit(parser.singleStatement()) match {
@@ -39,14 +39,14 @@ abstract class ZorderSparkSqlExtensionsParserBase extends ParserInterface {
     }
   }
 
-  protected def parse[T](command: String)(toResult: ZorderSqlExtensionsParser => T): T = {
-    val lexer = new ZorderSqlExtensionsLexer(
+  protected def parse[T](command: String)(toResult: KyuubiSparkSQLParser => T): T = {
+    val lexer = new KyuubiSparkSQLLexer(
       new UpperCaseCharStream(CharStreams.fromString(command)))
     lexer.removeErrorListeners()
     lexer.addErrorListener(ParseErrorListener)
 
     val tokenStream = new CommonTokenStream(lexer)
-    val parser = new ZorderSqlExtensionsParser(tokenStream)
+    val parser = new KyuubiSparkSQLParser(tokenStream)
     parser.addParseListener(PostProcessor)
     parser.removeErrorListeners()
     parser.addErrorListener(ParseErrorListener)
@@ -102,15 +102,15 @@ abstract class ZorderSparkSqlExtensionsParserBase extends ParserInterface {
   }
 }
 
-class ZorderSparkSqlExtensionsParser(
+class SparkKyuubiSparkSQLParser(
     override val delegate: ParserInterface)
-  extends ZorderSparkSqlExtensionsParserBase {
-  def astBuilder: ZorderSqlAstBuilderBase = new ZorderSqlAstBuilder
+  extends KyuubiSparkSQLParserBase {
+  def astBuilder: KyuubiSparkSQLAstBuilderBase = new KyuubiSparkSQLAstBuilder
 }
 
 /* Copied from Apache Spark's to avoid dependency on Spark Internals */
 class UpperCaseCharStream(wrapped: CodePointCharStream) extends CharStream {
-  override def consume(): Unit = wrapped.consume
+  override def consume(): Unit = wrapped.consume()
   override def getSourceName(): String = wrapped.getSourceName
   override def index(): Int = wrapped.index
   override def mark(): Int = wrapped.mark
