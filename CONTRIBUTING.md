@@ -29,11 +29,14 @@ We hope that this will be a pleasant first experience for you to return to conti
 
 ## Get Involved
 
-In the process of using Apache Kyuubi, if you have any questions, suggestions, or improvement ideas, you can participate in the Kyuubi community building through the following suggested channels.
+In the process of using Apache Kyuubi, if you have any questions, suggestions, or improvement ideas, you can participate
+in the Kyuubi community building through the following suggested channels.
 
-- Join the [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html) - the best way to keep up-to-date with the community.
+- Join the [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html) - the best way to keep up-to-date with the
+  community.
 - [Issue Tracker](https://kyuubi.apache.org/issue_tracking.html) - tracking bugs, ideas, plans, etc.
-- [Github Discussions](https://github.com/apache/incubator-kyuubi/discussions) - second to mailing list for anything else you want to share or ask
+- [Github Discussions](https://github.com/apache/incubator-kyuubi/discussions) - second to mailing list for anything
+  else you want to share or ask
 
 ## Contributing Guide
 
@@ -45,10 +48,13 @@ There are many ways to make valuable contributions to the project and community.
 You can make various types of contributions to Kyuubi, including the following but not limited to,
 
 - Answer questions in the  [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html)
-- [Share your success stories with us](https://github.com/apache/incubator-kyuubi/discussions/925) 
-- Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
-- Test latest releases - [![Latest tag](https://img.shields.io/github/v/tag/apache/incubator-kyuubi?label=tag)](https://github.com/apache/incubator-kyuubi/tags)
-- Improve test coverage - [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
+- [Share your success stories with us](https://github.com/apache/incubator-kyuubi/discussions/925)
+- Improve Documentation
+  - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
+- Test latest releases
+  - [![Latest tag](https://img.shields.io/github/v/tag/apache/incubator-kyuubi?label=tag)](https://github.com/apache/incubator-kyuubi/tags)
+- Improve test coverage
+  - [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
 - Report bugs and better help developers to reproduce
 - Review changes
 - [Make a pull request](https://kyuubi.apache.org/pull_request.html)
@@ -60,4 +66,5 @@ You can make various types of contributions to Kyuubi, including the following b
 TBD, please be patient for the surprise.
 
 ## IDE Setup Guide
-[IntelliJ IDEA Setup Guide](https://kyuubi.apache.org/docs/latest/develop_tools/idea_setup.html)
+
+[IntelliJ IDEA Setup Guide](https://kyuubi.readthedocs.io/en/latest/develop_tools/idea_setup.html)
