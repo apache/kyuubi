@@ -23,6 +23,7 @@ import javax.ws.rs.core.MediaType
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_CHECK_INTERVAL, ENGINE_SPARK_MAX_LIFETIME}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("open batch session") {
@@ -46,5 +47,13 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val batch = response.readEntity(classOf[Batch])
     assert(batch.kyuubiInstance === fe.connectionUrl)
+
+    val requestObj2 = requestObj.copy(conf = requestObj.conf ++
+      Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> "root"))
+    val response2 = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj2, MediaType.APPLICATION_JSON_TYPE))
+
+    assert(500 == response2.getStatus)
   }
 }
