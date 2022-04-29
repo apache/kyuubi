@@ -19,15 +19,16 @@ package org.apache.spark.sql.catalog
 
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.util.StringUtils
 import org.apache.spark.sql.connector.catalog.CatalogManager
-import org.apache.spark.sql.execution.command.LeafRunnableCommand
+import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.types.StringType
 
 /**
  * The command for `SHOW CATALOGS`.
  */
-case class ShowCatalogsCommand(pattern: Option[String]) extends LeafRunnableCommand {
+case class ShowCatalogsCommand(pattern: Option[String]) extends RunnableCommand {
   override val output: Seq[Attribute] = Seq(
     AttributeReference("catalog", StringType, nullable = false)())
 
@@ -41,4 +42,7 @@ case class ShowCatalogsCommand(pattern: Option[String]) extends LeafRunnableComm
     val allCatalogs = (configuredCatalogs + CatalogManager.SESSION_CATALOG_NAME).toSeq.sorted
     pattern.map(StringUtils.filterPattern(allCatalogs, _)).getOrElse(allCatalogs).map(Row(_))
   }
+
+  protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan =
+    this.asInstanceOf[LogicalPlan]
 }
