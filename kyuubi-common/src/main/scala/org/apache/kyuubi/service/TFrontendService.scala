@@ -537,7 +537,22 @@ abstract class TFrontendService(name: String)
   override def SetClientInfo(req: TSetClientInfoReq): TSetClientInfoResp = {
     debug(req.toString)
     val resp = new TSetClientInfoResp
-    resp.setStatus(KyuubiSQLException.featureNotSupported().toTStatus)
+    if (req.isSetConfiguration) {
+      val sessionHandle = SessionHandle(req.getSessionHandle)
+      val stringBuilder = new StringBuilder("Client information for ")
+        .append(sessionHandle)
+        .append(": ")
+      val entries = req.getConfiguration.entrySet.asScala.toSeq
+      entries.headOption.foreach(e => {
+        stringBuilder.append(e.getKey).append(" = ").append(e.getValue)
+      })
+      entries.tail.foreach { e =>
+        stringBuilder.append(", ")
+        stringBuilder.append(e.getKey).append(" = ").append(e.getValue)
+      }
+      info(stringBuilder.toString())
+    }
+    resp.setStatus(OK_STATUS)
     resp
   }
 
