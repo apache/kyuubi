@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-grammar KyuubiSqlExtensions;
+grammar KyuubiSparkSQL;
 
 @members {
    /**

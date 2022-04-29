@@ -40,10 +40,10 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.kyuubi.sql.KyuubiSqlExtensionsParser._
+import org.apache.kyuubi.sql.KyuubiSparkSQLParser._
 import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, OptimizeZorderStatementBase, Zorder, ZorderBase}
 
-abstract class KyuubiSQLParserBase extends KyuubiSqlExtensionsBaseVisitor[AnyRef] {
+abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[AnyRef] {
   def buildZorder(child: Seq[Expression]): ZorderBase
   def buildOptimizeZorderStatement(
       tableIdentifier: Seq[String],
@@ -105,19 +105,19 @@ abstract class KyuubiSQLParserBase extends KyuubiSqlExtensionsBaseVisitor[AnyRef
     val right = expression(ctx.constant())
     val operator = ctx.comparisonOperator().getChild(0).asInstanceOf[TerminalNode]
     operator.getSymbol.getType match {
-      case KyuubiSqlExtensionsParser.EQ =>
+      case KyuubiSparkSQLParser.EQ =>
         EqualTo(left, right)
-      case KyuubiSqlExtensionsParser.NSEQ =>
+      case KyuubiSparkSQLParser.NSEQ =>
         EqualNullSafe(left, right)
-      case KyuubiSqlExtensionsParser.NEQ | KyuubiSqlExtensionsParser.NEQJ =>
+      case KyuubiSparkSQLParser.NEQ | KyuubiSparkSQLParser.NEQJ =>
         Not(EqualTo(left, right))
-      case KyuubiSqlExtensionsParser.LT =>
+      case KyuubiSparkSQLParser.LT =>
         LessThan(left, right)
-      case KyuubiSqlExtensionsParser.LTE =>
+      case KyuubiSparkSQLParser.LTE =>
         LessThanOrEqual(left, right)
-      case KyuubiSqlExtensionsParser.GT =>
+      case KyuubiSparkSQLParser.GT =>
         GreaterThan(left, right)
-      case KyuubiSqlExtensionsParser.GTE =>
+      case KyuubiSparkSQLParser.GTE =>
         GreaterThanOrEqual(left, right)
     }
   }
@@ -125,8 +125,8 @@ abstract class KyuubiSQLParserBase extends KyuubiSqlExtensionsBaseVisitor[AnyRef
   override def visitLogicalBinary(ctx: LogicalBinaryContext): Expression = withOrigin(ctx) {
     val expressionType = ctx.operator.getType
     val expressionCombiner = expressionType match {
-      case KyuubiSqlExtensionsParser.AND => And.apply _
-      case KyuubiSqlExtensionsParser.OR => Or.apply _
+      case KyuubiSparkSQLParser.AND => And.apply _
+      case KyuubiSparkSQLParser.OR => Or.apply _
     }
 
     // Collect all similar left hand contexts.
@@ -437,7 +437,7 @@ abstract class KyuubiSQLParserBase extends KyuubiSqlExtensionsBaseVisitor[AnyRef
   }
 }
 
-class KyuubiSQLParser extends KyuubiSQLParserBase {
+class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLAstBuilderBase {
   override def buildZorder(child: Seq[Expression]): ZorderBase = {
     Zorder(child)
   }
