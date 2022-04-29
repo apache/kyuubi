@@ -162,7 +162,8 @@ public class KyuubiBeeLine extends BeeLine {
     int code = 0;
     if (cl.getOptionValues('e') != null) {
       commands = Arrays.asList(cl.getOptionValues('e'));
-      getOpts().setAllowMultiLineCommand(false); // When using -e, command is always a single line
+      // When using -e, command is always a single line, see HIVE-19018
+      getOpts().setAllowMultiLineCommand(false);
     }
 
     if (!commands.isEmpty() && getOpts().getScriptFile() != null) {
