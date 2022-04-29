@@ -27,7 +27,7 @@ import org.eclipse.jetty.servlet.FilterHolder
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
-import org.apache.kyuubi.server.api.v1.{ApiRootResource, SessionOpenRequest}
+import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
@@ -93,24 +93,24 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     super.stop()
   }
 
-  def getUserName(req: SessionOpenRequest): String = {
-    val realUser: String =
-      ServiceUtils.getShortName(Option(AuthenticationFilter.getUserName).getOrElse(req.user))
-    if (req.configs == null) {
-      realUser
-    } else {
-      getProxyUser(req.configs, Option(AuthenticationFilter.getUserIpAddress).orNull, realUser)
-    }
+  def getUserName(sessionConf: Map[String, String]): String = {
+    val realUser: String = ServiceUtils.getShortName(
+      Option(AuthenticationFilter.getUserName).filter(_.nonEmpty).getOrElse("anonymous"))
+    getProxyUser(sessionConf, Option(AuthenticationFilter.getUserIpAddress).orNull, realUser)
   }
 
   private def getProxyUser(
       sessionConf: Map[String, String],
       ipAddress: String,
       realUser: String): String = {
-    sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).map { proxyUser =>
-      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
-      proxyUser
-    }.getOrElse(realUser)
+    if (sessionConf == null) {
+      realUser
+    } else {
+      sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).map { proxyUser =>
+        KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+        proxyUser
+      }.getOrElse(realUser)
+    }
   }
 
   override val discoveryService: Option[Service] = None

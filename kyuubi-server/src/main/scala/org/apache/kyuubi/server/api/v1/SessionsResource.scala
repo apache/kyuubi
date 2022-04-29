@@ -132,7 +132,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): SessionHandle = {
-    val userName = fe.getUserName(request)
+    val userName = fe.getUserName(request.configs)
     val ipAddress = AuthenticationFilter.getUserIpAddress
     fe.be.openSession(
       TProtocolVersion.findByValue(request.protocolVersion),

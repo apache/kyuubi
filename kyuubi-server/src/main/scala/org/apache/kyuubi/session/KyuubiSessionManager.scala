@@ -120,7 +120,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress,
       conf,
       this,
-      // TODO: user defaults conf for batch session
       this.getConf.getUserDefaults(user),
       batchRequest)
     try {
