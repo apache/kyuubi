@@ -160,18 +160,7 @@ abstract class AbstractBackendService(name: String)
     val operation = sessionManager.operationManager.getOperation(operationHandle)
     if (operation.shouldRunAsync) {
       try {
-        val startTime = System.currentTimeMillis()
-        var duration: Long = 0
-        var break = false
-        while (!break && duration < timeout) {
-          if (operation.getBackgroundHandle == null) {
-            Thread.sleep(100)
-          } else {
-            operation.getBackgroundHandle.get(timeout - duration, TimeUnit.MILLISECONDS)
-            break = true
-          }
-          duration = System.currentTimeMillis() - startTime
-        }
+        operation.getBackgroundHandle.get(timeout, TimeUnit.MILLISECONDS)
       } catch {
         case e: TimeoutException =>
           debug(s"$operationHandle: Long polling timed out, ${e.getMessage}")
