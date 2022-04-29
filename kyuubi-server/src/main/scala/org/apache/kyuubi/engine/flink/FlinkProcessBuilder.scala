@@ -84,7 +84,7 @@ class FlinkProcessBuilder(
       .toFile
       .listFiles(new FilenameFilter {
         override def accept(dir: File, name: String): Boolean = {
-          name.startsWith("flink-sql-client")
+          name.toLowerCase.startsWith("flink-sql-client")
         }
       }).head.getAbsolutePath
     classpathEntries.add(flinkSqlClientPath)
@@ -101,7 +101,7 @@ class FlinkProcessBuilder(
     val hadoopClasspath = env.get("HADOOP_CLASSPATH")
     if (hadoopClasspath.isEmpty) {
       throw KyuubiSQLException("HADOOP_CLASSPATH is not set! " +
-        "For more detail information on installing and configuring Flink, please visit " +
+        "For more detail information on configuring HADOOP_CLASSPATH" +
         "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
     classpathEntries.add(hadoopClasspath.get)
