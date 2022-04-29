@@ -33,12 +33,12 @@ case class ShowCatalogsCommand(pattern: Option[String]) extends LeafRunnableComm
 
   // The implementation use eager strategy to list catalog, which is different from SPARK-35973
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    val registeredCatalogs = sparkSession.sessionState.conf.getAllConfs.keys
+    val configuredCatalogs = sparkSession.sessionState.conf.getAllConfs.keys
       .filter { _ startsWith "spark.sql.catalog." }
       .map { _ stripPrefix "spark.sql.catalog." }
       .filterNot { _ contains "." }
       .toSet
-    val allCatalogs = (registeredCatalogs + CatalogManager.SESSION_CATALOG_NAME).toSeq.sorted
+    val allCatalogs = (configuredCatalogs + CatalogManager.SESSION_CATALOG_NAME).toSeq.sorted
     pattern.map(StringUtils.filterPattern(allCatalogs, _)).getOrElse(allCatalogs).map(Row(_))
   }
 }
