@@ -95,6 +95,7 @@ abstract class AbstractSession(
       opHandle
     } catch {
       case e: KyuubiSQLException =>
+        opHandleSet.remove(operation.getHandle)
         sessionManager.operationManager.closeOperation(operation.getHandle)
         throw e
     }
