@@ -162,15 +162,8 @@ public class KyuubiBeeLine extends BeeLine {
     int code = 0;
     if (cl.getOptionValues('e') != null) {
       commands = Arrays.asList(cl.getOptionValues('e'));
-      try {
-        Field optsField = BeeLine.class.getDeclaredField("opts");
-        optsField.setAccessible(true);
-        BeeLineOpts opts = (BeeLineOpts) optsField.get(this);
-        opts.setAllowMultiLineCommand(false);
-      } catch (Exception t) {
-        error(t.getMessage());
-        return 1;
-      }
+      // When using -e, command is always a single line, see HIVE-19018
+      getOpts().setAllowMultiLineCommand(false);
     }
 
     if (!commands.isEmpty() && getOpts().getScriptFile() != null) {
