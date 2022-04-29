@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.hive.operation
 
 import org.apache.commons.lang3.{JavaVersion, SystemUtils}
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TStatusCode}
 
 import org.apache.kyuubi.{HiveEngineTests, Utils}
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
@@ -48,19 +47,6 @@ class HiveOperationSuite extends HiveEngineTests {
       statement.executeQuery("SELECT ID, VALUE FROM hive_engine_test")
       val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
       assert(kyuubiStatement.getQueryId != null)
-    }
-  }
-
-  test("test set command") {
-    withSessionHandle { (client, handle) =>
-      val req = new TExecuteStatementReq()
-      req.setSessionHandle(handle)
-      req.setRunAsync(true)
-      req.setStatement("set hive.query.name=test")
-      val resp = client.ExecuteStatement(req)
-      val getStatusReq = new TGetOperationStatusReq(resp.getOperationHandle)
-      val getStatusResp = client.GetOperationStatus(getStatusReq)
-      assert(getStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
 }
