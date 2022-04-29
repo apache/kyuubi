@@ -42,7 +42,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   final private[kyuubi] val statementId = handle.identifier.toString
 
-  protected var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
+  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
   protected def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
