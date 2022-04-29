@@ -80,7 +80,10 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
     val appInfo = yarnOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
 
     assert(appInfo("state") === "KILLED")
-    assert(batchJobSubmissionOp.getStatus.state === ERROR)
+
+    eventually(timeout(10.seconds), interval(50.milliseconds)) {
+      assert(batchJobSubmissionOp.getStatus.state === ERROR)
+    }
 
     val resultColumns = batchJobSubmissionOp.getNextRowSet(FetchOrientation.FETCH_NEXT, 10)
       .getColumns.asScala
