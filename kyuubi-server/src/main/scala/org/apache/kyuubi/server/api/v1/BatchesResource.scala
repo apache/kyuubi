@@ -41,7 +41,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
-    description = "Open(create) a batch session")
+    description = "create and open a batch session")
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openBatchSession(request: BatchRequest): Batch = {
