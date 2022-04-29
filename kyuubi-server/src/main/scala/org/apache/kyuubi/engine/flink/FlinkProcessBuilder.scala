@@ -19,13 +19,17 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
 import java.nio.file.Paths
+import java.util.LinkedHashSet
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
-import org.apache.kyuubi.engine.flink.FlinkProcessBuilder.FLINK_ENGINE_BINARY_FILE
 import org.apache.kyuubi.operation.log.OperationLog
 
 /**
@@ -37,28 +41,6 @@ class FlinkProcessBuilder(
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
-  override protected def executable: String = {
-    val flinkEngineHomeOpt = env.get("FLINK_ENGINE_HOME").orElse {
-      val cwd = Utils.getCodeSourceLocation(getClass)
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve("kyuubi-flink-sql-engine")
-          .toFile)
-        .map(_.getAbsolutePath)
-    }
-
-    flinkEngineHomeOpt.map { dir =>
-      Paths.get(dir, "bin", FLINK_ENGINE_BINARY_FILE).toAbsolutePath.toFile.getCanonicalPath
-    } getOrElse {
-      throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
-        "For more detail information on installing and configuring Flink, please visit " +
-        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
-    }
-  }
-
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
@@ -66,14 +48,68 @@ class FlinkProcessBuilder(
   override protected def childProcEnv: Map[String, String] = conf.getEnvs +
     ("FLINK_HOME" -> FLINK_HOME) +
     ("FLINK_CONF_DIR" -> s"$FLINK_HOME/conf") +
-    ("FLINK_SQL_ENGINE_JAR" -> mainResource.get) +
-    ("FLINK_SQL_ENGINE_DYNAMIC_ARGS" ->
-      conf.getAll.filter { case (k, _) =>
-        k.startsWith("kyuubi.") || k.startsWith("flink.") ||
-          k.startsWith("hadoop.") || k.startsWith("yarn.")
-      }.map { case (k, v) => s"-D$k=$v" }.mkString(" "))
+    ("_FLINK_HOME_DETERMINED" -> s"1")
 
-  override protected def commands: Array[String] = Array(executable)
+  override protected def commands: Array[String] = {
+    val buffer = new ArrayBuffer[String]()
+    buffer += s"bash"
+    buffer += s"-c"
+    val commandStr = new StringBuilder()
+
+    commandStr.append(s"source $FLINK_HOME${File.separator}bin" +
+      s"${File.separator}config.sh && $executable")
+
+    // TODO: How shall we deal with proxyUser,
+    // user.name
+    // kyuubi.session.user
+    // or just leave it, because we can handle it at operation layer
+    commandStr.append(s" -D$KYUUBI_SESSION_USER_KEY=$proxyUser ")
+
+    // TODO: add Kyuubi.engineEnv.FLINK_ENGINE_MEMORY or kyuubi.engine.flink.memory to configure
+    // -Xmx5g
+    // java options
+    val confStr = conf.getAll.filter { case (k, _) =>
+      k.startsWith("kyuubi.") || k.startsWith("flink.") ||
+        k.startsWith("hadoop.") || k.startsWith("yarn.")
+    }.map { case (k, v) => s"-D$k=$v" }.mkString(" ")
+    commandStr.append(confStr)
+
+    commandStr.append(" -cp ")
+    val classpathEntries = new LinkedHashSet[String]
+    // flink engine runtime jar
+    mainResource.foreach(classpathEntries.add)
+    // flink sql client jar
+    val flinkSqlClientPath = Paths.get(FLINK_HOME)
+      .resolve("opt")
+      .toFile
+      .listFiles(new FilenameFilter {
+        override def accept(dir: File, name: String): Boolean = {
+          name.toLowerCase.startsWith("flink-sql-client")
+        }
+      }).head.getAbsolutePath
+    classpathEntries.add(flinkSqlClientPath)
+
+    // jars from flink lib
+    classpathEntries.add(s"$FLINK_HOME${File.separator}lib${File.separator}*")
+
+    // classpath contains flink configurations, default to flink.home/conf
+    classpathEntries.add(env.getOrElse("FLINK_CONF_DIR", s"$FLINK_HOME${File.separator}conf"))
+    // classpath contains hadoop configurations
+    env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
+    env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
+    env.get("HBASE_CONF_DIR").foreach(classpathEntries.add)
+    val hadoopClasspath = env.get("HADOOP_CLASSPATH")
+    if (hadoopClasspath.isEmpty) {
+      throw KyuubiSQLException("HADOOP_CLASSPATH is not set! " +
+        "For more detail information on configuring HADOOP_CLASSPATH" +
+        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
+    }
+    classpathEntries.add(hadoopClasspath.get)
+    commandStr.append(classpathEntries.asScala.mkString(File.pathSeparator))
+    commandStr.append(s" $mainClass")
+    buffer += commandStr.toString()
+    buffer.toArray
+  }
 
   @VisibleForTesting
   def FLINK_HOME: String = {
@@ -112,6 +148,4 @@ class FlinkProcessBuilder(
 object FlinkProcessBuilder {
   final val APP_KEY = "yarn.application.name"
   final val TAG_KEY = "yarn.tags"
-
-  final private val FLINK_ENGINE_BINARY_FILE = "flink-sql-engine.sh"
 }
