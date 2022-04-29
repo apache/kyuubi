@@ -109,7 +109,6 @@ case class Field(dataType: String, value: Any)
  *
  * @param batchType the batch job type, such as spark, flink, etc.
  * @param resource the main resource jar, required.
- * @param proxyUser the proxy user, optional.
  * @param className the main class name, required.
  * @param name a name of your batch job, optional.
  * @param conf arbitrary configuration properties, optional.
@@ -118,7 +117,6 @@ case class Field(dataType: String, value: Any)
 case class BatchRequest(
     batchType: String,
     resource: String,
-    proxyUser: String,
     className: String,
     name: String,
     conf: Map[String, String],

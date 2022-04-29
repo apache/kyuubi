@@ -30,7 +30,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val requestObj = BatchRequest(
       "spark",
       sparkProcessBuilder.mainResource.get,
-      null,
       sparkProcessBuilder.mainClass,
       "spark-batch-submission",
       Map(
