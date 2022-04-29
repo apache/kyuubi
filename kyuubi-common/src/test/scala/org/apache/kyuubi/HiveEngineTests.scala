@@ -442,4 +442,14 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
       assert(connection.getClientInfo("ApplicationName") == "test kyuubi hive jdbc")
     }
   }
+
+  test("test set command") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
+    withJdbcStatement() { statement =>
+      statement.execute("set hive.query.name=test")
+      val resultSet = statement.executeQuery("set hive.query.name")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) === "hive.query.name=test")
+    }
+  }
 }
