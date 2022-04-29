@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.sql.zorder
+package org.apache.kyuubi.sql
 
 import java.time.LocalDate
 import java.util.Locale
@@ -29,7 +29,7 @@ import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
 import org.apache.commons.codec.binary.Hex
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
-import org.apache.spark.sql.catalyst.expressions.{And, Ascending, EqualNullSafe, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual, Literal, Not, NullsLast, Or, SortOrder}
+import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, stringWithoutUnescape, withOrigin}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
@@ -40,10 +40,10 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.kyuubi.sql.KyuubiSQLConf
-import org.apache.kyuubi.sql.zorder.ZorderSqlExtensionsParser.{BigDecimalLiteralContext, BigIntLiteralContext, BooleanLiteralContext, DecimalLiteralContext, DoubleLiteralContext, IntegerLiteralContext, LogicalBinaryContext, MultipartIdentifierContext, NullLiteralContext, NumberContext, OptimizeZorderContext, PassThroughContext, QueryContext, SingleStatementContext, SmallIntLiteralContext, StringLiteralContext, TinyIntLiteralContext, TypeConstructorContext, ZorderClauseContext}
+import org.apache.kyuubi.sql.KyuubiSqlExtensionsParser._
+import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, OptimizeZorderStatementBase, Zorder, ZorderBase}
 
-abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
+abstract class KyuubiSQLParserBase extends KyuubiSqlExtensionsBaseVisitor[AnyRef] {
   def buildZorder(child: Seq[Expression]): ZorderBase
   def buildOptimizeZorderStatement(
       tableIdentifier: Seq[String],
@@ -105,19 +105,19 @@ abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[An
     val right = expression(ctx.constant())
     val operator = ctx.comparisonOperator().getChild(0).asInstanceOf[TerminalNode]
     operator.getSymbol.getType match {
-      case ZorderSqlExtensionsParser.EQ =>
+      case KyuubiSqlExtensionsParser.EQ =>
         EqualTo(left, right)
-      case ZorderSqlExtensionsParser.NSEQ =>
+      case KyuubiSqlExtensionsParser.NSEQ =>
         EqualNullSafe(left, right)
-      case ZorderSqlExtensionsParser.NEQ | ZorderSqlExtensionsParser.NEQJ =>
+      case KyuubiSqlExtensionsParser.NEQ | KyuubiSqlExtensionsParser.NEQJ =>
         Not(EqualTo(left, right))
-      case ZorderSqlExtensionsParser.LT =>
+      case KyuubiSqlExtensionsParser.LT =>
         LessThan(left, right)
-      case ZorderSqlExtensionsParser.LTE =>
+      case KyuubiSqlExtensionsParser.LTE =>
         LessThanOrEqual(left, right)
-      case ZorderSqlExtensionsParser.GT =>
+      case KyuubiSqlExtensionsParser.GT =>
         GreaterThan(left, right)
-      case ZorderSqlExtensionsParser.GTE =>
+      case KyuubiSqlExtensionsParser.GTE =>
         GreaterThanOrEqual(left, right)
     }
   }
@@ -125,8 +125,8 @@ abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[An
   override def visitLogicalBinary(ctx: LogicalBinaryContext): Expression = withOrigin(ctx) {
     val expressionType = ctx.operator.getType
     val expressionCombiner = expressionType match {
-      case ZorderSqlExtensionsParser.AND => And.apply _
-      case ZorderSqlExtensionsParser.OR => Or.apply _
+      case KyuubiSqlExtensionsParser.AND => And.apply _
+      case KyuubiSqlExtensionsParser.OR => Or.apply _
     }
 
     // Collect all similar left hand contexts.
@@ -437,7 +437,7 @@ abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[An
   }
 }
 
-class ZorderSqlAstBuilder extends ZorderSqlAstBuilderBase {
+class KyuubiSQLParser extends KyuubiSQLParserBase {
   override def buildZorder(child: Seq[Expression]): ZorderBase = {
     Zorder(child)
   }
