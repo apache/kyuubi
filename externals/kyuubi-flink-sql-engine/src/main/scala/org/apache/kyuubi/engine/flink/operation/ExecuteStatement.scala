@@ -119,7 +119,7 @@ class ExecuteStatement(
     } catch {
       onError(cancel = true)
     } finally {
-      statementTimeoutCleaner.foreach(_.shutdown())
+      shutdownTimeoutMonitor()
     }
   }
 

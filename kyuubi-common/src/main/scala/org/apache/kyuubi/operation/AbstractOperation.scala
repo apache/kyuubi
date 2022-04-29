@@ -61,6 +61,10 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
     }
   }
 
+  protected def shutdownTimeoutMonitor(): Unit = {
+    statementTimeoutCleaner.foreach(_.shutdown())
+  }
+
   override def getOperationLog: Option[OperationLog] = None
 
   @volatile protected var state: OperationState = INITIALIZED
