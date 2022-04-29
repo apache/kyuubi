@@ -51,6 +51,7 @@ singleStatement
 
 statement
     : OPTIMIZE multipartIdentifier whereClause? zorderClause        #optimizeZorder
+    | SHOW CATALOGS (LIKE? pattern=STRING)?                         #showCatalogs
     | .*?                                                           #passThrough
     ;
 
@@ -119,11 +120,14 @@ quotedIdentifier
 nonReserved
     : AND
     | BY
+    | CATALOGS
     | FALSE
     | DATE
     | INTERVAL
+    | LIKE
     | OPTIMIZE
     | OR
+    | SHOW
     | TABLE
     | TIMESTAMP
     | TRUE
@@ -133,12 +137,15 @@ nonReserved
 
 AND: 'AND';
 BY: 'BY';
+CATALOGS: 'CATALOGS';
 FALSE: 'FALSE';
 DATE: 'DATE';
 INTERVAL: 'INTERVAL';
+LIKE: 'LIKE';
 NULL: 'NULL';
 OPTIMIZE: 'OPTIMIZE';
 OR: 'OR';
+SHOW: 'SHOW';
 TABLE: 'TABLE';
 TIMESTAMP: 'TIMESTAMP';
 TRUE: 'TRUE';

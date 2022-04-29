@@ -28,6 +28,7 @@ import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
 import org.apache.commons.codec.binary.Hex
 import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.catalog.ShowCatalogsCommand
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.parser.ParseException
@@ -96,6 +97,10 @@ abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[An
         Project(Seq(UnresolvedStar(None)), tableWithFilter))
 
     buildOptimizeZorderStatement(tableIdent, query)
+  }
+
+  override def visitShowCatalogs(ctx: ShowCatalogsContext): LogicalPlan = withOrigin(ctx) {
+    ShowCatalogsCommand(Option(ctx.pattern).map(string))
   }
 
   override def visitPassThrough(ctx: PassThroughContext): LogicalPlan = null
