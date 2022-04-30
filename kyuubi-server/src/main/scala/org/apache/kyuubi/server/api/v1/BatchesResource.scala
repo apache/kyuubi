@@ -17,8 +17,10 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import javax.ws.rs.{Consumes, POST, Produces}
+import javax.ws.rs._
 import javax.ws.rs.core.MediaType
+
+import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -54,8 +56,31 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       ipAddress,
       Option(request.conf).getOrElse(Map()),
       request)
-    val batchOp = sessionManager.getSession(sessionHandle).asInstanceOf[
-      KyuubiBatchSessionImpl].batchJobSubmissionOp
+    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    buildBatch(session)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "get the batch info via batch id")
+  @GET
+  @Path("{batchId}")
+  def batchInfo(@PathParam("batchId") batchId: String): Batch = {
+    try {
+      val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
+      val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+      buildBatch(session)
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid batchId: $batchId", e)
+        throw new NotFoundException(s"Invalid batchId: $batchId")
+    }
+  }
+
+  private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
+    val batchOp = session.batchJobSubmissionOp
     Batch(
       batchOp.batchId,
       batchOp.batchType,

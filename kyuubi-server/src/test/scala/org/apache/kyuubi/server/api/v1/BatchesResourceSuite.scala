@@ -42,18 +42,30 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val response = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
-
     assert(200 == response.getStatus)
-
-    val batch = response.readEntity(classOf[Batch])
+    var batch = response.readEntity(classOf[Batch])
     assert(batch.kyuubiInstance === fe.connectionUrl)
+    assert(batch.batchType === "spark")
 
-    val requestObj2 = requestObj.copy(conf = requestObj.conf ++
+    val proxyUserRequest = requestObj.copy(conf = requestObj.conf ++
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> "root"))
-    val response2 = webTarget.path("api/v1/batches")
+    val proxyUserResponse = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
-      .post(Entity.entity(requestObj2, MediaType.APPLICATION_JSON_TYPE))
+      .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
+    assert(500 == proxyUserResponse.getStatus)
 
-    assert(500 == response2.getStatus)
+    var getBatchResponse = webTarget.path(s"api/v1/batches/${batch.id}")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+    assert(200 == getBatchResponse.getStatus)
+    batch = getBatchResponse.readEntity(classOf[Batch])
+    assert(batch.kyuubiInstance === fe.connectionUrl)
+    assert(batch.batchType === "spark")
+
+    // invalid batchId
+    getBatchResponse = webTarget.path(s"api/v1/batches/invalidBatchId")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+    assert(404 == getBatchResponse.getStatus)
   }
 }

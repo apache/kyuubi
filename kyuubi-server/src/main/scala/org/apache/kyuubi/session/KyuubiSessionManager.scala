@@ -151,6 +151,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     SessionHandle(HandleIdentifier(UUID.randomUUID(), STATIC_BATCH_SECRET_UUID), protocol)
   }
 
+  def getBatchSessionHandle(batchId: String, protocol: TProtocolVersion): SessionHandle = {
+    SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
+  }
+
   override def start(): Unit = synchronized {
     MetricsSystem.tracing { ms =>
       ms.registerGauge(CONN_OPEN, getOpenSessionCount, 0)
