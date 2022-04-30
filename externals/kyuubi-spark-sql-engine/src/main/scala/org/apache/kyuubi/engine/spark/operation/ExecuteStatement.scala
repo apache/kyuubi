@@ -21,6 +21,7 @@ import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorServic
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.kyuubi.SparkProgressFetcher
 import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
@@ -29,7 +30,6 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
-import org.apache.kyuubi.engine.spark.operation.progress.SparkProgressFetcher
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationStatus, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState

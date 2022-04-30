@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation.progress
+package org.apache.spark.kyuubi
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.status.api.v1.StageStatus
 
+import org.apache.kyuubi.engine.spark.operation.progress.{SparkProgressMonitor, SparkStage, SparkStageProgress}
 import org.apache.kyuubi.operation.JobProgressUpdate
 
 class SparkProgressFetcher(spark: SparkSession, jobGroup: String) {
 
-  val statusTracker = spark.sparkContext.statusTracker
+  val statusStore = spark.sparkContext.statusStore
 
   def getJobProgressUpdate(startTime: Long): JobProgressUpdate = {
     val progressMap = getProgressMap
@@ -38,18 +40,25 @@ class SparkProgressFetcher(spark: SparkSession, jobGroup: String) {
   }
 
   private def getProgressMap(): Map[SparkStage, SparkStageProgress] = {
-    val jobs = statusTracker.getJobIdsForGroup(jobGroup)
-      .flatMap(statusTracker.getJobInfo(_))
-    val stages = jobs.flatMap(_.stageIds()).flatMap(statusTracker.getStageInfo(_))
-    stages.map(stage => {
-      val sparkStage = SparkStage(stage.stageId(), stage.currentAttemptId())
-      val sparkStageProgress = SparkStageProgress(
-        stage.numTasks,
-        stage.numCompletedTasks,
-        stage.numActiveTasks,
-        stage.numFailedTasks)
-      (sparkStage, sparkStageProgress)
-    }).toMap
+    statusStore.jobsList(null)
+      .filter(_.jobGroup == Option(jobGroup))
+      .flatMap(_.stageIds)
+      .flatMap(stageId => Option(statusStore.lastStageAttempt(stageId)))
+      .map(stage => {
+        val sparkStage = SparkStage(stage.stageId, stage.attemptId)
+        val succeededTaskCount =
+          if (stage.status == StageStatus.SKIPPED) {
+            stage.numTasks
+          } else {
+            stage.numCompleteTasks
+          }
+        val sparkStageProgress = SparkStageProgress(
+          stage.numTasks,
+          succeededTaskCount,
+          stage.numActiveTasks,
+          stage.numFailedTasks)
+        (sparkStage, sparkStageProgress)
+      }).toMap
   }
 
 }
