@@ -18,7 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs._
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{MediaType, Response}
 
 import scala.util.control.NonFatal
 
@@ -87,6 +87,43 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       batchOp.currentApplicationState.getOrElse(Map.empty),
       fe.connectionUrl,
       batchOp.getStatus.state.toString)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "close a batch session")
+  @DELETE
+  @Path("{batchId}")
+  def closeBatchSession(
+      @PathParam("batchId") batchId: String,
+      @QueryParam("killApp") killApp: Boolean): Response = {
+    var session: KyuubiBatchSessionImpl = null
+    try {
+      val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
+      session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid batchId: $batchId", e)
+        throw new NotFoundException(s"Invalid batchId: $batchId")
+    }
+
+    // TODO: Support proxy user
+    val userName = fe.getUserName(Map())
+    if (!session.user.equals(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to close the session belong to ${session.user}")
+    }
+
+    if (killApp) {
+      val killResponse = session.batchJobSubmissionOp.killBatchApplication()
+      sessionManager.closeSession(session.handle)
+      Response.ok().entity(killResponse).build()
+    } else {
+      sessionManager.closeSession(session.handle)
+      Response.ok().build()
+    }
   }
 }
 
