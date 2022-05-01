@@ -24,13 +24,13 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.sparkMajorMinorVersion
 
 trait WithSparkSQLEngine extends KyuubiFunSuite {
-  protected var spark: SparkSession = _
-  protected var engine: SparkSQLEngine = _
+  @volatile protected var spark: SparkSession = _
+  @volatile protected var engine: SparkSQLEngine = _
   // conf will be loaded until start spark engine
   def withKyuubiConf: Map[String, String]
   def kyuubiConf: KyuubiConf = SparkSQLEngine.kyuubiConf
 
-  protected var connectionUrl: String = _
+  @volatile protected var connectionUrl: String = _
 
   // Affected by such configuration' default value
   //    engine.initialize.sql='SHOW DATABASES'
@@ -93,6 +93,8 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       spark.stop()
       spark = null
     }
+    SparkSession.getActiveSession.foreach(_.close())
+    SparkSession.getDefaultSession.foreach(_.close())
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
   }
