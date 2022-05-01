@@ -43,7 +43,7 @@ class SparkProgressFetcher(spark: SparkSession, jobGroup: String) {
     statusStore.jobsList(null)
       .filter(_.jobGroup == Option(jobGroup))
       .flatMap(_.stageIds)
-      .flatMap(stageId => Option(statusStore.lastStageAttempt(stageId)))
+      .flatMap(stageId => statusStore.asOption(statusStore.lastStageAttempt(stageId)))
       .map(stage => {
         val sparkStage = SparkStage(stage.stageId, stage.attemptId)
         val succeededTaskCount =
