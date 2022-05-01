@@ -41,7 +41,7 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
       preReq.setRunAsync(false)
       client.ExecuteStatement(preReq)
 
-      val sql = "SELECT java_method('java.lang.Thread', 'sleep', 5000l) FROM range(1, 3, 1, 2)"
+      val sql = "SELECT java_method('java.lang.Thread', 'sleep', 10000l) FROM range(1, 3, 1, 2)"
       val req = new TExecuteStatementReq()
       req.setStatement(sql)
       req.setRunAsync(true)
@@ -50,7 +50,8 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
       var checkFlag1 = false
       var checkFlag2 = false
       var checkFlag3 = false
-      eventually(Timeout(20.seconds)) {
+      val initStageId = initJobId
+      eventually(Timeout(25.seconds)) {
         val statusReq = new TGetOperationStatusReq(resp.getOperationHandle)
         val statusResp = client.GetOperationStatus(statusReq)
         val headers = statusResp.getProgressUpdateResponse.getHeaderNames
@@ -71,19 +72,37 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
         assert(rows.size() == 1)
         progress match {
           case 0.0 =>
-            assertResult(Seq("Stage-1 ", "0", "RUNNING", "2", "0", "1", "1", "0", ""))(
+            assertResult(Seq(s"Stage-$initStageId ", "0", "RUNNING", "2", "0", "1", "1", "0", ""))(
               rows.get(0).asScala)
             assert("STAGES: 00/01" === getFooterSummary)
             assert(TJobExecutionStatus.IN_PROGRESS === status)
             checkFlag1 = true
           case 0.5 =>
-            assertResult(Seq("Stage-1 ....", "0", "RUNNING", "2", "1", "1", "0", "0", ""))(
+            assertResult(Seq(
+              s"Stage-$initStageId ....",
+              "0",
+              "RUNNING",
+              "2",
+              "1",
+              "1",
+              "0",
+              "0",
+              ""))(
               rows.get(0).asScala)
             assert("STAGES: 00/01" === getFooterSummary)
             assert(TJobExecutionStatus.IN_PROGRESS === status)
             checkFlag2 = true
           case 1.0 =>
-            assertResult(Seq("Stage-1 ........", "0", "FINISHED", "2", "2", "0", "0", "0", ""))(
+            assertResult(Seq(
+              s"Stage-$initStageId ........",
+              "0",
+              "FINISHED",
+              "2",
+              "2",
+              "0",
+              "0",
+              "0",
+              ""))(
               rows.get(0).asScala)
             assert("STAGES: 01/01" === getFooterSummary)
             checkFlag3 = true
