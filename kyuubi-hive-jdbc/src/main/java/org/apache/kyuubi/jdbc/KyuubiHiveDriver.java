@@ -48,7 +48,7 @@ public class KyuubiHiveDriver implements Driver {
 
   @Override
   public boolean acceptsURL(String url) throws SQLException {
-    return url.startsWith(Utils.URL_PREFIX);
+    return url != null && url.startsWith(Utils.URL_PREFIX);
   }
 
   @Override
