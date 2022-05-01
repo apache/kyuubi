@@ -33,6 +33,10 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class TPCDSTable(tbl: String, scale: Int) extends SpakrTable with SupportsRead {
 
+  // When true, use CHAR VARCHAR; otherwise use STRING
+  // TODO: make it configurable
+  val useAnsiStringType: Boolean = false
+
   val tablePartitionColumns: Map[String, Array[String]] = Map(
     "catalog_sales" -> Array("cs_sold_date_sk"),
     "catalog_returns" -> Array("cr_returned_date_sk"),
@@ -74,9 +78,10 @@ class TPCDSTable(tbl: String, scale: Int) extends SpakrTable with SupportsRead {
       case (IDENTIFIER, None, None) => LongType
       case (DATE, None, None) => DateType
       case (DECIMAL, Some(precision), Some(scale)) => DecimalType(precision, scale)
-      case (VARCHAR, Some(precision), None) => VarcharType(precision)
-      case (CHAR, Some(precision), None) => CharType(precision)
-      case (TIME, None, None) => StringType // only used in table `dbgen_version`
+      case (VARCHAR, Some(precision), None) =>
+        if (useAnsiStringType) VarcharType(precision) else StringType
+      case (CHAR, Some(precision), None) =>
+        if (useAnsiStringType) CharType(precision) else StringType
       case (t, po, so) =>
         throw new IllegalArgumentException(s"Unsupported TPC-DS type: ($t, $po, $so)")
     }

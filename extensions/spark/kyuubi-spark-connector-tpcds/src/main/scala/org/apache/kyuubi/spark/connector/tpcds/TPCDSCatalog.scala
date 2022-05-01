@@ -30,7 +30,8 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class TPCDSCatalog extends TableCatalog {
 
-  val tables: Array[String] = Table.getBaseTables.asScala.map(_.getName).toArray
+  val tables: Array[String] = Table.getBaseTables.asScala
+    .map(_.getName).filterNot(_ == "dbgen_version").toArray
 
   val scales: Array[Int] = Array(0, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000)
 
