@@ -18,12 +18,13 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.File
-import java.net.URL
+import java.net.{InetAddress, URL}
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
 import org.apache.flink.client.cli.{CliFrontend, CustomCommandLine, DefaultCLI, GenericCLI}
 import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration}
@@ -34,9 +35,13 @@ import org.apache.flink.util.JarUtils
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
+import org.apache.kyuubi.engine.flink.event.FlinkEngineEvent
+import org.apache.kyuubi.engine.flink.event.handler.FlinkJsonLoggingEventHandler
+import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
 import org.apache.kyuubi.service.Serverable
-import org.apache.kyuubi.util.SignalRegister
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 
 case class FlinkSQLEngine(engineContext: DefaultContext) extends Serverable("FlinkSQLEngine") {
 
@@ -61,6 +66,7 @@ case class FlinkSQLEngine(engineContext: DefaultContext) extends Serverable("Fli
 object FlinkSQLEngine extends Logging {
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
+    .set(ENGINE_EVENT_LOGGERS.key, "JSON")
   var currentEngine: Option[FlinkSQLEngine] = None
 
   private val user = currentUser
@@ -119,6 +125,9 @@ object FlinkSQLEngine extends Logging {
         currentEngine.foreach { engine =>
           error(t)
           engine.stop()
+          val event = FlinkEngineEvent(engine)
+            .copy(endTime = System.currentTimeMillis(), diagnostic = t.getMessage)
+          EventBus.post(event)
         }
       case t: Throwable =>
         error("Create FlinkSQL Engine Failed", t)
@@ -126,11 +135,43 @@ object FlinkSQLEngine extends Logging {
   }
 
   def startEngine(engineContext: DefaultContext): Unit = {
+    try {
+      initLoggerEventHandler(kyuubiConf)
+    } catch {
+      case NonFatal(e) =>
+        warn(s"Failed to initialize Logger EventHandler: ${e.getMessage}", e)
+    }
     currentEngine = Some(new FlinkSQLEngine(engineContext))
     currentEngine.foreach { engine =>
       engine.initialize(kyuubiConf)
       engine.start()
-      addShutdownHook(() => engine.stop(), FLINK_ENGINE_SHUTDOWN_PRIORITY + 1)
+      val event = FlinkEngineEvent(engine)
+      EventBus.post(event)
+      addShutdownHook(
+        () => {
+          engine.stop()
+          val event = FlinkEngineEvent(engine)
+            .copy(endTime = System.currentTimeMillis())
+          EventBus.post(event)
+        },
+        FLINK_ENGINE_SHUTDOWN_PRIORITY + 1)
+    }
+  }
+
+  private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
+    val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+    conf.get(ENGINE_EVENT_LOGGERS).map(EventLoggerType.withName).foreach {
+      case EventLoggerType.JSON =>
+        val hostName = InetAddress.getLocalHost.getCanonicalHostName
+        val handler = FlinkJsonLoggingEventHandler(
+          s"Flink-$hostName",
+          ENGINE_EVENT_JSON_LOG_PATH,
+          hadoopConf,
+          conf)
+        EventBus.register[KyuubiEvent](handler)
+      case logger =>
+        throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
+
     }
   }
 

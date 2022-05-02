@@ -31,7 +31,9 @@ import org.apache.flink.table.operations.command._
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.engine.flink.event.FlinkOperationEvent
 import org.apache.kyuubi.engine.flink.result.ResultSet
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -191,4 +193,6 @@ class ExecuteStatement(
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
   }
+
+  EventBus.post(FlinkOperationEvent(this))
 }

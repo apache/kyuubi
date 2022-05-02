@@ -21,6 +21,9 @@ import org.apache.flink.table.client.gateway.{Executor, SqlExecutionException}
 import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.engine.flink.event.FlinkSessionEvent
+import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class FlinkSessionImpl(
@@ -33,6 +36,8 @@ class FlinkSessionImpl(
     override val handle: SessionHandle,
     val sessionContext: SessionContext)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  private val sessionEvent = FlinkSessionEvent(this)
 
   def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
 
@@ -51,5 +56,17 @@ class FlinkSessionImpl(
       case (key, value) => setModifiableConfig(key, value)
     }
     super.open()
+    EventBus.post(sessionEvent)
+  }
+
+  override protected def runOperation(operation: Operation): OperationHandle = {
+    sessionEvent.totalOperations += 1
+    super.runOperation(operation)
+  }
+
+  override def close(): Unit = {
+    sessionEvent.endTime = System.currentTimeMillis()
+    EventBus.post(sessionEvent)
+    super.close()
   }
 }
