@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TJobExecutionStatus}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
@@ -57,7 +58,7 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
         val headers = statusResp.getProgressUpdateResponse.getHeaderNames
         val progress = statusResp.getProgressUpdateResponse.getProgressedPercentage
         val rows = statusResp.getProgressUpdateResponse.getRows
-        val getFooterSummary = statusResp.getProgressUpdateResponse.getFooterSummary
+        val footerSummary = statusResp.getProgressUpdateResponse.getFooterSummary
         val status = statusResp.getProgressUpdateResponse.getStatus
         assertResult(Seq(
           "STAGES",
@@ -70,43 +71,64 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
           "FAILED",
           ""))(headers.asScala)
         assert(rows.size() == 1)
-        progress match {
-          case 0.0 =>
-            assertResult(Seq(s"Stage-$initStageId ", "0", "RUNNING", "2", "0", "1", "1", "0", ""))(
-              rows.get(0).asScala)
-            assert("STAGES: 00/01" === getFooterSummary)
-            assert(TJobExecutionStatus.IN_PROGRESS === status)
-            checkFlag1 = true
-          case 0.5 =>
-            assertResult(Seq(
-              s"Stage-$initStageId ....",
-              "0",
-              "RUNNING",
-              "2",
-              "1",
-              "1",
-              "0",
-              "0",
-              ""))(
-              rows.get(0).asScala)
-            assert("STAGES: 00/01" === getFooterSummary)
-            assert(TJobExecutionStatus.IN_PROGRESS === status)
-            checkFlag2 = true
-          case 1.0 =>
-            assertResult(Seq(
-              s"Stage-$initStageId ........",
-              "0",
-              "FINISHED",
-              "2",
-              "2",
-              "0",
-              "0",
-              "0",
-              ""))(
-              rows.get(0).asScala)
-            assert("STAGES: 01/01" === getFooterSummary)
-            checkFlag3 = true
+        try {
+          progress match {
+            case 0.0 =>
+              assertResult(Seq(
+                s"Stage-$initStageId ",
+                "0",
+                "RUNNING",
+                "2",
+                "0",
+                "1",
+                "1",
+                "0",
+                ""))(rows.get(0).asScala)
+              assert("STAGES: 00/01" === footerSummary)
+              assert(TJobExecutionStatus.IN_PROGRESS === status)
+              checkFlag1 = true
+            case 0.5 =>
+              assertResult(Seq(
+                s"Stage-$initStageId ....",
+                "0",
+                "RUNNING",
+                "2",
+                "1",
+                "1",
+                "0",
+                "0",
+                ""))(
+                rows.get(0).asScala)
+              assert("STAGES: 00/01" === footerSummary)
+              assert(TJobExecutionStatus.IN_PROGRESS === status)
+              checkFlag2 = true
+            case 1.0 =>
+              assertResult(Seq(
+                s"Stage-$initStageId ........",
+                "0",
+                "FINISHED",
+                "2",
+                "2",
+                "0",
+                "0",
+                "0",
+                ""))(
+                rows.get(0).asScala)
+              assert("STAGES: 01/01" === footerSummary)
+              checkFlag3 = true
+          }
+        } catch {
+          case tfe: TestFailedException =>
+            // scalastyle:off println
+            println(s"progress: $progress")
+            println(s"rows: $rows")
+            println(s"footerSummary: $footerSummary")
+            println(s"status: $status")
+            // scalastyle:on println
+            throw tfe
+          case t: Throwable => throw t
         }
+
         assert(checkFlag1 && checkFlag2 && checkFlag3)
       }
     }
