@@ -74,16 +74,12 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
         try {
           progress match {
             case 0.0 =>
-              assertResult(Seq(
-                s"Stage-$initStageId ",
-                "0",
-                "RUNNING",
-                "2",
-                "0",
-                "1",
-                "1",
-                "0",
-                ""))(rows.get(0).asScala)
+              assert(Seq(s"Stage-$initStageId ", "0", "PENDING", "2", "0", "0", "2", "0", "")
+                == rows.get(0).asScala ||
+                Seq(s"Stage-$initStageId ", "0", "RUNNING", "2", "0", "1", "1", "0", "")
+                == rows.get(0).asScala ||
+                Seq(s"Stage-$initStageId ", "0", "RUNNING", "2", "0", "2", "0", "0", "")
+                == rows.get(0).asScala)
               assert("STAGES: 00/01" === footerSummary)
               assert(TJobExecutionStatus.IN_PROGRESS === status)
               checkFlag1 = true
