@@ -30,6 +30,8 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
 
   def jdbcDriverClass: String = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
 
+  protected val URL_PREFIX = "jdbc:hive2://"
+
   protected def matchAllPatterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
 
   override protected lazy val user: String = Utils.currentUser
@@ -82,12 +84,12 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
 
   def withThriftClient[T](user: Option[String] = None)(f: TCLIService.Iface => T): T = {
     TClientTestUtils.withThriftClient(
-      jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head,
+      jdbcUrl.stripPrefix(URL_PREFIX).split("/;").head,
       user)(f)
   }
 
   def withSessionHandle[T](f: (TCLIService.Iface, TSessionHandle) => T): T = {
-    val hostAndPort = jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head
+    val hostAndPort = jdbcUrl.stripPrefix(URL_PREFIX).split("/;").head
     TClientTestUtils.withSessionHandle(hostAndPort, sessionConfigs)(f)
   }
 

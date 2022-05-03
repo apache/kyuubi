@@ -38,6 +38,8 @@ import org.apache.kyuubi.plugin.SessionConfAdvisor
  */
 class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
+  override protected val URL_PREFIX: String = "jdbc:kyuubi://"
+
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
