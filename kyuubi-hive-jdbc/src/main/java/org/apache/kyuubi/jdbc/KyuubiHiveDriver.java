@@ -18,7 +18,6 @@
 package org.apache.kyuubi.jdbc;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.sql.*;
 import java.util.Properties;
@@ -127,10 +126,7 @@ public class KyuubiHiveDriver implements Driver {
 
     Utils.JdbcConnectionParams params;
     try {
-      Method parseURLMethod =
-          Utils.class.getDeclaredMethod("parseURL", String.class, Properties.class);
-      parseURLMethod.setAccessible(true);
-      params = (Utils.JdbcConnectionParams) parseURLMethod.invoke(null, url, defaults);
+      params = Utils.parseURL(url, defaults);
     } catch (Exception e) {
       throw new SQLException(e);
     }
