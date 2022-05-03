@@ -104,12 +104,13 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
       info(s"Submitting ${batchRequest.batchType} batch job: $builder")
       val process = builder.start
       var applicationStatus = currentApplicationState
-      while (applicationStatus.isEmpty) {
+      while (applicationStatus.isEmpty && process.isAlive) {
         applicationStatus = currentApplicationState
         Thread.sleep(applicationCheckInterval)
       }
-      val state = applicationStatus.get(ApplicationOperation.APP_STATE_KEY)
-      if (state == "KILLED" || state == "FAILED") {
+
+      if (applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).filter(s =>
+          s == "KILLED" || s == "FAILED").isDefined) {
         process.destroyForcibly()
         throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
       } else {
