@@ -110,7 +110,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
       }
 
       if (applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).filter(s =>
-          s == "KILLED" || s == "FAILED").isDefined) {
+          s == Some("KILLED") || s == Some("FAILED")).isDefined) {
         process.destroyForcibly()
         throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
       } else {
