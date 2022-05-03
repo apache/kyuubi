@@ -37,8 +37,9 @@ import org.slf4j.LoggerFactory;
 
 public class Utils {
   static final Logger LOG = LoggerFactory.getLogger(Utils.class.getName());
-  /** The required prefix for the connection URL. */
-  public static final String URL_PREFIX = "jdbc:hive2://";
+  /** The required prefix list for the connection URL. */
+  public static final List<String> URL_PREFIX_LIST =
+      Arrays.asList("jdbc:hive2://", "jdbc:kyuubi://");
 
   /** If host is provided, without a port. */
   static final String DEFAULT_PORT = "10000";
@@ -55,6 +56,16 @@ public class Utils {
   static final String HIVE_SERVER2_RETRY_KEY = "hive.server2.retryserver";
   static final String HIVE_SERVER2_RETRY_TRUE = "true";
   static final String HIVE_SERVER2_RETRY_FALSE = "false";
+
+  static String getMatchedUrlPrefix(String uri) throws JdbcUriParseException {
+    for (String urlPrefix : URL_PREFIX_LIST) {
+      if (uri.startsWith(urlPrefix)) {
+        return urlPrefix;
+      }
+    }
+    throw new JdbcUriParseException(
+        "Bad URL format: Missing prefix " + String.join(" or ", URL_PREFIX_LIST));
+  }
 
   public static class JdbcConnectionParams {
     // Note on client side parameter naming convention:
@@ -290,13 +301,11 @@ public class Utils {
       throws JdbcUriParseException, SQLException, ZooKeeperHiveClientException {
     JdbcConnectionParams connParams = new JdbcConnectionParams();
 
-    if (!uri.startsWith(URL_PREFIX)) {
-      throw new JdbcUriParseException("Bad URL format: Missing prefix " + URL_PREFIX);
-    }
+    String matchedUrlPrefix = getMatchedUrlPrefix(uri);
 
     // For URLs with no other configuration
     // Don't parse them, but set embedded mode as true
-    if (uri.equalsIgnoreCase(URL_PREFIX)) {
+    if (uri.equalsIgnoreCase(matchedUrlPrefix)) {
       connParams.setEmbeddedMode(true);
       return connParams;
     }
@@ -510,7 +519,8 @@ public class Utils {
      * jdbc:hive2://host1:port1,host2:port2,host3:port3?k2=v2#k3=v3
      * jdbc:hive2://host1:port1,host2:port2,host3:port3#k3=v3
      */
-    int fromIndex = Utils.URL_PREFIX.length();
+    String matchedUrlPrefix = getMatchedUrlPrefix(uri);
+    int fromIndex = matchedUrlPrefix.length();
     int toIndex = -1;
     ArrayList<String> toIndexChars = new ArrayList<String>(Arrays.asList("/", "?", "#"));
     for (String toIndexChar : toIndexChars) {
