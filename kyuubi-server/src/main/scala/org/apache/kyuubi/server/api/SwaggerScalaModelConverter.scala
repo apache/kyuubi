@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.api
 
+// scalastyle:off
 import java.lang.annotation.Annotation
 import java.lang.reflect.ParameterizedType
 import java.util.Iterator
