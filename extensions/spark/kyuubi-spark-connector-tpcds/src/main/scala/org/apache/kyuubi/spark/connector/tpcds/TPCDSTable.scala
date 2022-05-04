@@ -25,13 +25,13 @@ import scala.collection.JavaConverters._
 import io.trino.tpcds.Table
 import io.trino.tpcds.column.ColumnType
 import io.trino.tpcds.column.ColumnType.Base._
-import org.apache.spark.sql.connector.catalog.{SupportsRead, Table => SpakrTable, TableCapability}
+import org.apache.spark.sql.connector.catalog.{SupportsRead, Table => SparkTable, TableCapability}
 import org.apache.spark.sql.connector.expressions.{Expressions, Transform}
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCDSTable(tbl: String, scale: Int) extends SpakrTable with SupportsRead {
+class TPCDSTable(tbl: String, scale: Int) extends SparkTable with SupportsRead {
 
   // When true, use CHAR VARCHAR; otherwise use STRING
   // TODO: make it configurable
