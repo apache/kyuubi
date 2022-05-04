@@ -22,6 +22,7 @@ import java.lang.annotation.Annotation
 import java.lang.reflect.ParameterizedType
 import java.util.Iterator
 
+import scala.language.existentials
 import scala.util.Try
 import scala.util.control.NonFatal
 
