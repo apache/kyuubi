@@ -32,9 +32,11 @@ import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 
 class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
 
+  private val preDefinedAppName = "kyuubi-batch-job"
+
   override protected val conf: KyuubiConf = {
-    new KyuubiConf().set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.master", "yarn")
-      .set(BATCH_CONF_IGNORE_LIST, Seq("spark.master"))
+    new KyuubiConf().set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.app.name", preDefinedAppName)
+      .set(BATCH_CONF_IGNORE_LIST, Seq("spark.app.name"))
   }
 
   private def sessionManager(): KyuubiSessionManager =
@@ -47,9 +49,10 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
       "spark",
       sparkProcessBuilder.mainResource.get,
       sparkProcessBuilder.mainClass,
-      "spark-batch-submission",
+      null,
       Map(
-        "spark.master" -> "local",
+        "spark.master" -> "yarn",
+        "spark.app.name" -> "customName",
         s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
         s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
       Seq.empty[String])
@@ -70,6 +73,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
       val state = batchJobSubmissionOp.currentApplicationState
       assert(state.nonEmpty)
       assert(state.exists(_("id").startsWith("application_")))
+      assert(state.exists(_("name") == preDefinedAppName))
     }
 
     val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
@@ -103,5 +107,36 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
     assert(appUrl === state2("url"))
     assert(appError === state2("error"))
     sessionManager.closeSession(sessionHandle)
+  }
+
+  test("prevent dead loop if the batch job submission process it not alive") {
+    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
+
+    val batchRequest = BatchRequest(
+      "spark",
+      sparkProcessBuilder.mainResource.get,
+      sparkProcessBuilder.mainClass,
+      "spark-batch-submission",
+      Map(
+        "spark.master" -> "invalid",
+        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
+        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
+      Seq.empty[String])
+
+    val sessionHandle = sessionManager().openBatchSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      batchRequest.conf,
+      batchRequest)
+
+    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    val batchJobSubmissionOp = session.batchJobSubmissionOp
+
+    eventually(timeout(3.minutes), interval(50.milliseconds)) {
+      assert(batchJobSubmissionOp.currentApplicationState.isEmpty)
+      assert(batchJobSubmissionOp.getStatus.state === OperationState.ERROR)
+    }
   }
 }
