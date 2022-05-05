@@ -114,6 +114,19 @@
 
         <dependency>
             <groupId>org.apache.hive</groupId>
+            <artifactId>hive-standalone-metastore</artifactId>
+            <version>${hive.version}</version>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
             <artifactId>hive-serde</artifactId>
             <version>${hive.version}</version>
             <optional>true</optional>
@@ -235,6 +248,12 @@
                             <excludes>
                                 <exclude>package.jdo</exclude>
                             </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>org.apache.hive:hive-standalone-metastore</artifact>
+                            <includes>
+                                <include>**</include>
+                            </includes>
                         </filter>
                         <filter>
                             <artifact>org.apache.hive.shims:hive-shims-common</artifact>

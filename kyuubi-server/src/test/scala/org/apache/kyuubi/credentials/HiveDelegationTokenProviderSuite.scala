@@ -31,7 +31,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars._
 import org.apache.hadoop.hive.metastore.{HiveMetaException, HiveMetaStore}
-import org.apache.hadoop.hive.thrift.{DelegationTokenIdentifier, HadoopThriftAuthBridge, HadoopThriftAuthBridge23}
+import org.apache.hadoop.hive.metastore.security.{DelegationTokenIdentifier, HadoopThriftAuthBridge, HadoopThriftAuthBridge23}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.authorize.ProxyUsers
@@ -183,12 +183,13 @@ class HadoopThriftAuthBridgeWithServerContextClassLoader(classloader: ClassLoade
 
   override def createServer(
       keytabFile: String,
-      principalConf: String): HadoopThriftAuthBridge.Server = {
-    new Server(keytabFile, principalConf)
+      principalConf: String,
+      clientConf: String): HadoopThriftAuthBridge.Server = {
+    new Server(keytabFile, principalConf, clientConf)
   }
 
-  class Server(keytabFile: String, principalConf: String)
-    extends HadoopThriftAuthBridge.Server(keytabFile, principalConf) {
+  class Server(keytabFile: String, principalConf: String, clientConf: String)
+    extends HadoopThriftAuthBridge.Server(keytabFile, principalConf, clientConf) {
 
     override def wrapProcessor(processor: TProcessor): TProcessor = {
       new SetThreadContextClassLoaderProcess(super.wrapProcessor(processor))
