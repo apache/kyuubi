@@ -27,10 +27,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource.REST_BATCH_PROTOCOL
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 
 @Tag(name = "Batch")
@@ -98,7 +99,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @Path("{batchId}")
   def closeBatchSession(
       @PathParam("batchId") batchId: String,
-      @QueryParam("killApp") killApp: Boolean): Response = {
+      @QueryParam("killApp") killApp: Boolean,
+      @QueryParam("proxyUser") proxyUser: String): Response = {
     var session: KyuubiBatchSessionImpl = null
     try {
       val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
@@ -109,8 +111,17 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         throw new NotFoundException(s"Invalid batchId: $batchId")
     }
 
-    // TODO: Support proxy user
-    val userName = fe.getUserName(Map())
+    val sessionConf = Option(proxyUser).filter(_.nonEmpty).map(proxy =>
+      Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxy)).getOrElse(Map())
+
+    var userName: String = null
+    try {
+      userName = fe.getUserName(sessionConf)
+    } catch {
+      case t: Throwable =>
+        throw new NotAllowedException(t.getMessage)
+    }
+
     if (!session.user.equals(userName)) {
       throw new NotAllowedException(
         s"$userName is not allowed to close the session belong to ${session.user}")

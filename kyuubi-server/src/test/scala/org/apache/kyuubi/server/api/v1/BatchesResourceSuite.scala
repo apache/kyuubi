@@ -94,6 +94,13 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .delete()
     assert(404 == deleteBatchResponse.getStatus)
 
+    // invalid proxy user
+    deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.id}")
+      .queryParam("proxyUser", "invalidProxy")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .delete()
+    assert(405 == deleteBatchResponse.getStatus)
+
     // killApp is true
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.id}")
       .queryParam("killApp", "true")
