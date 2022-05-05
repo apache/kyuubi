@@ -109,14 +109,21 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
         Thread.sleep(applicationCheckInterval)
       }
 
-      if (applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).filter(s =>
-          s == Some("KILLED") || s == Some("FAILED")).isDefined) {
+      if (applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
+          s.contains("KILLED") || s.contains("FAILED"))) {
         process.destroyForcibly()
         throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
       } else {
         process.waitFor()
         if (process.exitValue() != 0) {
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
+        }
+
+        val finalApplicationStatus = currentApplicationState
+        if (finalApplicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
+            s.contains("KILLED") || s.contains("FAILED"))) {
+          throw new KyuubiException(
+            s"Final application state:${finalApplicationStatus.get.mkString(",")}")
         }
       }
     } finally {
