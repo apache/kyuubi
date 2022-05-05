@@ -38,6 +38,9 @@ import io.swagger.v3.oas.annotations.media.{ArraySchema, Schema => SchemaAnnotat
 import io.swagger.v3.oas.models.media.Schema
 import org.slf4j.LoggerFactory
 
+/**
+ * Copied from https://github.com/swagger-akka-http/swagger-scala-module
+ */
 class AnnotatedTypeForOption extends AnnotatedType
 
 object SwaggerScalaModelConverter {
