@@ -37,7 +37,6 @@ import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_PRIOR
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -86,13 +85,6 @@ abstract class TrinoOperation(opType: OperationType, session: Session)
 
   override def cancel(): Unit = {
     cleanup(OperationState.CANCELED)
-  }
-
-  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
-    if (!isTerminalState(state)) {
-      setState(targetState)
-      Option(getBackgroundHandle).foreach(_.cancel(true))
-    }
   }
 
   override def close(): Unit = {
