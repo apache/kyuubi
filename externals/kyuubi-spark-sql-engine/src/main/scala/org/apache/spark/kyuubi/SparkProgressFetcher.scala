@@ -21,21 +21,21 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.status.api.v1.StageStatus
 
 import org.apache.kyuubi.engine.spark.operation.progress.{SparkProgressMonitor, SparkStage, SparkStageProgress}
-import org.apache.kyuubi.operation.JobProgressUpdate
+import org.apache.kyuubi.operation.OperationProgressUpdate
 
 class SparkProgressFetcher(spark: SparkSession, jobGroup: String) {
 
   val statusStore = spark.sparkContext.statusStore
 
-  def getJobProgressUpdate(startTime: Long): JobProgressUpdate = {
+  def getJobProgressUpdate(startTime: Long): OperationProgressUpdate = {
     val progressMap = getProgressMap
-    val progressMonitor = new SparkProgressMonitor(progressMap, startTime)
-    JobProgressUpdate(
+    val progressMonitor = new SparkProgressMonitor(progressMap)
+    OperationProgressUpdate(
       progressMonitor.headers,
       progressMonitor.rows,
       progressMonitor.footerSummary,
       progressMonitor.progressedPercentage,
-      progressMonitor.startTime,
+      startTime,
       progressMonitor.executionStatus)
   }
 
@@ -46,7 +46,7 @@ class SparkProgressFetcher(spark: SparkSession, jobGroup: String) {
       .flatMap(stageId => statusStore.asOption(statusStore.lastStageAttempt(stageId)))
       .map(stage => {
         val sparkStage = SparkStage(stage.stageId, stage.attemptId)
-        val succeededTaskCount =
+        val completedTasksCount =
           if (stage.status == StageStatus.SKIPPED) {
             stage.numTasks
           } else {
@@ -54,7 +54,7 @@ class SparkProgressFetcher(spark: SparkSession, jobGroup: String) {
           }
         val sparkStageProgress = SparkStageProgress(
           stage.numTasks,
-          succeededTaskCount,
+          completedTasksCount,
           stage.numActiveTasks,
           stage.numFailedTasks)
         (sparkStage, sparkStageProgress)

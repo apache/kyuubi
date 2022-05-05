@@ -22,13 +22,13 @@ import java.util
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.TJobExecutionStatus
 
-case class JobProgressUpdate(
-    headers: util.List[String] = null,
-    rows: util.List[util.List[String]] = null,
-    footerSummary: String = null,
-    progressedPercentage: Double = 0.0,
-    startTimeMillis: Long = 0L,
-    status: String = null)
+case class OperationProgressUpdate(
+    headers: util.List[String],
+    rows: util.List[util.List[String]],
+    footerSummary: String,
+    progressedPercentage: Double,
+    startTimeMillis: Long,
+    status: String)
 
 object KyuubiProgressMonitorStatusMapper {
 
@@ -36,18 +36,19 @@ object KyuubiProgressMonitorStatusMapper {
     if (StringUtils.isEmpty(status)) {
       return TJobExecutionStatus.NOT_AVAILABLE
     }
-    KyuubiStatus.withName(status) match {
-      case KyuubiStatus.NOT_AVAILABLE =>
+    OperationProgressStatus.withName(status) match {
+      case OperationProgressStatus.NOT_AVAILABLE =>
         TJobExecutionStatus.NOT_AVAILABLE
-      case KyuubiStatus.IN_PROGRESS | KyuubiStatus.PENDING | KyuubiStatus.RUNNING =>
+      case OperationProgressStatus.IN_PROGRESS | OperationProgressStatus.PENDING
+          | OperationProgressStatus.RUNNING =>
         TJobExecutionStatus.IN_PROGRESS
-      case KyuubiStatus.COMPLETE => TJobExecutionStatus.COMPLETE
+      case OperationProgressStatus.COMPLETE => TJobExecutionStatus.COMPLETE
       case _ => TJobExecutionStatus.COMPLETE
     }
   }
 }
 
-object KyuubiStatus extends Enumeration {
-  type KyuubiStatus = Value
+object OperationProgressStatus extends Enumeration {
+  type OperationProgressStatus = Value
   val PENDING, RUNNING, FINISHED, IN_PROGRESS, COMPLETE, NOT_AVAILABLE = Value
 }

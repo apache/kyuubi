@@ -28,4 +28,4 @@ case class OperationStatus(
     completed: Long,
     hasResultSet: Boolean,
     exception: Option[KyuubiSQLException] = None,
-    jobProgressUpdate: Option[JobProgressUpdate] = None)
+    operationProgressUpdate: Option[OperationProgressUpdate] = None)

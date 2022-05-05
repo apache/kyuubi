@@ -21,27 +21,32 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.engine.spark.operation.progress.SparkProgressMonitor._
-import org.apache.kyuubi.operation.KyuubiStatus
+import org.apache.kyuubi.operation.OperationProgressStatus
 
-class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress], _startTime: Long = 0) {
+class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress]) {
 
   def headers: util.List[String] = HEADERS
 
   def rows: util.List[util.List[String]] = {
     val progressRows = progressMap.toSeq.sortBy(_._1).map {
       case (stage, progress) =>
-        val complete = progress.succeededTaskCount
+        val complete = progress.completedTasksCount
         val total = progress.totalTaskCount
         val running = progress.runningTaskCount
         val failed = progress.failedTaskCount
         var state =
           if (total > 0) {
-            KyuubiStatus.PENDING
+            OperationProgressStatus.PENDING
           } else {
-            KyuubiStatus.FINISHED
+            OperationProgressStatus.FINISHED
           }
         if (complete > 0 || running > 0 || failed > 0) {
-          state = if (complete < total) KyuubiStatus.RUNNING else KyuubiStatus.FINISHED
+          state =
+            if (complete < total) {
+              OperationProgressStatus.RUNNING
+            } else {
+              OperationProgressStatus.FINISHED
+            }
         }
         val attempt = String.valueOf(stage.attemptId)
         val stageName = "Stage-" + String.valueOf(stage.stageId)
@@ -69,7 +74,7 @@ class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress], _st
     var sumTotal = 0
     var sumComplete = 0
     progressMap.toSeq.sortBy(_._1).map(_._2).foreach { progress =>
-      val complete = progress.succeededTaskCount
+      val complete = progress.completedTasksCount
       val total = progress.totalTaskCount
       sumTotal += total
       sumComplete += complete
@@ -81,13 +86,11 @@ class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress], _st
     }
   }
 
-  def startTime: Long = _startTime
-
   def executionStatus: String =
     if (getCompletedStages == progressMap.keySet.size) {
-      KyuubiStatus.FINISHED.toString
+      OperationProgressStatus.FINISHED.toString
     } else {
-      KyuubiStatus.RUNNING.toString
+      OperationProgressStatus.RUNNING.toString
     }
 
   private def getNameWithProgress(s: String, complete: Int, total: Int): String = {
@@ -113,8 +116,8 @@ class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress], _st
 
   private def getCompletedStages: Int = {
     var completed = 0
-    progressMap.toSeq.sortBy(_._1).map(_._2).foreach { progress =>
-      val complete = progress.succeededTaskCount
+    progressMap.values.foreach { progress =>
+      val complete = progress.completedTasksCount
       val total = progress.totalTaskCount
       if (total > 0 && complete == total) completed += 1
     }

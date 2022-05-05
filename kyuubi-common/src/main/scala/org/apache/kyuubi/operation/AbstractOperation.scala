@@ -49,7 +49,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   @volatile protected var lastAccessTime: Long = createTime
 
   @volatile protected var operationException: KyuubiSQLException = _
-  @volatile protected var operationJobProgress: JobProgressUpdate = _
+  @volatile protected var operationJobProgress: OperationProgressUpdate = _
 
   @volatile protected var hasResultSet: Boolean = false
 
@@ -74,7 +74,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
     this.operationException = opEx
   }
 
-  def setOperationJobProgress(opJobProgress: JobProgressUpdate): Unit = {
+  def setOperationJobProgress(opJobProgress: OperationProgressUpdate): Unit = {
     this.operationJobProgress = opJobProgress
   }
 

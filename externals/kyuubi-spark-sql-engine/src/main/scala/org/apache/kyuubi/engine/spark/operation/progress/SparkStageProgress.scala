@@ -28,6 +28,6 @@ case class SparkStage(stageId: Int, attemptId: Int) extends Comparable[SparkStag
 
 case class SparkStageProgress(
     totalTaskCount: Int,
-    succeededTaskCount: Int,
+    completedTasksCount: Int,
     runningTaskCount: Int,
     failedTaskCount: Int)

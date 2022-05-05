@@ -82,7 +82,7 @@ class ExecuteStatement(
         fetchQueryLog()
         verifyTStatus(statusResp.getStatus)
         if (statusResp.getProgressUpdateResponse != null) {
-          setOperationJobProgress(JobProgressUpdate(
+          setOperationJobProgress(OperationProgressUpdate(
             statusResp.getProgressUpdateResponse.getHeaderNames,
             statusResp.getProgressUpdateResponse.getRows,
             statusResp.getProgressUpdateResponse.getFooterSummary,

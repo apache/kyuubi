@@ -426,7 +426,7 @@ abstract class TFrontendService(name: String)
         resp.setErrorCode(e.getErrorCode)
         resp.setErrorMessage(stringifyException(e))
       }
-      operationStatus.jobProgressUpdate.foreach { p =>
+      operationStatus.operationProgressUpdate.foreach { p =>
         resp.setProgressUpdateResponse(new TProgressUpdateResp(
           p.headers,
           p.rows,
