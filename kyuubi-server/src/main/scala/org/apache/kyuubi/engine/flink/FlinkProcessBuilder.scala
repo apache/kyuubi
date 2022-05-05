@@ -46,30 +46,17 @@ class FlinkProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
   override protected def childProcEnv: Map[String, String] = conf.getEnvs +
-    ("FLINK_HOME" -> FLINK_HOME) +
-    ("FLINK_CONF_DIR" -> s"$FLINK_HOME/conf") +
-    ("_FLINK_HOME_DETERMINED" -> s"1")
+    ("FLINK_CONF_DIR" -> s"$FLINK_HOME/conf")
 
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
-    buffer += s"bash"
-    buffer += s"-c"
-    val commandSet = new LinkedHashSet[String]()
-
-    commandSet.add(s"source $FLINK_HOME${File.separator}bin" +
-      s"${File.separator}config.sh && $executable")
-
-    // TODO: How shall we deal with proxyUser,
-    // user.name
-    // kyuubi.session.user
-    // or just leave it, because we can handle it at operation layer
-    commandSet.add(s"-D$KYUUBI_SESSION_USER_KEY=$proxyUser")
+    buffer += executable
 
     // TODO: add Kyuubi.engineEnv.FLINK_ENGINE_MEMORY or kyuubi.engine.flink.memory to configure
     // -Xmx5g
     // java options
 
-    commandSet.add(s"-cp")
+    buffer += "-cp"
     val classpathEntries = new LinkedHashSet[String]
     // flink engine runtime jar
     mainResource.foreach(classpathEntries.add)
@@ -100,16 +87,16 @@ class FlinkProcessBuilder(
         "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
     classpathEntries.add(hadoopClasspath.get)
-    commandSet.add(classpathEntries.asScala.mkString(File.pathSeparator))
-    commandSet.add(s"$mainClass")
+    buffer += classpathEntries.asScala.mkString(File.pathSeparator)
+    buffer += mainClass
 
-    val confStr = conf.getAll.filter { case (k, _) =>
-      k.startsWith("kyuubi.") || k.startsWith("flink.") ||
-        k.startsWith("hadoop.") || k.startsWith("yarn.")
-    }.map { case (k, v) => s"--conf $k=$v" }.mkString(" ")
-    commandSet.add(confStr)
-    val commandStr = commandSet.asScala.mkString(" ")
-    buffer += commandStr
+    buffer += "--conf"
+    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+
+    for ((k, v) <- conf.getAll) {
+      buffer += "--conf"
+      buffer += s"$k=$v"
+    }
     buffer.toArray
   }
 
