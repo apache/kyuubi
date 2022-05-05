@@ -22,7 +22,7 @@ import javax.ws.rs.core.{MediaType, Response}
 
 import scala.util.control.NonFatal
 
-import io.swagger.v3.oas.annotations.media.{Content, Schema}
+import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
@@ -45,7 +45,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[Seq[SessionData]]))),
+      array = new ArraySchema(schema = new Schema(implementation = classOf[SessionData])))),
     description = "get the list of all live sessions")
   @GET
   def sessions(): Seq[SessionData] = {
