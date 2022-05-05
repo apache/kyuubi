@@ -123,10 +123,10 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
 
-        val finalApplicationStatus = currentApplicationState
-        if (applicationFailed(finalApplicationStatus)) {
+        applicationStatus = currentApplicationState
+        if (applicationFailed(applicationStatus)) {
           throw new KyuubiException(
-            s"Final application state:${finalApplicationStatus.get.mkString(",")}")
+            s"Final application state:${applicationStatus.get.mkString(",")}")
         }
       }
     } finally {
