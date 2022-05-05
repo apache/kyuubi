@@ -53,6 +53,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
       Map(
         "spark.master" -> "yarn",
         "spark.app.name" -> "customName",
+        "spark.submit.deployMode" -> "cluster",
         s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
         s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
       Seq.empty[String])
