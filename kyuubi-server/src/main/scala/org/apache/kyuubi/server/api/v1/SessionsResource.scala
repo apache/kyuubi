@@ -17,12 +17,12 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces, _}
+import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.util.control.NonFatal
 
-import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
@@ -44,7 +44,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[Seq[SessionData]]))),
     description = "get the list of all live sessions")
   @GET
   def sessions(): Seq[SessionData] = {
@@ -63,7 +64,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[KyuubiEvent]))),
     description = "get a session event via session handle identifier")
   @GET
   @Path("{sessionHandle}")
@@ -81,7 +83,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[InfoDetail]))),
     description =
       "get a information detail via session handle identifier and a specific information type")
   @GET
@@ -103,7 +106,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[SessionOpenCount]))),
     description = "Get the current open session count")
   @GET
   @Path("count")
@@ -114,7 +118,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ExecPoolStatistic]))),
     description = "Get statistic info of background executors")
   @GET
   @Path("execPool/statistic")
@@ -127,7 +132,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[SessionHandle]))),
     description = "Open(create) a session")
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
@@ -157,7 +163,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with EXECUTE_STATEMENT type")
   @POST
   @Path("{sessionHandle}/operations/statement")
@@ -182,7 +189,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_TYPE_INFO type")
   @POST
   @Path("{sessionHandle}/operations/typeInfo")
@@ -200,7 +208,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_CATALOGS type")
   @POST
   @Path("{sessionHandle}/operations/catalogs")
@@ -218,7 +227,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_SCHEMAS type")
   @POST
   @Path("{sessionHandle}/operations/schemas")
@@ -243,7 +253,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_TABLES type")
   @POST
   @Path("{sessionHandle}/operations/tables")
@@ -268,7 +279,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_TABLE_TYPES type")
   @POST
   @Path("{sessionHandle}/operations/tableTypes")
@@ -286,7 +298,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_COLUMNS type")
   @POST
   @Path("{sessionHandle}/operations/columns")
@@ -311,7 +324,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_FUNCTIONS type")
   @POST
   @Path("{sessionHandle}/operations/functions")
@@ -335,7 +349,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_FUNCTIONS type")
   @POST
   @Path("{sessionHandle}/operations/primaryKeys")
@@ -359,7 +374,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_FUNCTIONS type")
   @POST
   @Path("{sessionHandle}/operations/crossReference")
