@@ -73,6 +73,7 @@ object FlinkSQLEngine extends Logging {
     FlinkEngineUtils.checkFlinkVersion()
 
     try {
+      Utils.fromCommandLineArgs(args, kyuubiConf)
       val flinkConfDir = CliFrontend.getConfigurationDirectoryFromEnv
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
       val flinkConfFromSys =

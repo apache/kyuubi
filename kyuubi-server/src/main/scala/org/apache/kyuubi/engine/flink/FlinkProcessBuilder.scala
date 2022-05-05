@@ -54,27 +54,22 @@ class FlinkProcessBuilder(
     val buffer = new ArrayBuffer[String]()
     buffer += s"bash"
     buffer += s"-c"
-    val commandStr = new StringBuilder()
+    val commandSet = new LinkedHashSet[String]()
 
-    commandStr.append(s"source $FLINK_HOME${File.separator}bin" +
+    commandSet.add(s"source $FLINK_HOME${File.separator}bin" +
       s"${File.separator}config.sh && $executable")
 
     // TODO: How shall we deal with proxyUser,
     // user.name
     // kyuubi.session.user
     // or just leave it, because we can handle it at operation layer
-    commandStr.append(s" -D$KYUUBI_SESSION_USER_KEY=$proxyUser ")
+    commandSet.add(s"-D$KYUUBI_SESSION_USER_KEY=$proxyUser")
 
     // TODO: add Kyuubi.engineEnv.FLINK_ENGINE_MEMORY or kyuubi.engine.flink.memory to configure
     // -Xmx5g
     // java options
-    val confStr = conf.getAll.filter { case (k, _) =>
-      k.startsWith("kyuubi.") || k.startsWith("flink.") ||
-        k.startsWith("hadoop.") || k.startsWith("yarn.")
-    }.map { case (k, v) => s"-D$k=$v" }.mkString(" ")
-    commandStr.append(confStr)
 
-    commandStr.append(" -cp ")
+    commandSet.add(s"-cp")
     val classpathEntries = new LinkedHashSet[String]
     // flink engine runtime jar
     mainResource.foreach(classpathEntries.add)
@@ -105,9 +100,16 @@ class FlinkProcessBuilder(
         "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
     classpathEntries.add(hadoopClasspath.get)
-    commandStr.append(classpathEntries.asScala.mkString(File.pathSeparator))
-    commandStr.append(s" $mainClass")
-    buffer += commandStr.toString()
+    commandSet.add(classpathEntries.asScala.mkString(File.pathSeparator))
+    commandSet.add(s"$mainClass")
+
+    val confStr = conf.getAll.filter { case (k, _) =>
+      k.startsWith("kyuubi.") || k.startsWith("flink.") ||
+        k.startsWith("hadoop.") || k.startsWith("yarn.")
+    }.map { case (k, v) => s"--conf $k=$v" }.mkString(" ")
+    commandSet.add(confStr)
+    val commandStr = commandSet.asScala.mkString(" ")
+    buffer += commandStr
     buffer.toArray
   }
 
