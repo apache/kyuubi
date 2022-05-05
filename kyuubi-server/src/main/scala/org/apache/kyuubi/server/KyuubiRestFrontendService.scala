@@ -62,7 +62,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private def startInternal(): Unit = {
     val contextHandler = ApiRootResource.getServletHandler(this)
     val holder = new FilterHolder(new AuthenticationFilter(conf))
-    contextHandler.addFilter(holder, "/*", EnumSet.allOf(classOf[DispatcherType]))
+    contextHandler.addFilter(holder, "/v1/*", EnumSet.allOf(classOf[DispatcherType]))
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
 
