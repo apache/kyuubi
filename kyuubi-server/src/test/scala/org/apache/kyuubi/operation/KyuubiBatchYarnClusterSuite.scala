@@ -84,7 +84,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
 
     assert(appInfo("state") === "KILLED")
 
-    eventually(timeout(10.seconds), interval(50.milliseconds)) {
+    eventually(timeout(3.minutes), interval(50.milliseconds)) {
       assert(batchJobSubmissionOp.getStatus.state === ERROR)
     }
 
