@@ -38,7 +38,9 @@ import org.apache.kyuubi.plugin.SessionConfAdvisor
  */
 class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
-  override protected def jdbcUrl: String = getJdbcUrl
+  override protected def jdbcUrl: String =
+    s"jdbc:kyuubi://${server.frontendServices.head.connectionUrl}/;"
+  override protected val URL_PREFIX: String = "jdbc:kyuubi://"
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "connection")
