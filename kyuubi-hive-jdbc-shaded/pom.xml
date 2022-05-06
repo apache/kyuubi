@@ -251,9 +251,9 @@
                         </filter>
                         <filter>
                             <artifact>org.apache.hive:hive-standalone-metastore</artifact>
-                            <includes>
-                                <include>**</include>
-                            </includes>
+                            <excludes>
+                                <exclude>package.jdo</exclude>
+                            </excludes>
                         </filter>
                         <filter>
                             <artifact>org.apache.hive.shims:hive-shims-common</artifact>
