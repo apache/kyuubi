@@ -427,13 +427,7 @@ abstract class TFrontendService(name: String)
         resp.setErrorMessage(stringifyException(e))
       }
       operationStatus.operationProgressUpdate.foreach { p =>
-        resp.setProgressUpdateResponse(new TProgressUpdateResp(
-          p.headers,
-          p.rows,
-          p.progressedPercentage,
-          p.status,
-          p.footerSummary,
-          p.startTimeMillis))
+        resp.setProgressUpdateResponse(p)
       }
       resp.setStatus(OK_STATUS)
     } catch {

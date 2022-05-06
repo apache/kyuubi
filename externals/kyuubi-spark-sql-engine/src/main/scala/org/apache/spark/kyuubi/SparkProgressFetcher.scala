@@ -17,26 +17,26 @@
 
 package org.apache.spark.kyuubi
 
+import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.status.api.v1.StageStatus
 
 import org.apache.kyuubi.engine.spark.operation.progress.{SparkProgressMonitor, SparkStage, SparkStageProgress}
-import org.apache.kyuubi.operation.OperationProgressUpdate
 
 class SparkProgressFetcher(spark: SparkSession, jobGroup: String) {
 
   val statusStore = spark.sparkContext.statusStore
 
-  def getJobProgressUpdate(startTime: Long): OperationProgressUpdate = {
+  def getJobProgressUpdate(startTime: Long): TProgressUpdateResp = {
     val progressMap = getProgressMap
     val progressMonitor = new SparkProgressMonitor(progressMap)
-    OperationProgressUpdate(
+    new TProgressUpdateResp(
       progressMonitor.headers,
       progressMonitor.rows,
-      progressMonitor.footerSummary,
       progressMonitor.progressedPercentage,
-      startTime,
-      progressMonitor.executionStatus)
+      progressMonitor.executionStatus,
+      progressMonitor.footerSummary,
+      startTime)
   }
 
   private def getProgressMap(): Map[SparkStage, SparkStageProgress] = {
