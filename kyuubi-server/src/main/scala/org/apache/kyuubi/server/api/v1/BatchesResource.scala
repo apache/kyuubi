@@ -132,8 +132,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         .batchJobSubmissionOp
       val rowSet = submissionOpt.getOperationLogRowSet(
         FetchOrientation.FETCH_NEXT,
-        maxRows
-      )
+        maxRows)
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       OperationLog(logRowSet, logRowSet.size)
     } catch {
