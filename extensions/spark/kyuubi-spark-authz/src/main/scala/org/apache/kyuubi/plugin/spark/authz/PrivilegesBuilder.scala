@@ -670,7 +670,10 @@ object PrivilegesBuilder {
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     plan match {
       // RunnableCommand
-      case cmd: Command => buildCommand(cmd, inputObjs, outputObjs)
+      case cmd: Command =>
+        buildCommand(cmd, inputObjs, outputObjs)
+        buildV2Command(cmd, inputObjs, outputObjs)
+        buildIcebergCommand(cmd, inputObjs, outputObjs)
       // Queries
       case _ => buildQuery(plan, inputObjs)
     }
