@@ -136,10 +136,15 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val connection = driver.connect(jdbcUrlWithConf, new Properties())
 
       val stmt = connection.createStatement()
-      stmt.execute("select engine_name()")
-      val resultSet = stmt.getResultSet
-      assert(resultSet.next())
-      assert(resultSet.getString(1).nonEmpty)
+      try {
+        stmt.execute("select engine_name()")
+        val resultSet = stmt.getResultSet
+        assert(resultSet.next())
+        assert(resultSet.getString(1).nonEmpty)
+      } finally {
+        stmt.close()
+        connection.close()
+      }
     }
 
     withSessionConf(Map.empty)(Map.empty)(Map(
@@ -148,10 +153,15 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val connection = driver.connect(jdbcUrlWithConf, new Properties())
 
       val stmt = connection.createStatement()
-      stmt.execute("select engine_name()")
-      val resultSet = stmt.getResultSet
-      assert(resultSet.next())
-      assert(resultSet.getString(1).nonEmpty)
+      try {
+        stmt.execute("select engine_name()")
+        val resultSet = stmt.getResultSet
+        assert(resultSet.next())
+        assert(resultSet.getString(1).nonEmpty)
+      } finally {
+        stmt.close()
+        connection.close()
+      }
     }
   }
 
