@@ -25,7 +25,7 @@ import java.util.concurrent.CountDownLatch
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.flink.client.cli.{CliFrontend, CustomCommandLine, DefaultCLI, GenericCLI}
+import org.apache.flink.client.cli.{DefaultCLI, GenericCLI}
 import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration}
 import org.apache.flink.table.client.SqlClientException
 import org.apache.flink.table.client.gateway.context.DefaultContext
@@ -74,8 +74,11 @@ object FlinkSQLEngine extends Logging {
 
     try {
       Utils.fromCommandLineArgs(args, kyuubiConf)
-      val flinkConfDir = CliFrontend.getConfigurationDirectoryFromEnv
-      val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
+      val flinkConfDir = sys.env.get("FLINK_CONF_DIR")
+        .orElse(sys.env.get("FLINK_HOME").map(_ + File.separator + "conf"))
+
+      val flinkConf = flinkConfDir.map(GlobalConfiguration.loadConfiguration)
+        .getOrElse(GlobalConfiguration.loadConfiguration)
       val flinkConfFromArgs =
         kyuubiConf.getAll.filterKeys(_.startsWith("flink."))
           .map { case (k, v) => (k.stripPrefix("flink."), v) }
@@ -106,7 +109,7 @@ object FlinkSQLEngine extends Logging {
       val engineContext = new DefaultContext(
         dependencies.asJava,
         flinkConf,
-        List[CustomCommandLine](new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava)
+        Seq(new GenericCLI(flinkConf, flinkConfDir.getOrElse(".")), new DefaultCLI).asJava)
 
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
