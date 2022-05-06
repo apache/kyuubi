@@ -22,7 +22,7 @@ import javax.ws.rs.core.{MediaType, Response}
 
 import scala.util.control.NonFatal
 
-import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
@@ -43,7 +43,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[Batch]))),
     description = "create and open a batch session")
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
@@ -64,7 +65,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[Batch]))),
     description = "get the batch info via batch id")
   @GET
   @Path("{batchId}")
