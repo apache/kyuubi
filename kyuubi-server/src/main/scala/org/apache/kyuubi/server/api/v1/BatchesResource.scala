@@ -20,6 +20,7 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
@@ -28,17 +29,32 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource.REST_BATCH_PROTOCOL
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
+import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle}
 
 @Tag(name = "Batch")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+
+  private def buildBatch(sessionHandle: SessionHandle): Batch = {
+    buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
+  }
+
+  private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
+    val batchOp = session.batchJobSubmissionOp
+    Batch(
+      batchOp.batchId,
+      batchOp.batchType,
+      batchOp.currentApplicationState.getOrElse(Map.empty),
+      fe.connectionUrl,
+      batchOp.getStatus.state.toString)
+  }
 
   @ApiResponse(
     responseCode = "200",
@@ -58,8 +74,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       ipAddress,
       Option(request.conf).getOrElse(Map()),
       request)
-    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
-    buildBatch(session)
+    buildBatch(sessionHandle)
   }
 
   @ApiResponse(
@@ -73,8 +88,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
     try {
       val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
-      val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
-      buildBatch(session)
+      buildBatch(sessionHandle)
     } catch {
       case NonFatal(e) =>
         error(s"Invalid batchId: $batchId", e)
@@ -102,14 +116,32 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     GetBatchesResponse(from, batches.size, batches)
   }
 
-  private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
-    val batchOp = session.batchJobSubmissionOp
-    Batch(
-      batchOp.batchId,
-      batchOp.batchType,
-      batchOp.currentApplicationState.getOrElse(Map.empty),
-      fe.connectionUrl,
-      batchOp.getStatus.state.toString)
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+    schema = new Schema(implementation = classOf[OperationLog]))),
+  description = "get operation log")
+  @GET
+  @Path("{batchId}/log")
+  def getBatchLog(
+      @PathParam("batchId") batchId: String,
+      @QueryParam("maxRows") maxRows: Int): OperationLog = {
+    try {
+      val submissionOpt = sessionManager.getBatchSessionImpl(batchId, REST_BATCH_PROTOCOL)
+        .batchJobSubmissionOp
+      val rowSet = submissionOpt.getOperationLogRowSet(
+        FetchOrientation.FETCH_NEXT,
+        maxRows
+      )
+      val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
+      OperationLog(logRowSet, logRowSet.size)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = s"Error getting operation log for batchId: $batchId"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
   }
 
   @ApiResponse(
