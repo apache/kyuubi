@@ -125,7 +125,7 @@
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
         <hive.archive.download.skip>false</hive.archive.download.skip>
-        <hudi.version>0.10.0</hudi.version>
+        <hudi.version>0.11.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
         <iceberg.version>0.13.1</iceberg.version>
         <jackson.version>2.13.1</jackson.version>
@@ -1088,7 +1088,7 @@
 
             <dependency>
                 <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark3_${scala.binary.version}</artifactId>
+                <artifactId>hudi-spark3.1.x_${scala.binary.version}</artifactId>
                 <version>${hudi.version}</version>
                 <exclusions>
                     <exclusion>
