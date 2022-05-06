@@ -68,7 +68,6 @@ case class FilteredShowDatabasesCommand(delegated: ShowNamespaces) extends Runna
 
   override def run(spark: SparkSession): Seq[Row] = {
     val catalog = spark.sessionState.catalog
-    // Seq[String]
     val dbs = catalog.listDatabases()
     val rows = dbs.map(s => Row(s))
     val ugi = AuthZUtils.getAuthzUgi(spark.sparkContext)
