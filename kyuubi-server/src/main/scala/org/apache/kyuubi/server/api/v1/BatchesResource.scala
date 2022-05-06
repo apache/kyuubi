@@ -18,7 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs._
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{MediaType, Response}
 
 import scala.util.control.NonFatal
 
@@ -31,6 +31,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource.REST_BATCH_PROTOCOL
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 
 @Tag(name = "Batch")
@@ -87,6 +88,53 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       batchOp.currentApplicationState.getOrElse(Map.empty),
       fe.connectionUrl,
       batchOp.getStatus.state.toString)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "close a batch session")
+  @DELETE
+  @Path("{batchId}")
+  def closeBatchSession(
+      @PathParam("batchId") batchId: String,
+      @QueryParam("killApp") killApp: Boolean,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
+    var session: KyuubiBatchSessionImpl = null
+    try {
+      val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
+      session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid batchId: $batchId", e)
+        throw new NotFoundException(s"Invalid batchId: $batchId")
+    }
+
+    val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
+      Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
+
+    var userName: String = null
+    try {
+      userName = fe.getUserName(sessionConf)
+    } catch {
+      case t: Throwable =>
+        throw new NotAllowedException(t.getMessage)
+    }
+
+    if (!session.user.equals(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to close the session belong to ${session.user}")
+    }
+
+    if (killApp) {
+      val killResponse = session.batchJobSubmissionOp.killBatchApplication()
+      sessionManager.closeSession(session.handle)
+      Response.ok().entity(killResponse).build()
+    } else {
+      sessionManager.closeSession(session.handle)
+      Response.ok().build()
+    }
   }
 }
 
