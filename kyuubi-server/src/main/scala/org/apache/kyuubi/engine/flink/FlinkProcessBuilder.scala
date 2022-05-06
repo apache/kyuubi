@@ -24,8 +24,6 @@ import java.util.LinkedHashSet
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import com.google.common.annotations.VisibleForTesting
-
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
@@ -41,12 +39,14 @@ class FlinkProcessBuilder(
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
+  private val flinkHome: String = getEngineHome(shortName)
+
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
   override protected def childProcEnv: Map[String, String] = conf.getEnvs +
-    ("FLINK_CONF_DIR" -> env.getOrElse("FLINK_CONF_DIR", s"$FLINK_HOME${File.separator}conf"))
+    ("FLINK_CONF_DIR" -> env.getOrElse("FLINK_CONF_DIR", s"$flinkHome${File.separator}conf"))
 
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
@@ -61,7 +61,7 @@ class FlinkProcessBuilder(
     // flink engine runtime jar
     mainResource.foreach(classpathEntries.add)
     // flink sql client jar
-    val flinkSqlClientPath = Paths.get(FLINK_HOME)
+    val flinkSqlClientPath = Paths.get(flinkHome)
       .resolve("opt")
       .toFile
       .listFiles(new FilenameFilter {
@@ -72,10 +72,10 @@ class FlinkProcessBuilder(
     classpathEntries.add(flinkSqlClientPath)
 
     // jars from flink lib
-    classpathEntries.add(s"$FLINK_HOME${File.separator}lib${File.separator}*")
+    classpathEntries.add(s"$flinkHome${File.separator}lib${File.separator}*")
 
     // classpath contains flink configurations, default to flink.home/conf
-    classpathEntries.add(env.getOrElse("FLINK_CONF_DIR", s"$FLINK_HOME${File.separator}conf"))
+    classpathEntries.add(env.getOrElse("FLINK_CONF_DIR", s"$flinkHome${File.separator}conf"))
     // classpath contains hadoop configurations
     env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
@@ -98,37 +98,6 @@ class FlinkProcessBuilder(
       buffer += s"$k=$v"
     }
     buffer.toArray
-  }
-
-  @VisibleForTesting
-  def FLINK_HOME: String = {
-    // prepare FLINK_HOME
-    val flinkHomeOpt = env.get("FLINK_HOME").orElse {
-      val cwd = Utils.getCodeSourceLocation(getClass)
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve("kyuubi-download")
-          .resolve("target")
-          .toFile
-          .listFiles(new FilenameFilter {
-            override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.startsWith("flink-")
-            }
-          }))
-        .flatMap(_.headOption)
-        .map(_.getAbsolutePath)
-    }
-
-    flinkHomeOpt.map { dir =>
-      dir
-    } getOrElse {
-      throw KyuubiSQLException("FLINK_HOME is not set! " +
-        "For more detail information on installing and configuring Flink, please visit " +
-        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
-    }
   }
 
   override def shortName: String = "flink"

@@ -52,9 +52,14 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def constructClasspathStr(builder: FlinkProcessBuilder) = {
     val classpathEntries = new java.util.LinkedHashSet[String]
     builder.mainResource.foreach(classpathEntries.add)
-    val flinkSqlClientJarPath = s"${builder.FLINK_HOME}$flinkSqlClientJarPathSuffix"
-    val flinkLibPath = s"${builder.FLINK_HOME}$flinkLibPathSuffix"
-    val flinkConfPath = s"${builder.FLINK_HOME}$flinkConfPathSuffix"
+
+    val flinkHomeField = classOf[FlinkProcessBuilder].getDeclaredField("flinkHome")
+    flinkHomeField.setAccessible(true)
+    val flinkHome = flinkHomeField.get(builder).asInstanceOf[String]
+
+    val flinkSqlClientJarPath = s"$flinkHome$flinkSqlClientJarPathSuffix"
+    val flinkLibPath = s"$flinkHome$flinkLibPathSuffix"
+    val flinkConfPath = s"$flinkHome$flinkConfPathSuffix"
     classpathEntries.add(flinkSqlClientJarPath)
     classpathEntries.add(flinkLibPath)
     classpathEntries.add(flinkConfPath)

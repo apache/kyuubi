@@ -37,7 +37,7 @@ class HiveProcessBuilder(
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
-  private val hiveHome: String = getEngineHome("hive")
+  private val hiveHome: String = getEngineHome(shortName)
 
   private val HIVE_HADOOP_CLASSPATH: String = "HIVE_HADOOP_CLASSPATH"
 
