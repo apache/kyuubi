@@ -82,6 +82,25 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "returns the active batch sessions")
+  @GET
+  @Consumes(Array(MediaType.APPLICATION_JSON))
+  def getBatchInfoList(
+      @QueryParam("batchType") batchType: String,
+      @QueryParam("from") from: Int,
+      @QueryParam("size") size: Int): GetBatchListResponse = {
+    val sessions = sessionManager.getBatchSessionList(batchType, from, size)
+    val batches = sessions.map { session =>
+      val batchSession = session.asInstanceOf[KyuubiBatchSessionImpl]
+      buildBatch(batchSession)
+    }
+    GetBatchListResponse(from, batches.size, batches)
+  }
+
   private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
     val batchOp = session.batchJobSubmissionOp
     Batch(
