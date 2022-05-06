@@ -26,6 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.operation.log.OperationLog
@@ -41,6 +42,8 @@ class FlinkProcessBuilder(
 
   private val flinkHome: String = getEngineHome(shortName)
 
+  private val FLINK_HADOOP_CLASSPATH: String = "FLINK_HADOOP_CLASSPATH"
+
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
@@ -52,9 +55,12 @@ class FlinkProcessBuilder(
     val buffer = new ArrayBuffer[String]()
     buffer += executable
 
-    // TODO: add Kyuubi.engineEnv.FLINK_ENGINE_MEMORY or kyuubi.engine.flink.memory to configure
-    // -Xmx5g
-    // java options
+    val memory = conf.get(ENGINE_FLINK_MEMORY)
+    buffer += s"-Xmx$memory"
+    val javaOptions = conf.get(ENGINE_FLINK_JAVA_OPTIONS)
+    if (javaOptions.isDefined) {
+      buffer += javaOptions.get
+    }
 
     buffer += "-cp"
     val classpathEntries = new LinkedHashSet[String]
@@ -80,13 +86,17 @@ class FlinkProcessBuilder(
     env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
     env.get("HBASE_CONF_DIR").foreach(classpathEntries.add)
-    val hadoopClasspath = env.get("HADOOP_CLASSPATH")
-    if (hadoopClasspath.isEmpty) {
-      throw KyuubiSQLException("HADOOP_CLASSPATH is not set! " +
-        "For more detail information on configuring HADOOP_CLASSPATH" +
-        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
+    val hadoopCp = env.get(FLINK_HADOOP_CLASSPATH)
+    hadoopCp.foreach(classpathEntries.add)
+    val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
+    extraCp.foreach(classpathEntries.add)
+    if (hadoopCp.isEmpty && extraCp.isEmpty) {
+      throw new KyuubiException(s"The conf of ${FLINK_HADOOP_CLASSPATH} or " +
+        s"${ENGINE_FLINK_EXTRA_CLASSPATH} is empty." +
+        s"Please set ${FLINK_HADOOP_CLASSPATH} or ${ENGINE_FLINK_EXTRA_CLASSPATH} for " +
+        s"configuring location of hadoop client jars, etc")
     }
-    classpathEntries.add(hadoopClasspath.get)
+
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass
 

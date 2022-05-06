@@ -175,6 +175,24 @@ If the `TopSpeedWindowing` passes, configure it in `$KYUUBI_HOME/conf/kyuubi-env
 $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi-env.sh
 ```
 
+#### Required Environment Variable
+
+The `FLINK_HADOOP_CLASSPATH` is required, too. It should contain `commons-collections-*.jar`, 
+`hadoop-client-runtime-*.jar`, `hadoop-client-api-*.jar` and `htrace-core4-*.jar`.
+All four jars are in the `HADOOP_HOME`. 
+
+For example, in Hadoop 3.1.0 version, the following is their location. 
+- `${HADOOP_HOME}/share/hadoop/common/lib/commons-collections-3.2.2.jar`
+- `${HADOOP_HOME}/share/hadoop/client/hadoop-client-runtime-3.1.0.jar`
+- `${HADOOP_HOME}/share/hadoop/client/hadoop-client-api-3.1.0.jar`
+- `${HADOOP_HOME}/share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar`
+
+Configure them in `$KYUUBI_HOME/conf/kyuubi-env.sh`
+
+```bash
+$ echo "export FLINK_HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/common/lib/commons-collections-3.2.2.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-runtime-3.1.0.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-api-3.1.0.jar:${HADOOP_HOME}/share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+```
+
 ### Deployment Modes Supported by Flink on YARN
 
 For experiment use, we recommend deploying Kyuubi Flink SQL engine in [Session Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#session-mode).
