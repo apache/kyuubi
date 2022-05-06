@@ -119,14 +119,9 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
         process.destroyForcibly()
         throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
       } else {
+        process.waitFor()
         if (process.exitValue() != 0) {
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
-        }
-
-        applicationStatus = currentApplicationState
-        if (applicationFailed(applicationStatus)) {
-          throw new KyuubiException(
-            s"Final application state:${applicationStatus.get.mkString(",")}")
         }
       }
     } finally {
