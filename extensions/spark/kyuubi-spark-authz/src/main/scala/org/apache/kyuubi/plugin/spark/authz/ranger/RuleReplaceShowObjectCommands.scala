@@ -30,6 +30,8 @@ import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, WithInternalChild}
 class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
     case r: RunnableCommand if r.nodeName == "ShowTablesCommand" => FilteredShowTablesCommand(r)
+    case r: ShowNamespaces if r.nodeName == "ShowNamespaces" =>
+      FilteredShowDatabasesCommand(r)
     case _ => plan
   }
 }
@@ -52,6 +54,32 @@ case class FilteredShowTablesCommand(delegated: RunnableCommand)
     val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
     val resource = AccessResource(objectType, database, table, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, AccessType.USE)
+    val result = SparkRangerAdminPlugin.isAccessAllowed(request)
+    result != null && result.getIsAllowed
+  }
+
+  override def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = this
+}
+
+case class FilteredShowDatabasesCommand(delegated: ShowNamespaces) extends RunnableCommand
+  with WithInternalChild {
+
+  override val output: Seq[Attribute] = delegated.output
+
+  override def run(spark: SparkSession): Seq[Row] = {
+    val catalog = spark.sessionState.catalog
+    // Seq[String]
+    val dbs = catalog.listDatabases()
+    val rows = dbs.map(s => Row(s))
+    val ugi = AuthZUtils.getAuthzUgi(spark.sparkContext)
+    rows.filter(r => isAllowed(r, ugi))
+  }
+
+  protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
+    val database = r.getString(0)
+    val objectType = ObjectType.DATABASE
+    val resource = AccessResource(objectType, database, null, null)
+    val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
