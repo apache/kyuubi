@@ -76,9 +76,8 @@ object FlinkSQLEngine extends Logging {
       Utils.fromCommandLineArgs(args, kyuubiConf)
       val flinkConfDir = sys.env.get("FLINK_CONF_DIR")
         .orElse(sys.env.get("FLINK_HOME").map(_ + File.separator + "conf"))
-
-      val flinkConf = flinkConfDir.map(GlobalConfiguration.loadConfiguration)
-        .getOrElse(GlobalConfiguration.loadConfiguration)
+        .getOrElse(".")
+      val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
       val flinkConfFromArgs =
         kyuubiConf.getAll.filterKeys(_.startsWith("flink."))
           .map { case (k, v) => (k.stripPrefix("flink."), v) }
@@ -109,7 +108,7 @@ object FlinkSQLEngine extends Logging {
       val engineContext = new DefaultContext(
         dependencies.asJava,
         flinkConf,
-        Seq(new GenericCLI(flinkConf, flinkConfDir.getOrElse(".")), new DefaultCLI).asJava)
+        Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava)
 
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
