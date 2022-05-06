@@ -133,8 +133,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .get()
 
     assert(response.getStatus == 200)
-    val getBatchListResponse = response.readEntity(classOf[GetBatchListResponse])
-    assert(getBatchListResponse.sessions.isEmpty && getBatchListResponse.total == 0)
+    val getBatchListResponse = response.readEntity(classOf[GetBatchesResponse])
+    assert(getBatchListResponse.batches.isEmpty && getBatchListResponse.total == 0)
 
     sessionManager.openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
@@ -179,7 +179,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     assert(response2.getStatus == 200)
 
-    val getBatchListResponse2 = response2.readEntity(classOf[GetBatchListResponse])
+    val getBatchListResponse2 = response2.readEntity(classOf[GetBatchesResponse])
     assert(getBatchListResponse2.total == 2)
 
     val response3 = webTarget.path("api/v1/batches")
@@ -191,7 +191,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     assert(response3.getStatus == 200)
 
-    val getBatchListResponse3 = response3.readEntity(classOf[GetBatchListResponse])
+    val getBatchListResponse3 = response3.readEntity(classOf[GetBatchesResponse])
     assert(getBatchListResponse3.total == 1)
 
     val response4 = webTarget.path("api/v1/batches")
@@ -202,8 +202,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .get()
 
     assert(response4.getStatus == 200)
-    val getBatchListResponse4 = response4.readEntity(classOf[GetBatchListResponse])
-    assert(getBatchListResponse4.sessions.isEmpty && getBatchListResponse4.total == 0)
+    val getBatchListResponse4 = response4.readEntity(classOf[GetBatchesResponse])
+    assert(getBatchListResponse4.batches.isEmpty && getBatchListResponse4.total == 0)
     sessionManager.allSessions().map(_.close())
   }
 }

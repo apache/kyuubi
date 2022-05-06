@@ -122,10 +122,10 @@ case class BatchRequest(
     conf: Map[String, String],
     args: Seq[String])
 
-case class GetBatchListResponse(
+case class GetBatchesResponse(
     from: Int,
     total: Int,
-    sessions: Seq[Batch])
+    batches: Seq[Batch])
 
 case class Batch(
     id: String,
