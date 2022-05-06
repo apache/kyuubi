@@ -20,10 +20,12 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
+import org.apache.spark.sql.catalyst.analysis.{FieldName, NamedRelation}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
-import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project, Sort, Window}
+import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project, QualifiedColType, Sort, Window}
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StructField
 
@@ -54,6 +56,13 @@ object PrivilegesBuilder {
       columns: Seq[String] = Nil,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
     PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns)
+  }
+
+  private def identifierPrivileges(
+      ident: Identifier,
+      columns: Seq[String] = Nil,
+      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
+    PrivilegeObject(TABLE_OR_VIEW, actionType, ident.namespace().head, ident.name(), columns)
   }
 
   private def functionPrivileges(
@@ -473,6 +482,176 @@ object PrivilegesBuilder {
       // ShowDatabasesCommand
       // StreamingExplainCommand
       // UncacheTableCommand
+    }
+  }
+
+  /**
+   * Build PrivilegeObjects from Spark DSv2 LogicalPlan
+   * @param plan a Spark LogicalPlan used to generate Spark PrivilegeObjects
+   * @param inputObjs input privilege object list
+   * @param outputObjs output privilege object list
+   */
+  private def buildV2Command(
+    plan: LogicalPlan,
+    inputObjs: ArrayBuffer[PrivilegeObject],
+    outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
+
+    def getPlanField[T](field: String): T = {
+      getFieldVal[T](plan, field)
+    }
+
+    def getTable: LogicalPlan = {
+      getPlanField("table")
+    }
+
+    def getIdentifierOfTable(table: LogicalPlan): Identifier = {
+      getFieldVal[Identifier](table, "identifier")
+    }
+
+    def getQuery: LogicalPlan = {
+      getPlanField[LogicalPlan]("query")
+    }
+
+    plan.nodeName match {
+      case "AddColumns" =>
+        val table = getTable
+        table.nodeName match {
+          case "ResolvedTable" =>
+            val column = getPlanField[Seq[QualifiedColType]]("columnsToAdd").map(_.colName)
+            outputObjs += identifierPrivileges(getIdentifierOfTable(table), column)
+          case _ =>
+        }
+
+      case "AlterColumn" |
+           "RenameColumn" =>
+        val table = getPlanField[LogicalPlan]("table")
+        table.nodeName match {
+          case "ResolvedTable" =>
+            val column = getPlanField[FieldName]("column").name.last :: Nil
+            outputObjs += identifierPrivileges(getIdentifierOfTable(table), column)
+          case _ =>
+        }
+
+      case "AppendData" =>
+        val table = getPlanField[NamedRelation]("table")
+        table.nodeName match {
+          case "DataSourceV2Relation" =>
+            val sourceIdent = getFieldVal[Option[Identifier]](table, "identifier")
+            inputObjs += identifierPrivileges(
+              sourceIdent.orNull,
+              actionType = PrivilegeObjectActionType.INSERT)
+          case _ =>
+        }
+        buildQuery(getQuery, inputObjs)
+
+      case "CreateV2Table" =>
+        outputObjs += identifierPrivileges(getPlanField[Identifier]("tableName"))
+
+      case "DropColumns" =>
+        val table = getTable
+        table.nodeName match {
+          case "ResolvedTable" =>
+            val columns = getPlanField[Seq[FieldName]]("columnsToDrop").map(_.name.last)
+            outputObjs += identifierPrivileges(getIdentifierOfTable(table), columns)
+          case _ =>
+        }
+
+      case "DropTable" =>
+        val table = getPlanField[LogicalPlan]("child")
+        table.nodeName match {
+          case "ResolvedTable" =>
+            outputObjs += identifierPrivileges(getIdentifierOfTable(table))
+          case _ =>
+        }
+
+      case "RenameTable" |
+           "SetTableProperties" |
+           "UnsetTableProperties" =>
+        val table = getTable
+        table.nodeName match {
+          case "ResolvedTable" =>
+            outputObjs += identifierPrivileges(getIdentifierOfTable(table))
+          case _ =>
+        }
+
+//      case "ReplaceTableAsSelect" =>
+
+      case "TruncateTable" =>
+        val table = getTable
+        table.nodeName match {
+          case "ResolvedTable" =>
+            outputObjs += identifierPrivileges(getIdentifierOfTable(table))
+          case _ =>
+        }
+
+      case _ =>
+
+    }
+  }
+
+  /**
+   * Build PrivilegeObjects from Iceberg LogicalPlan
+   * @param plan a Spark LogicalPlan used to generate Spark PrivilegeObjects
+   * @param inputObjs input privilege object list
+   * @param outputObjs output privilege object list
+   */
+  private def buildIcebergCommand(
+    plan: LogicalPlan,
+    inputObjs: ArrayBuffer[PrivilegeObject],
+    outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
+
+    def getPlanField[T](field: String): T = {
+      getFieldVal[T](plan, field)
+    }
+
+    def getIcebergTableName: Seq[String] = {
+      getFieldVal[Seq[String]](plan, "table")
+    }
+
+    def addDSv2Relation(table: LogicalPlan, privileages: ArrayBuffer[PrivilegeObject]): Unit = {
+      table.nodeName match {
+        case "DataSourceV2Relation" =>
+          val sourceIdent = getFieldVal[Option[Identifier]](privileages, "identifier")
+          inputObjs += identifierPrivileges(sourceIdent.orNull)
+        case _ =>
+      }
+    }
+
+    plan.nodeName match {
+      case "AddPartitionField" =>
+        val table = getIcebergTableName
+        outputObjs += identifierPrivileges(Identifier.of(table.init.toArray, table.last))
+
+      case "DeleteFromIcebergTable" =>
+
+      case "DropIdentifierFields" |
+            "SetIdentifierFields" |
+            "SetWriteDistributionAndOrdering" =>
+        val table = getIcebergTableName
+        outputObjs += identifierPrivileges(Identifier.of(table.init.toArray, table.last))
+
+      case "DropPartitionField" =>
+        val table = getIcebergTableName
+        outputObjs += identifierPrivileges(Identifier.of(table.init.toArray, table.last))
+
+      case "MergeIntoIcebergTable" =>
+        val targetTable = getFieldVal[LogicalPlan](plan, "targetTable")
+        addDSv2Relation(targetTable, outputObjs)
+        val sourceTable = getFieldVal[LogicalPlan](plan, "sourceTable")
+        addDSv2Relation(sourceTable, inputObjs)
+
+      case "UpdateIcebergTable" =>
+        val table = getIcebergTableName
+        outputObjs += identifierPrivileges(
+          Identifier.of(table.init.toArray, table.last),
+          actionType = PrivilegeObjectActionType.UPDATE)
+        // query part
+        val children = getPlanField[Seq[LogicalPlan]]("children")
+        if (children.size == 2) {
+          buildQuery(children(1), inputObjs)
+        }
+
+      case _ =>
     }
   }
 

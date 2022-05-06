@@ -38,8 +38,10 @@ object OperationType extends Enumeration {
   def apply(clzName: String): OperationType = {
     clzName match {
       case "AddArchivesCommand" => EXPLAIN
+      case "AddColumns" => ALTERTABLE_ADDCOLS
       case "AddFilesCommand" => EXPLAIN
       case "AddJarsCommand" => EXPLAIN
+      case "AddPartitionField" => ALTERTABLE_ADDPARTS
       case "AddPartitions" => ALTERTABLE_ADDPARTS
       case "AlterColumn" => ALTERTABLE_REPLACECOLS
       case "AlterDatabasePropertiesCommand" => ALTERDATABASE
@@ -59,7 +61,7 @@ object OperationType extends Enumeration {
           "AlterTableUnsetPropertiesCommand" => ALTERTABLE_PROPERTIES
       case ava if ava.contains("AlterViewAs") => ALTERVIEW_AS
       case ac if ac.startsWith("Analyze") => ANALYZE_TABLE
-      case "AppendData" => ALTERTABLE_ADDPARTS
+      case "AppendData" => QUERY
       case "CreateDatabaseCommand" => CREATEDATABASE
       case "CreateFunctionCommand" => CREATEFUNCTION
       case "CreateTableAsSelect" |
@@ -68,7 +70,8 @@ object OperationType extends Enumeration {
           "OptimizedCreateHiveTableAsSelectCommand" => CREATETABLE_AS_SELECT
       case "CreateTableCommand" |
           "CreateDataSourceTableCommand" |
-          "CreateTableLikeCommand" => CREATETABLE
+          "CreateTableLikeCommand" |
+          "CreateV2Table" => CREATETABLE
       case "CreateViewCommand" |
           "CacheTableCommand" |
           "CreateTempViewUsing" |
@@ -77,9 +80,12 @@ object OperationType extends Enumeration {
       case "DescribeDatabaseCommand" => DESCDATABASE
       case "DescribeFunctionCommand" => DESCFUNCTION
       case "DescribeColumnCommand" | "DescribeTableCommand" => DESCTABLE
+      case "DropColumns" => ALTERTABLE_ADDCOLS
       case "DropDatabaseCommand" => DROPDATABASE
       case "DropFunctionCommand" => DROPFUNCTION
-      case "DropTableCommand" => DROPTABLE
+      case "DropPartitionField" => ALTERTABLE_DROPPARTS
+      case "DropTableCommand" |
+           "DropTable" => DROPTABLE
       case "ExplainCommand" => EXPLAIN
       case "InsertIntoDataSourceCommand" |
           "InsertIntoDataSourceDirCommand" |
@@ -90,10 +96,16 @@ object OperationType extends Enumeration {
       case "SetCommand" => SHOWCONF
       case "RefreshFunctionCommand" => RELOADFUNCTION
       case "RefreshTableCommand" | "RefreshTable" => QUERY
+      case "RenameColumn" => ALTERTABLE_RENAMECOL
+      case "RenameTable" => ALTERTABLE_RENAME
+      case "ReplaceTableAsSelect" => CREATETABLE_AS_SELECT
       case "SetCatalogCommand" |
           "SetCatalogAndNamespace" |
           "SetNamespaceCommand" |
           "SetDatabaseCommand" => SWITCHDATABASE
+      case "SetTableProperties" |
+           "UnsetTableProperties" |
+           "SetWriteDistributionAndOrdering" => ALTERTABLE_PROPERTIES
       case "ShowCatalogsCommand" |
           "ShowCurrentNamespaceCommand" => SHOWDATABASES
       case "ShowTablesCommand" |
@@ -104,7 +116,8 @@ object OperationType extends Enumeration {
       case "ShowFunctionsCommand" => SHOWFUNCTIONS
       case "ShowPartitionsCommand" => SHOWPARTITIONS
       case "ShowTablePropertiesCommand" => SHOW_TBLPROPERTIES
-      case "TruncateTableCommand" => TRUNCATETABLE
+      case "TruncateTableCommand" |
+           "TruncateTable" => TRUNCATETABLE
       case "UncacheTableCommand" => DROPVIEW
       case _ => QUERY
     }
