@@ -35,11 +35,11 @@ import org.apache.hive.service.rpc.thrift.TStatusCode
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
+import org.apache.kyuubi.engine.trino.TrinoQueryTests
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
+class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_TRINO_CONNECTION_CATALOG.key -> "memory")
 
