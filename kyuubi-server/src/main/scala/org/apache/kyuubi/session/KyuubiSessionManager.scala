@@ -156,10 +156,16 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def getBatchSessionList(batchType: String, from: Int, size: Int): List[Session] = {
+    def getSessionId(session: Session): String = {
+      session.handle.identifier.toString
+    }
+
     allSessions().filter { session =>
       session.isInstanceOf[KyuubiBatchSessionImpl] &&
       session
         .asInstanceOf[KyuubiBatchSessionImpl].batchJobSubmissionOp.batchType.equals(batchType)
+    }.toArray.sortWith { (a, b) =>
+      getSessionId(a).compareTo(getSessionId(b)) < 0
     }.zipWithIndex.filter { item =>
       val index = item._2
       index >= from && index < from + size

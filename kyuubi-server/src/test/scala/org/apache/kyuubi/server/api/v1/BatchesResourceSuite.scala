@@ -117,6 +117,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(response4.getStatus == 200)
     val getBatchListResponse4 = response4.readEntity(classOf[GetBatchListResponse])
     assert(getBatchListResponse4.sessions.isEmpty && getBatchListResponse4.total == 0)
+    sessionManager.allSessions().map(_.close())
   }
 
   test("open batch session") {
