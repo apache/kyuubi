@@ -90,12 +90,12 @@ case class FilteredShowFunctionsCommand(delegated: RunnableCommand)
   override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val functionName = r.getString(0)
     val items = functionName.split("\\.", 2)
-    val resource =
-      if (items.length == 1) {
-        AccessResource(ObjectType.FUNCTION, null, items(0), null)
-      } else {
-        AccessResource(ObjectType.FUNCTION, items(0), items(1), null)
-      }
+    // the system functions return true
+    if (items.length == 1) {
+      return true
+    }
+
+    val resource = AccessResource(ObjectType.FUNCTION, items(0), items(1), null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWFUNCTIONS, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed

@@ -305,7 +305,11 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
       doAs("bob", assert(sql(s"show user functions $db3.$function1").collect().length == 0))
 
       doAs("admin", assert(sql(s"show system functions").collect().length > 0))
-      doAs("bob", assert(sql(s"show system functions").collect().length === 0))
+      doAs("bob", assert(sql(s"show system functions").collect().length > 0))
+
+      val adminSystemFunctionCount = doAs("admin", sql(s"show system functions").collect().length)
+      val bobSystemFunctionCount = doAs("bob", sql(s"show system functions").collect().length)
+      assert(adminSystemFunctionCount == bobSystemFunctionCount)
     } finally {
       doAs("admin", sql(s"DROP FUNCTION IF EXISTS $default.$function1"))
       doAs("admin", sql(s"DROP FUNCTION IF EXISTS $db3.$function1"))
