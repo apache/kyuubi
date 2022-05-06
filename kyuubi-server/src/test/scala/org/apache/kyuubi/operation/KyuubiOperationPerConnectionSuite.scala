@@ -140,6 +140,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val resultSet = stmt.getResultSet
       assert(resultSet.next())
       assert(resultSet.getString(1).nonEmpty)
+      stmt.close()
+      connection.close()
     }
 
     withSessionConf(Map.empty)(Map.empty)(Map(
@@ -152,6 +154,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val resultSet = stmt.getResultSet
       assert(resultSet.next())
       assert(resultSet.getString(1).nonEmpty)
+      stmt.close()
+      connection.close()
     }
   }
 
