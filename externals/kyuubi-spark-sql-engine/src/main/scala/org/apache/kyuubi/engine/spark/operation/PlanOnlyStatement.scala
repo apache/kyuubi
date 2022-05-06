@@ -89,7 +89,8 @@ class PlanOnlyStatement(
   private def withActive[T](block: => T): T = {
     val old = SparkSession.getActiveSession
     SparkSession.setActiveSession(spark)
-    try block finally {
+    try block
+    finally {
       old.foreach(SparkSession.setActiveSession)
     }
   }
