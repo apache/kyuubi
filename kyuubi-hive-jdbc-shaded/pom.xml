@@ -254,6 +254,9 @@
                             <excludes>
                                 <exclude>package.jdo</exclude>
                             </excludes>
+                            <includes>
+                                <indluce>com.zaxxer.*</indluce>
+                            </includes>
                         </filter>
                         <filter>
                             <artifact>org.apache.hive.shims:hive-shims-common</artifact>
