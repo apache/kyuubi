@@ -19,6 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.nio.ByteBuffer
 import java.util.{ArrayList => JArrayList, Locale}
+import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
@@ -103,18 +104,22 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
     } catch onError("submitting batch job submission operation in background, request rejected")
   }
 
+  private def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
+    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
+      s.contains("KILLED") || s.contains("FAILED"))
+  }
+
   private def submitBatchJob(): Unit = {
     try {
       info(s"Submitting ${batchRequest.batchType} batch job: $builder")
       val process = builder.start
       var applicationStatus = currentApplicationState
-      while (applicationStatus.isEmpty && process.isAlive) {
+      while (!applicationFailed(applicationStatus) && process.isAlive) {
+        process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
         applicationStatus = currentApplicationState
-        Thread.sleep(applicationCheckInterval)
       }
 
-      if (applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).filter(s =>
-          s == Some("KILLED") || s == Some("FAILED")).isDefined) {
+      if (applicationFailed(applicationStatus)) {
         process.destroyForcibly()
         throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
       } else {

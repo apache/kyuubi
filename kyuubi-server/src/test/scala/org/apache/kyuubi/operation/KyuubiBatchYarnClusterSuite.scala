@@ -37,6 +37,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
   override protected val conf: KyuubiConf = {
     new KyuubiConf().set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.app.name", preDefinedAppName)
       .set(BATCH_CONF_IGNORE_LIST, Seq("spark.app.name"))
+      .set(BATCH_APPLICATION_CHECK_INTERVAL, 3000L)
   }
 
   private def sessionManager(): KyuubiSessionManager =
@@ -84,7 +85,7 @@ class KyuubiBatchYarnClusterSuite extends WithKyuubiServerOnYarn {
 
     assert(appInfo("state") === "KILLED")
 
-    eventually(timeout(3.minutes), interval(50.milliseconds)) {
+    eventually(timeout(10.seconds), interval(50.milliseconds)) {
       assert(batchJobSubmissionOp.getStatus.state === ERROR)
     }
 
