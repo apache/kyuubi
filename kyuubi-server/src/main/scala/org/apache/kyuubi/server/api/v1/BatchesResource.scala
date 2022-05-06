@@ -85,7 +85,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[GetBatchListResponse]))),
     description = "returns the active batch sessions")
   @GET
   @Consumes(Array(MediaType.APPLICATION_JSON))
