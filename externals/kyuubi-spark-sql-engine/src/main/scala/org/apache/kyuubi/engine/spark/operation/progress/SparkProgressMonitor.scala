@@ -60,8 +60,7 @@ class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress]) {
           String.valueOf(complete),
           String.valueOf(running),
           String.valueOf(pending),
-          String.valueOf(failed),
-          "")
+          String.valueOf(failed))
     }.toList.asJavaCollection
     new util.ArrayList[util.List[String]](progressRows)
   }
@@ -136,8 +135,7 @@ object SparkProgressMonitor {
     "COMPLETED",
     "RUNNING",
     "PENDING",
-    "FAILED",
-    "")
+    "FAILED")
 
   private val COLUMN_1_WIDTH = 16
 
