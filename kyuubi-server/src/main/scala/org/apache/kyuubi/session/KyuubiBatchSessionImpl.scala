@@ -60,6 +60,7 @@ class KyuubiBatchSessionImpl(
 
     // we should call super.open before running batch job submission operation
     super.open()
+
     runOperation(batchJobSubmissionOp)
   }
 
