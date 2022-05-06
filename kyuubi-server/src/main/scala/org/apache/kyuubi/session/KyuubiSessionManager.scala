@@ -158,9 +158,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   def getBatchSessionList(batchType: String, from: Int, size: Int): Seq[Session] = {
     allSessions().filter {
       case batchSession: KyuubiBatchSessionImpl =>
-        batchSession.batchJobSubmissionOp.batchType.equals(batchType)
-      case _ =>
-        false
+        batchSession.batchJobSubmissionOp.batchType.equalsIgnoreCase(batchType)
+      case _ => false
     }.toSeq.sortBy(_.handle.identifier.toString).slice(from, from + size)
   }
 

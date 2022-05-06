@@ -33,7 +33,6 @@ import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.KyuubiSessionManager
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
-
   test("open batch session") {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val requestObj = BatchRequest(
@@ -207,5 +206,4 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(getBatchListResponse4.sessions.isEmpty && getBatchListResponse4.total == 0)
     sessionManager.allSessions().map(_.close())
   }
-
 }
