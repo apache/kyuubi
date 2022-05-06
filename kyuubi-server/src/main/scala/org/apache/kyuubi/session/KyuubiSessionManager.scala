@@ -155,21 +155,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
   }
 
-  def getBatchSessionList(batchType: String, from: Int, size: Int): List[Session] = {
-    def getSessionId(session: Session): String = {
-      session.handle.identifier.toString
-    }
-
-    allSessions().filter { session =>
-      session.isInstanceOf[KyuubiBatchSessionImpl] &&
-      session
-        .asInstanceOf[KyuubiBatchSessionImpl].batchJobSubmissionOp.batchType.equals(batchType)
-    }.toArray.sortWith { (a, b) =>
-      getSessionId(a).compareTo(getSessionId(b)) < 0
-    }.zipWithIndex.filter { item =>
-      val index = item._2
-      index >= from && index < from + size
-    }.map(_._1).toList
+  def getBatchSessionList(batchType: String, from: Int, size: Int): Seq[Session] = {
+    allSessions().filter {
+      case batchSession: KyuubiBatchSessionImpl =>
+        batchSession.batchJobSubmissionOp.batchType.equals(batchType)
+      case _ =>
+        false
+    }.toSeq.sortBy(_.handle.identifier.toString).slice(from, from + size)
   }
 
   override def start(): Unit = synchronized {

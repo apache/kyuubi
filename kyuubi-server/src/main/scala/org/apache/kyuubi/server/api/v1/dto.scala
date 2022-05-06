@@ -125,7 +125,7 @@ case class BatchRequest(
 case class GetBatchListResponse(
     from: Int,
     total: Int,
-    sessions: List[Batch])
+    sessions: Seq[Batch])
 
 case class Batch(
     id: String,

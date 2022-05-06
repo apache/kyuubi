@@ -34,92 +34,6 @@ import org.apache.kyuubi.session.KyuubiSessionManager
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
-  test("get batch session list") {
-    val response = webTarget.path("api/v1/batches")
-      .queryParam("batchType", "spark")
-      .queryParam("from", "0")
-      .queryParam("size", "2")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .get()
-
-    assert(response.getStatus == 200)
-    val getBatchListResponse = response.readEntity(classOf[GetBatchListResponse])
-    assert(getBatchListResponse.sessions.isEmpty && getBatchListResponse.total == 0)
-
-    val sessionManager = server.frontendServices.head
-      .be.sessionManager.asInstanceOf[KyuubiSessionManager]
-
-    sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
-      "kyuubi",
-      "kyuubi",
-      InetAddress.getLocalHost.getCanonicalHostName,
-      Map.empty,
-      BatchRequest("spark", "", "", "", Map.empty, Seq.empty))
-    sessionManager.openSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
-      "",
-      "",
-      "",
-      Map.empty)
-    sessionManager.openSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
-      "",
-      "",
-      "",
-      Map.empty)
-    sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
-      "kyuubi",
-      "kyuubi",
-      InetAddress.getLocalHost.getCanonicalHostName,
-      Map.empty,
-      BatchRequest("spark", "", "", "", Map.empty, Seq.empty))
-    sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
-      "kyuubi",
-      "kyuubi",
-      InetAddress.getLocalHost.getCanonicalHostName,
-      Map.empty,
-      BatchRequest("spark", "", "", "", Map.empty, Seq.empty))
-
-    val response2 = webTarget.path("api/v1/batches")
-      .queryParam("batchType", "spark")
-      .queryParam("from", "0")
-      .queryParam("size", "2")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .get()
-
-    assert(response2.getStatus == 200)
-
-    val getBatchListResponse2 = response2.readEntity(classOf[GetBatchListResponse])
-    assert(getBatchListResponse2.total == 2)
-
-    val response3 = webTarget.path("api/v1/batches")
-      .queryParam("batchType", "spark")
-      .queryParam("from", "2")
-      .queryParam("size", "2")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .get()
-
-    assert(response3.getStatus == 200)
-
-    val getBatchListResponse3 = response3.readEntity(classOf[GetBatchListResponse])
-    assert(getBatchListResponse3.total == 1)
-
-    val response4 = webTarget.path("api/v1/batches")
-      .queryParam("batchType", "spark")
-      .queryParam("from", "3")
-      .queryParam("size", "2")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .get()
-
-    assert(response4.getStatus == 200)
-    val getBatchListResponse4 = response4.readEntity(classOf[GetBatchListResponse])
-    assert(getBatchListResponse4.sessions.isEmpty && getBatchListResponse4.total == 0)
-    sessionManager.allSessions().map(_.close())
-  }
-
   test("open batch session") {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val requestObj = BatchRequest(
@@ -205,6 +119,93 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .request(MediaType.APPLICATION_JSON_TYPE)
       .delete()
     assert(404 == deleteBatchResponse.getStatus)
+  }
+
+  test("get batch session list") {
+    val sessionManager = server.frontendServices.head
+      .be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    sessionManager.allSessions().foreach(_.close())
+
+    val response = webTarget.path("api/v1/batches")
+      .queryParam("batchType", "spark")
+      .queryParam("from", "0")
+      .queryParam("size", "2")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+
+    assert(response.getStatus == 200)
+    val getBatchListResponse = response.readEntity(classOf[GetBatchListResponse])
+    assert(getBatchListResponse.sessions.isEmpty && getBatchListResponse.total == 0)
+
+    sessionManager.openBatchSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "kyuubi",
+      "kyuubi",
+      InetAddress.getLocalHost.getCanonicalHostName,
+      Map.empty,
+      BatchRequest("spark", "", "", "", Map.empty, Seq.empty))
+    sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      "",
+      "",
+      "",
+      Map.empty)
+    sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      "",
+      "",
+      "",
+      Map.empty)
+    sessionManager.openBatchSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "kyuubi",
+      "kyuubi",
+      InetAddress.getLocalHost.getCanonicalHostName,
+      Map.empty,
+      BatchRequest("spark", "", "", "", Map.empty, Seq.empty))
+    sessionManager.openBatchSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "kyuubi",
+      "kyuubi",
+      InetAddress.getLocalHost.getCanonicalHostName,
+      Map.empty,
+      BatchRequest("spark", "", "", "", Map.empty, Seq.empty))
+
+    val response2 = webTarget.path("api/v1/batches")
+      .queryParam("batchType", "spark")
+      .queryParam("from", "0")
+      .queryParam("size", "2")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+
+    assert(response2.getStatus == 200)
+
+    val getBatchListResponse2 = response2.readEntity(classOf[GetBatchListResponse])
+    assert(getBatchListResponse2.total == 2)
+
+    val response3 = webTarget.path("api/v1/batches")
+      .queryParam("batchType", "spark")
+      .queryParam("from", "2")
+      .queryParam("size", "2")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+
+    assert(response3.getStatus == 200)
+
+    val getBatchListResponse3 = response3.readEntity(classOf[GetBatchListResponse])
+    assert(getBatchListResponse3.total == 1)
+
+    val response4 = webTarget.path("api/v1/batches")
+      .queryParam("batchType", "spark")
+      .queryParam("from", "3")
+      .queryParam("size", "2")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+
+    assert(response4.getStatus == 200)
+    val getBatchListResponse4 = response4.readEntity(classOf[GetBatchListResponse])
+    assert(getBatchListResponse4.sessions.isEmpty && getBatchListResponse4.total == 0)
+    sessionManager.allSessions().map(_.close())
   }
 
 }
