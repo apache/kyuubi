@@ -25,11 +25,10 @@ import java.nio.file.{Files, Path}
  * A seekable buffer reader, if the previous file path lines do not satisfy the limit size
  * the reader will fetch line from next file path.
  *
- * Note that, call side should always new instance if want to replay the lines which has been
- * fetched.
+ * Note that, this reader is always read forwards so call side should always new instance if
+ * want to replay the lines which has been fetched.
  */
-class SeekableBufferedReader(paths: Seq[Path])
-  extends Closeable {
+class SeekableBufferedReader(paths: Seq[Path]) extends Closeable {
 
   private val bufferedReaders: Seq[BufferedReader] = paths.map { path =>
     Files.newBufferedReader(path, StandardCharsets.UTF_8)
