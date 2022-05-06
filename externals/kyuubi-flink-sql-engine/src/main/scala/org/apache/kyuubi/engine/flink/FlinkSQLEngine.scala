@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.File
 import java.net.URL
+import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
@@ -74,9 +75,14 @@ object FlinkSQLEngine extends Logging {
 
     try {
       Utils.fromCommandLineArgs(args, kyuubiConf)
-      val flinkConfDir = sys.env.get("FLINK_CONF_DIR")
-        .orElse(sys.env.get("FLINK_HOME").map(_ + File.separator + "conf"))
-        .getOrElse(".")
+      val flinkConfDir = sys.env.getOrElse("FLINK_CONF_DIR", {
+        val flinkHome = sys.env.getOrElse("FLINK_HOME", {
+          // detect the FLINK_HOME by flink-core*.jar location if unset
+          val jarLoc = classOf[GlobalConfiguration].getProtectionDomain.getCodeSource.getLocation
+          new File(jarLoc.toURI).getParentFile.getParent
+        })
+        Paths.get(flinkHome, "conf").toString
+      })
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
       val flinkConfFromArgs =
         kyuubiConf.getAll.filterKeys(_.startsWith("flink."))
