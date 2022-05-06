@@ -19,7 +19,6 @@ package org.apache.kyuubi.operation
 
 import java.util
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.TJobExecutionStatus
 
 case class OperationProgressUpdate(
@@ -28,27 +27,4 @@ case class OperationProgressUpdate(
     footerSummary: String,
     progressedPercentage: Double,
     startTimeMillis: Long,
-    status: String)
-
-object KyuubiProgressMonitorStatusMapper {
-
-  def forStatus(status: String): TJobExecutionStatus = {
-    if (StringUtils.isEmpty(status)) {
-      return TJobExecutionStatus.NOT_AVAILABLE
-    }
-    OperationProgressStatus.withName(status) match {
-      case OperationProgressStatus.NOT_AVAILABLE =>
-        TJobExecutionStatus.NOT_AVAILABLE
-      case OperationProgressStatus.IN_PROGRESS | OperationProgressStatus.PENDING
-          | OperationProgressStatus.RUNNING =>
-        TJobExecutionStatus.IN_PROGRESS
-      case OperationProgressStatus.COMPLETE => TJobExecutionStatus.COMPLETE
-      case _ => TJobExecutionStatus.COMPLETE
-    }
-  }
-}
-
-object OperationProgressStatus extends Enumeration {
-  type OperationProgressStatus = Value
-  val PENDING, RUNNING, FINISHED, IN_PROGRESS, COMPLETE, NOT_AVAILABLE = Value
-}
+    status: TJobExecutionStatus)

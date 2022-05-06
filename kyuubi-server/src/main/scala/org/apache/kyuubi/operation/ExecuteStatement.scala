@@ -88,7 +88,7 @@ class ExecuteStatement(
             statusResp.getProgressUpdateResponse.getFooterSummary,
             statusResp.getProgressUpdateResponse.getProgressedPercentage,
             statusResp.getProgressUpdateResponse.getStartTime,
-            statusResp.getProgressUpdateResponse.getStatus.toString))
+            statusResp.getProgressUpdateResponse.getStatus))
         }
         val remoteState = statusResp.getOperationState
         info(s"Query[$statementId] in ${remoteState.name()}")

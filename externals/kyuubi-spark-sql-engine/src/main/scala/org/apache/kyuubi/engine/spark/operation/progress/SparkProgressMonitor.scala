@@ -20,8 +20,9 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.hive.service.rpc.thrift.TJobExecutionStatus
+
 import org.apache.kyuubi.engine.spark.operation.progress.SparkProgressMonitor._
-import org.apache.kyuubi.operation.OperationProgressStatus
 
 class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress]) {
 
@@ -36,16 +37,16 @@ class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress]) {
         val failed = progress.failedTaskCount
         var state =
           if (total > 0) {
-            OperationProgressStatus.PENDING
+            SparkOperationProgressStatus.PENDING
           } else {
-            OperationProgressStatus.FINISHED
+            SparkOperationProgressStatus.FINISHED
           }
         if (complete > 0 || running > 0 || failed > 0) {
           state =
             if (complete < total) {
-              OperationProgressStatus.RUNNING
+              SparkOperationProgressStatus.RUNNING
             } else {
-              OperationProgressStatus.FINISHED
+              SparkOperationProgressStatus.FINISHED
             }
         }
         val attempt = String.valueOf(stage.attemptId)
@@ -85,11 +86,11 @@ class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress]) {
     }
   }
 
-  def executionStatus: String =
+  def executionStatus: TJobExecutionStatus =
     if (getCompletedStages == progressMap.keySet.size) {
-      OperationProgressStatus.FINISHED.toString
+      TJobExecutionStatus.COMPLETE
     } else {
-      OperationProgressStatus.RUNNING.toString
+      TJobExecutionStatus.IN_PROGRESS
     }
 
   private def getNameWithProgress(s: String, complete: Int, total: Int): String = {

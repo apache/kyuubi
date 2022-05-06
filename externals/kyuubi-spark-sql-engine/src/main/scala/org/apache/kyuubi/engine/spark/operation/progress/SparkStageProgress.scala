@@ -31,3 +31,8 @@ case class SparkStageProgress(
     completedTasksCount: Int,
     runningTaskCount: Int,
     failedTaskCount: Int)
+
+object SparkOperationProgressStatus extends Enumeration {
+  type SparkOperationProgressStatus = Value
+  val PENDING, RUNNING, FINISHED = Value
+}
