@@ -73,12 +73,13 @@ object FlinkSQLEngine extends Logging {
     FlinkEngineUtils.checkFlinkVersion()
 
     try {
+      Utils.fromCommandLineArgs(args, kyuubiConf)
       val flinkConfDir = CliFrontend.getConfigurationDirectoryFromEnv
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
-      val flinkConfFromSys =
-        Utils.getSystemProperties.filterKeys(_.startsWith("flink."))
+      val flinkConfFromArgs =
+        kyuubiConf.getAll.filterKeys(_.startsWith("flink."))
           .map { case (k, v) => (k.stripPrefix("flink."), v) }
-      flinkConf.addAll(Configuration.fromMap(flinkConfFromSys.asJava))
+      flinkConf.addAll(Configuration.fromMap(flinkConfFromArgs.asJava))
 
       val executionTarget = flinkConf.getString(DeploymentOptions.TARGET)
       // set cluster name for per-job and application mode
