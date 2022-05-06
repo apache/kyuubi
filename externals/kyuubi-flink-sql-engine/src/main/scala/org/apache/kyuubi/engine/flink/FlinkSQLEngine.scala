@@ -75,14 +75,17 @@ object FlinkSQLEngine extends Logging {
 
     try {
       Utils.fromCommandLineArgs(args, kyuubiConf)
-      val flinkConfDir = sys.env.getOrElse("FLINK_CONF_DIR", {
-        val flinkHome = sys.env.getOrElse("FLINK_HOME", {
-          // detect the FLINK_HOME by flink-core*.jar location if unset
-          val jarLoc = classOf[GlobalConfiguration].getProtectionDomain.getCodeSource.getLocation
-          new File(jarLoc.toURI).getParentFile.getParent
+      val flinkConfDir = sys.env.getOrElse(
+        "FLINK_CONF_DIR", {
+          val flinkHome = sys.env.getOrElse(
+            "FLINK_HOME", {
+              // detect the FLINK_HOME by flink-core*.jar location if unset
+              val jarLoc =
+                classOf[GlobalConfiguration].getProtectionDomain.getCodeSource.getLocation
+              new File(jarLoc.toURI).getParentFile.getParent
+            })
+          Paths.get(flinkHome, "conf").toString
         })
-        Paths.get(flinkHome, "conf").toString
-      })
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
       val flinkConfFromArgs =
         kyuubiConf.getAll.filterKeys(_.startsWith("flink."))
