@@ -84,6 +84,8 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
       hiveConf.setVar(METASTORE_KERBEROS_PRINCIPAL, testPrincipal)
       hiveConf.setVar(METASTORE_KERBEROS_KEYTAB_FILE, testKeytab)
       hiveConf.setVar(METASTORE_CONNECTION_POOLING_TYPE, "NONE")
+      hiveConf.setVar(METASTORE_AUTO_CREATE_ALL, "true")
+      hiveConf.setVar(METASTORE_SCHEMA_VERIFICATION, "false")
       ProxyUsers.refreshSuperUserGroupsConfiguration(hiveConf)
       val metaServer = new LocalMetaServer(hiveConf, classloader)
       metaServer.start()
