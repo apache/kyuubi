@@ -45,7 +45,7 @@ matrix:
       - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-spark-sql-engine,kyuubi-server -DwildcardSuites=org.apache.kyuubi.operation.KyuubiOperationPerUserSuite
   - name: Build Kyuubi Trino on Linux ARM64
     script:
-      - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-trino-engine,kyuubi-server -DwildcardSuites=org.apache.kyuubi.engine.trino.TrinoQueryTests
+      - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-trino-engine,kyuubi-server -DwildcardSuites=org.apache.kyuubi.engine.trino
   - name: Build Kyuubi Hive on Linux ARM64
     script:
       - ./build/mvn test $MVN_ARGS -pl externals/kyuubi-hive-sql-engine,kyuubi-server -DwildcardSuites=org.apache.kyuubi.operation.hive
