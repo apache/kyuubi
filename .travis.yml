@@ -68,5 +68,4 @@ after_success:
 
 after_failure:
   - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
-  - for log in `find * -name "kyuubi-spark-sql-engine.log*"`; do echo "=========$log========="; grep "ERROR" $log -A 100 -B 20; done
-  - for log in `find * -name "unit-tests.log"`;  do echo "=========$log========="; grep "ERROR" $log -A 100 -B 20; done
+  - for log in `find * -name "unit-tests.log"`;  do echo "=========$log========="; grep "ERROR" $log -A 100 -B 5; done
