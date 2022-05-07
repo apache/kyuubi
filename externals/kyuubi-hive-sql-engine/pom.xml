@@ -170,7 +170,7 @@
                             <include>com.fasterxml.jackson.core:jackson-annotations</include>
                             <include>com.fasterxml.jackson.core:jackson-core</include>
                             <include>com.fasterxml.jackson.core:jackson-databind</include>
-                            <include>com.fasterxml.jackson.module:jackson-module-scala_2.12</include>
+                            <include>com.fasterxml.jackson.module:jackson-module-scala_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-events_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
