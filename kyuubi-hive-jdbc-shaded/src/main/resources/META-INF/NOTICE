@@ -41,22 +41,28 @@ Curator Framework
 Copyright 2011-2017 The Apache Software Foundation
 
 Hive Common
-Copyright 2021 The Apache Software Foundation
+Copyright 2022 The Apache Software Foundation
 
 Hive JDBC
-Copyright 2021 The Apache Software Foundation
+Copyright 2022 The Apache Software Foundation
 
 Hive Metastore
-Copyright 2021 The Apache Software Foundation
+Copyright 2022 The Apache Software Foundation
+
+Hive Standalone Metastore
+Copyright 2022 The Apache Software Foundation
+
+Hive Llap Client
+Copyright 2022 The Apache Software Foundation
 
 Hive Serde
-Copyright 2021 The Apache Software Foundation
+Copyright 2022 The Apache Software Foundation
 
 Hive Service
-Copyright 2021 The Apache Software Foundation
+Copyright 2022 The Apache Software Foundation
 
 Hive Service RPC
-Copyright 2019 The Apache Software Foundation
+Copyright 2022 The Apache Software Foundation
 
 Hive Shims 0.23
 Copyright 2021 The Apache Software Foundation
