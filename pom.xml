@@ -202,6 +202,7 @@
 
         <!-- Package to use when relocating shaded classes. -->
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
+        <hikaricp.version>2.6.1</hikaricp.version>
     </properties>
 
     <repositories>
@@ -1340,6 +1341,13 @@
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${HikariCP.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
