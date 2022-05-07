@@ -28,6 +28,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
+import org.apache.kyuubi.config.KyuubiConf.SESSION_PROGRESS_ENABLE
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.events.EventBus
@@ -52,7 +53,17 @@ class ExecuteStatement(
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
-  private val progressFetcher = new SparkProgressFetcher(spark, statementId)
+  private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
+    case Some(s) => s.toBoolean
+    case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
+  }
+
+  private val progressFetcher: Option[SparkProgressFetcher] =
+    if (progressEnable) {
+      Some(new SparkProgressFetcher(spark, statementId))
+    } else {
+      None
+    }
 
   EventBus.post(SparkOperationEvent(this))
 
@@ -161,7 +172,7 @@ class ExecuteStatement(
   }
 
   override def getStatus: OperationStatus = {
-    setOperationJobProgress(progressFetcher.getJobProgressUpdate(startTime))
+    progressFetcher.foreach(p => setOperationJobProgress(p.getJobProgressUpdate(startTime)))
     super.getStatus
   }
 
