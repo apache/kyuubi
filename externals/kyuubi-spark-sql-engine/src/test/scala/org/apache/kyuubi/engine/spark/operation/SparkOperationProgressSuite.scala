@@ -31,7 +31,7 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map(
     "spark.master" -> "local[1]",
-    "kyuubi.session.progress.enable" -> "true",
+    "kyuubi.operation.progress.enabled" -> "true",
     "kyuubi.operation.status.polling.timeout" -> "1000")
 
   test("test operation progress") {

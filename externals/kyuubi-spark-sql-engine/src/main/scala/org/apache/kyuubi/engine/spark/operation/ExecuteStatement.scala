@@ -21,8 +21,8 @@ import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorServic
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.kyuubi.SparkProgressFetcher
-import org.apache.spark.kyuubi.SQLOperationListener
+import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
+import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
@@ -57,13 +57,6 @@ class ExecuteStatement(
     case Some(s) => s.toBoolean
     case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
   }
-
-  private val progressFetcher: Option[SparkProgressFetcher] =
-    if (progressEnable) {
-      Some(new SparkProgressFetcher(spark, statementId))
-    } else {
-      None
-    }
 
   EventBus.post(SparkOperationEvent(this))
 
@@ -172,7 +165,16 @@ class ExecuteStatement(
   }
 
   override def getStatus: OperationStatus = {
-    progressFetcher.foreach(p => setOperationJobProgress(p.getJobProgressUpdate(startTime)))
+    if (progressEnable) {
+      val progressMonitor = new SparkProgressMonitor(spark, statementId)
+      setOperationJobProgress(new TProgressUpdateResp(
+        progressMonitor.headers,
+        progressMonitor.rows,
+        progressMonitor.progressedPercentage,
+        progressMonitor.executionStatus,
+        progressMonitor.footerSummary,
+        startTime))
+    }
     super.getStatus
   }
 

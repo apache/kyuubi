@@ -14,22 +14,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.spark.operation.progress
+package org.apache.spark.kyuubi
 
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.SortedMap
 
 import org.apache.hive.service.rpc.thrift.TJobExecutionStatus
+import org.apache.spark.kyuubi.SparkProgressMonitor._
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.status.api.v1.StageStatus
 
-import org.apache.kyuubi.engine.spark.operation.progress.SparkProgressMonitor._
+import org.apache.kyuubi.engine.spark.operation.progress.{SparkOperationProgressStatus, SparkStage, SparkStageProgress}
 
-class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress]) {
+class SparkProgressMonitor(spark: SparkSession, jobGroup: String) {
+
+  private val statusStore = spark.sparkContext.statusStore
+
+  private lazy val progressMap: Map[SparkStage, SparkStageProgress] = {
+    val stages = statusStore.jobsList(null)
+      .filter(_.jobGroup == Option(jobGroup))
+      .flatMap(_.stageIds)
+      .flatMap(stageId => statusStore.asOption(statusStore.lastStageAttempt(stageId)))
+      .map(stage => {
+        val sparkStage = SparkStage(stage.stageId, stage.attemptId)
+        val completedTasksCount =
+          if (stage.status == StageStatus.SKIPPED) {
+            stage.numTasks
+          } else {
+            stage.numCompleteTasks
+          }
+        val sparkStageProgress = SparkStageProgress(
+          stage.numTasks,
+          completedTasksCount,
+          stage.numActiveTasks,
+          stage.numFailedTasks)
+        (sparkStage, sparkStageProgress)
+      })
+    SortedMap(stages: _*)
+  }
 
   def headers: util.List[String] = HEADERS
 
   def rows: util.List[util.List[String]] = {
-    val progressRows = progressMap.toSeq.sortBy(_._1).map {
+    val progressRows = progressMap.map {
       case (stage, progress) =>
         val complete = progress.completedTasksCount
         val total = progress.totalTaskCount
@@ -73,7 +102,7 @@ class SparkProgressMonitor(progressMap: Map[SparkStage, SparkStageProgress]) {
   def progressedPercentage: Double = {
     var sumTotal = 0
     var sumComplete = 0
-    progressMap.toSeq.sortBy(_._1).map(_._2).foreach { progress =>
+    progressMap.values.foreach { progress =>
       val complete = progress.completedTasksCount
       val total = progress.totalTaskCount
       sumTotal += total
