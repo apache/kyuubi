@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_PLAN_ONLY_EXCLUDES
@@ -50,9 +51,13 @@ class PlanOnlyStatement(
     } else result.schema
   }
 
-  override protected def runInternal(): Unit = withActive {
+  override protected def runInternal(): Unit = {
     try {
-      val parsed = spark.sessionState.sqlParser.parsePlan(statement)
+      val substitutorStatement = SQLConf.withExistingConf(spark.sessionState.conf) {
+        new VariableSubstitution().substitute(statement)
+      }
+      spark.sparkContext.setJobDescription(substitutorStatement)
+      val parsed = spark.sessionState.sqlParser.parsePlan(substitutorStatement)
       parsed match {
         case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
           result = spark.sql(statement)
@@ -79,19 +84,6 @@ class PlanOnlyStatement(
       }
     } catch {
       onError()
-    }
-  }
-
-  /**
-   * Execute a block of code with the this session set as the active session, and restore the
-   * previous session on completion.
-   */
-  private def withActive[T](block: => T): T = {
-    val old = SparkSession.getActiveSession
-    SparkSession.setActiveSession(spark)
-    try block
-    finally {
-      old.foreach(SparkSession.setActiveSession)
     }
   }
 }
