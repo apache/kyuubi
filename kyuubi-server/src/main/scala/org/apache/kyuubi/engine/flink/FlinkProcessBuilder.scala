@@ -37,16 +37,13 @@ class FlinkProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
     val extraEngineLog: Option[OperationLog] = None)
-  extends ProcBuilder with Logging {
+  extends ProcBuilder {
 
   private val flinkHome: String = getEngineHome(shortName)
 
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
-
-  override protected def childProcEnv: Map[String, String] = conf.getEnvs +
-    ("FLINK_CONF_DIR" -> env.getOrElse("FLINK_CONF_DIR", s"$flinkHome${File.separator}conf"))
 
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()

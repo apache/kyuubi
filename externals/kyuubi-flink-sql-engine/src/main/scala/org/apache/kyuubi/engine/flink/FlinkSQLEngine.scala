@@ -19,13 +19,14 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.File
 import java.net.URL
+import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.flink.client.cli.{CliFrontend, CustomCommandLine, DefaultCLI, GenericCLI}
+import org.apache.flink.client.cli.{DefaultCLI, GenericCLI}
 import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration}
 import org.apache.flink.table.client.SqlClientException
 import org.apache.flink.table.client.gateway.context.DefaultContext
@@ -74,7 +75,17 @@ object FlinkSQLEngine extends Logging {
 
     try {
       Utils.fromCommandLineArgs(args, kyuubiConf)
-      val flinkConfDir = CliFrontend.getConfigurationDirectoryFromEnv
+      val flinkConfDir = sys.env.getOrElse(
+        "FLINK_CONF_DIR", {
+          val flinkHome = sys.env.getOrElse(
+            "FLINK_HOME", {
+              // detect the FLINK_HOME by flink-core*.jar location if unset
+              val jarLoc =
+                classOf[GlobalConfiguration].getProtectionDomain.getCodeSource.getLocation
+              new File(jarLoc.toURI).getParentFile.getParent
+            })
+          Paths.get(flinkHome, "conf").toString
+        })
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
       val flinkConfFromArgs =
         kyuubiConf.getAll.filterKeys(_.startsWith("flink."))
@@ -106,7 +117,7 @@ object FlinkSQLEngine extends Logging {
       val engineContext = new DefaultContext(
         dependencies.asJava,
         flinkConf,
-        List[CustomCommandLine](new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava)
+        Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava)
 
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
