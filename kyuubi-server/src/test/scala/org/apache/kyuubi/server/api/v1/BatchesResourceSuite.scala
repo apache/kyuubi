@@ -140,11 +140,13 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
       "kyuubi",
       "kyuubi",
+      "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
       Map.empty,
       BatchRequest("spark", "", "", "", Map.empty, Seq.empty))
     sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      "",
       "",
       "",
       "",
@@ -154,9 +156,11 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "",
       "",
       "",
+      "",
       Map.empty)
     sessionManager.openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "kyuubi",
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
@@ -164,6 +168,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       BatchRequest("spark", "", "", "", Map.empty, Seq.empty))
     sessionManager.openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "kyuubi",
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,

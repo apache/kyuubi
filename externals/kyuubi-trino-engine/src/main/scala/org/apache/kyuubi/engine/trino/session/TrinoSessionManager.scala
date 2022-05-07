@@ -41,11 +41,12 @@ class TrinoSessionManager
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    new TrinoSessionImpl(protocol, user, password, ipAddress, conf, this)
+    new TrinoSessionImpl(protocol, realUser, user, password, ipAddress, conf, this)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

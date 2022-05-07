@@ -58,6 +58,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
@@ -66,6 +67,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val newConf = conf + (CLIENT_IP_KEY -> ipAddress)
     new KyuubiSessionImpl(
       protocol,
+      realUser,
       user,
       password,
       ipAddress,
@@ -76,6 +78,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def openSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
@@ -83,7 +86,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
     try {
-      super.openSession(protocol, username, password, ipAddress, conf)
+      super.openSession(protocol, realUser, username, password, ipAddress, conf)
     } catch {
       case e: Throwable =>
         MetricsSystem.tracing { ms =>
@@ -107,6 +110,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def openBatchSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
@@ -115,6 +119,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     val batchSession = new KyuubiBatchSessionImpl(
       protocol,
+      realUser,
       user,
       password,
       ipAddress,

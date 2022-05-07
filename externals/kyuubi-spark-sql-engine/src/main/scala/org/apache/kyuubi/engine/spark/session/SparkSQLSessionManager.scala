@@ -138,6 +138,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
@@ -152,6 +153,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
     new SparkSessionImpl(
       protocol,
+      realUser,
       user,
       password,
       ipAddress,

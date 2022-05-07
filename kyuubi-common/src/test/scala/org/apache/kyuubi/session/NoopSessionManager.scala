@@ -37,6 +37,7 @@ class NoopSessionManager extends SessionManager("noop") {
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
@@ -44,7 +45,7 @@ class NoopSessionManager extends SessionManager("noop") {
     if (conf.get("kyuubi.test.should.fail").exists(_.toBoolean)) {
       throw KyuubiSQLException("Asked to fail")
     }
-    new NoopSessionImpl(protocol, user, password, ipAddress, conf, this)
+    new NoopSessionImpl(protocol, realUser, user, password, ipAddress, conf, this)
   }
 
   override protected def isServer: Boolean = true

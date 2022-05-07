@@ -26,6 +26,7 @@ import org.apache.kyuubi.session.AbstractSession
  * @param sessionId server session id
  * @param clientVersion client version
  * @param sessionName if user not specify it, we use empty string instead
+ * @param realUser the real user that open the session
  * @param user session user
  * @param clientIP client ip address
  * @param serverIP A unique Kyuubi server id, e.g. kyuubi server ip address and port,
@@ -42,6 +43,7 @@ case class KyuubiSessionEvent(
     sessionId: String,
     clientVersion: Int,
     sessionName: String,
+    realUser: String,
     user: String,
     clientIP: String,
     serverIP: String,
@@ -65,6 +67,7 @@ object KyuubiSessionEvent {
       session.handle.toString,
       session.protocol.getValue,
       sessionName,
+      session.realUser,
       session.user,
       session.ipAddress,
       serverIP,

@@ -28,6 +28,7 @@ import org.apache.kyuubi.operation.log.OperationLog
 
 abstract class AbstractSession(
     val protocol: TProtocolVersion,
+    val realUser: String,
     val user: String,
     val password: String,
     val ipAddress: String,

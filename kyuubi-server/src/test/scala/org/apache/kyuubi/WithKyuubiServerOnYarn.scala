@@ -120,6 +120,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     val sessionHandle = sessionManager.openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
       "kyuubi",
+      "kyuubi",
       "passwd",
       "localhost",
       batchRequest.conf,
@@ -185,6 +186,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
 
     val sessionHandle = sessionManager.openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
+      "kyuubi",
       "kyuubi",
       "passwd",
       "localhost",

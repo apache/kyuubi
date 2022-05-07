@@ -106,6 +106,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val sessionManager = fe.be.sessionManager
     val sessionHandle = sessionManager.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "kyuubi",
       "admin",
       "123456",
       "localhost",

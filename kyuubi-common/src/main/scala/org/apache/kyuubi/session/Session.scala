@@ -29,6 +29,7 @@ trait Session {
 
   def conf: Map[String, String]
 
+  def realUser: String
   def user: String
   def password: String
   def ipAddress: String

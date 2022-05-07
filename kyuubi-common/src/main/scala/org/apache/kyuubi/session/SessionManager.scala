@@ -79,6 +79,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   protected def createSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
@@ -86,12 +87,13 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def openSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
     info(s"Opening session for $user@$ipAddress")
-    val session = createSession(protocol, user, password, ipAddress, conf)
+    val session = createSession(protocol, realUser, user, password, ipAddress, conf)
     try {
       val handle = session.handle
       session.open()

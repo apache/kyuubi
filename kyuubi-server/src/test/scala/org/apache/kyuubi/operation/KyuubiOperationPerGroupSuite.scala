@@ -76,4 +76,14 @@ class KyuubiOperationPerGroupSuite extends WithKyuubiServer with SparkQueryTests
       }
     }
   }
+
+  test("test kyuubi.session.real.user") {
+    withSessionConf(Map("hive.server2.proxy.user" -> "user1"))(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery("set kyuubi.session.real.user")
+        assert(res.next())
+        assert(res.getString(2) === user)
+      }
+    }
+  }
 }

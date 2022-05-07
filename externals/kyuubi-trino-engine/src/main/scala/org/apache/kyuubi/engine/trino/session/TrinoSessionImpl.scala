@@ -42,12 +42,13 @@ import org.apache.kyuubi.session.SessionManager
 
 class TrinoSessionImpl(
     protocol: TProtocolVersion,
+    realUser: String,
     user: String,
     password: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends AbstractSession(protocol, realUser, user, password, ipAddress, conf, sessionManager) {
 
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _

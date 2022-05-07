@@ -40,6 +40,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
       "kyuubi",
+      "kyuubi",
       "passwd",
       "localhost",
       Map.empty)
@@ -93,6 +94,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
       "kyuubi",
+      "kyuubi",
       "passwd",
       "localhost",
       Map.empty)
@@ -134,6 +136,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
       "kyuubi",
       "passwd",
       "localhost",
@@ -185,6 +188,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
       "kyuubi",
       "passwd",
       "localhost",

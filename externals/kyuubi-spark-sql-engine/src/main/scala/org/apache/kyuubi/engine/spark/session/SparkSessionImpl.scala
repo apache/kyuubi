@@ -29,6 +29,7 @@ import org.apache.kyuubi.session.{AbstractSession, SessionManager}
 
 class SparkSessionImpl(
     protocol: TProtocolVersion,
+    realUser: String,
     user: String,
     password: String,
     serverIpAddress: String,
@@ -36,7 +37,7 @@ class SparkSessionImpl(
     conf: Map[String, String],
     sessionManager: SessionManager,
     val spark: SparkSession)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends AbstractSession(protocol, realUser, user, password, ipAddress, conf, sessionManager) {
 
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {

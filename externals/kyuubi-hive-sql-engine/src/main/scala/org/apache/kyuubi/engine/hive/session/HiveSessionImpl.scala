@@ -31,6 +31,7 @@ import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager
 
 class HiveSessionImpl(
     protocol: TProtocolVersion,
+    realUser: String,
     user: String,
     password: String,
     serverIpAddress: String,
@@ -39,7 +40,7 @@ class HiveSessionImpl(
     sessionManager: SessionManager,
     override val handle: SessionHandle,
     val hive: HiveSession)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends AbstractSession(protocol, realUser, user, password, ipAddress, conf, sessionManager) {
 
   private val sessionEvent = HiveSessionEvent(this)
 

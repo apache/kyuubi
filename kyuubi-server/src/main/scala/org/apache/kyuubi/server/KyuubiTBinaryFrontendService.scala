@@ -23,8 +23,9 @@ import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TR
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
-import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
+import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 final class KyuubiTBinaryFrontendService(
@@ -37,6 +38,31 @@ final class KyuubiTBinaryFrontendService(
     } else {
       None
     }
+  }
+
+  private def getProxyUser(
+      sessionConf: java.util.Map[String, String],
+      ipAddress: String,
+      realUser: String): String = {
+    val proxyUser = sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER)
+    if (proxyUser == null) {
+      realUser
+    } else {
+      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+      proxyUser
+    }
+  }
+
+  override protected def getUserName(req: TOpenSessionReq): (String, String) = {
+    val realUser: String =
+      ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
+    val userName =
+      if (req.getConfiguration == null) {
+        realUser
+      } else {
+        getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
+      }
+    realUser -> userName
   }
 
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {

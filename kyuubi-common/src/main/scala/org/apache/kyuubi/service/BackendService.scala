@@ -37,6 +37,7 @@ trait BackendService {
 
   def openSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddr: String,

@@ -25,6 +25,7 @@ import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager
 
 class FlinkSessionImpl(
     protocol: TProtocolVersion,
+    realUser: String,
     user: String,
     password: String,
     ipAddress: String,
@@ -32,7 +33,7 @@ class FlinkSessionImpl(
     sessionManager: SessionManager,
     override val handle: SessionHandle,
     val sessionContext: SessionContext)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends AbstractSession(protocol, realUser, user, password, ipAddress, conf, sessionManager) {
 
   def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
 

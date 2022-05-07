@@ -40,6 +40,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
@@ -53,6 +54,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
 
     new FlinkSessionImpl(
       protocol,
+      realUser,
       user,
       password,
       ipAddress,

@@ -29,12 +29,13 @@ trait BackendServiceMetric extends BackendService {
 
   abstract override def openSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddr: String,
       configs: Map[String, String]): SessionHandle = {
     MetricsSystem.timerTracing(MetricsConstants.BS_OPEN_SESSION) {
-      super.openSession(protocol, user, password, ipAddr, configs)
+      super.openSession(protocol, realUser, user, password, ipAddr, configs)
     }
   }
 

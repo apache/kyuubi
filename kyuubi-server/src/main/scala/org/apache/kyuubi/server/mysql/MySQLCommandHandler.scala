@@ -101,7 +101,7 @@ class MySQLCommandHandler(be: BackendService, execPool: ThreadPoolExecutor)
       }
       // v1 is sufficient now, upgrade version when needed
       val proto = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1
-      val sessionHandle = be.openSession(proto, user, "", remoteIp, sessionConf)
+      val sessionHandle = be.openSession(proto, user, user, "", remoteIp, sessionConf)
       sessionHandle
     } catch {
       case rethrow: Exception =>

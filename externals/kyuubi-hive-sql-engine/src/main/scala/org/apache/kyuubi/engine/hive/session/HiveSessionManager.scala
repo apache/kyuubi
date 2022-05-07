@@ -66,6 +66,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddress: String,
@@ -85,6 +86,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
     operationLogRoot.foreach(dir => hive.setOperationLogSessionDir(new File(dir)))
     new HiveSessionImpl(
       protocol,
+      realUser,
       user,
       password,
       ipAddress,

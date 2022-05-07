@@ -28,6 +28,7 @@ import org.apache.kyuubi.server.api.v1.BatchRequest
 
 class KyuubiBatchSessionImpl(
     protocol: TProtocolVersion,
+    realUser: String,
     user: String,
     password: String,
     ipAddress: String,
@@ -35,12 +36,13 @@ class KyuubiBatchSessionImpl(
     sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
     batchRequest: BatchRequest)
-  extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends KyuubiSession(protocol, realUser, user, password, ipAddress, conf, sessionManager) {
   override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
 
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] =
-    sessionManager.validateBatchConf(Option(batchRequest.conf).getOrElse(Map.empty))
+    sessionManager.validateBatchConf(Option(batchRequest.conf).getOrElse(Map.empty)) ++
+      Map(KyuubiConf.SESSION_REAL_USER.key -> realUser)
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(this, batchRequest.copy(conf = normalizedConf))

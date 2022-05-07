@@ -31,7 +31,7 @@ import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST, SESSION_REAL_USER}
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
@@ -46,7 +46,7 @@ abstract class TFrontendService(name: String)
   extends AbstractFrontendService(name) with TCLIService.Iface with Runnable with Logging {
   import TFrontendService._
   private val started = new AtomicBoolean(false)
-  private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
+  protected lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
   private lazy val serverThread = new NamedThreadFactory(getName, false).newThread(this)
   private lazy val serverHost = conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
 
@@ -119,27 +119,15 @@ abstract class TFrontendService(name: String)
     host + ":" + actualPort
   }
 
-  private def getProxyUser(
-      sessionConf: java.util.Map[String, String],
-      ipAddress: String,
-      realUser: String): String = {
-    val proxyUser = sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER)
-    if (proxyUser == null) {
-      realUser
-    } else {
-      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
-      proxyUser
-    }
-  }
-
-  private def getUserName(req: TOpenSessionReq): String = {
-    val realUser: String =
-      ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
-    if (req.getConfiguration == null) {
-      realUser
-    } else {
-      getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
-    }
+  /**
+   * @param req thrift open session request
+   * @return the real user and final user name
+   */
+  protected def getUserName(req: TOpenSessionReq): (String, String) = {
+    val userName = ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
+    val realUser =
+      Option(req.getConfiguration).flatMap(_.asScala.get(SESSION_REAL_USER.key)).getOrElse(userName)
+    realUser -> userName
   }
 
   private def getMinVersion(versions: TProtocolVersion*): TProtocolVersion = {
@@ -150,12 +138,13 @@ abstract class TFrontendService(name: String)
   protected def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
-    val userName = getUserName(req)
+    val (realUser, userName) = getUserName(req)
     val ipAddress = authFactory.getIpAddress.orNull
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
     val sessionHandle = be.openSession(
       protocol,
+      realUser,
       userName,
       req.getPassword,
       ipAddress,

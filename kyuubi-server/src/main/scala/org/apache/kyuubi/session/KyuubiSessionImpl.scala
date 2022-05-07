@@ -37,13 +37,14 @@ import org.apache.kyuubi.service.authentication.EngineSecurityAccessor
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
+    realUser: String,
     user: String,
     password: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf)
-  extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends KyuubiSession(protocol, realUser, user, password, ipAddress, conf, sessionManager) {
 
   private[kyuubi] val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
@@ -55,7 +56,7 @@ class KyuubiSessionImpl(
       warn(s"the server plugin return null value for user: $user, ignore it")
       normalizedConf
     }
-  }
+  } ++ Map(KyuubiConf.SESSION_REAL_USER.key -> realUser)
 
   // TODO: needs improve the hardcode
   optimizedConf.foreach {

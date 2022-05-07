@@ -38,11 +38,12 @@ abstract class AbstractBackendService(name: String)
 
   override def openSession(
       protocol: TProtocolVersion,
+      realUser: String,
       user: String,
       password: String,
       ipAddr: String,
       configs: Map[String, String]): SessionHandle = {
-    sessionManager.openSession(protocol, user, password, ipAddr, configs)
+    sessionManager.openSession(protocol, realUser, user, password, ipAddr, configs)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
