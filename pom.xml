@@ -1345,7 +1345,7 @@
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
-                <version>${hikaricp.version}</version>
+                <version>${HikariCP.version}</version>
             </dependency>
 
         </dependencies>
