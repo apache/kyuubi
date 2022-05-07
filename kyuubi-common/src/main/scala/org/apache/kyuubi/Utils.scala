@@ -25,6 +25,7 @@ import java.util.{Properties, TimeZone, UUID}
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
+import scala.util.matching.Regex
 
 import org.apache.commons.lang3.SystemUtils
 import org.apache.commons.lang3.time.DateFormatUtils
@@ -286,6 +287,23 @@ object Utils extends Logging {
         case seq if seq.length == 2 => conf.set(seq.head, seq.last)
         case _ => throw new IllegalArgumentException(s"Illegal argument: ${args(i + 1)}.")
       }
+    }
+  }
+
+  val REDACTION_REPLACEMENT_TEXT = "*********(redacted)"
+
+  /**
+   * Redact the sensitive information in the given string.
+   */
+  def redact(regex: Option[Regex], text: String): String = {
+    regex match {
+      case None => text
+      case Some(r) =>
+        if (text == null || text.isEmpty) {
+          text
+        } else {
+          r.replaceAllIn(text, REDACTION_REPLACEMENT_TEXT)
+        }
     }
   }
 }

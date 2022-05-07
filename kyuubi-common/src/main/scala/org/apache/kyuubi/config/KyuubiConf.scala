@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf._
@@ -1459,5 +1460,13 @@ object KyuubiConf {
         " Any user-ipaddress exceeding this limit will not be allowed to connect.")
       .version("1.6.0")
       .intConf
+      .createOptional
+
+  val SERVER_SECRET_REDACTION_PATTERN: OptionalConfigEntry[Regex] =
+    buildConf("kyuubi.server.redaction.regex")
+      .doc("Regex to decide which Kyuubi contain sensitive information. When this regex matches " +
+        "a property key or value, the value is redacted from the environment UI and various logs.")
+      .version("1.6.0")
+      .regexConf
       .createOptional
 }
