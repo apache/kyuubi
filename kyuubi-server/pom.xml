@@ -258,6 +258,10 @@
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.apache.thrift</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
@@ -306,6 +310,13 @@
                     <artifactId>commons-dbcp</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-storage-api</artifactId>
+            <version>${hive.client.storage-api.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
