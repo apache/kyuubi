@@ -1439,21 +1439,21 @@ object KyuubiConf {
 
   val ENGINE_FLINK_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.flink.memory")
-      .doc("The heap memory for the flink query engine")
+      .doc("The heap memory for the flink sql engine")
       .version("1.6.0")
       .stringConf
       .createWithDefault("1g")
 
   val ENGINE_FLINK_JAVA_OPTIONS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.flink.java.options")
-      .doc("The extra java options for the flink query engine")
+      .doc("The extra java options for the flink sql engine")
       .version("1.6.0")
       .stringConf
       .createOptional
 
   val ENGINE_FLINK_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.flink.extra.classpath")
-      .doc("The extra classpath for the flink query engine, for configuring location" +
+      .doc("The extra classpath for the flink sql engine, for configuring location" +
         " of hadoop client jars, etc")
       .version("1.6.0")
       .stringConf

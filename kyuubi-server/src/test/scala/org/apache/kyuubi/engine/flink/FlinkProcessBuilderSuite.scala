@@ -28,7 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE
 
 class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
-    .set(ENGINE_FLINK_MEMORY, "5g")
+    .set(ENGINE_FLINK_MEMORY, "1g")
     .set(
       ENGINE_FLINK_JAVA_OPTIONS,
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")

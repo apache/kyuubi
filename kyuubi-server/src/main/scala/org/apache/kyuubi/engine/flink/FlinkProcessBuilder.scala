@@ -91,9 +91,9 @@ class FlinkProcessBuilder(
     val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
     if (hadoopCp.isEmpty && extraCp.isEmpty) {
-      throw new KyuubiException(s"The conf of ${FLINK_HADOOP_CLASSPATH} or " +
-        s"${ENGINE_FLINK_EXTRA_CLASSPATH} is empty." +
-        s"Please set ${FLINK_HADOOP_CLASSPATH} or ${ENGINE_FLINK_EXTRA_CLASSPATH} for " +
+      throw new KyuubiException(s"The conf of ${FLINK_HADOOP_CLASSPATH} and " +
+        s"${ENGINE_FLINK_EXTRA_CLASSPATH.key} is empty." +
+        s"Please set ${FLINK_HADOOP_CLASSPATH} or ${ENGINE_FLINK_EXTRA_CLASSPATH.key} for " +
         s"configuring location of hadoop client jars, etc")
     }
 
