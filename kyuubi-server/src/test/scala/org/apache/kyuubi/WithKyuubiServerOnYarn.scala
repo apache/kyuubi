@@ -32,7 +32,6 @@ import org.apache.kyuubi.server.MiniYarnService
 import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 
-
 /**
  * To developers:
  *   You should specify JAVA_HOME before running test with mini yarn server. Otherwise the error
