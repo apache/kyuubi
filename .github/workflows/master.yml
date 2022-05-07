@@ -37,7 +37,7 @@ env:
 jobs:
   default:
     name: Kyuubi and Spark Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -99,7 +99,7 @@ jobs:
 
   flink-it:
     name: Flink Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -143,7 +143,7 @@ jobs:
 
   hive-it:
     name: Hive Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -177,7 +177,7 @@ jobs:
 
   jdbc-it:
     name: JDBC Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -212,7 +212,7 @@ jobs:
 
   trino-it:
     name: Trino Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -247,7 +247,7 @@ jobs:
 
   tpch-tpcds:
     name: TPC-H and TPC-DS Tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -271,7 +271,7 @@ jobs:
 
   kyuubi-on-k8s-it:
     name: Kyuubi Server On Kubernetes Integration Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -318,7 +318,7 @@ jobs:
 
   spark-on-k8s-it:
     name: Spark Engine On Kubernetes Integration Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
