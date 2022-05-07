@@ -171,9 +171,9 @@ class OperationLogSuite extends KyuubiFunSuite {
     val tempDir = Utils.createTempDir().toFile
     tempDir.setExecutable(false)
 
-    sessionManager.setOperationLogRootDir(tempDir.getAbsolutePath + "/operation_logs")
-    assert(sessionManager.operationLogRoot.isDefined)
-    sessionManager.initialize(KyuubiConf())
+    val conf = KyuubiConf()
+      .set(KyuubiConf.SERVER_OPERATION_LOG_DIR_ROOT, tempDir.getAbsolutePath + "/operation_logs")
+    sessionManager.initialize(conf)
     assert(sessionManager.operationLogRoot.isEmpty)
 
     tempDir.setExecutable(true)
