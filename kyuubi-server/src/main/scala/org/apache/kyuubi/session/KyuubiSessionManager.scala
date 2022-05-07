@@ -155,6 +155,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
   }
 
+  def getBatchSessionList(batchType: String, from: Int, size: Int): Seq[Session] = {
+    allSessions().filter {
+      case batchSession: KyuubiBatchSessionImpl =>
+        batchSession.batchJobSubmissionOp.batchType.equalsIgnoreCase(batchType)
+      case _ => false
+    }.toSeq.sortBy(_.handle.identifier.toString).slice(from, from + size)
+  }
+
   override def start(): Unit = synchronized {
     MetricsSystem.tracing { ms =>
       ms.registerGauge(CONN_OPEN, getOpenSessionCount, 0)
