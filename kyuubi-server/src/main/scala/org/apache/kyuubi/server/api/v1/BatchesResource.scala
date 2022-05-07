@@ -29,7 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation}
+import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource.REST_BATCH_PROTOCOL
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
@@ -126,13 +126,15 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @Path("{batchId}/log")
   def getBatchLog(
       @PathParam("batchId") batchId: String,
-      @QueryParam("maxRows") maxRows: Int): OperationLog = {
+      @QueryParam("from") @DefaultValue("-1") from: Int,
+      @QueryParam("size") size: Int): OperationLog = {
     try {
       val submissionOpt = sessionManager.getBatchSessionImpl(batchId, REST_BATCH_PROTOCOL)
         .batchJobSubmissionOp
       val rowSet = submissionOpt.getOperationLogRowSet(
         FetchOrientation.FETCH_NEXT,
-        maxRows)
+        from,
+        size)
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       OperationLog(logRowSet, logRowSet.size)
     } catch {

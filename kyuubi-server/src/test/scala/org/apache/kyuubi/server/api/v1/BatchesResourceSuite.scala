@@ -81,7 +81,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     // get batch log
     var logResponse = webTarget.path(s"api/v1/batches/${batch.id}/log")
-      .queryParam("maxRows", "1")
+      .queryParam("from", "0")
+      .queryParam("size", "1")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .get()
     var log = logResponse.readEntity(classOf[OperationLog])
@@ -92,12 +93,12 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     logs.append(head)
     eventually(timeout(10.seconds), interval(1.seconds)) {
       logResponse = webTarget.path(s"api/v1/batches/${batch.id}/log")
-        .queryParam("maxRows", "100")
+        .queryParam("from", "0")
+        .queryParam("size", "100")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .get()
       log = logResponse.readEntity(classOf[OperationLog])
       if (log.rowCount > 0) {
-        assert(log.logRowSet.head != head)
         log.logRowSet.foreach(logs.append(_))
       }
 

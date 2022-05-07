@@ -21,8 +21,9 @@ import java.io.{BufferedReader, IOException}
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.util.{ArrayList => JArrayList}
+import java.util.{ArrayList => JArrayList, List => JList}
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
@@ -86,11 +87,15 @@ class OperationLog(path: Path) {
   private lazy val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
   private lazy val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
 
+  private lazy val extraPaths: ListBuffer[Path] = ListBuffer()
   private lazy val extraReaders: ListBuffer[BufferedReader] = ListBuffer()
+  private var lastReadPos = 0
+  private var seekableReader: SeekableBufferedReader = _
 
   def addExtraLog(path: Path): Unit = synchronized {
     try {
       extraReaders += Files.newBufferedReader(path, StandardCharsets.UTF_8)
+      extraPaths += path
     } catch {
       case _: IOException =>
     }
@@ -130,6 +135,13 @@ class OperationLog(path: Path) {
     }
   }
 
+  private def toRowSet(logs: JList[String]): TRowSet = {
+    val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
+    val tRow = new TRowSet(0, new JArrayList[TRow](logs.size()))
+    tRow.addToColumns(tColumn)
+    tRow
+  }
+
   /**
    * Read to log file line by line
    *
@@ -144,10 +156,29 @@ class OperationLog(path: Path) {
       logs.addAll(extraLogs)
     }
 
-    val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
-    val tRow = new TRowSet(0, new JArrayList[TRow](logs.size()))
-    tRow.addToColumns(tColumn)
-    tRow
+    toRowSet(logs)
+  }
+
+  def read(from: Int, size: Int): TRowSet = synchronized {
+    var pos = from
+    if (pos < 0) {
+      // just fetch forward
+      pos = lastReadPos
+    }
+    if (seekableReader == null) {
+      seekableReader = new SeekableBufferedReader(Seq(path) ++ extraPaths)
+    } else {
+      // if from < last pos, we should reload the reader
+      // otherwise, we can reuse the existed reader for better performance
+      if (pos < lastReadPos) {
+        seekableReader.close()
+        seekableReader = new SeekableBufferedReader(Seq(path) ++ extraPaths)
+      }
+    }
+
+    val it = seekableReader.readLine(pos, size)
+    lastReadPos = pos + size
+    toRowSet(it.toList.asJava)
   }
 
   def close(): Unit = synchronized {
@@ -158,6 +189,13 @@ class OperationLog(path: Path) {
     }
     trySafely {
       writer.close()
+    }
+
+    if (seekableReader != null) {
+      lastReadPos = 0
+      trySafely {
+        seekableReader.close()
+      }
     }
 
     trySafely {

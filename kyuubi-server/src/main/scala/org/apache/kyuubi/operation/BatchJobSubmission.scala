@@ -135,9 +135,10 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   def getOperationLogRowSet(
       order: FetchOrientation,
-      maxRows: Int): TRowSet = {
+      from: Int,
+      size: Int): TRowSet = {
     val operationLog = getOperationLog
-    operationLog.map(_.read(maxRows)).getOrElse {
+    operationLog.map(_.read(from, size)).getOrElse {
       throw KyuubiSQLException(s"Batch ID: $batchId, failed to generate operation log")
     }
   }
