@@ -116,6 +116,7 @@
         <guava.version>30.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.2</hadoop.version>
+        <hikaricp.version>2.6.1</hikaricp.version>
         <hive.engine.hive.version>3.1.3</hive.engine.hive.version>
         <hive.version>3.1.3</hive.version>
         <hive.service.rpc.version>3.1.3</hive.service.rpc.version>
@@ -202,7 +203,6 @@
 
         <!-- Package to use when relocating shaded classes. -->
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
-        <hikaricp.version>2.6.1</hikaricp.version>
     </properties>
 
     <repositories>
