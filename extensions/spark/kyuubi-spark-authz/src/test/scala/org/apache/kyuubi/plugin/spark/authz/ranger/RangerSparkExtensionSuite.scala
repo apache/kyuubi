@@ -275,15 +275,17 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
   }
 
   test("show databases") {
-    val db = "default"
+    val db1 = "default"
+    val db2 = "default2"
     try {
-      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db1"))
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db2"))
 
       doAs("admin", assert(sql(s"show databases").collect().length === 1))
       doAs("bob", assert(sql(s"show databases").collect().length === 0))
       doAs("i_am_invisible", assert(sql(s"show databases").collect().length === 0))
     } finally {
-      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db2"))
     }
   }
 }
