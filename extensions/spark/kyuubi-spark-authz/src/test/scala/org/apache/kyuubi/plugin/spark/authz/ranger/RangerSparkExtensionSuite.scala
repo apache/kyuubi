@@ -282,7 +282,7 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
       doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db2"))
 
       doAs("admin", assert(sql(s"show databases").collect().length === 2))
-      doAs("bob", assert(sql(s"show databases").collect().length === 0))
+      doAs("bob", assert(sql(s"show databases").collect().length === 1))
       doAs("i_am_invisible", assert(sql(s"show databases").collect().length === 0))
     } finally {
       doAs("admin", sql(s"DROP DATABASE IF EXISTS $db2"))
