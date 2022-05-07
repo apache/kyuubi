@@ -47,7 +47,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def compareActualAndExpected(builder: FlinkProcessBuilder) = {
     val actualCommands = builder.toString
     val classpathStr: String = constructClasspathStr(builder)
-    val expectedCommands = s"$javaPath -Xmx5g " +
+    val expectedCommands = s"$javaPath -Xmx1g " +
       s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 " +
       s"-cp $classpathStr $mainClassStr \\\n\t--conf kyuubi.session.user=vinoyang " +
       s"$confStr"
