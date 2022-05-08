@@ -426,6 +426,9 @@ abstract class TFrontendService(name: String)
         resp.setErrorCode(e.getErrorCode)
         resp.setErrorMessage(stringifyException(e))
       }
+      operationStatus.operationProgressUpdate.foreach { p =>
+        resp.setProgressUpdateResponse(p)
+      }
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>

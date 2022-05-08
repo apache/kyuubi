@@ -14,20 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.spark.operation.progress
 
-package org.apache.kyuubi.operation
+case class SparkStage(stageId: Int, attemptId: Int) extends Comparable[SparkStage] {
+  override def compareTo(o: SparkStage): Int = {
+    if (stageId == o.stageId) {
+      attemptId - o.attemptId
+    } else {
+      stageId - o.stageId
+    }
+  }
+}
 
-import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
+case class SparkStageProgress(
+    totalTaskCount: Int,
+    completedTasksCount: Int,
+    runningTaskCount: Int,
+    failedTaskCount: Int)
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.operation.OperationState.OperationState
-
-case class OperationStatus(
-    state: OperationState,
-    create: Long,
-    start: Long,
-    lastModified: Long,
-    completed: Long,
-    hasResultSet: Boolean,
-    exception: Option[KyuubiSQLException] = None,
-    operationProgressUpdate: Option[TProgressUpdateResp] = None)
+object SparkOperationProgressStatus extends Enumeration {
+  type SparkOperationProgressStatus = Value
+  val PENDING, RUNNING, FINISHED = Value
+}
