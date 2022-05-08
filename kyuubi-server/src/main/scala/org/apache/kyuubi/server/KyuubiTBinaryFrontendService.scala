@@ -28,6 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS, SERVER_VERSION}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
 
 final class KyuubiTBinaryFrontendService(
@@ -42,8 +43,32 @@ final class KyuubiTBinaryFrontendService(
     }
   }
 
-  private def getRealUser(req: TOpenSessionReq): String = {
-    ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
+  private def getProxyUser(
+      sessionConf: java.util.Map[String, String],
+      ipAddress: String,
+      realUser: String): String = {
+    val proxyUser = sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER)
+    if (proxyUser == null) {
+      realUser
+    } else {
+      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
+      proxyUser
+    }
+  }
+
+  /**
+   * @param req the thrift open session request
+   * @return the real user and the final user
+   */
+  private def getUserName(req: TOpenSessionReq): (String, String) = {
+    val realUser = ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
+    val finalUser =
+      if (req.getConfiguration == null) {
+        realUser
+      } else {
+        getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
+      }
+    realUser -> finalUser
   }
 
   @throws[KyuubiSQLException]
@@ -52,8 +77,7 @@ final class KyuubiTBinaryFrontendService(
       res: TOpenSessionResp): SessionHandle = {
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
-    val realUser = getRealUser(req)
-    val userName = getUserName(req)
+    val (realUser, userName) = getUserName(req)
     val ipAddress = authFactory.getIpAddress.orNull
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++

@@ -46,7 +46,7 @@ abstract class TFrontendService(name: String)
   extends AbstractFrontendService(name) with TCLIService.Iface with Runnable with Logging {
   import TFrontendService._
   private val started = new AtomicBoolean(false)
-  private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
+  protected lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
   private lazy val serverThread = new NamedThreadFactory(getName, false).newThread(this)
   private lazy val serverHost = conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
 
@@ -119,27 +119,8 @@ abstract class TFrontendService(name: String)
     host + ":" + actualPort
   }
 
-  private def getProxyUser(
-      sessionConf: java.util.Map[String, String],
-      ipAddress: String,
-      realUser: String): String = {
-    val proxyUser = sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER)
-    if (proxyUser == null) {
-      realUser
-    } else {
-      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
-      proxyUser
-    }
-  }
-
-  protected def getUserName(req: TOpenSessionReq): String = {
-    val realUser: String =
-      ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
-    if (req.getConfiguration == null) {
-      realUser
-    } else {
-      getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
-    }
+  private def getUserName(req: TOpenSessionReq): String = {
+    ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
   }
 
   protected def getMinVersion(versions: TProtocolVersion*): TProtocolVersion = {
