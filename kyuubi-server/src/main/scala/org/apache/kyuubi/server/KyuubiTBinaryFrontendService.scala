@@ -21,6 +21,7 @@ import java.util.Base64
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -30,10 +31,12 @@ import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TBinaryFron
 import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS, SERVER_VERSION}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
+import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 final class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)
   extends TBinaryFrontendService("KyuubiTBinaryFrontend") {
+  private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
 
   override lazy val discoveryService: Option[Service] = {
     if (ServiceDiscovery.supportServiceDiscovery(conf)) {

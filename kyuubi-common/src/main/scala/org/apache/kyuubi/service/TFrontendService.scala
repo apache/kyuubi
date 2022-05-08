@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.TProtocol
 import org.apache.thrift.server.{ServerContext, TServerEventHandler}
@@ -35,7 +34,7 @@ import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{KyuubiHadoopUtils, NamedThreadFactory}
+import org.apache.kyuubi.util.NamedThreadFactory
 
 /**
  * Apache Thrift based hive-service-rpc base class
@@ -46,7 +45,6 @@ abstract class TFrontendService(name: String)
   extends AbstractFrontendService(name) with TCLIService.Iface with Runnable with Logging {
   import TFrontendService._
   private val started = new AtomicBoolean(false)
-  protected lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
   private lazy val serverThread = new NamedThreadFactory(getName, false).newThread(this)
   private lazy val serverHost = conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
 
