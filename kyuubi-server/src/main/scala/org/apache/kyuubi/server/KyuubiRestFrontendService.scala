@@ -93,10 +93,16 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     super.stop()
   }
 
-  def getUserName(sessionConf: Map[String, String]): String = {
+  /**
+   * @param sessionConf the open session conf
+   * @return the real user and the final user
+   */
+  def getUserName(sessionConf: Map[String, String]): (String, String) = {
     val realUser: String = ServiceUtils.getShortName(
       Option(AuthenticationFilter.getUserName).filter(_.nonEmpty).getOrElse("anonymous"))
-    getProxyUser(sessionConf, Option(AuthenticationFilter.getUserIpAddress).orNull, realUser)
+    val finalUser =
+      getProxyUser(sessionConf, Option(AuthenticationFilter.getUserIpAddress).orNull, realUser)
+    realUser -> finalUser
   }
 
   private def getProxyUser(

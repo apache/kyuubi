@@ -19,13 +19,16 @@ package org.apache.kyuubi.server
 
 import java.util.Base64
 
+import scala.collection.JavaConverters._
+
 import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
-import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
-import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
-import org.apache.kyuubi.session.KyuubiSessionImpl
+import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TBinaryFrontendService}
+import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS, SERVER_VERSION}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
 
 final class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)
@@ -37,6 +40,31 @@ final class KyuubiTBinaryFrontendService(
     } else {
       None
     }
+  }
+
+  private def getRealUser(req: TOpenSessionReq): String = {
+    ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
+  }
+
+  @throws[KyuubiSQLException]
+  override protected def getSessionHandle(
+      req: TOpenSessionReq,
+      res: TOpenSessionResp): SessionHandle = {
+    val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
+    res.setServerProtocolVersion(protocol)
+    val realUser = getRealUser(req)
+    val userName = getUserName(req)
+    val ipAddress = authFactory.getIpAddress.orNull
+    val configuration =
+      Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
+        Map(KyuubiConf.SESSION_REAL_USER.key -> realUser)
+    val sessionHandle = be.openSession(
+      protocol,
+      userName,
+      req.getPassword,
+      ipAddress,
+      configuration)
+    sessionHandle
   }
 
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {

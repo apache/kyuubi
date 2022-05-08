@@ -22,6 +22,7 @@ import org.apache.kyuubi.events.KyuubiSessionEvent
 
 abstract class KyuubiSession(
     protocol: TProtocolVersion,
+    val realUser: String,
     user: String,
     password: String,
     ipAddress: String,

@@ -64,8 +64,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       conf: Map[String, String]): Session = {
     // inject client ip into session conf
     val newConf = conf + (CLIENT_IP_KEY -> ipAddress)
+    val realUser = conf.get(KyuubiConf.SESSION_REAL_USER.key).getOrElse(user)
     new KyuubiSessionImpl(
       protocol,
+      realUser,
       user,
       password,
       ipAddress,
@@ -112,9 +114,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String],
       batchRequest: BatchRequest): SessionHandle = {
-    val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
+    val realUser = conf.get(KyuubiConf.SESSION_REAL_USER.key).getOrElse(user)
     val batchSession = new KyuubiBatchSessionImpl(
       protocol,
+      realUser,
       user,
       password,
       ipAddress,
@@ -142,7 +145,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
         }
         throw KyuubiSQLException(
-          s"Error opening batch session for $username client ip $ipAddress, due to ${e.getMessage}",
+          s"Error opening batch session for $user client ip $ipAddress, due to ${e.getMessage}",
           e)
     }
   }
