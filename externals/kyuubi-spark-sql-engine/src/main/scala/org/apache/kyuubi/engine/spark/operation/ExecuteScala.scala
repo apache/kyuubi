@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.io.File
-
 import scala.tools.nsc.interpreter.Results.{Error, Incomplete, Success}
 
 import org.apache.spark.sql.Row
@@ -66,11 +64,15 @@ class ExecuteScala(
       if (legacyOutput.nonEmpty) {
         warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
       }
-      val jars = spark.sharedState.jarClassLoader.getURLs.filter { u =>
-        val file = new File(u.getPath)
-        u.getProtocol == "file" && file.isFile
+      val jars = spark.sharedState.jarClassLoader.getURLs
+      jars.foreach { jar =>
+        try {
+          repl.addUrlsToClassPath(jar)
+        } catch {
+          case t: Throwable =>
+            throw KyuubiSQLException(s"Failed to add jar $jar", t)
+        }
       }
-      repl.addUrlsToClassPath(jars: _*)
 
       repl.interpretWithRedirectOutError(statement) match {
         case Success =>
