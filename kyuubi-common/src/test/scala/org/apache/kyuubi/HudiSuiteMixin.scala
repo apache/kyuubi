@@ -49,7 +49,7 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
     if (Try {
         Thread.currentThread().getContextClassLoader.loadClass(hoodieCatalog)
       }.isSuccess) {
-      config + ("spark.sql.catalog." + catalog -> "org.apache.spark.sql.hudi.catalog.HoodieCatalog")
+      config + ("spark.sql.catalog." + catalog -> hoodieCatalog)
     } else {
       config
     }
