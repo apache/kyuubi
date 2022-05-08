@@ -204,6 +204,29 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(response4.getStatus == 200)
     val getBatchListResponse4 = response4.readEntity(classOf[GetBatchesResponse])
     assert(getBatchListResponse4.batches.isEmpty && getBatchListResponse4.total == 0)
+
+    val response5 = webTarget.path("api/v1/batches")
+      .queryParam("batchType", "mock")
+      .queryParam("from", "2")
+      .queryParam("size", "2")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+
+    assert(response5.getStatus == 200)
+
+    val getBatchListResponse5 = response5.readEntity(classOf[GetBatchesResponse])
+    assert(getBatchListResponse5.total == 0)
+
+    // TODO add more test when add more batchType
+    val response6 = webTarget.path("api/v1/batches")
+      .queryParam("from", "2")
+      .queryParam("size", "2")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+
+    assert(response6.getStatus == 200)
+    val getBatchListResponse6 = response6.readEntity(classOf[GetBatchesResponse])
+    assert(getBatchListResponse6.total == 1)
     sessionManager.allSessions().map(_.close())
   }
 }
