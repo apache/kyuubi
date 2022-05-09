@@ -95,28 +95,26 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   /**
    * @param sessionConf the open session conf
-   * @return the real user and the final user
+   * @return the real user and proxy user
    */
-  def getUserName(sessionConf: Map[String, String]): (String, String) = {
+  def getRealUserAndProxyUser(sessionConf: Map[String, String]): (String, Option[String]) = {
     val realUser: String = ServiceUtils.getShortName(
       Option(AuthenticationFilter.getUserName).filter(_.nonEmpty).getOrElse("anonymous"))
-    val finalUser =
+    val proxyUser =
       getProxyUser(sessionConf, Option(AuthenticationFilter.getUserIpAddress).orNull, realUser)
-    realUser -> finalUser
+    realUser -> proxyUser
   }
 
   private def getProxyUser(
       sessionConf: Map[String, String],
       ipAddress: String,
-      realUser: String): String = {
-    if (sessionConf == null) {
-      realUser
-    } else {
-      sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).map { proxyUser =>
+      realUser: String): Option[String] = {
+    Option(sessionConf).map { conf =>
+      conf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).map { proxyUser =>
         KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
         proxyUser
-      }.getOrElse(realUser)
-    }
+      }.orElse(None)
+    }.getOrElse(None)
   }
 
   override val discoveryService: Option[Service] = None

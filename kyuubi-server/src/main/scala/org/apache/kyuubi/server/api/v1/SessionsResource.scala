@@ -28,7 +28,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
@@ -139,15 +138,14 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): SessionHandle = {
-    val (realUser, userName) = fe.getUserName(request.configs)
+    val (realUser, _) = fe.getRealUserAndProxyUser(request.configs)
     val ipAddress = AuthenticationFilter.getUserIpAddress
     fe.be.openSession(
       TProtocolVersion.findByValue(request.protocolVersion),
-      userName,
+      realUser,
       request.password,
       ipAddress,
-      Option(request.configs).getOrElse(Map.empty[String, String]) ++
-        Map(KyuubiConf.SESSION_REAL_USER.key -> realUser))
+      Option(request.configs).getOrElse(Map.empty[String, String]))
   }
 
   @ApiResponse(

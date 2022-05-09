@@ -23,12 +23,18 @@ import org.apache.kyuubi.events.KyuubiSessionEvent
 abstract class KyuubiSession(
     protocol: TProtocolVersion,
     val realUser: String,
-    user: String,
+    val proxyUser: Option[String],
     password: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends AbstractSession(
+    protocol,
+    proxyUser.getOrElse(realUser),
+    password,
+    ipAddress,
+    conf,
+    sessionManager) {
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 

@@ -1309,14 +1309,6 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val SESSION_REAL_USER: OptionalConfigEntry[String] =
-    buildConf("kyuubi.session.real.user")
-      .internal
-      .doc("The real user that open the session.")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
-
   object OperationModes extends Enumeration {
     type OperationMode = Value
     val PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION, NONE = Value

@@ -28,7 +28,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource.REST_BATCH_PROTOCOL
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
@@ -50,14 +49,15 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openBatchSession(request: BatchRequest): Batch = {
-    val (realUser, userName) = fe.getUserName(request.conf)
+    val (realUser, proxyUser) = fe.getRealUserAndProxyUser(request.conf)
     val ipAddress = AuthenticationFilter.getUserIpAddress
     val sessionHandle = sessionManager.openBatchSession(
       REST_BATCH_PROTOCOL,
-      userName,
+      realUser,
+      proxyUser,
       "anonymous",
       ipAddress,
-      Option(request.conf).getOrElse(Map()) ++ Map(KyuubiConf.SESSION_REAL_USER.key -> realUser),
+      Option(request.conf).getOrElse(Map()),
       request)
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
     buildBatch(session)
@@ -139,7 +139,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
     var userName: String = null
     try {
-      userName = fe.getUserName(sessionConf)._2
+      val (realUser, proxyUser) = fe.getRealUserAndProxyUser(sessionConf)
+      userName = proxyUser.getOrElse(realUser)
     } catch {
       case t: Throwable =>
         throw new NotAllowedException(t.getMessage)

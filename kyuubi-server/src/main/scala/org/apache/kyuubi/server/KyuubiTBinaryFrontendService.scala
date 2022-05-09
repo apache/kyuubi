@@ -25,7 +25,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS, SERVER_VERSION}
@@ -46,32 +45,23 @@ final class KyuubiTBinaryFrontendService(
     }
   }
 
-  private def getProxyUser(
-      sessionConf: java.util.Map[String, String],
-      ipAddress: String,
-      realUser: String): String = {
-    val proxyUser = sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER)
-    if (proxyUser == null) {
-      realUser
-    } else {
-      KyuubiAuthenticationFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hadoopConf)
-      proxyUser
-    }
-  }
-
   /**
    * @param req the thrift open session request
-   * @return the real user and the final user
+   * @return the real user that open the session
    */
-  private def getUserName(req: TOpenSessionReq): (String, String) = {
+  private def getRealUser(req: TOpenSessionReq): String = {
     val realUser = ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
-    val finalUser =
-      if (req.getConfiguration == null) {
-        realUser
-      } else {
-        getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
+    if (req.getConfiguration == null) {
+      val sessionConf = req.getConfiguration.asScala
+      sessionConf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER).foreach { proxyUser =>
+        KyuubiAuthenticationFactory.verifyProxyAccess(
+          realUser,
+          proxyUser,
+          authFactory.getIpAddress.orNull,
+          hadoopConf)
       }
-    realUser -> finalUser
+    }
+    realUser
   }
 
   @throws[KyuubiSQLException]
@@ -80,14 +70,13 @@ final class KyuubiTBinaryFrontendService(
       res: TOpenSessionResp): SessionHandle = {
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
-    val (realUser, userName) = getUserName(req)
+    val realUser = getRealUser(req)
     val ipAddress = authFactory.getIpAddress.orNull
     val configuration =
-      Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
-        Map(KyuubiConf.SESSION_REAL_USER.key -> realUser)
+      Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
     val sessionHandle = be.openSession(
       protocol,
-      userName,
+      realUser,
       req.getPassword,
       ipAddress,
       configuration)

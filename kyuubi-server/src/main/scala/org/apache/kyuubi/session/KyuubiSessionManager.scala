@@ -33,6 +33,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.api.v1.BatchRequest
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   import KyuubiSessionManager._
@@ -58,17 +59,18 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override protected def createSession(
       protocol: TProtocolVersion,
-      user: String,
+      realUser: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
     // inject client ip into session conf
     val newConf = conf + (CLIENT_IP_KEY -> ipAddress)
-    val realUser = conf.get(KyuubiConf.SESSION_REAL_USER.key).getOrElse(user)
+    val proxyUser = conf.get(KyuubiAuthenticationFactory.HS2_PROXY_USER)
+    val user = proxyUser.getOrElse(realUser)
     new KyuubiSessionImpl(
       protocol,
       realUser,
-      user,
+      proxyUser,
       password,
       ipAddress,
       newConf,
@@ -109,16 +111,17 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def openBatchSession(
       protocol: TProtocolVersion,
-      user: String,
+      realUser: String,
+      proxyUser: Option[String],
       password: String,
       ipAddress: String,
       conf: Map[String, String],
       batchRequest: BatchRequest): SessionHandle = {
-    val realUser = conf.get(KyuubiConf.SESSION_REAL_USER.key).getOrElse(user)
+    val user = proxyUser.getOrElse(realUser)
     val batchSession = new KyuubiBatchSessionImpl(
       protocol,
       realUser,
-      user,
+      proxyUser,
       password,
       ipAddress,
       conf,
