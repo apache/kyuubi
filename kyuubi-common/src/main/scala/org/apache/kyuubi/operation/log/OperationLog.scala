@@ -89,7 +89,7 @@ class OperationLog(path: Path) {
 
   private lazy val extraPaths: ListBuffer[Path] = ListBuffer()
   private lazy val extraReaders: ListBuffer[BufferedReader] = ListBuffer()
-  private var lastReadPos = 0
+  private var lastSeekReadPos = 0
   private var seekableReader: SeekableBufferedReader = _
 
   def addExtraLog(path: Path): Unit = synchronized {
@@ -163,22 +163,23 @@ class OperationLog(path: Path) {
     var pos = from
     if (pos < 0) {
       // just fetch forward
-      pos = lastReadPos
+      pos = lastSeekReadPos
     }
     if (seekableReader == null) {
       seekableReader = new SeekableBufferedReader(Seq(path) ++ extraPaths)
     } else {
       // if from < last pos, we should reload the reader
       // otherwise, we can reuse the existed reader for better performance
-      if (pos < lastReadPos) {
+      if (pos < lastSeekReadPos) {
         seekableReader.close()
         seekableReader = new SeekableBufferedReader(Seq(path) ++ extraPaths)
       }
     }
 
     val it = seekableReader.readLine(pos, size)
-    lastReadPos = pos + size
-    toRowSet(it.toList.asJava)
+    val res = it.toList.asJava
+    lastSeekReadPos = pos + res.size()
+    toRowSet(res)
   }
 
   def close(): Unit = synchronized {
@@ -192,7 +193,7 @@ class OperationLog(path: Path) {
     }
 
     if (seekableReader != null) {
-      lastReadPos = 0
+      lastSeekReadPos = 0
       trySafely {
         seekableReader.close()
       }
