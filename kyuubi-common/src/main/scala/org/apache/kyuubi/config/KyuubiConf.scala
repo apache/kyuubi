@@ -186,6 +186,26 @@ object KyuubiConf {
     ConfigBuilder(key).onCreate(register)
   }
 
+  /**
+   * Create an object instance with given [[KyuubiConf]].
+   * @param clazz object class
+   * @param conf configuration ([[KyuubiConf]])
+   * @tparam T object instance type to create
+   * @return
+   */
+  def createInstance[T](clazz: Class[_], conf: KyuubiConf): T = {
+    val confConstructor = clazz.getConstructors.exists(p => {
+      val params = p.getParameterTypes
+      params.length == 1 && classOf[KyuubiConf].isAssignableFrom(params(0))
+    })
+    if (confConstructor) {
+      clazz.getConstructor(classOf[KyuubiConf]).newInstance(conf)
+        .asInstanceOf[T]
+    } else {
+      clazz.newInstance().asInstanceOf[T]
+    }
+  }
+
   val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("kyuubi.kinit.principal")
     .doc("Name of the Kerberos principal.")
     .version("1.0.0")
