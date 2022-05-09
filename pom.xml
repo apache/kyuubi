@@ -1880,7 +1880,10 @@
                 <spark.version>3.0.3</spark.version>
                 <delta.version>0.8.0</delta.version>
                 <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-                <!-- Hudi 0.10.0 still support Spark 3.0, but need build by user with specific profile -->
+                <!--
+                    https://hudi.apache.org/releases/release-0.11.0/#bundle-usage-updates
+                    Hudi 0.11.0 Spark bundle for 3.0.x is no longer officially supported.
+                -->
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -1905,6 +1908,10 @@
                 <spark.version>3.2.1</spark.version>
                 <delta.version>1.2.1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
+                <!--
+                    See https://github.com/apache/incubator-kyuubi/pull/2576
+                    Hudi 0.11 requires hudi-spark3.2-bundle to execute UT
+                -->
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
