@@ -19,8 +19,6 @@ package org.apache.kyuubi
 
 import java.nio.file.Path
 
-import scala.util.Try
-
 trait HudiSuiteMixin extends DataLakeSuiteMixin {
 
   override protected def format: String = "hudi"
@@ -36,22 +34,10 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
       .mkString(",")
   }
 
-  override protected def extraConfigs = {
-    val config = Map(
-      "spark.sql.catalogImplementation" -> "in-memory",
-      "spark.sql.defaultCatalog" -> catalog,
-      "spark.sql.extensions" -> "org.apache.spark.sql.hudi.HoodieSparkSessionExtension",
-      "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
-      "spark.jars" -> extraJars)
-    // See https://hudi.apache.org/docs/quick-start-guide/
-    // For Spark 3.2, the additional spark_catalog config is required
-    val hoodieCatalog = "org.apache.spark.sql.hudi.catalog.HoodieCatalog"
-    if (Try {
-        Thread.currentThread().getContextClassLoader.loadClass(hoodieCatalog)
-      }.isSuccess) {
-      config + ("spark.sql.catalog." + catalog -> "org.apache.spark.sql.hudi.catalog.HoodieCatalog")
-    } else {
-      config
-    }
-  }
+  override protected def extraConfigs = Map(
+    "spark.sql.catalogImplementation" -> "in-memory",
+    "spark.sql.defaultCatalog" -> catalog,
+    "spark.sql.extensions" -> "org.apache.spark.sql.hudi.HoodieSparkSessionExtension",
+    "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
+    "spark.jars" -> extraJars)
 }
