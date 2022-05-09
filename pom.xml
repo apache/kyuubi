@@ -146,7 +146,6 @@
         <scalatestplus.version>3.2.9.0</scalatestplus.version>
         <scopt.version>4.0.1</scopt.version>
         <slf4j.version>1.7.35</slf4j.version>
-        <thrift.version>0.9.3</thrift.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `iceberg.name`, `maven.plugin.scalatest.exclude.tags`
@@ -156,7 +155,8 @@
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.1.11</swagger.version>
-        <testcontainers.version>0.39.12</testcontainers.version>
+        <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
+        <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <zookeeper.version>3.4.14</zookeeper.version>
@@ -533,13 +533,13 @@
             <dependency>
                 <groupId>com.dimafeng</groupId>
                 <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>
-                <version>${testcontainers.version}</version>
+                <version>${testcontainers-scala.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.dimafeng</groupId>
                 <artifactId>testcontainers-scala-trino_${scala.binary.version}</artifactId>
-                <version>${testcontainers.version}</version>
+                <version>${testcontainers-scala.version}</version>
             </dependency>
 
             <dependency>
