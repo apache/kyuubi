@@ -25,11 +25,14 @@ class KyuubiOperationWithHiveEngineSuite extends WithKyuubiServer with HiveEngin
   override protected val conf: KyuubiConf = {
     val metastore = Utils.createTempDir(namePrefix = getClass.getSimpleName)
     metastore.toFile.delete()
+    val currentUser = Utils.currentUser
     KyuubiConf()
       .set(ENGINE_TYPE, "HIVE_SQL")
       // increase this to 30s as hive session state and metastore client is slow initializing
       .setIfMissing(ENGINE_IDLE_TIMEOUT, 30000L)
       .set("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
+      .set(s"hadoop.proxyuser.$currentUser.groups", "*")
+      .set(s"hadoop.proxyuser.$currentUser.hosts", "*")
   }
 
   override protected def jdbcUrl: String = getJdbcUrl

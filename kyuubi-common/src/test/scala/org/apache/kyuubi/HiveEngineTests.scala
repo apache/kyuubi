@@ -32,6 +32,20 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
  */
 trait HiveEngineTests extends HiveJDBCTestHelper {
 
+  test("multi tenancy support") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
+    val currentUser = Utils.currentUser
+    val proxyUser = currentUser + "proxy"
+    withSessionConf(Map("hive.server2.proxy.user" -> proxyUser))(
+      Map("kyuubi.engine.share.level" -> "connection"))() {
+      withJdbcStatement() { statement =>
+        val rs = statement.executeQuery("SELECT current_user() as col")
+        assert(rs.next())
+        assert(rs.getString("col") === proxyUser)
+      }
+    }
+  }
+
   test("get catalogs") {
     assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
     withJdbcStatement() { statement =>
