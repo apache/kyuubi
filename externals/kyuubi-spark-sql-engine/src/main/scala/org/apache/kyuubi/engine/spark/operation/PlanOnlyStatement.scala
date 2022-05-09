@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_PLAN_ONLY_EXCLUDES
@@ -53,34 +53,33 @@ class PlanOnlyStatement(
 
   override protected def runInternal(): Unit = {
     try {
-      val substitutorStatement = SQLConf.withExistingConf(spark.sessionState.conf) {
-        new VariableSubstitution().substitute(statement)
-      }
-      spark.sparkContext.setJobDescription(substitutorStatement)
-      val parsed = spark.sessionState.sqlParser.parsePlan(substitutorStatement)
-      parsed match {
-        case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
-          result = spark.sql(statement)
-          iter = new ArrayFetchIterator(result.collect())
-        case plan => mode match {
-            case PARSE =>
-              iter = new IterableFetchIterator(Seq(Row(plan.toString())))
-            case ANALYZE =>
-              val analyzed = spark.sessionState.analyzer.execute(plan)
-              spark.sessionState.analyzer.checkAnalysis(analyzed)
-              iter = new IterableFetchIterator(Seq(Row(analyzed.toString())))
-            case OPTIMIZE =>
-              val analyzed = spark.sessionState.analyzer.execute(plan)
-              spark.sessionState.analyzer.checkAnalysis(analyzed)
-              val optimized = spark.sessionState.optimizer.execute(analyzed)
-              iter = new IterableFetchIterator(Seq(Row(optimized.toString())))
-            case PHYSICAL =>
-              val physical = spark.sql(statement).queryExecution.sparkPlan
-              iter = new IterableFetchIterator(Seq(Row(physical.toString())))
-            case EXECUTION =>
-              val executed = spark.sql(statement).queryExecution.executedPlan
-              iter = new IterableFetchIterator(Seq(Row(executed.toString())))
-          }
+      spark.sparkContext.setJobDescription(statement)
+      SQLConf.withExistingConf(spark.sessionState.conf) {
+        val parsed = spark.sessionState.sqlParser.parsePlan(statement)
+        parsed match {
+          case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
+            result = spark.sql(statement)
+            iter = new ArrayFetchIterator(result.collect())
+          case plan => mode match {
+              case PARSE =>
+                iter = new IterableFetchIterator(Seq(Row(plan.toString())))
+              case ANALYZE =>
+                val analyzed = spark.sessionState.analyzer.execute(plan)
+                spark.sessionState.analyzer.checkAnalysis(analyzed)
+                iter = new IterableFetchIterator(Seq(Row(analyzed.toString())))
+              case OPTIMIZE =>
+                val analyzed = spark.sessionState.analyzer.execute(plan)
+                spark.sessionState.analyzer.checkAnalysis(analyzed)
+                val optimized = spark.sessionState.optimizer.execute(analyzed)
+                iter = new IterableFetchIterator(Seq(Row(optimized.toString())))
+              case PHYSICAL =>
+                val physical = spark.sql(statement).queryExecution.sparkPlan
+                iter = new IterableFetchIterator(Seq(Row(physical.toString())))
+              case EXECUTION =>
+                val executed = spark.sql(statement).queryExecution.executedPlan
+                iter = new IterableFetchIterator(Seq(Row(executed.toString())))
+            }
+        }
       }
     } catch {
       onError()
