@@ -19,9 +19,8 @@ package org.apache.kyuubi.ha.client
 
 import java.io.IOException
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient
 
 object DiscoveryClientProvider extends Logging {
 
@@ -29,7 +28,7 @@ object DiscoveryClientProvider extends Logging {
    * Creates a zookeeper client before calling `f` and close it after calling `f`.
    */
   def withDiscoveryClient[T](conf: KyuubiConf)(f: DiscoveryClient => T): T = {
-    val discoveryClient = new ZookeeperDiscoveryClient(conf)
+    val discoveryClient = createDiscoveryClient(conf)
     try {
       discoveryClient.createClient()
       f(discoveryClient)
@@ -42,4 +41,15 @@ object DiscoveryClientProvider extends Logging {
     }
   }
 
+  def createDiscoveryClient(conf: KyuubiConf): DiscoveryClient = {
+    val className = conf.get(KyuubiConf.DISCOVERY_CLIENT_CLASS)
+    val clazz =
+      try {
+        Class.forName(className)
+      } catch {
+        case ex: Throwable => throw new KyuubiException(s"Class not found $className", ex)
+      }
+    val constructor = clazz.getConstructor(conf.getClass)
+    constructor.newInstance(conf).asInstanceOf[DiscoveryClient]
+  }
 }

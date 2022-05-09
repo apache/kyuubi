@@ -1468,4 +1468,11 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
+
+  val DISCOVERY_CLIENT_CLASS: ConfigEntry[String] =
+    buildConf("kyuubi.service.discovery.client.class")
+      .doc("Class name for service discovery client.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient")
 }
