@@ -51,9 +51,8 @@ class PlanOnlyStatement(
     } else result.schema
   }
 
-  override protected def runInternal(): Unit = {
+  override protected def runInternal(): Unit = withLocalProperties {
     try {
-      spark.sparkContext.setJobDescription(statement)
       SQLConf.withExistingConf(spark.sessionState.conf) {
         val parsed = spark.sessionState.sqlParser.parsePlan(statement)
         parsed match {
