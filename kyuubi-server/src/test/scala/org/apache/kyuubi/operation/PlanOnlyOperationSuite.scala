@@ -103,6 +103,17 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("kyuubi #2565: Variable substitution should work in plan only mode") {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PARSE.toString))(Map.empty) {
+      withJdbcStatement() { statement =>
+        statement.executeQuery("set x = y")
+        val resultSet = statement.executeQuery("select '${x}'")
+        assert(resultSet.next())
+        resultSet.getString(1).contains("'Project [unresolvedalias(y, None)]")
+      }
+    }
+  }
+
   private def getOperationPlanWithStatement(statement: Statement): String = {
     val resultSet = statement.executeQuery("select 1 where true")
     assert(resultSet.next())
