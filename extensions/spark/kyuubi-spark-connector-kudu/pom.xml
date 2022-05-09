@@ -160,16 +160,40 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>io.trino.tpcds:tpcds</include>
-                            <include>com.google.guava:guava</include>
+                            <include>org.apache.kudu:kudu-client</include>
+                            <include>com.stumbleupon:async</include>
                         </includes>
                     </artifactSet>
+                    <filters>
+                        <filter>
+                            <artifact>org.apache.kudu:kudu-client</artifact>
+                            <excludes>
+                                <exclude>META-INF/maven/**</exclude>
+                                <exclude>META-INF/native/**</exclude>
+                                <exclude>META-INF/native-image/**</exclude>
+                                <exclude>MANIFEST.MF</exclude>
+                                <exclude>LICENSE</exclude>
+                                <exclude>LICENSE.txt</exclude>
+                                <exclude>NOTICE</exclude>
+                                <exclude>NOTICE.txt</exclude>
+                                <exclude>*.properties</exclude>
+                                <exclude>**/*.proto</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
                     <relocations>
                         <relocation>
-                            <pattern>com.google.common</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.com.google.common</shadedPattern>
+                            <pattern>org.apache.kudu</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.kudu</shadedPattern>
                             <includes>
-                                <include>com.google.common.**</include>
+                                <include>org.apache.kudu.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.stumbleupon:async</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.stumbleupon.async</shadedPattern>
+                            <includes>
+                                <include>com.stumbleupon.async.**</include>
                             </includes>
                         </relocation>
                     </relocations>
