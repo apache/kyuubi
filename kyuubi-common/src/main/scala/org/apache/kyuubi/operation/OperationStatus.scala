@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.OperationState.OperationState
 
@@ -27,4 +29,5 @@ case class OperationStatus(
     lastModified: Long,
     completed: Long,
     hasResultSet: Boolean,
-    exception: Option[KyuubiSQLException] = None)
+    exception: Option[KyuubiSQLException] = None,
+    operationProgressUpdate: Option[TProgressUpdateResp] = None)

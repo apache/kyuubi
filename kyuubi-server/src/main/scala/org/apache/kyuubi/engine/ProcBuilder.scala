@@ -103,8 +103,6 @@ trait ProcBuilder {
 
   protected def env: Map[String, String] = conf.getEnvs
 
-  protected def childProcEnv: Map[String, String] = env
-
   protected val extraEngineLog: Option[OperationLog]
 
   protected val workingDir: Path = {
@@ -137,7 +135,7 @@ trait ProcBuilder {
     val pb = new ProcessBuilder(commands: _*)
 
     val envs = pb.environment()
-    envs.putAll(childProcEnv.asJava)
+    envs.putAll(env.asJava)
     pb.directory(workingDir.toFile)
     pb.redirectError(engineLog)
     pb.redirectOutput(engineLog)

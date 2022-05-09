@@ -72,8 +72,10 @@ class SparkSQLEngineDeregisterMsgSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key ->
       // see https://issues.apache.org/jira/browse/SPARK-38926
-      // upper case SQL types in error messages
-      "to int causes overflow,to INT causes overflow")
+      // Upper case SQL types in error messages
+      // see https://issues.apache.org/jira/browse/SPARK-39007
+      // Use double quotes for SQL configs in error messages
+      "to int causes overflow,to \"INT\" causes overflow")
   }
 }
 

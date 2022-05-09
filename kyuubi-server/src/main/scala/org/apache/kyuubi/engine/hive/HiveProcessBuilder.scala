@@ -78,7 +78,7 @@ class HiveProcessBuilder(
     val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
     if (hadoopCp.isEmpty && extraCp.isEmpty) {
-      warn(s"The conf of ${HIVE_HADOOP_CLASSPATH} or ${ENGINE_HIVE_EXTRA_CLASSPATH} is empty.")
+      warn(s"The conf of ${HIVE_HADOOP_CLASSPATH} and ${ENGINE_HIVE_EXTRA_CLASSPATH.key} is empty.")
       debug("Detected development environment")
       mainResource.foreach { path =>
         val devHadoopJars = Paths.get(path).getParent
@@ -86,7 +86,7 @@ class HiveProcessBuilder(
           .resolve("jars")
         if (!Files.exists(devHadoopJars)) {
           throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
-            s"Please set ${HIVE_HADOOP_CLASSPATH} or ${ENGINE_HIVE_EXTRA_CLASSPATH} for " +
+            s"Please set ${HIVE_HADOOP_CLASSPATH} or ${ENGINE_HIVE_EXTRA_CLASSPATH.key} for " +
             s"configuring location of hadoop client jars, etc")
         }
         classpathEntries.add(s"$devHadoopJars${File.separator}*")

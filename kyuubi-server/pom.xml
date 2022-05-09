@@ -92,6 +92,18 @@
 
         <dependency>
             <groupId>org.apache.hive</groupId>
+            <artifactId>hive-standalone-metastore</artifactId>
+            <version>${hive.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
             <artifactId>hive-serde</artifactId>
             <version>${hive.version}</version>
             <exclusions>
@@ -236,7 +248,7 @@
 
         <dependency>
             <groupId>org.apache.hive</groupId>
-            <artifactId>hive-metastore</artifactId>
+            <artifactId>hive-standalone-metastore</artifactId>
             <version>${hive.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -298,6 +310,13 @@
                     <artifactId>commons-dbcp</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-storage-api</artifactId>
+            <version>${hive.client.storage-api.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TProgressUpdateResp, TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
@@ -73,6 +73,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   @volatile protected var lastAccessTime: Long = createTime
 
   @volatile protected var operationException: KyuubiSQLException = _
+  @volatile protected var operationJobProgress: TProgressUpdateResp = _
+
   @volatile protected var hasResultSet: Boolean = false
 
   @volatile private var _backgroundHandle: Future[_] = _
@@ -94,6 +96,10 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   protected def setOperationException(opEx: KyuubiSQLException): Unit = {
     this.operationException = opEx
+  }
+
+  def setOperationJobProgress(opJobProgress: TProgressUpdateResp): Unit = {
+    this.operationJobProgress = opJobProgress
   }
 
   protected def setState(newState: OperationState): Unit = {
@@ -206,7 +212,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
       lastAccessTime,
       completedTime,
       hasResultSet,
-      Option(operationException))
+      Option(operationException),
+      Option(operationJobProgress))
   }
 
   override def shouldRunAsync: Boolean
