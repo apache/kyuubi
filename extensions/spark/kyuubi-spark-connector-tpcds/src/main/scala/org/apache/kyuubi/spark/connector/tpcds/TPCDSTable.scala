@@ -31,11 +31,11 @@ import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCDSTable(tbl: String, scale: Int) extends SparkTable with SupportsRead {
+class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
+  extends SparkTable with SupportsRead {
 
   // When true, use CHAR VARCHAR; otherwise use STRING
-  // TODO: make it configurable
-  val useAnsiStringType: Boolean = false
+  val useAnsiStringType: Boolean = options.getBoolean("useAnsiStringType", false)
 
   val tablePartitionColumns: Map[String, Array[String]] = Map(
     "catalog_sales" -> Array("cs_sold_date_sk"),
