@@ -19,6 +19,8 @@ package org.apache.kyuubi
 
 import java.nio.file.Path
 
+import scala.util.Try
+
 trait HudiSuiteMixin extends DataLakeSuiteMixin {
 
   override protected def format: String = "hudi"
@@ -43,11 +45,13 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
       "spark.jars" -> extraJars)
     // See https://hudi.apache.org/docs/quick-start-guide/
     // For Spark 3.2, the additional spark_catalog config is required
-    Utils.majorMinorVersion(SPARK_COMPILE_VERSION) match {
-      case (3, minor) if minor >= 2 =>
-        config + ("spark.sql.catalog." + catalog ->
-          "org.apache.spark.sql.hudi.catalog.HoodieCatalog")
-      case _ => config
+    val hoodieCatalog = "org.apache.spark.sql.hudi.catalog.HoodieCatalog"
+    if (Try {
+        Thread.currentThread().getContextClassLoader.loadClass(hoodieCatalog)
+      }.isSuccess) {
+      config + ("spark.sql.catalog." + catalog -> hoodieCatalog)
+    } else {
+      config
     }
   }
 }
