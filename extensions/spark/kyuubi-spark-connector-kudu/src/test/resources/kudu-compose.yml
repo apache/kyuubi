@@ -19,7 +19,6 @@ version: "3"
 services:
   kudu-master:
     image: apache/kudu:1.15.0
-    container_name: kudu-master
     hostname: kudu-master
     ports:
       - "7051"
@@ -32,7 +31,6 @@ services:
     image: apache/kudu:1.15.0
     depends_on:
       - kudu-master
-    container_name: kudu-tserver-1
     hostname: kudu-tserver-1
     ports:
       - "7050"
@@ -45,7 +43,6 @@ services:
     image: apache/kudu:1.15.0
     depends_on:
       - kudu-master
-    container_name: kudu-tserver-2
     hostname: kudu-tserver-2
     ports:
       - "7050"
@@ -58,7 +55,6 @@ services:
     image: apache/kudu:1.15.0
     depends_on:
       - kudu-master
-    container_name: kudu-tserver-3
     hostname: kudu-tserver-3
     ports:
       - "7050"

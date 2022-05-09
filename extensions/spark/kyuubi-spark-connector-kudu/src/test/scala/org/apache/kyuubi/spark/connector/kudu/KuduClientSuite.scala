@@ -26,6 +26,7 @@ class KuduClientSuite extends KyuubiFunSuite with KuduMixin {
   test("kudu client") {
     val builder = new KuduClient.KuduClientBuilder(kuduMasterUrl)
     val kuduClient = builder.build()
-    assert(kuduClient.getClusterId.nonEmpty)
+
+    assert(kuduClient.findLeaderMasterServer().getPort === kuduMasterPort)
   }
 }
