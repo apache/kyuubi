@@ -68,15 +68,16 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
           "COMPLETED",
           "RUNNING",
           "PENDING",
-          "FAILED"))(headers.asScala)
+          "FAILED",
+          ""))(headers.asScala)
         assert(rows.size() == 1)
         progress match {
           case 0.0 =>
-            assert(Seq(s"Stage-$initStageId ", "0", "PENDING", "2", "0", "0", "2", "0")
+            assert(Seq(s"Stage-$initStageId ", "0", "PENDING", "2", "0", "0", "2", "0", "")
               == rows.get(0).asScala ||
-              Seq(s"Stage-$initStageId ", "0", "RUNNING", "2", "0", "1", "1", "0")
+              Seq(s"Stage-$initStageId ", "0", "RUNNING", "2", "0", "1", "1", "0", "")
               == rows.get(0).asScala ||
-              Seq(s"Stage-$initStageId ", "0", "RUNNING", "2", "0", "2", "0", "0")
+              Seq(s"Stage-$initStageId ", "0", "RUNNING", "2", "0", "2", "0", "0", "")
               == rows.get(0).asScala)
             assert("STAGES: 00/01" === footerSummary)
             assert(TJobExecutionStatus.IN_PROGRESS === status)
@@ -90,7 +91,8 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
               "1",
               "1",
               "0",
-              "0"))(
+              "0",
+              ""))(
               rows.get(0).asScala)
             assert("STAGES: 00/01" === footerSummary)
             assert(TJobExecutionStatus.IN_PROGRESS === status)
@@ -104,7 +106,8 @@ class SparkOperationProgressSuite extends WithSparkSQLEngine with HiveJDBCTestHe
               "2",
               "0",
               "0",
-              "0"))(
+              "0",
+              ""))(
               rows.get(0).asScala)
             assert("STAGES: 01/01" === footerSummary)
             checkFlag3 = true
