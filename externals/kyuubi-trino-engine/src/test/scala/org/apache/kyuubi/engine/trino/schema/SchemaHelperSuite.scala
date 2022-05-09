@@ -53,7 +53,8 @@ class SchemaHelperSuite extends KyuubiFunSuite {
       column("c18", TIME_WITH_TIME_ZONE),
       column("c19", TIMESTAMP_WITH_TIME_ZONE),
       column("c20", IPADDRESS),
-      column("c21", UUID))
+      column("c21", UUID),
+      column("c22", UNKNOWN))
 
   test("toTTypeId") {
     assert(toTTypeId(outerSchema.head.getTypeSignature) === TTypeId.BOOLEAN_TYPE)
@@ -80,6 +81,7 @@ class SchemaHelperSuite extends KyuubiFunSuite {
     assert(toTTypeId(outerSchema(19).getTypeSignature) === TTypeId.STRING_TYPE)
     assert(toTTypeId(outerSchema(20).getTypeSignature) === TTypeId.STRING_TYPE)
     assert(toTTypeId(outerSchema(21).getTypeSignature) === TTypeId.STRING_TYPE)
+    assert(toTTypeId(outerSchema(22).getTypeSignature) === TTypeId.NULL_TYPE)
 
     val e1 = intercept[IllegalArgumentException](toTTypeId(textTypeSignature))
     assert(e1.getMessage === "Unrecognized trino type name: text")

@@ -147,6 +147,9 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
   test("test with non-authentication path") {
     val response = webTarget.path("swagger").request().get()
     assert(HttpServletResponse.SC_OK == response.getStatus)
+
+    val openApiResponse = webTarget.path("api/openapi.json").request().get()
+    assert(HttpServletResponse.SC_OK == openApiResponse.getStatus)
   }
 
   test("test with ugi wrapped open session") {

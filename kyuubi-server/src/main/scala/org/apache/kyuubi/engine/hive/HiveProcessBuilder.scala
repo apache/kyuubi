@@ -37,7 +37,7 @@ class HiveProcessBuilder(
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
-  private val hiveHome: String = getEngineHome("hive")
+  private val hiveHome: String = getEngineHome(shortName)
 
   private val HIVE_HADOOP_CLASSPATH: String = "HIVE_HADOOP_CLASSPATH"
 
@@ -48,12 +48,6 @@ class HiveProcessBuilder(
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
-
-    // TODO: How shall we deal with proxyUser,
-    // user.name
-    // kyuubi.session.user
-    // or just leave it, because we can handle it at operation layer
-    buffer += s"-D$KYUUBI_SESSION_USER_KEY=$proxyUser"
 
     val memory = conf.get(ENGINE_HIVE_MEMORY)
     buffer += s"-Xmx$memory"
@@ -84,7 +78,7 @@ class HiveProcessBuilder(
     val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
     if (hadoopCp.isEmpty && extraCp.isEmpty) {
-      warn(s"The conf of ${HIVE_HADOOP_CLASSPATH} or ${ENGINE_HIVE_EXTRA_CLASSPATH} is empty.")
+      warn(s"The conf of ${HIVE_HADOOP_CLASSPATH} and ${ENGINE_HIVE_EXTRA_CLASSPATH.key} is empty.")
       debug("Detected development environment")
       mainResource.foreach { path =>
         val devHadoopJars = Paths.get(path).getParent
@@ -92,7 +86,7 @@ class HiveProcessBuilder(
           .resolve("jars")
         if (!Files.exists(devHadoopJars)) {
           throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
-            s"Please set ${HIVE_HADOOP_CLASSPATH} or ${ENGINE_HIVE_EXTRA_CLASSPATH} for " +
+            s"Please set ${HIVE_HADOOP_CLASSPATH} or ${ENGINE_HIVE_EXTRA_CLASSPATH.key} for " +
             s"configuring location of hadoop client jars, etc")
         }
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
@@ -100,6 +94,10 @@ class HiveProcessBuilder(
     }
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass
+
+    buffer += "--conf"
+    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+
     for ((k, v) <- conf.getAll) {
       buffer += "--conf"
       buffer += s"$k=$v"

@@ -14,28 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.spark.operation.progress
 
-package org.apache.kyuubi.operation
-
-import org.apache.kyuubi.WithKyuubiServerOnYarn
-
-class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with SparkQueryTests {
-
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  test("KYUUBI #527- Support test with mini yarn cluster") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("""SELECT "${spark.app.id}" as id""")
-      assert(resultSet.next())
-      assert(resultSet.getString("id").startsWith("application_"))
+case class SparkStage(stageId: Int, attemptId: Int) extends Comparable[SparkStage] {
+  override def compareTo(o: SparkStage): Int = {
+    if (stageId == o.stageId) {
+      attemptId - o.attemptId
+    } else {
+      stageId - o.stageId
     }
   }
+}
 
-  test("session_user shall work on yarn") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT SESSION_USER() as su")
-      assert(resultSet.next())
-      assert(resultSet.getString("su") === user)
-    }
-  }
+case class SparkStageProgress(
+    totalTaskCount: Int,
+    completedTasksCount: Int,
+    runningTaskCount: Int,
+    failedTaskCount: Int)
+
+object SparkOperationProgressStatus extends Enumeration {
+  type SparkOperationProgressStatus = Value
+  val PENDING, RUNNING, FINISHED = Value
 }

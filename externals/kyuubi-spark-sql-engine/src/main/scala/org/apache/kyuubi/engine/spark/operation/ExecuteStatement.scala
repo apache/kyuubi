@@ -17,24 +17,25 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.kyuubi.SQLOperationListener
+import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
+import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
+import org.apache.kyuubi.config.KyuubiConf.SESSION_PROGRESS_ENABLE
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.events.EventBus
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationStatus, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
     session: Session,
@@ -44,12 +45,15 @@ class ExecuteStatement(
     incrementalCollect: Boolean)
   extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
 
-  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
-
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
+
+  private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
+    case Some(s) => s.toBoolean
+    case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
+  }
 
   EventBus.post(SparkOperationEvent(this))
 
@@ -99,12 +103,12 @@ class ExecuteStatement(
     } catch {
       onError(cancel = true)
     } finally {
-      statementTimeoutCleaner.foreach(_.shutdown())
+      shutdownTimeoutMonitor()
     }
   }
 
   override protected def runInternal(): Unit = {
-    addTimeoutMonitor()
+    addTimeoutMonitor(queryTimeout)
     if (shouldRunAsync) {
       val asyncOperation = new Runnable {
         override def run(): Unit = {
@@ -130,22 +134,6 @@ class ExecuteStatement(
     }
   }
 
-  private def addTimeoutMonitor(): Unit = {
-    if (queryTimeout > 0) {
-      val timeoutExecutor =
-        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
-      timeoutExecutor.schedule(
-        new Runnable {
-          override def run(): Unit = {
-            cleanup(OperationState.TIMEOUT)
-          }
-        },
-        queryTimeout,
-        TimeUnit.SECONDS)
-      statementTimeoutCleaner = Some(timeoutExecutor)
-    }
-  }
-
   override def cleanup(targetState: OperationState): Unit = {
     spark.sparkContext.removeSparkListener(operationListener)
     super.cleanup(targetState)
@@ -155,6 +143,20 @@ class ExecuteStatement(
     super.setState(newState)
     EventBus.post(
       SparkOperationEvent(this, operationListener.getExecutionId))
+  }
+
+  override def getStatus: OperationStatus = {
+    if (progressEnable) {
+      val progressMonitor = new SparkProgressMonitor(spark, statementId)
+      setOperationJobProgress(new TProgressUpdateResp(
+        progressMonitor.headers,
+        progressMonitor.rows,
+        progressMonitor.progressedPercentage,
+        progressMonitor.executionStatus,
+        progressMonitor.footerSummary,
+        startTime))
+    }
+    super.getStatus
   }
 
   def setCompiledStateIfNeeded(): Unit = synchronized {

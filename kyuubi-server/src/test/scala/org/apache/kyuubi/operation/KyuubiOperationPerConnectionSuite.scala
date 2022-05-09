@@ -38,7 +38,9 @@ import org.apache.kyuubi.plugin.SessionConfAdvisor
  */
 class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
-  override protected def jdbcUrl: String = getJdbcUrl
+  override protected def jdbcUrl: String =
+    s"jdbc:kyuubi://${server.frontendServices.head.connectionUrl}/;"
+  override protected val URL_PREFIX: String = "jdbc:kyuubi://"
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "connection")
@@ -134,10 +136,15 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val connection = driver.connect(jdbcUrlWithConf, new Properties())
 
       val stmt = connection.createStatement()
-      stmt.execute("select engine_name()")
-      val resultSet = stmt.getResultSet
-      assert(resultSet.next())
-      assert(resultSet.getString(1).nonEmpty)
+      try {
+        stmt.execute("select engine_name()")
+        val resultSet = stmt.getResultSet
+        assert(resultSet.next())
+        assert(resultSet.getString(1).nonEmpty)
+      } finally {
+        stmt.close()
+        connection.close()
+      }
     }
 
     withSessionConf(Map.empty)(Map.empty)(Map(
@@ -146,10 +153,15 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val connection = driver.connect(jdbcUrlWithConf, new Properties())
 
       val stmt = connection.createStatement()
-      stmt.execute("select engine_name()")
-      val resultSet = stmt.getResultSet
-      assert(resultSet.next())
-      assert(resultSet.getString(1).nonEmpty)
+      try {
+        stmt.execute("select engine_name()")
+        val resultSet = stmt.getResultSet
+        assert(resultSet.next())
+        assert(resultSet.getString(1).nonEmpty)
+      } finally {
+        stmt.close()
+        connection.close()
+      }
     }
   }
 

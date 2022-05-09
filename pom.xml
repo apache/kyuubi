@@ -68,6 +68,7 @@
         <module>dev/kyuubi-codecov</module>
         <module>extensions/server/kyuubi-server-plugin</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
+        <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
         <module>externals/kyuubi-hive-sql-engine</module>
@@ -182,9 +183,7 @@
         <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
         <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
         <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
-        <!-- DO NOT bump 4.4.0, see https://github.com/apache/incubator-kyuubi/pull/441 -->
-        <!-- DO NOT bump 4.5.3, see https://github.com/apache/incubator-kyuubi/issues/708 -->
-        <maven.plugin.scala.version>4.5.6</maven.plugin.scala.version>
+        <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>

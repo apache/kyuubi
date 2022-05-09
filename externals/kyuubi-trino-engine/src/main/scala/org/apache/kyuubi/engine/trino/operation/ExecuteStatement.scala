@@ -17,20 +17,15 @@
 
 package org.apache.kyuubi.engine.trino.operation
 
-import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.RejectedExecutionException
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.trino.TrinoStatement
 import org.apache.kyuubi.engine.trino.event.TrinoOperationEvent
 import org.apache.kyuubi.events.EventBus
-import org.apache.kyuubi.operation.ArrayFetchIterator
-import org.apache.kyuubi.operation.IterableFetchIterator
-import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
     session: Session,
@@ -39,8 +34,6 @@ class ExecuteStatement(
     queryTimeout: Long,
     incrementalCollect: Boolean)
   extends TrinoOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
-
-  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
@@ -56,7 +49,7 @@ class ExecuteStatement(
   }
 
   override protected def runInternal(): Unit = {
-    addTimeoutMonitor()
+    addTimeoutMonitor(queryTimeout)
     val trinoStatement = TrinoStatement(trinoContext, session.sessionManager.getConf, statement)
     trino = trinoStatement.getTrinoClient
     if (shouldRunAsync) {
@@ -101,17 +94,7 @@ class ExecuteStatement(
     } catch {
       onError(cancel = true)
     } finally {
-      statementTimeoutCleaner.foreach(_.shutdown())
-    }
-  }
-
-  private def addTimeoutMonitor(): Unit = {
-    if (queryTimeout > 0) {
-      val timeoutExecutor =
-        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
-      val action: Runnable = () => cleanup(OperationState.TIMEOUT)
-      timeoutExecutor.schedule(action, queryTimeout, TimeUnit.SECONDS)
-      statementTimeoutCleaner = Some(timeoutExecutor)
+      shutdownTimeoutMonitor()
     }
   }
 

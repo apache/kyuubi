@@ -24,8 +24,6 @@ import java.util.LinkedHashSet
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import com.google.common.annotations.VisibleForTesting
-
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
@@ -39,47 +37,28 @@ class FlinkProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
     val extraEngineLog: Option[OperationLog] = None)
-  extends ProcBuilder with Logging {
+  extends ProcBuilder {
+
+  private val flinkHome: String = getEngineHome(shortName)
 
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
-  override protected def childProcEnv: Map[String, String] = conf.getEnvs +
-    ("FLINK_HOME" -> FLINK_HOME) +
-    ("FLINK_CONF_DIR" -> s"$FLINK_HOME/conf") +
-    ("_FLINK_HOME_DETERMINED" -> s"1")
-
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
-    buffer += s"bash"
-    buffer += s"-c"
-    val commandStr = new StringBuilder()
-
-    commandStr.append(s"source $FLINK_HOME${File.separator}bin" +
-      s"${File.separator}config.sh && $executable")
-
-    // TODO: How shall we deal with proxyUser,
-    // user.name
-    // kyuubi.session.user
-    // or just leave it, because we can handle it at operation layer
-    commandStr.append(s" -D$KYUUBI_SESSION_USER_KEY=$proxyUser ")
+    buffer += executable
 
     // TODO: add Kyuubi.engineEnv.FLINK_ENGINE_MEMORY or kyuubi.engine.flink.memory to configure
     // -Xmx5g
     // java options
-    val confStr = conf.getAll.filter { case (k, _) =>
-      k.startsWith("kyuubi.") || k.startsWith("flink.") ||
-        k.startsWith("hadoop.") || k.startsWith("yarn.")
-    }.map { case (k, v) => s"-D$k=$v" }.mkString(" ")
-    commandStr.append(confStr)
 
-    commandStr.append(" -cp ")
+    buffer += "-cp"
     val classpathEntries = new LinkedHashSet[String]
     // flink engine runtime jar
     mainResource.foreach(classpathEntries.add)
     // flink sql client jar
-    val flinkSqlClientPath = Paths.get(FLINK_HOME)
+    val flinkSqlClientPath = Paths.get(flinkHome)
       .resolve("opt")
       .toFile
       .listFiles(new FilenameFilter {
@@ -90,10 +69,10 @@ class FlinkProcessBuilder(
     classpathEntries.add(flinkSqlClientPath)
 
     // jars from flink lib
-    classpathEntries.add(s"$FLINK_HOME${File.separator}lib${File.separator}*")
+    classpathEntries.add(s"$flinkHome${File.separator}lib${File.separator}*")
 
     // classpath contains flink configurations, default to flink.home/conf
-    classpathEntries.add(env.getOrElse("FLINK_CONF_DIR", s"$FLINK_HOME${File.separator}conf"))
+    classpathEntries.add(env.getOrElse("FLINK_CONF_DIR", s"$flinkHome${File.separator}conf"))
     // classpath contains hadoop configurations
     env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
@@ -105,41 +84,17 @@ class FlinkProcessBuilder(
         "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
     }
     classpathEntries.add(hadoopClasspath.get)
-    commandStr.append(classpathEntries.asScala.mkString(File.pathSeparator))
-    commandStr.append(s" $mainClass")
-    buffer += commandStr.toString()
+    buffer += classpathEntries.asScala.mkString(File.pathSeparator)
+    buffer += mainClass
+
+    buffer += "--conf"
+    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+
+    for ((k, v) <- conf.getAll) {
+      buffer += "--conf"
+      buffer += s"$k=$v"
+    }
     buffer.toArray
-  }
-
-  @VisibleForTesting
-  def FLINK_HOME: String = {
-    // prepare FLINK_HOME
-    val flinkHomeOpt = env.get("FLINK_HOME").orElse {
-      val cwd = Utils.getCodeSourceLocation(getClass)
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve("kyuubi-download")
-          .resolve("target")
-          .toFile
-          .listFiles(new FilenameFilter {
-            override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.startsWith("flink-")
-            }
-          }))
-        .flatMap(_.headOption)
-        .map(_.getAbsolutePath)
-    }
-
-    flinkHomeOpt.map { dir =>
-      dir
-    } getOrElse {
-      throw KyuubiSQLException("FLINK_HOME is not set! " +
-        "For more detail information on installing and configuring Flink, please visit " +
-        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
-    }
   }
 
   override def shortName: String = "flink"

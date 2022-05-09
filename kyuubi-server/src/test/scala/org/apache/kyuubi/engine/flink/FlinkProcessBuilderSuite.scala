@@ -36,18 +36,14 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def envWithAllHadoop: ListMap[String, String] = envWithoutHadoopCLASSPATH +
     ("HADOOP_CLASSPATH" -> s"${File.separator}hadoop")
   private def confStr: String = {
-    conf.getAll.filter { case (k, _) =>
-      k.startsWith("kyuubi.") || k.startsWith("flink.") ||
-        k.startsWith("hadoop.") || k.startsWith("yarn.")
-    }.map { case (k, v) => s"-D$k=$v" }.mkString(" ")
+    conf.getAll.map { case (k, v) => s"\\\n\t--conf $k=$v" }.mkString(" ")
   }
   private def compareActualAndExpected(builder: FlinkProcessBuilder) = {
     val actualCommands = builder.toString
     val classpathStr: String = constructClasspathStr(builder)
-    val expectedCommands = s"bash -c source ${builder.FLINK_HOME}" +
-      s"${File.separator}bin${File.separator}config.sh && $javaPath " +
-      s"-Dkyuubi.session.user=vinoyang $confStr" +
-      s" -cp $classpathStr $mainClassStr"
+    val expectedCommands = s"$javaPath " +
+      s"-cp $classpathStr $mainClassStr \\\n\t--conf kyuubi.session.user=vinoyang " +
+      s"$confStr"
     info(s"\n\n actualCommands $actualCommands")
     info(s"\n\n expectedCommands $expectedCommands")
     assert(actualCommands.equals(expectedCommands))
@@ -56,9 +52,14 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def constructClasspathStr(builder: FlinkProcessBuilder) = {
     val classpathEntries = new java.util.LinkedHashSet[String]
     builder.mainResource.foreach(classpathEntries.add)
-    val flinkSqlClientJarPath = s"${builder.FLINK_HOME}$flinkSqlClientJarPathSuffix"
-    val flinkLibPath = s"${builder.FLINK_HOME}$flinkLibPathSuffix"
-    val flinkConfPath = s"${builder.FLINK_HOME}$flinkConfPathSuffix"
+
+    val flinkHomeField = classOf[FlinkProcessBuilder].getDeclaredField("flinkHome")
+    flinkHomeField.setAccessible(true)
+    val flinkHome = flinkHomeField.get(builder).asInstanceOf[String]
+
+    val flinkSqlClientJarPath = s"$flinkHome$flinkSqlClientJarPathSuffix"
+    val flinkLibPath = s"$flinkHome$flinkLibPathSuffix"
+    val flinkConfPath = s"$flinkHome$flinkConfPathSuffix"
     classpathEntries.add(flinkSqlClientJarPath)
     classpathEntries.add(flinkLibPath)
     classpathEntries.add(flinkConfPath)

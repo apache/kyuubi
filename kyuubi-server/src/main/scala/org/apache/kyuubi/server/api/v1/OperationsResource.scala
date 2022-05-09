@@ -17,13 +17,13 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import javax.ws.rs.{GET, Path, PathParam, Produces, _}
+import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.util.control.NonFatal
 
-import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift._
@@ -42,7 +42,8 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[KyuubiOperationEvent]))),
     description =
       "Get an operation event")
   @GET
@@ -91,7 +92,8 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ResultSetMetaData]))),
     description =
       "get result set metadata")
   @GET
@@ -130,7 +132,8 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationLog]))),
     description =
       "get operation log")
   @GET
@@ -156,7 +159,8 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ResultRowSet]))),
     description =
       "get result row set")
   @GET
