@@ -68,6 +68,7 @@
         <module>dev/kyuubi-codecov</module>
         <module>extensions/server/kyuubi-server-plugin</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
+        <module>extensions/spark/kyuubi-spark-connector-kudu</module>
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
@@ -135,6 +136,7 @@
         <jetty.version>9.4.41.v20210516</jetty.version>
         <jline.version>0.9.94</jline.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
+        <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <log4j.version>2.17.2</log4j.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
@@ -1347,6 +1349,11 @@
                 <version>${hikaricp.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.kudu</groupId>
+                <artifactId>kudu-client</artifactId>
+                <version>${kudu.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
