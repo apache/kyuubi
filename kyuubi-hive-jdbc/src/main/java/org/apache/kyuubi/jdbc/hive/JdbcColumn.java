@@ -24,6 +24,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
+import org.apache.hadoop.hive.common.type.TimestampTZ;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.thrift.Type;
 
@@ -94,6 +95,8 @@ public class JdbcColumn {
         return Double.class.getName();
       case Types.TIMESTAMP:
         return Timestamp.class.getName();
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+        return TimestampTZ.class.getName();
       case Types.DECIMAL:
         return BigInteger.class.getName();
       case Types.BINARY:
@@ -143,6 +146,8 @@ public class JdbcColumn {
       return Type.DATE_TYPE;
     } else if ("timestamp".equalsIgnoreCase(type)) {
       return Type.TIMESTAMP_TYPE;
+    } else if (serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME.equalsIgnoreCase(type)) {
+      return Type.TIMESTAMPLOCALTZ_TYPE;
     } else if ("interval_year_month".equalsIgnoreCase(type)) {
       return Type.INTERVAL_YEAR_MONTH_TYPE;
     } else if ("interval_day_time".equalsIgnoreCase(type)) {
@@ -157,6 +162,8 @@ public class JdbcColumn {
       return Type.ARRAY_TYPE;
     } else if ("struct".equalsIgnoreCase(type)) {
       return Type.STRUCT_TYPE;
+    } else if ("uniontype".equalsIgnoreCase(type)) {
+      return Type.UNION_TYPE;
     } else if ("void".equalsIgnoreCase(type) || "null".equalsIgnoreCase(type)) {
       return Type.NULL_TYPE;
     }
@@ -196,6 +203,8 @@ public class JdbcColumn {
       return serdeConstants.BIGINT_TYPE_NAME;
     } else if ("timestamp".equalsIgnoreCase(type)) {
       return serdeConstants.TIMESTAMP_TYPE_NAME;
+    } else if (serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME.equalsIgnoreCase(type)) {
+      return serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME;
     } else if ("date".equalsIgnoreCase(type)) {
       return serdeConstants.DATE_TYPE_NAME;
     } else if ("interval_year_month".equalsIgnoreCase(type)) {
@@ -241,6 +250,7 @@ public class JdbcColumn {
       case Types.DATE:
         return 10;
       case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
         return columnPrecision(hiveType, columnAttributes);
 
         // see
@@ -297,6 +307,8 @@ public class JdbcColumn {
         return 10;
       case Types.TIMESTAMP:
         return 29;
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+        return 31;
       case Types.DECIMAL:
         return columnAttributes.precision;
       case Types.OTHER:
@@ -341,6 +353,7 @@ public class JdbcColumn {
       case Types.DOUBLE:
         return 15;
       case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
         return 9;
       case Types.DECIMAL:
         return columnAttributes.scale;

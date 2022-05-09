@@ -23,6 +23,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
+import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.sql.*;
@@ -34,16 +36,15 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import javax.security.auth.Subject;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
-import org.apache.hive.service.auth.HiveAuthFactory;
-import org.apache.hive.service.auth.KerberosSaslHelper;
-import org.apache.hive.service.auth.PlainSaslHelper;
-import org.apache.hive.service.auth.SaslQOP;
+import org.apache.hive.service.auth.*;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
+import org.apache.hive.service.cli.session.SessionUtils;
 import org.apache.hive.service.cli.thrift.*;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
@@ -97,6 +98,9 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private TProtocolVersion protocol;
   private int fetchSize = KyuubiStatement.DEFAULT_FETCH_SIZE;
   private String initFile = null;
+  private String wmPool = null, wmApp = null;
+  private Properties clientInfo;
+  private Subject loggedInSubject;
   private boolean initFileCompleted = false;
 
   private TOperationHandle launchEngineOpHandle = null;
@@ -105,7 +109,26 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private volatile boolean launchEngineOpCompleted = false;
 
   private boolean isBeeLineMode;
-  private Properties clientInfo;
+
+  /**
+   * Get all direct HiveServer2 URLs from a ZooKeeper based HiveServer2 URL
+   *
+   * @param zookeeperBasedHS2Url
+   * @return
+   * @throws Exception
+   */
+  public static List<JdbcConnectionParams> getAllUrls(String zookeeperBasedHS2Url)
+      throws Exception {
+    JdbcConnectionParams params = Utils.parseURL(zookeeperBasedHS2Url, new Properties());
+    // if zk is disabled or if HA service discovery is enabled we return the already populated
+    // params.
+    // in HA mode, params is already populated with Active server host info.
+    if (params.getZooKeeperEnsemble() == null
+        || ZooKeeperHiveClientHelper.isZkHADynamicDiscoveryMode(params.getSessionVars())) {
+      return Collections.singletonList(params);
+    }
+    return ZooKeeperHiveClientHelper.getDirectParamsList(params);
+  }
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
     setupLoginTimeout();
@@ -121,7 +144,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     // sess_var_list -> sessConfMap
     // hive_conf_list -> hiveConfMap
     // hive_var_list -> hiveVarMap
-    host = connParams.getHost();
+    host = Utils.getCanonicalHostName(connParams.getHost());
     port = connParams.getPort();
     sessConfMap = connParams.getSessionVars();
     isEmbeddedMode = connParams.isEmbeddedMode();
@@ -131,6 +154,11 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
     if (sessConfMap.containsKey(JdbcConnectionParams.INIT_FILE)) {
       initFile = sessConfMap.get(JdbcConnectionParams.INIT_FILE);
+    }
+    wmPool = sessConfMap.get(JdbcConnectionParams.WM_POOL);
+    for (String application : JdbcConnectionParams.APPLICATION) {
+      wmApp = sessConfMap.get(application);
+      if (wmApp != null) break;
     }
 
     // add supported protocols
@@ -147,10 +175,11 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
     if (isEmbeddedMode) {
       EmbeddedThriftBinaryCLIService embeddedClient = new EmbeddedThriftBinaryCLIService();
-      embeddedClient.init(null);
+      embeddedClient.init(null, connParams.getHiveConfs());
       TCLIService.Iface _client = embeddedClient;
       // Wrap the client with a thread-safe proxy to serialize the RPC calls
       client = newSynchronizedClient(_client);
+      connParams.getHiveConfs().clear();
       // open client session
       openSession();
       showLaunchEngineLog();
@@ -186,7 +215,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           LOG.warn("Failed to connect to " + connParams.getHost() + ":" + connParams.getPort());
           String errMsg = null;
           String warnMsg = "Could not open client transport with JDBC Uri: " + jdbcUriString + ": ";
-          if (isZkDynamicDiscoveryMode()) {
+          if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
             errMsg = "Could not open client transport for any of the Server URI's in ZooKeeper: ";
             // Try next available server in zookeeper, or retry all the servers again if retry is
             // enabled
@@ -195,7 +224,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
             }
             // Update with new values
             jdbcUriString = connParams.getJdbcUriString();
-            host = connParams.getHost();
+            host = Utils.getCanonicalHostName(connParams.getHost());
             port = connParams.getPort();
           } else {
             errMsg = warnMsg;
@@ -369,8 +398,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     transport = isHttpTransportMode() ? createHttpTransport() : createBinaryTransport();
     if (!transport.isOpen()) {
       transport.open();
-      logZkDiscoveryMessage("Connected to " + connParams.getHost() + ":" + connParams.getPort());
     }
+    logZkDiscoveryMessage("Connected to " + connParams.getHost() + ":" + connParams.getPort());
   }
 
   public String getConnectedUrl() {
@@ -415,6 +444,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     // Request interceptor for any request pre-processing logic
     HttpRequestInterceptor requestInterceptor;
     Map<String, String> additionalHttpHeaders = new HashMap<String, String>();
+    Map<String, String> customCookies = new HashMap<String, String>();
 
     // Retrieve the additional HttpHeaders
     for (Map.Entry<String, String> entry : sessConfMap.entrySet()) {
@@ -424,9 +454,22 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         additionalHttpHeaders.put(
             key.substring(JdbcConnectionParams.HTTP_HEADER_PREFIX.length()), entry.getValue());
       }
+      if (key.startsWith(JdbcConnectionParams.HTTP_COOKIE_PREFIX)) {
+        customCookies.put(
+            key.substring(JdbcConnectionParams.HTTP_COOKIE_PREFIX.length()), entry.getValue());
+      }
     }
     // Configure http client for kerberos/password based authentication
     if (isKerberosAuthMode()) {
+      if (assumeSubject) {
+        // With this option, we're assuming that the external application,
+        // using the JDBC driver has done a JAAS kerberos login already
+        AccessControlContext context = AccessController.getContext();
+        loggedInSubject = Subject.getSubject(context);
+        if (loggedInSubject == null) {
+          throw new SQLException("The Subject is not set");
+        }
+      }
       /**
        * Add an interceptor which sets the appropriate header in the request. It does the kerberos
        * authentication and get the final service ticket, for sending to the server before every
@@ -437,18 +480,19 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
               sessConfMap.get(JdbcConnectionParams.AUTH_PRINCIPAL),
               host,
               getServerHttpUrl(useSsl),
-              assumeSubject,
+              loggedInSubject,
               cookieStore,
               cookieName,
               useSsl,
-              additionalHttpHeaders);
+              additionalHttpHeaders,
+              customCookies);
     } else {
       // Check for delegation token, if present add it in the header
       String tokenStr = getClientDelegationToken(sessConfMap);
       if (tokenStr != null) {
         requestInterceptor =
             new HttpTokenAuthInterceptor(
-                tokenStr, cookieStore, cookieName, useSsl, additionalHttpHeaders);
+                tokenStr, cookieStore, cookieName, useSsl, additionalHttpHeaders, customCookies);
       } else {
         /**
          * Add an interceptor to pass username/password in the header. In https mode, the entire
@@ -461,7 +505,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
                 cookieStore,
                 cookieName,
                 useSsl,
-                additionalHttpHeaders);
+                additionalHttpHeaders,
+                customCookies);
       }
     }
     // Configure http client for cookie based authentication
@@ -720,8 +765,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         jdbcConnConf.get(JdbcConnectionParams.AUTH_TYPE))) {
       // check delegation token in job conf if any
       try {
-        tokenStr =
-            org.apache.hadoop.hive.shims.Utils.getTokenStrForm(HiveAuthFactory.HS2_CLIENT_TOKEN);
+        tokenStr = SessionUtils.getTokenStrForm(HiveAuthConstants.HS2_CLIENT_TOKEN);
       } catch (IOException e) {
         throw new SQLException("Error reading token ", e);
       }
@@ -747,11 +791,18 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     openConf.put(
         "set:hiveconf:hive.server2.thrift.resultset.default.fetch.size",
         Integer.toString(fetchSize));
+    if (wmPool != null) {
+      openConf.put("set:hivevar:wmpool", wmPool);
+    }
+    if (wmApp != null) {
+      openConf.put("set:hivevar:wmapp", wmApp);
+    }
 
     // set the session configuration
     Map<String, String> sessVars = connParams.getSessionVars();
-    if (sessVars.containsKey(HiveAuthFactory.HS2_PROXY_USER)) {
-      openConf.put(HiveAuthFactory.HS2_PROXY_USER, sessVars.get(HiveAuthFactory.HS2_PROXY_USER));
+    if (sessVars.containsKey(HiveAuthConstants.HS2_PROXY_USER)) {
+      openConf.put(
+          HiveAuthConstants.HS2_PROXY_USER, sessVars.get(HiveAuthConstants.HS2_PROXY_USER));
     }
     openReq.setConfiguration(openConf);
 
@@ -834,14 +885,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     return false;
   }
 
-  private boolean isZkDynamicDiscoveryMode() {
-    return (sessConfMap.get(JdbcConnectionParams.SERVICE_DISCOVERY_MODE) != null)
-        && (JdbcConnectionParams.SERVICE_DISCOVERY_MODE_ZOOKEEPER.equalsIgnoreCase(
-            sessConfMap.get(JdbcConnectionParams.SERVICE_DISCOVERY_MODE)));
-  }
-
   private void logZkDiscoveryMessage(String message) {
-    if (isZkDynamicDiscoveryMode()) {
+    if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
       LOG.info(message);
     }
   }

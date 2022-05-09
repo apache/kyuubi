@@ -117,8 +117,9 @@
         <guava.version>30.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.2</hadoop.version>
+        <hikaricp.version>2.6.1</hikaricp.version>
         <hive.engine.hive.version>3.1.3</hive.engine.hive.version>
-        <hive.version>2.3.9</hive.version>
+        <hive.version>3.1.3</hive.version>
         <hive.service.rpc.version>3.1.3</hive.service.rpc.version>
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
@@ -1339,6 +1340,13 @@
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikaricp.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
