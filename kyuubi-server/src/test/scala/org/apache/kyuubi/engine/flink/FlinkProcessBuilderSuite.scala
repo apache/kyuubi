@@ -28,13 +28,13 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE
 
 class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
-    .set(ENGINE_FLINK_MEMORY, "1g")
+    .set(ENGINE_FLINK_MEMORY, "512m")
     .set(
       ENGINE_FLINK_JAVA_OPTIONS,
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
 
   private def envDefault: ListMap[String, String] = ListMap(
-    "JAVA_HOME" -> s"${File.separator}jdk1.8.0_181")
+    "JAVA_HOME" -> s"${File.separator}jdk")
   private def envWithoutHadoopCLASSPATH: ListMap[String, String] = envDefault +
     ("HADOOP_CONF_DIR" -> s"${File.separator}hadoop${File.separator}conf") +
     ("YARN_CONF_DIR" -> s"${File.separator}yarn${File.separator}conf") +
@@ -47,7 +47,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def compareActualAndExpected(builder: FlinkProcessBuilder) = {
     val actualCommands = builder.toString
     val classpathStr: String = constructClasspathStr(builder)
-    val expectedCommands = s"$javaPath -Xmx1g " +
+    val expectedCommands = s"$javaPath -Xmx512m " +
       s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 " +
       s"-cp $classpathStr $mainClassStr \\\n\t--conf kyuubi.session.user=vinoyang " +
       s"$confStr"

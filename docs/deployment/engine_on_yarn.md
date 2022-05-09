@@ -169,7 +169,7 @@ export HADOOP_CLASSPATH=`hadoop classpath`
 echo "stop" | ./bin/yarn-session.sh -id application_XXXXX_XXX
  ```
 
-If the `TopSpeedWindowing` passes, configure it in `$KYUUBI_HOME/conf/kyuubi-env.sh` or `$FLINK_HOME/bin/config.sh`, e.g.
+If the `TopSpeedWindowing` passes, configure it in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 
 ```bash
 $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi-env.sh
@@ -177,20 +177,23 @@ $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi
 
 #### Required Environment Variable
 
-The `FLINK_HADOOP_CLASSPATH` is required, too. It should contain `commons-collections-*.jar`, 
-`hadoop-client-runtime-*.jar`, `hadoop-client-api-*.jar` and `htrace-core4-*.jar`.
-All four jars are in the `HADOOP_HOME`. 
+The `FLINK_HADOOP_CLASSPATH` is required, too.
 
-For example, in Hadoop 3.1.0 version, the following is their location. 
-- `${HADOOP_HOME}/share/hadoop/common/lib/commons-collections-3.2.2.jar`
-- `${HADOOP_HOME}/share/hadoop/client/hadoop-client-runtime-3.1.0.jar`
-- `${HADOOP_HOME}/share/hadoop/client/hadoop-client-api-3.1.0.jar`
-- `${HADOOP_HOME}/share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar`
-
-Configure them in `$KYUUBI_HOME/conf/kyuubi-env.sh`
+If using Hadoop 3.x,  configured it in `$KYUUBI_HOME/conf/kyuubi-env.sh` as follows:
 
 ```bash
-$ echo "export FLINK_HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/common/lib/commons-collections-3.2.2.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-runtime-3.1.0.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-api-3.1.0.jar:${HADOOP_HOME}/share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+$ echo "export FLINK_HADOOP_CLASSPATH=/path/to/hadoop-client-runtime-*.jar:/path/to/hadoop-client-api-*.jar" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+```
+`hadoop-client-api-*.jar` and `hadoop-client-runtime-*.jar` are only applicable to users whose
+ 
+hadoop version is 3.x, if users use hadoop2.x, FLINK_HADOOP_CLASSPATH is recommended to
+ 
+be set to `hadoop classpath`
+
+If using Hadoop 2.x, configured it in `$KYUUBI_HOME/conf/kyuubi-env.sh` as follows:
+
+```bash
+$ echo "export FLINK_HADOOP_CLASSPATH=`hadoop classpath`" >> $KYUUBI_HOME/conf/kyuubi-env.sh
 ```
 
 ### Deployment Modes Supported by Flink on YARN
