@@ -155,6 +155,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
   }
 
+  def getBatchSessionImpl(batchId: String, protocol: TProtocolVersion): KyuubiBatchSessionImpl = {
+    getSession(getBatchSessionHandle(batchId, protocol)).asInstanceOf[KyuubiBatchSessionImpl]
+  }
+
+  def getBatchSessionImpl(sessionHandle: SessionHandle): KyuubiBatchSessionImpl = {
+    getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+  }
+
   def getBatchSessionList(batchType: String, from: Int, size: Int): Seq[Session] = {
     val sessions =
       if (batchType == null) {

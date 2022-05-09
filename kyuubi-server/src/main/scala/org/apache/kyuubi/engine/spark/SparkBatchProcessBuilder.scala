@@ -28,7 +28,7 @@ class SparkBatchProcessBuilder(
     override val conf: KyuubiConf,
     batchId: String,
     batchRequest: BatchRequest,
-    override val extraEngineLog: Option[OperationLog] = None)
+    override val extraEngineLog: Option[OperationLog])
   extends SparkProcessBuilder(proxyUser, conf, extraEngineLog) {
   import SparkProcessBuilder._
 
