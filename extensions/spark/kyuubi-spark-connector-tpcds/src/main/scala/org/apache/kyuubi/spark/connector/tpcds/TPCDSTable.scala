@@ -25,13 +25,14 @@ import scala.collection.JavaConverters._
 import io.trino.tpcds.Table
 import io.trino.tpcds.column.ColumnType
 import io.trino.tpcds.column.ColumnType.Base._
-import org.apache.spark.sql.connector.catalog.{SupportsRead, Table => SparkTable, TableCapability}
+import org.apache.spark.sql.connector.catalog.{MetadataColumn, SupportsMetadataColumns, SupportsRead, Table => SparkTable, TableCapability}
 import org.apache.spark.sql.connector.expressions.{Expressions, Transform}
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCDSTable(tbl: String, scale: Int) extends SparkTable with SupportsRead {
+class TPCDSTable(tbl: String, scale: Int) extends SparkTable
+  with SupportsRead with SupportsMetadataColumns {
 
   // When true, use CHAR VARCHAR; otherwise use STRING
   // TODO: make it configurable
@@ -93,4 +94,14 @@ class TPCDSTable(tbl: String, scale: Int) extends SparkTable with SupportsRead {
       case _ => if (optional.isPresent) Option(optional.get) else None
     }
   }
+
+  private object ScaleColumn extends MetadataColumn {
+    override def name: String = "scale"
+
+    override def dataType: DataType = IntegerType
+
+    override def comment: String = "The scale of the TPCDS table"
+  }
+
+  override def metadataColumns(): Array[MetadataColumn] = Array(ScaleColumn)
 }
