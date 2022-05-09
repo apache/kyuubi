@@ -185,7 +185,7 @@ private[kyuubi] class EngineRef(
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
-      val redactedCmd = Utils.redact(conf.get(SERVER_SECRET_REDACTION_PATTERN), builder.toString)
+      val redactedCmd = builder.toString
       info(s"Launching engine:\n$redactedCmd")
       val process = builder.start
       var exitValue: Option[Int] = None
