@@ -25,6 +25,7 @@ import java.util.{Properties, TimeZone, UUID}
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
+import scala.util.matching.Regex
 
 import org.apache.commons.lang3.SystemUtils
 import org.apache.commons.lang3.time.DateFormatUtils
@@ -287,5 +288,54 @@ object Utils extends Logging {
         case _ => throw new IllegalArgumentException(s"Illegal argument: ${args(i + 1)}.")
       }
     }
+  }
+
+  val REDACTION_REPLACEMENT_TEXT = "*********(redacted)"
+
+  private val PATTERN_FOR_KEY_VALUE_ARG = "(.+?)=(.+)".r
+
+  def redactCommandLineArgs(conf: KyuubiConf, commands: Array[String]): Array[String] = {
+    val redactionPattern = conf.get(SERVER_SECRET_REDACTION_PATTERN)
+    var nextKV = false
+    commands.map {
+      case PATTERN_FOR_KEY_VALUE_ARG(key, value) if nextKV =>
+        val (_, newValue) = redact(redactionPattern, Seq((key, value))).head
+        nextKV = false
+        s"$key=$newValue"
+
+      case cmd if cmd == "--conf" =>
+        nextKV = true
+        cmd
+
+      case cmd =>
+        cmd
+    }
+  }
+
+  /**
+   * Redact the sensitive values in the given map. If a map key matches the redaction pattern then
+   * its value is replaced with a dummy text.
+   */
+  def redact[K, V](regex: Option[Regex], kvs: Seq[(K, V)]): Seq[(K, V)] = {
+    regex match {
+      case None => kvs
+      case Some(r) => redact(r, kvs)
+    }
+  }
+
+  private def redact[K, V](redactionPattern: Regex, kvs: Seq[(K, V)]): Seq[(K, V)] = {
+    kvs.map {
+      case (key: String, value: String) =>
+        redactionPattern.findFirstIn(key)
+          .orElse(redactionPattern.findFirstIn(value))
+          .map { _ => (key, REDACTION_REPLACEMENT_TEXT) }
+          .getOrElse((key, value))
+      case (key, value: String) =>
+        redactionPattern.findFirstIn(value)
+          .map { _ => (key, REDACTION_REPLACEMENT_TEXT) }
+          .getOrElse((key, value))
+      case (key, value) =>
+        (key, value)
+    }.asInstanceOf[Seq[(K, V)]]
   }
 }
