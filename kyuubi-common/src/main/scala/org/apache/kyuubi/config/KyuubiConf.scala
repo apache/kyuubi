@@ -1473,7 +1473,7 @@ object KyuubiConf {
   val SERVER_SECRET_REDACTION_PATTERN: OptionalConfigEntry[Regex] =
     buildConf("kyuubi.server.redaction.regex")
       .doc("Regex to decide which Kyuubi contain sensitive information. When this regex matches " +
-        "a property key or value, the value is redacted from the environment UI and various logs.")
+        "a property key or value, the value is redacted from the various logs.")
       .version("1.6.0")
       .regexConf
       .createOptional
