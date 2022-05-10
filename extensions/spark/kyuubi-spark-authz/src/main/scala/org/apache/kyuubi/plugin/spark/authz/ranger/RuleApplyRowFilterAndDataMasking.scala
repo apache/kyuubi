@@ -52,7 +52,8 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = OperationType(plan.nodeName)
     val parse = spark.sessionState.sqlParser.parseExpression _
-    val are = AccessResource(ObjectType.TABLE,
+    val are = AccessResource(
+      ObjectType.TABLE,
       identifier.database.orNull,
       identifier.table,
       null,
@@ -61,7 +62,8 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
     val filterExprStr = SparkRangerAdminPlugin.getFilterExpr(art)
     val newOutput = plan.output.map { attr =>
       val are =
-        AccessResource(ObjectType.COLUMN,
+        AccessResource(
+          ObjectType.COLUMN,
           identifier.database.orNull,
           identifier.table,
           attr.name,

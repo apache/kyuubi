@@ -18,11 +18,13 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.language.implicitConversions
+
 import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl
+import org.apache.spark.sql.SparkSession
+
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
-import org.apache.spark.sql.SparkSession
 
 class AccessResource private (val objectType: ObjectType) extends RangerAccessResourceImpl {
   implicit def asString(obj: Object): String = if (obj != null) obj.asInstanceOf[String] else null
@@ -45,12 +47,13 @@ object AccessResource {
       spark: SparkSession = null): AccessResource = {
     val resource = new AccessResource(objectType)
 
-    val firstLevelResource = if (spark != null
-      && (firstLevelResourceOrNull == null || firstLevelResourceOrNull.isEmpty)) {
-      spark.catalog.currentDatabase
-    } else {
-      firstLevelResourceOrNull
-    }
+    val firstLevelResource =
+      if (spark != null
+        && (firstLevelResourceOrNull == null || firstLevelResourceOrNull.isEmpty)) {
+        spark.catalog.currentDatabase
+      } else {
+        firstLevelResourceOrNull
+      }
 
     resource.objectType match {
       case DATABASE => resource.setValue("database", firstLevelResource)
@@ -73,9 +76,10 @@ object AccessResource {
     apply(objectType, firstLevelResource, null, null, null)
   }
 
-  def apply(objectType: ObjectType,
-            firstLevelResource: String,
-            spark: SparkSession): AccessResource = {
+  def apply(
+      objectType: ObjectType,
+      firstLevelResource: String,
+      spark: SparkSession): AccessResource = {
     apply(objectType, firstLevelResource, null, null, spark)
   }
 
@@ -83,9 +87,7 @@ object AccessResource {
     apply(ObjectType(obj, opType), obj.dbname, obj.objectName, obj.columns.mkString(","), null)
   }
 
-  def apply(obj: PrivilegeObject,
-            opType: OperationType,
-            spark: SparkSession): AccessResource = {
+  def apply(obj: PrivilegeObject, opType: OperationType, spark: SparkSession): AccessResource = {
     apply(ObjectType(obj, opType), obj.dbname, obj.objectName, obj.columns.mkString(","), spark)
   }
 }

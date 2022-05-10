@@ -18,8 +18,8 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.{OperationType, PrivilegesBuilder, SparkSessionProvider}
+import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 
 class AccessResourceSuite extends KyuubiFunSuite {
 

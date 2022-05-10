@@ -65,11 +65,8 @@ object RuleAuthorization {
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
           resource.getColumns.foreach { col =>
-            val cr = AccessResource(COLUMN,
-              resource.getDatabase,
-              resource.getTable,
-              col,
-              spark = spark)
+            val cr =
+              AccessResource(COLUMN, resource.getDatabase, resource.getTable, col, spark = spark)
             val req = AccessRequest(cr, ugi, opType, request.accessType)
             verify(req)
           }
