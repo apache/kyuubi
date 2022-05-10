@@ -81,6 +81,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # - FLINK_HOME              Flink distribution which you would like to use in Kyuubi.
 # - FLINK_CONF_DIR          Optional directory where the Flink configuration lives.
 #                           (Default: $FLINK_HOME/conf)
+# - FLINK_HADOOP_CLASSPATH  Required Hadoop jars when you use the Kyuubi Flink engine.
 # - HIVE_HOME               Hive distribution which you would like to use in Kyuubi.
 # - HIVE_CONF_DIR           Optional directory where the Hive configuration lives.
 #                           (Default: $HIVE_HOME/conf)
@@ -94,6 +95,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # export SPARK_HOME=/opt/spark
 # export FLINK_HOME=/opt/flink
 # export HIVE_HOME=/opt/hive
+# export FLINK_HADOOP_CLASSPATH=/path/to/hadoop-client-runtime-3.3.2.jar:/path/to/hadoop-client-api-3.3.2.jar
 # export HIVE_HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/common/lib/commons-collections-3.2.2.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-runtime-3.1.0.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-api-3.1.0.jar:${HADOOP_HOME}/share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar
 # export HADOOP_CONF_DIR=/usr/ndp/current/mapreduce_client/conf
 # export YARN_CONF_DIR=/usr/ndp/current/yarn/conf
@@ -207,6 +209,9 @@ Key | Default | Meaning | Type | Since
 <code>kyuubi.engine.deregister.job.max.failures</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>4</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Number of failures of job before deregistering the engine.</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.2.0</div>
 <code>kyuubi.engine.event.json.log.path</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>file:///tmp/kyuubi/events</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The location of all the engine events go for the builtin JSON logger.<ul><li>Local Path: start with 'file://'</li><li>HDFS Path: start with 'hdfs://'</li></ul></div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.3.0</div>
 <code>kyuubi.engine.event.loggers</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>SPARK</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul></div>|<div style='width: 30pt'>seq</div>|<div style='width: 20pt'>1.3.0</div>
+<code>kyuubi.engine.flink.extra.classpath</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The extra classpath for the flink sql engine, for configuring location of hadoop client jars, etc</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
+<code>kyuubi.engine.flink.java.options</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The extra java options for the flink sql engine</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
+<code>kyuubi.engine.flink.memory</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>1g</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The heap memory for the flink sql engine</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
 <code>kyuubi.engine.hive.extra.classpath</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The extra classpath for the hive query engine, for configuring location of hadoop client jars, etc</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
 <code>kyuubi.engine.hive.java.options</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The extra java options for the hive query engine</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
 <code>kyuubi.engine.hive.memory</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>1g</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The heap memory for the hive query engine</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
