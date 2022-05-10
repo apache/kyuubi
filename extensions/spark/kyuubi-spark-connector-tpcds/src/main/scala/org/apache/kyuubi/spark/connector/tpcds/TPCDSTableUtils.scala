@@ -21,7 +21,7 @@ object TPCDSTableUtils {
 
   // https://tpc.org/TPC_Documents_Current_Versions/pdf/TPC-DS_v3.2.0.pdf
   // Page 42 Table 3-2 Database Row Counts
-  val tableAvrRowSizeInBytes: Map[String, Int] = Map(
+  val tableAvrRowSizeInBytes: Map[String, Long] = Map(
     "call_center" -> 305,
     "catalog_page" -> 139,
     "catalog_returns" -> 166,
