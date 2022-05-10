@@ -27,6 +27,7 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     SparkSession.builder()
       .master("local[*]")
       .config("spark.ui.enabled", "false")
+      .config("spark.sql.cbo.enabled", "true")
       .config("spark.sql.catalogImplementation", "in-memory")
       .config("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
       .getOrCreate()
@@ -57,6 +58,39 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     assert(spark.table("tpcds.sf1.web_returns").count === 71763)
     assert(spark.table("tpcds.sf1.web_sales").count === 719384)
     assert(spark.table("tpcds.sf1.web_site").count === 30)
+  }
+
+  test("tpcds.sf1 stats") {
+    def assertStats(tableName: String, sizeInBytes: BigInt = 1, rowCount: BigInt = 1): Unit = {
+      val stats = spark.table(tableName).queryExecution.analyzed.stats
+      assert(stats.sizeInBytes == sizeInBytes)
+      assert(stats.rowCount.contains(rowCount))
+    }
+
+    assertStats("tpcds.sf1.call_center", 2640, 6)
+    assertStats("tpcds.sf1.catalog_page", 1218672, 11718)
+    assertStats("tpcds.sf1.catalog_returns", 33920000, 160000)
+    assertStats("tpcds.sf1.catalog_sales", 42880000, 160000)
+    assertStats("tpcds.sf1.customer", 22800000, 100000)
+    assertStats("tpcds.sf1.customer_address", 11800000, 50000)
+    assertStats("tpcds.sf1.customer_demographics", 199763200, 1920800)
+    assertStats("tpcds.sf1.date_dim", 21330308, 73049)
+    assertStats("tpcds.sf1.household_demographics", 316800, 7200)
+    assertStats("tpcds.sf1.income_band", 320, 20)
+    assertStats("tpcds.sf1.inventory", 328860000, 11745000)
+    assertStats("tpcds.sf1.item", 5256000, 18000)
+    assertStats("tpcds.sf1.promotion", 91200, 300)
+    assertStats("tpcds.sf1.reason", 1680, 35)
+    assertStats("tpcds.sf1.ship_mode", 2160, 20)
+    assertStats("tpcds.sf1.store", 5040, 12)
+    assertStats("tpcds.sf1.store_returns", 37440000, 240000)
+    assertStats("tpcds.sf1.store_sales", 43200000, 240000)
+    assertStats("tpcds.sf1.time_dim", 10713600, 86400)
+    assertStats("tpcds.sf1.warehouse", 1200, 5)
+    assertStats("tpcds.sf1.web_page", 8160, 60)
+    assertStats("tpcds.sf1.web_returns", 11280000, 60000)
+    assertStats("tpcds.sf1.web_sales", 16080000, 60000)
+    assertStats("tpcds.sf1.web_site", 11880, 30)
   }
 
   override def afterAll(): Unit = {

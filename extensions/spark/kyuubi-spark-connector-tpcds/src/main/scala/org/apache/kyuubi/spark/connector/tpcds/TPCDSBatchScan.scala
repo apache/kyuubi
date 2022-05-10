@@ -19,6 +19,7 @@ package org.apache.kyuubi.spark.connector.tpcds
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.OptionalLong
 
 import scala.collection.JavaConverters._
 
@@ -32,12 +33,11 @@ import org.apache.spark.unsafe.types.UTF8String
 case class TPCDSTableChuck(table: String, scale: Int, parallelism: Int, index: Int)
   extends InputPartition
 
-// TODO with SupportsReportStatistics
-//      https://tpc.org/TPC_Documents_Current_Versions/pdf/TPC-DS_v3.2.0.pdf
 class TPCDSBatchScan(
     @transient table: Table,
     scale: Int,
-    schema: StructType) extends ScanBuilder with Scan with Batch with Serializable {
+    schema: StructType) extends ScanBuilder
+  with SupportsReportStatistics with Batch with Serializable {
 
   private val rowCountPerTask: Int = 1000000
 
@@ -64,6 +64,16 @@ class TPCDSBatchScan(
   def createReaderFactory: PartitionReaderFactory = (partition: InputPartition) => {
     val chuck = partition.asInstanceOf[TPCDSTableChuck]
     new TPCDSPartitionReader(chuck.table, chuck.scale, chuck.parallelism, chuck.index, schema)
+  }
+
+  override def estimateStatistics(): Statistics = {
+    new Statistics {
+      override def sizeInBytes(): OptionalLong = {
+        OptionalLong.of(rowCount * schema.defaultSize)
+      }
+
+      override def numRows(): OptionalLong = OptionalLong.of(rowCount)
+    }
   }
 }
 
