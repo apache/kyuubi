@@ -52,8 +52,8 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
         classOf[Seq[String]],
         classOf[Option[String]])
 
-      val instance = constructor.newInstance(output, catalog, resolvedNamespace, pattern)
-      FilteredShowNamespacesCommand(instance)
+      val showNamespacesExec = constructor.newInstance(output, catalog, resolvedNamespace, pattern)
+      FilteredShowNamespacesCommand(showNamespacesExec)
     // show databases in spark2.4.x
     case r: RunnableCommand if r.nodeName == "ShowDatabasesCommand" =>
       FilteredShowDatabasesCommand(r)
