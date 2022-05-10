@@ -42,16 +42,18 @@ case class FilteredShowTablesCommand(delegated: RunnableCommand)
   override def run(spark: SparkSession): Seq[Row] = {
     val rows = delegated.run(spark)
     val ugi = AuthZUtils.getAuthzUgi(spark.sparkContext)
-    rows.filter(r => isAllowed(r, ugi))
+    val isExtended: Boolean = AuthZUtils.getFieldVal(delegated, "isExtended").asInstanceOf[Boolean]
+    rows.filter(r => isAllowed(r, ugi, isExtended))
   }
 
-  private def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
+  private def isAllowed(r: Row, ugi: UserGroupInformation, isExtended: Boolean): Boolean = {
     val database = r.getString(0)
     val table = r.getString(1)
     val isTemp = r.getBoolean(2)
     val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
     val resource = AccessResource(objectType, database, table, null)
-    val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, AccessType.USE)
+    val accessType = if (isExtended) AccessType.SELECT else AccessType.USE
+    val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, accessType)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
