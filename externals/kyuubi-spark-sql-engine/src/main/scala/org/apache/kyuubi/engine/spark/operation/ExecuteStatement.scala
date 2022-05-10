@@ -27,8 +27,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
-import org.apache.kyuubi.config.KyuubiConf.SESSION_PROGRESS_ENABLE
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_REGISTER_OPERATION_LISTENER, OPERATION_RESULT_MAX_ROWS, SESSION_PROGRESS_ENABLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.events.EventBus
@@ -48,7 +48,14 @@ class ExecuteStatement(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
+  private val conf: KyuubiConf = getSession.sessionManager.getConf
+
+  private val operationListener: Option[SQLOperationListener] =
+    if (conf.get(ENGINE_SPARK_REGISTER_OPERATION_LISTENER)) {
+      Some(new SQLOperationListener(this, spark))
+    } else {
+      None
+    }
 
   private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
     case Some(s) => s.toBoolean
@@ -80,8 +87,7 @@ class ExecuteStatement(
       setState(OperationState.RUNNING)
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      // TODO: Make it configurable
-      spark.sparkContext.addSparkListener(operationListener)
+      operationListener.foreach(spark.sparkContext.addSparkListener(_))
       result = spark.sql(statement)
       iter =
         if (incrementalCollect) {
@@ -135,14 +141,14 @@ class ExecuteStatement(
   }
 
   override def cleanup(targetState: OperationState): Unit = {
-    spark.sparkContext.removeSparkListener(operationListener)
+    operationListener.foreach(spark.sparkContext.removeSparkListener(_))
     super.cleanup(targetState)
   }
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
     EventBus.post(
-      SparkOperationEvent(this, operationListener.getExecutionId))
+      SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
   }
 
   override def getStatus: OperationStatus = {
@@ -178,7 +184,7 @@ class ExecuteStatement(
         lastAccessTime = lastAccessCompiledTime
       }
       EventBus.post(
-        SparkOperationEvent(this, operationListener.getExecutionId))
+        SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
     }
   }
 }

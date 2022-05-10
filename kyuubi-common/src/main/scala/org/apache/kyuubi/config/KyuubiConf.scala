@@ -1490,4 +1490,12 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
+
+  val ENGINE_SPARK_REGISTER_OPERATION_LISTENER: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.spark.register.operation.listener")
+      .doc("When set to true, Spark engine registers a SQLOperationListener before executing " +
+        "the statement, logs a few summary statistics when each stage completes.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
 }
