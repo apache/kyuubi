@@ -21,6 +21,7 @@ import javax.security.sasl.AuthenticationException
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
+import org.apache.kyuubi.util.ClassUtils
 
 /**
  * This class helps select a [[PasswdAuthenticationProvider]] for a given [[AuthMethods]]
@@ -53,7 +54,7 @@ object AuthenticationProviderFactory {
       val cls = Class.forName(className.get, true, classLoader)
       cls match {
         case c if classOf[PasswdAuthenticationProvider].isAssignableFrom(cls) =>
-          KyuubiConf.createInstance[PasswdAuthenticationProvider](c, conf)
+          ClassUtils.createInstance[PasswdAuthenticationProvider](c, conf)
         case _ => throw new AuthenticationException(
             s"$className must extend of PasswdAuthenticationProvider.")
       }

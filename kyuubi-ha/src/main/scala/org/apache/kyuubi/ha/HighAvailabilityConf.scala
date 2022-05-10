@@ -158,4 +158,12 @@ object HighAvailabilityConf {
       .version("1.5.0")
       .stringConf
       .createOptional
+
+  val DISCOVERY_CLIENT_CLASS: ConfigEntry[String] =
+    buildConf("kyuubi.service.discovery.client.class")
+      .doc("Class name for service discovery client.")
+      .version("1.6.0")
+      .stringConf
+      .checkValue(!_.isEmpty, "must not be empty")
+      .createWithDefault("org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient")
 }
