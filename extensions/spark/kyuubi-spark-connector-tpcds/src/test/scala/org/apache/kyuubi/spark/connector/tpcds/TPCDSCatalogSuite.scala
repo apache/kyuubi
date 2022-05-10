@@ -60,37 +60,38 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     assert(spark.table("tpcds.sf1.web_site").count === 30)
   }
 
-  test("tpcds.sf1 stats") {
-    def assertStats(tableName: String, sizeInBytes: BigInt = 1, rowCount: BigInt = 1): Unit = {
+  test("tpcds.sf1 size") {
+    def assertStats(tableName: String, sizeInBytes: BigInt = 1): Unit = {
       val stats = spark.table(tableName).queryExecution.analyzed.stats
       assert(stats.sizeInBytes == sizeInBytes)
-      assert(stats.rowCount.contains(rowCount))
+      // See https://issues.apache.org/jira/browse/SPARK-33954
+      // stats.rowCount only has value in Spark3.2 and above
     }
 
-    assertStats("tpcds.sf1.call_center", 2640, 6)
-    assertStats("tpcds.sf1.catalog_page", 1218672, 11718)
-    assertStats("tpcds.sf1.catalog_returns", 33920000, 160000)
-    assertStats("tpcds.sf1.catalog_sales", 42880000, 160000)
-    assertStats("tpcds.sf1.customer", 22800000, 100000)
-    assertStats("tpcds.sf1.customer_address", 11800000, 50000)
-    assertStats("tpcds.sf1.customer_demographics", 199763200, 1920800)
-    assertStats("tpcds.sf1.date_dim", 21330308, 73049)
-    assertStats("tpcds.sf1.household_demographics", 316800, 7200)
-    assertStats("tpcds.sf1.income_band", 320, 20)
-    assertStats("tpcds.sf1.inventory", 328860000, 11745000)
-    assertStats("tpcds.sf1.item", 5256000, 18000)
-    assertStats("tpcds.sf1.promotion", 91200, 300)
-    assertStats("tpcds.sf1.reason", 1680, 35)
-    assertStats("tpcds.sf1.ship_mode", 2160, 20)
-    assertStats("tpcds.sf1.store", 5040, 12)
-    assertStats("tpcds.sf1.store_returns", 37440000, 240000)
-    assertStats("tpcds.sf1.store_sales", 43200000, 240000)
-    assertStats("tpcds.sf1.time_dim", 10713600, 86400)
-    assertStats("tpcds.sf1.warehouse", 1200, 5)
-    assertStats("tpcds.sf1.web_page", 8160, 60)
-    assertStats("tpcds.sf1.web_returns", 11280000, 60000)
-    assertStats("tpcds.sf1.web_sales", 16080000, 60000)
-    assertStats("tpcds.sf1.web_site", 11880, 30)
+    assertStats("tpcds.sf1.call_center", 1830)
+    assertStats("tpcds.sf1.catalog_page", 1628802)
+    assertStats("tpcds.sf1.catalog_returns", 26560000)
+    assertStats("tpcds.sf1.catalog_sales", 36160000)
+    assertStats("tpcds.sf1.customer", 13200000)
+    assertStats("tpcds.sf1.customer_address", 5500000)
+    assertStats("tpcds.sf1.customer_demographics", 80673600)
+    assertStats("tpcds.sf1.date_dim", 10299909)
+    assertStats("tpcds.sf1.household_demographics", 151200)
+    assertStats("tpcds.sf1.income_band", 320)
+    assertStats("tpcds.sf1.inventory", 187920000)
+    assertStats("tpcds.sf1.item", 5058000)
+    assertStats("tpcds.sf1.promotion", 37200)
+    assertStats("tpcds.sf1.reason", 1330)
+    assertStats("tpcds.sf1.ship_mode", 1120)
+    assertStats("tpcds.sf1.store", 3156)
+    assertStats("tpcds.sf1.store_returns", 32160000)
+    assertStats("tpcds.sf1.store_sales", 39360000)
+    assertStats("tpcds.sf1.time_dim", 5097600)
+    assertStats("tpcds.sf1.warehouse", 585)
+    assertStats("tpcds.sf1.web_page", 5760)
+    assertStats("tpcds.sf1.web_returns", 9720000)
+    assertStats("tpcds.sf1.web_sales", 13560000)
+    assertStats("tpcds.sf1.web_site", 8760)
   }
 
   override def afterAll(): Unit = {

@@ -69,7 +69,8 @@ class TPCDSBatchScan(
   override def estimateStatistics(): Statistics = {
     new Statistics {
       override def sizeInBytes(): OptionalLong = {
-        OptionalLong.of(rowCount * schema.defaultSize)
+        OptionalLong.of(rowCount * TPCDSTableUtils.tableAvrRowSizeInBytes
+          .getOrElse(table.getName, 1))
       }
 
       override def numRows(): OptionalLong = OptionalLong.of(rowCount)
