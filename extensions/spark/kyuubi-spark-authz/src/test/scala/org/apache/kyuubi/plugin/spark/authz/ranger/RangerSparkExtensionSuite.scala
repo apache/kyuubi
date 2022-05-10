@@ -273,6 +273,17 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
       doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
+
+  test("show databases") {
+    val db = "default2"
+    try {
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
+      doAs("admin", assert(sql(s"SHOW DATABASES").collect().length == 2))
+      doAs("bob", assert(sql(s"SHOW DATABASES").collect().length == 1))
+    } finally {
+      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+    }
+  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
