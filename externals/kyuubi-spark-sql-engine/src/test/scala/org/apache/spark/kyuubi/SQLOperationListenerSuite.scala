@@ -19,9 +19,10 @@ package org.apache.spark.kyuubi
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchOrientation, TFetchResultsReq}
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TOperationHandle}
 import org.scalatest.time.SpanSugar._
 
+import org.apache.kyuubi.config.KyuubiConf.OPERATION_SPARK_LISTENER_ENABLED
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
@@ -50,6 +51,44 @@ class SQLOperationListenerSuite extends WithSparkSQLEngine with HiveJDBCTestHelp
         assert(logs.exists(_.contains("Finished stage:")))
         assert(logs.exists(_.contains(s"Job ${0 + initJobId} succeeded")))
       }
+    }
+  }
+
+  test("SQLOperationListener configurable") {
+    val sql = "select /*+ REPARTITION(3, a) */ a from values(1) t(a);"
+    withSessionHandle { (client, handle) =>
+      def execute(sql: String): TOperationHandle = {
+        val req = new TExecuteStatementReq()
+        req.setSessionHandle(handle)
+        req.setStatement(sql)
+        val execStmtResp = client.ExecuteStatement(req)
+        execStmtResp.getOperationHandle
+      }
+
+      def executeAndWait(sql: String): TOperationHandle = {
+        val opHandle = execute(sql)
+        waitForOperationToComplete(client, opHandle)
+        opHandle
+      }
+
+      Seq(true, false).foreach(key => {
+        executeAndWait(s"SET ${OPERATION_SPARK_LISTENER_ENABLED.key}=$key")
+        val opHandle = execute(sql)
+        val fetchResultsReq = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1000)
+        fetchResultsReq.setFetchType(1.toShort)
+        eventually(timeout(90.seconds), interval(500.milliseconds)) {
+          val resultsResp = client.FetchResults(fetchResultsReq)
+          val logs = resultsResp.getResults.getColumns.get(0).getStringVal.getValues.asScala
+          if (key) {
+            assert(logs.exists(_.contains("started with 2 stages")))
+            assert(logs.exists(_.contains("started with 1 tasks")))
+            assert(logs.exists(_.contains("started with 3 tasks")))
+            assert(logs.exists(_.contains("Finished stage:")))
+          } else {
+            assert(logs.isEmpty)
+          }
+        }
+      })
     }
   }
 }
