@@ -19,9 +19,7 @@ package org.apache.kyuubi.engine.hive.operation
 
 import java.util.concurrent.Future
 
-import org.apache.hive.service.cli.{OperationState => HiveOperationState}
-import org.apache.hive.service.cli.operation.Operation
-import org.apache.hive.service.cli.operation.OperationManager
+import org.apache.hive.service.cli.operation.{Operation, OperationManager}
 import org.apache.hive.service.cli.session.{HiveSession, SessionManager => HiveSessionManager}
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
@@ -67,11 +65,11 @@ abstract class HiveOperation(opType: OperationType, session: Session)
   }
 
   override def cancel(): Unit = {
-    internalHiveOperation.cancel(HiveOperationState.CANCELED)
+    delegatedOperationManager.cancelOperation(internalHiveOperation.getHandle)
   }
 
   override def close(): Unit = {
-    internalHiveOperation.close()
+    delegatedOperationManager.closeOperation(internalHiveOperation.getHandle)
   }
 
   override def getStatus: OperationStatus = {
@@ -97,6 +95,17 @@ abstract class HiveOperation(opType: OperationType, session: Session)
     val hiveOrder = org.apache.hive.service.cli.FetchOrientation.getFetchOrientation(tOrder)
     val rowSet = internalHiveOperation.getNextRowSet(hiveOrder, rowSetSize)
     rowSet.toTRowSet
+  }
+
+  def getOperationLogRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+    val tOrder = FetchOrientation.toTFetchOrientation(order)
+    val hiveOrder = org.apache.hive.service.cli.FetchOrientation.getFetchOrientation(tOrder)
+    val handle = internalHiveOperation.getHandle
+    delegatedOperationManager.getOperationLogRowSet(
+      handle,
+      hiveOrder,
+      rowSetSize,
+      hive.getHiveConf).toTRowSet
   }
 
   override def isTimedOut: Boolean = internalHiveOperation.isTimedOut(System.currentTimeMillis)
