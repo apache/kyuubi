@@ -39,5 +39,5 @@ jobs:
           cd dist
           pwd
           suffix=$(date +%s)
-          docker build -f docker/Dockerfile -t ghcr.io/datapunchorg/incubator-kyuubi:kyuubi-$suffix --build-arg BASE_IMAGE=openjdk:11-jre-slim
+          docker build -f docker/Dockerfile -t ghcr.io/datapunchorg/incubator-kyuubi:kyuubi-$suffix --build-arg BASE_IMAGE=openjdk:11-jre-slim .
           docker push ghcr.io/datapunchorg/incubator-kyuubi:kyuubi-$suffix
