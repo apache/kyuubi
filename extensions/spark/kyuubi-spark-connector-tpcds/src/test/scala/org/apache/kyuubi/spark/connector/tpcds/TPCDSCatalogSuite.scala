@@ -27,7 +27,6 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     SparkSession.builder()
       .master("local[*]")
       .config("spark.ui.enabled", "false")
-      .config("spark.sql.cbo.enabled", "true")
       .config("spark.sql.catalogImplementation", "in-memory")
       .config("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
       .getOrCreate()
