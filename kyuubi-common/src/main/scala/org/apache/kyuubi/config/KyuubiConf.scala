@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf._
@@ -1490,6 +1491,14 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
+
+  val SERVER_SECRET_REDACTION_PATTERN: OptionalConfigEntry[Regex] =
+    buildConf("kyuubi.server.redaction.regex")
+      .doc("Regex to decide which Kyuubi contain sensitive information. When this regex matches " +
+        "a property key or value, the value is redacted from the various logs.")
+      .version("1.6.0")
+      .regexConf
+      .createOptional
 
   val ENGINE_SPARK_REGISTER_OPERATION_LISTENER: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.spark.register.operation.listener")
