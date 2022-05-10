@@ -58,4 +58,9 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     assert(spark.table("tpcds.sf1.web_sales").count === 719384)
     assert(spark.table("tpcds.sf1.web_site").count === 30)
   }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    spark.stop()
+  }
 }
