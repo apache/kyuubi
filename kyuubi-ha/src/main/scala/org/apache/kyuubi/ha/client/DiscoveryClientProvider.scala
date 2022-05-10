@@ -55,7 +55,7 @@ object DiscoveryClientProvider extends Logging {
       case c if classOf[DiscoveryClient].isAssignableFrom(cls) =>
         ClassUtils.createInstance[DiscoveryClient](c, conf)
       case _ => throw new KyuubiException(
-        s"$className must extend of ${DiscoveryClient.getClass.getName}")
+          s"$className must extend of ${DiscoveryClient.getClass.getName}")
     }
   }
 }

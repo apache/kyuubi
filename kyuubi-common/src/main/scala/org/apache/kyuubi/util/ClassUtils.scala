@@ -19,8 +19,8 @@ package org.apache.kyuubi.util
 
 import org.apache.kyuubi.config.KyuubiConf
 
-
 object ClassUtils {
+
   /**
    * Create an object instance with given [[KyuubiConf]].
    * @param clazz object class
