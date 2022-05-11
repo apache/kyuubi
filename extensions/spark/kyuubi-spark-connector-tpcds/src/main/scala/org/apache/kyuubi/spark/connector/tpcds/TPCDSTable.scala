@@ -59,11 +59,13 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
   override def name: String = s"`sf$scale`.`$tbl`"
 
   override def schema: StructType = {
-    // TODO tpcdsTable.notNullBitMap does not correct, set nullable follows
-    //      https://tpc.org/TPC_Documents_Current_Versions/pdf/TPC-DS_v3.2.0.pdf
+    def nullable(index: Int): Boolean = {
+      val bitMask = 1L << index
+      (bitMask & ~tpcdsTable.getNotNullBitMap) != 0
+    }
     StructType(
       tpcdsTable.getColumns.zipWithIndex.map { case (c, i) =>
-        StructField(reviseColumnName(c), toSparkDataType(c.getType))
+        StructField(reviseColumnName(c), toSparkDataType(c.getType), nullable(i))
       })
   }
 

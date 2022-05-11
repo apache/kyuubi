@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
+import io.trino.tpcds.Table
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
@@ -54,5 +55,25 @@ class TPCDSTableSuite extends KyuubiFunSuite {
         })
       }
     })
+  }
+
+  test("test nullable column") {
+    Seq("call_center", "catalog_page", "catalog_returns").foreach { tableName =>
+      val tpcdsTable = Table.getTable(tableName)
+      val sparkConf = new SparkConf().setMaster("local[*]")
+        .set("spark.ui.enabled", "false")
+        .set("spark.sql.catalogImplementation", "in-memory")
+        .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+      withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+        val sparkTable = spark.table(s"tpcds.sf1.$tableName")
+        var notNullBitMap = 0
+        sparkTable.schema.fields.zipWithIndex.foreach { case (field, i) =>
+          if (!field.nullable) {
+            notNullBitMap |= 1 << i
+          }
+        }
+        assert(tpcdsTable.getNotNullBitMap == notNullBitMap)
+      }
+    }
   }
 }
