@@ -26,6 +26,7 @@ import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.util.*;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hive.service.cli.FetchType;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.rpc.thrift.*;
@@ -941,7 +942,7 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
       if (stmtHandle != null) {
         TFetchResultsReq tFetchResultsReq =
             new TFetchResultsReq(stmtHandle, getFetchOrientation(incremental), fetchSize);
-        tFetchResultsReq.setFetchType((short) 1);
+        tFetchResultsReq.setFetchType(FetchType.LOG.toTFetchType());
         tFetchResultsResp = client.FetchResults(tFetchResultsReq);
         Utils.verifySuccessWithInfo(tFetchResultsResp.getStatus());
       } else {
