@@ -1,0 +1,112 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# Pull Request Labeler Github Action Configuration: https://github.com/marketplace/actions/labeler
+
+"kind:build":
+  - ".dockerignore"
+  - ".rat-excludes"
+  - ".scalafmt"
+  - "**/*pom.xml"
+  - "bin/docker-image-tool.sh"
+  - "build/**/*"
+  - "docker/**/*"
+  - "docs/requirements"
+  - "kyuubi-assembly/**/*"
+  - "scalastyle-config.xml"
+  - any: ["dev/**/*", "!dev/kyuubi-codecov/**/*", "!dev/kyuubi-tpcds/**/*"]
+
+"kind:deploy":
+  - any: ["bin/**/*", "!bin/beeline", "!bin/docker-image-tool.sh"]
+    
+"kind:documentation":
+  - "*.md"
+  - "conf/**/*"
+  - "docs/**/*"
+  - "readthedocs.yml"
+
+"kind:infra":
+  - ".asf.yaml"
+  - ".gitattributes"
+  - ".github/**/*"
+  - ".gitignore"
+  - ".travis.yml"
+  - "DISCLAIMER"
+  - "LICENSE"
+  - "LICENSE-binary"
+  - "NOTICE"
+  - "NOTICE-binary"
+  - "codecov.yml"
+  - "dev/kyuubi-codecov/**/*"
+  - "licenses-binary"
+
+"module:common":
+  - "kyuubi-common/**/*"
+
+"module:ctl":
+  - "bin/beeline"
+  - "kyuubi-ctl/**/*"
+  - "kyuubi-hive-beeline/**/*"
+  - "kyuubi-hive-jdbc/**/*"
+  - "kyuubi-hive-jdbc-shaded/**/*"
+
+"module:flink":
+  - "externals/kyuubi-flink-sql-engine/**/*"
+  - "integration-tests/kyuubi-flink-it/**/*"
+
+"module:ha":
+  - "kyuubi-ha/**/*"
+  - "kyuubi-zookeeper/**/*"
+
+"module:hive":
+  - "bin/beeline"
+  - "externals/kyuubi-hive-sql-engine/**/*"
+  - "kyuubi-hive-beeline/**/*"
+  - "kyuubi-hive-jdbc/**/*"
+  - "kyuubi-hive-jdbc-shaded/**/*"
+
+"module:kubernetes":
+  - ".dockerignore"
+  - "bin/docker-image-tool.sh"
+  - "docker/**/*"
+  - "integration-tests/kyuubi-kubernetes-it/**/*"
+  - "tools/spark-block-cleaner/**/*"
+
+"module:metrics":
+  - "kyuubi-metrics/**/*"
+
+"module:trino":
+  - "externals/kyuubi-trino-engine/**/*" 
+
+"module:tpcds":
+  - "dev/kyuubi-tpcds/**/*"
+
+"module:server":
+  - "bin/kyuubi"
+  - "kyuubi-server/**/*"
+  - "extension/server/kyuubi-server-plugin/**/*"
+
+"module:spark":
+  - "externals/kyuubi-spark-sql-engine/**/*" 
+  - "extensions/spark/kyuubi-extension-spark*/**/*"
+  - "extensions/spark/kyuubi-spark-authz/**/*"
+  - "integration-tests/kyuubi-kubernetes-it/**/*"
+  - "tools/spark-block-cleaner/**/*"
+
+"module:extensions":
+  - "extension/**/*"
