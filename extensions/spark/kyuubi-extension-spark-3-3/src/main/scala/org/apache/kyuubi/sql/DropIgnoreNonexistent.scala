@@ -17,11 +17,10 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedRelation, UnresolvedTableOrView, UnresolvedView}
-import org.apache.spark.sql.catalyst.plans.logical.{DropTable, DropView, LogicalPlan, NoopCommand, UncacheTable}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedFunc, UnresolvedRelation, UnresolvedTableOrView, UnresolvedView}
+import org.apache.spark.sql.catalyst.plans.logical.{DropFunction, DropNamespace, DropTable, DropView, LogicalPlan, NoopCommand, UncacheTable}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.{AlterTableDropPartitionCommand, DropDatabaseCommand, DropFunctionCommand, DropTableCommand}
-
+import org.apache.spark.sql.execution.command.{AlterTableDropPartitionCommand, DropTableCommand}
 import org.apache.kyuubi.sql.KyuubiSQLConf._
 
 case class DropIgnoreNonexistent(session: SparkSession) extends Rule[LogicalPlan] {
@@ -33,9 +32,7 @@ case class DropIgnoreNonexistent(session: SparkSession) extends Rule[LogicalPlan
           i.copy(ifExists = true)
         case i @ DropTableCommand(_, false, _, _) =>
           i.copy(ifExists = true)
-        case i @ DropDatabaseCommand(_, false, _) =>
-          i.copy(ifExists = true)
-        case i @ DropFunctionCommand(_, _, false, _) =>
+        case i @ DropNamespace(_, false, _) =>
           i.copy(ifExists = true)
         // like: org.apache.spark.sql.catalyst.analysis.ResolveCommandsWithIfExists
         case DropTable(u: UnresolvedTableOrView, false, _) =>
@@ -44,6 +41,8 @@ case class DropIgnoreNonexistent(session: SparkSession) extends Rule[LogicalPlan
           NoopCommand("DROP VIEW", u.multipartIdentifier)
         case UncacheTable(u: UnresolvedRelation, false, _) =>
           NoopCommand("UNCACHE TABLE", u.multipartIdentifier)
+        case DropFunction(u: UnresolvedFunc, false) =>
+          NoopCommand("DROP FUNCTION", u.multipartIdentifier)
         case _ => plan
       }
     } else {
