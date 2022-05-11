@@ -19,6 +19,7 @@ package org.apache.kyuubi.jdbc.hive;
 
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.security.auth.Subject;
 import org.apache.hive.service.auth.HttpAuthUtils;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -34,7 +35,7 @@ public class HttpKerberosRequestInterceptor extends HttpRequestInterceptorBase {
   String principal;
   String host;
   String serverHttpUrl;
-  boolean assumeSubject;
+  Subject loggedInSubject;
 
   // A fair reentrant lock
   private static ReentrantLock kerberosLock = new ReentrantLock(true);
@@ -43,16 +44,17 @@ public class HttpKerberosRequestInterceptor extends HttpRequestInterceptorBase {
       String principal,
       String host,
       String serverHttpUrl,
-      boolean assumeSubject,
+      Subject loggedInSubject,
       CookieStore cs,
       String cn,
       boolean isSSL,
-      Map<String, String> additionalHeaders) {
-    super(cs, cn, isSSL, additionalHeaders);
+      Map<String, String> additionalHeaders,
+      Map<String, String> customCookies) {
+    super(cs, cn, isSSL, additionalHeaders, customCookies);
     this.principal = principal;
     this.host = host;
     this.serverHttpUrl = serverHttpUrl;
-    this.assumeSubject = assumeSubject;
+    this.loggedInSubject = loggedInSubject;
   }
 
   @Override
@@ -63,7 +65,7 @@ public class HttpKerberosRequestInterceptor extends HttpRequestInterceptorBase {
       // Locking ensures the tokens are unique in case of concurrent requests
       kerberosLock.lock();
       String kerberosAuthHeader =
-          HttpAuthUtils.getKerberosServiceTicket(principal, host, serverHttpUrl, assumeSubject);
+          HttpAuthUtils.getKerberosServiceTicket(principal, host, serverHttpUrl, loggedInSubject);
       // Set the session key token (Base64 encoded) in the headers
       httpRequest.addHeader(
           HttpAuthUtils.AUTHORIZATION + ": " + HttpAuthUtils.NEGOTIATE + " ", kerberosAuthHeader);

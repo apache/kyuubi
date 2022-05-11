@@ -18,8 +18,10 @@
 package org.apache.kyuubi.config
 
 import java.time.Duration
+import java.util.regex.PatternSyntaxException
 
 import scala.util.{Failure, Success, Try}
+import scala.util.matching.Regex
 
 private[kyuubi] case class ConfigBuilder(key: String) {
 
@@ -118,6 +120,18 @@ private[kyuubi] case class ConfigBuilder(key: String) {
       new ConfigEntryFallback[T](key, _doc, _version, _internal, fallback)
     _onCreate.foreach(_(entry))
     entry
+  }
+
+  def regexConf: TypedConfigBuilder[Regex] = {
+    def regexFromString(str: String, key: String): Regex = {
+      try str.r
+      catch {
+        case e: PatternSyntaxException =>
+          throw new IllegalArgumentException(s"$key should be a regex, but was $str", e)
+      }
+    }
+
+    new TypedConfigBuilder(this, regexFromString(_, this.key), _.toString)
   }
 }
 

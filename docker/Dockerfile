@@ -33,10 +33,6 @@ ONBUILD ENV SPARK_HOME ${spark_home_in_docker}
 
 FROM ${BASE_IMAGE} as builder_spark_builtin
 
-ONBUILD ENV SPARK_HOME /opt/spark
-ONBUILD RUN mkdir -p  ${SPARK_HOME}
-ONBUILD COPY spark-binary ${SPARK_HOME}
-
 FROM builder_${spark_provided}
 
 ARG kyuubi_uid=10009

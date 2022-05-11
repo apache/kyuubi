@@ -315,7 +315,6 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
         () => metaData.storesLowerCaseQuotedIdentifiers(),
         () => metaData.storesMixedCaseIdentifiers(),
         () => metaData.storesMixedCaseQuotedIdentifiers(),
-        () => metaData.getSQLKeywords,
         () => metaData.nullPlusNonNullIsNull,
         () => metaData.supportsConvert,
         () => metaData.supportsTableCorrelationNames,

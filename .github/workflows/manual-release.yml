@@ -1,0 +1,43 @@
+name: Manually release
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Release Name'
+        required: true
+        default: '0.0.0'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build distribution
+        run: |
+          ./build/dist
+          ls -lt dist
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish the Docker image
+        run: |
+          pwd
+          cd dist
+          pwd
+          suffix=$(date +%s)
+          docker build -f docker/Dockerfile -t ghcr.io/datapunchorg/incubator-kyuubi:kyuubi-$suffix --build-arg BASE_IMAGE=openjdk:11-jre-slim .
+          docker push ghcr.io/datapunchorg/incubator-kyuubi:kyuubi-$suffix

@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf._
@@ -693,7 +694,7 @@ object KyuubiConf {
     .doc("The timeout of awaiting response after sending request to remote sql query engine")
     .version("1.4.0")
     .timeConf
-    .createWithDefault(Duration.ofSeconds(60).toMillis)
+    .createWithDefault(0)
 
   val ENGINE_ALIVE_PROBE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.alive.probe.enabled")
@@ -1437,6 +1438,28 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_FLINK_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.flink.memory")
+      .doc("The heap memory for the flink sql engine")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_FLINK_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.flink.java.options")
+      .doc("The extra java options for the flink sql engine")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_FLINK_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.flink.extra.classpath")
+      .doc("The extra classpath for the flink sql engine, for configuring location" +
+        " of hadoop client jars, etc")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
   val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.connections.per.user")
       .doc("Maximum kyuubi server connections per user." +
@@ -1468,4 +1491,12 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
+
+  val SERVER_SECRET_REDACTION_PATTERN: OptionalConfigEntry[Regex] =
+    buildConf("kyuubi.server.redaction.regex")
+      .doc("Regex to decide which Kyuubi contain sensitive information. When this regex matches " +
+        "a property key or value, the value is redacted from the various logs.")
+      .version("1.6.0")
+      .regexConf
+      .createOptional
 }

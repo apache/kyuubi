@@ -40,7 +40,7 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJ
     .set(ENGINE_TYPE, "FLINK_SQL")
     .set("flink.parallelism.default", "6")
     .set(
-      s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CLASSPATH",
+      s"$KYUUBI_ENGINE_ENV_PREFIX.FLINK_HADOOP_CLASSPATH",
       s"$hadoopClasspath${File.separator}" +
         s"hadoop-client-api-$HADOOP_COMPILE_VERSION.jar${File.pathSeparator}" +
         s"$hadoopClasspath${File.separator}hadoop-client-runtime-$HADOOP_COMPILE_VERSION.jar")

@@ -50,10 +50,14 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   private def initOperationLogRootDir(): Unit = {
     try {
-      _operationLogRoot.foreach { logRoot =>
-        val rootPath = Paths.get(logRoot)
-        Files.createDirectories(rootPath)
-      }
+      val logRoot =
+        if (isServer) {
+          conf.get(SERVER_OPERATION_LOG_DIR_ROOT)
+        } else {
+          conf.get(ENGINE_OPERATION_LOG_DIR_ROOT)
+        }
+      val logPath = Files.createDirectories(Utils.getAbsolutePathFromWork(logRoot))
+      _operationLogRoot = Some(logPath.toString)
     } catch {
       case e: IOException =>
         error(s"Failed to initialize operation log root directory: ${_operationLogRoot}", e)
@@ -227,6 +231,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
+    this.conf = conf
     addService(operationManager)
     initOperationLogRootDir()
 
