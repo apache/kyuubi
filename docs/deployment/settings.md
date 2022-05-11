@@ -353,6 +353,13 @@ Key | Default | Meaning | Type | Since
 <code>kyuubi.server.redaction.regex</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Regex to decide which Kyuubi contain sensitive information. When this regex matches a property key or value, the value is redacted from the various logs.</div>|<div style='width: 30pt'></div>|<div style='width: 20pt'>1.6.0</div>
 
 
+### Service
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+<code>kyuubi.service.discovery.client.class</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Class name for service discovery client.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
+
+
 ### Session
 
 Key | Default | Meaning | Type | Since
