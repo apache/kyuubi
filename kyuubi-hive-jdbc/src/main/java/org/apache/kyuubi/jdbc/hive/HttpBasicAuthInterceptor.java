@@ -40,8 +40,9 @@ public class HttpBasicAuthInterceptor extends HttpRequestInterceptorBase {
       CookieStore cookieStore,
       String cn,
       boolean isSSL,
-      Map<String, String> additionalHeaders) {
-    super(cookieStore, cn, isSSL, additionalHeaders);
+      Map<String, String> additionalHeaders,
+      Map<String, String> customCookies) {
+    super(cookieStore, cn, isSSL, additionalHeaders, customCookies);
     this.authScheme = new BasicScheme();
     if (username != null) {
       this.credentials = new UsernamePasswordCredentials(username, password);

@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.KyuubiException
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
@@ -42,7 +42,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   override def shouldRunAsync: Boolean = true
 
-  private lazy val _operationLog = OperationLog.createOperationLog(session, getHandle)
+  private val _operationLog = OperationLog.createOperationLog(session, getHandle)
 
   private val applicationManager =
     session.sessionManager.asInstanceOf[KyuubiSessionManager].applicationManager
@@ -130,6 +130,16 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
       }
     } finally {
       builder.close()
+    }
+  }
+
+  def getOperationLogRowSet(
+      order: FetchOrientation,
+      from: Int,
+      size: Int): TRowSet = {
+    val operationLog = getOperationLog
+    operationLog.map(_.read(from, size)).getOrElse {
+      throw KyuubiSQLException(s"Batch ID: $batchId, failed to generate operation log")
     }
   }
 

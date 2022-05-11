@@ -169,12 +169,33 @@ export HADOOP_CLASSPATH=`hadoop classpath`
 echo "stop" | ./bin/yarn-session.sh -id application_XXXXX_XXX
  ```
 
-If the `TopSpeedWindowing` passes, configure it in `$KYUUBI_HOME/conf/kyuubi-env.sh` or `$FLINK_HOME/bin/config.sh`, e.g.
+If the `TopSpeedWindowing` passes, configure it in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 
 ```bash
 $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi-env.sh
 ```
 
+#### Required Environment Variable
+
+The `FLINK_HADOOP_CLASSPATH` is required, too.
+
+For users who are using Hadoop 3.x, Hadoop shaded client is recommended instead of Hadoop vanilla jars. 
+For users who are using Hadoop 2.x, `FLINK_HADOOP_CLASSPATH` should be set to hadoop classpath to use Hadoop 
+vanilla jars. For users which does not use Hadoop services, e.g. HDFS, YARN at all, Hadoop client jars 
+is also required, and recommend to use Hadoop shaded client as Hadoop 3.x's users do.
+
+See [HADOOP-11656](https://issues.apache.org/jira/browse/HADOOP-11656) for details of Hadoop shaded client.
+
+To use Hadoop shaded client, please configure $KYUUBI_HOME/conf/kyuubi-env.sh as follows:
+
+```bash
+$ echo "export FLINK_HADOOP_CLASSPATH=/path/to/hadoop-client-runtime-3.3.2.jar:/path/to/hadoop-client-api-3.3.2.jar" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+```
+To use Hadoop vanilla jars, please configure $KYUUBI_HOME/conf/kyuubi-env.sh as follows:
+
+```bash
+$ echo "export FLINK_HADOOP_CLASSPATH=`hadoop classpath`" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+```
 ### Deployment Modes Supported by Flink on YARN
 
 For experiment use, we recommend deploying Kyuubi Flink SQL engine in [Session Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#session-mode).

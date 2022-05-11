@@ -38,9 +38,13 @@ class TPCDSCatalog extends TableCatalog {
 
   val databases: Array[String] = scales.map("sf" + _)
 
+  var options: CaseInsensitiveStringMap = _
+
   override def name: String = "tpcds"
 
-  override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {}
+  override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
+    this.options = options
+  }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = namespace match {
     case Array(db) if databases contains db => tables.map(Identifier.of(namespace, _))
@@ -49,7 +53,7 @@ class TPCDSCatalog extends TableCatalog {
 
   override def loadTable(ident: Identifier): SparkTable = (ident.namespace, ident.name) match {
     case (Array(db), table) if databases contains db =>
-      new TPCDSTable(table.toLowerCase, scales(databases indexOf db))
+      new TPCDSTable(table.toLowerCase, scales(databases indexOf db), options)
     case (_, _) => throw new NoSuchTableException(ident)
   }
 

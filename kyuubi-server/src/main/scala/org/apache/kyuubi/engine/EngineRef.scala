@@ -185,7 +185,8 @@ private[kyuubi] class EngineRef(
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
-      info(s"Launching engine:\n$builder")
+      val redactedCmd = builder.toString
+      info(s"Launching engine:\n$redactedCmd")
       val process = builder.start
       var exitValue: Option[Int] = None
       while (engineRef.isEmpty) {
@@ -205,7 +206,7 @@ private[kyuubi] class EngineRef(
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
-            s"Timeout($timeout ms) to launched $engineType engine with $builder. $killMessage",
+            s"Timeout($timeout ms) to launched $engineType engine with $redactedCmd. $killMessage",
             builder.getError)
         }
         engineRef = discoveryClient.getEngineByRefId(engineSpace, engineRefId)

@@ -22,8 +22,7 @@ import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.{KyuubiSQLException, Utils}
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel._
@@ -44,12 +43,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   extends SessionManager(name) {
 
   def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    val absPath = Utils.getAbsolutePathFromWork(conf.get(ENGINE_OPERATION_LOG_DIR_ROOT))
-    _operationLogRoot = Some(absPath.toAbsolutePath.toString)
-    super.initialize(conf)
-  }
 
   val operationManager = new SparkSQLOperationManager()
 

@@ -35,8 +35,9 @@ public class HttpTokenAuthInterceptor extends HttpRequestInterceptorBase {
       CookieStore cookieStore,
       String cn,
       boolean isSSL,
-      Map<String, String> additionalHeaders) {
-    super(cookieStore, cn, isSSL, additionalHeaders);
+      Map<String, String> additionalHeaders,
+      Map<String, String> customCookies) {
+    super(cookieStore, cn, isSSL, additionalHeaders, customCookies);
     this.tokenStr = tokenStr;
   }
 

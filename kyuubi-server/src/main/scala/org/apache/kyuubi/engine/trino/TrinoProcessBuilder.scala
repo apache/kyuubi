@@ -98,5 +98,5 @@ class TrinoProcessBuilder(
 
   override def shortName: String = "trino"
 
-  override def toString: String = commands.mkString("\n")
+  override def toString: String = Utils.redactCommandLineArgs(conf, commands).mkString("\n")
 }

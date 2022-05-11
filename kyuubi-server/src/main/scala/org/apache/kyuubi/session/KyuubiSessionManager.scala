@@ -22,7 +22,7 @@ import java.util.UUID
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.{KyuubiSQLException, Utils}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -50,8 +50,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   override def initialize(conf: KyuubiConf): Unit = {
     addService(applicationManager)
     addService(credentialsManager)
-    val absPath = Utils.getAbsolutePathFromWork(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
-    _operationLogRoot = Some(absPath.toAbsolutePath.toString)
     initSessionLimiter(conf)
     super.initialize(conf)
   }
@@ -153,6 +151,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def getBatchSessionHandle(batchId: String, protocol: TProtocolVersion): SessionHandle = {
     SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
+  }
+
+  def getBatchSessionImpl(batchId: String, protocol: TProtocolVersion): KyuubiBatchSessionImpl = {
+    getSession(getBatchSessionHandle(batchId, protocol)).asInstanceOf[KyuubiBatchSessionImpl]
+  }
+
+  def getBatchSessionImpl(sessionHandle: SessionHandle): KyuubiBatchSessionImpl = {
+    getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
   }
 
   def getBatchSessionList(batchType: String, from: Int, size: Int): Seq[Session] = {

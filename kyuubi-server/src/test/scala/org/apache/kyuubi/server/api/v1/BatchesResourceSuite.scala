@@ -23,6 +23,9 @@ import java.util.UUID
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
+import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.duration.DurationInt
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
@@ -35,11 +38,12 @@ import org.apache.kyuubi.session.KyuubiSessionManager
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("open batch session") {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
+    val appName = "spark-batch-submission"
     val requestObj = BatchRequest(
       "spark",
       sparkProcessBuilder.mainResource.get,
       sparkProcessBuilder.mainClass,
-      "spark-batch-submission",
+      appName,
       Map(
         "spark.master" -> "local",
         s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
@@ -74,6 +78,34 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .request(MediaType.APPLICATION_JSON_TYPE)
       .get()
     assert(404 == getBatchResponse.getStatus)
+
+    // get batch log
+    var logResponse = webTarget.path(s"api/v1/batches/${batch.id}/log")
+      .queryParam("from", "0")
+      .queryParam("size", "1")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+    var log = logResponse.readEntity(classOf[OperationLog])
+    val head = log.logRowSet.head
+    assert(log.rowCount == 1)
+
+    val logs = new ArrayBuffer[String]
+    logs.append(head)
+    eventually(timeout(10.seconds), interval(1.seconds)) {
+      logResponse = webTarget.path(s"api/v1/batches/${batch.id}/log")
+        .queryParam("from", "0")
+        .queryParam("size", "100")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+      log = logResponse.readEntity(classOf[OperationLog])
+      if (log.rowCount > 0) {
+        log.logRowSet.foreach(logs.append(_))
+      }
+
+      // check both kyuubi log and engine log
+      assert(logs.exists(_.contains("/bin/spark-submit")) && logs.exists(
+        _.contains(s"spark.SparkContext: Submitted application: $appName")))
+    }
 
     // invalid user name
     val encodeAuthorization = new String(Base64.getEncoder.encode(batch.id.getBytes()), "UTF-8")

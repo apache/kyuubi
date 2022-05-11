@@ -35,7 +35,6 @@ class SeekableBufferedReader(paths: Seq[Path]) extends Closeable {
   }
 
   private var linePos = 0L
-  private var numLines = 0L
   private var readerIndex = 0
   private val numReaders = bufferedReaders.length
   private var currentReader = bufferedReaders.head
@@ -48,6 +47,9 @@ class SeekableBufferedReader(paths: Seq[Path]) extends Closeable {
       currentReader = bufferedReaders(readerIndex)
       currentValue = currentReader.readLine()
     }
+    if (currentValue != null) {
+      linePos += 1
+    }
   }
 
   /**
@@ -58,14 +60,14 @@ class SeekableBufferedReader(paths: Seq[Path]) extends Closeable {
     if (from < 0) throw new IOException("Negative seek offset")
 
     new Iterator[String] {
+      private var numLines = 0L
       override def hasNext: Boolean = {
         if (numLines >= limit) {
           false
         } else {
           nextLine()
-          while (linePos < from && currentValue != null) {
+          while (linePos <= from && currentValue != null) {
             nextLine()
-            linePos += 1
           }
           numLines += 1
           currentValue != null
