@@ -31,7 +31,7 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, Zorder, ZorderBytesUtils}
 
-trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
+trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
   override def sparkConf(): SparkConf = {
     super.sparkConf()
       .set(
@@ -654,7 +654,7 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
   }
 }
 
-class ZorderWithCodegenEnabledSuite extends ZorderSuite {
+trait ZorderWithCodegenEnabledSuiteBase extends ZorderSuiteBase {
   override def sparkConf(): SparkConf = {
     val conf = super.sparkConf
     conf.set(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, "true")
@@ -662,7 +662,7 @@ class ZorderWithCodegenEnabledSuite extends ZorderSuite {
   }
 }
 
-class ZorderWithCodegenDisabledSuite extends ZorderSuite {
+trait ZorderWithCodegenDisabledSuiteBase extends ZorderSuiteBase {
   override def sparkConf(): SparkConf = {
     val conf = super.sparkConf
     conf.set(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, "false")
