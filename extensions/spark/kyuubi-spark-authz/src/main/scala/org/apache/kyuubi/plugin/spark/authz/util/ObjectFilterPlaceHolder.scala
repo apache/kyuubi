@@ -14,18 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import org.apache.spark.sql.{SparkSession, Strategy}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.SparkPlan
+package org.apache.kyuubi.plugin.spark.authz.util
 
-import org.apache.kyuubi.plugin.spark.authz.util.ObjectFilterPlaceHolder
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 
-class FilterDataSourceV2Strategy(spark: SparkSession) extends Strategy {
-  override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowNamespaces" =>
-      spark.sessionState.planner.plan(child).map(FilteredShowNamespaceExec).toSeq
-    case _ => Nil
-  }
+case class ObjectFilterPlaceHolder(child: LogicalPlan) extends LeafNode {
+  override def output: Seq[Attribute] = child.output
 }

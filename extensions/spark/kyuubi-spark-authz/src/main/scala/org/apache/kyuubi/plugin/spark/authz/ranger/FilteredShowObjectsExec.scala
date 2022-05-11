@@ -19,61 +19,29 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeSet}
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
-abstract class KyuubiV2CommandExec extends SparkPlan {
+trait FilteredShowObjectsExec extends LeafExecNode {
+  def delegated: SparkPlan
 
-  /**
-   * Abstract method that each concrete command needs to implement to compute the result.
-   */
-  protected def run(): Seq[InternalRow]
+  final override def output: Seq[Attribute] = delegated.output
 
-  /**
-   * The value of this field can be used as the contents of the corresponding RDD generated from
-   * the physical plan of this command.
-   */
-  private lazy val result: Seq[InternalRow] = run()
+  final private lazy val result = {
+    delegated.executeCollect().filter(isAllowed(_, AuthZUtils.getAuthzUgi(sparkContext)))
+  }
 
-  /**
-   * The `execute()` method of all the physical command classes should reference `result`
-   * so that the command can be executed eagerly right after the command query is created.
-   */
-  override def executeCollect(): Array[InternalRow] = result.toArray
-
-  override def executeToIterator(): Iterator[InternalRow] = result.toIterator
-
-  override def executeTake(limit: Int): Array[InternalRow] = result.take(limit).toArray
-
-  override protected def doExecute(): RDD[InternalRow] = {
+  final override def doExecute(): RDD[InternalRow] = {
     sparkContext.parallelize(result, 1)
   }
 
-  override def producedAttributes: AttributeSet = outputSet
-
-}
-
-abstract class ShowObjectExec(delegated: SparkPlan)
-  extends KyuubiV2CommandExec with LeafExecNode {
-
-  override def run(): Seq[InternalRow] = {
-    val runMethod = delegated.getClass.getMethod("run")
-    runMethod.setAccessible(true)
-    val rows = runMethod.invoke(delegated).asInstanceOf[Seq[InternalRow]]
-    val ugi = AuthZUtils.getAuthzUgi(sparkContext)
-    rows.filter(r => isAllowed(r, ugi))
-  }
-
   protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean
-
-  override def output: Seq[Attribute] = delegated.output
-
 }
 
-case class FilterShowNamespaceExec(delegated: SparkPlan) extends ShowObjectExec(delegated) {
+case class FilteredShowNamespaceExec(delegated: SparkPlan) extends FilteredShowObjectsExec {
 
   override protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
