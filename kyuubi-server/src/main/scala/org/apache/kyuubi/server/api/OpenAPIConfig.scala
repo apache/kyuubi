@@ -25,4 +25,5 @@ class OpenAPIConfig extends ResourceConfig {
   packages("org.apache.kyuubi.server.api.v1")
   register(classOf[KyuubiOpenApiResource])
   register(classOf[KyuubiScalaObjectMapper])
+  register(classOf[RestExceptionMapper])
 }
