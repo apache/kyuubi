@@ -23,7 +23,7 @@ import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
-class InsertShuffleNodeBeforeJoinSuite extends KyuubiSparkSQLExtensionTest {
+trait InsertShuffleNodeBeforeJoinSuiteBase extends KyuubiSparkSQLExtensionTest {
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     setupData()
