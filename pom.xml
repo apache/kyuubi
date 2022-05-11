@@ -1015,6 +1015,10 @@
                         <artifactId>hbase-server</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>hbase-client</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.orc</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -1025,6 +1029,10 @@
                     <exclusion>
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1045,6 +1053,10 @@
                     <exclusion>
                         <groupId>org.apache.hudi</groupId>
                         <artifactId>hudi-spark2_2.11</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hudi</groupId>
+                        <artifactId>hudi-spark2-common</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.curator</groupId>
@@ -1073,6 +1085,14 @@
                     <exclusion>
                         <groupId>org.apache.hudi</groupId>
                         <artifactId>hudi-spark-common_2.11</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
