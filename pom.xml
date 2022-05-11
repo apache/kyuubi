@@ -125,7 +125,7 @@
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
         <hive.archive.download.skip>false</hive.archive.download.skip>
-        <hudi.version>0.10.0</hudi.version>
+        <hudi.version>0.11.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
         <iceberg.version>0.13.1</iceberg.version>
         <jackson.version>2.13.1</jackson.version>
@@ -969,27 +969,6 @@
             </dependency>
 
             <!-- Hudi dependency  -->
-            <!--
-              We don't use hadoop-common directly, it's only for suppressing exception:
-                 Failed to execute goal org.apache.maven.plugins:maven-shade-plugin:3.2.4:shade (default) on project
-                 kyuubi-spark-sql-engine_2.12: Error creating shaded jar: Could not resolve following dependencies:
-                 [jdk.tools:jdk.tools:jar:1.6 (system)]
-
-              The issue only occurs on GitHub Action environment with Hudi 0.10.0 and JDK 11.
-              After few days digging, only found one place introduces jdk.tools,
-
-              - org.apache.hudi:hudi-common:jar:0.10.0:test
-                - org.apache.hbase:hbase-server:jar:1.2.3:test
-                  - org.apache.hadoop:hadoop-common:jar:2.5.1:test
-                    - org.apache.hadoop:hadoop-annotations:jar:2.5.1:test
-                      - jdk.tools:jdk.tools:jar:1.6:system
-            -->
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-common</artifactId>
-                <version>${hadoop.version}</version>
-            </dependency>
-
             <dependency>
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
@@ -1040,6 +1019,10 @@
                         <artifactId>hbase-server</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>hbase-client</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.orc</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -1050,6 +1033,10 @@
                     <exclusion>
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1072,6 +1059,10 @@
                         <artifactId>hudi-spark2_2.11</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hudi</groupId>
+                        <artifactId>hudi-spark2-common</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.curator</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -1092,12 +1083,20 @@
 
             <dependency>
                 <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark3_${scala.binary.version}</artifactId>
+                <artifactId>hudi-spark3.1.x_${scala.binary.version}</artifactId>
                 <version>${hudi.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.hudi</groupId>
                         <artifactId>hudi-spark-common_2.11</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1905,7 +1904,10 @@
                 <spark.version>3.0.3</spark.version>
                 <delta.version>0.8.0</delta.version>
                 <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-                <!-- Hudi 0.10.0 still support Spark 3.0, but need build by user with specific profile -->
+                <!--
+                    https://hudi.apache.org/releases/release-0.11.0/#bundle-usage-updates
+                    Hudi 0.11.0 Spark bundle for 3.0.x is no longer officially supported.
+                -->
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -1930,6 +1932,10 @@
                 <spark.version>3.2.1</spark.version>
                 <delta.version>1.2.1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
+                <!--
+                    See https://github.com/apache/incubator-kyuubi/pull/2576
+                    Hudi 0.11 requires hudi-spark3.2-bundle to execute UT
+                -->
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
