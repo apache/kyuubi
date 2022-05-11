@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.RunnableCommand
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, WithInternalChild}
+import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceHolder, WithInternalChild}
 
 class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
@@ -33,6 +33,8 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
     // show databases in spark2.4.x
     case r: RunnableCommand if r.nodeName == "ShowDatabasesCommand" =>
       FilteredShowDatabasesCommand(r)
+    case n: LogicalPlan if n.nodeName == "ShowNamespaces" =>
+      ObjectFilterPlaceHolder(n)
     case _ => plan
   }
 }
