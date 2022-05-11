@@ -42,6 +42,7 @@ import javax.security.sasl.SaslException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
 import org.apache.hive.service.auth.*;
+import org.apache.hive.service.cli.FetchType;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.cli.session.SessionUtils;
@@ -275,7 +276,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
     TFetchResultsReq fetchResultsReq =
         new TFetchResultsReq(launchEngineOpHandle, TFetchOrientation.FETCH_NEXT, fetchSize);
-    fetchResultsReq.setFetchType((short) 1);
+    fetchResultsReq.setFetchType(FetchType.LOG.toTFetchType());
 
     List<String> logs = new ArrayList<>();
     try {
