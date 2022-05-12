@@ -21,7 +21,7 @@ import org.apache.kyuubi.{HiveEngineTests, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
-class KyuubiOperationWithHiveEngineSuite extends WithKyuubiServer with HiveEngineTests {
+class KyuubiOperationHiveEnginePerUserSuite extends WithKyuubiServer with HiveEngineTests {
   override protected val conf: KyuubiConf = {
     val metastore = Utils.createTempDir(namePrefix = getClass.getSimpleName)
     metastore.toFile.delete()

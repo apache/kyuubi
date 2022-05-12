@@ -48,8 +48,8 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
 
   def withSessionConf[T](
       sessionConfigs: Map[String, String] = Map.empty)(
-      jdbcConfigs: Map[String, String])(
-      jdbcVars: Map[String, String])(f: => T): T = {
+      jdbcConfigs: Map[String, String] = Map.empty)(
+      jdbcVars: Map[String, String] = Map.empty)(f: => T): T = {
     this._sessionConfigs = sessionConfigs
     this._jdbcConfigs = jdbcConfigs
     this._jdbcVars = jdbcVars

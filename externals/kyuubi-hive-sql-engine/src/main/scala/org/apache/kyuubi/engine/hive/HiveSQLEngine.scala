@@ -18,13 +18,15 @@
 package org.apache.kyuubi.engine.hive
 
 import java.net.InetAddress
+import java.security.PrivilegedExceptionAction
 
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
 import org.apache.kyuubi.engine.hive.HiveSQLEngine.currentEngine
 import org.apache.kyuubi.engine.hive.events.HiveEngineEvent
@@ -68,7 +70,7 @@ object HiveSQLEngine extends Logging {
   val kyuubiConf = new KyuubiConf()
   kyuubiConf.set(ENGINE_EVENT_LOGGERS.key, "JSON")
 
-  def startEngine(): HiveSQLEngine = {
+  def startEngine(): Unit = {
     try {
       // TODO: hive 2.3.x has scala 2.11 deps.
       initLoggerEventHandler(kyuubiConf)
@@ -110,7 +112,6 @@ object HiveSQLEngine extends Logging {
       engine.getServices.foreach(_.stop())
     })
     currentEngine = Some(engine)
-    engine
   }
 
   private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
@@ -134,7 +135,18 @@ object HiveSQLEngine extends Logging {
     SignalRegister.registerLogger(logger)
     try {
       Utils.fromCommandLineArgs(args, kyuubiConf)
-      startEngine()
+      val sessionUser = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY)
+      val realUser = UserGroupInformation.getLoginUser
+
+      if (sessionUser.isEmpty || sessionUser.get == realUser.getShortUserName) {
+        startEngine()
+      } else {
+        val effectiveUser = UserGroupInformation.createProxyUser(sessionUser.get, realUser)
+        effectiveUser.doAs(new PrivilegedExceptionAction[Unit] {
+          override def run(): Unit = startEngine()
+        })
+      }
+
     } catch {
       case t: Throwable => currentEngine match {
           case Some(engine) =>
