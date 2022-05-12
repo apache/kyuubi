@@ -35,6 +35,8 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
       FilteredShowDatabasesCommand(r)
     case n: LogicalPlan if n.nodeName == "ShowNamespaces" =>
       ObjectFilterPlaceHolder(n)
+    case r: RunnableCommand if r.nodeName == "ShowFunctionsCommand" =>
+      FilteredShowFunctionsCommand(r)
     case _ => plan
   }
 }
@@ -80,4 +82,22 @@ abstract class FilteredShowObjectCommand(delegated: RunnableCommand)
   protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean
 
   override def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = this
+}
+
+case class FilteredShowFunctionsCommand(delegated: RunnableCommand)
+  extends FilteredShowObjectCommand(delegated) with WithInternalChild {
+
+  override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
+    val functionName = r.getString(0)
+    val items = functionName.split("\\.", 2)
+    // the system functions return true
+    if (items.length == 1) {
+      return true
+    }
+
+    val resource = AccessResource(ObjectType.FUNCTION, items(0), items(1), null)
+    val request = AccessRequest(resource, ugi, OperationType.SHOWFUNCTIONS, AccessType.USE)
+    val result = SparkRangerAdminPlugin.isAccessAllowed(request)
+    result != null && result.getIsAllowed
+  }
 }
