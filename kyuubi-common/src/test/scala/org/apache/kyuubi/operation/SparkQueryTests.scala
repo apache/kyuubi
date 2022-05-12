@@ -18,9 +18,11 @@
 package org.apache.kyuubi.operation
 
 import java.sql.{Date, SQLException, SQLTimeoutException, Timestamp}
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
 
@@ -605,6 +607,63 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
         foundOperationLangItem = rs.getString(1).contains("kyuubi.operation.language")
       }
       assert(foundOperationLangItem)
+    }
+  }
+
+  test("scala code with loading external package at runtime ") {
+    val jarDir = Utils.createTempDir().toFile
+
+    withJdbcStatement() { statement =>
+      statement.execute("SET kyuubi.operation.language=scala")
+      val udfCode =
+        """
+          |package test.utils
+          |
+          |object Math {
+          |def add(x: Int, y: Int): Int = x + y
+          |}
+          |
+          |""".stripMargin
+
+      val jarFile = UserJarTestUtils.createJarFile(
+        udfCode,
+        "test",
+        s"test-function-${UUID.randomUUID}.jar",
+        jarDir.toString)
+      val jarBytes = FileUtils.readFileToByteArray(jarFile)
+      val jarStr = new String(java.util.Base64.getEncoder().encode(jarBytes))
+      val jarName = s"test-function-${UUID.randomUUID}.jar"
+
+      val code0 = """spark.sql("SET kyuubi.operation.language").show(false)"""
+      statement.execute(code0)
+
+      // Generate a jar package in spark engine
+      val batchCode =
+        s"""
+           |import java.io.{BufferedOutputStream, File, FileOutputStream}
+           |val dir = spark.sparkContext.getConf.get("spark.repl.class.outputDir")
+           |val jarFile = new File(dir, "$jarName")
+           |val bos = new BufferedOutputStream(new FileOutputStream(jarFile))
+           |val path = "$jarStr"
+           |bos.write(java.util.Base64.getDecoder.decode(path))
+           |bos.close()
+           |val jarPath = jarFile.getAbsolutePath
+           |val fileSize = jarFile.length
+           |""".stripMargin
+      batchCode.split("\n").filter(_.nonEmpty).foreach { code =>
+        val rs = statement.executeQuery(code)
+        rs.next()
+        // scalastyle:off
+        println(rs.getString(1))
+      // scalastyle:on
+      }
+
+      val code1 = s"""spark.sql("add jar " + jarPath)"""
+      val code2 = """val x = test.utils.Math.add(1,2)"""
+      statement.execute(code1)
+      val rs = statement.executeQuery(code2)
+      rs.next()
+      assert(rs.getString(1) == "x: Int = 3")
     }
   }
 

@@ -85,7 +85,7 @@ function resolve_file {
 function create_dev_build_context {(
   set -e
   local BASE_CTX="$CTX_DIR/base"
-  mkdir -r "$BASE_CTX/docker"
+  mkdir -p "$BASE_CTX/docker"
   cp -r "docker/" "$BASE_CTX/docker"
 
   cp -r "kyuubi-assembly/target/scala-${KYUUBI_SCALA_VERSION}/jars" "$BASE_CTX/jars"
