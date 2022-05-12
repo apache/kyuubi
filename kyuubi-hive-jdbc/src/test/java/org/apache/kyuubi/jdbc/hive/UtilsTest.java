@@ -18,34 +18,46 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import static org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
+import static org.apache.kyuubi.jdbc.hive.Utils.extractURLComponents;
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Properties;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 public class UtilsTest {
 
-  @Test
-  public void testExtractURLComponentsWithAuthoritiesIsEmpty() throws JdbcUriParseException {
-    String uri1 = "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3";
-    String uri2 = "jdbc:hive2:///";
-    Utils.JdbcConnectionParams jdbcConnectionParams1 =
-        Utils.extractURLComponents(uri1, new Properties());
-    assertEquals("localhost", jdbcConnectionParams1.getHost());
-    assertEquals(10009, jdbcConnectionParams1.getPort());
+  private String expectedHost;
+  private String expectedPort;
+  private String uri;
 
-    Utils.JdbcConnectionParams jdbcConnectionParams2 =
-        Utils.extractURLComponents(uri1, new Properties());
-    assertEquals("localhost", jdbcConnectionParams2.getHost());
-    assertEquals(10009, jdbcConnectionParams2.getPort());
+  @Parameterized.Parameters
+  public static Collection<String[]> data() {
+    return Arrays.asList(
+        new String[][] {
+          {"localhost", "10009", "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3"},
+          {"localhost", "10009", "jdbc:hive2:///"},
+          {"localhost", "10009", "jdbc:kyuubi://"},
+          {"localhost", "10009", "jdbc:hive2://"},
+          {"hostname", "10018", "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3"}
+        });
+  }
+
+  public UtilsTest(String expectedHost, String expectedPort, String uri) {
+    this.expectedHost = expectedHost;
+    this.expectedPort = expectedPort;
+    this.uri = uri;
   }
 
   @Test
-  public void testExtractURLComponentsWithAuthoritiesIsNotEmpty() throws JdbcUriParseException {
-    String uri = "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3";
-    Utils.JdbcConnectionParams jdbcConnectionParams =
-        Utils.extractURLComponents(uri, new Properties());
-    assertEquals("hostname", jdbcConnectionParams.getHost());
-    assertEquals(10018, jdbcConnectionParams.getPort());
+  public void testExtractURLComponents() throws JdbcUriParseException {
+    JdbcConnectionParams jdbcConnectionParams1 = extractURLComponents(uri, new Properties());
+    assertEquals(expectedHost, jdbcConnectionParams1.getHost());
+    assertEquals(Integer.parseInt(expectedPort), jdbcConnectionParams1.getPort());
   }
 }

@@ -348,9 +348,8 @@ public class Utils {
       // Given uri of the form:
       // jdbc:hive2:///dbName;sess_var_list?hive_conf_list#hive_var_list
       authorityFromClientJdbcURL = "localhost:10009";
-      uri =
-          uri.replace(
-              getMatchedUrlPrefix(uri), getMatchedUrlPrefix(uri) + authorityFromClientJdbcURL);
+      String urlPrefix = getMatchedUrlPrefix(uri);
+      uri = uri.replace(urlPrefix, urlPrefix + authorityFromClientJdbcURL);
     }
     connParams.setSuppliedURLAuthority(authorityFromClientJdbcURL);
     uri = uri.replace(authorityFromClientJdbcURL, dummyAuthorityString);
