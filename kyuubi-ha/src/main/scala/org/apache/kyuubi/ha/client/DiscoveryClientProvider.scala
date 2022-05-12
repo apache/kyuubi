@@ -45,10 +45,10 @@ object DiscoveryClientProvider extends Logging {
 
   def createDiscoveryClient(conf: KyuubiConf): DiscoveryClient = {
     val classLoader = Thread.currentThread.getContextClassLoader
-    val className = conf.get(HighAvailabilityConf.DISCOVERY_CLIENT_CLASS)
+    val className = conf.get(HighAvailabilityConf.HA_DISCOVERY_CLIENT_CLASS)
     if (className.isEmpty) {
       throw new KyuubiException(
-        s"${HighAvailabilityConf.DISCOVERY_CLIENT_CLASS.key} cannot be empty.")
+        s"${HighAvailabilityConf.HA_DISCOVERY_CLIENT_CLASS.key} cannot be empty.")
     }
     val cls = Class.forName(className, true, classLoader)
     cls match {
