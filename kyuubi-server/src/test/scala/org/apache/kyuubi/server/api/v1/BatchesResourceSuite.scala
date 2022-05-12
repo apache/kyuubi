@@ -40,7 +40,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   override def afterEach(): Unit = {
     val sessionManager = fe.be.sessionManager
     sessionManager.asInstanceOf[KyuubiSessionManager]
-      .getBatchSessionList(null, 0, 0)
+      .getBatchSessionList(null, 0, Int.MaxValue)
       .map(_.asInstanceOf[KyuubiBatchSessionImpl])
       .foreach { session =>
         try {
