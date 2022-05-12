@@ -280,6 +280,7 @@ Key | Default | Meaning | Type | Since
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+<code>kyuubi.ha.service.discovery.client.class</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Class name for service discovery client.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.6.0</div>
 <code>kyuubi.ha.zookeeper.acl.enabled</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>false</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Set to true if the zookeeper ensemble is kerberized</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.0.0</div>
 <code>kyuubi.ha.zookeeper.auth.digest</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The digest auth string is used for zookeeper authentication, like: username:password.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.3.2</div>
 <code>kyuubi.ha.zookeeper.auth.keytab</code>|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Location of Kyuubi server's keytab is used for zookeeper authentication.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.3.2</div>
