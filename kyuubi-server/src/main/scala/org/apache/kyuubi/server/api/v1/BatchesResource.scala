@@ -65,6 +65,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openBatchSession(request: BatchRequest): Batch = {
+    require(request.batchType != null, "batchType is a required parameter")
+    require(request.resource != null, "resource is a required parameter")
     val userName = fe.getUserName(request.conf)
     val ipAddress = AuthenticationFilter.getUserIpAddress
     val sessionHandle = sessionManager.openBatchSession(
@@ -72,7 +74,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       userName,
       "anonymous",
       ipAddress,
-      Option(request.conf).getOrElse(Map()),
+      request.conf,
       request)
     buildBatch(sessionHandle)
   }

@@ -266,5 +266,5 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
 class FakeSparkProcessBuilder(config: KyuubiConf)
   extends SparkProcessBuilder("fake", config) {
-  override protected def commands: Array[String] = Array("ls")
+  override protected val commands: Array[String] = Array("ls")
 }

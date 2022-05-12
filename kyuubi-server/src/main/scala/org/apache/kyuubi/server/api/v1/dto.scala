@@ -107,9 +107,9 @@ case class Field(dataType: String, value: Any)
 /**
  * The request body for batch job submission.
  *
- * @param batchType the batch job type, such as spark, flink, etc.
+ * @param batchType the batch job type, such as spark, flink, etc. required.
  * @param resource the main resource jar, required.
- * @param className the main class name, required.
+ * @param className the main class name, optional.
  * @param name a name of your batch job, optional.
  * @param conf arbitrary configuration properties, optional.
  * @param args comma-separated list of batch job arguments, optional.
@@ -119,8 +119,8 @@ case class BatchRequest(
     resource: String,
     className: String,
     name: String,
-    conf: Map[String, String],
-    args: Seq[String])
+    conf: Map[String, String] = Map.empty,
+    args: Seq[String] = Seq.empty)
 
 case class GetBatchesResponse(
     from: Int,

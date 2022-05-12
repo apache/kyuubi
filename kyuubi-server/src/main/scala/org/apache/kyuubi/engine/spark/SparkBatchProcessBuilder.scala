@@ -36,11 +36,13 @@ class SparkBatchProcessBuilder(
 
   override def mainResource: Option[String] = Option(batchRequest.resource)
 
-  override protected def commands: Array[String] = {
+  override protected val commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
-    buffer += CLASS
-    buffer += mainClass
+    Option(mainClass).foreach { cla =>
+      buffer += CLASS
+      buffer += cla
+    }
 
     val batchJobTag = batchRequest.conf.get(TAG_KEY).map(_ + ",").getOrElse("") + batchId
 
@@ -54,7 +56,8 @@ class SparkBatchProcessBuilder(
     buffer += PROXY_USER
     buffer += proxyUser
 
-    mainResource.foreach { r => buffer += r }
+    assert(mainResource.isDefined)
+    buffer += mainResource.get
 
     batchRequest.args.foreach { arg => buffer += arg }
 

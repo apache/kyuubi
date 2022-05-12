@@ -43,7 +43,7 @@ class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 
     response = webTarget.path("api/v1/exception").request().get()
     assert(500 == response.getStatus)
-    assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("server error"))
+    assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("Internal Server Error"))
   }
 
   test("swagger ui") {
