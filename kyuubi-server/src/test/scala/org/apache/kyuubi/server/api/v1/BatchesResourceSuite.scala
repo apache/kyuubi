@@ -33,9 +33,24 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_CHECK_INTERVAL, ENGINE_SPARK_
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+
+  override def afterEach(): Unit = {
+    val sessionManager = fe.be.sessionManager
+    sessionManager.asInstanceOf[KyuubiSessionManager]
+      .getBatchSessionList(null, 0, Int.MaxValue)
+      .map(_.asInstanceOf[KyuubiBatchSessionImpl])
+      .foreach { session =>
+        try {
+          session.batchJobSubmissionOp.killBatchApplication()
+        } finally {
+          sessionManager.closeSession(session.handle)
+        }
+      }
+  }
+
   test("open batch session") {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val appName = "spark-batch-submission"
@@ -104,7 +119,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       // check both kyuubi log and engine log
       assert(logs.exists(_.contains("/bin/spark-submit")) && logs.exists(
-        _.contains(s"spark.SparkContext: Submitted application: $appName")))
+        _.contains(s"SparkContext: Submitted application: $appName")))
     }
 
     // invalid user name
