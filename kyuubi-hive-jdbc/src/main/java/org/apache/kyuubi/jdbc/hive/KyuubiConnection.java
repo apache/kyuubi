@@ -1704,18 +1704,11 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (launchEngineOpHandle == null) return;
 
     TGetOperationStatusReq statusReq = new TGetOperationStatusReq(launchEngineOpHandle);
-    TGetOperationStatusResp statusResp = null;
 
     // Poll on the operation status, till the operation is complete
     while (!launchEngineOpCompleted) {
       try {
-        try {
-          statusResp = client.GetOperationStatus(statusReq);
-        } catch (Exception e) {
-          LOG.debug("Failed to get launch engine operation status, assume it has completed", e);
-          launchEngineOpCompleted = true;
-          break;
-        }
+        TGetOperationStatusResp statusResp = client.GetOperationStatus(statusReq);
         Utils.verifySuccessWithInfo(statusResp.getStatus());
         if (statusResp.isSetOperationState()) {
           switch (statusResp.getOperationState()) {
@@ -1747,7 +1740,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         engineLogInflight = false;
         closeOnLaunchEngineFailure();
         if (e instanceof SQLException) {
-          throw e;
+          throw (SQLException) e;
         } else {
           throw new SQLException(e.getMessage(), "08S01", e);
         }
