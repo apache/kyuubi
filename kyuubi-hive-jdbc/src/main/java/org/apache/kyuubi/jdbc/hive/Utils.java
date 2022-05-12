@@ -21,12 +21,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.hive.service.cli.HiveSQLException;
@@ -168,7 +163,6 @@ public class Utils {
     private Map<String, String> hiveConfs = new LinkedHashMap<String, String>();
     private Map<String, String> hiveVars = new LinkedHashMap<String, String>();
     private Map<String, String> sessionVars = new LinkedHashMap<String, String>();
-    private boolean isEmbeddedMode = false;
     private String suppliedURLAuthority;
     private String zooKeeperEnsemble = null;
     private String currentHostZnodePath;
@@ -184,7 +178,6 @@ public class Utils {
       this.hiveConfs.putAll(params.hiveConfs);
       this.hiveVars.putAll(params.hiveVars);
       this.sessionVars.putAll(params.sessionVars);
-      this.isEmbeddedMode = params.isEmbeddedMode;
       this.suppliedURLAuthority = params.suppliedURLAuthority;
       this.zooKeeperEnsemble = params.zooKeeperEnsemble;
       this.currentHostZnodePath = params.currentHostZnodePath;
@@ -213,10 +206,6 @@ public class Utils {
 
     public Map<String, String> getHiveVars() {
       return hiveVars;
-    }
-
-    public boolean isEmbeddedMode() {
-      return isEmbeddedMode;
     }
 
     public Map<String, String> getSessionVars() {
@@ -263,10 +252,6 @@ public class Utils {
       this.hiveVars = hiveVars;
     }
 
-    public void setEmbeddedMode(boolean embeddedMode) {
-      this.isEmbeddedMode = embeddedMode;
-    }
-
     public void setSessionVars(Map<String, String> sessionVars) {
       this.sessionVars = sessionVars;
     }
@@ -307,6 +292,7 @@ public class Utils {
       throws JdbcUriParseException, SQLException, ZooKeeperHiveClientException {
     return parseURL(uri, new Properties());
   }
+
   /**
    * Parse JDBC connection URL The new format of the URL is:
    * jdbc:hive2://<host1>:<port1>,<host2>:<port2>/dbName;sess_var_list?hive_conf_list#hive_var_list
@@ -339,6 +325,7 @@ public class Utils {
     handleAllDeprecations(connParams);
     return connParams;
   }
+
   /**
    * This method handles the base parsing of the given jdbc uri. Some of JdbcConnectionParams
    * returned from this method are updated if ZooKeeper is used for service discovery
@@ -352,15 +339,6 @@ public class Utils {
       throws JdbcUriParseException {
     JdbcConnectionParams connParams = new JdbcConnectionParams();
 
-    String matchedUrlPrefix = getMatchedUrlPrefix(uri);
-
-    // For URLs with no other configuration
-    // Don't parse them, but set embedded mode as true
-    if (uri.equalsIgnoreCase(matchedUrlPrefix)) {
-      connParams.setEmbeddedMode(true);
-      return connParams;
-    }
-
     // The JDBC URI now supports specifying multiple host:port if dynamic service discovery is
     // configured on HiveServer2 (like: host1:port1,host2:port2,host3:port3)
     // We'll extract the authorities (host:port combo) from the URI, extract session vars, hive
@@ -369,11 +347,12 @@ public class Utils {
     if ((authorityFromClientJdbcURL == null) || (authorityFromClientJdbcURL.isEmpty())) {
       // Given uri of the form:
       // jdbc:hive2:///dbName;sess_var_list?hive_conf_list#hive_var_list
-      connParams.setEmbeddedMode(true);
-    } else {
-      connParams.setSuppliedURLAuthority(authorityFromClientJdbcURL);
-      uri = uri.replace(authorityFromClientJdbcURL, dummyAuthorityString);
+      authorityFromClientJdbcURL = "localhost:10009";
+      String urlPrefix = getMatchedUrlPrefix(uri);
+      uri = uri.replace(urlPrefix, urlPrefix + authorityFromClientJdbcURL);
     }
+    connParams.setSuppliedURLAuthority(authorityFromClientJdbcURL);
+    uri = uri.replace(authorityFromClientJdbcURL, dummyAuthorityString);
 
     // Now parse the connection uri with dummy authority
     URI jdbcURI = URI.create(uri.substring(URI_JDBC_PREFIX.length()));
@@ -469,51 +448,45 @@ public class Utils {
           .getSessionVars()
           .put(JdbcConnectionParams.AUTH_TYPE, info.getProperty(JdbcConnectionParams.AUTH_TYPE));
     }
-    // Extract host, port
-    if (connParams.isEmbeddedMode()) {
-      // In case of embedded mode we were supplied with an empty authority.
-      // So we never substituted the authority with a dummy one.
-      connParams.setHost(jdbcURI.getHost());
-      connParams.setPort(jdbcURI.getPort());
+
+    String authorityStr = connParams.getSuppliedURLAuthority();
+    // If we're using ZooKeeper, the final host, port will be read from ZooKeeper
+    // (in a different method call). Therefore, we put back the original authority string
+    // (which basically is the ZooKeeper ensemble) back in the uri
+    if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(connParams.getSessionVars())) {
+      uri = uri.replace(dummyAuthorityString, authorityStr);
+      // Set ZooKeeper ensemble in connParams for later use
+      connParams.setZooKeeperEnsemble(authorityStr);
     } else {
-      String authorityStr = connParams.getSuppliedURLAuthority();
-      // If we're using ZooKeeper, the final host, port will be read from ZooKeeper
-      // (in a different method call). Therefore, we put back the original authority string
-      // (which basically is the ZooKeeper ensemble) back in the uri
-      if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(connParams.getSessionVars())) {
-        uri = uri.replace(dummyAuthorityString, authorityStr);
-        // Set ZooKeeper ensemble in connParams for later use
-        connParams.setZooKeeperEnsemble(authorityStr);
-      } else {
-        URI jdbcBaseURI = URI.create(URI_HIVE_PREFIX + "//" + authorityStr);
-        // Check to prevent unintentional use of embedded mode. A missing "/"
-        // to separate the 'path' portion of URI can result in this.
-        // The missing "/" common typo while using secure mode, eg of such url -
-        // jdbc:hive2://localhost:10000;principal=hive/HiveServer2Host@YOUR-REALM.COM
-        if (jdbcBaseURI.getAuthority() != null) {
-          String host = jdbcBaseURI.getHost();
-          int port = jdbcBaseURI.getPort();
-          if (host == null) {
-            throw new JdbcUriParseException(
-                "Bad URL format. Hostname not found "
-                    + " in authority part of the url: "
-                    + jdbcBaseURI.getAuthority()
-                    + ". Are you missing a '/' after the hostname ?");
-          }
-          // Set the port to default value; we do support jdbc url like:
-          // jdbc:hive2://localhost/db
-          if (port <= 0) {
-            port = Integer.parseInt(Utils.DEFAULT_PORT);
-          }
-          connParams.setHost(jdbcBaseURI.getHost());
-          connParams.setPort(jdbcBaseURI.getPort());
+      URI jdbcBaseURI = URI.create(URI_HIVE_PREFIX + "//" + authorityStr);
+      // Check to prevent unintentional use of embedded mode. A missing "/"
+      // to separate the 'path' portion of URI can result in this.
+      // The missing "/" common typo while using secure mode, eg of such url -
+      // jdbc:hive2://localhost:10000;principal=hive/HiveServer2Host@YOUR-REALM.COM
+      if (jdbcBaseURI.getAuthority() != null) {
+        String host = jdbcBaseURI.getHost();
+        int port = jdbcBaseURI.getPort();
+        if (host == null) {
+          throw new JdbcUriParseException(
+              "Bad URL format. Hostname not found "
+                  + " in authority part of the url: "
+                  + jdbcBaseURI.getAuthority()
+                  + ". Are you missing a '/' after the hostname ?");
         }
-        // We check for invalid host, port while configuring connParams with configureConnParams()
-        authorityStr = connParams.getHost() + ":" + connParams.getPort();
-        LOG.debug("Resolved authority: " + authorityStr);
-        uri = uri.replace(dummyAuthorityString, authorityStr);
+        // Set the port to default value; we do support jdbc url like:
+        // jdbc:hive2://localhost/db
+        if (port <= 0) {
+          port = Integer.parseInt(Utils.DEFAULT_PORT);
+        }
+        connParams.setHost(jdbcBaseURI.getHost());
+        connParams.setPort(jdbcBaseURI.getPort());
       }
+      // We check for invalid host, port while configuring connParams with configureConnParams()
+      authorityStr = connParams.getHost() + ":" + connParams.getPort();
+      LOG.debug("Resolved authority: " + authorityStr);
+      uri = uri.replace(dummyAuthorityString, authorityStr);
     }
+
     connParams.setJdbcUriString(uri);
     return connParams;
   }

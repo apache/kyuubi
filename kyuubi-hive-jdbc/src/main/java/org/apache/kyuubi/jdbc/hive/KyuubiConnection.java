@@ -41,12 +41,14 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
-import org.apache.hive.service.auth.*;
+import org.apache.hive.service.auth.HiveAuthConstants;
+import org.apache.hive.service.auth.KerberosSaslHelper;
+import org.apache.hive.service.auth.PlainSaslHelper;
+import org.apache.hive.service.auth.SaslQOP;
 import org.apache.hive.service.cli.FetchType;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.cli.session.SessionUtils;
-import org.apache.hive.service.cli.thrift.*;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
@@ -86,7 +88,6 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private int port;
   private final Map<String, String> sessConfMap;
   private JdbcConnectionParams connParams;
-  private final boolean isEmbeddedMode;
   private TTransport transport;
   private boolean assumeSubject;
   // TODO should be replaced by CliServiceClient
@@ -148,7 +149,6 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     host = Utils.getCanonicalHostName(connParams.getHost());
     port = connParams.getPort();
     sessConfMap = connParams.getSessionVars();
-    isEmbeddedMode = connParams.isEmbeddedMode();
 
     if (sessConfMap.containsKey(JdbcConnectionParams.FETCH_SIZE)) {
       fetchSize = Integer.parseInt(sessConfMap.get(JdbcConnectionParams.FETCH_SIZE));
@@ -175,69 +175,55 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     supportedProtocols.add(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10);
     supportedProtocols.add(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11);
 
-    if (isEmbeddedMode) {
-      EmbeddedThriftBinaryCLIService embeddedClient = new EmbeddedThriftBinaryCLIService();
-      embeddedClient.init(null, connParams.getHiveConfs());
-      TCLIService.Iface _client = embeddedClient;
-      // Wrap the client with a thread-safe proxy to serialize the RPC calls
-      client = newSynchronizedClient(_client);
-      connParams.getHiveConfs().clear();
-      // open client session
-      openSession();
-      showLaunchEngineLog();
-      waitLaunchEngineToComplete();
-      executeInitSql();
-    } else {
-      int maxRetries = 1;
-      try {
-        String strRetries = sessConfMap.get(JdbcConnectionParams.RETRIES);
-        if (StringUtils.isNotBlank(strRetries)) {
-          maxRetries = Integer.parseInt(strRetries);
-        }
-      } catch (NumberFormatException e) { // Ignore the exception
+    int maxRetries = 1;
+    try {
+      String strRetries = sessConfMap.get(JdbcConnectionParams.RETRIES);
+      if (StringUtils.isNotBlank(strRetries)) {
+        maxRetries = Integer.parseInt(strRetries);
       }
+    } catch (NumberFormatException e) { // Ignore the exception
+    }
 
-      for (int numRetries = 0; ; ) {
-        try {
-          // open the client transport
-          openTransport();
-          // set up the client
-          TCLIService.Iface _client = new TCLIService.Client(new TBinaryProtocol(transport));
-          // Wrap the client with a thread-safe proxy to serialize the RPC calls
-          client = newSynchronizedClient(_client);
-          // open client session
-          openSession();
-          if (!isBeeLineMode) {
-            showLaunchEngineLog();
-            waitLaunchEngineToComplete();
-            executeInitSql();
+    for (int numRetries = 0; ; ) {
+      try {
+        // open the client transport
+        openTransport();
+        // set up the client
+        TCLIService.Iface _client = new TCLIService.Client(new TBinaryProtocol(transport));
+        // Wrap the client with a thread-safe proxy to serialize the RPC calls
+        client = newSynchronizedClient(_client);
+        // open client session
+        openSession();
+        if (!isBeeLineMode) {
+          showLaunchEngineLog();
+          waitLaunchEngineToComplete();
+          executeInitSql();
+        }
+        break;
+      } catch (Exception e) {
+        LOG.warn("Failed to connect to " + connParams.getHost() + ":" + connParams.getPort());
+        String errMsg = null;
+        String warnMsg = "Could not open client transport with JDBC Uri: " + jdbcUriString + ": ";
+        if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
+          errMsg = "Could not open client transport for any of the Server URI's in ZooKeeper: ";
+          // Try next available server in zookeeper, or retry all the servers again if retry is
+          // enabled
+          while (!Utils.updateConnParamsFromZooKeeper(connParams) && ++numRetries < maxRetries) {
+            connParams.getRejectedHostZnodePaths().clear();
           }
-          break;
-        } catch (Exception e) {
-          LOG.warn("Failed to connect to " + connParams.getHost() + ":" + connParams.getPort());
-          String errMsg = null;
-          String warnMsg = "Could not open client transport with JDBC Uri: " + jdbcUriString + ": ";
-          if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
-            errMsg = "Could not open client transport for any of the Server URI's in ZooKeeper: ";
-            // Try next available server in zookeeper, or retry all the servers again if retry is
-            // enabled
-            while (!Utils.updateConnParamsFromZooKeeper(connParams) && ++numRetries < maxRetries) {
-              connParams.getRejectedHostZnodePaths().clear();
-            }
-            // Update with new values
-            jdbcUriString = connParams.getJdbcUriString();
-            host = Utils.getCanonicalHostName(connParams.getHost());
-            port = connParams.getPort();
-          } else {
-            errMsg = warnMsg;
-            ++numRetries;
-          }
+          // Update with new values
+          jdbcUriString = connParams.getJdbcUriString();
+          host = Utils.getCanonicalHostName(connParams.getHost());
+          port = connParams.getPort();
+        } else {
+          errMsg = warnMsg;
+          ++numRetries;
+        }
 
-          if (numRetries >= maxRetries) {
-            throw new SQLException(errMsg + e.getMessage(), " 08S01", e);
-          } else {
-            LOG.warn(warnMsg + e.getMessage() + " Retrying " + numRetries + " of " + maxRetries);
-          }
+        if (numRetries >= maxRetries) {
+          throw new SQLException(errMsg + e.getMessage(), " 08S01", e);
+        } else {
+          LOG.warn(warnMsg + e.getMessage() + " Retrying " + numRetries + " of " + maxRetries);
         }
       }
     }
