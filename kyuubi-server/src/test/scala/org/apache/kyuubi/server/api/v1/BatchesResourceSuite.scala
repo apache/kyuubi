@@ -63,7 +63,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val proxyUserResponse = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
-    assert(400 == proxyUserResponse.getStatus)
+    assert(500 == proxyUserResponse.getStatus)
 
     var getBatchResponse = webTarget.path(s"api/v1/batches/${batch.id}")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -267,35 +267,40 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     // open batch session
     Seq(
-      (BatchRequest(
-        null,
-        sparkProcessBuilder.mainResource.get,
-        sparkProcessBuilder.mainClass,
-        "test-name"), "batchType is a required parameter"),
-      (BatchRequest(
-        "sp",
-        sparkProcessBuilder.mainResource.get,
-        sparkProcessBuilder.mainClass,
-        "test-name"), "due to Batch type sp unsupported"),
-      (BatchRequest(
-        "SPARK",
-        null,
-        sparkProcessBuilder.mainClass,
-        "test-name"), "resource is a required parameter")
-    ).foreach { case (req, msg) =>
+      (
+        BatchRequest(
+          null,
+          sparkProcessBuilder.mainResource.get,
+          sparkProcessBuilder.mainClass,
+          "test-name"),
+        "batchType is a required parameter"),
+      (
+        BatchRequest(
+          "sp",
+          sparkProcessBuilder.mainResource.get,
+          sparkProcessBuilder.mainClass,
+          "test-name"),
+        "due to Batch type sp unsupported"),
+      (
+        BatchRequest(
+          "SPARK",
+          null,
+          sparkProcessBuilder.mainClass,
+          "test-name"),
+        "resource is a required parameter")).foreach { case (req, msg) =>
       val response = webTarget.path("api/v1/batches")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .post(Entity.entity(req, MediaType.APPLICATION_JSON_TYPE))
-      assert(400 == response.getStatus)
+      assert(500 == response.getStatus)
       assert(response.readEntity(classOf[String]).contains(msg))
     }
 
     // get batch by id
     Seq(
       ("??", "Invalid batchId: ??"),
-      ("3ea7ddbe-0c35-45da-85ad-3186770181a7",
-        "Invalid batchId: 3ea7ddbe-0c35-45da-85ad-3186770181a7"),
-    ).foreach { case (batchId, msg) =>
+      (
+        "3ea7ddbe-0c35-45da-85ad-3186770181a7",
+        "Invalid batchId: 3ea7ddbe-0c35-45da-85ad-3186770181a7")).foreach { case (batchId, msg) =>
       val response = webTarget.path(s"api/v1/batches/$batchId")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .get

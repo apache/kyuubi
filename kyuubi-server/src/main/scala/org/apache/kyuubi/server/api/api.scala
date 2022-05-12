@@ -48,7 +48,7 @@ class RestExceptionMapper extends ExceptionMapper[Exception] {
           .entity(e.getMessage)
           .build()
       case e =>
-        Response.status(Response.Status.BAD_REQUEST)
+        Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .`type`(MediaType.APPLICATION_JSON)
           .entity(e.getMessage)
           .build()
