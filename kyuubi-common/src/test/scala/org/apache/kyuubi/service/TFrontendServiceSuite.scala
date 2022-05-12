@@ -172,6 +172,8 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
       req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
       assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
+      req.setInfoType(TGetInfoType.CLI_ODBC_KEYWORDS)
+      assert(client.GetInfo(req).getInfoValue.getStringValue === "Unimplemented")
       req.setInfoType(TGetInfoType.CLI_MAX_COLUMN_NAME_LEN)
       assert(client.GetInfo(req).getInfoValue.getLenValue === 128)
       req.setInfoType(TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN)
