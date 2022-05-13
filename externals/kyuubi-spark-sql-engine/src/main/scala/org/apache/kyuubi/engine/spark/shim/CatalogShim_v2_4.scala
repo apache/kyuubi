@@ -21,6 +21,7 @@ import java.util.regex.Pattern
 
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 
 class CatalogShim_v2_4 extends SparkCatalogShim {
 
@@ -34,8 +35,15 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
       spark: SparkSession,
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
-    (spark.sessionState.catalog.listDatabases(schemaPattern) ++
+
+    (getSchemas(spark, schemaPattern) ++
       getGlobalTempViewManager(spark, schemaPattern)).map(Row(_, ""))
+  }
+
+  protected def getSchemas(spark: SparkSession, schemaPattern: String): Seq[String] = {
+    val showDatabases = "SHOW DATABASES"
+    spark.sql(showDatabases).collect().filter(r => r.getString(0).matches(schemaPattern))
+      .map(r => r.getString(0))
   }
 
   override protected def getGlobalTempViewManager(
@@ -51,27 +59,46 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
       schemaPattern: String,
       tablePattern: String,
       tableTypes: Set[String]): Seq[Row] = {
-    val catalog = spark.sessionState.catalog
-    val databases = catalog.listDatabases(schemaPattern)
+    getSchemas(spark, schemaPattern).flatMap(db => {
+      tableTypes.flatMap(t => {
+        getCatalogTablesOrViews(spark, t, db, tablePattern)
+      }).toSeq
+    })
+  }
 
-    databases.flatMap { db =>
-      val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = false)
-      catalog.getTablesByName(identifiers)
-        .filter(t => matched(tableTypes, t.tableType.name)).map { t =>
-          val typ = if (t.tableType.name == "VIEW") "VIEW" else "TABLE"
+  private def getCatalogTablesOrViews(
+      spark: SparkSession,
+      tableType: String,
+      db: String,
+      tablePattern: String): Seq[Row] = {
+    val catalog = spark.sessionState.catalog
+    val tp = tablePattern.r.pattern
+
+    var showSql = s"SHOW TABLES IN $db"
+    if (tableType.equals("VIEW")) {
+      showSql = s"SHOW VIEWS IN $db"
+    }
+
+    spark.sql(showSql).collect()
+      .filter(r => tp.matcher(r.getString(1)).matches())
+      .flatMap(r => {
+        val database = r.getString(0)
+        val tableName = r.getString(1)
+        val identifier = new TableIdentifier(tableName, Option.apply(database))
+        catalog.getTablesByName(Array(identifier)).map(f => {
           Row(
-            catalogName,
-            t.database,
-            t.identifier.table,
-            typ,
-            t.comment.getOrElse(""),
+            SparkCatalogShim.SESSION_CATALOG,
+            database,
+            tableName,
+            tableType,
+            f.comment.getOrElse(""),
             null,
             null,
             null,
             null,
             null)
-        }
-    }
+        })
+      })
   }
 
   override def getTempViews(
@@ -120,21 +147,43 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
       columnPattern: Pattern): Seq[Row] = {
     val catalog = spark.sessionState.catalog
 
-    val databases = catalog.listDatabases(schemaPattern)
+    val databases = getSchemas(spark, schemaPattern)
 
-    databases.flatMap { db =>
-      val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = true)
-      catalog.getTablesByName(identifiers).flatMap { t =>
-        val tableSchema =
-          if (t.provider.getOrElse("").equalsIgnoreCase("delta")) {
-            spark.table(t.identifier.table).schema
-          } else {
-            t.schema
+    val byCatalog = databases.flatMap(db => {
+      val tables = getCatalogTablesOrViews(spark, catalogName, db, tablePattern)
+
+      tables.flatMap(r => {
+        val identifier = new TableIdentifier(r.getString(2), Option.apply(db))
+        catalog.getTablesByName(Array(identifier)).flatMap(t => {
+          val sqlText = s"SHOW COLUMNS IN $db.${identifier.table}"
+
+          val columns =
+            try {
+              spark.sql(sqlText).collect().map(_.getString(0))
+            } catch { // Possibly deleted by other threads
+              case _: TableAlreadyExistsException => Array()
+            }
+          if (columns.isEmpty) {
+            Seq.empty
           }
-        tableSchema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
-          .map { case (f, i) => toColumnResult(catalogName, t.database, t.identifier.table, f, i) }
-      }
-    }
+
+          val tableSchema =
+            if (t.provider.getOrElse("").equalsIgnoreCase("delta")) {
+              spark.table(t.identifier.table).schema
+            } else {
+              t.schema
+            }
+          tableSchema.zipWithIndex.filter(f =>
+            columnPattern.matcher(f._1.name).matches()
+              && columns.exists(_.equals(f._1.name)))
+            .map({ case (f, i) =>
+              toColumnResult(catalogName, t.database, t.identifier.table, f, i)
+            })
+        })
+      })
+    })
+
+    byCatalog
   }
 
   protected def getColumnsByGlobalTempViewManager(

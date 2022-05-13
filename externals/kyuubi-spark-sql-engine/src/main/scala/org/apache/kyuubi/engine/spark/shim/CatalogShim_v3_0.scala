@@ -116,10 +116,15 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
       spark: SparkSession,
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
-    val viewMgr = getGlobalTempViewManager(spark, schemaPattern)
     val catalog = getCatalog(spark, catalogName)
-    val schemas = getSchemasWithPattern(catalog, schemaPattern)
-    (schemas ++ viewMgr).map(Row(_, catalog.name()))
+    val viewMgr = getGlobalTempViewManager(spark, schemaPattern)
+
+    if (catalog.name() == SESSION_CATALOG) {
+      (getSchemas(spark, schemaPattern) ++ viewMgr).map(Row(_, catalog.name()))
+    } else {
+      val schemas = getSchemasWithPattern(catalog, schemaPattern)
+      (schemas ++ viewMgr).map(Row(_, catalog.name()))
+    }
   }
 
   override def getCatalogTablesOrViews(
@@ -129,7 +134,6 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
       tablePattern: String,
       tableTypes: Set[String]): Seq[Row] = {
     val catalog = getCatalog(spark, catalogName)
-    val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
     catalog match {
       case builtin if builtin.name() == SESSION_CATALOG =>
         super.getCatalogTablesOrViews(
@@ -138,7 +142,9 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
           schemaPattern,
           tablePattern,
           tableTypes)
+
       case tc: TableCatalog =>
+        val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
         val tp = tablePattern.r.pattern
         val identifiers = namespaces.flatMap { ns =>
           tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())

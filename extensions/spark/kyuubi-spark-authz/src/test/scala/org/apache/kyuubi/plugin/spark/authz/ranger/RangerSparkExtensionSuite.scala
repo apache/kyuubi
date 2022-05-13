@@ -273,6 +273,41 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
       doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
+
+  test("KYUUBI #2596 Support to control the viewing permissions of " +
+    "databases/tables/views/columns.") {
+    val db1 = "default"
+    val db2 = "default_2596"
+    val table1 = "src"
+    val table2 = "src_2596"
+    val col = "key"
+
+    val create1 = s"CREATE TABLE IF NOT EXISTS $db1.$table1 ($col int, value int) USING $format"
+    val drop1 = s"DROP TABLE IF EXISTS $db1.$table1"
+
+    val create2 = s"CREATE database IF NOT EXISTS $db2"
+    val create3 = s"CREATE TABLE IF NOT EXISTS $db2.$table2 ($col int, value int) USING $format"
+    val drop2 = s"DROP TABLE IF EXISTS $db2.$table2"
+    val drop3 = s"DROP DATABASE IF EXISTS $db2"
+
+    try {
+      doAs("admin", assert(Try { sql(create1) }.isSuccess))
+      doAs("admin", assert(Try { sql(create2) }.isSuccess))
+      doAs("admin", assert(Try { sql(create3) }.isSuccess))
+
+      doAs("admin", assert(sql(s"SHOW DATABASES").count() == 2))
+      doAs("admin", assert(sql(s"SHOW TABLES IN $db2").count() == 1))
+      doAs("admin", assert(sql(s"SHOW COLUMNS IN $db2.$table2").count() == 2))
+
+      doAs("kent", assert(sql(s"SHOW DATABASES").count() == 1))
+      doAs("kent", assert(sql(s"SHOW TABLES IN $db2").isEmpty))
+      doAs("kent", assert(sql(s"SHOW COLUMNS IN $db1.$table1").count() == 1))
+    } finally {
+      doAs("admin", sql(drop1))
+      doAs("admin", sql(drop2))
+      doAs("admin", sql(drop3))
+    }
+  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
