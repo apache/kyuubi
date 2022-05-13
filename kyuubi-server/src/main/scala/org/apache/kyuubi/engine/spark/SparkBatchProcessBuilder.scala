@@ -53,8 +53,11 @@ class SparkBatchProcessBuilder(
       buffer += s"$k=$v"
     }
 
-    buffer += PROXY_USER
-    buffer += proxyUser
+    // iff the keytab is specified, PROXY_USER is not supported
+    if (!useKeytab()) {
+      buffer += PROXY_USER
+      buffer += proxyUser
+    }
 
     assert(mainResource.isDefined)
     buffer += mainResource.get

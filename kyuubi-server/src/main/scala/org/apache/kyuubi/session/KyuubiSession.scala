@@ -16,6 +16,8 @@
  */
 package org.apache.kyuubi.session
 
+import scala.collection.JavaConverters._
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.events.KyuubiSessionEvent
@@ -29,6 +31,17 @@ abstract class KyuubiSession(
     sessionManager: KyuubiSessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  def getSessionEvent: Option[KyuubiSessionEvent]
+  private[kyuubi] lazy val optimizedConf: Map[String, String] = {
+    val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
+      user,
+      normalizedConf.asJava)
+    if (confOverlay != null) {
+      normalizedConf ++ confOverlay.asScala
+    } else {
+      warn(s"the server plugin return null value for user: $user, ignore it")
+      normalizedConf
+    }
+  }
 
+  def getSessionEvent: Option[KyuubiSessionEvent]
 }

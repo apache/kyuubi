@@ -93,7 +93,7 @@ class SparkProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
-  private def useKeytab(): Boolean = {
+  protected def useKeytab(): Boolean = {
     val principal = conf.getOption(PRINCIPAL)
     val keytab = conf.getOption(KEYTAB)
     if (principal.isEmpty || keytab.isEmpty) {

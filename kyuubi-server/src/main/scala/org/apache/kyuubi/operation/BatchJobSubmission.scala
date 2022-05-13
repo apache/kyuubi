@@ -51,7 +51,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private[kyuubi] val batchType: String = batchRequest.batchType
 
-  private val builder: ProcBuilder = {
+  private[kyuubi] val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
       case Some("SPARK") =>
         val batchSparkConf = session.sessionConf.getBatchConf("spark")

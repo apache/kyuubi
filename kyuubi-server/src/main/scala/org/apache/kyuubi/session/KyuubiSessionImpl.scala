@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import scala.collection.JavaConverters._
-
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 
@@ -44,18 +42,6 @@ class KyuubiSessionImpl(
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
-
-  private[kyuubi] val optimizedConf: Map[String, String] = {
-    val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
-      user,
-      normalizedConf.asJava)
-    if (confOverlay != null) {
-      normalizedConf ++ confOverlay.asScala
-    } else {
-      warn(s"the server plugin return null value for user: $user, ignore it")
-      normalizedConf
-    }
-  }
 
   // TODO: needs improve the hardcode
   optimizedConf.foreach {
