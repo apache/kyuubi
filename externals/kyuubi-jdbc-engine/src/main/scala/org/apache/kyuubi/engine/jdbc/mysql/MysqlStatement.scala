@@ -14,14 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc.mysql
 
-package org.apache.kyuubi.engine
+import java.sql.{Connection, ResultSet, Statement}
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+import org.apache.kyuubi.engine.jdbc.JdbcStatement
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, DORIS = Value
+class MysqlStatement extends JdbcStatement {
+
+  override def createStatement(connection: Connection, fetchSize: Int = 1000): Statement = {
+    val statement =
+      connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+    statement.setFetchSize(Integer.MIN_VALUE)
+    statement
+  }
 }

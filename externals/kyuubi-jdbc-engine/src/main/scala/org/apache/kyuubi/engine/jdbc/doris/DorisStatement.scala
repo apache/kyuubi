@@ -14,14 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc.doris
 
-package org.apache.kyuubi.engine
+import org.apache.kyuubi.engine.jdbc.mysql.MysqlStatement
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
-
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, DORIS = Value
-}
+class DorisStatement extends MysqlStatement

@@ -14,14 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc.util
 
-package org.apache.kyuubi.engine
+trait SupportServiceLoader {
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
-
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, DORIS = Value
+  def name(): String
 }
