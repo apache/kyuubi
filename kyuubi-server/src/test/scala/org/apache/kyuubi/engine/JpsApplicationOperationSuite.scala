@@ -65,7 +65,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     assert(desc2("state") === "FINISHED")
   }
 
-  test("JpsApplicationOperation with spark local mode") {
+  ignore("JpsApplicationOperation with spark local mode") {
     val user = Utils.currentUser
     val id = UUID.randomUUID().toString
     val conf = new KyuubiConf()
