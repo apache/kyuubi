@@ -22,7 +22,7 @@ import java.util.Base64
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, THandleIdentifier, TOpenSessionReq, TOperationHandle, TOperationType, TSessionHandle}
+import org.apache.hive.service.rpc.thrift._
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
