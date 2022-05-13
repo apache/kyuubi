@@ -106,6 +106,7 @@ abstract class AbstractSession(
       case TGetInfoType.CLI_SERVER_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
       case TGetInfoType.CLI_DBMS_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.kyuubi.KYUUBI_VERSION)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
           TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
           TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
