@@ -25,6 +25,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationOperation.NOT_FOUND
 
 class JpsApplicationOperation extends ApplicationOperation {
+  import ApplicationOperation._
 
   private var runner: String = _
 
@@ -80,11 +81,11 @@ class JpsApplicationOperation extends ApplicationOperation {
       val idAndCmd = commandOption.get
       val (id, cmd) = idAndCmd.splitAt(idAndCmd.indexOf(" "))
       Map(
-        "id" -> id,
-        "name" -> cmd,
-        "state" -> "RUNNING")
+        APP_ID_KEY -> id,
+        APP_NAME_KEY -> cmd,
+        APP_STATE_KEY -> "RUNNING")
     } else {
-      Map("state" -> "FINISHED")
+      Map(APP_STATE_KEY -> "FINISHED")
     }
   }
 
