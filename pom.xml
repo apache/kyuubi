@@ -67,7 +67,6 @@
     <modules>
         <module>dev/kyuubi-codecov</module>
         <module>extensions/server/kyuubi-server-plugin</module>
-        <module>extensions/spark/kyuubi-spark-authz</module>
         <module>extensions/spark/kyuubi-spark-connector-kudu</module>
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>externals/kyuubi-download</module>
@@ -1910,6 +1909,9 @@
                 -->
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <modules>
+                <module>extensions/spark/kyuubi-spark-authz</module>
+            </modules>
         </profile>
 
         <profile>
@@ -1923,6 +1925,7 @@
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-1</module>
+                <module>extensions/spark/kyuubi-spark-authz</module>
             </modules>
         </profile>
 
@@ -1940,6 +1943,7 @@
             </properties>
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
+                <module>extensions/spark/kyuubi-spark-authz</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-2</module>
             </modules>
         </profile>
