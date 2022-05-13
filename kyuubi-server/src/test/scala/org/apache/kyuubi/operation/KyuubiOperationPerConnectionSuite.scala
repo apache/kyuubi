@@ -23,7 +23,7 @@ import java.util.Properties
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetOperationStatusReq, TOperationState, TStatusCode}
+import org.apache.hive.service.rpc.thrift._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.WithKyuubiServer
@@ -99,8 +99,10 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   test("test asynchronous open kyuubi session") {
     withSessionConf(Map(
       KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true"))(Map.empty)(Map.empty) {
-      withSessionHandle { (client, handle) =>
-        val executeStmtReq = new TExecuteStatementReq()
+      withSessionAndLaunchEngineHandle { (client, handle, launchOpHandleOpt) =>
+        assert(launchOpHandleOpt.isDefined)
+        val launchOpHandle = launchOpHandleOpt.get
+        val executeStmtReq = new TExecuteStatementReq
         executeStmtReq.setStatement("select engine_name()")
         executeStmtReq.setSessionHandle(handle)
         executeStmtReq.setRunAsync(false)
@@ -108,6 +110,10 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
         val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
         assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        assert(getOpStatusResp.getOperationState === TOperationState.FINISHED_STATE)
+
+        val launchEngineResp = client.GetOperationStatus(new TGetOperationStatusReq(launchOpHandle))
+        assert(launchEngineResp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
         assert(getOpStatusResp.getOperationState === TOperationState.FINISHED_STATE)
       }
     }
@@ -117,14 +123,19 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
     withSessionConf(Map(
       KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true",
       "spark.master" -> "invalid"))(Map.empty)(Map.empty) {
-      withSessionHandle { (client, handle) =>
-        val executeStmtReq = new TExecuteStatementReq()
+      withSessionAndLaunchEngineHandle { (client, handle, launchOpHandleOpt) =>
+        assert(launchOpHandleOpt.isDefined)
+        val launchOpHandle = launchOpHandleOpt.get
+        val executeStmtReq = new TExecuteStatementReq
         executeStmtReq.setStatement("select engine_name()")
         executeStmtReq.setSessionHandle(handle)
         executeStmtReq.setRunAsync(false)
         val executeStmtResp = client.ExecuteStatement(executeStmtReq)
         assert(executeStmtResp.getStatus.getStatusCode == TStatusCode.ERROR_STATUS)
         assert(executeStmtResp.getStatus.getErrorMessage.contains("kyuubi-spark-sql-engine.log"))
+
+        val launchEngineResp = client.GetOperationStatus(new TGetOperationStatusReq(launchOpHandle))
+        assert(launchEngineResp.getStatus.getStatusCode == TStatusCode.INVALID_HANDLE_STATUS)
       }
     }
   }

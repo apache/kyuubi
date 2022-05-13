@@ -93,6 +93,12 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
     TClientTestUtils.withSessionHandle(hostAndPort, sessionConfigs)(f)
   }
 
+  def withSessionAndLaunchEngineHandle[T](
+      f: (TCLIService.Iface, TSessionHandle, Option[TOperationHandle]) => T): T = {
+    val hostAndPort = jdbcUrl.stripPrefix(URL_PREFIX).split("/;").head
+    TClientTestUtils.withSessionAndLaunchEngineHandle(hostAndPort, sessionConfigs)(f)
+  }
+
   def checkGetSchemas(rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {
     var count = 0
     while (rs.next()) {

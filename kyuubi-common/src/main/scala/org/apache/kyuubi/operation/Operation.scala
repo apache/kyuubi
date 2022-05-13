@@ -49,4 +49,7 @@ trait Operation {
 object Operation {
   val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
     Set(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST, FetchOrientation.FETCH_PRIOR)
+
+  val LAUNCH_ENGINE_GUID = "kyuubi.session.engine.launch.handle.guid"
+  val LAUNCH_ENGINE_SECRET = "kyuubi.session.engine.launch.handle.secret"
 }
