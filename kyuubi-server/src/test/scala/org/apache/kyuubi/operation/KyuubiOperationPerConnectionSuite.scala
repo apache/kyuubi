@@ -135,7 +135,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         assert(executeStmtResp.getStatus.getErrorMessage.contains("kyuubi-spark-sql-engine.log"))
 
         val launchEngineResp = client.GetOperationStatus(new TGetOperationStatusReq(launchOpHandle))
-        assert(launchEngineResp.getStatus.getStatusCode == TStatusCode.INVALID_HANDLE_STATUS)
+        assert(launchEngineResp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
+        assert(launchEngineResp.getOperationState == TOperationState.ERROR_STATE)
       }
     }
   }
