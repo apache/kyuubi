@@ -20,16 +20,16 @@ package org.apache.kyuubi.spark.connector.tpcds
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 
 import io.trino.tpcds.Table
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
-import org.apache.spark.sql.connector.catalog.{Identifier, Table => SparkTable, TableCatalog, TableChange}
+import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table => SparkTable, TableCatalog, TableChange}
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-// TODO: implement SupportsNamespaces
-class TPCDSCatalog extends TableCatalog {
+class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
   val tables: Array[String] = Table.getBaseTables.asScala
     .map(_.getName).filterNot(_ == "dbgen_version").toArray
@@ -71,5 +71,38 @@ class TPCDSCatalog extends TableCatalog {
     throw new UnsupportedOperationException
 
   override def renameTable(oldIdent: Identifier, newIdent: Identifier): Unit =
+    throw new UnsupportedOperationException
+
+  override def listNamespaces(): Array[Array[String]] = {
+    databases.map(Array(_))
+  }
+
+  override def listNamespaces(namespace: Array[String]): Array[Array[String]] = {
+    namespace match {
+      case Array() =>
+        listNamespaces()
+      case Array(db) if databases contains db =>
+        Array()
+      case _ =>
+        throw new NoSuchNamespaceException(namespace)
+    }
+  }
+
+  override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] = {
+    namespace match {
+      case Array(_) =>
+        immutable.HashMap[String, String]().asJava
+      case _ =>
+        throw new NoSuchNamespaceException(namespace)
+    }
+  }
+
+  override def createNamespace(namespace: Array[String], metadata: util.Map[String, String]): Unit =
+    throw new UnsupportedOperationException
+
+  override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
+    throw new UnsupportedOperationException
+
+  override def dropNamespace(namespace: Array[String]): Boolean =
     throw new UnsupportedOperationException
 }
