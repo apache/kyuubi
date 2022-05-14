@@ -32,6 +32,12 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
       .getOrCreate()
   }
 
+  test("supports namespaces") {
+    spark.sql("use tpcds")
+    assert(spark.sql(s"SHOW DATABASES").collect().length == 10)
+    assert(spark.sql(s"SHOW NAMESPACES IN tpcds.sf1").collect().length == 0)
+  }
+
   test("tpcds.sf1 count") {
     assert(spark.table("tpcds.sf1.call_center").count === 6)
     assert(spark.table("tpcds.sf1.catalog_page").count === 11718)

@@ -20,7 +20,7 @@ package org.apache.kyuubi.spark.connector.tpcds
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
+import scala.collection.immutable
 
 import io.trino.tpcds.Table
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
@@ -29,7 +29,6 @@ import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-// TODO: implement SupportsNamespaces
 class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
   val tables: Array[String] = Table.getBaseTables.asScala
@@ -92,7 +91,7 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
   override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] = {
     namespace match {
       case Array(_) =>
-        mutable.HashMap[String, String]().asJava
+        immutable.HashMap[String, String]().asJava
       case _ =>
         throw new NoSuchNamespaceException(namespace)
     }
