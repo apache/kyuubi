@@ -95,7 +95,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(404 == getBatchResponse.getStatus)
 
     // get batch log
-    var logResponse = webTarget.path(s"api/v1/batches/${batch.id}/log")
+    var logResponse = webTarget.path(s"api/v1/batches/${batch.id}/localLog")
       .queryParam("from", "0")
       .queryParam("size", "1")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -107,7 +107,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val logs = new ArrayBuffer[String]
     logs.append(head)
     eventually(timeout(10.seconds), interval(1.seconds)) {
-      logResponse = webTarget.path(s"api/v1/batches/${batch.id}/log")
+      logResponse = webTarget.path(s"api/v1/batches/${batch.id}/localLog")
         .queryParam("from", "0")
         .queryParam("size", "100")
         .request(MediaType.APPLICATION_JSON_TYPE)

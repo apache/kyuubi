@@ -123,10 +123,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[OperationLog]))),
-    description = "get the log lines from this batch")
+    description = "get the local log lines from this batch")
   @GET
-  @Path("{batchId}/log")
-  def getBatchLog(
+  @Path("{batchId}/localLog")
+  def getBatchLocalLog(
       @PathParam("batchId") batchId: String,
       @QueryParam("from") @DefaultValue("-1") from: Int,
       @QueryParam("size") size: Int): OperationLog = {
