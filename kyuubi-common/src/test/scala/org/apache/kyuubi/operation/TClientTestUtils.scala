@@ -17,14 +17,18 @@
 
 package org.apache.kyuubi.operation
 
+import java.nio.ByteBuffer
+import java.util.Base64
+
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
+import org.apache.hive.service.rpc.thrift._
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.service.FrontendService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
@@ -71,6 +75,40 @@ object TClientTestUtils extends Logging {
           client.CloseSession(tCloseSessionReq)
         } catch {
           case e: Exception => error(s"Failed to close $handle", e)
+        }
+      }
+    }
+  }
+
+  def withSessionAndLaunchEngineHandle[T](url: String, configs: Map[String, String])(
+      f: (TCLIService.Iface, TSessionHandle, Option[TOperationHandle]) => T): T = {
+    withThriftClient(url) { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername(Utils.currentUser)
+      req.setPassword("anonymous")
+      req.setConfiguration(configs.asJava)
+      val resp = client.OpenSession(req)
+      val sessionHandle = resp.getSessionHandle
+
+      val guid = resp.getConfiguration.get(KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID)
+      val secret = resp.getConfiguration.get(KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET)
+
+      val launchOpHandleOpt =
+        if (guid != null && secret != null) {
+          val launchHandleId = new THandleIdentifier(
+            ByteBuffer.wrap(Base64.getMimeDecoder.decode(guid)),
+            ByteBuffer.wrap(Base64.getMimeDecoder.decode(secret)))
+          Some(new TOperationHandle(launchHandleId, TOperationType.UNKNOWN, false))
+        } else None
+
+      try {
+        f(client, sessionHandle, launchOpHandleOpt)
+      } finally {
+        val tCloseSessionReq = new TCloseSessionReq(sessionHandle)
+        try {
+          client.CloseSession(tCloseSessionReq)
+        } catch {
+          case e: Exception => error(s"Failed to close $sessionHandle", e)
         }
       }
     }

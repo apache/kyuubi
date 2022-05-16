@@ -19,9 +19,10 @@ package org.apache.kyuubi.server
 
 import java.util.Base64
 
-import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
+import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
@@ -52,10 +53,10 @@ final class KyuubiTBinaryFrontendService(
 
       val opHandleIdentifier = launchEngineOp.getHandle.identifier.toTHandleIdentifier
       respConfiguration.put(
-        "kyuubi.session.engine.launch.handle.guid",
+        KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID,
         Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getGuid))
       respConfiguration.put(
-        "kyuubi.session.engine.launch.handle.secret",
+        KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET,
         Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getSecret))
 
       resp.setSessionHandle(sessionHandle.toTSessionHandle)
