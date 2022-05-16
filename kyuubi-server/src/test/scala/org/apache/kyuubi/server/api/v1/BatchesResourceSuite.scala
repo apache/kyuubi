@@ -197,9 +197,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         "spark",
         "",
         "",
-        "",
-        Map.empty[String, String].asJava,
-        Seq.empty[String].asJava))
+        ""))
     sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
       "",
@@ -222,9 +220,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         "spark",
         "",
         "",
-        "",
-        Map.empty[String, String].asJava,
-        Seq.empty[String].asJava))
+        ""))
     sessionManager.openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
       "kyuubi",
@@ -235,9 +231,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         "spark",
         "",
         "",
-        "",
-        Map.empty[String, String].asJava,
-        Seq.empty[String].asJava))
+        ""))
 
     val response2 = webTarget.path("api/v1/batches")
       .queryParam("batchType", "spark")

@@ -64,8 +64,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
           getOperationLog)
 
       case _ =>
-        throw new UnsupportedOperationException(
-          s"Batch type ${batchRequest.getBatchType} unsupported")
+        throw new UnsupportedOperationException(s"Batch type $batchType unsupported")
     }
   }
 
