@@ -1,0 +1,105 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.kyuubi.client.api.v1.dto;
+
+import java.util.Map;
+
+public class SessionData {
+  private SessionHandle sessionHandle;
+  private String user;
+  private String ipAddr;
+  private Map<String, String> conf;
+  private Long createTime;
+  private Long duration;
+  private Long idleTime;
+
+  public SessionData() {}
+
+  public SessionData(
+      SessionHandle sessionHandle,
+      String user,
+      String ipAddr,
+      Map<String, String> conf,
+      Long createTime,
+      Long duration,
+      Long idleTime) {
+    this.sessionHandle = sessionHandle;
+    this.user = user;
+    this.ipAddr = ipAddr;
+    this.conf = conf;
+    this.createTime = createTime;
+    this.duration = duration;
+    this.idleTime = idleTime;
+  }
+
+  public SessionHandle getSessionHandle() {
+    return sessionHandle;
+  }
+
+  public void setSessionHandle(SessionHandle sessionHandle) {
+    this.sessionHandle = sessionHandle;
+  }
+
+  public String getUser() {
+    return user;
+  }
+
+  public void setUser(String user) {
+    this.user = user;
+  }
+
+  public String getIpAddr() {
+    return ipAddr;
+  }
+
+  public void setIpAddr(String ipAddr) {
+    this.ipAddr = ipAddr;
+  }
+
+  public Map<String, String> getConf() {
+    return conf;
+  }
+
+  public void setConf(Map<String, String> conf) {
+    this.conf = conf;
+  }
+
+  public Long getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(Long createTime) {
+    this.createTime = createTime;
+  }
+
+  public Long getDuration() {
+    return duration;
+  }
+
+  public void setDuration(Long duration) {
+    this.duration = duration;
+  }
+
+  public Long getIdleTime() {
+    return idleTime;
+  }
+
+  public void setIdleTime(Long idleTime) {
+    this.idleTime = idleTime;
+  }
+}

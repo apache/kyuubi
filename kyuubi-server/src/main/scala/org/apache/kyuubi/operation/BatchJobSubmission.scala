@@ -26,12 +26,12 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
+import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -49,21 +49,23 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private[kyuubi] val batchId: String = session.handle.identifier.toString
 
-  private[kyuubi] val batchType: String = batchRequest.batchType
+  private[kyuubi] val batchType: String = batchRequest.getBatchType
 
   private val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
       case Some("SPARK") =>
         val batchSparkConf = session.sessionConf.getBatchConf("spark")
+        batchRequest.setConf((batchSparkConf ++ batchRequest.getConf.asScala).asJava)
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
           batchId,
-          batchRequest.copy(conf = batchSparkConf ++ batchRequest.conf),
+          batchRequest,
           getOperationLog)
 
       case _ =>
-        throw new UnsupportedOperationException(s"Batch type ${batchRequest.batchType} unsupported")
+        throw new UnsupportedOperationException(
+          s"Batch type ${batchRequest.getBatchType} unsupported")
     }
   }
 
@@ -111,7 +113,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private def submitBatchJob(): Unit = {
     try {
-      info(s"Submitting ${batchRequest.batchType} batch job: $builder")
+      info(s"Submitting $batchType batch job: $builder")
       val process = builder.start
       var applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {

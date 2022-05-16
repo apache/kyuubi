@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource.REST_BATCH_PROTOCOL
@@ -48,10 +49,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
     val batchOp = session.batchJobSubmissionOp
-    Batch(
+    new Batch(
       batchOp.batchId,
       batchOp.batchType,
-      batchOp.currentApplicationState.getOrElse(Map.empty),
+      batchOp.currentApplicationState.getOrElse(Map.empty).asJava,
       fe.connectionUrl,
       batchOp.getStatus.state.toString)
   }
@@ -65,16 +66,16 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openBatchSession(request: BatchRequest): Batch = {
-    require(request.batchType != null, "batchType is a required parameter")
-    require(request.resource != null, "resource is a required parameter")
-    val userName = fe.getUserName(request.conf)
+    require(request.getBatchType != null, "batchType is a required parameter")
+    require(request.getResource != null, "resource is a required parameter")
+    val userName = fe.getUserName(request.getConf.asScala.toMap)
     val ipAddress = AuthenticationFilter.getUserIpAddress
     val sessionHandle = sessionManager.openBatchSession(
       REST_BATCH_PROTOCOL,
       userName,
       "anonymous",
       ipAddress,
-      request.conf,
+      request.getConf.asScala.toMap,
       request)
     buildBatch(sessionHandle)
   }
@@ -115,7 +116,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       val batchSession = session.asInstanceOf[KyuubiBatchSessionImpl]
       buildBatch(batchSession)
     }
-    GetBatchesResponse(from, batches.size, batches)
+    new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 
   @ApiResponse(
@@ -138,7 +139,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         from,
         size)
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
-      OperationLog(logRowSet, logRowSet.size)
+      new OperationLog(logRowSet.asJava, logRowSet.size)
     } catch {
       case NonFatal(e) =>
         val errorMsg = s"Error getting operation log for batchId: $batchId"

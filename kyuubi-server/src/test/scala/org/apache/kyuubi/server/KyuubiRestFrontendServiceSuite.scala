@@ -18,13 +18,13 @@
 package org.apache.kyuubi.server
 
 import org.apache.kyuubi.{KYUUBI_VERSION, RestFrontendTestHelper}
-import org.apache.kyuubi.server.api.v1.VersionInfo
+import org.apache.kyuubi.client.api.v1.dto.VersionInfo
 
 class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 
   test("version") {
     val resp = v1Call("version")
-    assert(resp.readEntity(classOf[VersionInfo]).version === KYUUBI_VERSION)
+    assert(resp.readEntity(classOf[VersionInfo]).getVersion === KYUUBI_VERSION)
   }
 
   test("kyuubi REST frontend service http basic") {

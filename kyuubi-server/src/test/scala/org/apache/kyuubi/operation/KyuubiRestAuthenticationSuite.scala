@@ -22,13 +22,15 @@ import javax.servlet.http.HttpServletResponse
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KerberizedTestHelper, RestFrontendTestHelper}
+import org.apache.kyuubi.client.api.v1.dto.{SessionOpenCount, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.api.v1.{SessionOpenCount, SessionOpenRequest}
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
@@ -83,7 +85,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
 
     assert(HttpServletResponse.SC_OK == response.getStatus)
     val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
-    assert(openedSessionCount.openSessionCount == 0)
+    assert(openedSessionCount.getOpenSessionCount == 0)
   }
 
   test("test with CUSTOM authorization") {
@@ -155,12 +157,12 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
   test("test with ugi wrapped open session") {
     UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
     val token = generateToken(hostName)
-    val sessionOpenRequest = SessionOpenRequest(
+    val sessionOpenRequest = new SessionOpenRequest(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11.getValue,
       "kyuubi",
       "pass",
       "localhost",
-      Map.empty[String, String])
+      Map.empty[String, String].asJava)
 
     val response = webTarget.path("api/v1/sessions")
       .request()
