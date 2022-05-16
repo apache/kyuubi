@@ -22,7 +22,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.RunnableCommand
+import org.apache.spark.sql.execution.command.{RunnableCommand, ShowColumnsCommand}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceHolder, WithInternalChild}
@@ -37,6 +37,8 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
       ObjectFilterPlaceHolder(n)
     case r: RunnableCommand if r.nodeName == "ShowFunctionsCommand" =>
       FilteredShowFunctionsCommand(r)
+    case r: RunnableCommand if r.nodeName == "ShowColumnsCommand" =>
+      FilteredShowColumnsCommand(r)
     case _ => plan
   }
 }
@@ -97,6 +99,27 @@ case class FilteredShowFunctionsCommand(delegated: RunnableCommand)
 
     val resource = AccessResource(ObjectType.FUNCTION, items(0), items(1), null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWFUNCTIONS, AccessType.USE)
+    val result = SparkRangerAdminPlugin.isAccessAllowed(request)
+    result != null && result.getIsAllowed
+  }
+}
+
+case class FilteredShowColumnsCommand(delegated: RunnableCommand)
+  extends FilteredShowObjectCommand(delegated) with WithInternalChild {
+
+  override val output: Seq[Attribute] = delegated.output
+
+  override def run(spark: SparkSession): Seq[Row] = {
+    val rows = delegated.run(spark)
+    val table = delegated.asInstanceOf[ShowColumnsCommand].tableName
+    val ugi = AuthZUtils.getAuthzUgi(spark.sparkContext)
+    rows.filter(f =>
+      isAllowed(Row(table.database.orNull, table.table, f.getString(0)), ugi))
+  }
+
+  override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
+    val resource = AccessResource(ObjectType.COLUMN, r.getString(0), r.getString(1), r.getString(2))
+    val request = AccessRequest(resource, ugi, OperationType.SHOWCOLUMNS, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
