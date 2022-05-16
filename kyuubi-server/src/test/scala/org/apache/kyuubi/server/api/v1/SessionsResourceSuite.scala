@@ -31,7 +31,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.server.KyuubiServer
-import org.apache.kyuubi.session.SessionHandle
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -51,8 +50,9 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val sessionHandle = response.readEntity(classOf[SessionHandle])
 
-    assert(sessionHandle.protocol.getValue == 1)
-    assert(sessionHandle.identifier != null)
+    assert(sessionHandle.getProtocolVersion == 1)
+    assert(sessionHandle.getPublicId != null)
+    assert(sessionHandle.getSecretId != null)
 
     val statistic = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
     val execPoolStatistic1 = statistic.readEntity(classOf[ExecPoolStatistic])
@@ -64,8 +64,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(openedSessionCount.getOpenSessionCount == 1)
 
     // close an opened session
-    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    val serializedSessionHandle = s"${sessionHandle.getPublicId}|" +
+      s"${sessionHandle.getSecretId}|${sessionHandle.getProtocolVersion}"
     response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
     assert(200 == response.getStatus)
 
@@ -94,8 +94,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     // close an opened session
     val sessionHandle = response.readEntity(classOf[SessionHandle])
-    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    val serializedSessionHandle = s"${sessionHandle.getPublicId}|" +
+      s"${sessionHandle.getSecretId}|${sessionHandle.getProtocolVersion}"
     response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
     assert(200 == response.getStatus)
 
@@ -148,8 +148,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
     val sessionHandle = response.readEntity(classOf[SessionHandle])
-    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    val serializedSessionHandle = s"${sessionHandle.getPublicId}|" +
+      s"${sessionHandle.getSecretId}|${sessionHandle.getProtocolVersion}"
 
     response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/13")
       .request().get()
@@ -186,8 +186,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
     val sessionHandle = response.readEntity(classOf[SessionHandle])
-    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    val serializedSessionHandle = s"${sessionHandle.getPublicId}|" +
+      s"${sessionHandle.getSecretId}|${sessionHandle.getProtocolVersion}"
 
     val pathPrefix = s"api/v1/sessions/$serializedSessionHandle"
 
