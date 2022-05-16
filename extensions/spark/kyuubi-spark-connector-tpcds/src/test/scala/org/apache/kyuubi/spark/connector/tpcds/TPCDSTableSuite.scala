@@ -68,7 +68,8 @@ class TPCDSTableSuite extends KyuubiFunSuite {
       val rowCount = spark.table("tpcds.sf1.catalog_page").count
       val df = spark.sql("select * from tpcds.sf1.catalog_page")
       val tpcdsScan = df.queryExecution.executedPlan.collectFirst {
-        case BatchScanExec(_, s: TPCDSBatchScan) => s
+        case e: BatchScanExec if e.scan.isInstanceOf[TPCDSBatchScan] =>
+          e.scan.asInstanceOf[TPCDSBatchScan]
       }
       assert(tpcdsScan.isDefined)
       val parallelism = (rowCount / rowCountPerTask.toDouble).ceil.toInt
