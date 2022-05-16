@@ -28,7 +28,7 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.operation.Operation._
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.service.FrontendService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
@@ -90,8 +90,8 @@ object TClientTestUtils extends Logging {
       val resp = client.OpenSession(req)
       val sessionHandle = resp.getSessionHandle
 
-      val guid = resp.getConfiguration.get(LAUNCH_ENGINE_GUID)
-      val secret = resp.getConfiguration.get(LAUNCH_ENGINE_SECRET)
+      val guid = resp.getConfiguration.get(KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID)
+      val secret = resp.getConfiguration.get(KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET)
 
       val launchOpHandleOpt =
         if (guid != null && secret != null) {
