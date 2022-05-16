@@ -28,6 +28,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.unsafe.types.UTF8String
 
 case class TPCDSTableChuck(table: String, scale: Int, parallelism: Int, index: Int)
@@ -36,10 +37,11 @@ case class TPCDSTableChuck(table: String, scale: Int, parallelism: Int, index: I
 class TPCDSBatchScan(
     @transient table: Table,
     scale: Int,
+    options: CaseInsensitiveStringMap,
     schema: StructType) extends ScanBuilder
   with SupportsReportStatistics with Batch with Serializable {
 
-  private val rowCountPerTask: Int = 1000000
+  private val rowCountPerTask: Int = options.getInt("rowCountPerTask", 1000000)
 
   private val rowCount: Long = new Scaling(scale).getRowCount(table)
 

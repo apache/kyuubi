@@ -68,8 +68,13 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
   override def capabilities(): util.Set[TableCapability] =
     Set(TableCapability.BATCH_READ).asJava
 
-  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
-    new TPCDSBatchScan(tpcdsTable, scale, schema)
+  override def newScanBuilder(scanOpts: CaseInsensitiveStringMap): ScanBuilder = {
+    val map = new util.HashMap[String, String](scanOpts)
+    options.asScala.foreach {
+      case (k, v) => map.putIfAbsent(k, v)
+    }
+    val newOpts = new CaseInsensitiveStringMap(map)
+    new TPCDSBatchScan(tpcdsTable, scale, newOpts, schema)
   }
 
   def toSparkDataType(tpcdsType: ColumnType): DataType = {

@@ -19,6 +19,7 @@ package org.apache.kyuubi.spark.connector.tpcds
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.tpcds.LocalSparkSession.withSparkSession
@@ -54,5 +55,24 @@ class TPCDSTableSuite extends KyuubiFunSuite {
         })
       }
     })
+  }
+
+  test("test rowCountPerTask") {
+    val rowCountPerTask = 100
+    val sparkConf = new SparkConf().setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+      .set("spark.sql.catalog.tpcds.rowCountPerTask", s"$rowCountPerTask")
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      val rowCount = spark.table("tpcds.sf1.catalog_page").count
+      val df = spark.sql("select * from tpcds.sf1.catalog_page")
+      val tpcdsScan = df.queryExecution.executedPlan.collectFirst {
+        case BatchScanExec(_, s: TPCDSBatchScan) => s
+      }
+      assert(tpcdsScan.isDefined)
+      val parallelism = (rowCount / rowCountPerTask.toDouble).ceil.toInt
+      assert(tpcdsScan.get.planInputPartitions.length == parallelism)
+    }
   }
 }
