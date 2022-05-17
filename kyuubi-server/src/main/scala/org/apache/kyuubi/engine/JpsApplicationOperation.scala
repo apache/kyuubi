@@ -50,7 +50,11 @@ class JpsApplicationOperation extends ApplicationOperation {
       None
     } else {
       val pb = s"$runner -ml" #| s"grep $tag"
-      pb.lineStream_!.headOption
+      try {
+        pb.lineStream_!.headOption
+      } catch {
+        case _: Throwable => None
+      }
     }
   }
 
