@@ -23,6 +23,8 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.sparkMajorMinorVersion
+
 class CatalogShim_v2_4 extends SparkCatalogShim {
 
   override def getCatalogs(spark: SparkSession): Seq[Row] = {
@@ -58,10 +60,22 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
       schemaPattern: String,
       tablePattern: String,
       tableTypes: Set[String]): Seq[Row] = {
+    val catalog = spark.sessionState.catalog
+
     getSchemas(spark, schemaPattern).flatMap(db => {
-      tableTypes.flatMap(t => {
-        getCatalogTablesOrViews(spark, t, db, tablePattern)
-      }).toSeq
+      if (tableTypes.exists("TABLE".equalsIgnoreCase)) {
+        var tableViews = getCatalogTablesOrViews(spark, "TABLE", db, tablePattern)
+        if (!tableTypes.exists("VIEW".equalsIgnoreCase)) {
+          tableViews = tableViews.filter(f => {
+            // no query view, so exclude view
+            !catalog.isView(Seq(f.getString(1), f.getString(2)))
+          })
+        }
+        tableViews
+      } else {
+        // get views
+        getCatalogTablesOrViews(spark, "VIEW", db, tablePattern)
+      }
     })
   }
 
@@ -74,7 +88,8 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
     val tp = tablePattern.r.pattern
 
     var showSql = s"SHOW TABLES IN $db"
-    if (tableType.equals("VIEW")) {
+    if (tableType.equals("VIEW") && sparkMajorMinorVersion._1 != 2) {
+      // spark2.x doesn't support "show views" command
       showSql = s"SHOW VIEWS IN $db"
     }
 
@@ -85,11 +100,18 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
         val tableName = r.getString(1)
         val identifier = new TableIdentifier(tableName, Option.apply(database))
         catalog.getTablesByName(Array(identifier)).map(f => {
+          var tbType = tableType
+          if (tableType.equals("TABLE")) {
+            // The return of "show tables" contains views, which are corrected here
+            if (catalog.isView(Seq(database, tableName))) {
+              tbType = "VIEW"
+            }
+          }
           Row(
             SparkCatalogShim.SESSION_CATALOG,
             database,
             tableName,
-            tableType,
+            tbType,
             f.comment.getOrElse(""),
             null,
             null,
