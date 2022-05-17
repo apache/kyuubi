@@ -36,6 +36,7 @@ class JpsApplicationOperation extends ApplicationOperation {
     runner =
       try {
         jps.!!
+        jps
       } catch {
         case _: Throwable => null
       }
@@ -49,7 +50,7 @@ class JpsApplicationOperation extends ApplicationOperation {
     if (runner == null) {
       None
     } else {
-      val pb = "jps -ml" #| s"grep $tag"
+      val pb = s"$runner -ml" #| s"grep $tag"
       try {
         pb.lineStream_!.headOption
       } catch {
