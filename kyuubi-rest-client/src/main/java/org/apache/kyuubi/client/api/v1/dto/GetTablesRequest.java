@@ -30,10 +30,7 @@ public class GetTablesRequest {
   public GetTablesRequest() {}
 
   public GetTablesRequest(
-      String catalogName,
-      String schemaName,
-      String tableName,
-      List<String> tableTypes) {
+      String catalogName, String schemaName, String tableName, List<String> tableTypes) {
     this.catalogName = catalogName;
     this.schemaName = schemaName;
     this.tableName = tableName;
