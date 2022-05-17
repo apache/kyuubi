@@ -22,7 +22,6 @@ import java.nio.file.Paths
 import scala.sys.process._
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ApplicationOperation.NOT_FOUND
 
 class JpsApplicationOperation extends ApplicationOperation {
   import ApplicationOperation._
@@ -51,11 +50,7 @@ class JpsApplicationOperation extends ApplicationOperation {
       None
     } else {
       val pb = s"$runner -ml" #| s"grep $tag"
-      try {
-        pb.lineStream_!.headOption
-      } catch {
-        case _: Throwable => None
-      }
+      pb.lineStream_!.headOption
     }
   }
 
