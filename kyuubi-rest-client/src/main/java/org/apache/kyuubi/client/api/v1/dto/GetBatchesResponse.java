@@ -19,6 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class GetBatchesResponse {
   private int from;
@@ -58,5 +59,20 @@ public class GetBatchesResponse {
 
   public void setBatches(List<Batch> batches) {
     this.batches = batches;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof GetBatchesResponse)) return false;
+    GetBatchesResponse that = (GetBatchesResponse) o;
+    return getFrom() == that.getFrom()
+        && getTotal() == that.getTotal()
+        && Objects.equals(getBatches(), that.getBatches());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getFrom(), getTotal(), getBatches());
   }
 }

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class GetCrossReferenceRequest {
   private String primaryCatalog;
   private String primarySchema;
@@ -88,5 +90,29 @@ public class GetCrossReferenceRequest {
 
   public void setForeignTable(String foreignTable) {
     this.foreignTable = foreignTable;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof GetCrossReferenceRequest)) return false;
+    GetCrossReferenceRequest that = (GetCrossReferenceRequest) o;
+    return Objects.equals(getPrimaryCatalog(), that.getPrimaryCatalog())
+        && Objects.equals(getPrimarySchema(), that.getPrimarySchema())
+        && Objects.equals(getPrimaryTable(), that.getPrimaryTable())
+        && Objects.equals(getForeignCatalog(), that.getForeignCatalog())
+        && Objects.equals(getForeignSchema(), that.getForeignSchema())
+        && Objects.equals(getForeignTable(), that.getForeignTable());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getPrimaryCatalog(),
+        getPrimarySchema(),
+        getPrimaryTable(),
+        getForeignCatalog(),
+        getForeignSchema(),
+        getForeignTable());
   }
 }

@@ -20,6 +20,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class BatchRequest {
   private String batchType;
@@ -107,5 +108,24 @@ public class BatchRequest {
 
   public void setArgs(List<String> args) {
     this.args = args;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof BatchRequest)) return false;
+    BatchRequest that = (BatchRequest) o;
+    return Objects.equals(getBatchType(), that.getBatchType())
+        && Objects.equals(getResource(), that.getResource())
+        && Objects.equals(getClassName(), that.getClassName())
+        && Objects.equals(getName(), that.getName())
+        && Objects.equals(getConf(), that.getConf())
+        && Objects.equals(getArgs(), that.getArgs());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getBatchType(), getResource(), getClassName(), getName(), getConf(), getArgs());
   }
 }

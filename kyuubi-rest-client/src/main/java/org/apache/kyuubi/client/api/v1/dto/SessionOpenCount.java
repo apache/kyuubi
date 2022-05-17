@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class SessionOpenCount {
   private int openSessionCount;
 
@@ -32,5 +34,18 @@ public class SessionOpenCount {
 
   public void setOpenSessionCount(int openSessionCount) {
     this.openSessionCount = openSessionCount;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof SessionOpenCount)) return false;
+    SessionOpenCount that = (SessionOpenCount) o;
+    return getOpenSessionCount() == that.getOpenSessionCount();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getOpenSessionCount());
   }
 }

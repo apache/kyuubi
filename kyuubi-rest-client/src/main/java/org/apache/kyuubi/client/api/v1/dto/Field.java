@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class Field {
   private String dataType;
   private Object value;
@@ -42,5 +44,19 @@ public class Field {
 
   public void setValue(Object value) {
     this.value = value;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Field)) return false;
+    Field field = (Field) o;
+    return Objects.equals(getDataType(), field.getDataType())
+        && Objects.equals(getValue(), field.getValue());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getDataType(), getValue());
   }
 }

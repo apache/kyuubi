@@ -19,6 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class Row {
   private List<Field> fields;
@@ -38,5 +39,18 @@ public class Row {
 
   public void setFields(List<Field> fields) {
     this.fields = fields;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Row)) return false;
+    Row row = (Row) o;
+    return Objects.equals(getFields(), row.getFields());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getFields());
   }
 }

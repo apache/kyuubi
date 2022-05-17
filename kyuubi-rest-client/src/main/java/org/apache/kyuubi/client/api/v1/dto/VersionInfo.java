@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class VersionInfo {
   private String version;
 
@@ -32,5 +34,18 @@ public class VersionInfo {
 
   public void setVersion(String version) {
     this.version = version;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof VersionInfo)) return false;
+    VersionInfo that = (VersionInfo) o;
+    return Objects.equals(getVersion(), that.getVersion());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getVersion());
   }
 }

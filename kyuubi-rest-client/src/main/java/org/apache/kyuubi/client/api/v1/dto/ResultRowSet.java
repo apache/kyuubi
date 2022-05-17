@@ -19,6 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class ResultRowSet {
   private List<Row> rows;
@@ -48,5 +49,18 @@ public class ResultRowSet {
 
   public void setRowCount(int rowCount) {
     this.rowCount = rowCount;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ResultRowSet)) return false;
+    ResultRowSet that = (ResultRowSet) o;
+    return getRowCount() == that.getRowCount() && Objects.equals(getRows(), that.getRows());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getRows(), getRowCount());
   }
 }

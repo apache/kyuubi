@@ -19,6 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 public class Batch {
   private String id;
@@ -83,5 +84,22 @@ public class Batch {
 
   public void setState(String state) {
     this.state = state;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Batch)) return false;
+    Batch batch = (Batch) o;
+    return Objects.equals(getId(), batch.getId())
+        && Objects.equals(getBatchType(), batch.getBatchType())
+        && Objects.equals(getBatchInfo(), batch.getBatchInfo())
+        && Objects.equals(getKyuubiInstance(), batch.getKyuubiInstance())
+        && Objects.equals(getState(), batch.getState());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getId(), getBatchType(), getBatchInfo(), getKyuubiInstance(), getState());
   }
 }

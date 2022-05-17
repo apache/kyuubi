@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class ColumnDesc {
   private String columnName;
   private String dataType;
@@ -88,5 +90,24 @@ public class ColumnDesc {
 
   public void setComment(String comment) {
     this.comment = comment;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ColumnDesc)) return false;
+    ColumnDesc that = (ColumnDesc) o;
+    return getColumnIndex() == that.getColumnIndex()
+        && getPrecision() == that.getPrecision()
+        && getScale() == that.getScale()
+        && Objects.equals(getColumnName(), that.getColumnName())
+        && Objects.equals(getDataType(), that.getDataType())
+        && Objects.equals(getComment(), that.getComment());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getColumnName(), getDataType(), getColumnIndex(), getPrecision(), getScale(), getComment());
   }
 }

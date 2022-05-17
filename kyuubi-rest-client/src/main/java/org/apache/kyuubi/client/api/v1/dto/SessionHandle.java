@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class SessionHandle {
@@ -54,5 +55,20 @@ public class SessionHandle {
 
   public void setProtocolVersion(int protocolVersion) {
     this.protocolVersion = protocolVersion;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof SessionHandle)) return false;
+    SessionHandle that = (SessionHandle) o;
+    return getProtocolVersion() == that.getProtocolVersion()
+        && Objects.equals(getPublicId(), that.getPublicId())
+        && Objects.equals(getSecretId(), that.getSecretId());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getPublicId(), getSecretId(), getProtocolVersion());
   }
 }

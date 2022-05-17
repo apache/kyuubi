@@ -19,6 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 public class SessionOpenRequest {
   private int protocolVersion;
@@ -83,5 +84,22 @@ public class SessionOpenRequest {
 
   public void setConfigs(Map<String, String> configs) {
     this.configs = configs;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof SessionOpenRequest)) return false;
+    SessionOpenRequest that = (SessionOpenRequest) o;
+    return getProtocolVersion() == that.getProtocolVersion()
+        && Objects.equals(getUser(), that.getUser())
+        && Objects.equals(getPassword(), that.getPassword())
+        && Objects.equals(getIpAddr(), that.getIpAddr())
+        && Objects.equals(getConfigs(), that.getConfigs());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getProtocolVersion(), getUser(), getPassword(), getIpAddr(), getConfigs());
   }
 }

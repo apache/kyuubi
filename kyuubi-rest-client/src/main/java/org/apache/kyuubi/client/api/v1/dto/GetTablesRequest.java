@@ -19,6 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class GetTablesRequest {
   private String catalogName;
@@ -69,5 +70,21 @@ public class GetTablesRequest {
 
   public void setTableTypes(List<String> tableTypes) {
     this.tableTypes = tableTypes;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof GetTablesRequest)) return false;
+    GetTablesRequest that = (GetTablesRequest) o;
+    return Objects.equals(getCatalogName(), that.getCatalogName())
+        && Objects.equals(getSchemaName(), that.getSchemaName())
+        && Objects.equals(getTableName(), that.getTableName())
+        && Objects.equals(getTableTypes(), that.getTableTypes());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getCatalogName(), getSchemaName(), getTableName(), getTableTypes());
   }
 }

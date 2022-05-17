@@ -19,6 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class ResultSetMetaData {
   private List<ColumnDesc> columns;
@@ -38,5 +39,18 @@ public class ResultSetMetaData {
 
   public void setColumns(List<ColumnDesc> columns) {
     this.columns = columns;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ResultSetMetaData)) return false;
+    ResultSetMetaData that = (ResultSetMetaData) o;
+    return Objects.equals(getColumns(), that.getColumns());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getColumns());
   }
 }

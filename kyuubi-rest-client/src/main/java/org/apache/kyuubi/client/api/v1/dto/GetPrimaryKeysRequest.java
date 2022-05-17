@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class GetPrimaryKeysRequest {
   private String catalogName;
   private String schemaName;
@@ -52,5 +54,20 @@ public class GetPrimaryKeysRequest {
 
   public void setTableName(String tableName) {
     this.tableName = tableName;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof GetPrimaryKeysRequest)) return false;
+    GetPrimaryKeysRequest that = (GetPrimaryKeysRequest) o;
+    return Objects.equals(getCatalogName(), that.getCatalogName())
+        && Objects.equals(getSchemaName(), that.getSchemaName())
+        && Objects.equals(getTableName(), that.getTableName());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getCatalogName(), getSchemaName(), getTableName());
   }
 }

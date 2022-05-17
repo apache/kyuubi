@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class OpActionRequest {
   private String action;
 
@@ -32,5 +34,18 @@ public class OpActionRequest {
 
   public void setAction(String action) {
     this.action = action;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof OpActionRequest)) return false;
+    OpActionRequest that = (OpActionRequest) o;
+    return Objects.equals(getAction(), that.getAction());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getAction());
   }
 }

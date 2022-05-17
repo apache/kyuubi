@@ -19,6 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class OperationLog {
   private List<String> logRowSet;
@@ -48,5 +49,19 @@ public class OperationLog {
 
   public void setRowCount(int rowCount) {
     this.rowCount = rowCount;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof OperationLog)) return false;
+    OperationLog that = (OperationLog) o;
+    return getRowCount() == that.getRowCount()
+        && Objects.equals(getLogRowSet(), that.getLogRowSet());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getLogRowSet(), getRowCount());
   }
 }

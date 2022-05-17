@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class InfoDetail {
   private String infoType;
   private String infoValue;
@@ -42,5 +44,19 @@ public class InfoDetail {
 
   public void setInfoValue(String infoValue) {
     this.infoValue = infoValue;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof InfoDetail)) return false;
+    InfoDetail that = (InfoDetail) o;
+    return Objects.equals(getInfoType(), that.getInfoType())
+        && Objects.equals(getInfoValue(), that.getInfoValue());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getInfoType(), getInfoValue());
   }
 }

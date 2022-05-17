@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class GetColumnsRequest {
   private String catalogName;
   private String schemaName;
@@ -63,5 +65,21 @@ public class GetColumnsRequest {
 
   public void setColumnName(String columnName) {
     this.columnName = columnName;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof GetColumnsRequest)) return false;
+    GetColumnsRequest that = (GetColumnsRequest) o;
+    return Objects.equals(getCatalogName(), that.getCatalogName())
+        && Objects.equals(getSchemaName(), that.getSchemaName())
+        && Objects.equals(getTableName(), that.getTableName())
+        && Objects.equals(getColumnName(), that.getColumnName());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getCatalogName(), getSchemaName(), getTableName(), getColumnName());
   }
 }

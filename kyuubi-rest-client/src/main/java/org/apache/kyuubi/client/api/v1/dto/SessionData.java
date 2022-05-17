@@ -19,6 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 public class SessionData {
   private SessionHandle sessionHandle;
@@ -105,5 +106,31 @@ public class SessionData {
 
   public void setIdleTime(Long idleTime) {
     this.idleTime = idleTime;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof SessionData)) return false;
+    SessionData that = (SessionData) o;
+    return Objects.equals(getSessionHandle(), that.getSessionHandle())
+        && Objects.equals(getUser(), that.getUser())
+        && Objects.equals(getIpAddr(), that.getIpAddr())
+        && Objects.equals(getConf(), that.getConf())
+        && Objects.equals(getCreateTime(), that.getCreateTime())
+        && Objects.equals(getDuration(), that.getDuration())
+        && Objects.equals(getIdleTime(), that.getIdleTime());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getSessionHandle(),
+        getUser(),
+        getIpAddr(),
+        getConf(),
+        getCreateTime(),
+        getDuration(),
+        getIdleTime());
   }
 }

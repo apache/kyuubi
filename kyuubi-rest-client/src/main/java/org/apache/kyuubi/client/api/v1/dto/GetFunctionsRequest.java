@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class GetFunctionsRequest {
   private String catalogName;
   private String schemaName;
@@ -52,5 +54,20 @@ public class GetFunctionsRequest {
 
   public void setFunctionName(String functionName) {
     this.functionName = functionName;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof GetFunctionsRequest)) return false;
+    GetFunctionsRequest that = (GetFunctionsRequest) o;
+    return Objects.equals(getCatalogName(), that.getCatalogName())
+        && Objects.equals(getSchemaName(), that.getSchemaName())
+        && Objects.equals(getFunctionName(), that.getFunctionName());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getCatalogName(), getSchemaName(), getFunctionName());
   }
 }

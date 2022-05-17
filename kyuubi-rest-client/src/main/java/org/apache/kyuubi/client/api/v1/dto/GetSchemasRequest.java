@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class GetSchemasRequest {
   private String catalogName;
   private String schemaName;
@@ -42,5 +44,19 @@ public class GetSchemasRequest {
 
   public void setSchemaName(String schemaName) {
     this.schemaName = schemaName;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof GetSchemasRequest)) return false;
+    GetSchemasRequest that = (GetSchemasRequest) o;
+    return Objects.equals(getCatalogName(), that.getCatalogName())
+        && Objects.equals(getSchemaName(), that.getSchemaName());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getCatalogName(), getSchemaName());
   }
 }

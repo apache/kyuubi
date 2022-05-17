@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class StatementRequest {
   private String statement;
   private boolean runAsync;
@@ -52,5 +54,20 @@ public class StatementRequest {
 
   public void setQueryTimeout(Long queryTimeout) {
     this.queryTimeout = queryTimeout;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof StatementRequest)) return false;
+    StatementRequest that = (StatementRequest) o;
+    return isRunAsync() == that.isRunAsync()
+        && Objects.equals(getStatement(), that.getStatement())
+        && Objects.equals(getQueryTimeout(), that.getQueryTimeout());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getStatement(), isRunAsync(), getQueryTimeout());
   }
 }

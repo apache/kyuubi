@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Objects;
+
 public class ExecPoolStatistic {
   private int execPoolSize;
   private int execPoolActiveCount;
@@ -42,5 +44,19 @@ public class ExecPoolStatistic {
 
   public void setExecPoolActiveCount(int execPoolActiveCount) {
     this.execPoolActiveCount = execPoolActiveCount;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ExecPoolStatistic)) return false;
+    ExecPoolStatistic that = (ExecPoolStatistic) o;
+    return getExecPoolSize() == that.getExecPoolSize()
+        && getExecPoolActiveCount() == that.getExecPoolActiveCount();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getExecPoolSize(), getExecPoolActiveCount());
   }
 }
