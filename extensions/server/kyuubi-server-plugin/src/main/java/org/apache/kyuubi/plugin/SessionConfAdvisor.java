@@ -23,10 +23,10 @@ import java.util.Map;
 /**
  * Provide the session configuration according to the user and session configuration.
  *
- * Note that, this interface should be compatible with all engines and all types of sessions.
- * In general, developers inject some configs in session conf then plugin can catch those
- * configs and return reasonable configs back.
- * */
+ * <p>Note that, this interface should be compatible with all engines and all types of sessions. In
+ * general, developers inject some configs in session conf then plugin can catch those configs and
+ * return reasonable configs back.
+ */
 public interface SessionConfAdvisor {
   /** The returned conf will overwrite the session conf */
   @SuppressWarnings("unchecked")
