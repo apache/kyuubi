@@ -91,15 +91,11 @@ public class Batch {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Batch batch = (Batch) o;
-    return Objects.equals(getId(), batch.getId())
-        && Objects.equals(getBatchType(), batch.getBatchType())
-        && Objects.equals(getBatchInfo(), batch.getBatchInfo())
-        && Objects.equals(getKyuubiInstance(), batch.getKyuubiInstance())
-        && Objects.equals(getState(), batch.getState());
+    return Objects.equals(getId(), batch.getId());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getId(), getBatchType(), getBatchInfo(), getKyuubiInstance(), getState());
+    return Objects.hash(getId());
   }
 }

@@ -62,13 +62,12 @@ public class SessionHandle {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SessionHandle that = (SessionHandle) o;
-    return getProtocolVersion() == that.getProtocolVersion()
-        && Objects.equals(getPublicId(), that.getPublicId())
+    return Objects.equals(getPublicId(), that.getPublicId())
         && Objects.equals(getSecretId(), that.getSecretId());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getPublicId(), getSecretId(), getProtocolVersion());
+    return Objects.hash(getPublicId(), getSecretId());
   }
 }

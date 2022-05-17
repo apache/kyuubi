@@ -28,7 +28,10 @@ public class GetColumnsRequest {
   public GetColumnsRequest() {}
 
   public GetColumnsRequest(
-      String catalogName, String schemaName, String tableName, String columnName) {
+      String catalogName,
+      String schemaName,
+      String tableName,
+      String columnName) {
     this.catalogName = catalogName;
     this.schemaName = schemaName;
     this.tableName = tableName;

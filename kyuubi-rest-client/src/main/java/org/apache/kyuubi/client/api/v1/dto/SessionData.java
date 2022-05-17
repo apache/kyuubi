@@ -113,24 +113,11 @@ public class SessionData {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SessionData that = (SessionData) o;
-    return Objects.equals(getSessionHandle(), that.getSessionHandle())
-        && Objects.equals(getUser(), that.getUser())
-        && Objects.equals(getIpAddr(), that.getIpAddr())
-        && Objects.equals(getConf(), that.getConf())
-        && Objects.equals(getCreateTime(), that.getCreateTime())
-        && Objects.equals(getDuration(), that.getDuration())
-        && Objects.equals(getIdleTime(), that.getIdleTime());
+    return Objects.equals(getSessionHandle(), that.getSessionHandle());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        getSessionHandle(),
-        getUser(),
-        getIpAddr(),
-        getConf(),
-        getCreateTime(),
-        getDuration(),
-        getIdleTime());
+    return Objects.hash(getSessionHandle());
   }
 }
