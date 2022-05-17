@@ -81,11 +81,10 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
       assert(desc1.contains("id"))
       assert(desc1("name").contains(id))
       assert(desc1("state") === "RUNNING")
+      val response = jps.killApplicationByTag(id)
+      assert(response._1, response._2)
+      assert(response._2 startsWith "Succeeded to terminate:")
     }
-
-    val response = jps.killApplicationByTag(id)
-    assert(response._1, response._2)
-    assert(response._2 startsWith "Succeeded to terminate:")
 
     val desc2 = jps.getApplicationInfoByTag(id)
     assert(!desc2.contains("id"))
