@@ -26,12 +26,17 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
-abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionProvider {
+abstract class PrivilegesBuilderSuite extends AnyFunSuite
+  with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
+// scalastyle:on
 
   protected def withTable(t: String)(f: String => Unit): Unit = {
     try {
@@ -435,25 +440,6 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assert(tuple._2.size === 0)
   }
 
-  test("ShowTablesCommand") {
-    val plan = sql(s"SHOW TABLES IN $reusedDb")
-      .queryExecution.analyzed
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === SHOWTABLES)
-    val tuple = PrivilegesBuilder.build(plan)
-    assert(tuple._1.size === 1)
-    val po0 = tuple._1.head
-    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    assert(po0.dbname equalsIgnoreCase reusedDb)
-    assert(po0.objectName equalsIgnoreCase reusedDb)
-    assert(po0.columns.isEmpty)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.USE)
-
-    assert(tuple._2.size === 0)
-  }
-
   test("CacheTable") {
     val plan = sql(s"CACHE LAZY TABLE $reusedTable").queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
@@ -578,7 +564,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
-    assert(po.dbname === null)
+    val db = if (isSparkV33OrGreater) "default" else null
+    assert(po.dbname === db)
     assert(po.objectName === "CreateFunctionCommand")
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -597,7 +584,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
-    assert(po.dbname === null)
+    val db = if (isSparkV33OrGreater) "default" else null
+    assert(po.dbname === db)
     assert(po.objectName === "DropFunctionCommand")
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
@@ -605,7 +593,7 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
   }
 
   test("RefreshFunctionCommand") {
-    assume(isSparkV31OrGreater)
+    assume(AuthZUtils.isSparkVersionAtLeast("3.1"))
     sql(s"CREATE FUNCTION RefreshFunctionCommand AS '${getClass.getCanonicalName}'")
     val plan = sql("REFRESH FUNCTION RefreshFunctionCommand")
       .queryExecution.analyzed
@@ -617,7 +605,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
-    assert(po.dbname === null)
+    val db = if (isSparkV33OrGreater) "default" else null
+    assert(po.dbname === db)
     assert(po.objectName === "RefreshFunctionCommand")
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)

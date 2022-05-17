@@ -51,3 +51,16 @@ case class FilteredShowNamespaceExec(delegated: SparkPlan) extends FilteredShowO
     result != null && result.getIsAllowed
   }
 }
+
+case class FilteredShowTablesExec(delegated: SparkPlan) extends FilteredShowObjectsExec {
+  override protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
+    val database = r.getString(0)
+    val table = r.getString(1)
+    val isTemp = r.getBoolean(2)
+    val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
+    val resource = AccessResource(objectType, database, table, null)
+    val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, AccessType.USE)
+    val result = SparkRangerAdminPlugin.isAccessAllowed(request)
+    result != null && result.getIsAllowed
+  }
+}

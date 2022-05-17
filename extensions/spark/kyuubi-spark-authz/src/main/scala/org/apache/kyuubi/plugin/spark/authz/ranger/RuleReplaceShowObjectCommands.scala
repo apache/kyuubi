@@ -30,6 +30,8 @@ import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceH
 class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
     case r: RunnableCommand if r.nodeName == "ShowTablesCommand" => FilteredShowTablesCommand(r)
+    case n: LogicalPlan if n.nodeName == "ShowTables" =>
+      ObjectFilterPlaceHolder(n)
     // show databases in spark2.4.x
     case r: RunnableCommand if r.nodeName == "ShowDatabasesCommand" =>
       FilteredShowDatabasesCommand(r)
