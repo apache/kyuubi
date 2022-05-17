@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
 import java.util.Map;
 
 public class Batch {
@@ -58,6 +59,9 @@ public class Batch {
   }
 
   public Map<String, String> getBatchInfo() {
+    if (batchInfo == null) {
+      return Collections.emptyMap();
+    }
     return batchInfo;
   }
 
