@@ -17,22 +17,10 @@
 
 package org.apache.kyuubi.engine.trino.operation
 
-import org.apache.kyuubi.engine.trino.TrinoStatement
-import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, OPERATION_INCREMENTAL_COLLECT}
 
-class GetTableTypes(session: Session)
-  extends TrinoOperation(OperationType.GET_TABLE_TYPES, session) {
-
-  override protected def runInternal(): Unit = {
-    try {
-      val trinoStatement = TrinoStatement(
-        trinoContext,
-        session.sessionManager.getConf,
-        "SELECT TABLE_TYPE FROM system.jdbc.table_types")
-      schema = trinoStatement.getColumns
-      val resultSet = trinoStatement.execute()
-      iter = new ArrayFetchIterator(resultSet.toArray)
-    } catch onError()
-  }
+class TrinoOperationIncrementCollectSuite extends TrinoOperationSuite {
+  override def withKyuubiConf: Map[String, String] = Map(
+    ENGINE_TRINO_CONNECTION_CATALOG.key -> "memory",
+    OPERATION_INCREMENTAL_COLLECT.key -> "true")
 }

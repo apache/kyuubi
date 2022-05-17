@@ -32,10 +32,7 @@ import org.apache.kyuubi.engine.trino.schema.SchemaHelper
 import org.apache.kyuubi.engine.trino.session.TrinoSessionImpl
 import org.apache.kyuubi.operation.AbstractOperation
 import org.apache.kyuubi.operation.FetchIterator
-import org.apache.kyuubi.operation.FetchOrientation.FETCH_FIRST
-import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
-import org.apache.kyuubi.operation.FetchOrientation.FETCH_PRIOR
-import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
@@ -60,8 +57,8 @@ abstract class TrinoOperation(opType: OperationType, session: Session)
     setHasResultSet(true)
     order match {
       case FETCH_NEXT => iter.fetchNext()
-      case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
-      case FETCH_FIRST => iter.fetchAbsolute(0);
+      case FETCH_PRIOR => iter.fetchPrior(rowSetSize)
+      case FETCH_FIRST => iter.fetchAbsolute(0)
     }
     val taken = iter.take(rowSetSize)
     val resultRowSet = RowSet.toTRowSet(taken.toList, schema, getProtocolVersion)
