@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiFunSuite
 
@@ -97,6 +97,13 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     assertStats("tpcds.sf1.web_returns", 9720000)
     assertStats("tpcds.sf1.web_sales", 13560000)
     assertStats("tpcds.sf1.web_site", 8760)
+  }
+
+  test("nonexistent table") {
+    val exception = intercept[AnalysisException] {
+      spark.table("tpcds.sf1.nonexistent_table")
+    }
+    assert(exception.message === "Table or view not found: tpcds.sf1.nonexistent_table")
   }
 
   override def afterAll(): Unit = {

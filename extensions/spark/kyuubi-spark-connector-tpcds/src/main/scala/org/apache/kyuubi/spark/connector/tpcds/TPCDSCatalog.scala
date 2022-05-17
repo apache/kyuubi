@@ -52,7 +52,7 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
   }
 
   override def loadTable(ident: Identifier): SparkTable = (ident.namespace, ident.name) match {
-    case (Array(db), table) if databases contains db =>
+    case (Array(db), table) if (databases contains db) && tables.contains(table.toLowerCase) =>
       new TPCDSTable(table.toLowerCase, scales(databases indexOf db), options)
     case (_, _) => throw new NoSuchTableException(ident)
   }
