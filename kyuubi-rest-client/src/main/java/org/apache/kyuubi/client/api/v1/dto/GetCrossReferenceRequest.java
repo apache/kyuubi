@@ -95,7 +95,7 @@ public class GetCrossReferenceRequest {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof GetCrossReferenceRequest)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     GetCrossReferenceRequest that = (GetCrossReferenceRequest) o;
     return Objects.equals(getPrimaryCatalog(), that.getPrimaryCatalog())
         && Objects.equals(getPrimarySchema(), that.getPrimarySchema())

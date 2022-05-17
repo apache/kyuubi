@@ -39,7 +39,7 @@ public class SessionOpenCount {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof SessionOpenCount)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     SessionOpenCount that = (SessionOpenCount) o;
     return getOpenSessionCount() == that.getOpenSessionCount();
   }

@@ -113,7 +113,7 @@ public class BatchRequest {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof BatchRequest)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     BatchRequest that = (BatchRequest) o;
     return Objects.equals(getBatchType(), that.getBatchType())
         && Objects.equals(getResource(), that.getResource())

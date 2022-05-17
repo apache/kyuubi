@@ -111,7 +111,7 @@ public class SessionData {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof SessionData)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     SessionData that = (SessionData) o;
     return Objects.equals(getSessionHandle(), that.getSessionHandle())
         && Objects.equals(getUser(), that.getUser())

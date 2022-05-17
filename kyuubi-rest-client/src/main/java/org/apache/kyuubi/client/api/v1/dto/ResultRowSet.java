@@ -54,7 +54,7 @@ public class ResultRowSet {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof ResultRowSet)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     ResultRowSet that = (ResultRowSet) o;
     return getRowCount() == that.getRowCount() && Objects.equals(getRows(), that.getRows());
   }

@@ -44,7 +44,7 @@ public class ResultSetMetaData {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof ResultSetMetaData)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     ResultSetMetaData that = (ResultSetMetaData) o;
     return Objects.equals(getColumns(), that.getColumns());
   }

@@ -89,7 +89,7 @@ public class SessionOpenRequest {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof SessionOpenRequest)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     SessionOpenRequest that = (SessionOpenRequest) o;
     return getProtocolVersion() == that.getProtocolVersion()
         && Objects.equals(getUser(), that.getUser())

@@ -49,7 +49,7 @@ public class ExecPoolStatistic {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof ExecPoolStatistic)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     ExecPoolStatistic that = (ExecPoolStatistic) o;
     return getExecPoolSize() == that.getExecPoolSize()
         && getExecPoolActiveCount() == that.getExecPoolActiveCount();

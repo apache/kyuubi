@@ -89,7 +89,7 @@ public class Batch {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof Batch)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     Batch batch = (Batch) o;
     return Objects.equals(getId(), batch.getId())
         && Objects.equals(getBatchType(), batch.getBatchType())

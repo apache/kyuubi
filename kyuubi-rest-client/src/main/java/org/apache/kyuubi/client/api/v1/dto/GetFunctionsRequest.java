@@ -59,7 +59,7 @@ public class GetFunctionsRequest {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof GetFunctionsRequest)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     GetFunctionsRequest that = (GetFunctionsRequest) o;
     return Objects.equals(getCatalogName(), that.getCatalogName())
         && Objects.equals(getSchemaName(), that.getSchemaName())

@@ -54,7 +54,7 @@ public class OperationLog {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof OperationLog)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     OperationLog that = (OperationLog) o;
     return getRowCount() == that.getRowCount()
         && Objects.equals(getLogRowSet(), that.getLogRowSet());

@@ -70,7 +70,7 @@ public class GetColumnsRequest {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof GetColumnsRequest)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     GetColumnsRequest that = (GetColumnsRequest) o;
     return Objects.equals(getCatalogName(), that.getCatalogName())
         && Objects.equals(getSchemaName(), that.getSchemaName())

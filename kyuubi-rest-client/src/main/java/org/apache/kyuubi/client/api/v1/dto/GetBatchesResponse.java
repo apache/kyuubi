@@ -64,7 +64,7 @@ public class GetBatchesResponse {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof GetBatchesResponse)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     GetBatchesResponse that = (GetBatchesResponse) o;
     return getFrom() == that.getFrom()
         && getTotal() == that.getTotal()

@@ -39,7 +39,7 @@ public class OpActionRequest {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof OpActionRequest)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     OpActionRequest that = (OpActionRequest) o;
     return Objects.equals(getAction(), that.getAction());
   }

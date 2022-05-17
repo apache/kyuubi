@@ -49,7 +49,7 @@ public class GetSchemasRequest {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof GetSchemasRequest)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     GetSchemasRequest that = (GetSchemasRequest) o;
     return Objects.equals(getCatalogName(), that.getCatalogName())
         && Objects.equals(getSchemaName(), that.getSchemaName());

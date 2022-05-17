@@ -39,7 +39,7 @@ public class VersionInfo {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof VersionInfo)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     VersionInfo that = (VersionInfo) o;
     return Objects.equals(getVersion(), that.getVersion());
   }

@@ -60,7 +60,7 @@ public class SessionHandle {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof SessionHandle)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     SessionHandle that = (SessionHandle) o;
     return getProtocolVersion() == that.getProtocolVersion()
         && Objects.equals(getPublicId(), that.getPublicId())

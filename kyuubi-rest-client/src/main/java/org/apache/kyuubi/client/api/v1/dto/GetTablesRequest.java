@@ -75,7 +75,7 @@ public class GetTablesRequest {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof GetTablesRequest)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     GetTablesRequest that = (GetTablesRequest) o;
     return Objects.equals(getCatalogName(), that.getCatalogName())
         && Objects.equals(getSchemaName(), that.getSchemaName())

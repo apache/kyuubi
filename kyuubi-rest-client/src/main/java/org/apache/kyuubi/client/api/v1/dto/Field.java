@@ -49,7 +49,7 @@ public class Field {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof Field)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     Field field = (Field) o;
     return Objects.equals(getDataType(), field.getDataType())
         && Objects.equals(getValue(), field.getValue());
