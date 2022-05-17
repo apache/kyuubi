@@ -44,7 +44,8 @@ class KyuubiBatchSessionSuite extends WithKyuubiServer {
   }
 
   test("propagate session conf") {
-    val req = BatchRequest("spark", "a", "b", "c", Map("k1" -> "v1", "k2" -> "v2"))
+    val req =
+      BatchRequest("spark", "a", "b", "c", Map("k1" -> "v1", "k2" -> "v2", "spark.k1" -> "v3"))
     val session = batchSession(req, "x")
     assert(session.optimizedConf.get("k1").contains("v1"))
     assert(session.optimizedConf.get("k2").contains("v2"))
@@ -52,5 +53,9 @@ class KyuubiBatchSessionSuite extends WithKyuubiServer {
     val builder = session.batchJobSubmissionOp.builder.asInstanceOf[SparkBatchProcessBuilder]
     assert(builder.conf.getOption("k1").contains("v1"))
     assert(builder.conf.getOption("k2").contains("v2"))
+
+    Seq("k1=v1", "k2=v2", "spark.k1=v3").foreach { conf =>
+      assert(builder.commands.contains(conf))
+    }
   }
 }
