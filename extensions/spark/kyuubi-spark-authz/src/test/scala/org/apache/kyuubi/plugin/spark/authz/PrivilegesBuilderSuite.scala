@@ -1167,6 +1167,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("AlterTableChangeColumnsCommand") {
+    assume(!isSparkV2)
     val plan = sql(s"ALTER TABLE $reusedTable" +
       s" ALTER COLUMN value COMMENT 'alter column'").queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
