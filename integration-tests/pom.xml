@@ -33,6 +33,7 @@
 
     <modules>
         <module>kyuubi-flink-it</module>
+        <module>kyuubi-trino-it</module>
     </modules>
 
     <profiles>
