@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
 import java.util.List;
 
 public class GetBatchesResponse {
@@ -49,6 +50,9 @@ public class GetBatchesResponse {
   }
 
   public List<Batch> getBatches() {
+    if (null == batches) {
+      return Collections.emptyList();
+    }
     return batches;
   }
 

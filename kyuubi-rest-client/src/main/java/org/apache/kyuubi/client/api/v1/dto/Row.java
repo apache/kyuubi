@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
 import java.util.List;
 
 public class Row {
@@ -29,6 +30,9 @@ public class Row {
   }
 
   public List<Field> getFields() {
+    if (null == fields) {
+      return Collections.emptyList();
+    }
     return fields;
   }
 

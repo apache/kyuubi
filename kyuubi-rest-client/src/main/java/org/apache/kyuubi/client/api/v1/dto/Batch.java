@@ -59,7 +59,7 @@ public class Batch {
   }
 
   public Map<String, String> getBatchInfo() {
-    if (batchInfo == null) {
+    if (null == batchInfo) {
       return Collections.emptyMap();
     }
     return batchInfo;

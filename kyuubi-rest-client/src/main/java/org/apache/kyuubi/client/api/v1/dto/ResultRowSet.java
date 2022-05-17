@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ResultRowSet {
@@ -31,6 +32,9 @@ public class ResultRowSet {
   }
 
   public List<Row> getRows() {
+    if (null == rows) {
+      return Collections.emptyList();
+    }
     return rows;
   }
 

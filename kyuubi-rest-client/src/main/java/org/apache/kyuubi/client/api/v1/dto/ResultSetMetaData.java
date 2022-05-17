@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ResultSetMetaData {
@@ -29,6 +30,9 @@ public class ResultSetMetaData {
   }
 
   public List<ColumnDesc> getColumns() {
+    if (null == columns) {
+      return Collections.emptyList();
+    }
     return columns;
   }
 

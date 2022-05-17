@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
 import java.util.Map;
 
 public class SessionOpenRequest {
@@ -74,6 +75,9 @@ public class SessionOpenRequest {
   }
 
   public Map<String, String> getConfigs() {
+    if (null == configs) {
+      return Collections.emptyMap();
+    }
     return configs;
   }
 

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
 import java.util.List;
 
 public class OperationLog {
@@ -31,6 +32,9 @@ public class OperationLog {
   }
 
   public List<String> getLogRowSet() {
+    if (null == logRowSet) {
+      return Collections.emptyList();
+    }
     return logRowSet;
   }
 

@@ -88,7 +88,7 @@ public class BatchRequest {
   }
 
   public Map<String, String> getConf() {
-    if (conf == null) {
+    if (null == conf) {
       return Collections.emptyMap();
     }
     return conf;
@@ -99,7 +99,7 @@ public class BatchRequest {
   }
 
   public List<String> getArgs() {
-    if (args == null) {
+    if (null == args) {
       return Collections.emptyList();
     }
     return args;

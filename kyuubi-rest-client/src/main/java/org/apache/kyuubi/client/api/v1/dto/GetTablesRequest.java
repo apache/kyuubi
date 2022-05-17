@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
 import java.util.List;
 
 public class GetTablesRequest {
@@ -60,6 +61,9 @@ public class GetTablesRequest {
   }
 
   public List<String> getTableTypes() {
+    if (null == tableTypes) {
+      return Collections.emptyList();
+    }
     return tableTypes;
   }
 
