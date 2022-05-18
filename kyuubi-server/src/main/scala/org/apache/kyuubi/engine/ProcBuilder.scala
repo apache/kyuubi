@@ -97,7 +97,7 @@ trait ProcBuilder {
 
   protected def proxyUser: String
 
-  protected def commands: Array[String]
+  protected val commands: Array[String]
 
   def conf: KyuubiConf
 
