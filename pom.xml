@@ -68,7 +68,6 @@
         <module>dev/kyuubi-codecov</module>
         <module>extensions/server/kyuubi-server-plugin</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
-        <module>extensions/spark/kyuubi-spark-connector-kudu</module>
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
@@ -1985,6 +1984,9 @@
                 <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.3.0-rc2-bin/</spark.archive.mirror>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <modules>
+                <module>extensions/spark/kyuubi-spark-connector-kudu</module>
+            </modules>
         </profile>
 
         <profile>
