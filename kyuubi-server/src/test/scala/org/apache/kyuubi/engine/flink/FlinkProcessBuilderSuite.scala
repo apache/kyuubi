@@ -32,6 +32,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     .set(
       ENGINE_FLINK_JAVA_OPTIONS,
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
+    .set("yarn.tags", "KYUUBI")
 
   private def envDefault: ListMap[String, String] = ListMap(
     "JAVA_HOME" -> s"${File.separator}jdk")
@@ -53,7 +54,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
       s"$confStr"
     info(s"\n\n actualCommands $actualCommands")
     info(s"\n\n expectedCommands $expectedCommands")
-    assert(actualCommands.equals(expectedCommands))
+    assert(actualCommands == expectedCommands)
   }
 
   private def constructClasspathStr(builder: FlinkProcessBuilder) = {

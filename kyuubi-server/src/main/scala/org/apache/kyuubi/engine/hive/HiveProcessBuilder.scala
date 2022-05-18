@@ -24,6 +24,8 @@ import java.util.LinkedHashSet
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import com.google.common.annotations.VisibleForTesting
+
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
@@ -34,9 +36,14 @@ import org.apache.kyuubi.operation.log.OperationLog
 class HiveProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
-    val extraEngineLog: Option[OperationLog] = None,
-    val engineRefId: String = "")
+    val engineRefId: String,
+    val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
+
+  @VisibleForTesting
+  def this(proxyUser: String, conf: KyuubiConf) {
+    this(proxyUser, conf, "")
+  }
 
   private val hiveHome: String = getEngineHome(shortName)
 

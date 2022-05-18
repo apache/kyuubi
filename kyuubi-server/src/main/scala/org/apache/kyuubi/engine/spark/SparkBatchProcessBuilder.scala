@@ -30,7 +30,7 @@ class SparkBatchProcessBuilder(
     batchId: String,
     batchRequest: BatchRequest,
     override val extraEngineLog: Option[OperationLog])
-  extends SparkProcessBuilder(proxyUser, conf, extraEngineLog) {
+  extends SparkProcessBuilder(proxyUser, conf, batchId, extraEngineLog) {
   import SparkProcessBuilder._
 
   override def mainClass: String = batchRequest.getClassName

@@ -22,6 +22,7 @@ import java.nio.file.Paths
 
 import scala.collection.mutable.ArrayBuffer
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
@@ -34,9 +35,14 @@ import org.apache.kyuubi.operation.log.OperationLog
 class SparkProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
-    val extraEngineLog: Option[OperationLog] = None,
-    val engineRefId: String = "")
+    val engineRefId: String,
+    val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
+
+  @VisibleForTesting
+  def this(proxyUser: String, conf: KyuubiConf) {
+    this(proxyUser, conf, "")
+  }
 
   import SparkProcessBuilder._
 
