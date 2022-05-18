@@ -32,7 +32,7 @@ import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
+import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
 
 class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest)
@@ -44,8 +44,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private val _operationLog = OperationLog.createOperationLog(session, getHandle)
 
-  private val applicationManager =
-    session.sessionManager.asInstanceOf[KyuubiSessionManager].applicationManager
+  private val applicationManager = session.sessionManager.applicationManager
 
   private[kyuubi] val batchId: String = session.handle.identifier.toString
 
@@ -111,11 +110,17 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   }
 
   private def submitBatchJob(): Unit = {
+    var applicationStatus: Option[Map[String, String]] = None
+    var appStatusFirstUpdated = false
     try {
       info(s"Submitting $batchType batch job: $builder")
       val process = builder.start
-      var applicationStatus = currentApplicationState
+      applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
+        if (!appStatusFirstUpdated && applicationStatus.isDefined) {
+          session.sessionManager.sessionStateStore.updateBatchAppInfo(batchId, applicationStatus)
+          appStatusFirstUpdated = true
+        }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
         applicationStatus = currentApplicationState
       }
@@ -130,6 +135,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
         }
       }
     } finally {
+      session.sessionManager.sessionStateStore.updateBatchAppInfo(batchId, applicationStatus)
       builder.close()
     }
   }

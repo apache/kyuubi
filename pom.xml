@@ -119,7 +119,9 @@
         <guava.version>30.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.2</hadoop.version>
-        <hikaricp.version>2.6.1</hikaricp.version>
+        <hikaricp.version>4.0.3</hikaricp.version>
+        <sqltool.version>2.5.2</sqltool.version>
+        <derby.version>10.14.2.0</derby.version>
         <hive.engine.hive.version>3.1.3</hive.engine.hive.version>
         <hive.version>3.1.3</hive.version>
         <hive.service.rpc.version>3.1.3</hive.service.rpc.version>
@@ -1371,6 +1373,18 @@
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${hikaricp.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.hsqldb</groupId>
+                <artifactId>sqltool</artifactId>
+                <version>${sqltool.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.derby</groupId>
+                <artifactId>derby</artifactId>
+                <version>${derby.version}</version>
             </dependency>
 
             <dependency>

@@ -33,6 +33,7 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.server.statestore.SessionStateStore
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   import KyuubiSessionManager._
@@ -44,12 +45,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
+  val sessionStateStore = new SessionStateStore()
 
   private var limiter: Option[SessionLimiter] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(applicationManager)
     addService(credentialsManager)
+    addService(sessionStateStore)
     initSessionLimiter(conf)
     super.initialize(conf)
   }
@@ -126,6 +129,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       setSession(handle, batchSession)
       info(s"$user's batch session with $handle is opened, current opening sessions" +
         s" $getOpenSessionCount")
+      sessionStateStore.createBatch(handle.identifier.toString, username, conf, batchRequest)
       handle
     } catch {
       case e: Exception =>
@@ -161,26 +165,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
   }
 
-  def getBatchSessionList(batchType: String, from: Int, size: Int): Seq[Session] = {
-    val sessions =
-      if (batchType == null) {
-        allSessions().filter(_.isInstanceOf[KyuubiBatchSessionImpl])
-      } else {
-        allSessions().filter {
-          case batchSession: KyuubiBatchSessionImpl =>
-            batchSession.batchJobSubmissionOp.batchType.equalsIgnoreCase(batchType)
-          case _ => false
-        }
-      }
-    sessions.toSeq.sortBy(_.handle.identifier.toString).slice(from, from + size)
-  }
-
   override def start(): Unit = synchronized {
     MetricsSystem.tracing { ms =>
       ms.registerGauge(CONN_OPEN, getOpenSessionCount, 0)
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
     }
+    // TODO: support to recover batch sessions with session state store
     super.start()
   }
 
