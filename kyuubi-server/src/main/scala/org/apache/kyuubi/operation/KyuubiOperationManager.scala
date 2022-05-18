@@ -63,10 +63,10 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     addOperation(operation)
   }
 
-  def newBatchJobSubmissionOperation(
+  def newSubmitBatchAppOperation(
       session: KyuubiBatchSessionImpl,
-      batchRequest: BatchRequest): BatchJobSubmission = {
-    val operation = new BatchJobSubmission(session, batchRequest)
+      batchRequest: BatchRequest): SubmitBatchApp = {
+    val operation = new SubmitBatchApp(session, batchRequest)
     addOperation(operation)
     operation
   }

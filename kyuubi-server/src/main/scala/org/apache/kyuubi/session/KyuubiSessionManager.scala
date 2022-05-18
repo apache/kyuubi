@@ -168,7 +168,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       } else {
         allSessions().filter {
           case batchSession: KyuubiBatchSessionImpl =>
-            batchSession.batchJobSubmissionOp.batchType.equalsIgnoreCase(batchType)
+            batchSession.submitBatchAppOp.batchType.equalsIgnoreCase(batchType)
           case _ => false
         }
       }

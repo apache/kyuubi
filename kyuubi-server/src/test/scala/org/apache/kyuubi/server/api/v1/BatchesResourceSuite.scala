@@ -46,7 +46,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .map(_.asInstanceOf[KyuubiBatchSessionImpl])
       .foreach { session =>
         try {
-          session.batchJobSubmissionOp.killBatchApplication()
+          session.submitBatchAppOp.killBatchApplication()
         } finally {
           sessionManager.closeSession(session.handle)
         }

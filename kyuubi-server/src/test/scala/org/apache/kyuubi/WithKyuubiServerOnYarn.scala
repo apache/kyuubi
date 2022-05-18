@@ -127,10 +127,10 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
 
     assert(sessionHandle.identifier.secretId === KyuubiSessionManager.STATIC_BATCH_SECRET_UUID)
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
-    val batchJobSubmissionOp = session.batchJobSubmissionOp
+    val batchOp = session.submitBatchAppOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val state = batchJobSubmissionOp.currentApplicationState
+      val state = batchOp.currentApplicationState
       assert(state.nonEmpty)
       assert(state.exists(_("id").startsWith("application_")))
       assert(state.exists(_("name") == preDefinedAppName))
@@ -145,10 +145,10 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     assert(appInfo("state") === "KILLED")
 
     eventually(timeout(10.minutes), interval(50.milliseconds)) {
-      assert(batchJobSubmissionOp.getStatus.state === ERROR)
+      assert(batchOp.getStatus.state === ERROR)
     }
 
-    val resultColumns = batchJobSubmissionOp.getNextRowSet(FetchOrientation.FETCH_NEXT, 10)
+    val resultColumns = batchOp.getNextRowSet(FetchOrientation.FETCH_NEXT, 10)
       .getColumns.asScala
 
     val keys = resultColumns.head.getStringVal.getValues.asScala
@@ -160,7 +160,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     val appUrl = rows("url")
     val appError = rows("error")
 
-    val state2 = batchJobSubmissionOp.currentApplicationState.get
+    val state2 = batchOp.currentApplicationState.get
     assert(appId === state2("id"))
     assert(appName === state2("name"))
     assert(appState === state2("state"))
@@ -192,11 +192,11 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       batchRequest)
 
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
-    val batchJobSubmissionOp = session.batchJobSubmissionOp
+    val batchOp = session.submitBatchAppOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      assert(batchJobSubmissionOp.currentApplicationState.isEmpty)
-      assert(batchJobSubmissionOp.getStatus.state === OperationState.ERROR)
+      assert(batchOp.currentApplicationState.isEmpty)
+      assert(batchOp.getStatus.state === OperationState.ERROR)
     }
   }
 }

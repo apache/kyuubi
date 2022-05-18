@@ -48,13 +48,13 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   }
 
   private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
-    val batchOp = session.batchJobSubmissionOp
+    val batchOp = session.submitBatchAppOp
     new Batch(
       batchOp.batchId,
       batchOp.batchType,
       batchOp.currentApplicationState.getOrElse(Map.empty).asJava,
       fe.connectionUrl,
-      batchOp.getStatus.state.toString)
+      batchOp.getBatchAppState.toString)
   }
 
   @ApiResponse(
@@ -132,9 +132,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("from") @DefaultValue("-1") from: Int,
       @QueryParam("size") size: Int): OperationLog = {
     try {
-      val submissionOpt = sessionManager.getBatchSessionImpl(batchId, REST_BATCH_PROTOCOL)
-        .batchJobSubmissionOp
-      val rowSet = submissionOpt.getOperationLogRowSet(
+      val batchOp = sessionManager.getBatchSessionImpl(batchId, REST_BATCH_PROTOCOL)
+        .submitBatchAppOp
+      val rowSet = batchOp.getOperationLogRowSet(
         FetchOrientation.FETCH_NEXT,
         from,
         size)
@@ -186,7 +186,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
 
     if (killApp) {
-      val killResponse = session.batchJobSubmissionOp.killBatchApplication()
+      val killResponse = session.submitBatchAppOp.killBatchApplication()
       sessionManager.closeSession(session.handle)
       Response.ok().entity(killResponse).build()
     } else {

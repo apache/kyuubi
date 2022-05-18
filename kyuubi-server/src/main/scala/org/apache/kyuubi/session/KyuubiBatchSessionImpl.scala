@@ -46,8 +46,8 @@ class KyuubiBatchSessionImpl(
 
   batchRequest.setConf(normalizedConf.asJava)
 
-  private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
-    .newBatchJobSubmissionOperation(this, batchRequest)
+  private[kyuubi] lazy val submitBatchAppOp = sessionManager.operationManager
+    .newSubmitBatchAppOperation(this, batchRequest)
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
@@ -65,7 +65,7 @@ class KyuubiBatchSessionImpl(
     // we should call super.open before running batch job submission operation
     super.open()
 
-    runOperation(batchJobSubmissionOp)
+    runOperation(submitBatchAppOp)
   }
 
   override def close(): Unit = {
