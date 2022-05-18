@@ -102,10 +102,9 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("all hadoop related environment variables are configured except FLINK_HADOOP_CLASSPATH") {
-    val builder = new FlinkProcessBuilder("vinoyang", conf) {
+    assertThrows[KyuubiException](new FlinkProcessBuilder("vinoyang", conf) {
       override def env: Map[String, String] = envWithoutHadoopCLASSPATH
-    }
-    assertThrows[KyuubiException](builder.toString)
+    })
   }
 
   test("only FLINK_HADOOP_CLASSPATH environment variables are configured") {
