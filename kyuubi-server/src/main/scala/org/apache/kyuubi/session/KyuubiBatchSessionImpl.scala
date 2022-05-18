@@ -42,8 +42,7 @@ class KyuubiBatchSessionImpl(
 
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] =
-    sessionManager.validateBatchConf(Option(batchRequest.getConf.asScala.toMap)
-      .getOrElse(Map.empty))
+    sessionManager.validateBatchConf(batchRequest.getConf.asScala.toMap)
 
   batchRequest.setConf(normalizedConf.asJava)
 

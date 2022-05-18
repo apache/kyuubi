@@ -150,7 +150,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       userName,
       request.getPassword,
       ipAddress,
-      Option(request.getConfigs.asScala.toMap).getOrElse(Map.empty[String, String]))
+      request.getConfigs.asScala.toMap)
     new SessionHandle(
       handle.identifier.publicId,
       handle.identifier.secretId,
