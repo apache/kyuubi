@@ -110,6 +110,14 @@ class SubmitBatchApp(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest
     } catch onError("submitting batch job submission operation in background, request rejected")
   }
 
+  override protected def onError(action: String): PartialFunction[Throwable, Unit] = {
+    case e: Throwable =>
+      submissionState = BatchAppSubmissionState.FAILED
+      try {
+        throw e
+      } catch super.onError(action)
+  }
+
   private def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
     applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
       s.contains("KILLED") || s.contains("FAILED"))
