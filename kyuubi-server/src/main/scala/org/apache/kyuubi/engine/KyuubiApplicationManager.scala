@@ -91,7 +91,7 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
 object KyuubiApplicationManager {
   private def setupSparkYarnTag(tag: String, conf: KyuubiConf): Unit = {
     val originalTag = conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("")
-    val newTag = s"${originalTag}KYUUBI" + Some(tag).map("," + _).getOrElse("")
+    val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")
     conf.set(SparkProcessBuilder.TAG_KEY, newTag)
   }
 
@@ -100,8 +100,8 @@ object KyuubiApplicationManager {
   }
 
   private def setupFlinkK8sTag(tag: String, conf: KyuubiConf): Unit = {
-    val originalTag = conf.getOption(FlinkProcessBuilder.TAG_KEY).map(_ + ",")
-    val newTag = s"${originalTag}KYUUBI" + Some(tag).map("," + _).getOrElse("")
+    val originalTag = conf.getOption(FlinkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("")
+    val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")
     conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
   }
 

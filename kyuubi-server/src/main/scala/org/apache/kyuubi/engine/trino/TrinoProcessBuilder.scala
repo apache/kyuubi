@@ -49,7 +49,7 @@ class TrinoProcessBuilder(
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.trino.TrinoSqlEngine"
 
-  override protected def commands: Array[String] = {
+  override protected val commands: Array[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     require(
       conf.get(ENGINE_TRINO_CONNECTION_URL).nonEmpty,

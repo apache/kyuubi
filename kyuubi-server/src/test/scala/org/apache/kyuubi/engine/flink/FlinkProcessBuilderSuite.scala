@@ -32,7 +32,6 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     .set(
       ENGINE_FLINK_JAVA_OPTIONS,
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
-    .set("yarn.tags", "KYUUBI")
 
   private def envDefault: ListMap[String, String] = ListMap(
     "JAVA_HOME" -> s"${File.separator}jdk")
@@ -43,7 +42,9 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def envWithAllHadoop: ListMap[String, String] = envWithoutHadoopCLASSPATH +
     ("FLINK_HADOOP_CLASSPATH" -> s"${File.separator}hadoop")
   private def confStr: String = {
-    conf.getAll.map { case (k, v) => s"\\\n\t--conf $k=$v" }.mkString(" ")
+    conf.clone.set("yarn.tags", "KYUUBI").getAll.map {
+      case (k, v) => s"\\\n\t--conf $k=$v"
+    }.mkString(" ")
   }
   private def compareActualAndExpected(builder: FlinkProcessBuilder) = {
     val actualCommands = builder.toString
