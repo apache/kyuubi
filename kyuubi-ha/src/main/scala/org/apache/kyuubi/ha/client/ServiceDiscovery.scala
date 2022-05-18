@@ -63,8 +63,8 @@ abstract class ServiceDiscovery(
 
   // stop the server genteelly
   def stopGracefully(isLost: Boolean = false): Unit = {
-    while (fe.be != null && fe.be.sessionManager.getOpenSessionCount > 0) {
-      debug(s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
+    while (fe.be.sessionManager.getOpenSessionCount > 0) {
+      info(s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
       Thread.sleep(1000 * 60)
     }
     isServerLost.set(isLost)
