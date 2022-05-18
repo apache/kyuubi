@@ -42,6 +42,7 @@ import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, 
 private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+  private def sessionStateStore = sessionManager.sessionStateStore
 
   private def buildBatch(sessionHandle: SessionHandle): Batch = {
     buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
@@ -89,13 +90,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @GET
   @Path("{batchId}")
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
-    try {
-      val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
-      buildBatch(sessionHandle)
-    } catch {
-      case NonFatal(e) =>
-        error(s"Invalid batchId: $batchId", e)
-        throw new NotFoundException(s"Invalid batchId: $batchId")
+    Option(sessionStateStore.getBatch(batchId)).getOrElse {
+      error(s"Invalid batchId: $batchId")
+      throw new NotFoundException(s"Invalid batchId: $batchId")
     }
   }
 
@@ -111,11 +108,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("batchType") batchType: String,
       @QueryParam("from") from: Int,
       @QueryParam("size") size: Int): GetBatchesResponse = {
-    val sessions = sessionManager.getBatchSessionList(batchType, from, size)
-    val batches = sessions.map { session =>
-      val batchSession = session.asInstanceOf[KyuubiBatchSessionImpl]
-      buildBatch(batchSession)
-    }
+    val batches = sessionStateStore.getBatchesByType(batchType, from, size)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 

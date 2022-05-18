@@ -34,7 +34,7 @@ class KyuubiBatchSessionImpl(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: KyuubiSessionManager,
+    override val sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
     batchRequest: BatchRequest)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
@@ -70,7 +70,12 @@ class KyuubiBatchSessionImpl(
 
   override def close(): Unit = {
     super.close()
-    sessionEvent.endTime = System.currentTimeMillis()
+    val endTime = System.currentTimeMillis()
+    sessionManager.sessionStateStore.closeBatch(
+      batchJobSubmissionOp.batchId,
+      batchJobSubmissionOp.getStatus.state.toString,
+      endTime)
+    sessionEvent.endTime = endTime
     EventBus.post(sessionEvent)
     MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
   }

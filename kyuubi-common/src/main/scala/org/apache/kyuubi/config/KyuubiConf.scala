@@ -855,6 +855,41 @@ object KyuubiConf {
       .intConf
       .createWithDefault(100)
 
+  val SERVER_STATE_STORE_CLASS: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.class")
+      .doc("Class name for state store.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("org.apache.kyuubi.server.statestore.InMemoryStateStore")
+
+  val SERVER_STATE_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.server.state.store.cleaner.enabled")
+      .doc("Whether to clean the state store periodically.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val SERVER_STATE_STORE_MAX_AGE: ConfigEntry[Long] =
+    buildConf("kyuubi.server.state.store.max.age")
+      .doc("The maximum age of state info in state store.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofHours(1).toMillis)
+
+  val SERVER_STATE_STORE_MAX_NUMBER: ConfigEntry[Int] =
+    buildConf("kyuubi.server.state.store.max.number")
+      .doc("The maximum number of state info in state store.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(Int.MaxValue)
+
+  val SERVER_STATE_STORE_CLEANER_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.server.state.store.cleaner.interval")
+      .doc("The interval to clean state store.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(30).toMillis)
+
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")
       .doc("Size of the wait queue for the operation execution thread pool in SQL engine" +
