@@ -263,17 +263,15 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     assert(b1.toString.contains(s"--conf spark.files=$testKeytab"))
   }
 
-  test("SparkProcessBuilder commands mutable") {
+  test("SparkProcessBuilder commands immutable") {
     val conf = KyuubiConf(false)
-    val pb = new SparkProcessBuilder("", conf)
     val engineRefId = UUID.randomUUID().toString
-    assert(!pb.toString.contains(engineRefId))
-    conf.set("spark.yarn.tags", engineRefId)
+    val pb = new SparkProcessBuilder("", conf, engineRefId = engineRefId)
     assert(pb.toString.contains(engineRefId))
   }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)
   extends SparkProcessBuilder("fake", config) {
-  override protected def commands: Array[String] = Array("ls")
+  override protected val commands: Array[String] = Array("ls")
 }

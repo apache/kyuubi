@@ -23,6 +23,8 @@ import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.service.AbstractService
 
 class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager") {
@@ -88,7 +90,7 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
 
 object KyuubiApplicationManager {
   private def setupSparkYarnTag(tag: String, conf: KyuubiConf): Unit = {
-    val originalTag = conf.getOption("spark.yarn.tags").map(_ + ",").getOrElse("")
+    val originalTag = conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("")
     val newTag = s"${originalTag}KYUUBI,$tag"
     conf.set("spark.yarn.tags", newTag)
   }
@@ -98,10 +100,9 @@ object KyuubiApplicationManager {
   }
 
   private def setupFlinkK8sTag(tag: String, conf: KyuubiConf): Unit = {
-    // TODO: yarn.tags or flink.yarn.tags, the mess of flink settings confuses me now.
-    val originalTag = conf.getOption("yarn.tags").map(_ + ",")
+    val originalTag = conf.getOption(FlinkProcessBuilder.APP_KEY).map(_ + ",")
     val newTag = s"${originalTag}KYUUBI,$tag"
-    conf.set("yarn.tags", newTag)
+    conf.set(FlinkProcessBuilder.APP_KEY, newTag)
   }
 
   /**

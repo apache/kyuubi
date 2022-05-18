@@ -28,13 +28,14 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
 
 class HiveProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
-    val extraEngineLog: Option[OperationLog] = None)
+    val extraEngineLog: Option[OperationLog] = None,
+    val engineRefId: String = "")
   extends ProcBuilder with Logging {
 
   private val hiveHome: String = getEngineHome(shortName)
@@ -46,6 +47,7 @@ class HiveProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.hive.HiveSQLEngine"
 
   override protected def commands: Array[String] = {
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
     buffer += executable
 

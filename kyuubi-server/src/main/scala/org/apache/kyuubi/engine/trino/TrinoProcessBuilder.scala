@@ -28,19 +28,22 @@ import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, ENGINE_TRINO_CONNECTION_URL, ENGINE_TRINO_EXTRA_CLASSPATH, ENGINE_TRINO_JAVA_OPTIONS, ENGINE_TRINO_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
 
 class TrinoProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
-    val extraEngineLog: Option[OperationLog] = None) extends ProcBuilder with Logging {
+    val extraEngineLog: Option[OperationLog] = None,
+    val engineRefId: String = "")
+  extends ProcBuilder with Logging {
 
   override protected def module: String = "kyuubi-trino-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.trino.TrinoSqlEngine"
 
   override protected def commands: Array[String] = {
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     require(
       conf.get(ENGINE_TRINO_CONNECTION_URL).nonEmpty,
       s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}")

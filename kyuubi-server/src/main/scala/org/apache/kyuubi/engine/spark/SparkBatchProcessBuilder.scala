@@ -37,7 +37,7 @@ class SparkBatchProcessBuilder(
 
   override def mainResource: Option[String] = Option(batchRequest.getResource)
 
-  override protected def commands: Array[String] = {
+  override protected val commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
     Option(mainClass).foreach { cla =>

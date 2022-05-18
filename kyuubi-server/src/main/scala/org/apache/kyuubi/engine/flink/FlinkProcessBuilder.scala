@@ -28,7 +28,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
 
 /**
@@ -37,7 +37,8 @@ import org.apache.kyuubi.operation.log.OperationLog
 class FlinkProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
-    val extraEngineLog: Option[OperationLog] = None)
+    val extraEngineLog: Option[OperationLog] = None,
+    val engineRefId: String = "")
   extends ProcBuilder {
 
   private val flinkHome: String = getEngineHome(shortName)
@@ -49,6 +50,7 @@ class FlinkProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
   override protected def commands: Array[String] = {
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
     buffer += executable
 
