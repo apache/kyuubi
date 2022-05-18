@@ -85,7 +85,7 @@ object OperationType extends Enumeration {
       case "DropFunctionCommand" => DROPFUNCTION
       case "DropPartitionField" => ALTERTABLE_DROPPARTS
       case "DropTableCommand" |
-           "DropTable" => DROPTABLE
+          "DropTable" => DROPTABLE
       case "ExplainCommand" => EXPLAIN
       case "InsertIntoDataSourceCommand" |
           "InsertIntoDataSourceDirCommand" |
@@ -104,8 +104,8 @@ object OperationType extends Enumeration {
           "SetNamespaceCommand" |
           "SetDatabaseCommand" => SWITCHDATABASE
       case "SetTableProperties" |
-           "UnsetTableProperties" |
-           "SetWriteDistributionAndOrdering" => ALTERTABLE_PROPERTIES
+          "UnsetTableProperties" |
+          "SetWriteDistributionAndOrdering" => ALTERTABLE_PROPERTIES
       case "ShowCatalogsCommand" |
           "ShowCurrentNamespaceCommand" => SHOWDATABASES
       case "ShowTablesCommand" |
@@ -117,7 +117,7 @@ object OperationType extends Enumeration {
       case "ShowPartitionsCommand" => SHOWPARTITIONS
       case "ShowTablePropertiesCommand" => SHOW_TBLPROPERTIES
       case "TruncateTableCommand" |
-           "TruncateTable" => TRUNCATETABLE
+          "TruncateTable" => TRUNCATETABLE
       case "UncacheTableCommand" => DROPVIEW
       case _ => QUERY
     }

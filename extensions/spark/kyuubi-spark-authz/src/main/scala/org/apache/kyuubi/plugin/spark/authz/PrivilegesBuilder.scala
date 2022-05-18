@@ -492,9 +492,9 @@ object PrivilegesBuilder {
    * @param outputObjs output privilege object list
    */
   private def buildV2Command(
-    plan: LogicalPlan,
-    inputObjs: ArrayBuffer[PrivilegeObject],
-    outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
+      plan: LogicalPlan,
+      inputObjs: ArrayBuffer[PrivilegeObject],
+      outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
 
     def getPlanField[T](field: String): T = {
       getFieldVal[T](plan, field)
@@ -523,7 +523,7 @@ object PrivilegesBuilder {
         }
 
       case "AlterColumn" |
-           "RenameColumn" =>
+          "RenameColumn" =>
         val table = getPlanField[LogicalPlan]("table")
         table.nodeName match {
           case "ResolvedTable" =>
@@ -565,8 +565,8 @@ object PrivilegesBuilder {
         }
 
       case "RenameTable" |
-           "SetTableProperties" |
-           "UnsetTableProperties" =>
+          "SetTableProperties" |
+          "UnsetTableProperties" =>
         val table = getTable
         table.nodeName match {
           case "ResolvedTable" =>
@@ -596,9 +596,9 @@ object PrivilegesBuilder {
    * @param outputObjs output privilege object list
    */
   private def buildIcebergCommand(
-    plan: LogicalPlan,
-    inputObjs: ArrayBuffer[PrivilegeObject],
-    outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
+      plan: LogicalPlan,
+      inputObjs: ArrayBuffer[PrivilegeObject],
+      outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
 
     def getPlanField[T](field: String): T = {
       getFieldVal[T](plan, field)
@@ -625,8 +625,8 @@ object PrivilegesBuilder {
       case "DeleteFromIcebergTable" =>
 
       case "DropIdentifierFields" |
-            "SetIdentifierFields" |
-            "SetWriteDistributionAndOrdering" =>
+          "SetIdentifierFields" |
+          "SetWriteDistributionAndOrdering" =>
         val table = getIcebergTableName
         outputObjs += identifierPrivileges(Identifier.of(table.init.toArray, table.last))
 
