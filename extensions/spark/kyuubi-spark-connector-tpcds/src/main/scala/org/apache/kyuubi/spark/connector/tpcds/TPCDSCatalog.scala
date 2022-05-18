@@ -103,6 +103,11 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
   override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
     throw new UnsupportedOperationException
 
-  override def dropNamespace(namespace: Array[String]): Boolean =
+  // Removed in SPARK-37929
+  def dropNamespace(namespace: Array[String]): Boolean =
+    throw new UnsupportedOperationException
+
+  // Introduced in SPARK-37929
+  def dropNamespace(namespace: Array[String], cascade: Boolean): Boolean =
     throw new UnsupportedOperationException
 }
