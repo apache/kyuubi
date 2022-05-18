@@ -85,7 +85,7 @@ class KyuubiSyncThriftClient private (
       }
     }
     engineLastAlive = System.currentTimeMillis()
-    engineAliveThreadPool.scheduleAtFixedRate(
+    engineAliveThreadPool.scheduleWithFixedDelay(
       task,
       engineAliveProbeInterval,
       engineAliveProbeInterval,
