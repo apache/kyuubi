@@ -20,11 +20,12 @@ package org.apache.kyuubi.session
 import java.util.UUID
 
 import com.codahale.metrics.MetricRegistry
+import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.HandleIdentifier
-import org.apache.kyuubi.client.api.v1.dto.BatchRequest
+import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
@@ -32,7 +33,10 @@ import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.server.statestore.SessionStateStore
+import org.apache.kyuubi.server.statestore.api.Metadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   import KyuubiSessionManager._
@@ -44,6 +48,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
+  private lazy val sessionStateStore = SessionStateStore.get()
 
   private var limiter: Option[SessionLimiter] = None
 
@@ -161,18 +166,29 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
   }
 
-  def getBatchSessionList(batchType: String, from: Int, size: Int): Seq[Session] = {
-    val sessions =
-      if (batchType == null) {
-        allSessions().filter(_.isInstanceOf[KyuubiBatchSessionImpl])
-      } else {
-        allSessions().filter {
-          case batchSession: KyuubiBatchSessionImpl =>
-            batchSession.batchJobSubmissionOp.batchType.equalsIgnoreCase(batchType)
-          case _ => false
-        }
-      }
-    sessions.toSeq.sortBy(_.handle.identifier.toString).slice(from, from + size)
+  def insertMetadata(metadata: Metadata): Unit = {
+    sessionStateStore.insertMetadata(metadata)
+  }
+
+  def updateBatchMetadata(
+      batchId: String,
+      state: OperationState,
+      applicationStatus: Map[String, String],
+      endTime: Long = 0L): Unit = {
+    sessionStateStore.updateBatchMetadata(batchId, state.toString, applicationStatus, endTime)
+  }
+
+  def getBatch(batchId: String): Batch = {
+    sessionStateStore.getBatch(batchId)
+  }
+
+  def getBatchesByType(batchType: String, from: Int, size: Int): Seq[Batch] = {
+    sessionStateStore.getBatchesByType(batchType, from, size)
+  }
+
+  @VisibleForTesting
+  def cleanupBatchMetadata(batchId: String): Unit = {
+    sessionStateStore.cleanupBatchById(batchId)
   }
 
   override def start(): Unit = synchronized {
@@ -181,6 +197,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
     }
+    // TODO: support to recover batch sessions with session state store
     super.start()
   }
 

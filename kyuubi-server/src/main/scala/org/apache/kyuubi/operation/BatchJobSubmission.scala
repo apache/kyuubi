@@ -26,16 +26,22 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
-import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
+import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
 
-class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest)
+class BatchJobSubmission(
+    session: KyuubiBatchSessionImpl,
+    val batchType: String,
+    val batchName: String,
+    resource: String,
+    className: String,
+    batchConf: Map[String, String],
+    batchArgs: Seq[String])
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
 
   override def statement: String = "BATCH_JOB_SUBMISSION"
@@ -44,23 +50,24 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private val _operationLog = OperationLog.createOperationLog(session, getHandle)
 
-  private val applicationManager =
-    session.sessionManager.asInstanceOf[KyuubiSessionManager].applicationManager
+  private val applicationManager = session.sessionManager.applicationManager
 
   private[kyuubi] val batchId: String = session.handle.identifier.toString
 
-  private[kyuubi] val batchType: String = batchRequest.getBatchType
+  private var applicationStatus: Option[Map[String, String]] = None
 
   private val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
       case Some("SPARK") =>
-        val batchSparkConf = session.sessionConf.getBatchConf("spark")
-        batchRequest.setConf((batchSparkConf ++ batchRequest.getConf.asScala).asJava)
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
           batchId,
-          batchRequest,
+          batchName,
+          Option(resource),
+          className,
+          batchConf,
+          batchArgs,
           getOperationLog)
 
       case _ =>
@@ -89,6 +96,11 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   override protected def afterRun(): Unit = {
     OperationLog.removeCurrentOperationLog()
+    session.sessionManager.updateBatchMetadata(
+      batchId,
+      getStatus.state,
+      applicationStatus.getOrElse(Map.empty),
+      System.currentTimeMillis())
   }
 
   override protected def runInternal(): Unit = {
@@ -111,11 +123,19 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   }
 
   private def submitBatchJob(): Unit = {
+    var appStatusFirstUpdated = false
     try {
       info(s"Submitting $batchType batch job: $builder")
       val process = builder.start
-      var applicationStatus = currentApplicationState
+      applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
+        if (!appStatusFirstUpdated && applicationStatus.isDefined) {
+          session.sessionManager.updateBatchMetadata(
+            batchId,
+            getStatus.state,
+            applicationStatus.get)
+          appStatusFirstUpdated = true
+        }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
         applicationStatus = currentApplicationState
       }
