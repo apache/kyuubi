@@ -109,6 +109,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     getAllWithPrefix(s"$KYUUBI_BATCH_CONF_PREFIX.${batchType.toLowerCase(Locale.ROOT)}", "")
   }
 
+  /** Get all state store jdbc datasource properties as map */
+  def getStateStoreJDBCDataSourceProperties: Map[String, String] = {
+    getAllWithPrefix(KYUUBI_STATE_STORE_JDBC_DATASOURCE_PREFIX, "")
+  }
+
   /**
    * Retrieve key-value pairs from [[KyuubiConf]] starting with `dropped.remainder`, and put them to
    * the result map with the `dropped` of key being dropped.
@@ -172,6 +177,7 @@ object KyuubiConf {
   final val KYUUBI_HOME = "KYUUBI_HOME"
   final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
   final val KYUUBI_BATCH_CONF_PREFIX = "kyuubi.batchConf"
+  final val KYUUBI_STATE_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.server.state.store.jdbc.datasource"
 
   val kyuubiConfEntries: java.util.Map[String, ConfigEntry[_]] =
     java.util.Collections.synchronizedMap(new java.util.HashMap[String, ConfigEntry[_]]())
@@ -854,6 +860,85 @@ object KyuubiConf {
       .version("1.0.0")
       .intConf
       .createWithDefault(100)
+
+  val SERVER_STATE_STORE_CLASS: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.class")
+      .doc("Class name for server state store.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("org.apache.kyuubi.server.statestore.jdbc.JDBCStateStore")
+
+  val SERVER_STATE_STORE_JDBC_DATABASE_TYPE: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.database.type")
+      .doc("The database type for server jdbc state store.<ul>" +
+        " <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
+        " <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li>" +
+        " <li>CUSTOM: User-defined database type, need specify the jdbc driver in addition.</li>" +
+        " Note that: The jdbc datasource is powered by HiKariCP, for datasource properties," +
+        " please specify them with prefix: kyuubi.server.state.store.jdbc.datasource." +
+        " For example, kyuubi.server.state.store.jdbc.datasource.connectionTimeout=10000.")
+      .version("1.6.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .createWithDefault("DERBY")
+
+  val SERVER_STATE_STORE_JDBC_DATABASE_SCHEMA_INIT: ConfigEntry[Boolean] =
+    buildConf("kyuubi.server.state.store.jdbc.database.schema.init")
+      .doc("Whether to init the jdbc state store database schema.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val SERVER_STATE_STORE_JDBC_DRIVER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.driver")
+      .doc("JDBC driver class name for server jdbc state store.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val SERVER_STATE_STORE_JDBC_URL: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.url")
+      .doc("The jdbc url for server jdbc state store. By defaults, it is a DERBY in-memory" +
+        " database url, and the state information is not shared across kyuubi instances. To" +
+        " enable multiple kyuubi instances high available, please specify a production jdbc url.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("jdbc:derby:memory:kyuubi_state_store_db;create=true")
+
+  val SERVER_STATE_STORE_JDBC_USER: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.user")
+      .doc("The username for server jdbc state store.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("")
+
+  val SERVER_STATE_STORE_JDBC_PASSWORD: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.password")
+      .doc("The password for server jdbc state store.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("")
+
+  val SERVER_STATE_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.server.state.store.cleaner.enabled")
+      .doc("Whether to clean the state store periodically.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val SERVER_STATE_STORE_MAX_AGE: ConfigEntry[Long] =
+    buildConf("kyuubi.server.state.store.max.age")
+      .doc("The maximum age of state info in state store.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofDays(3).toMillis)
+
+  val SERVER_STATE_STORE_CLEANER_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.server.state.store.cleaner.interval")
+      .doc("The interval to clean state store.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(30).toMillis)
 
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")

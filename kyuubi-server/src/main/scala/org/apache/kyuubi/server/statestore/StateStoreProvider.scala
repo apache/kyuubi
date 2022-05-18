@@ -15,40 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ha.client
-
-import java.io.IOException
+package org.apache.kyuubi.server.statestore
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.util.ClassUtils
 
-object DiscoveryClientProvider extends Logging {
-
-  /**
-   * Creates a zookeeper client before calling `f` and close it after calling `f`.
-   */
-  def withDiscoveryClient[T](conf: KyuubiConf)(f: DiscoveryClient => T): T = {
-    val discoveryClient = createDiscoveryClient(conf)
-    try {
-      discoveryClient.createClient()
-      f(discoveryClient)
-    } finally {
-      try {
-        discoveryClient.closeClient()
-      } catch {
-        case e: IOException => error("Failed to release the zkClient", e)
-      }
-    }
-  }
-
-  def createDiscoveryClient(conf: KyuubiConf): DiscoveryClient = {
-    val className = conf.get(HighAvailabilityConf.HA_CLIENT_CLASS)
+object StateStoreProvider extends Logging {
+  def createStateStore(conf: KyuubiConf): StateStore = {
+    val className = conf.get(KyuubiConf.SERVER_STATE_STORE_CLASS)
     if (className.isEmpty) {
       throw new KyuubiException(
-        s"${HighAvailabilityConf.HA_CLIENT_CLASS.key} cannot be empty.")
+        s"${KyuubiConf.SERVER_STATE_STORE_CLASS.key} cannot be empty.")
     }
-    ClassUtils.createInstance(className, classOf[DiscoveryClient], conf)
+    ClassUtils.createInstance(className, classOf[StateStore], conf)
   }
 }

@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit
 
 import org.apache.hive.service.rpc.thrift.TRowSet
 
-import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
@@ -65,8 +64,20 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
 
   def newBatchJobSubmissionOperation(
       session: KyuubiBatchSessionImpl,
-      batchRequest: BatchRequest): BatchJobSubmission = {
-    val operation = new BatchJobSubmission(session, batchRequest)
+      batchType: String,
+      batchName: String,
+      resource: String,
+      className: String,
+      batchConf: Map[String, String],
+      batchArgs: Seq[String]): BatchJobSubmission = {
+    val operation = new BatchJobSubmission(
+      session,
+      batchType,
+      batchName,
+      resource,
+      className,
+      batchConf,
+      batchArgs)
     addOperation(operation)
     operation
   }
