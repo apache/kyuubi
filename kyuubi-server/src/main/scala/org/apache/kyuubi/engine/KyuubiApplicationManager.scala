@@ -100,9 +100,9 @@ object KyuubiApplicationManager {
   }
 
   private def setupFlinkK8sTag(tag: String, conf: KyuubiConf): Unit = {
-    val originalTag = conf.getOption(FlinkProcessBuilder.APP_KEY).map(_ + ",")
+    val originalTag = conf.getOption(FlinkProcessBuilder.TAG_KEY).map(_ + ",")
     val newTag = s"${originalTag}KYUUBI" + Some(tag).map("," + _).getOrElse("")
-    conf.set(FlinkProcessBuilder.APP_KEY, newTag)
+    conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
   }
 
   /**
