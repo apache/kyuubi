@@ -53,7 +53,7 @@ class KyuubiSyncThriftClient private (
   @volatile private var remoteEngineBroken: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
-  private var engineLastAlive: Long = _
+  @volatile private var engineLastAlive: Long = _
 
   private def startEngineAliveProbe(): Unit = {
     engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
