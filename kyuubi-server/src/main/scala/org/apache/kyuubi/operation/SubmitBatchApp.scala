@@ -30,7 +30,7 @@ import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
-import org.apache.kyuubi.operation.BatchAppState.BatchAppState
+import org.apache.kyuubi.operation.BatchAppSubmissionState.BatchAppSubmissionState
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
@@ -52,9 +52,9 @@ class SubmitBatchApp(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest
 
   private[kyuubi] val batchType: String = batchRequest.getBatchType
 
-  private var batchAppState: BatchAppState = BatchAppState.SUBMITTING
+  private var submissionState: BatchAppSubmissionState = BatchAppSubmissionState.SUBMITTING
 
-  private[kyuubi] def getBatchAppState: BatchAppState = batchAppState
+  private[kyuubi] def getSubmissionState: BatchAppSubmissionState = submissionState
 
   private val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
@@ -121,8 +121,8 @@ class SubmitBatchApp(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest
       val process = builder.start
       var applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
-        if (batchAppState == BatchAppState.SUBMITTING && applicationStatus.isDefined) {
-          batchAppState = BatchAppState.RUNNING
+        if (submissionState == BatchAppSubmissionState.SUBMITTING && applicationStatus.isDefined) {
+          submissionState = BatchAppSubmissionState.RUNNING
         }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
         applicationStatus = currentApplicationState
@@ -130,19 +130,18 @@ class SubmitBatchApp(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest
 
       if (applicationFailed(applicationStatus)) {
         applicationStatus.get.get(ApplicationOperation.APP_STATE_KEY) match {
-          case Some("FAILED") => batchAppState = BatchAppState.FAILED
-          case Some("KILLED") => batchAppState = BatchAppState.KILLED
-          case _ =>
+          case Some("KILLED") => submissionState = BatchAppSubmissionState.KILLED
+          case _ => submissionState = BatchAppSubmissionState.FAILED
         }
         process.destroyForcibly()
         throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
       } else {
         process.waitFor()
         if (process.exitValue() != 0) {
-          batchAppState = BatchAppState.FAILED
+          submissionState = BatchAppSubmissionState.FAILED
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
-        batchAppState = BatchAppState.FINISHED
+        submissionState = BatchAppSubmissionState.FINISHED
       }
     } finally {
       builder.close()
