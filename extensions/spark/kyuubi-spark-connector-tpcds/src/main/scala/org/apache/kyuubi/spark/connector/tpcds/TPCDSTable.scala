@@ -56,7 +56,9 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
 
   val tpcdsTable: Table = Table.getTable(tbl)
 
-  override def name: String = s"`sf$scale`.`$tbl`"
+  override def name: String = s"sf$scale.$tbl"
+
+  override def toString: String = s"TPCDSTable($name)"
 
   override def schema: StructType = {
     // TODO tpcdsTable.notNullBitMap does not correct, set nullable follows
