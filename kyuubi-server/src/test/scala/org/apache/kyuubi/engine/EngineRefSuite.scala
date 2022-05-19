@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine
 
 import java.util.UUID
+import java.util.concurrent.Executors
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
@@ -28,6 +29,8 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 import org.apache.kyuubi.ha.client.DiscoveryPaths
+import org.apache.kyuubi.metrics.MetricsConstants.ENGINE_TOTAL
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.util.NamedThreadFactory
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
@@ -37,6 +40,7 @@ class EngineRefSuite extends KyuubiFunSuite {
   private val zkServer = new EmbeddedZookeeper
   private val conf = KyuubiConf()
   private val user = Utils.currentUser
+  private val metricsSystem = new MetricsSystem
 
   override def beforeAll(): Unit = {
     val zkData = Utils.createTempDir()
@@ -45,10 +49,13 @@ class EngineRefSuite extends KyuubiFunSuite {
       .set("spark.sql.catalogImplementation", "in-memory")
     zkServer.initialize(conf)
     zkServer.start()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
+    metricsSystem.stop()
     zkServer.stop()
     super.afterAll()
   }
@@ -56,6 +63,8 @@ class EngineRefSuite extends KyuubiFunSuite {
   override def beforeEach(): Unit = {
     conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
     conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+    conf.unset(KyuubiConf.ENGINE_POOL_SIZE)
+    conf.unset(KyuubiConf.ENGINE_POOL_NAME)
     super.beforeEach()
   }
 
@@ -245,6 +254,92 @@ class EngineRefSuite extends KyuubiFunSuite {
     eventually(timeout(90.seconds), interval(1.second)) {
       assert(port1 != 0, "engine started")
       assert(port2 == port1, "engine shared")
+    }
+  }
+
+  test("different engine type should use its own lock") {
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
+    conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test1")
+    conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)
+    val conf1 = conf.clone
+    conf1.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    val conf2 = conf.clone
+    conf2.set(KyuubiConf.ENGINE_TYPE, HIVE_SQL.toString)
+
+    val start = System.currentTimeMillis()
+    val times = new Array[Long](2)
+    val executor = Executors.newFixedThreadPool(2)
+    try {
+      executor.execute(() => {
+        DiscoveryClientProvider.withDiscoveryClient(conf1) { client =>
+          try {
+            new EngineRef(conf1, user, UUID.randomUUID().toString, null)
+              .getOrCreate(client)
+          } finally {
+            times(0) = System.currentTimeMillis()
+          }
+        }
+      })
+      executor.execute(() => {
+        DiscoveryClientProvider.withDiscoveryClient(conf2) { client =>
+          try {
+            new EngineRef(conf2, user, UUID.randomUUID().toString, null)
+              .getOrCreate(client)
+          } finally {
+            times(1) = System.currentTimeMillis()
+          }
+        }
+      })
+
+      eventually(timeout(10.seconds), interval(200.milliseconds)) {
+        assert(times.forall(_ > start))
+        // ENGINE_INIT_TIMEOUT is 3000ms
+        assert(times.max - times.min < 2500)
+      }
+    } finally {
+      executor.shutdown()
+    }
+  }
+
+  test("three same lock request with initialization timeout") {
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
+    conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test2")
+    conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)
+
+    val beforeEngines = MetricsSystem.counterValue(ENGINE_TOTAL).getOrElse(0L)
+    val start = System.currentTimeMillis()
+    val times = new Array[Long](3)
+    val executor = Executors.newFixedThreadPool(3)
+    try {
+      (0 until (3)).foreach { i =>
+        val cloned = conf.clone
+        executor.execute(() => {
+          DiscoveryClientProvider.withDiscoveryClient(cloned) { client =>
+            try {
+              new EngineRef(cloned, user, id, null).getOrCreate(client)
+            } finally {
+              times(i) = System.currentTimeMillis()
+            }
+          }
+        })
+      }
+
+      eventually(timeout(20.seconds), interval(200.milliseconds)) {
+        assert(times.forall(_ > start))
+        // ENGINE_INIT_TIMEOUT is 3000ms
+        assert(times.max - times.min > 2800)
+      }
+
+      // we should only submit two engines, the last request should timeout and fail
+      assert(MetricsSystem.counterValue(ENGINE_TOTAL).get - beforeEngines == 2)
+    } finally {
+      executor.shutdown()
     }
   }
 }
