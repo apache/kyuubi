@@ -22,7 +22,6 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.immutable
 
-import io.trino.tpcds.Table
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
 import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table => SparkTable, TableCatalog, TableChange}
 import org.apache.spark.sql.connector.expressions.Transform
@@ -31,8 +30,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
-  val tables: Array[String] = Table.getBaseTables.asScala
-    .map(_.getName).filterNot(_ == "dbgen_version").toArray
+  val tables: Array[String] = TPCDSTableUtils.BASE_TABLES.map(_.getName)
 
   val scales: Array[Int] = Array(0, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000)
 

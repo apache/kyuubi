@@ -61,11 +61,18 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
   override def toString: String = s"TPCDSTable($name)"
 
   override def schema: StructType = {
-    // TODO tpcdsTable.notNullBitMap does not correct, set nullable follows
-    //      https://tpc.org/TPC_Documents_Current_Versions/pdf/TPC-DS_v3.2.0.pdf
+    def nullable(index: Int): Boolean = {
+      val bitMask = 1L << index
+      (bitMask & ~tpcdsTable.getNotNullBitMap) != 0
+    }
     StructType(
       tpcdsTable.getColumns.zipWithIndex.map { case (c, i) =>
-        StructField(reviseColumnName(c), toSparkDataType(c.getType))
+        // Because the order of `GeneratorColumn` and `Column` of some tables is inconsistent,
+        // we need to revise the index of null column, in order to be consistent
+        // with the calculation of null column in the getValues method of Row.
+        // Like: io.trino.tpcds.row.CallCenterRow.getValues
+        val index = TPCDSTableUtils.reviseNullColumnIndex(tpcdsTable, i)
+        StructField(reviseColumnName(c), toSparkDataType(c.getType), nullable(index))
       })
   }
 
