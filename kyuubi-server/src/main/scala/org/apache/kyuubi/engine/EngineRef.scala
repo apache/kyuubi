@@ -75,6 +75,10 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
+  // In case the multi kyuubi instances have the small gap of timeout, here we add
+  // a small amount of time for timeout
+  private val LOCK_TIMEOUT_SPAN_FACTOR = 0.1
+
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
     case Some(_subdomain) => _subdomain
@@ -147,15 +151,42 @@ private[kyuubi] class EngineRef(
     case CONNECTION => f
     case _ =>
       val lockPath =
-        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subdomain)
+        ZKPaths.makePath(s"${serverSpace}_${shareLevel}_$engineType", "lock", appUser, subdomain)
       var lock: InterProcessSemaphoreMutex = null
       try {
         try {
           lock = new InterProcessSemaphoreMutex(zkClient, lockPath)
           // Acquire a lease. If no leases are available, this method blocks until either the
-          // maximum number of leases is increased or another client/process closes a lease
-          lock.acquire(timeout, TimeUnit.MILLISECONDS)
+          // maximum number of leases is increased or another client/process closes a lease.
+          //
+          // Here, we should throw exception if timeout during acquiring lock.
+          // Let's say we have three clients with same request lock to two kyuubi server instances.
+          //
+          //  client A  --->  kyuubi X  -- first acquired  \
+          //  client B  --->  kyuubi X  -- second acquired --  zookeeper
+          //  client C  --->  kyuubi Y  -- third acquired  /
+          //
+          // The first client A acqiured the lock then B and C are blocked until A release the lock,
+          // with the A created engine state:
+          //   - SUCCESS
+          //     B acquired the lock then get engine ref and release the lock.
+          //     C acquired the lock then get engine ref and release the lock.
+          //   - FAILED or TIMEOUT
+          //     B acquired the lock then try to create engine again if not timeout.
+          //     C should be timeout and throw exception back to client. This fast fail
+          //     to avoid client too long to waiting in concurrent.
+
+          // Return false means we are timeout
+          val acquired = lock.acquire(
+            timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong,
+            TimeUnit.MILLISECONDS)
+          if (!acquired) {
+            throw KyuubiSQLException(s"Timeout to lock on path [$lockPath] after " +
+              s"$timeout ms. There would be some problem that other session may " +
+              s"create engine timeout.")
+          }
         } catch {
+          case e: KyuubiSQLException => throw e
           case e: Exception => throw KyuubiSQLException(s"Lock failed on path [$lockPath]", e)
         }
         f
