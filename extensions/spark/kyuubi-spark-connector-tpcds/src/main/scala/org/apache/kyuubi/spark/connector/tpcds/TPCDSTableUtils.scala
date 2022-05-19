@@ -56,6 +56,7 @@ object TPCDSTableUtils {
     "web_site" -> 292)
 
   def reviseNullColumnIndex[E <: Enum[E]](table: Table, index: Int): Int = {
+    assert(REVISED_NULL_COLUMN_MAP(table.getName).length == table.getColumns.length)
     REVISED_NULL_COLUMN_MAP(table.getName)(index).getGlobalColumnNumber -
       table.getGeneratorColumns.head.getGlobalColumnNumber
   }
@@ -323,7 +324,6 @@ object TPCDSTableUtils {
       CustomerGeneratorColumn.C_BIRTH_MONTH,
       CustomerGeneratorColumn.C_BIRTH_YEAR,
       CustomerGeneratorColumn.C_BIRTH_COUNTRY,
-      CustomerGeneratorColumn.C_LOGIN,
       CustomerGeneratorColumn.C_LOGIN,
       CustomerGeneratorColumn.C_EMAIL_ADDRESS,
       CustomerGeneratorColumn.C_LAST_REVIEW_DATE),
