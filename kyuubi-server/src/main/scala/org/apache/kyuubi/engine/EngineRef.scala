@@ -151,7 +151,7 @@ private[kyuubi] class EngineRef(
     case CONNECTION => f
     case _ =>
       val lockPath =
-        ZKPaths.makePath(s"${serverSpace}_${shareLevel}_$engineType", "lock", appUser, subdomain)
+        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subdomain)
       var lock: InterProcessSemaphoreMutex = null
       try {
         try {
