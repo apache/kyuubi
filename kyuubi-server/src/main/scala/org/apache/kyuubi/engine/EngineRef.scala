@@ -71,6 +71,10 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
+  // In case the multi kyuubi instances have the small gap of timeout, here we add
+  // a small amount of time for timeout
+  private val LOCK_TIMEOUT_SPAN_FACTOR = 0.1
+
   private var builder: ProcBuilder = _
 
   @VisibleForTesting
@@ -147,10 +151,13 @@ private[kyuubi] class EngineRef(
       case _ =>
         val lockPath =
           DiscoveryPaths.makePath(
-            s"${serverSpace}_$shareLevel",
+            s"${serverSpace}_${shareLevel}_$engineType",
             "lock",
             Array(appUser, subdomain))
-        discoveryClient.tryWithLock(lockPath, timeout, TimeUnit.MILLISECONDS)(f)
+        discoveryClient.tryWithLock(
+          lockPath,
+          timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong,
+          TimeUnit.MILLISECONDS)(f)
     }
 
   private def create(

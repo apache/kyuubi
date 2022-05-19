@@ -79,6 +79,7 @@ trait DiscoveryClient extends Logging {
   /**
    * The distributed lock path used to ensure only once engine being created for non-CONNECTION
    * share level.
+   * @throws KyuubiSQLException if timeout or get any exception during acquiring lock
    */
   def tryWithLock[T](
       lockPath: String,
