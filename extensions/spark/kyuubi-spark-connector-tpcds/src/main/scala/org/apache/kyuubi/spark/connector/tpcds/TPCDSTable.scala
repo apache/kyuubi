@@ -23,7 +23,7 @@ import java.util.Optional
 import scala.collection.JavaConverters._
 
 import io.trino.tpcds.Table
-import io.trino.tpcds.column.ColumnType
+import io.trino.tpcds.column._
 import io.trino.tpcds.column.ColumnType.Base._
 import org.apache.spark.sql.connector.catalog.{SupportsRead, Table => SparkTable, TableCapability}
 import org.apache.spark.sql.connector.expressions.{Expressions, Transform}
@@ -36,6 +36,14 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
 
   // When true, use CHAR VARCHAR; otherwise use STRING
   val useAnsiStringType: Boolean = options.getBoolean("useAnsiStringType", false)
+
+  // 09-26-2017 v2.6.0
+  // Replaced two occurrences of "c_last_review_date" with "c_last_review_date_sk" to be consistent
+  // with Table 2-14 (Customer Table Column Definitions) in section 2.4.7 of the specification
+  // (fogbugz 2046).
+  //
+  // https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v3.2.0.pdf
+  val useTableSchema_2_6: Boolean = options.getBoolean("useTableSchema_2_6", true)
 
   val tablePartitionColumns: Map[String, Array[String]] = Map(
     "catalog_sales" -> Array("cs_sold_date_sk"),
@@ -55,8 +63,16 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
     //      https://tpc.org/TPC_Documents_Current_Versions/pdf/TPC-DS_v3.2.0.pdf
     StructType(
       tpcdsTable.getColumns.zipWithIndex.map { case (c, i) =>
-        StructField(c.getName, toSparkDataType(c.getType))
+        StructField(reviseColumnName(c), toSparkDataType(c.getType))
       })
+  }
+
+  // https://github.com/trinodb/tpcds/pull/2
+  def reviseColumnName(col: Column): String = col match {
+    case CustomerColumn.C_LAST_REVIEW_DATE_SK if !useTableSchema_2_6 => "c_last_review_date"
+    case PromotionColumn.P_RESPONSE_TARGE => "p_response_target"
+    case StoreColumn.S_TAX_PRECENTAGE => "s_tax_percentage"
+    case right => right.getName
   }
 
   override def partitioning: Array[Transform] = {
