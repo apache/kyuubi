@@ -56,7 +56,7 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
 
   val tpcdsTable: Table = Table.getTable(tbl)
 
-  override def name: String = s"`sf$scale`.`$tbl`"
+  override def name: String = s"sf$scale.$tbl"
 
   override def toString: String = s"TPCDSTable($name)"
 
