@@ -271,33 +271,36 @@ class EngineRefSuite extends KyuubiFunSuite {
     val start = System.currentTimeMillis()
     val times = new Array[Long](2)
     val executor = Executors.newFixedThreadPool(2)
-    executor.execute(() => {
-      DiscoveryClientProvider.withDiscoveryClient(conf1) { client =>
-        try {
-          new EngineRef(conf1, user, UUID.randomUUID().toString, null)
-            .getOrCreate(client)
-        } finally {
-          times(0) = System.currentTimeMillis()
+    try {
+      executor.execute(() => {
+        DiscoveryClientProvider.withDiscoveryClient(conf1) { client =>
+          try {
+            new EngineRef(conf1, user, UUID.randomUUID().toString, null)
+              .getOrCreate(client)
+          } finally {
+            times(0) = System.currentTimeMillis()
+          }
         }
-      }
-    })
-    executor.execute(() => {
-      DiscoveryClientProvider.withDiscoveryClient(conf2) { client =>
-        try {
-          new EngineRef(conf2, user, UUID.randomUUID().toString, null)
-            .getOrCreate(client)
-        } finally {
-          times(1) = System.currentTimeMillis()
+      })
+      executor.execute(() => {
+        DiscoveryClientProvider.withDiscoveryClient(conf2) { client =>
+          try {
+            new EngineRef(conf2, user, UUID.randomUUID().toString, null)
+              .getOrCreate(client)
+          } finally {
+            times(1) = System.currentTimeMillis()
+          }
         }
-      }
-    })
+      })
 
-    eventually(timeout(10.seconds), interval(200.milliseconds)) {
-      assert(times.forall(_ > start))
-      // ENGINE_INIT_TIMEOUT is 3000ms
-      assert(times.max - times.min < 2500)
+      eventually(timeout(10.seconds), interval(200.milliseconds)) {
+        assert(times.forall(_ > start))
+        // ENGINE_INIT_TIMEOUT is 3000ms
+        assert(times.max - times.min < 2500)
+      }
+    } finally {
+      executor.shutdown()
     }
-    executor.shutdown()
   }
 
   test("three same lock request with initialization timeout") {
@@ -313,27 +316,30 @@ class EngineRefSuite extends KyuubiFunSuite {
     val start = System.currentTimeMillis()
     val times = new Array[Long](3)
     val executor = Executors.newFixedThreadPool(3)
-    (0 until (3)).foreach { i =>
-      val cloned = conf.clone
-      executor.execute(() => {
-        DiscoveryClientProvider.withDiscoveryClient(cloned) { client =>
-          try {
-            new EngineRef(cloned, user, id, null).getOrCreate(client)
-          } finally {
-            times(i) = System.currentTimeMillis()
+    try {
+      (0 until (3)).foreach { i =>
+        val cloned = conf.clone
+        executor.execute(() => {
+          DiscoveryClientProvider.withDiscoveryClient(cloned) { client =>
+            try {
+              new EngineRef(cloned, user, id, null).getOrCreate(client)
+            } finally {
+              times(i) = System.currentTimeMillis()
+            }
           }
-        }
-      })
-    }
+        })
+      }
 
-    eventually(timeout(20.seconds), interval(200.milliseconds)) {
-      assert(times.forall(_ > start))
-      // ENGINE_INIT_TIMEOUT is 3000ms
-      assert(times.max - times.min > 2800)
-    }
+      eventually(timeout(20.seconds), interval(200.milliseconds)) {
+        assert(times.forall(_ > start))
+        // ENGINE_INIT_TIMEOUT is 3000ms
+        assert(times.max - times.min > 2800)
+      }
 
-    // we should only submit two engines, the last request should timeout and fail
-    assert(MetricsSystem.counterValue(ENGINE_TOTAL).get - beforeEngines == 2)
-    executor.shutdown()
+      // we should only submit two engines, the last request should timeout and fail
+      assert(MetricsSystem.counterValue(ENGINE_TOTAL).get - beforeEngines == 2)
+    } finally {
+      executor.shutdown()
+    }
   }
 }
