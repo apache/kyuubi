@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
-import scala.collection.JavaConverters._
-
 import io.trino.tpcds.Table
 import io.trino.tpcds.generator.CallCenterGeneratorColumn
 import org.apache.spark.SparkConf
@@ -61,25 +59,24 @@ class TPCDSTableSuite extends KyuubiFunSuite {
   }
 
   test("test nullable column") {
-    Table.getBaseTables.asScala
-      .filterNot(_.getName == "dbgen_version").foreach { tpcdsTable =>
-        val tableName = tpcdsTable.getName
-        val sparkConf = new SparkConf().setMaster("local[*]")
-          .set("spark.ui.enabled", "false")
-          .set("spark.sql.catalogImplementation", "in-memory")
-          .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
-        withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-          val sparkTable = spark.table(s"tpcds.sf1.$tableName")
-          var notNullBitMap = 0
-          sparkTable.schema.fields.zipWithIndex.foreach { case (field, i) =>
-            val index = TPCDSTableUtils.reviseNullColumnIndex(tpcdsTable, i)
-            if (!field.nullable) {
-              notNullBitMap |= 1 << index
-            }
+    TPCDSTableUtils.BASE_TABLES.foreach { tpcdsTable =>
+      val tableName = tpcdsTable.getName
+      val sparkConf = new SparkConf().setMaster("local[*]")
+        .set("spark.ui.enabled", "false")
+        .set("spark.sql.catalogImplementation", "in-memory")
+        .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+      withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+        val sparkTable = spark.table(s"tpcds.sf1.$tableName")
+        var notNullBitMap = 0
+        sparkTable.schema.fields.zipWithIndex.foreach { case (field, i) =>
+          val index = TPCDSTableUtils.reviseNullColumnIndex(tpcdsTable, i)
+          if (!field.nullable) {
+            notNullBitMap |= 1 << index
           }
-          assert(tpcdsTable.getNotNullBitMap == notNullBitMap)
         }
+        assert(tpcdsTable.getNotNullBitMap == notNullBitMap)
       }
+    }
   }
 
   test("test reviseColumnIndex") {
