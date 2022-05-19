@@ -36,7 +36,7 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")
       .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
-      .set("spark.sql.catalog.tpcds.useLegacyColumnName", "false")
+      .set("spark.sql.catalog.tpcds.useTableSchema_2_6", "true")
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE tpcds.sf0")
       queries.map { queryName =>

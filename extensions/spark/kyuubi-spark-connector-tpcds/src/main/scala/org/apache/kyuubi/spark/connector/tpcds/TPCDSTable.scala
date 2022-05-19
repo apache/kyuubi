@@ -43,7 +43,7 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
   // (fogbugz 2046).
   //
   // https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v3.2.0.pdf
-  val useLegacyColumnName: Boolean = options.getBoolean("useLegacyColumnName", false)
+  val useTableSchema_2_6: Boolean = options.getBoolean("useTableSchema_2_6", true)
 
   val tablePartitionColumns: Map[String, Array[String]] = Map(
     "catalog_sales" -> Array("cs_sold_date_sk"),
@@ -69,7 +69,7 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
 
   // https://github.com/trinodb/tpcds/pull/2
   def reviseColumnName(col: Column): String = col match {
-    case CustomerColumn.C_LAST_REVIEW_DATE_SK if useLegacyColumnName => "c_last_review_date"
+    case CustomerColumn.C_LAST_REVIEW_DATE_SK if !useTableSchema_2_6 => "c_last_review_date"
     case PromotionColumn.P_RESPONSE_TARGE => "p_response_target"
     case StoreColumn.S_TAX_PRECENTAGE => "s_tax_percentage"
     case right => right.getName
