@@ -314,10 +314,11 @@ class EngineRefSuite extends KyuubiFunSuite {
     val times = new Array[Long](3)
     val executor = Executors.newFixedThreadPool(3)
     (0 until (3)).foreach { i =>
+      val cloned = conf.clone
       executor.execute(() => {
-        DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+        DiscoveryClientProvider.withDiscoveryClient(cloned) { client =>
           try {
-            new EngineRef(conf, user, id, null).getOrCreate(client)
+            new EngineRef(cloned, user, id, null).getOrCreate(client)
           } finally {
             times(i) = System.currentTimeMillis()
           }
