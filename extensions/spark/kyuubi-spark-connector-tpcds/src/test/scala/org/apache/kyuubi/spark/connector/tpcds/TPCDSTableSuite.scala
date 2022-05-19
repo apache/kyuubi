@@ -72,7 +72,7 @@ class TPCDSTableSuite extends KyuubiFunSuite {
           val sparkTable = spark.table(s"tpcds.sf1.$tableName")
           var notNullBitMap = 0
           sparkTable.schema.fields.zipWithIndex.foreach { case (field, i) =>
-            val index = TPCDSTableUtils.reviseColumnIndex(tpcdsTable, i)
+            val index = TPCDSTableUtils.reviseNullColumnIndex(tpcdsTable, i)
             if (!field.nullable) {
               notNullBitMap |= 1 << index
             }
@@ -118,7 +118,7 @@ class TPCDSTableSuite extends KyuubiFunSuite {
       "CC_TAX_PERCENTAGE")
     Table.CALL_CENTER.getColumns.zipWithIndex.map {
       case (_, i) =>
-        assert(TPCDSTableUtils.reviseColumnIndex(Table.CALL_CENTER, i) ==
+        assert(TPCDSTableUtils.reviseNullColumnIndex(Table.CALL_CENTER, i) ==
           CallCenterGeneratorColumn.valueOf(getValuesColumns(i)).getGlobalColumnNumber -
           CallCenterGeneratorColumn.CC_CALL_CENTER_SK.getGlobalColumnNumber)
     }

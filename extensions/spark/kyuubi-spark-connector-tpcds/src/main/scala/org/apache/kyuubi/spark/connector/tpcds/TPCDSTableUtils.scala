@@ -55,13 +55,14 @@ object TPCDSTableUtils {
     "web_sales" -> 226,
     "web_site" -> 292)
 
-  def reviseColumnIndex[E <: Enum[E]](table: Table, index: Int): Int = {
-    columnIndexRevisers(table.getName).getReviseColumnIndex(index)
+  def reviseNullColumnIndex[E <: Enum[E]](table: Table, index: Int): Int = {
+    nullColumnIndexRevisers(table.getName).getReviseNullColumnIndex(index)
   }
 
-  private val columnIndexRevisers: Map[String, ColumnIndexReviser] = initColumnIndexRevisers()
+  private val nullColumnIndexRevisers: Map[String, NullColumnIndexReviser] =
+    initNullColumnIndexRevisers()
 
-  private def initColumnIndexRevisers[E <: Enum[E]](): Map[String, ColumnIndexReviser] = {
+  private def initNullColumnIndexRevisers[E <: Enum[E]](): Map[String, NullColumnIndexReviser] = {
     Table.getBaseTables.asScala
       .filterNot(_.getName == "dbgen_version").map { table =>
         val first = table.getGeneratorColumns.head
@@ -83,12 +84,12 @@ object TPCDSTableUtils {
     new ClassReader(resourceStream)
   }
 
-  private trait ColumnIndexReviser {
-    def getReviseColumnIndex(index: Int): Int
+  private trait NullColumnIndexReviser {
+    def getReviseNullColumnIndex(index: Int): Int
   }
 
   private class GetValuesMethodVisitor[T <: Enum[T]](firstColumn: T)
-    extends ClassVisitor(ASM7) with ColumnIndexReviser {
+    extends ClassVisitor(ASM7) with NullColumnIndexReviser {
 
     private val columns: ArrayBuffer[GeneratorColumn] = new ArrayBuffer[GeneratorColumn]()
     def getGeneratorColumn: Array[GeneratorColumn] = {
@@ -101,7 +102,7 @@ object TPCDSTableUtils {
       columns.toArray
     }
 
-    override def getReviseColumnIndex(index: Int): Int = {
+    override def getReviseNullColumnIndex(index: Int): Int = {
       getGeneratorColumn(index).getGlobalColumnNumber -
         firstColumn.asInstanceOf[GeneratorColumn].getGlobalColumnNumber
     }

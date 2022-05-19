@@ -65,7 +65,11 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
     }
     StructType(
       tpcdsTable.getColumns.zipWithIndex.map { case (c, i) =>
-        val index = TPCDSTableUtils.reviseColumnIndex(tpcdsTable, i)
+        // Because the order of `GeneratorColumn` and `Column` of some tables is inconsistent,
+        // we need to revise the index of null column, in order to be consistent
+        //   with the calculation of null column in the getValues method of Row.
+        // Like: io.trino.tpcds.row.CallCenterRow.getValues
+        val index = TPCDSTableUtils.reviseNullColumnIndex(tpcdsTable, i)
         StructField(reviseColumnName(c), toSparkDataType(c.getType), nullable(index))
       })
   }
