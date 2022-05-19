@@ -156,8 +156,7 @@ private[kyuubi] class EngineRef(
             Array(appUser, subdomain))
         discoveryClient.tryWithLock(
           lockPath,
-          timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong,
-          TimeUnit.MILLISECONDS)(f)
+          timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong)(f)
     }
 
   private def create(

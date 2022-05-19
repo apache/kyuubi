@@ -134,10 +134,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       })
   }
 
-  def tryWithLock[T](
-      lockPath: String,
-      timeout: Long,
-      unit: TimeUnit = TimeUnit.MILLISECONDS)(f: => T): T = {
+  def tryWithLock[T](lockPath: String, timeout: Long)(f: => T): T = {
     var lock: InterProcessSemaphoreMutex = null
     try {
       try {
@@ -163,10 +160,10 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         //     to avoid client too long to waiting in concurrent.
 
         // Return false means we are timeout
-        val acquired = lock.acquire(timeout, unit)
+        val acquired = lock.acquire(timeout, TimeUnit.MILLISECONDS)
         if (!acquired) {
           throw KyuubiSQLException(s"Timeout to lock on path [$lockPath] after " +
-            s"$timeout ${unit.toString}. There would be some problem that other session may " +
+            s"$timeout ms. There would be some problem that other session may " +
             s"create engine timeout.")
         }
       } catch {

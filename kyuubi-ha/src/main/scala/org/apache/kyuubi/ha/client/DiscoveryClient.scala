@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.ha.client
 
-import java.util.concurrent.TimeUnit
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -79,12 +77,10 @@ trait DiscoveryClient extends Logging {
   /**
    * The distributed lock path used to ensure only once engine being created for non-CONNECTION
    * share level.
+   * @param timeout the timeout of acquiring lock, unit is ms
    * @throws KyuubiSQLException if timeout or get any exception during acquiring lock
    */
-  def tryWithLock[T](
-      lockPath: String,
-      timeout: Long,
-      unit: TimeUnit = TimeUnit.MILLISECONDS)(f: => T): T
+  def tryWithLock[T](lockPath: String, timeout: Long)(f: => T): T
 
   /**
    * Get the engine address and port from engine space.
