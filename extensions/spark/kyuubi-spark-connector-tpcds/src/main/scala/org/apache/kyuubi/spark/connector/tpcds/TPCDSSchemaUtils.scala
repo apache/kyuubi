@@ -20,51 +20,45 @@ package org.apache.kyuubi.spark.connector.tpcds
 import scala.collection.JavaConverters._
 
 import io.trino.tpcds.Table
+import io.trino.tpcds.Table._
+import io.trino.tpcds.column._
 import io.trino.tpcds.generator._
 
-object TPCDSTableUtils {
+object TPCDSSchemaUtils {
 
   val BASE_TABLES: Array[Table] = Table.getBaseTables.asScala
     .filterNot(_.getName == "dbgen_version").toArray
 
-  // https://tpc.org/TPC_Documents_Current_Versions/pdf/TPC-DS_v3.2.0.pdf
-  // Page 42 Table 3-2 Database Row Counts
-  val tableAvrRowSizeInBytes: Map[String, Long] = Map(
-    "call_center" -> 305,
-    "catalog_page" -> 139,
-    "catalog_returns" -> 166,
-    "catalog_sales" -> 226,
-    "customer" -> 132,
-    "customer_address" -> 110,
-    "customer_demographics" -> 42,
-    "date_dim" -> 141,
-    "household_demographics" -> 21,
-    "income_band" -> 16,
-    "inventory" -> 16,
-    "item" -> 281,
-    "promotion" -> 124,
-    "reason" -> 38,
-    "ship_mode" -> 56,
-    "store" -> 263,
-    "store_returns" -> 134,
-    "store_sales" -> 164,
-    "time_dim" -> 59,
-    "warehouse" -> 117,
-    "web_page" -> 96,
-    "web_returns" -> 162,
-    "web_sales" -> 226,
-    "web_site" -> 292)
+  // https://github.com/trinodb/tpcds/pull/2
+  def reviseColumnName(col: Column, useTableSchema_2_6: Boolean): String = col match {
+    case CustomerColumn.C_LAST_REVIEW_DATE_SK if !useTableSchema_2_6 => "c_last_review_date"
+    case PromotionColumn.P_RESPONSE_TARGE => "p_response_target"
+    case StoreColumn.S_TAX_PRECENTAGE => "s_tax_percentage"
+    case right => right.getName
+  }
 
-  def reviseNullColumnIndex[E <: Enum[E]](table: Table, index: Int): Int = {
-    assert(REVISED_NULL_COLUMN_MAP(table.getName).length == table.getColumns.length)
-    REVISED_NULL_COLUMN_MAP(table.getName)(index).getGlobalColumnNumber -
+  def tablePartitionColumnNames(table: Table, useTableSchema_2_6: Boolean): Array[String] =
+    TABLE_DATE_COLUMNS.getOrElse(table, Array.empty).map(reviseColumnName(_, useTableSchema_2_6))
+
+  private val TABLE_DATE_COLUMNS: Map[Table, Array[Column]] = Map(
+    CATALOG_SALES -> Array(CatalogSalesColumn.CS_SOLD_DATE_SK),
+    CATALOG_RETURNS -> Array(CatalogReturnsColumn.CR_RETURNED_DATE_SK),
+    INVENTORY -> Array(InventoryColumn.INV_DATE_SK),
+    STORE_SALES -> Array(StoreSalesColumn.SS_SOLD_DATE_SK),
+    STORE_RETURNS -> Array(StoreReturnsColumn.SR_RETURNED_DATE_SK),
+    WEB_SALES -> Array(WebSalesColumn.WS_SOLD_DATE_SK),
+    WEB_RETURNS -> Array(WebReturnsColumn.WR_RETURNED_DATE_SK))
+
+  def reviseNullColumnIndex(table: Table, index: Int): Int = {
+    assert(REVISED_NULL_COLUMN_MAP(table).length == table.getColumns.length)
+    REVISED_NULL_COLUMN_MAP(table)(index).getGlobalColumnNumber -
       table.getGeneratorColumns.head.getGlobalColumnNumber
   }
 
   // Collected from `getValues` method of all Row classes,
   // like: io.trino.tpcds.row.CallCenterRow.getValues
-  private val REVISED_NULL_COLUMN_MAP: Map[String, Array[GeneratorColumn]] = Map(
-    "time_dim" -> Array(
+  private val REVISED_NULL_COLUMN_MAP: Map[Table, Array[GeneratorColumn]] = Map(
+    TIME_DIM -> Array(
       TimeDimGeneratorColumn.T_TIME_SK,
       TimeDimGeneratorColumn.T_TIME_ID,
       TimeDimGeneratorColumn.T_TIME,
@@ -75,12 +69,12 @@ object TPCDSTableUtils {
       TimeDimGeneratorColumn.T_SHIFT,
       TimeDimGeneratorColumn.T_SUB_SHIFT,
       TimeDimGeneratorColumn.T_MEAL_TIME),
-    "inventory" -> Array(
+    INVENTORY -> Array(
       InventoryGeneratorColumn.INV_DATE_SK,
       InventoryGeneratorColumn.INV_ITEM_SK,
       InventoryGeneratorColumn.INV_WAREHOUSE_SK,
       InventoryGeneratorColumn.INV_QUANTITY_ON_HAND),
-    "web_page" -> Array(
+    WEB_PAGE -> Array(
       WebPageGeneratorColumn.WP_PAGE_SK,
       WebPageGeneratorColumn.WP_PAGE_ID,
       WebPageGeneratorColumn.WP_REC_START_DATE_ID,
@@ -95,7 +89,7 @@ object TPCDSTableUtils {
       WebPageGeneratorColumn.WP_LINK_COUNT,
       WebPageGeneratorColumn.WP_IMAGE_COUNT,
       WebPageGeneratorColumn.WP_MAX_AD_COUNT),
-    "customer_demographics" -> Array(
+    CUSTOMER_DEMOGRAPHICS -> Array(
       CustomerDemographicsGeneratorColumn.CD_DEMO_SK,
       CustomerDemographicsGeneratorColumn.CD_GENDER,
       CustomerDemographicsGeneratorColumn.CD_MARITAL_STATUS,
@@ -105,7 +99,7 @@ object TPCDSTableUtils {
       CustomerDemographicsGeneratorColumn.CD_DEP_COUNT,
       CustomerDemographicsGeneratorColumn.CD_DEP_EMPLOYED_COUNT,
       CustomerDemographicsGeneratorColumn.CD_DEP_COLLEGE_COUNT),
-    "store_returns" -> Array(
+    STORE_RETURNS -> Array(
       StoreReturnsGeneratorColumn.SR_RETURNED_DATE_SK,
       StoreReturnsGeneratorColumn.SR_RETURNED_TIME_SK,
       StoreReturnsGeneratorColumn.SR_ITEM_SK,
@@ -126,7 +120,7 @@ object TPCDSTableUtils {
       StoreReturnsGeneratorColumn.SR_PRICING_REVERSED_CHARGE,
       StoreReturnsGeneratorColumn.SR_PRICING_STORE_CREDIT,
       StoreReturnsGeneratorColumn.SR_PRICING_NET_LOSS),
-    "web_site" -> Array(
+    WEB_SITE -> Array(
       WebSiteGeneratorColumn.WEB_SITE_SK,
       WebSiteGeneratorColumn.WEB_SITE_ID,
       WebSiteGeneratorColumn.WEB_REC_START_DATE_ID,
@@ -153,7 +147,7 @@ object TPCDSTableUtils {
       WebSiteGeneratorColumn.WEB_ADDRESS_COUNTRY,
       WebSiteGeneratorColumn.WEB_ADDRESS_GMT_OFFSET,
       WebSiteGeneratorColumn.WEB_TAX_PERCENTAGE),
-    "catalog_sales" -> Array(
+    CATALOG_SALES -> Array(
       CatalogSalesGeneratorColumn.CS_SOLD_DATE_SK,
       CatalogSalesGeneratorColumn.CS_SOLD_TIME_SK,
       CatalogSalesGeneratorColumn.CS_SHIP_DATE_SK,
@@ -188,14 +182,14 @@ object TPCDSTableUtils {
       CatalogSalesGeneratorColumn.CS_PRICING_NET_PAID_INC_SHIP,
       CatalogSalesGeneratorColumn.CS_PRICING_NET_PAID_INC_SHIP_TAX,
       CatalogSalesGeneratorColumn.CS_PRICING_NET_PROFIT),
-    "ship_mode" -> Array(
+    SHIP_MODE -> Array(
       ShipModeGeneratorColumn.SM_SHIP_MODE_SK,
       ShipModeGeneratorColumn.SM_SHIP_MODE_ID,
       ShipModeGeneratorColumn.SM_TYPE,
       ShipModeGeneratorColumn.SM_CODE,
       ShipModeGeneratorColumn.SM_CARRIER,
       ShipModeGeneratorColumn.SM_CONTRACT),
-    "web_sales" -> Array(
+    WEB_SALES -> Array(
       WebSalesGeneratorColumn.WS_SOLD_DATE_SK,
       WebSalesGeneratorColumn.WS_SOLD_TIME_SK,
       WebSalesGeneratorColumn.WS_SHIP_DATE_SK,
@@ -230,7 +224,7 @@ object TPCDSTableUtils {
       WebSalesGeneratorColumn.WS_PRICING_NET_PAID_INC_SHIP,
       WebSalesGeneratorColumn.WS_PRICING_NET_PAID_INC_SHIP_TAX,
       WebSalesGeneratorColumn.WS_PRICING_NET_PROFIT),
-    "store" -> Array(
+    STORE -> Array(
       StoreGeneratorColumn.W_STORE_SK,
       StoreGeneratorColumn.W_STORE_ID,
       StoreGeneratorColumn.W_STORE_REC_START_DATE_ID,
@@ -260,7 +254,7 @@ object TPCDSTableUtils {
       StoreGeneratorColumn.W_STORE_ADDRESS_COUNTRY,
       StoreGeneratorColumn.W_STORE_ADDRESS_GMT_OFFSET,
       StoreGeneratorColumn.W_STORE_TAX_PERCENTAGE),
-    "customer_address" -> Array(
+    CUSTOMER_ADDRESS -> Array(
       CustomerAddressGeneratorColumn.CA_ADDRESS_SK,
       CustomerAddressGeneratorColumn.CA_ADDRESS_ID,
       CustomerAddressGeneratorColumn.CA_ADDRESS_STREET_NUM,
@@ -274,11 +268,11 @@ object TPCDSTableUtils {
       CustomerAddressGeneratorColumn.CA_ADDRESS_COUNTRY,
       CustomerAddressGeneratorColumn.CA_ADDRESS_GMT_OFFSET,
       CustomerAddressGeneratorColumn.CA_LOCATION_TYPE),
-    "reason" -> Array(
+    REASON -> Array(
       ReasonGeneratorColumn.R_REASON_SK,
       ReasonGeneratorColumn.R_REASON_ID,
       ReasonGeneratorColumn.R_REASON_DESCRIPTION),
-    "catalog_page" -> Array(
+    CATALOG_PAGE -> Array(
       CatalogPageGeneratorColumn.CP_CATALOG_PAGE_SK,
       CatalogPageGeneratorColumn.CP_CATALOG_PAGE_ID,
       CatalogPageGeneratorColumn.CP_START_DATE_ID,
@@ -288,7 +282,7 @@ object TPCDSTableUtils {
       CatalogPageGeneratorColumn.CP_CATALOG_PAGE_NUMBER,
       CatalogPageGeneratorColumn.CP_DESCRIPTION,
       CatalogPageGeneratorColumn.CP_TYPE),
-    "promotion" -> Array(
+    PROMOTION -> Array(
       PromotionGeneratorColumn.P_PROMO_SK,
       PromotionGeneratorColumn.P_PROMO_ID,
       PromotionGeneratorColumn.P_START_DATE_ID,
@@ -308,7 +302,7 @@ object TPCDSTableUtils {
       PromotionGeneratorColumn.P_CHANNEL_DETAILS,
       PromotionGeneratorColumn.P_PURPOSE,
       PromotionGeneratorColumn.P_DISCOUNT_ACTIVE),
-    "customer" -> Array(
+    CUSTOMER -> Array(
       CustomerGeneratorColumn.C_CUSTOMER_SK,
       CustomerGeneratorColumn.C_CUSTOMER_ID,
       CustomerGeneratorColumn.C_CURRENT_CDEMO_SK,
@@ -327,7 +321,7 @@ object TPCDSTableUtils {
       CustomerGeneratorColumn.C_LOGIN,
       CustomerGeneratorColumn.C_EMAIL_ADDRESS,
       CustomerGeneratorColumn.C_LAST_REVIEW_DATE),
-    "catalog_returns" -> Array(
+    CATALOG_RETURNS -> Array(
       CatalogReturnsGeneratorColumn.CR_RETURNED_DATE_SK,
       CatalogReturnsGeneratorColumn.CR_RETURNED_TIME_SK,
       CatalogReturnsGeneratorColumn.CR_ITEM_SK,
@@ -355,7 +349,7 @@ object TPCDSTableUtils {
       CatalogReturnsGeneratorColumn.CR_PRICING_REVERSED_CHARGE,
       CatalogReturnsGeneratorColumn.CR_PRICING_STORE_CREDIT,
       CatalogReturnsGeneratorColumn.CR_PRICING_NET_LOSS),
-    "call_center" -> Array(
+    CALL_CENTER -> Array(
       CallCenterGeneratorColumn.CC_CALL_CENTER_SK,
       CallCenterGeneratorColumn.CC_CALL_CENTER_ID,
       CallCenterGeneratorColumn.CC_REC_START_DATE_ID,
@@ -387,7 +381,7 @@ object TPCDSTableUtils {
       CallCenterGeneratorColumn.CC_COUNTRY,
       CallCenterGeneratorColumn.CC_GMT_OFFSET,
       CallCenterGeneratorColumn.CC_TAX_PERCENTAGE),
-    "web_returns" -> Array(
+    WEB_RETURNS -> Array(
       WebReturnsGeneratorColumn.WR_RETURNED_DATE_SK,
       WebReturnsGeneratorColumn.WR_RETURNED_TIME_SK,
       WebReturnsGeneratorColumn.WR_ITEM_SK,
@@ -412,7 +406,7 @@ object TPCDSTableUtils {
       WebReturnsGeneratorColumn.WR_PRICING_REVERSED_CHARGE,
       WebReturnsGeneratorColumn.WR_PRICING_STORE_CREDIT,
       WebReturnsGeneratorColumn.WR_PRICING_NET_LOSS),
-    "store_sales" -> Array(
+    STORE_SALES -> Array(
       StoreSalesGeneratorColumn.SS_SOLD_DATE_SK,
       StoreSalesGeneratorColumn.SS_SOLD_TIME_SK,
       StoreSalesGeneratorColumn.SS_SOLD_ITEM_SK,
@@ -436,13 +430,13 @@ object TPCDSTableUtils {
       StoreSalesGeneratorColumn.SS_PRICING_NET_PAID,
       StoreSalesGeneratorColumn.SS_PRICING_NET_PAID_INC_TAX,
       StoreSalesGeneratorColumn.SS_PRICING_NET_PROFIT),
-    "household_demographics" -> Array(
+    HOUSEHOLD_DEMOGRAPHICS -> Array(
       HouseholdDemographicsGeneratorColumn.HD_DEMO_SK,
       HouseholdDemographicsGeneratorColumn.HD_INCOME_BAND_ID,
       HouseholdDemographicsGeneratorColumn.HD_BUY_POTENTIAL,
       HouseholdDemographicsGeneratorColumn.HD_DEP_COUNT,
       HouseholdDemographicsGeneratorColumn.HD_VEHICLE_COUNT),
-    "date_dim" -> Array(
+    DATE_DIM -> Array(
       DateDimGeneratorColumn.D_DATE_SK,
       DateDimGeneratorColumn.D_DATE_ID,
       DateDimGeneratorColumn.D_DATE_SK,
@@ -471,11 +465,11 @@ object TPCDSTableUtils {
       DateDimGeneratorColumn.D_CURRENT_MONTH,
       DateDimGeneratorColumn.D_CURRENT_QUARTER,
       DateDimGeneratorColumn.D_CURRENT_YEAR),
-    "income_band" -> Array(
+    INCOME_BAND -> Array(
       IncomeBandGeneratorColumn.IB_INCOME_BAND_ID,
       IncomeBandGeneratorColumn.IB_LOWER_BOUND,
       IncomeBandGeneratorColumn.IB_UPPER_BOUND),
-    "warehouse" -> Array(
+    WAREHOUSE -> Array(
       WarehouseGeneratorColumn.W_WAREHOUSE_SK,
       WarehouseGeneratorColumn.W_WAREHOUSE_ID,
       WarehouseGeneratorColumn.W_WAREHOUSE_NAME,
@@ -490,7 +484,7 @@ object TPCDSTableUtils {
       WarehouseGeneratorColumn.W_ADDRESS_ZIP,
       WarehouseGeneratorColumn.W_ADDRESS_COUNTRY,
       WarehouseGeneratorColumn.W_ADDRESS_GMT_OFFSET),
-    "item" -> Array(
+    ITEM -> Array(
       ItemGeneratorColumn.I_ITEM_SK,
       ItemGeneratorColumn.I_ITEM_ID,
       ItemGeneratorColumn.I_REC_START_DATE_ID,

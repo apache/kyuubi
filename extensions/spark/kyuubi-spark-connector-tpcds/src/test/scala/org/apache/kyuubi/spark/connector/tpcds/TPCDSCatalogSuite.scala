@@ -80,8 +80,8 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     // table *_returns and *_sales have different count in spark.table.count and stats.count
     assertStats("tpcds.sf1.call_center", 1830, 6)
     assertStats("tpcds.sf1.catalog_page", 1628802, 11718)
-    assertStats("tpcds.sf1.catalog_returns", 26560000, 160000)
-    assertStats("tpcds.sf1.catalog_sales", 36160000, 160000)
+    assertStats("tpcds.sf1.catalog_returns", 23915122, 144067)
+    assertStats("tpcds.sf1.catalog_sales", 325789848, 1441548)
     assertStats("tpcds.sf1.customer", 13200000, 100000)
     assertStats("tpcds.sf1.customer_address", 5500000, 50000)
     assertStats("tpcds.sf1.customer_demographics", 80673600, 1920800)
@@ -94,13 +94,13 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     assertStats("tpcds.sf1.reason", 1330, 35)
     assertStats("tpcds.sf1.ship_mode", 1120, 20)
     assertStats("tpcds.sf1.store", 3156, 12)
-    assertStats("tpcds.sf1.store_returns", 32160000, 240000)
-    assertStats("tpcds.sf1.store_sales", 39360000, 240000)
+    assertStats("tpcds.sf1.store_returns", 38526876, 287514)
+    assertStats("tpcds.sf1.store_sales", 472386256, 2880404)
     assertStats("tpcds.sf1.time_dim", 5097600, 86400)
     assertStats("tpcds.sf1.warehouse", 585, 5)
     assertStats("tpcds.sf1.web_page", 5760, 60)
-    assertStats("tpcds.sf1.web_returns", 9720000, 60000)
-    assertStats("tpcds.sf1.web_sales", 13560000, 60000)
+    assertStats("tpcds.sf1.web_returns", 11625606, 71763)
+    assertStats("tpcds.sf1.web_sales", 162580784, 719384)
     assertStats("tpcds.sf1.web_site", 8760, 30)
   }
 

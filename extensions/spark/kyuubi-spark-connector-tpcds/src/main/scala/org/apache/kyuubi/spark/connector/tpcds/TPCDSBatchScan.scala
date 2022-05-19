@@ -39,22 +39,23 @@ class TPCDSBatchScan(
     schema: StructType) extends ScanBuilder
   with SupportsReportStatistics with Batch with Serializable {
 
-  private val rowCountPerTask: Int = 1000000
+  private val _sizeInBytes: Long = TPCDSStatisticsUtils.sizeInBytes(table, scale)
+  private val _numRows: Long = TPCDSStatisticsUtils.numRows(table, scale)
 
-  private val rowCount: Long = new Scaling(scale).getRowCount(table)
+  private val rowCountPerTask: Int = 1000000
 
   private val parallelism: Int =
     if (table.isSmall) 1
     else math.max(
       SparkSession.active.sparkContext.defaultParallelism,
-      (rowCount / rowCountPerTask.toDouble).ceil.toInt)
+      (_numRows / rowCountPerTask.toDouble).ceil.toInt)
 
   override def build: Scan = this
 
   override def toBatch: Batch = this
 
   override def description: String =
-    s"Scan TPC-DS sf$scale.${table.getName}, count: $rowCount, parallelism: $parallelism"
+    s"Scan TPC-DS sf$scale.${table.getName}, count: ${_numRows}, parallelism: $parallelism"
 
   override def readSchema: StructType = schema
 
@@ -66,15 +67,9 @@ class TPCDSBatchScan(
     new TPCDSPartitionReader(chuck.table, chuck.scale, chuck.parallelism, chuck.index, schema)
   }
 
-  override def estimateStatistics(): Statistics = {
-    new Statistics {
-      override def sizeInBytes(): OptionalLong = {
-        OptionalLong.of(rowCount * TPCDSTableUtils.tableAvrRowSizeInBytes
-          .getOrElse(table.getName, 1L))
-      }
-
-      override def numRows(): OptionalLong = OptionalLong.of(rowCount)
-    }
+  override def estimateStatistics: Statistics = new Statistics {
+    override def sizeInBytes: OptionalLong = OptionalLong.of(_sizeInBytes)
+    override def numRows: OptionalLong = OptionalLong.of(_numRows)
   }
 }
 

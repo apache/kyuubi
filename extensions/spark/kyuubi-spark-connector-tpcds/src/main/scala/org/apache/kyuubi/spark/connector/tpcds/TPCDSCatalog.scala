@@ -20,7 +20,6 @@ package org.apache.kyuubi.spark.connector.tpcds
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
 import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table => SparkTable, TableCatalog, TableChange}
@@ -30,9 +29,9 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
-  val tables: Array[String] = TPCDSTableUtils.BASE_TABLES.map(_.getName)
+  val tables: Array[String] = TPCDSSchemaUtils.BASE_TABLES.map(_.getName)
 
-  val scales: Array[Int] = Array(0, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000)
+  val scales: Array[Int] = TPCDSStatisticsUtils.SCALES
 
   val databases: Array[String] = scales.map("sf" + _)
 
@@ -71,29 +70,19 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
   override def renameTable(oldIdent: Identifier, newIdent: Identifier): Unit =
     throw new UnsupportedOperationException
 
-  override def listNamespaces(): Array[Array[String]] = {
-    databases.map(Array(_))
+  override def listNamespaces(): Array[Array[String]] = databases.map(Array(_))
+
+  override def listNamespaces(namespace: Array[String]): Array[Array[String]] = namespace match {
+    case Array() => listNamespaces()
+    case Array(db) if databases contains db => Array.empty
+    case _ => throw new NoSuchNamespaceException(namespace)
   }
 
-  override def listNamespaces(namespace: Array[String]): Array[Array[String]] = {
+  override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] =
     namespace match {
-      case Array() =>
-        listNamespaces()
-      case Array(db) if databases contains db =>
-        Array()
-      case _ =>
-        throw new NoSuchNamespaceException(namespace)
+      case Array(_) => Map.empty[String, String].asJava
+      case _ => throw new NoSuchNamespaceException(namespace)
     }
-  }
-
-  override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] = {
-    namespace match {
-      case Array(_) =>
-        immutable.HashMap[String, String]().asJava
-      case _ =>
-        throw new NoSuchNamespaceException(namespace)
-    }
-  }
 
   override def createNamespace(namespace: Array[String], metadata: util.Map[String, String]): Unit =
     throw new UnsupportedOperationException
