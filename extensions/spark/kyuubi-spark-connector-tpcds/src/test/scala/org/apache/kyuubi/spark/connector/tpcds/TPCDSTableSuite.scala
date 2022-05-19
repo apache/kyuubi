@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
+import scala.collection.JavaConverters._
+
 import io.trino.tpcds.Table
+import io.trino.tpcds.generator.CallCenterGeneratorColumn
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
@@ -58,22 +61,66 @@ class TPCDSTableSuite extends KyuubiFunSuite {
   }
 
   test("test nullable column") {
-    Seq("call_center", "catalog_page", "catalog_returns").foreach { tableName =>
-      val tpcdsTable = Table.getTable(tableName)
-      val sparkConf = new SparkConf().setMaster("local[*]")
-        .set("spark.ui.enabled", "false")
-        .set("spark.sql.catalogImplementation", "in-memory")
-        .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
-      withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-        val sparkTable = spark.table(s"tpcds.sf1.$tableName")
-        var notNullBitMap = 0
-        sparkTable.schema.fields.zipWithIndex.foreach { case (field, i) =>
-          if (!field.nullable) {
-            notNullBitMap |= 1 << i
+    Table.getBaseTables.asScala
+      .filterNot(_.getName == "dbgen_version").foreach { tpcdsTable =>
+        val tableName = tpcdsTable.getName
+        val sparkConf = new SparkConf().setMaster("local[*]")
+          .set("spark.ui.enabled", "false")
+          .set("spark.sql.catalogImplementation", "in-memory")
+          .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+        withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+          val sparkTable = spark.table(s"tpcds.sf1.$tableName")
+          var notNullBitMap = 0
+          sparkTable.schema.fields.zipWithIndex.foreach { case (field, i) =>
+            val index = TPCDSTableUtils.reviseColumnIndex(tpcdsTable, i)
+            if (!field.nullable) {
+              notNullBitMap |= 1 << index
+            }
           }
+          assert(tpcdsTable.getNotNullBitMap == notNullBitMap)
         }
-        assert(tpcdsTable.getNotNullBitMap == notNullBitMap)
       }
+  }
+
+  test("test reviseColumnIndex") {
+    // io.trino.tpcds.row.CallCenterRow.getValues
+    val getValuesColumns = Array(
+      "CC_CALL_CENTER_SK",
+      "CC_CALL_CENTER_ID",
+      "CC_REC_START_DATE_ID",
+      "CC_REC_END_DATE_ID",
+      "CC_CLOSED_DATE_ID",
+      "CC_OPEN_DATE_ID",
+      "CC_NAME",
+      "CC_CLASS",
+      "CC_EMPLOYEES",
+      "CC_SQ_FT",
+      "CC_HOURS",
+      "CC_MANAGER",
+      "CC_MARKET_ID",
+      "CC_MARKET_CLASS",
+      "CC_MARKET_DESC",
+      "CC_MARKET_MANAGER",
+      "CC_DIVISION",
+      "CC_DIVISION_NAME",
+      "CC_COMPANY",
+      "CC_COMPANY_NAME",
+      "CC_STREET_NUMBER",
+      "CC_STREET_NAME",
+      "CC_STREET_TYPE",
+      "CC_SUITE_NUMBER",
+      "CC_CITY",
+      "CC_ADDRESS",
+      "CC_STATE",
+      "CC_ZIP",
+      "CC_COUNTRY",
+      "CC_GMT_OFFSET",
+      "CC_TAX_PERCENTAGE")
+    Table.CALL_CENTER.getColumns.zipWithIndex.map {
+      case (_, i) =>
+        assert(TPCDSTableUtils.reviseColumnIndex(Table.CALL_CENTER, i) ==
+          CallCenterGeneratorColumn.valueOf(getValuesColumns(i)).getGlobalColumnNumber -
+          CallCenterGeneratorColumn.CC_CALL_CENTER_SK.getGlobalColumnNumber)
     }
   }
 }

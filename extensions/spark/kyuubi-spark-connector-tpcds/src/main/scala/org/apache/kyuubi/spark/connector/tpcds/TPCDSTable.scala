@@ -65,7 +65,8 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
     }
     StructType(
       tpcdsTable.getColumns.zipWithIndex.map { case (c, i) =>
-        StructField(reviseColumnName(c), toSparkDataType(c.getType), nullable(i))
+        val index = TPCDSTableUtils.reviseColumnIndex(tpcdsTable, i)
+        StructField(reviseColumnName(c), toSparkDataType(c.getType), nullable(index))
       })
   }
 
