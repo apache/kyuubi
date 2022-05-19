@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark
 import java.io.File
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
+import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 
 import org.scalatest.time.SpanSugar._
@@ -260,7 +261,17 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
     val b1 = new SparkProcessBuilder("test", conf)
     assert(b1.toString.contains(s"--conf spark.files=$testKeytab"))
+  }
 
+  test("SparkProcessBuilder commands immutable") {
+    val conf = KyuubiConf(false)
+    val engineRefId = UUID.randomUUID().toString
+    val pb = new SparkProcessBuilder("", conf, engineRefId)
+    assert(pb.toString.contains(engineRefId))
+    val engineRefId2 = UUID.randomUUID().toString
+    conf.set("spark.yarn.tags", engineRefId2)
+    assert(!pb.toString.contains(engineRefId2))
+    assert(pb.toString.contains(engineRefId))
   }
 }
 

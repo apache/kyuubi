@@ -167,21 +167,15 @@ private[kyuubi] class EngineRef(
     builder = engineType match {
       case SPARK_SQL =>
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-        new SparkProcessBuilder(appUser, conf, extraEngineLog)
+        new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case FLINK_SQL =>
         conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
-        new FlinkProcessBuilder(appUser, conf, extraEngineLog)
+        new FlinkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case TRINO =>
-        new TrinoProcessBuilder(appUser, conf, extraEngineLog)
+        new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
-        new HiveProcessBuilder(appUser, conf, extraEngineLog)
+        new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
     }
-    // TODO: Better to do this inside ProcBuilder
-    KyuubiApplicationManager.tagApplication(
-      engineRefId,
-      builder.shortName,
-      builder.clusterManager(),
-      builder.conf)
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
