@@ -43,7 +43,7 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
   // (fogbugz 2046).
   //
   // https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v3.2.0.pdf
-  val useLegacyColumnName: Boolean = options.getBoolean("useLegacyColumnName", true)
+  val useLegacyColumnName: Boolean = options.getBoolean("useLegacyColumnName", false)
 
   val tablePartitionColumns: Map[String, Array[String]] = Map(
     "catalog_sales" -> Array("cs_sold_date_sk"),

@@ -25,7 +25,7 @@ import org.apache.kyuubi.spark.connector.tpcds.LocalSparkSession.withSparkSessio
 
 class TPCDSTableSuite extends KyuubiFunSuite {
 
-  test("useAnsiStringType (true,false)") {
+  test("useAnsiStringType (true, false)") {
     Seq(true, false).foreach(key => {
       val sparkConf = new SparkConf().setMaster("local[*]")
         .set("spark.ui.enabled", "false")
