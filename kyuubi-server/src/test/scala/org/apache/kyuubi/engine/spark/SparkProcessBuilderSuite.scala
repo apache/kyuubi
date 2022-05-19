@@ -73,7 +73,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("engine log truncation") {
-    val msg = "org.apache.spark.sql.hive."
     val pb =
       new SparkProcessBuilder("kentyao", conf.set("spark.hive.metastore.uris", "thrift://dummy"))
     pb.start
@@ -81,7 +80,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       val error1 = pb.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
-      assert(error1.getMessage.contains(msg))
     }
 
     val pb2 = new SparkProcessBuilder(
@@ -93,7 +91,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       val error1 = pb2.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
-      assert(!error1.getMessage.contains(msg), "stack trace shall be truncated")
     }
 
     val pb3 =
