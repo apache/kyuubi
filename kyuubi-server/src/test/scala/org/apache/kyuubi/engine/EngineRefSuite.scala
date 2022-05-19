@@ -256,6 +256,8 @@ class EngineRefSuite extends KyuubiFunSuite {
           ZooKeeperClientProvider.withZkClient(cloned) { client =>
             try {
               new EngineRef(cloned, user, id).getOrCreate(client)
+            } catch {
+              case e: Exception => e.printStackTrace()
             } finally {
               times(i) = System.currentTimeMillis()
             }
