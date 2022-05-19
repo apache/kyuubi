@@ -149,7 +149,7 @@ class SubmitBatchApp(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest
           submissionState = BatchAppSubmissionState.FAILED
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
-        submissionState = BatchAppSubmissionState.FINISHED
+        submissionState = BatchAppSubmissionState.SUBMITTED
       }
     } finally {
       builder.close()

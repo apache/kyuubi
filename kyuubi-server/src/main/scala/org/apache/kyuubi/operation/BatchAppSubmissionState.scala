@@ -20,5 +20,5 @@ package org.apache.kyuubi.operation
 object BatchAppSubmissionState extends Enumeration {
   type BatchAppSubmissionState = Value
 
-  val PENDING, RUNNING, FINISHED, FAILED, KILLED = Value
+  val PENDING, RUNNING, SUBMITTED, FAILED, KILLED = Value
 }
