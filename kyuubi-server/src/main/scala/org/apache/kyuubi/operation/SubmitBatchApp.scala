@@ -52,7 +52,7 @@ class SubmitBatchApp(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest
 
   private[kyuubi] val batchType: String = batchRequest.getBatchType
 
-  private var submissionState: BatchAppSubmissionState = BatchAppSubmissionState.SUBMITTING
+  private var submissionState: BatchAppSubmissionState = BatchAppSubmissionState.PENDING
 
   private[kyuubi] def getSubmissionState: BatchAppSubmissionState = submissionState
 
@@ -129,7 +129,7 @@ class SubmitBatchApp(session: KyuubiBatchSessionImpl, batchRequest: BatchRequest
       val process = builder.start
       var applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
-        if (submissionState == BatchAppSubmissionState.SUBMITTING && applicationStatus.isDefined) {
+        if (submissionState == BatchAppSubmissionState.PENDING && applicationStatus.isDefined) {
           submissionState = BatchAppSubmissionState.RUNNING
         }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
