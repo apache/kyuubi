@@ -73,7 +73,7 @@ private[kyuubi] class EngineRef(
 
   // In case the multi kyuubi instances have the small gap of timeout, here we add
   // a small amount of time for timeout
-  private val LOCK_TIMEOUT_SPAN_FACTOR = 0.1
+  private val LOCK_TIMEOUT_SPAN_FACTOR = if (Utils.isTesting) 0.5 else 0.1
 
   private var builder: ProcBuilder = _
 
