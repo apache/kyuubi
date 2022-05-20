@@ -59,7 +59,7 @@ class TPCDSTableSuite extends KyuubiFunSuite {
   }
 
   test("test nullable column") {
-    TPCDSTableUtils.BASE_TABLES.foreach { tpcdsTable =>
+    TPCDSSchemaUtils.BASE_TABLES.foreach { tpcdsTable =>
       val tableName = tpcdsTable.getName
       val sparkConf = new SparkConf().setMaster("local[*]")
         .set("spark.ui.enabled", "false")
@@ -69,7 +69,7 @@ class TPCDSTableSuite extends KyuubiFunSuite {
         val sparkTable = spark.table(s"tpcds.sf1.$tableName")
         var notNullBitMap = 0
         sparkTable.schema.fields.zipWithIndex.foreach { case (field, i) =>
-          val index = TPCDSTableUtils.reviseNullColumnIndex(tpcdsTable, i)
+          val index = TPCDSSchemaUtils.reviseNullColumnIndex(tpcdsTable, i)
           if (!field.nullable) {
             notNullBitMap |= 1 << index
           }
@@ -115,7 +115,7 @@ class TPCDSTableSuite extends KyuubiFunSuite {
       "CC_TAX_PERCENTAGE")
     Table.CALL_CENTER.getColumns.zipWithIndex.map {
       case (_, i) =>
-        assert(TPCDSTableUtils.reviseNullColumnIndex(Table.CALL_CENTER, i) ==
+        assert(TPCDSSchemaUtils.reviseNullColumnIndex(Table.CALL_CENTER, i) ==
           CallCenterGeneratorColumn.valueOf(getValuesColumns(i)).getGlobalColumnNumber -
           CallCenterGeneratorColumn.CC_CALL_CENTER_SK.getGlobalColumnNumber)
     }

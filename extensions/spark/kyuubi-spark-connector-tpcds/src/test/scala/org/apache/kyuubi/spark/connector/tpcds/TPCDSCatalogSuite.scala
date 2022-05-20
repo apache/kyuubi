@@ -29,6 +29,8 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
       .config("spark.ui.enabled", "false")
       .config("spark.sql.catalogImplementation", "in-memory")
       .config("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+      .config("spark.sql.cbo.enabled", "true")
+      .config("spark.sql.cbo.planStats.enabled", "true")
       .getOrCreate()
   }
 
@@ -65,38 +67,40 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     assert(spark.table("tpcds.sf1.web_site").count === 30)
   }
 
-  test("tpcds.sf1 size") {
-    def assertStats(tableName: String, sizeInBytes: BigInt = 1): Unit = {
+  test("tpcds.sf1 stats") {
+    def assertStats(tableName: String, sizeInBytes: BigInt, rowCount: BigInt): Unit = {
       val stats = spark.table(tableName).queryExecution.analyzed.stats
       assert(stats.sizeInBytes == sizeInBytes)
-      // See https://issues.apache.org/jira/browse/SPARK-33954
-      // stats.rowCount only has value in Spark3.2 and above
+      // stats.rowCount only has value after SPARK-33954
+      if (SparkUtils.isSparkVersionAtLeast("3.2")) {
+        assert(stats.rowCount.contains(rowCount), tableName)
+      }
     }
 
-    assertStats("tpcds.sf1.call_center", 1830)
-    assertStats("tpcds.sf1.catalog_page", 1628802)
-    assertStats("tpcds.sf1.catalog_returns", 26560000)
-    assertStats("tpcds.sf1.catalog_sales", 36160000)
-    assertStats("tpcds.sf1.customer", 13200000)
-    assertStats("tpcds.sf1.customer_address", 5500000)
-    assertStats("tpcds.sf1.customer_demographics", 80673600)
-    assertStats("tpcds.sf1.date_dim", 10299909)
-    assertStats("tpcds.sf1.household_demographics", 151200)
-    assertStats("tpcds.sf1.income_band", 320)
-    assertStats("tpcds.sf1.inventory", 187920000)
-    assertStats("tpcds.sf1.item", 5058000)
-    assertStats("tpcds.sf1.promotion", 37200)
-    assertStats("tpcds.sf1.reason", 1330)
-    assertStats("tpcds.sf1.ship_mode", 1120)
-    assertStats("tpcds.sf1.store", 3156)
-    assertStats("tpcds.sf1.store_returns", 32160000)
-    assertStats("tpcds.sf1.store_sales", 39360000)
-    assertStats("tpcds.sf1.time_dim", 5097600)
-    assertStats("tpcds.sf1.warehouse", 585)
-    assertStats("tpcds.sf1.web_page", 5760)
-    assertStats("tpcds.sf1.web_returns", 9720000)
-    assertStats("tpcds.sf1.web_sales", 13560000)
-    assertStats("tpcds.sf1.web_site", 8760)
+    assertStats("tpcds.sf1.call_center", 1830, 6)
+    assertStats("tpcds.sf1.catalog_page", 1628802, 11718)
+    assertStats("tpcds.sf1.catalog_returns", 23915122, 144067)
+    assertStats("tpcds.sf1.catalog_sales", 325789848, 1441548)
+    assertStats("tpcds.sf1.customer", 13200000, 100000)
+    assertStats("tpcds.sf1.customer_address", 5500000, 50000)
+    assertStats("tpcds.sf1.customer_demographics", 80673600, 1920800)
+    assertStats("tpcds.sf1.date_dim", 10299909, 73049)
+    assertStats("tpcds.sf1.household_demographics", 151200, 7200)
+    assertStats("tpcds.sf1.income_band", 320, 20)
+    assertStats("tpcds.sf1.inventory", 187920000, 11745000)
+    assertStats("tpcds.sf1.item", 5058000, 18000)
+    assertStats("tpcds.sf1.promotion", 37200, 300)
+    assertStats("tpcds.sf1.reason", 1330, 35)
+    assertStats("tpcds.sf1.ship_mode", 1120, 20)
+    assertStats("tpcds.sf1.store", 3156, 12)
+    assertStats("tpcds.sf1.store_returns", 38526876, 287514)
+    assertStats("tpcds.sf1.store_sales", 472386256, 2880404)
+    assertStats("tpcds.sf1.time_dim", 5097600, 86400)
+    assertStats("tpcds.sf1.warehouse", 585, 5)
+    assertStats("tpcds.sf1.web_page", 5760, 60)
+    assertStats("tpcds.sf1.web_returns", 11625606, 71763)
+    assertStats("tpcds.sf1.web_sales", 162580784, 719384)
+    assertStats("tpcds.sf1.web_site", 8760, 30)
   }
 
   test("nonexistent table") {
