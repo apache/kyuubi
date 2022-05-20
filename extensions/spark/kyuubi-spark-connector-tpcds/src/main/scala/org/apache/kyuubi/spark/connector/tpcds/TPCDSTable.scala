@@ -77,9 +77,8 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
   override def capabilities(): util.Set[TableCapability] =
     Set(TableCapability.BATCH_READ).asJava
 
-  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
+  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder =
     new TPCDSBatchScan(tpcdsTable, scale, schema)
-  }
 
   def toSparkDataType(tpcdsType: ColumnType): DataType = {
     (tpcdsType.getBase, tpcdsType.getPrecision.asScala, tpcdsType.getScale.asScala) match {
