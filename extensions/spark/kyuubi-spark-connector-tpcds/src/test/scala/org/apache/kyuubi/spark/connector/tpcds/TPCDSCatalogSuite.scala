@@ -77,7 +77,6 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
       }
     }
 
-    // table *_returns and *_sales have different count in spark.table.count and stats.count
     assertStats("tpcds.sf1.call_center", 1830, 6)
     assertStats("tpcds.sf1.catalog_page", 1628802, 11718)
     assertStats("tpcds.sf1.catalog_returns", 23915122, 144067)
