@@ -26,6 +26,7 @@ object TPCDSStatisticsUtils {
 
   val SCALES: Array[Int] = Array(0, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000)
 
+  // https://github.com/Teradata/tpcds/issues/26
   def numRows(table: Table, scale: Int): Long = {
     require(SCALES.contains(scale), s"Unsupported scale $scale")
     (table, scale) match {
