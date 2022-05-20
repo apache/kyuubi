@@ -59,8 +59,8 @@ object TPCDSStatisticsUtils {
       case (STORE_RETURNS, 100000) => 28800018820L
       case (STORE_SALES, 1) => 2880404L
       case (STORE_SALES, 10) => 28800991L
-//      case (STORE_SALES, 100) =>
-//      case (STORE_SALES, 300) =>
+      case (STORE_SALES, 100) => 287997024L
+      case (STORE_SALES, 300) => 864001869L
       case (STORE_SALES, 1000) => 2879987999L
       case (STORE_SALES, 3000) => 8639936081L
       case (STORE_SALES, 10000) => 28799983563L
@@ -68,8 +68,8 @@ object TPCDSStatisticsUtils {
       case (STORE_SALES, 100000) => 287997818084L
       case (WEB_RETURNS, 1) => 71763L
       case (WEB_RETURNS, 10) => 719217L
-//      case (WEB_RETURNS, 100) =>
-//      case (WEB_RETURNS, 300) =>
+      case (WEB_RETURNS, 100) => 7197670L
+      case (WEB_RETURNS, 300) => 21599377L
       case (WEB_RETURNS, 1000) => 71997522L
       case (WEB_RETURNS, 3000) => 216003761L
       case (WEB_RETURNS, 10000) => 720020485L
@@ -77,8 +77,8 @@ object TPCDSStatisticsUtils {
       case (WEB_RETURNS, 100000) => 7199904459L
       case (WEB_SALES, 1) => 719384L
       case (WEB_SALES, 10) => 7197566L
-//      case (WEB_SALES, 100) =>
-//      case (WEB_SALES, 300) =>
+      case (WEB_SALES, 100) => 72001237L
+      case (WEB_SALES, 300) => 216009853L
       case (WEB_SALES, 1000) => 720000376L
       case (WEB_SALES, 3000) => 2159968881L
       case (WEB_SALES, 10000) => 7199963324L
