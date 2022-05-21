@@ -21,6 +21,10 @@ import org.apache.kyuubi.server.statestore.api._
 
 trait StateStore {
 
+  def initialize(): Unit
+
+  def shutdown(): Unit
+
   /**
    * Create a batch.
    */

@@ -30,6 +30,13 @@ class InMemoryStateStore(conf: KyuubiConf) extends StateStore {
   private val stateMaxAge = conf.get(KyuubiConf.SERVER_STATE_STORE_MAX_AGE)
   private val stateMaxNumber = conf.get(KyuubiConf.SERVER_STATE_STORE_MAX_NUMBER)
 
+  override def initialize(): Unit = {}
+
+  override def shutdown(): Unit = {
+    batchIdToBatch.clear()
+    closedBatches.clear()
+  }
+
   override def createBatch(batch: Batch): Unit = {
     batchIdToBatch.put(batch.id, batch)
   }
