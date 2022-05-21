@@ -109,6 +109,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     getAllWithPrefix(s"$KYUUBI_BATCH_CONF_PREFIX.${batchType.toLowerCase(Locale.ROOT)}", "")
   }
 
+  /** Get all state store jdbc datasource properties as map */
+  def getStateStoreJDBCDataSourceProperties: Map[String, String] = {
+    getAllWithPrefix(KYUUBI_STATE_STORE_JDBC_DATASOURCE_PREFIX, "datasource.")
+  }
+
   /**
    * Retrieve key-value pairs from [[KyuubiConf]] starting with `dropped.remainder`, and put them to
    * the result map with the `dropped` of key being dropped.
@@ -172,6 +177,7 @@ object KyuubiConf {
   final val KYUUBI_HOME = "KYUUBI_HOME"
   final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
   final val KYUUBI_BATCH_CONF_PREFIX = "kyuubi.batchConf"
+  final val KYUUBI_STATE_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.server.state.store.jdbc.datasource"
 
   val kyuubiConfEntries: java.util.Map[String, ConfigEntry[_]] =
     java.util.Collections.synchronizedMap(new java.util.HashMap[String, ConfigEntry[_]]())
@@ -861,6 +867,30 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createWithDefault("org.apache.kyuubi.server.statestore.InMemoryStateStore")
+
+  val SERVER_STATE_STORE_JDBC_DRIVER: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.driver")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("com.mysql.jdbc.Driver")
+
+  val SERVER_STATE_STORE_JDBC_URL: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.url")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("")
+
+  val SERVER_STATE_STORE_JDBC_USER: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.user")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("")
+
+  val SERVER_STATE_STORE_JDBC_PASSWORD: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.password")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("")
 
   val SERVER_STATE_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.server.state.store.cleaner.enabled")

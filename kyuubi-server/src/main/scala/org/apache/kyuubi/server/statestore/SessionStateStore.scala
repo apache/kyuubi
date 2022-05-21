@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.statestore.api.{Batch => BatchState, BatchRequest => BatchRequestState}
+import org.apache.kyuubi.server.statestore.api.{BatchState => BatchState, BatchMeta => BatchRequestState}
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.ThreadUtils
 
@@ -40,6 +40,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
     _stateStore = StateStoreProvider.createStateStore(conf)
+    _stateStore.initialize()
     super.initialize(conf)
   }
 
@@ -51,6 +52,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
   override def stop(): Unit = {
     super.stop()
     ThreadUtils.shutdown(stateStoreCleaner)
+    _stateStore.shutdown()
   }
 
   def getStateStore: StateStore = _stateStore

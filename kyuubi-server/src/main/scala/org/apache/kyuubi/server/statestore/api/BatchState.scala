@@ -17,11 +17,16 @@
 
 package org.apache.kyuubi.server.statestore.api
 
-case class BatchRequest(
-    batchId: String,
+case class BatchState(
+    id: String,
     batchType: String,
-    resource: String,
-    className: String,
-    name: String,
-    conf: Map[String, String] = Map.empty,
-    args: Seq[String] = Seq.empty)
+    batchOwner: String,
+    kyuubiInstance: String,
+    state: String,
+    createTime: Long,
+    appId: String = null,
+    appName: String = null,
+    appUrl: String = null,
+    appState: String = null,
+    appError: Option[String] = None,
+    endTime: Long = -1L)

@@ -28,12 +28,12 @@ trait StateStore {
   /**
    * Create a batch.
    */
-  def createBatch(batch: Batch): Unit
+  def createBatch(batch: BatchState): Unit
 
   /**
    * Get the persisted batch info by batch id.
    */
-  def getBatch(batchId: String): Batch
+  def getBatch(batchId: String): BatchState
 
   /**
    * Update the batch application info.
@@ -74,22 +74,22 @@ trait StateStore {
       batchOwner: String,
       batchState: String,
       from: Int,
-      size: Int): Seq[Batch]
+      size: Int): Seq[BatchState]
 
   /**
    * Get the batches to recover by the kyuubi instance with offset and size.
    */
-  def getBatchesToRecover(kyuubiInstance: String, from: Int, size: Int): Seq[Batch]
+  def getBatchesToRecover(kyuubiInstance: String, from: Int, size: Int): Seq[BatchState]
 
   /**
    * Save the batch request.
    */
-  def saveBatchRequest(batchRequest: BatchRequest): Unit
+  def saveBatchRequest(batchRequest: BatchMeta): Unit
 
   /**
    * Get the batch request by batch id.
    */
-  def getBatchRequest(batchId: String): BatchRequest
+  def getBatchRequest(batchId: String): BatchMeta
 
   /**
    * Check and cleanup the batches information with maxAge or max batches number limitation.

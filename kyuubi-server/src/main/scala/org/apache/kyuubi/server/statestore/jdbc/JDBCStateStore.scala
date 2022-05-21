@@ -18,26 +18,77 @@
 package org.apache.kyuubi.server.statestore.jdbc
 
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException, Statement}
-import java.util.Properties
-
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.statestore.StateStore
+import org.apache.kyuubi.server.statestore.api.BatchState
+
+import scala.collection.mutable.ListBuffer
 
 class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
-  private var hikariConfig: HikariConfig = _
   private var hikariDataSource: HikariDataSource = _
 
   override def initialize(): Unit = {
-    hikariConfig = new HikariConfig(new Properties())
+    val hikariConfig = new HikariConfig()
+    hikariConfig.setDriverClassName(conf.get(SERVER_STATE_STORE_JDBC_DRIVER))
+    hikariConfig.setJdbcUrl(conf.get(SERVER_STATE_STORE_JDBC_URL))
+    hikariConfig.setUsername(conf.get(SERVER_STATE_STORE_JDBC_USER))
+    hikariConfig.setPassword(conf.get(SERVER_STATE_STORE_JDBC_PASSWORD))
+    conf.getStateStoreJDBCDataSourceProperties.foreach { case (key, value) =>
+      hikariConfig.addDataSourceProperty(key, value)
+    }
     hikariDataSource = new HikariDataSource(hikariConfig)
   }
 
   override def shutdown(): Unit = {
     hikariDataSource.close()
+  }
+
+  override def createBatch(batch: BatchState): Unit = {
+    val connection = getConnection()
+    execute(connection, "")
+  }
+
+  override def getBatch(batchId: String): BatchState = {
+    val connection = getConnection()
+    val rs = executeQuery(connection, "")
+    buildBatches(rs).headOption.orNull
+  }
+
+  private def buildBatches(resultSet: ResultSet): Seq[BatchState] = {
+    val batches = ListBuffer[BatchState]()
+    while (resultSet.next()) {
+      val id = resultSet.getString("id")
+      val batchType = resultSet.getString("batch_type")
+      val batchOwner = resultSet.getString("batch_owner")
+      val kyuubiInstance = resultSet.getString("kyuubi_instance")
+      val state = resultSet.getString("state")
+      val createTime = resultSet.getLong("create_time")
+      val appId = resultSet.getString("app_id")
+      val appName = resultSet.getString("app_name")
+      val appUrl = resultSet.getString("app_url")
+      val appState = resultSet.getString("app_state")
+      val appError = Option(resultSet.getString("app_error"))
+      val endTime = resultSet.getLong("end_time")
+      val batch = BatchState(
+        id,
+        batchType,
+        batchOwner,
+        kyuubiInstance,
+        state,
+        createTime,
+        appId,
+        appName,
+        appUrl,
+        appState,
+        appError,
+        endTime)
+      batches += batch
+    }
+    batches
   }
 
   private def getConnection(autoCommit: Boolean = true): Connection = {

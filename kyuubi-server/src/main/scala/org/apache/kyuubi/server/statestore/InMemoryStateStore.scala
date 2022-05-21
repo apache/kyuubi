@@ -25,8 +25,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.statestore.api._
 
 class InMemoryStateStore(conf: KyuubiConf) extends StateStore {
-  private val batchIdToBatch = new ConcurrentHashMap[String, Batch]().asScala
-  private val closedBatches = new ConcurrentHashMap[String, Batch]().asScala
+  private val batchIdToBatch = new ConcurrentHashMap[String, BatchState]().asScala
+  private val closedBatches = new ConcurrentHashMap[String, BatchState]().asScala
   private val stateMaxAge = conf.get(KyuubiConf.SERVER_STATE_STORE_MAX_AGE)
   private val stateMaxNumber = conf.get(KyuubiConf.SERVER_STATE_STORE_MAX_NUMBER)
 
@@ -37,11 +37,11 @@ class InMemoryStateStore(conf: KyuubiConf) extends StateStore {
     closedBatches.clear()
   }
 
-  override def createBatch(batch: Batch): Unit = {
+  override def createBatch(batch: BatchState): Unit = {
     batchIdToBatch.put(batch.id, batch)
   }
 
-  override def getBatch(batchId: String): Batch = {
+  override def getBatch(batchId: String): BatchState = {
     batchIdToBatch.get(batchId).orElse(closedBatches.get(batchId)).orNull
   }
 
@@ -75,7 +75,7 @@ class InMemoryStateStore(conf: KyuubiConf) extends StateStore {
       batchOwner: String,
       batchState: String,
       from: Int,
-      size: Int): Seq[Batch] = {
+      size: Int): Seq[BatchState] = {
     batchIdToBatch.values.toSeq.union(closedBatches.values.toSeq).sortBy(_.id).filter { batch =>
       Option(batchType).filter(_.nonEmpty).forall(_.equalsIgnoreCase(batch.batchType)) &&
       Option(batchOwner).filter(_.nonEmpty).forall(_.equals(batch.batchOwner)) &&
@@ -86,19 +86,19 @@ class InMemoryStateStore(conf: KyuubiConf) extends StateStore {
   /**
    * For in-memory state store, it does not support batches recovery.
    */
-  override def getBatchesToRecover(kyuubiInstance: String, from: Int, size: Int): Seq[Batch] = {
+  override def getBatchesToRecover(kyuubiInstance: String, from: Int, size: Int): Seq[BatchState] = {
     Seq.empty
   }
 
   /**
    * For in-memory state store, it does not save batch request for recovery.
    */
-  override def saveBatchRequest(batchRequest: BatchRequest): Unit = {}
+  override def saveBatchRequest(batchRequest: BatchMeta): Unit = {}
 
   /**
    * For in-memory state store, it does not get batch request for recovery.
    */
-  override def getBatchRequest(batchId: String): BatchRequest = {
+  override def getBatchRequest(batchId: String): BatchMeta = {
     null
   }
 
