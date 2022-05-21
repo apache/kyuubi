@@ -21,15 +21,17 @@ import org.apache.kyuubi.server.statestore.api._
 
 trait StateStore {
 
+  def shutdown(): Unit
+
   /**
    * Create a batch.
    */
-  def createBatch(batch: Batch): Unit
+  def createBatch(batch: BatchState): Unit
 
   /**
    * Get the persisted batch info by batch id.
    */
-  def getBatch(batchId: String): Batch
+  def getBatch(batchId: String): BatchState
 
   /**
    * Update the batch application info.
@@ -70,31 +72,31 @@ trait StateStore {
       batchOwner: String,
       batchState: String,
       from: Int,
-      size: Int): Seq[Batch]
+      size: Int): Seq[BatchState]
 
   /**
    * Get the batches to recover by the kyuubi instance with offset and size.
    */
-  def getBatchesToRecover(kyuubiInstance: String, from: Int, size: Int): Seq[Batch]
+  def getBatchesToRecover(kyuubiInstance: String, from: Int, size: Int): Seq[BatchState]
 
   /**
-   * Save the batch request.
+   * Save the batch meta data.
    */
-  def saveBatchRequest(batchRequest: BatchRequest): Unit
+  def saveBatchMeta(batchMeta: BatchMeta): Unit
 
   /**
    * Get the batch request by batch id.
    */
-  def getBatchRequest(batchId: String): BatchRequest
+  def getBatchMeta(batchId: String): BatchMeta
 
   /**
    * Check and cleanup the batches information with maxAge or max batches number limitation.
-   * It will cleanup both batch and batch request records.
+   * It will cleanup both batch state and meta data.
    */
   def checkAndCleanupBatches(): Unit
 
   /**
-   * Cleanup batch and batch request by batch id.
+   * Cleanup batch state and meta data by batch id.
    */
   def cleanupBatch(batchId: String): Unit
 }

@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.server.statestore.api
 
-case class BatchRequest(
+case class BatchMeta(
     batchId: String,
+    sessionConf: Map[String, String],
     batchType: String,
     resource: String,
     className: String,

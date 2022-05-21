@@ -17,11 +17,10 @@
 
 package org.apache.kyuubi.server.statestore.api
 
-case class Batch(
+case class BatchState(
     id: String,
     batchType: String,
     batchOwner: String,
-    conf: Map[String, String],
     kyuubiInstance: String,
     state: String,
     createTime: Long,

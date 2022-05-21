@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.statestore.api.{Batch => BatchState, BatchRequest => BatchRequestState}
+import org.apache.kyuubi.server.statestore.api._
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.ThreadUtils
 
@@ -51,6 +51,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
   override def stop(): Unit = {
     super.stop()
     ThreadUtils.shutdown(stateStoreCleaner)
+    _stateStore.shutdown()
   }
 
   def getStateStore: StateStore = _stateStore
@@ -64,13 +65,13 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
       batchId,
       batchRequest.getBatchType,
       batchOwner,
-      conf,
       restInstance,
       OperationState.PENDING.toString,
       System.currentTimeMillis())
 
-    val batchRequestState = BatchRequestState(
+    val batchMeta = BatchMeta(
       batchId,
+      conf,
       batchRequest.getBatchType,
       batchRequest.getResource,
       batchRequest.getClassName,
@@ -79,7 +80,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
       batchRequest.getArgs.asScala)
 
     _stateStore.createBatch(batchState)
-    _stateStore.saveBatchRequest(batchRequestState)
+    _stateStore.saveBatchMeta(batchMeta)
   }
 
   def getBatch(batchId: String): Batch = {
