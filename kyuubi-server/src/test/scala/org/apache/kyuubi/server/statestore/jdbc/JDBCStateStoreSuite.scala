@@ -53,6 +53,7 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
 
     val batchMeta = BatchMeta(
       batchId,
+      "127.0.0.1",
       Map("kyuubi.test" -> "true"),
       "spark",
       "intern",

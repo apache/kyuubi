@@ -129,7 +129,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       setSession(handle, batchSession)
       info(s"$user's batch session with $handle is opened, current opening sessions" +
         s" $getOpenSessionCount")
-      sessionStateStore.createBatch(handle.identifier.toString, username, conf, batchRequest)
+      sessionStateStore.createBatch(
+        handle.identifier.toString,
+        username,
+        ipAddress,
+        conf,
+        batchRequest)
       handle
     } catch {
       case e: Exception =>

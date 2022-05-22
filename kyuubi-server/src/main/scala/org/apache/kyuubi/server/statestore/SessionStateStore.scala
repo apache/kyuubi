@@ -59,6 +59,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
   def createBatch(
       batchId: String,
       batchOwner: String,
+      ipAddress: String,
       conf: Map[String, String],
       batchRequest: BatchRequest): Unit = {
     val batchState = BatchState(
@@ -71,6 +72,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
 
     val batchMeta = BatchMeta(
       batchId,
+      ipAddress,
       conf,
       batchRequest.getBatchType,
       batchRequest.getResource,

@@ -34,6 +34,7 @@ CREATE TABLE BATCH_STATE(
 
 CREATE TABLE BATCH_META(
     BATCH_ID varchar(36) NOT NULL,
+    IP_ADDRESS varchar(512),
     SESSION_CONF clob,
     BATCH_TYPE varchar(1024),
     RESOURCE varchar(1024),

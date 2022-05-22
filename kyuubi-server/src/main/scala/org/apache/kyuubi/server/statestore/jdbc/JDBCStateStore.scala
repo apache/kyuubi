@@ -131,10 +131,11 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     val query =
       s"""
          |INSERT INTO $BATCH_META_TABLE
-         |(BATCH_ID, SESSION_CONF, BATCH_TYPE, RESOURCE, CLASS_NAME, NAME, CONF, ARGS)
+         |(BATCH_ID, IP_ADDRESS, SESSION_CONF, BATCH_TYPE, RESOURCE, CLASS_NAME, NAME, CONF, ARGS)
          |values
          |(
          |${sqlColValue(batchMeta.batchId)},
+         |${sqlColValue(batchMeta.ipAddress)},
          |${sqlColValue(valueAsString(batchMeta.sessionConf))},
          |${sqlColValue(batchMeta.batchType)},
          |${sqlColValue(batchMeta.resource)},
@@ -289,6 +290,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       val batches = ListBuffer[BatchMeta]()
       while (resultSet.next()) {
         val batchId = resultSet.getString("BATCH_ID")
+        val ipAddress = resultSet.getString("IP_ADDRESS")
         val sessionConf = string2Map(resultSet.getString("SESSION_CONF"))
         val batchType = resultSet.getString("BATCH_TYPE")
         val resource = resultSet.getString("RESOURCE")
@@ -298,6 +300,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
         val args = string2Seq(resultSet.getString("ARGS"))
         val batch = BatchMeta(
           batchId,
+          ipAddress,
           sessionConf,
           batchType,
           resource,
