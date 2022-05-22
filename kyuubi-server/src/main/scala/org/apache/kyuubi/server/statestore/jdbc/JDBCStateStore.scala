@@ -92,9 +92,9 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   override def createBatch(batch: BatchState): Unit = {
     val query =
       s"""
-         |insert into $BATCH_STATE_TABLE
-         |(id, batch_type, batch_owner, kyuubi_instance, state, create_time)
-         |values
+         |INSERT INTO $BATCH_STATE_TABLE
+         |(ID, BATCH_TYPE, BATCH_OWNER, KYUUBI_INSTANCE, STATE, CREATE_TIME)
+         |VALUES
          |(
          |${sqlColValue(batch.id)},
          |${sqlColValue(batch.batchType)},
@@ -115,14 +115,14 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       appError: Option[String]): Unit = {
     val query =
       s"""
-         |update $BATCH_STATE_TABLE
-         |set
-         |app_id=${sqlColValue(appId)},
-         |app_name=${sqlColValue(appName)},
-         |app_url=${sqlColValue(appUrl)},
-         |app_state=${sqlColValue(appState)},
-         |app_error=${sqlColValue(appError.orNull)}
-         |where id=${sqlColValue(batchId)}
+         |UPDATE $BATCH_STATE_TABLE
+         |SET
+         |APP_ID=${sqlColValue(appId)},
+         |APP_NAME=${sqlColValue(appName)},
+         |APP_URL=${sqlColValue(appUrl)},
+         |APP_STATE=${sqlColValue(appState)},
+         |APP_ERROR=${sqlColValue(appError.orNull)}
+         |WHERE id=${sqlColValue(batchId)}
         """.stripMargin
     executeQueries(query)
   }
@@ -130,8 +130,8 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   override def saveBatchMeta(batchMeta: BatchMeta): Unit = {
     val query =
       s"""
-         |insert into $BATCH_META_TABLE
-         |(batch_id, session_conf, batch_type, resource, class_name, name, conf, args)
+         |INSERT INTO $BATCH_META_TABLE
+         |(BATCH_ID, SESSION_CONF, BATCH_TYPE, RESOURCE, CLASS_NAME, NAME, CONF, ARGS)
          |values
          |(
          |${sqlColValue(batchMeta.batchId)},
@@ -149,11 +149,11 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   override def closeBatch(batchId: String, state: String, endTime: Long): Unit = {
     val query =
       s"""
-         |update $BATCH_STATE_TABLE
-         |set
-         |state=${sqlColValue(state)},
-         |end_time=${sqlColValue(endTime)}
-         |where id=${sqlColValue(batchId)}
+         |UPDATE $BATCH_STATE_TABLE
+         |SET
+         |STATE=${sqlColValue(state)},
+         |END_TIME=${sqlColValue(endTime)}
+         |WHERE ID=${sqlColValue(batchId)}
         """.stripMargin
     executeQueries(query)
   }
@@ -168,13 +168,13 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     queryBuilder.append(s"SELECT * FROM $BATCH_STATE_TABLE")
     val whereConditions = ListBuffer[String]()
     Option(batchType).filter(_.nonEmpty).foreach { _ =>
-      whereConditions += s" UPPER(batch_type)=${sqlColValue(batchType.toUpperCase(Locale.ROOT))} "
+      whereConditions += s" UPPER(BATCH_TYPE)=${sqlColValue(batchType.toUpperCase(Locale.ROOT))} "
     }
     Option(batchOwner).filter(_.nonEmpty).foreach { _ =>
-      whereConditions += s" batch_owner=${sqlColValue(batchOwner)} "
+      whereConditions += s" BATCH_OWNER=${sqlColValue(batchOwner)} "
     }
     Option(batchState).filter(_.nonEmpty).foreach { _ =>
-      whereConditions += s" state=${sqlColValue(batchState)} "
+      whereConditions += s" STATE=${sqlColValue(batchState)} "
     }
     if (whereConditions.nonEmpty) {
       queryBuilder.append(" WHERE " + whereConditions.mkString(" AND "))
@@ -195,9 +195,9 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       s"""
          |SELECT * FROM $BATCH_STATE_TABLE
          |WHERE
-         |kyuubi_instance=${sqlColValue(kyuubiInstance)}
-         |AND end_time IS NULL
-         |ORDER BY id
+         |KYUUBI_INSTANCE=${sqlColValue(kyuubiInstance)}
+         |AND END_TIME IS NULL
+         |ORDER BY ID
          |{LIMIT $size OFFSET $from}
          |""".stripMargin
     withConnection() { connection =>
@@ -208,21 +208,21 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
 
   override def getBatch(batchId: String): BatchState = {
     withConnection() { connection =>
-      val rs = execute(connection, s"select * from $BATCH_STATE_TABLE where id='$batchId'")
+      val rs = execute(connection, s"SELECT * FROM $BATCH_STATE_TABLE WHERE ID='$batchId'")
       buildBatches(rs).headOption.orNull
     }
   }
 
   override def getBatchMeta(batchId: String): BatchMeta = {
     withConnection() { connection =>
-      val rs = execute(connection, s"select * from $BATCH_META_TABLE where batch_id='$batchId'")
+      val rs = execute(connection, s"SELECT * FROM $BATCH_META_TABLE where BATCH_ID='$batchId'")
       buildMetaSeq(rs).headOption.orNull
     }
   }
 
   override def cleanupBatch(batchId: String): Unit = {
-    val query1 = s"delete from $BATCH_META_TABLE where batch_id=${sqlColValue(batchId)}"
-    val query2 = s"delete from $BATCH_STATE_TABLE where id=${sqlColValue(batchId)}"
+    val query1 = s"DELETE FROM $BATCH_META_TABLE WHERE BATCH_ID=${sqlColValue(batchId)}"
+    val query2 = s"DELETE FROM $BATCH_STATE_TABLE where ID=${sqlColValue(batchId)}"
     executeQueries(query1, query2)
   }
 
@@ -230,19 +230,19 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     val minEndTime = System.currentTimeMillis() - stateMaxAge
     val query1 =
       s"""
-         |delete from $BATCH_META_TABLE
-         |where
-         |batch_id in (
-         |select id from $BATCH_STATE_TABLE
-         |where
-         |end_time is not null and end_time < ${sqlColValue(minEndTime)}
+         |DELETE FROM $BATCH_META_TABLE
+         |WHERE
+         |BATCH_ID IN (
+         |SELECT ID FROM $BATCH_STATE_TABLE
+         |WHERE
+         |END_TIME IS NOT NULL AND END_TIME < ${sqlColValue(minEndTime)}
          |)
          |""".stripMargin
     val query2 =
       s"""
-         |delete from $BATCH_STATE_TABLE
-         |where
-         |end_time is not null and end_time < ${sqlColValue(minEndTime)}
+         |DELETE FROM $BATCH_STATE_TABLE
+         |WHERE
+         |END_TIME IS NOT NULL AND END_TIME < ${sqlColValue(minEndTime)}
          |""".stripMargin
     executeQueries(query1, query2)
   }
@@ -251,18 +251,18 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     try {
       val batches = ListBuffer[BatchState]()
       while (resultSet.next()) {
-        val id = resultSet.getString("id")
-        val batchType = resultSet.getString("batch_type")
-        val batchOwner = resultSet.getString("batch_owner")
-        val kyuubiInstance = resultSet.getString("kyuubi_instance")
-        val state = resultSet.getString("state")
-        val createTime = resultSet.getLong("create_time")
-        val appId = resultSet.getString("app_id")
-        val appName = resultSet.getString("app_name")
-        val appUrl = resultSet.getString("app_url")
-        val appState = resultSet.getString("app_state")
-        val appError = Option(resultSet.getString("app_error"))
-        val endTime = resultSet.getLong("end_time")
+        val id = resultSet.getString("ID")
+        val batchType = resultSet.getString("BATCH_TYPE")
+        val batchOwner = resultSet.getString("BATCH_OWNER")
+        val kyuubiInstance = resultSet.getString("KYUUBI_INSTANCE")
+        val state = resultSet.getString("STATE")
+        val createTime = resultSet.getLong("CREATE_TIME")
+        val appId = resultSet.getString("APP_ID")
+        val appName = resultSet.getString("APP_NAME")
+        val appUrl = resultSet.getString("APP_URL")
+        val appState = resultSet.getString("APP_STATE")
+        val appError = Option(resultSet.getString("APP_ERROR"))
+        val endTime = resultSet.getLong("END_TIME")
         val batch = BatchState(
           id,
           batchType,
@@ -288,14 +288,14 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     try {
       val batches = ListBuffer[BatchMeta]()
       while (resultSet.next()) {
-        val batchId = resultSet.getString("batch_id")
-        val sessionConf = string2Map(resultSet.getString("session_conf"))
-        val batchType = resultSet.getString("batch_type")
-        val resource = resultSet.getString("resource")
-        val className = resultSet.getString("class_name")
-        val name = resultSet.getString("name")
-        val conf = string2Map(resultSet.getString("conf"))
-        val args = string2Seq(resultSet.getString("args"))
+        val batchId = resultSet.getString("BATCH_ID")
+        val sessionConf = string2Map(resultSet.getString("SESSION_CONF"))
+        val batchType = resultSet.getString("BATCH_TYPE")
+        val resource = resultSet.getString("RESOURCE")
+        val className = resultSet.getString("CLASS_NAME")
+        val name = resultSet.getString("NAME")
+        val conf = string2Map(resultSet.getString("CONF"))
+        val args = string2Seq(resultSet.getString("ARGS"))
         val batch = BatchMeta(
           batchId,
           sessionConf,
@@ -397,6 +397,6 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
 }
 
 object JDBCStateStore {
-  private val BATCH_STATE_TABLE = "batch_state"
-  private val BATCH_META_TABLE = "batch_meta"
+  private val BATCH_STATE_TABLE = "BATCH_STATE"
+  private val BATCH_META_TABLE = "BATCH_META"
 }
