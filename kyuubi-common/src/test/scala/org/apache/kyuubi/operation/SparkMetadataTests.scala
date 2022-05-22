@@ -430,7 +430,7 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
       assert(metaData.supportsLimitedOuterJoins)
       assert(metaData.getSchemaTerm === "database")
       assert(metaData.getProcedureTerm === "UDF")
-      assert(metaData.getCatalogTerm === "instance")
+      assert(metaData.getCatalogTerm === "catalog")
       assert(metaData.getCatalogSeparator === ".")
       assert(metaData.supportsSchemasInDataManipulation)
       assert(!metaData.supportsSchemasInProcedureCalls)
