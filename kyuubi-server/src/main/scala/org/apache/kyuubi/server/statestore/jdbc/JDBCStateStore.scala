@@ -179,7 +179,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     if (whereConditions.nonEmpty) {
       queryBuilder.append(" WHERE " + whereConditions.mkString(" AND "))
     }
-    queryBuilder.append(" ORDER BY id ")
+    queryBuilder.append(" ORDER BY KEY_ID ")
     queryBuilder.append(s" {LIMIT $size OFFSET $from} ")
     withConnection() { connection =>
       val rs = execute(connection, queryBuilder.toString())
@@ -197,7 +197,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |WHERE
          |KYUUBI_INSTANCE=${sqlColValue(kyuubiInstance)}
          |AND END_TIME IS NULL
-         |ORDER BY ID
+         |ORDER BY KEY_ID
          |{LIMIT $size OFFSET $from}
          |""".stripMargin
     withConnection() { connection =>
