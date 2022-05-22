@@ -15,31 +15,31 @@
 -- limitations under the License.
 --
 
-create table if not exists batch_state(
-    id varchar(128) not null,
-    batch_type varchar(1024) not null,
-    batch_owner varchar(1024) not null,
-    kyuubi_instance varchar(1024) not null,
-    state varchar(128) not null,
-    create_time BIGINT not null,
-    app_id varchar(128),
-    app_name varchar(1024),
-    app_url varchar(1024),
-    app_state varchar(128),
-    app_error mediumtext,
-    end_time BIGINT,
-    PRIMARY KEY id
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+CREATE TABLE IF NOT EXISTS BATCH_STATE(
+    `KEY_ID` bigint PRIMARY KEY AUTO_INCREMENT,
+    `ID` varchar(128) NOT NULL,
+    `BATCH_TYPE` varchar(1024) NOT NULL,
+    `BATCH_OWNER` varchar(1024) NOT NULL,
+    `KYUUBI_INSTANCE` varchar(1024) NOT NULL,
+    `STATE` varchar(128) NOT NULL,
+    `create_time` BIGINT NOT NULL,
+    `app_id` varchar(128),
+    `app_name` varchar(1024),
+    `app_url` varchar(1024),
+    `app_state` varchar(128),
+    `app_error` mediumtext,
+    `end_time` bigint
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-create table if not exists batch_meta(
-    batch_id varchar(128) not null,
-    session_conf mediumtext,
-    batch_type varchar(1024),
-    resource varchar(1024),
-    className varchar(1024),
-    name varchar(1024),
-    conf mediumtext,
-    args mediumtext,
-    PRIMARY KEY batch_id
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;;
+CREATE TABLE IF NOT EXISTS BATCH_META(
+    `BATCHID` varchar(128) NOT NULL,
+    `SESSION_CONF` mediumtext,
+    `BATCH_TYPE` varchar(1024),
+    `RESOURCE` varchar(1024),
+    `CLASS_NAME` varchar(1024),
+    `NAME` varchar(1024),
+    `CONF` mediumtext,
+    `ARGS` mediumtext,
+    PRIMARY KEY (`BATCH_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;;
