@@ -141,9 +141,8 @@ object RowSet {
         val tStringValue = new TStringValue
         val fieldValue = row.getField(ordinal)
         fieldValue match {
-          case _: String =>
-            val stringValue = fieldValue.asInstanceOf[String]
-            tStringValue.setValue(stringValue)
+          case value: String =>
+            tStringValue.setValue(value)
           case _: StringData =>
             val stringValue = fieldValue.asInstanceOf[StringData]
             tStringValue.setValue(stringValue.toString)
