@@ -174,7 +174,7 @@ object RowSet {
     // if there's zero row, set empty as the column
     var sampleField: Object = null
     var i = -1
-    while (sampleField == null && i < rows.length) {
+    while (sampleField == null && rows.nonEmpty && i < rows.length) {
       i += 1
       sampleField = rows(i).getField(ordinal)
     }
