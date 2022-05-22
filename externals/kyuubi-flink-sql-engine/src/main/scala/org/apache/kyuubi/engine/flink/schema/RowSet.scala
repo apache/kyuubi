@@ -169,8 +169,8 @@ object RowSet {
 
   private def toTColumn(rows: Seq[Row], ordinal: Int, logicalType: LogicalType): TColumn = {
     val nulls = new java.util.BitSet()
-    // for each column, determine the conversion class by sampling the first row
-    // if there's zero row, set empty as the column
+    // for each column, determine the conversion class by sampling the first non-value value
+    // if there's no row, set the entire column empty
     var sampleField: Object = null
     var i = -1
     while (sampleField == null && i + 1 < rows.length) {
