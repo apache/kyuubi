@@ -68,9 +68,9 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     val classLoader = getClass.getClassLoader
     val initScriptUrl: Option[URL] = dbType match {
       case DERBY =>
-        Option(classLoader.getResource("sql/derby/statestore-schema.sql"))
+        Option(classLoader.getResource("sql/derby/statestore-schema.derby.sql"))
       case MYSQL =>
-        Option(classLoader.getResource("sql/mysql/statestore-schema.sql"))
+        Option(classLoader.getResource("sql/mysql/statestore-schema.mysql.sql"))
       case CUSTOM => None
     }
     initScriptUrl.foreach { url =>
