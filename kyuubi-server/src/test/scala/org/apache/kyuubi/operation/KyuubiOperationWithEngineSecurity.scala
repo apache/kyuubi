@@ -21,7 +21,7 @@ import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
-import org.apache.kyuubi.service.authentication.{EngineSecurityAccessor, ZooKeeperEngineSecuritySecretProviderImpl}
+import org.apache.kyuubi.service.authentication.{InternalSecurityAccessor, ZooKeeperInternalSecuritySecretProviderImpl}
 
 class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with HiveJDBCTestHelper {
   import DiscoveryClientProvider._
@@ -32,11 +32,11 @@ class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with HiveJDBCTe
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
-      .set(KyuubiConf.ENGINE_SECURITY_ENABLED, false)
+      .set(KyuubiConf.INTERNAL_SECURITY_ENABLED, false)
       .set(
-        KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
-        classOf[ZooKeeperEngineSecuritySecretProviderImpl].getCanonicalName)
-      .set(HighAvailabilityConf.HA_ZK_ENGINE_SECURE_SECRET_NODE, engineSecretNode)
+        KyuubiConf.INTERNAL_SECURITY_SECRET_PROVIDER,
+        classOf[ZooKeeperInternalSecuritySecretProviderImpl].getCanonicalName)
+      .set(HighAvailabilityConf.HA_ZK_INTERNAL_SECURE_SECRET_NODE, engineSecretNode)
   }
 
   override def beforeAll(): Unit = {
@@ -46,13 +46,13 @@ class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with HiveJDBCTe
       discoveryClient.startSecretNode("PERSISTENT", engineSecretNode, "_ENGINE_SECRET_")
     }
 
-    conf.set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
-    EngineSecurityAccessor.initialize(conf, true)
+    conf.set(KyuubiConf.INTERNAL_SECURITY_ENABLED, true)
+    InternalSecurityAccessor.initialize(conf, true)
   }
 
   test("engine security") {
     withJdbcStatement() { statement =>
-      val rs = statement.executeQuery(s"set spark.${KyuubiConf.ENGINE_SECURITY_ENABLED.key}")
+      val rs = statement.executeQuery(s"set spark.${KyuubiConf.INTERNAL_SECURITY_ENABLED.key}")
       assert(rs.next())
       assert(rs.getString(2).contains("true"))
     }

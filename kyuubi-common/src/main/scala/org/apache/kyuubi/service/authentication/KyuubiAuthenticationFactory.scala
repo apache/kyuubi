@@ -56,8 +56,8 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     }
   }
 
-  if (conf.get(ENGINE_SECURITY_ENABLED)) {
-    EngineSecurityAccessor.initialize(conf, isServer)
+  if (conf.get(INTERNAL_SECURITY_ENABLED)) {
+    InternalSecurityAccessor.initialize(conf, isServer)
   }
 
   private def getSaslProperties: java.util.Map[String, String] = {

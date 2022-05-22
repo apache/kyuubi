@@ -33,7 +33,7 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.service.authentication.EngineSecurityAccessor
+import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -97,8 +97,8 @@ class KyuubiSessionImpl(
     withDiscoveryClient(sessionConf) { discoveryClient =>
       val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
       val passwd =
-        if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
-          EngineSecurityAccessor.get().issueToken()
+        if (sessionManager.getConf.get(INTERNAL_SECURITY_ENABLED)) {
+          InternalSecurityAccessor.get().issueToken()
         } else {
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }

@@ -23,7 +23,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SECURE_SECRET_NODE
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 
-class ZooKeeperEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvider {
+@deprecated
+class ZooKeeperEngineSecuritySecretProviderImpl extends InternalSecuritySecretProvider {
   import DiscoveryClientProvider._
 
   private var conf: KyuubiConf = _
@@ -33,11 +34,12 @@ class ZooKeeperEngineSecuritySecretProviderImpl extends EngineSecuritySecretProv
   }
 
   override def getSecret(): String = {
-    conf.get(HA_ZK_ENGINE_SECURE_SECRET_NODE).map { zkNode =>
+    Option(conf.get(HA_ZK_ENGINE_SECURE_SECRET_NODE)).filter(_.nonEmpty).map { zkNode =>
       withDiscoveryClient[String](conf) { discoveryClient =>
         new String(discoveryClient.getData(zkNode), StandardCharsets.UTF_8)
       }
     }.getOrElse(
-      throw new IllegalArgumentException(s"${HA_ZK_ENGINE_SECURE_SECRET_NODE.key} is not defined"))
+      throw new IllegalArgumentException(
+        s"${HA_ZK_ENGINE_SECURE_SECRET_NODE.key} is not defined"))
   }
 }

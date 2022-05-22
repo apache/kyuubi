@@ -17,8 +17,28 @@
 
 package org.apache.kyuubi.service.authentication
 
-class EngineSecureAuthenticationProviderImpl extends PasswdAuthenticationProvider {
-  override def authenticate(user: String, password: String): Unit = {
-    InternalSecurityAccessor.get().authToken(password)
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.INTERNAL_SECURITY_SECRET_PROVIDER
+
+trait InternalSecuritySecretProvider {
+
+  /**
+   * Initialize with kyuubi conf.
+   */
+  def initialize(conf: KyuubiConf): Unit
+
+  /**
+   * Get the secret to encrypt and decrypt the secure access token.
+   */
+  def getSecret(): String
+}
+
+object InternalSecuritySecretProvider {
+  def create(conf: KyuubiConf): InternalSecuritySecretProvider = {
+    val providerClass = Class.forName(conf.get(INTERNAL_SECURITY_SECRET_PROVIDER))
+    val provider = providerClass.getConstructor().newInstance()
+      .asInstanceOf[InternalSecuritySecretProvider]
+    provider.initialize(conf)
+    provider
   }
 }

@@ -24,14 +24,14 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
-class EngineSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
-  val cryptoKeyLengthBytes = conf.get(ENGINE_SECURITY_CRYPTO_KEY_LENGTH) / java.lang.Byte.SIZE
-  val cryptoIvLength = conf.get(ENGINE_SECURITY_CRYPTO_IV_LENGTH)
-  val cryptoKeyAlgorithm = conf.get(ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM)
-  val cryptoCipher = conf.get(ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION)
+class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
+  val cryptoKeyLengthBytes = conf.get(INTERNAL_SECURITY_CRYPTO_KEY_LENGTH) / java.lang.Byte.SIZE
+  val cryptoIvLength = conf.get(INTERNAL_SECURITY_CRYPTO_IV_LENGTH)
+  val cryptoKeyAlgorithm = conf.get(INTERNAL_SECURITY_CRYPTO_KEY_ALGORITHM)
+  val cryptoCipher = conf.get(INTERNAL_SECURITY_CRYPTO_CIPHER_TRANSFORMATION)
 
-  private val tokenMaxLifeTime: Long = conf.get(ENGINE_SECURITY_TOKEN_MAX_LIFETIME)
-  private val provider: EngineSecuritySecretProvider = EngineSecuritySecretProvider.create(conf)
+  private val tokenMaxLifeTime: Long = conf.get(INTERNAL_SECURITY_TOKEN_MAX_LIFETIME)
+  private val provider: InternalSecuritySecretProvider = InternalSecuritySecretProvider.create(conf)
   private val (encryptor, decryptor) =
     initializeForAuth(cryptoCipher, normalizeSecret(provider.getSecret()))
 
@@ -109,16 +109,16 @@ class EngineSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
   }
 }
 
-object EngineSecurityAccessor extends Logging {
-  @volatile private var _engineSecurityAccessor: EngineSecurityAccessor = _
+object InternalSecurityAccessor extends Logging {
+  @volatile private var _engineSecurityAccessor: InternalSecurityAccessor = _
 
   def initialize(conf: KyuubiConf, isServer: Boolean): Unit = {
     if (_engineSecurityAccessor == null) {
-      _engineSecurityAccessor = new EngineSecurityAccessor(conf, isServer)
+      _engineSecurityAccessor = new InternalSecurityAccessor(conf, isServer)
     }
   }
 
-  def get(): EngineSecurityAccessor = {
+  def get(): InternalSecurityAccessor = {
     _engineSecurityAccessor
   }
 }

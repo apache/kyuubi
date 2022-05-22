@@ -20,18 +20,18 @@ package org.apache.kyuubi.service.authentication
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 
-class EngineSecurityAccessorSuite extends KyuubiFunSuite {
+class InternalSecurityAccessorSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
   conf.set(
-    KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
-    classOf[UserDefinedEngineSecuritySecretProvider].getCanonicalName)
+    KyuubiConf.INTERNAL_SECURITY_SECRET_PROVIDER,
+    classOf[UserDefinedInternalSecuritySecretProvider].getCanonicalName)
 
   test("test encrypt/decrypt, issue token/auth token") {
     Seq("AES/CBC/PKCS5PADDING", "AES/CTR/NoPadding").foreach { cipher =>
       val newConf = conf.clone
-      newConf.set(KyuubiConf.ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION, cipher)
+      newConf.set(KyuubiConf.INTERNAL_SECURITY_CRYPTO_CIPHER_TRANSFORMATION, cipher)
 
-      val secureAccessor = new EngineSecurityAccessor(newConf, true)
+      val secureAccessor = new InternalSecurityAccessor(newConf, true)
       val value = "tokenToEncrypt"
       val encryptedValue = secureAccessor.encrypt(value)
       assert(secureAccessor.decrypt(encryptedValue) === value)
@@ -40,7 +40,7 @@ class EngineSecurityAccessorSuite extends KyuubiFunSuite {
       secureAccessor.authToken(token)
       intercept[KyuubiSQLException](secureAccessor.authToken("invalidToken"))
 
-      val engineSecureAccessor = new EngineSecurityAccessor(newConf, false)
+      val engineSecureAccessor = new InternalSecurityAccessor(newConf, false)
       engineSecureAccessor.authToken(token)
     }
   }

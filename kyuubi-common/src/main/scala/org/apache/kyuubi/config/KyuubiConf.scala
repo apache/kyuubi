@@ -1248,58 +1248,111 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("engine_operation_logs")
 
+  @deprecated(s"using ${INTERNAL_SECURITY_ENABLED.key} instead", "1.6.0")
   val ENGINE_SECURITY_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.security.enabled")
-      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
+      .doc("(deprecated) Whether to enable the internal secure access between Kyuubi server " +
+        "and engine.")
       .version("1.5.0")
       .booleanConf
       .createWithDefault(false)
 
+  @deprecated(s"using ${INTERNAL_SECURITY_TOKEN_MAX_LIFETIME.key} instead", "1.6.0")
   val ENGINE_SECURITY_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
     buildConf("kyuubi.engine.security.token.max.lifetime")
-      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
+      .doc("(deprecated) The max lifetime of the token used for secure access between Kyuubi " +
+        "server and engine.")
       .version("1.5.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(10).toMillis)
 
+  @deprecated(s"using ${INTERNAL_SECURITY_SECRET_PROVIDER.key} instead", "1.6.0")
   val ENGINE_SECURITY_SECRET_PROVIDER: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.secret.provider")
-      .doc("The class used to manage the engine security secret. This class must be a " +
-        "subclass of EngineSecuritySecretProvider.")
+      .doc("(deprecated) The class used to manage the engine security secret. " +
+        "This class must be a subclass of EngineSecuritySecretProvider.")
       .version("1.5.0")
       .stringConf
       .createWithDefault(
-        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecuritySecretProviderImpl")
+        "org.apache.kyuubi.service.authentication.ZooKeeperInternalSecuritySecretProviderImpl")
 
+  @deprecated(s"using ${INTERNAL_SECURITY_CRYPTO_KEY_LENGTH.key} instead", "1.6.0")
   val ENGINE_SECURITY_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
     buildConf("kyuubi.engine.security.crypto.keyLength")
-      .doc("The length in bits of the encryption key to generate. " +
+      .doc("(deprecated) The length in bits of the encryption key to generate. " +
         "Valid values are 128, 192 and 256")
       .version("1.5.0")
       .intConf
       .checkValues(Set(128, 192, 256))
       .createWithDefault(128)
 
+  @deprecated(s"using ${INTERNAL_SECURITY_CRYPTO_IV_LENGTH.key} instead", "1.6.0")
   val ENGINE_SECURITY_CRYPTO_IV_LENGTH: ConfigEntry[Int] =
     buildConf("kyuubi.engine.security.crypto.ivLength")
-      .doc("Initial vector length, in bytes.")
+      .doc("(deprecated) Initial vector length, in bytes.")
       .version("1.5.0")
       .intConf
       .createWithDefault(16)
 
+  @deprecated(s"using ${INTERNAL_SECURITY_CRYPTO_KEY_ALGORITHM.key} instead", "1.6.0")
   val ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.crypto.keyAlgorithm")
-      .doc("The algorithm for generated secret keys.")
+      .doc("(deprecated) The algorithm for generated secret keys.")
       .version("1.5.0")
       .stringConf
       .createWithDefault("AES")
 
+  @deprecated(s"using ${INTERNAL_SECURITY_CRYPTO_CIPHER_TRANSFORMATION.key} instead", "1.6.0")
   val ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.crypto.cipher")
-      .doc("The cipher transformation to use for encrypting engine access token.")
+      .doc("(deprecated) The cipher transformation to use for encrypting engine access token.")
       .version("1.5.0")
       .stringConf
       .createWithDefault("AES/CBC/PKCS5PADDING")
+
+  val INTERNAL_SECURITY_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.internal.security.enabled")
+      .doc("Whether to enable the internal secure access between Kyuubi server and server/engine.")
+      .version("1.6.0")
+      .fallbackConf(ENGINE_SECURITY_ENABLED)
+
+  val INTERNAL_SECURITY_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
+    buildConf("kyuubi.internal.security.token.max.lifetime")
+      .doc("The max lifetime of the token used for internal secure access.")
+      .version("1.6.0")
+      .fallbackConf(ENGINE_SECURITY_TOKEN_MAX_LIFETIME)
+
+  val INTERNAL_SECURITY_SECRET_PROVIDER: ConfigEntry[String] =
+    buildConf("kyuubi.internal.security.secret.provider")
+      .doc("The class used to manage the internal security secret. This class must be a " +
+        "subclass of InternalSecuritySecretProvider.")
+      .version("1.6.0")
+      .fallbackConf(ENGINE_SECURITY_SECRET_PROVIDER)
+
+  val INTERNAL_SECURITY_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
+    buildConf("kyuubi.internal.security.crypto.keyLength")
+      .doc("The length in bits of the encryption key to generate. " +
+        "Valid values are 128, 192 and 256")
+      .version("1.6.0")
+      .fallbackConf(ENGINE_SECURITY_CRYPTO_KEY_LENGTH)
+
+  val INTERNAL_SECURITY_CRYPTO_IV_LENGTH: ConfigEntry[Int] =
+    buildConf("kyuubi.internal.security.crypto.ivLength")
+      .doc("Initial vector length, in bytes.")
+      .version("1.6.0")
+      .fallbackConf(ENGINE_SECURITY_CRYPTO_IV_LENGTH)
+
+  val INTERNAL_SECURITY_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
+    buildConf("kyuubi.internal.security.crypto.keyAlgorithm")
+      .doc("The algorithm for generated secret keys.")
+      .version("1.6.0")
+      .fallbackConf(ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM)
+
+  val INTERNAL_SECURITY_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
+    buildConf("kyuubi.internal.security.crypto.cipher")
+      .doc("The cipher transformation to use for encrypting internal access token.")
+      .version("1.6.0")
+      .fallbackConf(ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION)
 
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.name")
