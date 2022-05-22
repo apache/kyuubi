@@ -863,44 +863,55 @@ object KyuubiConf {
 
   val SERVER_STATE_STORE_CLASS: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.class")
-      .doc("Class name for state store.")
+      .doc("Class name for server state store.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("org.apache.kyuubi.server.statestore.jdbc.JDBCStateStore")
 
-  val SERVER_STATE_STORE_JDBC_DRIVER: OptionalConfigEntry[String] =
-    buildConf("kyuubi.server.state.store.jdbc.driver")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
-
   val SERVER_STATE_STORE_JDBC_DB_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.db.type")
+      .doc("The database type for server jdbc state store.<ul>" +
+        " <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
+        " <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li>" +
+        " <li>CUSTOM: User-defined database type, need specify the jdbc driver in addition.</li>")
       .version("1.6.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .createWithDefault("DERBY")
 
+  val SERVER_STATE_STORE_JDBC_DRIVER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.driver")
+      .doc("JDBC driver class name for server jdbc state store.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
   val SERVER_STATE_STORE_JDBC_DB_SCHEMA_INIT: ConfigEntry[Boolean] =
     buildConf("kyuubi.server.state.store.jdbc.db.schema.init")
+      .doc("Whether to init the jdbc state store database schema.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
 
   val SERVER_STATE_STORE_JDBC_URL: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.url")
+      .doc("The jdbc url for server jdbc state store. By defaults, it is a DERBY in-memory" +
+        " database url, and the state information is not shared across kyuubi instances." +
+        " To enable multiple kyuubi instances high available, please specify a production jdbc url")
       .version("1.6.0")
       .stringConf
       .createWithDefault("jdbc:derby:memory:kyuubi_state_store_db;create=true")
 
   val SERVER_STATE_STORE_JDBC_USER: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.user")
+      .doc("The username for server jdbc state store.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("")
 
   val SERVER_STATE_STORE_JDBC_PASSWORD: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.password")
+      .doc("The password for server jdbc state store.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("")

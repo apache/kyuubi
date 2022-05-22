@@ -39,13 +39,11 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   import JDBCStateStore._
 
   private val dbType = DataBaseType.withName(conf.get(SERVER_STATE_STORE_JDBC_DB_TYPE))
+  private val driverClassOpt = conf.get(SERVER_STATE_STORE_JDBC_DRIVER)
   private val driverClass = dbType match {
-    case DERBY =>
-      "org.apache.derby.jdbc.AutoloadedDriver"
-    case MYSQL =>
-      "com.mysql.jdbc.Driver"
-    case CUSTOM =>
-      conf.get(SERVER_STATE_STORE_JDBC_DRIVER).getOrElse(
+    case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
+    case MYSQL => driverClassOpt.getOrElse("com.mysql.jdbc.Driver")
+    case CUSTOM => driverClassOpt.getOrElse(
         throw new IllegalArgumentException("No jdbc driver defined"))
   }
 
