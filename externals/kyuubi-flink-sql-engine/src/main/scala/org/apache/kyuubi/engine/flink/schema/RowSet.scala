@@ -171,12 +171,7 @@ object RowSet {
     val nulls = new java.util.BitSet()
     // for each column, determine the conversion class by sampling the first non-value value
     // if there's no row, set the entire column empty
-    var sampleField: Object = null
-    var i = -1
-    while (sampleField == null && i + 1 < rows.length) {
-      i += 1
-      sampleField = rows(i).getField(ordinal)
-    }
+    val sampleField = rows.iterator.map(_.getField(ordinal)).find(_ ne null).orNull
     logicalType match {
       case _: BooleanType =>
         val values = getOrSetAsNull[lang.Boolean](rows, ordinal, nulls, true)
