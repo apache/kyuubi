@@ -112,8 +112,6 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   private boolean isBeeLineMode;
 
-  private String currentCatalog;
-
   /**
    * Get all direct HiveServer2 URLs from a ZooKeeper based HiveServer2 URL
    *
@@ -1166,7 +1164,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   @Override
   public String getCatalog() throws SQLException {
-    return currentCatalog;
+    return "";
   }
 
   /*
@@ -1516,10 +1514,12 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   @Override
   public void setCatalog(String catalog) throws SQLException {
+    // Per JDBC spec, if the driver does not support catalogs,
+    // it will silently ignore this request.
     if (isClosed) {
       throw new SQLException("Connection is closed");
     }
-    currentCatalog = catalog;
+    return;
   }
 
   /*
