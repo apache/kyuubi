@@ -437,13 +437,11 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
       assert(metaData.supportsSchemasInTableDefinitions)
       assert(!metaData.supportsSchemasInIndexDefinitions)
       assert(!metaData.supportsSchemasInPrivilegeDefinitions)
-      // This is actually supported, but hive jdbc package return false
-      assert(!metaData.supportsCatalogsInDataManipulation)
-      assert(!metaData.supportsCatalogsInProcedureCalls)
-      // This is actually supported, but hive jdbc package return false
-      assert(!metaData.supportsCatalogsInTableDefinitions)
-      assert(!metaData.supportsCatalogsInIndexDefinitions)
-      assert(!metaData.supportsCatalogsInPrivilegeDefinitions)
+      assert(metaData.supportsCatalogsInDataManipulation)
+      assert(metaData.supportsCatalogsInProcedureCalls)
+      assert(metaData.supportsCatalogsInTableDefinitions)
+      assert(metaData.supportsCatalogsInIndexDefinitions)
+      assert(metaData.supportsCatalogsInPrivilegeDefinitions)
       assert(!metaData.supportsPositionedDelete)
       assert(!metaData.supportsPositionedUpdate)
       assert(!metaData.supportsSelectForUpdate)
