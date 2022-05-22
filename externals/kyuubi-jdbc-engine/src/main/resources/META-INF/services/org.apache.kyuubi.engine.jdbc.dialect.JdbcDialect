@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.apache.kyuubi.engine.jdbc.doris.DorisJdbcOperationManager
+org.apache.kyuubi.engine.jdbc.dialect.DorisDialect

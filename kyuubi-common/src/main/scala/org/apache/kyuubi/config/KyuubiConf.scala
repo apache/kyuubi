@@ -1550,4 +1550,11 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createOptional
+
+  val ENGINE_JDBC_SHORT_NAME: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.type")
+      .doc("The short name of jdbc type")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 }

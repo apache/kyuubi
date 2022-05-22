@@ -16,41 +16,34 @@
  */
 package org.apache.kyuubi.engine.jdbc
 
-import java.util.concurrent.CountDownLatch
-
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, JDBC_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine.{countDownLatch, currentEngine}
+import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine.currentEngine
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
-class JdbcSQLEngine extends Serverable("JdbcEngine") {
+class JdbcSQLEngine extends Serverable("JdbcSQLEngine") {
 
   override val backendService = new JdbcBackendService()
   override val frontendServices =
     Seq(new JdbcTBinaryFrontendService(this))
-
-  override protected def stopServer(): Unit = {
-    countDownLatch.countDown()
-  }
 
   override def start(): Unit = {
     super.start()
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
     backendService.sessionManager.startTerminatingChecker(() => {
-      assert(currentEngine.isDefined)
-      currentEngine.get.stop()
+      currentEngine.foreach(_.stop())
     })
   }
+
+  override protected def stopServer(): Unit = {}
 }
 
 object JdbcSQLEngine extends Logging {
-
-  private val countDownLatch = new CountDownLatch(1)
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
@@ -73,12 +66,11 @@ object JdbcSQLEngine extends Logging {
     SignalRegister.registerLogger(logger)
 
     try {
+      Utils.fromCommandLineArgs(args, kyuubiConf)
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
       kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
       startEngine()
-      // blocking main thread
-      countDownLatch.await()
     } catch {
       case t: Throwable if currentEngine.isDefined =>
         currentEngine.foreach { engine =>

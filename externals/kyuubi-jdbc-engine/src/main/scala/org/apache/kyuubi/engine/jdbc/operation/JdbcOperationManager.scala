@@ -17,19 +17,19 @@
 package org.apache.kyuubi.engine.jdbc.operation
 
 import java.util
-import java.util.ServiceLoader
 
-import scala.collection.JavaConverters._
-
-import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_TYPE
+import org.apache.kyuubi.config.KyuubiConf.OPERATION_INCREMENTAL_COLLECT
+import org.apache.kyuubi.engine.jdbc.dialect.{JdbcDialect, JdbcDialects}
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
-class JdbcOperationManager extends OperationManager("JdbcOperationManager")
+class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOperationManager")
   with SupportServiceLoader {
+
+  private lazy val dialect: JdbcDialect = JdbcDialects.get(conf)
 
   override def name(): String = "jdbc"
 
@@ -39,22 +39,29 @@ class JdbcOperationManager extends OperationManager("JdbcOperationManager")
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val conf = session.sessionManager.getConf
+    val incrementalCollect = conf.get(OPERATION_INCREMENTAL_COLLECT)
+    val executeStatement =
+      new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
+    addOperation(executeStatement)
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getTypeInfoOperation(session)
+    addOperation(operation)
   }
 
   override def newGetCatalogsOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getCatalogsOperation(session)
+    addOperation(operation)
   }
 
   override def newGetSchemasOperation(
       session: Session,
       catalog: String,
       schema: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getSchemasOperation(session)
+    addOperation(operation)
   }
 
   override def newGetTablesOperation(
@@ -63,11 +70,13 @@ class JdbcOperationManager extends OperationManager("JdbcOperationManager")
       schemaName: String,
       tableName: String,
       tableTypes: util.List[String]): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getTablesOperation(session)
+    addOperation(operation)
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getTableTypesOperation(session)
+    addOperation(operation)
   }
 
   override def newGetColumnsOperation(
@@ -76,7 +85,8 @@ class JdbcOperationManager extends OperationManager("JdbcOperationManager")
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getColumnsOperation(session)
+    addOperation(operation)
   }
 
   override def newGetFunctionsOperation(
@@ -84,7 +94,8 @@ class JdbcOperationManager extends OperationManager("JdbcOperationManager")
       catalogName: String,
       schemaName: String,
       functionName: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getColumnsOperation(session)
+    addOperation(operation)
   }
 
   override def newGetPrimaryKeysOperation(
@@ -92,7 +103,8 @@ class JdbcOperationManager extends OperationManager("JdbcOperationManager")
       catalogName: String,
       schemaName: String,
       tableName: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getPrimaryKeysOperation(session)
+    addOperation(operation)
   }
 
   override def newGetCrossReferenceOperation(
@@ -103,31 +115,11 @@ class JdbcOperationManager extends OperationManager("JdbcOperationManager")
       foreignCatalog: String,
       foreignSchema: String,
       foreignTable: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val operation = dialect.getCrossReferenceOperation(session)
+    addOperation(operation)
   }
 
   override def getQueryId(operation: Operation): String = {
     throw KyuubiSQLException.featureNotSupported()
-  }
-}
-
-object JdbcOperationManager extends Logging {
-
-  def getOperationManager(kyuubiConf: KyuubiConf): JdbcOperationManager = {
-    val engineType = kyuubiConf.get(ENGINE_TYPE)
-    val serviceLoader = ServiceLoader.load(
-      classOf[JdbcOperationManager],
-      Thread.currentThread().getContextClassLoader)
-    serviceLoader.asScala.filter(_.name().equalsIgnoreCase(engineType)).toList match {
-      case Nil =>
-        throw new KyuubiException(s"Don't find any operation manager for engine: $engineType.")
-      case head :: Nil =>
-        head
-      case managers =>
-        warn(s"Found multiple operation manager for engine: $engineType")
-        managers
-          .filter(_.getClass.getCanonicalName.startsWith("org.apache.kyuubi"))
-          .head
-    }
   }
 }

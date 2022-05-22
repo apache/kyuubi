@@ -33,8 +33,7 @@ class JdbcSessionManager(name: String)
 
   override protected def isServer: Boolean = false
 
-  override lazy val operationManager: OperationManager =
-    JdbcOperationManager.getOperationManager(conf)
+  override lazy val operationManager: OperationManager = new JdbcOperationManager(conf)
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf

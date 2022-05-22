@@ -26,5 +26,6 @@ trait WithDorisEngine extends WithJdbcEngine with WithDorisContainer {
     ENGINE_JDBC_CONNECTION_URL.key -> s"jdbc:mysql://$feUrl",
     ENGINE_JDBC_CONNECTION_USER.key -> "root",
     ENGINE_JDBC_CONNECTION_PASSWORD.key -> "",
-    ENGINE_TYPE.key -> "doris")
+    ENGINE_TYPE.key -> "jdbc",
+    ENGINE_JDBC_SHORT_NAME.key -> "doris")
 }

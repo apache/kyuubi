@@ -19,6 +19,8 @@ package org.apache.kyuubi.engine.jdbc.operation
 import org.apache.hive.service.rpc.thrift.TRowSet
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.jdbc.dialect.{JdbcDialect, JdbcDialects}
 import org.apache.kyuubi.engine.jdbc.schema.{Row, Schema}
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
@@ -31,6 +33,10 @@ abstract class JdbcOperation(opType: OperationType, session: Session)
   protected var schema: Schema = _
 
   protected var iter: FetchIterator[Row] = _
+
+  protected lazy val conf: KyuubiConf = session.sessionManager.getConf
+
+  protected lazy val dialect: JdbcDialect = JdbcDialects.get(conf)
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)

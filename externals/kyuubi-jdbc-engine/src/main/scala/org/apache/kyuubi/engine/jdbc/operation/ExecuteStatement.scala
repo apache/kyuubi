@@ -16,17 +16,18 @@
  */
 package org.apache.kyuubi.engine.jdbc.operation
 
-import java.sql.{Connection, Types}
+import java.sql.{Connection, Statement, Types}
+
+import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.jdbc.JdbcStatement
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.ResultSetWrapper
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
 import org.apache.kyuubi.session.Session
 
-abstract class ExecuteStatement(
+class ExecuteStatement(
     session: Session,
     override val statement: String,
     override val shouldRunAsync: Boolean,
@@ -50,13 +51,12 @@ abstract class ExecuteStatement(
     }
   }
 
-  protected def getJdbcStatement(): JdbcStatement
-
   private def executeStatement(): Unit = {
     setState(OperationState.RUNNING)
+    var jdbcStatement: Statement = null
     try {
       val connection: Connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
-      val jdbcStatement = getJdbcStatement().createStatement(connection)
+      jdbcStatement = dialect.createStatement(connection)
       val hasResult = jdbcStatement.execute(statement)
       if (hasResult) {
         val resultSetWrapper = new ResultSetWrapper(jdbcStatement)
@@ -87,6 +87,9 @@ abstract class ExecuteStatement(
     } catch {
       onError(true)
     } finally {
+      if (jdbcStatement != null) {
+        jdbcStatement.closeOnCompletion()
+      }
       shutdownTimeoutMonitor()
     }
   }
@@ -97,4 +100,17 @@ abstract class ExecuteStatement(
   }
 
   override protected def afterRun(): Unit = {}
+
+  override protected def toTRowSet(taken: Iterator[Row]): TRowSet = {
+    val rowSetHelper = dialect.getRowSetHelper()
+    rowSetHelper.toTRowSet(
+      taken.toList.map(_.values),
+      schema.columns,
+      getProtocolVersion)
+  }
+
+  override def getResultSetSchema: TTableSchema = {
+    val schemaHelper = dialect.getSchemaHelper()
+    schemaHelper.toTTTableSchema(schema.columns)
+  }
 }
