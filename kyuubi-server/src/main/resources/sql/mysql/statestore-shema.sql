@@ -16,30 +16,30 @@
 --
 
 CREATE TABLE IF NOT EXISTS BATCH_STATE(
-    `KEY_ID` bigint PRIMARY KEY AUTO_INCREMENT,
-    `ID` varchar(128) NOT NULL,
-    `BATCH_TYPE` varchar(1024) NOT NULL,
-    `BATCH_OWNER` varchar(1024) NOT NULL,
-    `KYUUBI_INSTANCE` varchar(1024) NOT NULL,
-    `STATE` varchar(128) NOT NULL,
-    `create_time` BIGINT NOT NULL,
-    `app_id` varchar(128),
-    `app_name` varchar(1024),
-    `app_url` varchar(1024),
-    `app_state` varchar(128),
-    `app_error` mediumtext,
-    `end_time` bigint
+    KEY_ID bigint PRIMARY KEY AUTO_INCREMENT,
+    ID varchar(128) NOT NULL,
+    BATCH_TYPE varchar(1024) NOT NULL,
+    BATCH_OWNER varchar(1024) NOT NULL,
+    KYUUBI_INSTANCE varchar(1024) NOT NULL,
+    STATE varchar(128) NOT NULL,
+    CREATE_TIME BIGINT NOT NULL,
+    APP_ID varchar(128),
+    APP_NAME varchar(1024),
+    APP_URL varchar(1024),
+    APP_STATE varchar(128),
+    APP_ERROR mediumtext,
+    END_TIME bigint
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE IF NOT EXISTS BATCH_META(
-    `BATCHID` varchar(128) NOT NULL,
-    `SESSION_CONF` mediumtext,
-    `BATCH_TYPE` varchar(1024),
-    `RESOURCE` varchar(1024),
-    `CLASS_NAME` varchar(1024),
-    `NAME` varchar(1024),
-    `CONF` mediumtext,
-    `ARGS` mediumtext,
-    PRIMARY KEY (`BATCH_ID`)
+    BATCH_ID varchar(128) NOT NULL,
+    SESSION_CONF mediumtext,
+    BATCH_TYPE varchar(1024),
+    RESOURCE varchar(1024),
+    CLASS_NAME varchar(1024),
+    NAME varchar(1024),
+    CONF mediumtext,
+    ARGS mediumtext,
+    PRIMARY KEY (BATCH_ID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;;
