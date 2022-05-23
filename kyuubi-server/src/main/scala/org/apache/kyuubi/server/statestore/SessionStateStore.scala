@@ -60,29 +60,23 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
       batchId: String,
       batchOwner: String,
       ipAddress: String,
-      conf: Map[String, String],
+      sessionConf: Map[String, String],
       batchRequest: BatchRequest): Unit = {
-    val batchState = BatchState(
+    val batchMetadata = BatchMetadata(
       batchId,
-      batchRequest.getBatchType,
       batchOwner,
-      restInstance,
-      OperationState.PENDING.toString,
-      System.currentTimeMillis())
-
-    val batchMeta = BatchMeta(
-      batchId,
       ipAddress,
-      conf,
+      sessionConf,
+      restInstance,
       batchRequest.getBatchType,
       batchRequest.getResource,
       batchRequest.getClassName,
       batchRequest.getName,
       batchRequest.getConf.asScala.toMap,
-      batchRequest.getArgs.asScala)
-
-    _stateStore.createBatch(batchState)
-    _stateStore.saveBatchMeta(batchMeta)
+      batchRequest.getArgs.asScala,
+      OperationState.PENDING.toString,
+      System.currentTimeMillis())
+    _stateStore.createBatch(batchMetadata)
   }
 
   def getBatch(batchId: String): Batch = {
@@ -113,22 +107,22 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     _stateStore.getBatches(batchType, null, null, from, size).map(buildBatch)
   }
 
-  private def buildBatch(batchInfo: BatchState): Batch = {
+  private def buildBatch(batchMetadata: BatchMetadata): Batch = {
     val batchAppInfo = Map(
-      APP_ID_KEY -> Option(batchInfo.appId),
-      APP_NAME_KEY -> Option(batchInfo.appName),
-      APP_STATE_KEY -> Option(batchInfo.appState),
-      APP_URL_KEY -> Option(batchInfo.appUrl),
-      APP_ERROR_KEY -> batchInfo.appError)
+      APP_ID_KEY -> Option(batchMetadata.appId),
+      APP_NAME_KEY -> Option(batchMetadata.appName),
+      APP_STATE_KEY -> Option(batchMetadata.appState),
+      APP_URL_KEY -> Option(batchMetadata.appUrl),
+      APP_ERROR_KEY -> batchMetadata.appError)
       .filter(_._2.isDefined)
       .map(info => (info._1, info._2.get))
 
     new Batch(
-      batchInfo.id,
-      batchInfo.batchType,
+      batchMetadata.batchId,
+      batchMetadata.batchType,
       batchAppInfo.asJava,
-      batchInfo.kyuubiInstance,
-      batchInfo.state)
+      batchMetadata.kyuubiInstance,
+      batchMetadata.state)
   }
 
   private def startStateStoreCleaner(): Unit = {

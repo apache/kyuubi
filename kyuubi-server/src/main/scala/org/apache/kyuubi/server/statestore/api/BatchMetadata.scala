@@ -15,10 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore.jdbc
+package org.apache.kyuubi.server.statestore.api
 
-object DataBaseType extends Enumeration {
-  type DataBaseType = Value
-
-  val DERBY, MYSQL, CUSTOM = Value
-}
+case class BatchMetadata(
+    batchId: String,
+    batchOwner: String,
+    ipAddress: String,
+    sessionConf: Map[String, String],
+    kyuubiInstance: String,
+    batchType: String,
+    resource: String,
+    className: String,
+    name: String,
+    conf: Map[String, String],
+    args: Seq[String],
+    state: String,
+    createTime: Long,
+    appId: String = null,
+    appName: String = null,
+    appUrl: String = null,
+    appState: String = null,
+    appError: Option[String] = None,
+    endTime: Long = 0L)

@@ -15,12 +15,19 @@
 -- limitations under the License.
 --
 
-CREATE TABLE IF NOT EXISTS BATCH_STATE(
+CREATE TABLE IF NOT EXISTS BATCH_METADATA(
     KEY_ID bigint PRIMARY KEY AUTO_INCREMENT,
-    ID varchar(36) NOT NULL,
-    BATCH_TYPE varchar(1024) NOT NULL,
+    BATCH_ID varchar(36) NOT NULL,
     BATCH_OWNER varchar(1024) NOT NULL,
+    IP_ADDRESS varchar(512),
+    SESSION_CONF mediumtext,
     KYUUBI_INSTANCE varchar(1024) NOT NULL,
+    BATCH_TYPE varchar(1024) NOT NULL,
+    RESOURCE varchar(1024),
+    CLASS_NAME varchar(1024),
+    NAME varchar(1024),
+    CONF mediumtext,
+    ARGS mediumtext,
     STATE varchar(128) NOT NULL,
     CREATE_TIME BIGINT NOT NULL,
     APP_ID varchar(128),
@@ -30,17 +37,3 @@ CREATE TABLE IF NOT EXISTS BATCH_STATE(
     APP_ERROR text,
     END_TIME bigint
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-CREATE TABLE IF NOT EXISTS BATCH_META(
-    BATCH_ID varchar(36) NOT NULL,
-    IP_ADDRESS varchar(512),
-    SESSION_CONF mediumtext,
-    BATCH_TYPE varchar(1024),
-    RESOURCE varchar(1024),
-    CLASS_NAME varchar(1024),
-    NAME varchar(1024),
-    CONF mediumtext,
-    ARGS mediumtext,
-    PRIMARY KEY (BATCH_ID)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;;

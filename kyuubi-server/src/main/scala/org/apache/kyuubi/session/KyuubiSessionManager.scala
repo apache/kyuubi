@@ -24,7 +24,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.HandleIdentifier
-import org.apache.kyuubi.client.api.v1.dto.BatchRequest
+import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
@@ -168,6 +168,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def getBatchSessionImpl(sessionHandle: SessionHandle): KyuubiBatchSessionImpl = {
     getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+  }
+
+  def getBatch(batchId: String): Batch = {
+    sessionStateStore.getBatch(batchId)
+  }
+
+  def getBatchesByType(batchType: String, from: Int, size: Int): Seq[Batch] = {
+    sessionStateStore.getBatchesByType(batchType, from, size)
   }
 
   override def start(): Unit = synchronized {
