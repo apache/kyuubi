@@ -122,7 +122,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |APP_URL=${sqlColValue(appUrl)},
          |APP_STATE=${sqlColValue(appState)},
          |APP_ERROR=${sqlColValue(appError.orNull)}
-         |WHERE id=${sqlColValue(batchId)}
+         |WHERE ID=${sqlColValue(batchId)}
         """.stripMargin
     executeQueries(query)
   }
@@ -132,7 +132,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       s"""
          |INSERT INTO $BATCH_META_TABLE
          |(BATCH_ID, IP_ADDRESS, SESSION_CONF, BATCH_TYPE, RESOURCE, CLASS_NAME, NAME, CONF, ARGS)
-         |values
+         |VALUES
          |(
          |${sqlColValue(batchMeta.batchId)},
          |${sqlColValue(batchMeta.ipAddress)},
@@ -208,15 +208,17 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   }
 
   override def getBatch(batchId: String): BatchState = {
+    val query = s"SELECT * FROM $BATCH_STATE_TABLE WHERE ID=${sqlColValue(batchId)}"
     withConnection() { connection =>
-      val rs = execute(connection, s"SELECT * FROM $BATCH_STATE_TABLE WHERE ID='$batchId'")
+      val rs = execute(connection, query)
       buildBatches(rs).headOption.orNull
     }
   }
 
   override def getBatchMeta(batchId: String): BatchMeta = {
+    val query = s"SELECT * FROM $BATCH_META_TABLE where BATCH_ID=${sqlColValue(batchId)}"
     withConnection() { connection =>
-      val rs = execute(connection, s"SELECT * FROM $BATCH_META_TABLE where BATCH_ID='$batchId'")
+      val rs = execute(connection, query)
       buildMetaSeq(rs).headOption.orNull
     }
   }
