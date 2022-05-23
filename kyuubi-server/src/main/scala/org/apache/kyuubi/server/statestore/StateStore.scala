@@ -51,10 +51,15 @@ trait StateStore {
       appError: Option[String]): Unit
 
   /**
-   * Close a batch with final state and end time.
+   * Close a batch with final state, end time and final application info.
    * @param batchId the batch id.
    * @param state the batch final state.
    * @param endTime  the batch end time.
+   * @param appId the batch application id.
+   * @param appName the batch application name.
+   * @param appUrl the batch application tracking url.
+   * @param appState the batch application state.
+   * @param appError the batch application error for diagnose.
    */
   def closeBatch(
       batchId: String,
