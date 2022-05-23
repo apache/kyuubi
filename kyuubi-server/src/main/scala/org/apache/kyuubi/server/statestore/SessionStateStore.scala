@@ -117,6 +117,10 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     _stateStore.getBatches(batchType, null, null, from, size).map(buildBatch)
   }
 
+  def getBatchesToRecover(kyuubiInstance: String, from: Int, size: Int): Seq[BatchMetadata] = {
+    _stateStore.getBatchesToRecover(kyuubiInstance, from, size)
+  }
+
   private def buildBatch(batchMetadata: BatchMetadata): Batch = {
     val batchAppInfo = Map(
       APP_ID_KEY -> Option(batchMetadata.appId),

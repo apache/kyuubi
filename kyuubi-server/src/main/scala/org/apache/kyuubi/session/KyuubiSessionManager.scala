@@ -25,7 +25,7 @@ import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
@@ -205,7 +205,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           s"Error recovering batch session for $user client ip $ipAddress, due to ${e.getMessage}",
           e)
     }
-
   }
 
   def newBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
@@ -255,8 +254,27 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
     }
-    // TODO: support to recover batch sessions with session state store
+    recoverBatchSessions()
     super.start()
+  }
+
+  private def recoverBatchSessions(): Unit = {
+    val host = conf.get(FRONTEND_REST_BIND_HOST)
+      .getOrElse(Utils.findLocalInetAddress.getHostAddress)
+    val port = conf.get(FRONTEND_REST_BIND_PORT)
+    val kyuubiInstance = s"$host:$port"
+    var from = 0
+    val perBatchNumber = 10
+    var lastRecoverNum = Int.MaxValue
+    while (lastRecoverNum < perBatchNumber) {
+      val batchMetadataList = sessionStateStore.getBatchesToRecover(
+        kyuubiInstance,
+        from,
+        perBatchNumber)
+      batchMetadataList.foreach(meta => Utils.tryLogNonFatalError(recoverBatchSession(meta)))
+      lastRecoverNum = batchMetadataList.size
+      from += lastRecoverNum
+    }
   }
 
   override protected def isServer: Boolean = true

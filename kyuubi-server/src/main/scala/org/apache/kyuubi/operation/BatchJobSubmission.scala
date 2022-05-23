@@ -105,10 +105,15 @@ class BatchJobSubmission(
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
       try {
-        batchMetadata.map(_.appId).filter(_.nonEmpty) match {
-          case Some(appId) => monitorSubmittedApp(appId)
-          case _ => submitBatchJob()
-        }
+        batchMetadata.map { metadata =>
+          Option(metadata.appId).filter(_.nonEmpty).orElse {
+            currentApplicationState.flatMap(_.get(ApplicationOperation.APP_ID_KEY))
+          } match {
+            case Some(appId) => monitorSubmittedApp(appId)
+            case _ => submitBatchJob()
+          }
+        }.getOrElse(submitBatchJob())
+
         setState(OperationState.FINISHED)
       } catch onError()
     }
@@ -153,15 +158,13 @@ class BatchJobSubmission(
   }
 
   private def monitorSubmittedApp(appId: String): Unit = {
-    try {
-      info(s"Monitoring $batchType batch application: $appId")
-      applicationStatus = currentApplicationState
-      if (applicationStatus.isEmpty) {
-        info("The batch application not found, assume that it has finished.")
-      } else {
-        if (applicationFailed(applicationStatus)) {
-          throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
-        }
+    info(s"Monitoring $batchType batch application: $appId")
+    applicationStatus = currentApplicationState
+    if (applicationStatus.isEmpty) {
+      info("The batch application not found, assume that it has finished.")
+    } else {
+      if (applicationFailed(applicationStatus)) {
+        throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
       }
     }
   }
