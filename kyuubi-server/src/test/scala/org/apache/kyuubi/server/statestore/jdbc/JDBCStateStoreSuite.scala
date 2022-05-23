@@ -74,7 +74,25 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
 
     jdbcStateStore.createBatch(batch)
 
-    val batches = jdbcStateStore.getBatches("SPARK", null, null, 0, Int.MaxValue)
+    var batches = jdbcStateStore.getBatches("SPARK", null, null, 0, Int.MaxValue)
+    assert(batches == Seq(batchState))
+
+    batches = jdbcStateStore.getBatches("SPARK", "kyuubi", null, 0, Int.MaxValue)
+    assert(batches == Seq(batchState))
+
+    batches = jdbcStateStore.getBatches("SPARK", "kyuubi", "PENDING", 0, Int.MaxValue)
+    assert(batches == Seq(batchState))
+
+    batches = jdbcStateStore.getBatches("SPARK", "kyuubi", "RUNNING", 0, Int.MaxValue)
+    assert(batches.isEmpty)
+
+    batches = jdbcStateStore.getBatches("SPARK", "no_kyuubi", "PENDING", 0, Int.MaxValue)
+    assert(batches.isEmpty)
+
+    batches = jdbcStateStore.getBatches("SPARK", null, "PENDING", 0, Int.MaxValue)
+    assert(batches == Seq(batchState))
+
+    batches = jdbcStateStore.getBatches(null, null, null, 0, Int.MaxValue)
     assert(batches == Seq(batchState))
 
     val batchesToRecover = jdbcStateStore.getBatchesToRecover(kyuubiInstance, 0, Int.MaxValue)
