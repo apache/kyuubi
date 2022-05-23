@@ -27,6 +27,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.server.statestore.api.BatchMetadata
 
 class KyuubiBatchSessionImpl(
     protocol: TProtocolVersion,
@@ -36,9 +37,12 @@ class KyuubiBatchSessionImpl(
     conf: Map[String, String],
     override val sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
-    batchRequest: BatchRequest)
+    batchRequest: BatchRequest,
+    batchMetadata: Option[BatchMetadata] = None)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
-  override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
+  override val handle: SessionHandle = batchMetadata.map { metadata =>
+    sessionManager.getBatchSessionHandle(metadata.batchId, protocol)
+  }.getOrElse(sessionManager.newBatchSessionHandle(protocol))
 
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] =

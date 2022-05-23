@@ -27,6 +27,7 @@ import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.server.statestore.api.BatchMetadata
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionImpl, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -65,8 +66,9 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
 
   def newBatchJobSubmissionOperation(
       session: KyuubiBatchSessionImpl,
-      batchRequest: BatchRequest): BatchJobSubmission = {
-    val operation = new BatchJobSubmission(session, batchRequest)
+      batchRequest: BatchRequest,
+      batchMetadata: Option[BatchMetadata] = None): BatchJobSubmission = {
+    val operation = new BatchJobSubmission(session, batchRequest, batchMetadata)
     addOperation(operation)
     operation
   }
