@@ -1480,7 +1480,6 @@
                         <fork>true</fork>
                         <compilerArgs>
                             <arg>-Xlint:all,-serial,-path</arg>
-                            <arg>-XDignore.symbol.file</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -1540,7 +1539,6 @@
                             <javacArg>-target</javacArg>
                             <javacArg>${java.version}</javacArg>
                             <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
-                            <javacArg>-XDignore.symbol.file</javacArg>
                         </javacArgs>
                         <compilerPlugins>
                             <compilerPlugin>

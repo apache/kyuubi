@@ -19,6 +19,8 @@ package org.apache.kyuubi.client;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -29,10 +31,43 @@ import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import sun.security.tools.keytool.CertAndKeyGen;
-import sun.security.x509.X500Name;
 
 public class ServerTestHelper {
+
+  private static final Constructor<?> CONSTRUCTOR;
+  private static final Method GENERATE_METHOD;
+  private static final Method GET_PRIVATE_KEY_METHOD;
+  private static final Method GET_SELF_CERTIFICATE_METHOD;
+  private static final Constructor<?> X500_NAME_CONSTRUCTOR;
+
+  static {
+    Constructor<?> constructor = null;
+    Method generateMethod = null;
+    Method getPrivateKeyMethod = null;
+    Method getSelfCertificateMethod = null;
+    Constructor<?> x500NameConstructor = null;
+    Class<?> certAndKeyGenClass;
+    try {
+      certAndKeyGenClass = Class.forName("sun.security.tools.keytool.CertAndKeyGen");
+      final Class<?> x500NameClass = Class.forName("sun.security.x509.X500Name");
+      constructor = certAndKeyGenClass.getConstructor(String.class, String.class);
+      generateMethod = certAndKeyGenClass.getMethod("generate", Integer.TYPE);
+      getPrivateKeyMethod = certAndKeyGenClass.getMethod("getPrivateKey");
+      getSelfCertificateMethod =
+          certAndKeyGenClass.getMethod("getSelfCertificate", x500NameClass, Date.class, Long.TYPE);
+      x500NameConstructor =
+          x500NameClass.getConstructor(
+              String.class, String.class, String.class, String.class, String.class, String.class);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    CONSTRUCTOR = constructor;
+    GENERATE_METHOD = generateMethod;
+    GET_PRIVATE_KEY_METHOD = getPrivateKeyMethod;
+    GET_SELF_CERTIFICATE_METHOD = getSelfCertificateMethod;
+    X500_NAME_CONSTRUCTOR = x500NameConstructor;
+  }
 
   private String password = "my_password";
   private File keyStoreFile = new File(System.getProperty("test.dir", "target"), "kyuubi-test.jks");
@@ -61,18 +96,22 @@ public class ServerTestHelper {
     KeyStore ks = KeyStore.getInstance("jks");
     ks.load(null, null);
 
-    CertAndKeyGen keypair = new CertAndKeyGen("RSA", "SHA1WithRSA", null);
-    X500Name x500Name = new X500Name("", "", "", "", "", "");
-    keypair.generate(1024);
+    Object certAndKeyGen = CONSTRUCTOR.newInstance("RSA", "SHA1WithRSA");
+    GENERATE_METHOD.invoke(certAndKeyGen, 1024);
+    final PrivateKey _privateKey = (PrivateKey) GET_PRIVATE_KEY_METHOD.invoke(certAndKeyGen);
 
-    PrivateKey privateKey = keypair.getPrivateKey();
     X509Certificate[] chain = new X509Certificate[1];
-    chain[0] = keypair.getSelfCertificate(x500Name, new Date(), (long) 24 * 60 * 60);
+    chain[0] =
+        (X509Certificate)
+            GET_SELF_CERTIFICATE_METHOD.invoke(
+                certAndKeyGen,
+                X500_NAME_CONSTRUCTOR.newInstance("", "", "", "", "", ""),
+                new Date(),
+                (long) 24 * 60 * 60);
 
-    File keyStoreFile = new File(System.getProperty("test.dir", "target"), "kyuubi-test.jks");
     // store away the key store
     FileOutputStream fos = new FileOutputStream(keyStoreFile);
-    ks.setKeyEntry("kyuubi-test", privateKey, password.toCharArray(), chain);
+    ks.setKeyEntry("kyuubi-test", _privateKey, password.toCharArray(), chain);
     ks.store(fos, password.toCharArray());
     fos.close();
   }
