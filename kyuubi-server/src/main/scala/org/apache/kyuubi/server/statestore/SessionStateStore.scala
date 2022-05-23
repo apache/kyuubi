@@ -54,8 +54,6 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     _stateStore.shutdown()
   }
 
-  def getStateStore: StateStore = _stateStore
-
   def createBatch(
       batchId: String,
       batchOwner: String,
