@@ -70,12 +70,7 @@ class KyuubiBatchSessionImpl(
 
   override def close(): Unit = {
     super.close()
-    val endTime = System.currentTimeMillis()
-    sessionManager.sessionStateStore.closeBatch(
-      batchJobSubmissionOp.batchId,
-      batchJobSubmissionOp.getStatus.state.toString,
-      endTime)
-    sessionEvent.endTime = endTime
+    sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
     MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
   }

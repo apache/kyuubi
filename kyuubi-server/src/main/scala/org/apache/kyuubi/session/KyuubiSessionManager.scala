@@ -20,6 +20,7 @@ package org.apache.kyuubi.session
 import java.util.UUID
 
 import com.codahale.metrics.MetricRegistry
+import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -45,7 +46,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
-  val sessionStateStore = new SessionStateStore()
+  private[kyuubi] val sessionStateStore = new SessionStateStore()
 
   private var limiter: Option[SessionLimiter] = None
 
@@ -170,12 +171,25 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
   }
 
+  def updateBatchAppInfo(batchId: String, applicationStatus: Option[Map[String, String]]): Unit = {
+    sessionStateStore.updateBatchAppInfo(batchId, applicationStatus)
+  }
+
+  def closeBatch(batchId: String, state: String, endTime: Long): Unit = {
+    sessionStateStore.closeBatch(batchId, state, endTime)
+  }
+
   def getBatch(batchId: String): Batch = {
     sessionStateStore.getBatch(batchId)
   }
 
   def getBatchesByType(batchType: String, from: Int, size: Int): Seq[Batch] = {
     sessionStateStore.getBatchesByType(batchType, from, size)
+  }
+
+  @VisibleForTesting
+  def cleanupBatchMetadata(batchId: String): Unit = {
+    sessionStateStore.cleanupBatch(batchId)
   }
 
   override def start(): Unit = synchronized {

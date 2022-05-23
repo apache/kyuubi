@@ -88,6 +88,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   override protected def afterRun(): Unit = {
     OperationLog.removeCurrentOperationLog()
+    session.sessionManager.closeBatch(batchId, getStatus.state.toString, System.currentTimeMillis())
   }
 
   override protected def runInternal(): Unit = {
@@ -118,7 +119,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
       applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
         if (!appStatusFirstUpdated && applicationStatus.isDefined) {
-          session.sessionManager.sessionStateStore.updateBatchAppInfo(batchId, applicationStatus)
+          session.sessionManager.updateBatchAppInfo(batchId, applicationStatus)
           appStatusFirstUpdated = true
         }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
@@ -135,7 +136,7 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
         }
       }
     } finally {
-      session.sessionManager.sessionStateStore.updateBatchAppInfo(batchId, applicationStatus)
+      session.sessionManager.updateBatchAppInfo(batchId, applicationStatus)
       builder.close()
     }
   }
