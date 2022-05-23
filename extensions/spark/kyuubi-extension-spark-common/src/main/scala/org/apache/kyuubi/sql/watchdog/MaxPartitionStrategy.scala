@@ -97,7 +97,7 @@ case class MaxPartitionStrategy(session: SparkSession)
                 _),
               _,
               _,
-              _)) if fsRelation.partitionSchemaOption.isDefined =>
+              _)) if fsRelation.partitionSchema.nonEmpty =>
         val (partitionKeyFilters, dataFilter) =
           getPartitionKeyFiltersAndDataFilters(
             fsRelation.sparkSession,
@@ -130,7 +130,7 @@ case class MaxPartitionStrategy(session: SparkSession)
                 _),
               _,
               _,
-              _)) if fsRelation.partitionSchemaOption.isDefined =>
+              _)) if fsRelation.partitionSchema.nonEmpty =>
         val (partitionKeyFilters, _) =
           getPartitionKeyFiltersAndDataFilters(
             fsRelation.sparkSession,
