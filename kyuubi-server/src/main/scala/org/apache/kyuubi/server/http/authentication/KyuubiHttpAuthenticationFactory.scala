@@ -26,7 +26,7 @@ import org.eclipse.jetty.server.handler.HandlerWrapper
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, ENGINE_SECURITY_ENABLED}
-import org.apache.kyuubi.service.authentication.{AuthTypes, EngineSecurityAccessor}
+import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.KERBEROS
 
 class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
@@ -35,7 +35,7 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
   private val ugi = UserGroupInformation.getCurrentUser
 
   if (conf.get(ENGINE_SECURITY_ENABLED)) {
-    EngineSecurityAccessor.initialize(conf, true)
+    InternalSecurityAccessor.initialize(conf, true)
   }
 
   private[kyuubi] val httpHandlerWrapperFactory =

@@ -20,7 +20,7 @@ package org.apache.kyuubi.service.authentication
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 
-class EngineSecurityAccessorSuite extends KyuubiFunSuite {
+class InternalSecurityAccessorSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
   conf.set(
     KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
@@ -31,7 +31,7 @@ class EngineSecurityAccessorSuite extends KyuubiFunSuite {
       val newConf = conf.clone
       newConf.set(KyuubiConf.ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION, cipher)
 
-      val secureAccessor = new EngineSecurityAccessor(newConf, true)
+      val secureAccessor = new InternalSecurityAccessor(newConf, true)
       val value = "tokenToEncrypt"
       val encryptedValue = secureAccessor.encrypt(value)
       assert(secureAccessor.decrypt(encryptedValue) === value)
@@ -40,7 +40,7 @@ class EngineSecurityAccessorSuite extends KyuubiFunSuite {
       secureAccessor.authToken(token)
       intercept[KyuubiSQLException](secureAccessor.authToken("invalidToken"))
 
-      val engineSecureAccessor = new EngineSecurityAccessor(newConf, false)
+      val engineSecureAccessor = new InternalSecurityAccessor(newConf, false)
       engineSecureAccessor.authToken(token)
     }
   }
