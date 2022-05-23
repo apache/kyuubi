@@ -178,7 +178,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       whereConditions += s" STATE=${sqlColValue(batchState)} "
     }
     if (whereConditions.nonEmpty) {
-      queryBuilder.append(" WHERE " + whereConditions.mkString(" AND "))
+      queryBuilder.append(whereConditions.mkString(" WHERE ", " AND ", " "))
     }
     queryBuilder.append(" ORDER BY KEY_ID ")
     queryBuilder.append(s" {LIMIT $size OFFSET $from} ")
@@ -216,7 +216,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   }
 
   override def getBatchMeta(batchId: String): BatchMeta = {
-    val query = s"SELECT * FROM $BATCH_META_TABLE where BATCH_ID=${sqlColValue(batchId)}"
+    val query = s"SELECT * FROM $BATCH_META_TABLE WHERE BATCH_ID=${sqlColValue(batchId)}"
     withConnection() { connection =>
       val rs = execute(connection, query)
       buildMetaSeq(rs).headOption.orNull
@@ -225,7 +225,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
 
   override def cleanupBatch(batchId: String): Unit = {
     val query1 = s"DELETE FROM $BATCH_META_TABLE WHERE BATCH_ID=${sqlColValue(batchId)}"
-    val query2 = s"DELETE FROM $BATCH_STATE_TABLE where ID=${sqlColValue(batchId)}"
+    val query2 = s"DELETE FROM $BATCH_STATE_TABLE WHERE ID=${sqlColValue(batchId)}"
     executeQueries(query1, query2)
   }
 

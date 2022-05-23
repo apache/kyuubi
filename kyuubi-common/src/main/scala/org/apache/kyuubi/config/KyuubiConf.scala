@@ -873,7 +873,10 @@ object KyuubiConf {
       .doc("The database type for server jdbc state store.<ul>" +
         " <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
         " <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li>" +
-        " <li>CUSTOM: User-defined database type, need specify the jdbc driver in addition.</li>")
+        " <li>CUSTOM: User-defined database type, need specify the jdbc driver in addition.</li>" +
+        " Note that: The jdbc datasource is powered by HiKariCP, for datasource properties," +
+        " please specify them with prefix: kyuubi.server.state.store.jdbc.datasource." +
+        " For example, kyuubi.server.state.store.jdbc.datasource.connectionTimeout=10000.")
       .version("1.6.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
@@ -896,8 +899,8 @@ object KyuubiConf {
   val SERVER_STATE_STORE_JDBC_URL: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.url")
       .doc("The jdbc url for server jdbc state store. By defaults, it is a DERBY in-memory" +
-        " database url, and the state information is not shared across kyuubi instances." +
-        " To enable multiple kyuubi instances high available, please specify a production jdbc url")
+        " database url, and the state information is not shared across kyuubi instances. To" +
+        " enable multiple kyuubi instances high available, please specify a production jdbc url.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("jdbc:derby:memory:kyuubi_state_store_db;create=true")
