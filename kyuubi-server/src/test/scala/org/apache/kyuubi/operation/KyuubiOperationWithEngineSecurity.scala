@@ -21,7 +21,7 @@ import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
-import org.apache.kyuubi.service.authentication.{EngineSecurityAccessor, ZooKeeperEngineSecuritySecretProviderImpl}
+import org.apache.kyuubi.service.authentication.{InternalSecurityAccessor, ZooKeeperEngineSecuritySecretProviderImpl}
 
 class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with HiveJDBCTestHelper {
   import DiscoveryClientProvider._
@@ -47,7 +47,7 @@ class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with HiveJDBCTe
     }
 
     conf.set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
-    EngineSecurityAccessor.initialize(conf, true)
+    InternalSecurityAccessor.initialize(conf, true)
   }
 
   test("engine security") {

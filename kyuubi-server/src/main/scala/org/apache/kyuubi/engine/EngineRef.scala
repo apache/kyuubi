@@ -71,6 +71,10 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
+  // In case the multi kyuubi instances have the small gap of timeout, here we add
+  // a small amount of time for timeout
+  private val LOCK_TIMEOUT_SPAN_FACTOR = if (Utils.isTesting) 0.5 else 0.1
+
   private var builder: ProcBuilder = _
 
   @VisibleForTesting
@@ -147,10 +151,12 @@ private[kyuubi] class EngineRef(
       case _ =>
         val lockPath =
           DiscoveryPaths.makePath(
-            s"${serverSpace}_$shareLevel",
+            s"${serverSpace}_${shareLevel}_$engineType",
             "lock",
             Array(appUser, subdomain))
-        discoveryClient.tryWithLock(lockPath, timeout, TimeUnit.MILLISECONDS)(f)
+        discoveryClient.tryWithLock(
+          lockPath,
+          timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong)(f)
     }
 
   private def create(
@@ -167,21 +173,15 @@ private[kyuubi] class EngineRef(
     builder = engineType match {
       case SPARK_SQL =>
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-        new SparkProcessBuilder(appUser, conf, extraEngineLog)
+        new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case FLINK_SQL =>
         conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
-        new FlinkProcessBuilder(appUser, conf, extraEngineLog)
+        new FlinkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case TRINO =>
-        new TrinoProcessBuilder(appUser, conf, extraEngineLog)
+        new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
-        new HiveProcessBuilder(appUser, conf, extraEngineLog)
+        new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
     }
-    // TODO: Better to do this inside ProcBuilder
-    KyuubiApplicationManager.tagApplication(
-      engineRefId,
-      builder.shortName,
-      builder.clusterManager(),
-      builder.conf)
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {

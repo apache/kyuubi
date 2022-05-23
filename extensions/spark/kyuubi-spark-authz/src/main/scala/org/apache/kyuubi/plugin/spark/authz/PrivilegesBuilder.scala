@@ -261,8 +261,7 @@ object PrivilegesBuilder {
           "RefreshTable" =>
         inputObjs += tablePrivileges(getTableIdent)
 
-      case "AnalyzeTablesCommand" |
-          "ShowTablesCommand" =>
+      case "AnalyzeTablesCommand" =>
         val db = getPlanField[Option[String]]("databaseName")
         if (db.nonEmpty) {
           inputObjs += databasePrivileges(db.get)
@@ -288,6 +287,11 @@ object PrivilegesBuilder {
 
         val query = getPlanField[LogicalPlan]("plan")
         buildQuery(query, inputObjs)
+
+      case "CreateNamespace" =>
+        val resolvedNamespace = getPlanField[Any]("name")
+        val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
+        outputObjs += databasePrivileges(quote(databases))
 
       case "CreateViewCommand" =>
         val view = getPlanField[TableIdentifier]("name")
@@ -326,6 +330,11 @@ object PrivilegesBuilder {
         val functionName = getPlanField[String]("functionName")
         outputObjs += functionPrivileges(db.orNull, functionName)
 
+      case "CreateFunction" | "DropFunction" | "RefreshFunction" =>
+        val child = getPlanField("child")
+        val database = getFieldVal[Seq[String]](child, "nameParts")
+        inputObjs += databasePrivileges(quote(database))
+
       case "CreateTableAsSelect" |
           "ReplaceTableAsSelect" =>
         val left = getPlanField[LogicalPlan]("name")
@@ -360,9 +369,19 @@ object PrivilegesBuilder {
         val database = getPlanField[String]("databaseName")
         inputObjs += databasePrivileges(database)
 
+      case "DescribeNamespace" =>
+        val child = getPlanField[Any]("namespace")
+        val database = getFieldVal[Seq[String]](child, "namespace")
+        inputObjs += databasePrivileges(quote(database))
+
       case "DescribeFunctionCommand" =>
         val func = getPlanField[FunctionIdentifier]("functionName")
         inputObjs += functionPrivileges(func.database.orNull, func.funcName)
+
+      case "DropNamespace" =>
+        val child = getPlanField[Any]("namespace")
+        val database = getFieldVal[Seq[String]](child, "namespace")
+        outputObjs += databasePrivileges(quote(database))
 
       case "DropTableCommand" =>
         outputObjs += tablePrivileges(getTableName)
@@ -415,14 +434,21 @@ object PrivilegesBuilder {
         }
 
       case "SetCatalogAndNamespace" =>
-        getPlanField[Option[String]]("catalogName").foreach { catalog =>
-          // fixme do we really need to skip spark_catalog?
-          if (catalog != "spark_catalog") {
-            inputObjs += databasePrivileges(catalog)
-          }
-        }
-        getPlanField[Option[Seq[String]]]("namespace").foreach { nameParts =>
+        if (isSparkVersionAtLeast("3.3")) {
+          val child = getPlanField[Any]("child")
+          val nameParts = getFieldVal[Seq[String]](child, "nameParts")
           inputObjs += databasePrivileges(quote(nameParts))
+
+        } else {
+          getPlanField[Option[String]]("catalogName").foreach { catalog =>
+            // fixme do we really need to skip spark_catalog?
+            if (catalog != "spark_catalog") {
+              inputObjs += databasePrivileges(catalog)
+            }
+          }
+          getPlanField[Option[Seq[String]]]("namespace").foreach { nameParts =>
+            inputObjs += databasePrivileges(quote(nameParts))
+          }
         }
 
       case "SetCatalogCommand" =>
@@ -447,15 +473,41 @@ object PrivilegesBuilder {
         val table = getPlanField[TableIdentifier]("table")
         inputObjs += tablePrivileges(table)
 
+      case "ShowTableProperties" =>
+        val resolvedTable = getPlanField[Any]("table")
+        val identifier = getFieldVal[AnyRef](resolvedTable, "identifier")
+        val namespace = invoke(identifier, "namespace").asInstanceOf[Array[String]]
+        val table = invoke(identifier, "name").asInstanceOf[String]
+        inputObjs += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.OTHER,
+          quote(namespace),
+          table,
+          Nil)
+
+      case "ShowCreateTable" =>
+        val resolvedTable = getPlanField[Any]("child")
+        val identifier = getFieldVal[AnyRef](resolvedTable, "identifier")
+        val namespace = invoke(identifier, "namespace").asInstanceOf[Array[String]]
+        val table = invoke(identifier, "name").asInstanceOf[String]
+        inputObjs += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.OTHER,
+          quote(namespace),
+          table,
+          Nil)
+
       case "ShowFunctionsCommand" =>
-        getPlanField[Option[String]]("db").foreach { db =>
-          inputObjs += databasePrivileges(db)
-        }
 
       case "ShowPartitionsCommand" =>
         val cols = getPlanField[Option[TablePartitionSpec]]("spec")
           .map(_.keySet.toSeq).getOrElse(Nil)
         inputObjs += tablePrivileges(getTableName, cols)
+
+      case "SetNamespaceProperties" | "SetNamespaceLocation" =>
+        val resolvedNamespace = getPlanField[Any]("namespace")
+        val databases = getFieldVal[Seq[String]](resolvedNamespace, "namespace")
+        outputObjs += databasePrivileges(quote(databases))
 
       case _ =>
       // AddArchivesCommand

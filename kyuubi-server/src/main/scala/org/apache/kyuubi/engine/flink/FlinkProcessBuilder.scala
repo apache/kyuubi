@@ -24,11 +24,13 @@ import java.util.LinkedHashSet
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import com.google.common.annotations.VisibleForTesting
+
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
 
 /**
@@ -37,8 +39,14 @@ import org.apache.kyuubi.operation.log.OperationLog
 class FlinkProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
+    val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder {
+
+  @VisibleForTesting
+  def this(proxyUser: String, conf: KyuubiConf) {
+    this(proxyUser, conf, "")
+  }
 
   private val flinkHome: String = getEngineHome(shortName)
 
@@ -48,7 +56,8 @@ class FlinkProcessBuilder(
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
-  override protected def commands: Array[String] = {
+  override protected val commands: Array[String] = {
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
     buffer += executable
 

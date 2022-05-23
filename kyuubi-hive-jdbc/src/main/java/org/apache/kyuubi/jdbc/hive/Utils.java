@@ -344,7 +344,7 @@ public class Utils {
     // We'll extract the authorities (host:port combo) from the URI, extract session vars, hive
     // confs & hive vars by parsing it as a Java URI.
     String authorityFromClientJdbcURL = getAuthorityFromJdbcURL(uri);
-    if ((authorityFromClientJdbcURL == null) || (authorityFromClientJdbcURL.isEmpty())) {
+    if (authorityFromClientJdbcURL.isEmpty()) {
       // Given uri of the form:
       // jdbc:hive2:///dbName;sess_var_list?hive_conf_list#hive_var_list
       authorityFromClientJdbcURL = "localhost:10009";

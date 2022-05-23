@@ -22,6 +22,7 @@ import scala.concurrent.duration._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.YarnApplicationOperation
@@ -29,7 +30,6 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.operation.{FetchOrientation, HiveJDBCTestHelper, OperationState}
 import org.apache.kyuubi.operation.OperationState.ERROR
 import org.apache.kyuubi.server.MiniYarnService
-import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 
 /**
@@ -105,7 +105,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
   test("open batch session") {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
 
-    val batchRequest = BatchRequest(
+    val batchRequest = new BatchRequest(
       "spark",
       sparkProcessBuilder.mainResource.get,
       sparkProcessBuilder.mainClass,
@@ -114,15 +114,15 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
         "spark.master" -> "yarn",
         "spark.app.name" -> "customName",
         s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
-        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
-      Seq.empty[String])
+        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
+      Seq.empty[String].asJava)
 
     val sessionHandle = sessionManager.openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.conf,
+      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     assert(sessionHandle.identifier.secretId === KyuubiSessionManager.STATIC_BATCH_SECRET_UUID)
@@ -172,7 +172,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
   test("prevent dead loop if the batch job submission process it not alive") {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
 
-    val batchRequest = BatchRequest(
+    val batchRequest = new BatchRequest(
       "spark",
       sparkProcessBuilder.mainResource.get,
       sparkProcessBuilder.mainClass,
@@ -180,15 +180,15 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       Map(
         "spark.master" -> "invalid",
         s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
-        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
-      Seq.empty[String])
+        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
+      Seq.empty[String].asJava)
 
     val sessionHandle = sessionManager.openBatchSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
       "kyuubi",
       "passwd",
       "localhost",
-      batchRequest.conf,
+      batchRequest.getConf.asScala.toMap,
       batchRequest)
 
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]

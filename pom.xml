@@ -68,7 +68,6 @@
         <module>dev/kyuubi-codecov</module>
         <module>extensions/server/kyuubi-server-plugin</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
-        <module>extensions/spark/kyuubi-spark-connector-kudu</module>
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
@@ -85,6 +84,7 @@
         <module>kyuubi-hive-jdbc</module>
         <module>kyuubi-hive-jdbc-shaded</module>
         <module>kyuubi-metrics</module>
+        <module>kyuubi-rest-client</module>
         <module>kyuubi-server</module>
         <module>kyuubi-zookeeper</module>
     </modules>
@@ -1849,6 +1849,7 @@
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-1</module>
+                <module>extensions/spark/kyuubi-spark-authz</module>
             </modules>
         </profile>
 
@@ -1866,7 +1867,35 @@
             </properties>
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
+                <module>extensions/spark/kyuubi-spark-authz</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-2</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>spark-3.3</id>
+            <repositories>
+                <repository>
+                    <id>Apache Staging Repository</id>
+                    <url>https://repository.apache.org/content/groups/staging/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <properties>
+                <spark.version>3.3.0</spark.version>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.3.0-rc2-bin/</spark.archive.mirror>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
+            <modules>
+                <module>extensions/spark/kyuubi-extension-spark-common</module>
+                <module>extensions/spark/kyuubi-extension-spark-3-3</module>
+                <module>extensions/spark/kyuubi-spark-connector-kudu</module>
             </modules>
         </profile>
 
@@ -1885,7 +1914,7 @@
                 </repository>
             </repositories>
             <properties>
-                <spark.version>3.3.0-SNAPSHOT</spark.version>
+                <spark.version>3.4.0-SNAPSHOT</spark.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>

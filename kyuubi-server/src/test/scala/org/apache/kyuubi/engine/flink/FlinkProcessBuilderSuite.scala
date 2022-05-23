@@ -42,7 +42,9 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def envWithAllHadoop: ListMap[String, String] = envWithoutHadoopCLASSPATH +
     ("FLINK_HADOOP_CLASSPATH" -> s"${File.separator}hadoop")
   private def confStr: String = {
-    conf.getAll.map { case (k, v) => s"\\\n\t--conf $k=$v" }.mkString(" ")
+    conf.clone.set("yarn.tags", "KYUUBI").getAll.map {
+      case (k, v) => s"\\\n\t--conf $k=$v"
+    }.mkString(" ")
   }
   private def compareActualAndExpected(builder: FlinkProcessBuilder) = {
     val actualCommands = builder.toString
@@ -53,7 +55,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
       s"$confStr"
     info(s"\n\n actualCommands $actualCommands")
     info(s"\n\n expectedCommands $expectedCommands")
-    assert(actualCommands.equals(expectedCommands))
+    assert(actualCommands == expectedCommands)
   }
 
   private def constructClasspathStr(builder: FlinkProcessBuilder) = {
@@ -100,10 +102,9 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("all hadoop related environment variables are configured except FLINK_HADOOP_CLASSPATH") {
-    val builder = new FlinkProcessBuilder("vinoyang", conf) {
+    assertThrows[KyuubiException](new FlinkProcessBuilder("vinoyang", conf) {
       override def env: Map[String, String] = envWithoutHadoopCLASSPATH
-    }
-    assertThrows[KyuubiException](builder.toString)
+    })
   }
 
   test("only FLINK_HADOOP_CLASSPATH environment variables are configured") {

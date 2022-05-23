@@ -43,6 +43,16 @@ private[authz] object AuthZUtils {
     }
   }
 
+  def invoke(
+      obj: AnyRef,
+      methodName: String,
+      args: (Class[_], AnyRef)*): AnyRef = {
+    val (types, values) = args.unzip
+    val method = obj.getClass.getDeclaredMethod(methodName, types: _*)
+    method.setAccessible(true)
+    method.invoke(obj, values: _*)
+  }
+
   /**
    * Get the active session user
    * @param spark spark context instance

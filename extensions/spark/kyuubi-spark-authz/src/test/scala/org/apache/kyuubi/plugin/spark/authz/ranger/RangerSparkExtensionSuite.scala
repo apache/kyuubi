@@ -25,12 +25,15 @@ import scala.util.Try
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
+import org.scalatest.BeforeAndAfterAll
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 
-abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessionProvider {
-
+abstract class RangerSparkExtensionSuite extends AnyFunSuite
+  with SparkSessionProvider with BeforeAndAfterAll {
+// scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
   private def doAs[T](user: String, f: => T): T = {
@@ -48,7 +51,7 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
   private def errorMessage(
       privilege: String,
       resource: String = "default/src",
-      user: String = Utils.currentUser): String = {
+      user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
   }
 

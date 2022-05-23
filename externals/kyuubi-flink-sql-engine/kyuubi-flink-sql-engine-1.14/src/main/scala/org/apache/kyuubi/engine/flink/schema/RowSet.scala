@@ -29,6 +29,7 @@ import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.flink.table.catalog.Column
+import org.apache.flink.table.data.StringData
 import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift._
@@ -136,18 +137,20 @@ object RowSet {
           tDoubleValue.setValue(row.getField(ordinal).asInstanceOf[Double])
         }
         TColumnValue.doubleVal(tDoubleValue)
-      case _: VarCharType =>
+      case t @ (_: VarCharType | _: CharType) =>
         val tStringValue = new TStringValue
-        if (row.getField(ordinal) != null) {
-          val stringValue = row.getField(ordinal).asInstanceOf[String]
-          tStringValue.setValue(stringValue)
-        }
-        TColumnValue.stringVal(tStringValue)
-      case _: CharType =>
-        val tStringValue = new TStringValue
-        if (row.getField(ordinal) != null) {
-          val stringValue = row.getField(ordinal).asInstanceOf[String]
-          tStringValue.setValue(stringValue)
+        val fieldValue = row.getField(ordinal)
+        fieldValue match {
+          case value: String =>
+            tStringValue.setValue(value)
+          case value: StringData =>
+            tStringValue.setValue(value.toString)
+          case null =>
+            tStringValue.setValue(null)
+          case other =>
+            throw new IllegalArgumentException(
+              s"Unsupported conversion class ${other.getClass} " +
+                s"for type ${t.getClass}.")
         }
         TColumnValue.stringVal(tStringValue)
       case t =>
@@ -165,6 +168,9 @@ object RowSet {
 
   private def toTColumn(rows: Seq[Row], ordinal: Int, logicalType: LogicalType): TColumn = {
     val nulls = new java.util.BitSet()
+    // for each column, determine the conversion class by sampling the first non-value value
+    // if there's no row, set the entire column empty
+    val sampleField = rows.iterator.map(_.getField(ordinal)).find(_ ne null).orNull
     logicalType match {
       case _: BooleanType =>
         val values = getOrSetAsNull[lang.Boolean](rows, ordinal, nulls, true)
@@ -188,11 +194,22 @@ object RowSet {
       case _: DoubleType =>
         val values = getOrSetAsNull[lang.Double](rows, ordinal, nulls, 0.0)
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
-      case _: VarCharType =>
-        val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
-        TColumn.stringVal(new TStringColumn(values, nulls))
-      case _: CharType =>
-        val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
+      case t @ (_: VarCharType | _: CharType) =>
+        val values: util.List[String] = new util.ArrayList[String](0)
+        sampleField match {
+          case _: String =>
+            values.addAll(getOrSetAsNull[String](rows, ordinal, nulls, ""))
+          case _: StringData =>
+            val stringDataValues =
+              getOrSetAsNull[StringData](rows, ordinal, nulls, StringData.fromString(""))
+            stringDataValues.forEach(e => values.add(e.toString))
+          case null =>
+            values.addAll(getOrSetAsNull[String](rows, ordinal, nulls, ""))
+          case other =>
+            throw new IllegalArgumentException(
+              s"Unsupported conversion class ${other.getClass} " +
+                s"for type ${t.getClass}.")
+        }
         TColumn.stringVal(new TStringColumn(values, nulls))
       case _ =>
         var i = 0

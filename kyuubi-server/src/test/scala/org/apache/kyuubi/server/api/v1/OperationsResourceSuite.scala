@@ -20,11 +20,14 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
+import scala.collection.JavaConverters._
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{ExecuteStatement, OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
@@ -64,13 +67,13 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       s"${op.getHandle.typ.toString}"
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
-      .put(Entity.entity(OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
+      .put(Entity.entity(new OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     checkOpState(opHandleStr, OperationState.CANCELED)
 
     response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
-      .put(Entity.entity(OpActionRequest("close"), MediaType.APPLICATION_JSON_TYPE))
+      .put(Entity.entity(new OpActionRequest("close"), MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     response = webTarget.path(s"api/v1/operations/$opHandleStr/event")
       .request(MediaType.APPLICATION_JSON_TYPE).get()
@@ -84,7 +87,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       .request(MediaType.APPLICATION_JSON_TYPE).get()
     assert(200 == response.getStatus)
     val resultSetMetaData = response.readEntity(classOf[ResultSetMetaData])
-    assert(resultSetMetaData.columns(1).columnName.equals("tableName"))
+    assert(resultSetMetaData.getColumns.get(1).getColumnName.equals("tableName"))
   }
 
   test("get operation log") {
@@ -96,8 +99,8 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       .request(MediaType.APPLICATION_JSON).get()
     assert(200 == response.getStatus)
     val logRowSet = response.readEntity(classOf[OperationLog])
-    assert(logRowSet.logRowSet.exists(_.contains("show tables")))
-    assert(logRowSet.rowCount === 10)
+    assert(logRowSet.getLogRowSet.asScala.exists(_.contains("show tables")))
+    assert(logRowSet.getRowCount === 10)
   }
 
   test("test get result row set") {
@@ -111,8 +114,8 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       .request(MediaType.APPLICATION_JSON).get()
     assert(200 == response.getStatus)
     val logRowSet = response.readEntity(classOf[ResultRowSet])
-    assert("test".equals(logRowSet.rows.head.fields.head.value))
-    assert(logRowSet.rowCount == 1)
+    assert("test".equals(logRowSet.getRows.asScala.head.getFields.asScala.head.getValue))
+    assert(logRowSet.getRowCount == 1)
   }
 
   def getOpHandleStr(typ: OperationType, statement: String = "show tables"): String = {

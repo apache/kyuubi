@@ -1250,21 +1250,26 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.security.enabled")
-      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
+      .internal
+      .doc("Whether to enable the internal secure access. Before 1.6.0, it is used for the secure" +
+        " access between kyuubi server and kyuubi engine. Since 1.6.0, kyuubi supports internal" +
+        " secure across kyuubi server instances.")
       .version("1.5.0")
       .booleanConf
       .createWithDefault(false)
 
   val ENGINE_SECURITY_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
     buildConf("kyuubi.engine.security.token.max.lifetime")
-      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
+      .internal
+      .doc("The max lifetime of the token used for internal secure access.")
       .version("1.5.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(10).toMillis)
 
   val ENGINE_SECURITY_SECRET_PROVIDER: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.secret.provider")
-      .doc("The class used to manage the engine security secret. This class must be a " +
+      .internal
+      .doc("The class used to manage the internal security secret. This class must be a " +
         "subclass of EngineSecuritySecretProvider.")
       .version("1.5.0")
       .stringConf
@@ -1273,6 +1278,7 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
     buildConf("kyuubi.engine.security.crypto.keyLength")
+      .internal
       .doc("The length in bits of the encryption key to generate. " +
         "Valid values are 128, 192 and 256")
       .version("1.5.0")
@@ -1282,6 +1288,7 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_IV_LENGTH: ConfigEntry[Int] =
     buildConf("kyuubi.engine.security.crypto.ivLength")
+      .internal
       .doc("Initial vector length, in bytes.")
       .version("1.5.0")
       .intConf
@@ -1289,6 +1296,7 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.crypto.keyAlgorithm")
+      .internal
       .doc("The algorithm for generated secret keys.")
       .version("1.5.0")
       .stringConf
@@ -1296,7 +1304,8 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.crypto.cipher")
-      .doc("The cipher transformation to use for encrypting engine access token.")
+      .internal
+      .doc("The cipher transformation to use for encrypting internal access token.")
       .version("1.5.0")
       .stringConf
       .createWithDefault("AES/CBC/PKCS5PADDING")
@@ -1337,7 +1346,12 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .toSequence()
-      .createWithDefault(Seq("ResetCommand", "SetCommand", "SetNamespaceCommand", "UseStatement"))
+      .createWithDefault(Seq(
+        "ResetCommand",
+        "SetCommand",
+        "SetNamespaceCommand",
+        "UseStatement",
+        "SetCatalogAndNamespace"))
 
   object OperationLanguages extends Enumeration {
     type OperationLanguage = Value

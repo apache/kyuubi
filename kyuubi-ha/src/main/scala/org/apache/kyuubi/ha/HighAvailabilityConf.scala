@@ -153,8 +153,9 @@ object HighAvailabilityConf {
 
   val HA_ZK_ENGINE_SECURE_SECRET_NODE: OptionalConfigEntry[String] =
     buildConf("kyuubi.ha.zookeeper.engine.secure.secret.node")
-      .doc("The zk node contains the secret that used for internal secure between Kyuubi server " +
-        "and Kyuubi engine, please make sure that it is only visible for Kyuubi.")
+      .internal
+      .doc("The zk node contains the secret that used for internal secure, please make sure " +
+        "that it is only visible for Kyuubi.")
       .version("1.5.0")
       .stringConf
       .createOptional

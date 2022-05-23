@@ -42,8 +42,10 @@ object OperationType extends Enumeration {
       case "AddJarsCommand" => EXPLAIN
       case "AddPartitions" => ALTERTABLE_ADDPARTS
       case "AlterColumn" => ALTERTABLE_REPLACECOLS
-      case "AlterDatabasePropertiesCommand" => ALTERDATABASE
-      case "AlterDatabaseSetLocationCommand" => ALTERDATABASE_LOCATION
+      case "AlterDatabasePropertiesCommand" |
+          "SetNamespaceProperties" => ALTERDATABASE
+      case "AlterDatabaseSetLocationCommand" |
+          "SetNamespaceLocation" => ALTERDATABASE_LOCATION
       case "AlterTableAddColumnsCommand" |
           "AlterHoodieTableAddColumnsCommand" => ALTERTABLE_ADDCOLS
       case "AlterTableAddPartitionCommand" => ALTERTABLE_ADDPARTS
@@ -60,8 +62,8 @@ object OperationType extends Enumeration {
       case ava if ava.contains("AlterViewAs") => ALTERVIEW_AS
       case ac if ac.startsWith("Analyze") => ANALYZE_TABLE
       case "AppendData" => ALTERTABLE_ADDPARTS
-      case "CreateDatabaseCommand" => CREATEDATABASE
-      case "CreateFunctionCommand" => CREATEFUNCTION
+      case "CreateDatabaseCommand" | "CreateNamespace" => CREATEDATABASE
+      case "CreateFunctionCommand" | "CreateFunction" => CREATEFUNCTION
       case "CreateTableAsSelect" |
           "CreateDataSourceTableAsSelectCommand" |
           "CreateHiveTableAsSelectCommand" |
@@ -74,11 +76,11 @@ object OperationType extends Enumeration {
           "CreateTempViewUsing" |
           "CacheTable" |
           "CacheTableAsSelect" => CREATEVIEW
-      case "DescribeDatabaseCommand" => DESCDATABASE
+      case "DescribeDatabaseCommand" | "DescribeNamespace" => DESCDATABASE
       case "DescribeFunctionCommand" => DESCFUNCTION
       case "DescribeColumnCommand" | "DescribeTableCommand" => DESCTABLE
-      case "DropDatabaseCommand" => DROPDATABASE
-      case "DropFunctionCommand" => DROPFUNCTION
+      case "DropDatabaseCommand" | "DropNamespace" => DROPDATABASE
+      case "DropFunctionCommand" | "DropFunction" => DROPFUNCTION
       case "DropTableCommand" => DROPTABLE
       case "ExplainCommand" => EXPLAIN
       case "InsertIntoDataSourceCommand" |
@@ -88,7 +90,7 @@ object OperationType extends Enumeration {
           "SaveIntoDataSourceCommand" => QUERY
       case "LoadDataCommand" => LOAD
       case "SetCommand" => SHOWCONF
-      case "RefreshFunctionCommand" => RELOADFUNCTION
+      case "RefreshFunctionCommand" | "RefreshFunction" => RELOADFUNCTION
       case "RefreshTableCommand" | "RefreshTable" => QUERY
       case "SetCatalogCommand" |
           "SetCatalogAndNamespace" |
@@ -97,13 +99,16 @@ object OperationType extends Enumeration {
       case "ShowCatalogsCommand" |
           "ShowCurrentNamespaceCommand" => SHOWDATABASES
       case "ShowTablesCommand" |
-          "ShowViewsCommand" => SHOWTABLES
+          "ShowViewsCommand" |
+          "ShowTables" => SHOWTABLES
       case "ShowColumnsCommand" => SHOWCOLUMNS
       case "ShowCreateTableAsSerdeCommand" |
-          "ShowCreateTableCommand" => SHOW_CREATETABLE
+          "ShowCreateTableCommand" |
+          "ShowCreateTable" => SHOW_CREATETABLE
       case "ShowFunctionsCommand" => SHOWFUNCTIONS
       case "ShowPartitionsCommand" => SHOWPARTITIONS
-      case "ShowTablePropertiesCommand" => SHOW_TBLPROPERTIES
+      case "ShowTablePropertiesCommand" |
+          "ShowTableProperties" => SHOW_TBLPROPERTIES
       case "TruncateTableCommand" => TRUNCATETABLE
       case "UncacheTableCommand" => DROPVIEW
       case _ => QUERY
