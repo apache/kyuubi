@@ -17,28 +17,27 @@
 
 package org.apache.kyuubi.service.authentication
 
+import java.nio.charset.StandardCharsets
+
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.INTERNAL_SECURITY_SECRET_PROVIDER
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SECURE_SECRET_NODE
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 
-trait InternalSecuritySecretProvider {
+class ZooKeeperEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvider {
+  import DiscoveryClientProvider._
 
-  /**
-   * Initialize with kyuubi conf.
-   */
-  def initialize(conf: KyuubiConf): Unit
+  private var conf: KyuubiConf = _
 
-  /**
-   * Get the secret to encrypt and decrypt the secure access token.
-   */
-  def getSecret(): String
-}
+  override def initialize(conf: KyuubiConf): Unit = {
+    this.conf = conf
+  }
 
-object InternalSecuritySecretProvider {
-  def create(conf: KyuubiConf): InternalSecuritySecretProvider = {
-    val providerClass = Class.forName(conf.get(INTERNAL_SECURITY_SECRET_PROVIDER))
-    val provider = providerClass.getConstructor().newInstance()
-      .asInstanceOf[InternalSecuritySecretProvider]
-    provider.initialize(conf)
-    provider
+  override def getSecret(): String = {
+    conf.get(HA_ZK_ENGINE_SECURE_SECRET_NODE).map { zkNode =>
+      withDiscoveryClient[String](conf) { discoveryClient =>
+        new String(discoveryClient.getData(zkNode), StandardCharsets.UTF_8)
+      }
+    }.getOrElse(
+      throw new IllegalArgumentException(s"${HA_ZK_ENGINE_SECURE_SECRET_NODE.key} is not defined"))
   }
 }

@@ -25,7 +25,7 @@ import org.eclipse.jetty.server.{Handler, Request}
 import org.eclipse.jetty.server.handler.HandlerWrapper
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, INTERNAL_SECURITY_ENABLED}
+import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, ENGINE_SECURITY_ENABLED}
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.KERBEROS
 
@@ -34,7 +34,7 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
   private val kerberosEnabled = authTypes.contains(KERBEROS)
   private val ugi = UserGroupInformation.getCurrentUser
 
-  if (conf.get(INTERNAL_SECURITY_ENABLED)) {
+  if (conf.get(ENGINE_SECURITY_ENABLED)) {
     InternalSecurityAccessor.initialize(conf, true)
   }
 

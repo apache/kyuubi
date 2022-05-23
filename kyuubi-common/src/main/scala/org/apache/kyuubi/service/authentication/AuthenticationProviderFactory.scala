@@ -62,7 +62,7 @@ object AuthenticationProviderFactory {
   }
 
   private def getAuthenticationProviderForEngine(conf: KyuubiConf): PasswdAuthenticationProvider = {
-    if (conf.get(KyuubiConf.INTERNAL_SECURITY_ENABLED)) {
+    if (conf.get(KyuubiConf.ENGINE_SECURITY_ENABLED)) {
       new EngineSecureAuthenticationProviderImpl
     } else {
       new AnonymousAuthenticationProviderImpl

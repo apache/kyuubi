@@ -72,10 +72,10 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
       .set(
         KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
-      .set(KyuubiConf.INTERNAL_SECURITY_ENABLED, true)
+      .set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
       .set(
-        KyuubiConf.INTERNAL_SECURITY_SECRET_PROVIDER,
-        classOf[UserDefinedInternalSecuritySecretProvider].getCanonicalName)
+        KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
+        classOf[UserDefinedEngineSecuritySecretProvider].getCanonicalName)
   }
 
   test("test with LDAP authorization") {

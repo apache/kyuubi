@@ -27,8 +27,8 @@ import org.apache.hadoop.security.authentication.client.AuthenticationException
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, INTERNAL_SECURITY_ENABLED}
-import org.apache.kyuubi.service.authentication.AuthTypes
+import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
+import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
 class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
@@ -72,7 +72,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
       val basicHandler = new BasicAuthenticationHandler(basicAuthType)
       addAuthHandler(basicHandler)
     }
-    if (conf.get(INTERNAL_SECURITY_ENABLED)) {
+    if (InternalSecurityAccessor.get() != null) {
       val internalHandler = new KyuubiInternalAuthenticationHandler
       addAuthHandler(internalHandler)
     }

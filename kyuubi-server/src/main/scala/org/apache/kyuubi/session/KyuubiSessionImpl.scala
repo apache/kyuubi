@@ -97,7 +97,7 @@ class KyuubiSessionImpl(
     withDiscoveryClient(sessionConf) { discoveryClient =>
       val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
       val passwd =
-        if (sessionManager.getConf.get(INTERNAL_SECURITY_ENABLED)) {
+        if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
           InternalSecurityAccessor.get().issueToken()
         } else {
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")

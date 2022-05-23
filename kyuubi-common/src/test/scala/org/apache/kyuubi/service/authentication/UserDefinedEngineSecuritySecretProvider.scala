@@ -17,28 +17,12 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.nio.charset.StandardCharsets
-
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_INTERNAL_SECURE_SECRET_NODE
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 
-class ZooKeeperInternalSecuritySecretProviderImpl extends InternalSecuritySecretProvider {
-  import DiscoveryClientProvider._
-
-  private var conf: KyuubiConf = _
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    this.conf = conf
-  }
+class UserDefinedEngineSecuritySecretProvider extends EngineSecuritySecretProvider {
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {}
 
   override def getSecret(): String = {
-    conf.get(HA_ZK_INTERNAL_SECURE_SECRET_NODE).map { zkNode =>
-      withDiscoveryClient[String](conf) { discoveryClient =>
-        new String(discoveryClient.getData(zkNode), StandardCharsets.UTF_8)
-      }
-    }.getOrElse(
-      throw new IllegalArgumentException(
-        s"${HA_ZK_INTERNAL_SECURE_SECRET_NODE.key} is not defined"))
+    "ENGINE____SECRET"
   }
 }
