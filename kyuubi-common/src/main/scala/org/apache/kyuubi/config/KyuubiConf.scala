@@ -868,8 +868,8 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("org.apache.kyuubi.server.statestore.jdbc.JDBCStateStore")
 
-  val SERVER_STATE_STORE_JDBC_DB_TYPE: ConfigEntry[String] =
-    buildConf("kyuubi.server.state.store.jdbc.db.type")
+  val SERVER_STATE_STORE_JDBC_DATABASE_TYPE: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.jdbc.database.type")
       .doc("The database type for server jdbc state store.<ul>" +
         " <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
         " <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li>" +
@@ -882,19 +882,19 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .createWithDefault("DERBY")
 
+  val SERVER_STATE_STORE_JDBC_DATABASE_SCHEMA_INIT: ConfigEntry[Boolean] =
+    buildConf("kyuubi.server.state.store.jdbc.database.schema.init")
+      .doc("Whether to init the jdbc state store database schema.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val SERVER_STATE_STORE_JDBC_DRIVER: OptionalConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.driver")
       .doc("JDBC driver class name for server jdbc state store.")
       .version("1.6.0")
       .stringConf
       .createOptional
-
-  val SERVER_STATE_STORE_JDBC_DB_SCHEMA_INIT: ConfigEntry[Boolean] =
-    buildConf("kyuubi.server.state.store.jdbc.db.schema.init")
-      .doc("Whether to init the jdbc state store database schema.")
-      .version("1.6.0")
-      .booleanConf
-      .createWithDefault(true)
 
   val SERVER_STATE_STORE_JDBC_URL: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.url")

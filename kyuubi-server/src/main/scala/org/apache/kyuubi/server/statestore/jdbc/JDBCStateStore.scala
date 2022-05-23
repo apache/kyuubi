@@ -38,7 +38,7 @@ import org.apache.kyuubi.server.statestore.jdbc.DatabaseType._
 class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   import JDBCStateStore._
 
-  private val dbType = DatabaseType.withName(conf.get(SERVER_STATE_STORE_JDBC_DB_TYPE))
+  private val dbType = DatabaseType.withName(conf.get(SERVER_STATE_STORE_JDBC_DATABASE_TYPE))
   private val driverClassOpt = conf.get(SERVER_STATE_STORE_JDBC_DRIVER)
   private val driverClass = dbType match {
     case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
@@ -60,7 +60,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
   private val stateMaxAge = conf.get(SERVER_STATE_STORE_MAX_AGE)
 
-  if (conf.get(SERVER_STATE_STORE_JDBC_DB_SCHEMA_INIT)) {
+  if (conf.get(SERVER_STATE_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
     initSchema()
   }
 

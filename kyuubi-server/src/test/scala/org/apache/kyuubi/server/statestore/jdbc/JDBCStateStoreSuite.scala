@@ -29,8 +29,8 @@ import org.apache.kyuubi.server.statestore.api.BatchMetadata
 
 class JDBCStateStoreSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
-    .set(SERVER_STATE_STORE_JDBC_DB_TYPE, DatabaseType.DERBY.toString)
-    .set(SERVER_STATE_STORE_JDBC_DB_SCHEMA_INIT, true)
+    .set(SERVER_STATE_STORE_JDBC_DATABASE_TYPE, DatabaseType.DERBY.toString)
+    .set(SERVER_STATE_STORE_JDBC_DATABASE_SCHEMA_INIT, true)
     .set(SERVER_STATE_STORE_MAX_AGE, 3000L)
   private val jdbcStateStore = new JDBCStateStore(conf)
 
