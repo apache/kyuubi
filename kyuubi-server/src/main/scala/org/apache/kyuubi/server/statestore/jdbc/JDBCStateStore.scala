@@ -114,7 +114,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |${sqlColValue(batch.ipAddress)},
          |${sqlColValue(valueAsString(batch.sessionConf))},
          |${sqlColValue(batch.kyuubiInstance)},
-         |${sqlColValue(batch.batchType)}
+         |${sqlColValue(batch.batchType)},
          |${sqlColValue(batch.resource)},
          |${sqlColValue(batch.className)},
          |${sqlColValue(batch.name)},
@@ -203,7 +203,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |""".stripMargin
     withConnection() { connection =>
       val rs = execute(connection, query)
-      buildBatches(rs)
+      buildBatches(rs, false)
     }
   }
 
@@ -235,21 +235,16 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     executeQuery(query)
   }
 
-  private def buildBatches(resultSet: ResultSet): Seq[BatchMetadata] = {
+  private def buildBatches(
+      resultSet: ResultSet,
+      stateOnly: Boolean = true): Seq[BatchMetadata] = {
     try {
       val batches = ListBuffer[BatchMetadata]()
       while (resultSet.next()) {
         val batchId = resultSet.getString("BATCH_ID")
         val batchOwner = resultSet.getString("BATCH_OWNER")
-        val ipAddress = resultSet.getString("IP_ADDRESS")
-        val sessionConf = string2Map(resultSet.getString("SESSION_CONF"))
         val kyuubiInstance = resultSet.getString("KYUUBI_INSTANCE")
         val batchType = resultSet.getString("BATCH_TYPE")
-        val resource = resultSet.getString("RESOURCE")
-        val className = resultSet.getString("CLASS_NAME")
-        val name = resultSet.getString("NAME")
-        val conf = string2Map(resultSet.getString("CONF"))
-        val args = string2Seq(resultSet.getString("ARGS"))
         val state = resultSet.getString("STATE")
         val createTime = resultSet.getLong("CREATE_TIME")
         val appId = resultSet.getString("APP_ID")
@@ -258,6 +253,26 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
         val appState = resultSet.getString("APP_STATE")
         val appError = Option(resultSet.getString("APP_ERROR"))
         val endTime = resultSet.getLong("END_TIME")
+
+        // if the result set is for state info only, below fields are null or empty
+        var ipAddress: String = null
+        var sessionConf: Map[String, String] = Map.empty
+        var resource: String = null
+        var className: String = null
+        var name: String = null
+        var conf: Map[String, String] = Map.empty
+        var args: Seq[String] = Seq.empty
+
+        if (!stateOnly) {
+          ipAddress = resultSet.getString("IP_ADDRESS")
+          sessionConf = string2Map(resultSet.getString("SESSION_CONF"))
+          resource = resultSet.getString("RESOURCE")
+          className = resultSet.getString("CLASS_NAME")
+          name = resultSet.getString("NAME")
+          conf = string2Map(resultSet.getString("CONF"))
+          args = string2Seq(resultSet.getString("ARGS"))
+        }
+
         val batch = BatchMetadata(
           batchId,
           batchOwner,
@@ -370,9 +385,11 @@ object JDBCStateStore {
     "KYUUBI_INSTANCE",
     "BATCH_TYPE",
     "STATE",
+    "CREATE_TIME",
     "APP_ID",
     "APP_NAME",
     "APP_URL",
     "APP_STATE",
-    "APP_ERROR").mkString(",")
+    "APP_ERROR",
+    "END_TIME").mkString(",")
 }

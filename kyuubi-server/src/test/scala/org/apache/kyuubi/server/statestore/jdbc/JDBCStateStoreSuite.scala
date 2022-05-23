@@ -25,7 +25,7 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.server.statestore.api.{BatchMeta, BatchState}
+import org.apache.kyuubi.server.statestore.api.BatchMetadata
 
 class JDBCStateStoreSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
@@ -41,41 +41,43 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
 
   test("jdbc state store") {
     val batchId = UUID.randomUUID().toString
-    val batchState = BatchState(
+    val batch = BatchMetadata(
       batchId,
-      "spark",
       "kyuubi",
-      "localhost:10099",
-      "PENDING",
-      System.currentTimeMillis())
-    jdbcStateStore.createBatch(batchState)
-    assert(jdbcStateStore.getBatch(batchId) == batchState)
-
-    val batchMeta = BatchMeta(
-      batchId,
-      "127.0.0.1",
+      "localhost",
       Map("kyuubi.test" -> "true"),
-      "spark",
+      "localhost:10099",
+      "SPARK",
       "intern",
       "org.apache.kyuubi.SparkWC",
       "kyuubi_batch",
       Map("spark.master" -> "local"),
-      Seq("100"))
-    jdbcStateStore.saveBatchMeta(batchMeta)
-    assert(jdbcStateStore.getBatchMeta(batchId) == batchMeta)
+      Seq("100"),
+      "PENDING",
+      System.currentTimeMillis())
+
+    val batchState = batch.copy(
+      ipAddress = null,
+      sessionConf = Map.empty,
+      resource = null,
+      className = null,
+      name = null,
+      conf = Map.empty,
+      args = Seq.empty)
+
+    jdbcStateStore.createBatch(batch)
+    assert(jdbcStateStore.getBatch(batchId) == batchState)
 
     jdbcStateStore.cleanupBatch(batchId)
     assert(jdbcStateStore.getBatch(batchId) == null)
-    assert(jdbcStateStore.getBatchMeta(batchId) == null)
 
-    jdbcStateStore.createBatch(batchState)
-    jdbcStateStore.saveBatchMeta(batchMeta)
+    jdbcStateStore.createBatch(batch)
 
     val batches = jdbcStateStore.getBatches("SPARK", null, null, 0, Int.MaxValue)
     assert(batches == Seq(batchState))
 
     val batchesToRecover = jdbcStateStore.getBatchesToRecover("localhost:10099", 0, Int.MaxValue)
-    assert(batchesToRecover == Seq(batchState))
+    assert(batchesToRecover == Seq(batch))
 
     var newBatchState = batchState.copy(
       appId = "app_id",
@@ -99,7 +101,6 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
     eventually(Timeout(5.seconds)) {
       jdbcStateStore.checkAndCleanupBatches()
       assert(jdbcStateStore.getBatch(batchId) == null)
-      assert(jdbcStateStore.getBatchMeta(batchId) == null)
     }
   }
 }
