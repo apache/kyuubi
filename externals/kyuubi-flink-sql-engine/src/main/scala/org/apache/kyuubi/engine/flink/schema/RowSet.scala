@@ -143,9 +143,8 @@ object RowSet {
         fieldValue match {
           case value: String =>
             tStringValue.setValue(value)
-          case _: StringData =>
-            val stringValue = fieldValue.asInstanceOf[StringData]
-            tStringValue.setValue(stringValue.toString)
+          case value: StringData =>
+            tStringValue.setValue(value.toString)
           case null =>
             tStringValue.setValue(null)
           case other =>
