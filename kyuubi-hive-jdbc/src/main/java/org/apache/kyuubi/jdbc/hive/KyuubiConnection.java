@@ -1094,6 +1094,10 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     return new KyuubiStatement(this, client, sessHandle, fetchSize);
   }
 
+  private KyuubiStatement createKyuubiStatement() throws SQLException {
+    return ((KyuubiStatement) createStatement());
+  }
+
   /*
    * (non-Javadoc)
    *
@@ -1164,7 +1168,16 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   @Override
   public String getCatalog() throws SQLException {
-    return "";
+    if (isClosed) {
+      throw new SQLException("Connection is closed");
+    }
+    try (KyuubiStatement stmt = createKyuubiStatement();
+        ResultSet res = stmt.executeGetCurrentCatalog()) {
+      if (!res.next()) {
+        throw new SQLException("Failed to get catalog information");
+      }
+      return res.getString(1);
+    }
   }
 
   /*
@@ -1225,8 +1238,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (isClosed) {
       throw new SQLException("Connection is closed");
     }
-    try (Statement stmt = createStatement();
-        ResultSet res = stmt.executeQuery("SELECT current_database()")) {
+    try (KyuubiStatement stmt = createKyuubiStatement();
+        ResultSet res = stmt.executeGetCurrentDatabase()) {
       if (!res.next()) {
         throw new SQLException("Failed to get schema information");
       }
@@ -1514,12 +1527,15 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   @Override
   public void setCatalog(String catalog) throws SQLException {
-    // Per JDBC spec, if the driver does not support catalogs,
-    // it will silently ignore this request.
     if (isClosed) {
       throw new SQLException("Connection is closed");
     }
-    return;
+    try (KyuubiStatement stmt = createKyuubiStatement();
+        ResultSet res = stmt.executeSetCurrentCatalog(catalog)) {
+      if (!res.next()) {
+        throw new SQLException("Failed to set catalog");
+      }
+    }
   }
 
   /*
@@ -1641,8 +1657,11 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (schema == null || schema.isEmpty()) {
       throw new SQLException("Schema name is null or empty");
     }
-    try (Statement stmt = createStatement()) {
-      stmt.execute("use " + schema);
+    try (KyuubiStatement stmt = createKyuubiStatement();
+        ResultSet res = stmt.executeSetCurrentDatabase(schema)) {
+      if (!res.next()) {
+        throw new SQLException("Failed to set schema");
+      }
     }
   }
 

@@ -36,8 +36,32 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
+    val catalogDatabaseOperation = processCatalogDatabase(session, confOverlay)
+    if (catalogDatabaseOperation != null) {
+      return catalogDatabaseOperation
+    }
     val operation = new ExecuteStatement(session, statement, confOverlay, runAsync, queryTimeout)
     addOperation(operation)
+  }
+
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    val op = new SetCurrentCatalog(session, catalog)
+    addOperation(op)
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    val op = new GetCurrentCatalog(session)
+    addOperation(op)
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    val op = new SetCurrentDatabase(session, database)
+    addOperation(op)
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    val op = new GetCurrentDatabase(session)
+    addOperation(op)
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {

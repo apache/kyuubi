@@ -41,6 +41,10 @@ trait SparkCatalogShim extends Logging {
 
   protected def catalogExists(spark: SparkSession, catalog: String): Boolean
 
+  def setCurrentCatalog(spark: SparkSession, catalog: String): Unit
+
+  def getCurrentCatalog(spark: SparkSession): Row
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           Schema                                            //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,6 +53,10 @@ trait SparkCatalogShim extends Logging {
    * a list of [[Row]]s, with 2 fields `schemaName: String, catalogName: String`
    */
   def getSchemas(spark: SparkSession, catalogName: String, schemaPattern: String): Seq[Row]
+
+  def setCurrentDatabase(spark: SparkSession, databaseName: String): Unit
+
+  def getCurrentDatabase(spark: SparkSession): Row
 
   protected def getGlobalTempViewManager(spark: SparkSession, schemaPattern: String): Seq[String]
 

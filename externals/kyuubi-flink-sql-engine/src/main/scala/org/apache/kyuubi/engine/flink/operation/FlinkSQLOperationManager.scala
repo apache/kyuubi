@@ -42,6 +42,10 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
+    val catalogDatabaseOperation = processCatalogDatabase(session, confOverlay)
+    if (catalogDatabaseOperation != null) {
+      return catalogDatabaseOperation
+    }
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
     val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
       OPERATION_PLAN_ONLY_MODE.key,
@@ -56,6 +60,26 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       case mode =>
         new PlanOnlyStatement(session, statement, mode)
     }
+    addOperation(op)
+  }
+
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    val op = new SetCurrentCatalog(session, catalog)
+    addOperation(op)
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    val op = new GetCurrentCatalog(session)
+    addOperation(op)
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    val op = new SetCurrentDatabase(session, database)
+    addOperation(op)
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    val op = new GetCurrentDatabase(session)
     addOperation(op)
   }
 

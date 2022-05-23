@@ -58,6 +58,10 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
+    val catalogDatabaseOperation = processCatalogDatabase(session, confOverlay)
+    if (catalogDatabaseOperation != null) {
+      return catalogDatabaseOperation
+    }
     val operation =
       new ExecuteStatement(session, statement, confOverlay, runAsync, getQueryTimeout(queryTimeout))
     addOperation(operation)
@@ -69,6 +73,26 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     val operation = new BatchJobSubmission(session, batchRequest)
     addOperation(operation)
     operation
+  }
+
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    val operation = new SetCurrentCatalog(session, catalog)
+    addOperation(operation)
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    val operation = new GetCurrentCatalog(session)
+    addOperation(operation)
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    val operation = new SetCurrentDatabase(session, database)
+    addOperation(operation)
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    val operation = new GetCurrentDatabase(session)
+    addOperation(operation)
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {

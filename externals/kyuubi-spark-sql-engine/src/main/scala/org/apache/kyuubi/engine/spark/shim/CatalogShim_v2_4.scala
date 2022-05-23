@@ -30,12 +30,26 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
 
   override protected def catalogExists(spark: SparkSession, catalog: String): Boolean = false
 
+  override def setCurrentCatalog(spark: SparkSession, catalog: String): Unit = {}
+
+  override def getCurrentCatalog(spark: SparkSession): Row = {
+    Row(SparkCatalogShim.SESSION_CATALOG)
+  }
+
   override def getSchemas(
       spark: SparkSession,
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
     (spark.sessionState.catalog.listDatabases(schemaPattern) ++
       getGlobalTempViewManager(spark, schemaPattern)).map(Row(_, ""))
+  }
+
+  def setCurrentDatabase(spark: SparkSession, databaseName: String): Unit = {
+    spark.sessionState.catalog.setCurrentDatabase(databaseName)
+  }
+
+  def getCurrentDatabase(spark: SparkSession): Row = {
+    Row(spark.sessionState.catalog.getCurrentDatabase)
   }
 
   override protected def getGlobalTempViewManager(
