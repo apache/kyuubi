@@ -33,7 +33,7 @@ class ZooKeeperInternalSecuritySecretProviderImpl extends InternalSecuritySecret
   }
 
   override def getSecret(): String = {
-    Option(conf.get(HA_ZK_INTERNAL_SECURE_SECRET_NODE)).filter(_.nonEmpty).map { zkNode =>
+    conf.get(HA_ZK_INTERNAL_SECURE_SECRET_NODE).map { zkNode =>
       withDiscoveryClient[String](conf) { discoveryClient =>
         new String(discoveryClient.getData(zkNode), StandardCharsets.UTF_8)
       }

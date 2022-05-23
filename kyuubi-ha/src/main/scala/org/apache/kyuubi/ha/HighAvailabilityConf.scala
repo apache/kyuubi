@@ -151,21 +151,13 @@ object HighAvailabilityConf {
       .booleanConf
       .createWithDefault(false)
 
-  @deprecated(s"using ${HA_ZK_INTERNAL_SECURE_SECRET_NODE.key} instead, 1.6.0")
-  val HA_ZK_ENGINE_SECURE_SECRET_NODE: ConfigEntry[String] =
-    buildConf("kyuubi.ha.zookeeper.engine.secure.secret.node")
-      .doc("(deprecated) The zk node contains the secret that used for internal secure between " +
-        "Kyuubi server and Kyuubi engine, please make sure that it is only visible for Kyuubi.")
-      .version("1.5.0")
-      .stringConf
-      .createWithDefault("")
-
-  val HA_ZK_INTERNAL_SECURE_SECRET_NODE: ConfigEntry[String] =
+  val HA_ZK_INTERNAL_SECURE_SECRET_NODE: OptionalConfigEntry[String] =
     buildConf("kyuubi.ha.zookeeper.internal.secure.secret.node")
       .doc("The zk node contains the secret that used for internal secure, please make sure " +
         "that it is only visible for Kyuubi.")
       .version("1.6.0")
-      .fallbackConf(HA_ZK_ENGINE_SECURE_SECRET_NODE)
+      .stringConf
+      .createOptional
 
   val HA_DISCOVERY_CLIENT_CLASS: ConfigEntry[String] =
     buildConf("kyuubi.ha.service.discovery.client.class")

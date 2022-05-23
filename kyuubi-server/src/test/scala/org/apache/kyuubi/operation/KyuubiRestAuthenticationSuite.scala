@@ -190,11 +190,11 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
 
   test("test with internal authorization") {
     val internalSecurityAccessor = InternalSecurityAccessor.get()
-    val encodeAuthorization = new String(
+    var encodeAuthorization = new String(
       Base64.getEncoder.encode(
         s"$ldapUser:${internalSecurityAccessor.issueToken()}".getBytes()),
       "UTF-8")
-    val response = webTarget.path("api/v1/sessions/count")
+    var response = webTarget.path("api/v1/sessions/count")
       .request()
       .header(AUTHORIZATION_HEADER, s"${AuthSchemes.KYUUBI_INTERNAL.toString} $encodeAuthorization")
       .get()
@@ -202,5 +202,16 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
     assert(HttpServletResponse.SC_OK == response.getStatus)
     val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
     assert(openedSessionCount.getOpenSessionCount == 0)
+
+    val badAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$ldapUser:".getBytes()),
+      "UTF-8")
+    response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"${AuthSchemes.KYUUBI_INTERNAL.toString} $badAuthorization")
+      .get()
+
+    assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
   }
 }
