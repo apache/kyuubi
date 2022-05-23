@@ -102,7 +102,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
   }
 
   public String getCatalogTerm() throws SQLException {
-    return "instance";
+    return "catalog";
   }
 
   public ResultSet getCatalogs() throws SQLException {
@@ -952,23 +952,23 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
   }
 
   public boolean supportsCatalogsInDataManipulation() throws SQLException {
-    return false;
+    return true;
   }
 
   public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-    return false;
+    return true;
   }
 
   public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-    return false;
+    return true;
   }
 
   public boolean supportsCatalogsInProcedureCalls() throws SQLException {
-    return false;
+    return true;
   }
 
   public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-    return false;
+    return true;
   }
 
   public boolean supportsColumnAliasing() throws SQLException {
