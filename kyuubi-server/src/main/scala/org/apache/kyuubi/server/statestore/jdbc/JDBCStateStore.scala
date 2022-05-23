@@ -107,8 +107,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |STATE,
          |CREATE_TIME
          |)
-         |VALUES
-         |(
+         |VALUES(
          |${sqlColValue(batch.batchId)},
          |${sqlColValue(batch.batchOwner)},
          |${sqlColValue(batch.ipAddress)},
@@ -142,21 +141,47 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |APP_URL=${sqlColValue(appUrl)},
          |APP_STATE=${sqlColValue(appState)},
          |APP_ERROR=${sqlColValue(appError.orNull)}
-         |WHERE BATCH_ID=${sqlColValue(batchId)}
-        """.stripMargin
+         |WHERE BATCH_ID=${sqlColValue(batchId)}""".stripMargin
     executeQuery(query)
   }
 
-  override def closeBatch(batchId: String, state: String, endTime: Long): Unit = {
-    val query =
+  override def closeBatch(
+      batchId: String,
+      state: String,
+      endTime: Long,
+      appId: String,
+      appName: String,
+      appUrl: String,
+      appState: String,
+      appError: Option[String]): Unit = {
+    val queryBuilder = new StringBuilder
+    queryBuilder.append(
       s"""
          |UPDATE $BATCH_METADATA_TABLE
          |SET
          |STATE=${sqlColValue(state)},
-         |END_TIME=${sqlColValue(endTime)}
-         |WHERE BATCH_ID=${sqlColValue(batchId)}
-        """.stripMargin
-    executeQuery(query)
+         |END_TIME=${sqlColValue(endTime)}""".stripMargin)
+    val appInfoSetClauses = ListBuffer[String]()
+    Option(appId).foreach { _ =>
+      appInfoSetClauses += s" APP_ID=${sqlColValue(appId)} "
+    }
+    Option(appName).foreach { _ =>
+      appInfoSetClauses += s" APP_NAME=${sqlColValue(appName)} "
+    }
+    Option(appUrl).foreach { _ =>
+      appInfoSetClauses += s" APP_URL=${sqlColValue(appUrl)} "
+    }
+    Option(appState).foreach { _ =>
+      appInfoSetClauses += s" APP_STATE=${sqlColValue(appState)} "
+    }
+    appError.foreach { error =>
+      appInfoSetClauses += s" APP_ERROR=${sqlColValue(error)} "
+    }
+    if (appInfoSetClauses.nonEmpty) {
+      queryBuilder.append(appInfoSetClauses.mkString(",", ",", " "))
+    }
+    queryBuilder.append(s" WHERE BATCH_ID=${sqlColValue(batchId)} ")
+    executeQuery(queryBuilder.toString())
   }
 
   override def getBatches(
@@ -199,8 +224,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |KYUUBI_INSTANCE=${sqlColValue(kyuubiInstance)}
          |AND END_TIME IS NULL
          |ORDER BY KEY_ID
-         |{LIMIT $size OFFSET $from}
-         |""".stripMargin
+         |{LIMIT $size OFFSET $from}""".stripMargin
     withConnection() { connection =>
       val rs = execute(connection, query)
       buildBatches(rs, false)
@@ -230,8 +254,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       s"""
          |DELETE FROM $BATCH_METADATA_TABLE
          |WHERE
-         |END_TIME IS NOT NULL AND END_TIME < ${sqlColValue(minEndTime)}
-         |""".stripMargin
+         |END_TIME IS NOT NULL AND END_TIME < ${sqlColValue(minEndTime)}""".stripMargin
     executeQuery(query)
   }
 

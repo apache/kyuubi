@@ -50,6 +50,8 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   private[kyuubi] val batchType: String = batchRequest.getBatchType
 
+  private var applicationStatus: Option[Map[String, String]] = None
+
   private val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
       case Some("SPARK") =>
@@ -88,7 +90,11 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
 
   override protected def afterRun(): Unit = {
     OperationLog.removeCurrentOperationLog()
-    session.sessionManager.closeBatch(batchId, getStatus.state.toString, System.currentTimeMillis())
+    session.sessionManager.closeBatch(
+      batchId,
+      getStatus.state.toString,
+      System.currentTimeMillis(),
+      applicationStatus.getOrElse(Map.empty))
   }
 
   override protected def runInternal(): Unit = {
@@ -111,7 +117,6 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
   }
 
   private def submitBatchJob(): Unit = {
-    var applicationStatus: Option[Map[String, String]] = None
     var appStatusFirstUpdated = false
     try {
       info(s"Submitting $batchType batch job: $builder")
@@ -136,7 +141,6 @@ class BatchJobSubmission(session: KyuubiBatchSessionImpl, batchRequest: BatchReq
         }
       }
     } finally {
-      session.sessionManager.updateBatchAppInfo(batchId, applicationStatus)
       builder.close()
     }
   }

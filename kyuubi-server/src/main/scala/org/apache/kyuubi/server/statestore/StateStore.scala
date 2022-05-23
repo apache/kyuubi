@@ -56,7 +56,15 @@ trait StateStore {
    * @param state the batch final state.
    * @param endTime  the batch end time.
    */
-  def closeBatch(batchId: String, state: String, endTime: Long): Unit
+  def closeBatch(
+      batchId: String,
+      state: String,
+      endTime: Long,
+      appId: String,
+      appName: String,
+      appUrl: String,
+      appState: String,
+      appError: Option[String]): Unit
 
   /**
    * Get the batches with filter conditions, offset and size.

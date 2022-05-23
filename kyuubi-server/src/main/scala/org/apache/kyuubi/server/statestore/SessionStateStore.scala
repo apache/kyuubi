@@ -95,8 +95,20 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     }
   }
 
-  def closeBatch(batchId: String, state: String, endTime: Long): Unit = {
-    _stateStore.closeBatch(batchId, state, endTime)
+  def closeBatch(
+      batchId: String,
+      state: String,
+      endTime: Long,
+      finalAppStatus: Map[String, String]): Unit = {
+    _stateStore.closeBatch(
+      batchId,
+      state,
+      endTime,
+      finalAppStatus.get(APP_ID_KEY).orNull,
+      finalAppStatus.get(APP_NAME_KEY).orNull,
+      finalAppStatus.get(APP_URL_KEY).orNull,
+      finalAppStatus.get(APP_STATE_KEY).orNull,
+      finalAppStatus.get(APP_ERROR_KEY))
   }
 
   def cleanupBatch(batchId: String): Unit = {

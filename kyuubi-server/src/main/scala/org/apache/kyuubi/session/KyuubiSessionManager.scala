@@ -175,8 +175,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     sessionStateStore.updateBatchAppInfo(batchId, applicationStatus)
   }
 
-  def closeBatch(batchId: String, state: String, endTime: Long): Unit = {
-    sessionStateStore.closeBatch(batchId, state, endTime)
+  def closeBatch(
+      batchId: String,
+      state: String,
+      endTime: Long,
+      finalAppStatus: Map[String, String]): Unit = {
+    sessionStateStore.closeBatch(batchId, state, endTime, finalAppStatus)
   }
 
   def getBatch(batchId: String): Batch = {
