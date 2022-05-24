@@ -21,11 +21,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.gson.Gson;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.kyuubi.KyuubiException;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
+import org.apache.kyuubi.client.exception.KyuubiRestException;
 
 public class BatchRestApi {
 
@@ -39,18 +39,18 @@ public class BatchRestApi {
     return this.client.getHttpClient();
   }
 
-  public Batch createBatch(BatchRequest request) throws KyuubiException {
+  public Batch createBatch(BatchRequest request) throws KyuubiRestException {
     String jsonBody = new Gson().toJson(request);
 
     return this.getClient().post(jsonBody, new TypeReference<Batch>() {});
   }
 
-  public Batch getBatchById(String batchId) throws KyuubiException {
+  public Batch getBatchById(String batchId) throws KyuubiRestException {
     return this.getClient().get(batchId, null, new TypeReference<Batch>() {});
   }
 
   public GetBatchesResponse getBatchInfoList(String batchType, int from, int size)
-      throws KyuubiException {
+      throws KyuubiRestException {
     Map<String, Object> params = new HashMap<>();
     params.put("batchType", batchType);
     params.put("from", from);
@@ -58,7 +58,8 @@ public class BatchRestApi {
     return this.getClient().get(null, params, new TypeReference<GetBatchesResponse>() {});
   }
 
-  public OperationLog getOperationLog(String batchId, int from, int size) throws KyuubiException {
+  public OperationLog getOperationLog(String batchId, int from, int size)
+      throws KyuubiRestException {
     Map<String, Object> params = new HashMap<>();
     params.put("batchId", batchId);
     params.put("from", from);
@@ -68,7 +69,7 @@ public class BatchRestApi {
   }
 
   public void deleteBatch(String batchId, boolean killApp, String hs2ProxyUser)
-      throws KyuubiException {
+      throws KyuubiRestException {
     Map<String, Object> params = new HashMap<>();
     params.put("killApp", killApp);
     params.put("hive.server2.proxy.user", hs2ProxyUser);

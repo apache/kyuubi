@@ -29,11 +29,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.kyuubi.KyuubiException;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
+import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -171,7 +171,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void createBatchTest() throws IOException, KyuubiException {
+  public void createBatchTest() throws IOException, KyuubiRestException {
     // test spnego auth
     TestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
@@ -198,7 +198,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void getBatchByIdTest() throws IOException, KyuubiException {
+  public void getBatchByIdTest() throws IOException, KyuubiRestException {
     // test spnego auth
     TestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
@@ -220,7 +220,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void getBatchInfoListTest() throws IOException, KyuubiException {
+  public void getBatchInfoListTest() throws IOException, KyuubiRestException {
     // test spnego auth
     TestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
@@ -242,7 +242,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void getOperationLogTest() throws IOException, KyuubiException {
+  public void getOperationLogTest() throws IOException, KyuubiRestException {
     // test spnego auth
     TestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
@@ -260,7 +260,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void deleteBatchTest() throws IOException, KyuubiException {
+  public void deleteBatchTest() throws IOException, KyuubiRestException {
     // test spnego auth
     TestServlet.setAuthSchema(NEGOTIATE_AUTH);
     spnegoBatchRestApi.deleteBatch("71535", true, "b_test");

@@ -35,7 +35,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.kyuubi.KyuubiException;
+import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,41 +63,41 @@ public class RestClient implements AutoCloseable {
   }
 
   public <T> T get(String path, Map<String, Object> params, TypeReference<T> type)
-      throws KyuubiException {
+      throws KyuubiRestException {
     try {
       String responseJson = get(path, params);
       return new ObjectMapper().readValue(responseJson, type);
     } catch (JsonProcessingException e) {
-      throw new KyuubiException(
+      throw new KyuubiRestException(
           "cannot convert response json to object: " + type.getType().getTypeName(), e);
     }
   }
 
-  public String get(String path, Map<String, Object> params) throws KyuubiException {
+  public String get(String path, Map<String, Object> params) throws KyuubiRestException {
     return doRequest(buildURI(path, params), RequestBuilder.get());
   }
 
-  public <T> T post(String body, TypeReference<T> type) throws KyuubiException {
+  public <T> T post(String body, TypeReference<T> type) throws KyuubiRestException {
     try {
       String responseJson = post(body);
       return new ObjectMapper().readValue(responseJson, type);
     } catch (JsonProcessingException e) {
-      throw new KyuubiException(
+      throw new KyuubiRestException(
           "cannot convert response json to object: " + type.getType().getTypeName(), e);
     }
   }
 
-  public String post(String body) throws KyuubiException {
+  public String post(String body) throws KyuubiRestException {
     RequestBuilder postRequestBuilder =
         RequestBuilder.post().setEntity(new StringEntity(body, StandardCharsets.UTF_8));
     return doRequest(buildURI(), postRequestBuilder);
   }
 
-  public String delete(String path, Map<String, Object> params) throws KyuubiException {
+  public String delete(String path, Map<String, Object> params) throws KyuubiRestException {
     return doRequest(buildURI(path, params), RequestBuilder.delete());
   }
 
-  private String doRequest(URI uri, RequestBuilder requestBuilder) throws KyuubiException {
+  private String doRequest(URI uri, RequestBuilder requestBuilder) throws KyuubiRestException {
     String response = "";
     CloseableHttpResponse httpResponse = null;
     try {
@@ -114,13 +114,13 @@ public class RestClient implements AutoCloseable {
       LOG.info("Response: {}", response);
     } catch (Exception e) {
       e.printStackTrace();
-      throw new KyuubiException("Api request failed for " + uri.toString(), e);
+      throw new KyuubiRestException("Api request failed for " + uri.toString(), e);
     } finally {
       if (httpResponse != null) {
         try {
           httpResponse.close();
         } catch (IOException e) {
-          throw new KyuubiException("Close http response failed.", e);
+          throw new KyuubiRestException("Close http response failed.", e);
         }
       }
     }
@@ -128,11 +128,11 @@ public class RestClient implements AutoCloseable {
     return response;
   }
 
-  private URI buildURI() throws KyuubiException {
+  private URI buildURI() throws KyuubiRestException {
     return buildURI(null, null);
   }
 
-  private URI buildURI(String path, Map<String, Object> params) throws KyuubiException {
+  private URI buildURI(String path, Map<String, Object> params) throws KyuubiRestException {
     URI uri = null;
     try {
       String url = StringUtils.isNotBlank(path) ? this.baseUrl + "/" + path : this.baseUrl;
@@ -146,7 +146,7 @@ public class RestClient implements AutoCloseable {
 
       uri = builder.build();
     } catch (URISyntaxException e) {
-      throw new KyuubiException("invalid URI.", e);
+      throw new KyuubiRestException("invalid URI.", e);
     }
 
     return uri;
