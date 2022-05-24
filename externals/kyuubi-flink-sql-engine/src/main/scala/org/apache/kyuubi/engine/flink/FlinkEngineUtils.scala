@@ -40,8 +40,10 @@ object FlinkEngineUtils extends Logging {
 
   def checkFlinkVersion(): Unit = {
     val flinkVersion = EnvironmentInformation.getVersion
-    if (!flinkVersion.startsWith("1.14")) {
-      throw new RuntimeException("Only Flink-1.14.x is supported now!")
+    flinkVersion.split(".").map(_.toInt) match {
+      case Array(_, v, _) if v < 14 =>
+        throw new RuntimeException("Only Flink version >= 1.14 is supported now!")
+      case _ =>
     }
   }
 
