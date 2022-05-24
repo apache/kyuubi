@@ -52,8 +52,8 @@ class TrinoStatementSuite extends WithTrinoContainerServer {
       assert(this.schema === trinoStatement.getCurrentDatabase)
 
       val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "use sf1")
-      trinoStatement2.execute()
-
+      // if trinoStatement.execute return iterator is lazy, call toArray to strict evaluation
+      trinoStatement2.execute().toArray
       assert("sf1" === trinoStatement2.getCurrentDatabase)
     }
   }
@@ -61,7 +61,7 @@ class TrinoStatementSuite extends WithTrinoContainerServer {
   test("test exception") {
     withTrinoContainer { trinoContext =>
       val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "use kyuubi")
-      val e1 = intercept[KyuubiSQLException](trinoStatement.execute())
+      val e1 = intercept[KyuubiSQLException](trinoStatement.execute().toArray)
       assert(e1.getMessage.contains("Schema does not exist: tpch.kyuubi"))
     }
   }

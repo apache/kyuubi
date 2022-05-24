@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.engine.trino.TrinoStatement
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{COLUMN_NAME, TABLE_CAT, TABLE_NAME, TABLE_SCHEM}
 import org.apache.kyuubi.session.Session
 
@@ -71,7 +71,7 @@ class GetColumns(
         TrinoStatement(trinoContext, session.sessionManager.getConf, query.toString)
       schema = trinoStatement.getColumns
       val resultSet = trinoStatement.execute()
-      iter = new IterableFetchIterator(resultSet)
+      iter = new ArrayFetchIterator(resultSet.toArray)
     } catch onError()
   }
 }
