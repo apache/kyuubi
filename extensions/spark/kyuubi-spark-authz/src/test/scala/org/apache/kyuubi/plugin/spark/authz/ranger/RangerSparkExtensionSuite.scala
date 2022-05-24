@@ -290,7 +290,7 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
         assert(sql(s"show table extended from $db like '$table*'").collect().length === 5))
       doAs(
         "bob",
-       assert(sql(s"show tables from $db").collect().length === 5))
+        assert(sql(s"show tables from $db").collect().length === 5))
       doAs(
         "bob",
         assert(sql(s"show table extended from $db like '$table*'").collect().length === 3))
