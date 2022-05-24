@@ -41,7 +41,7 @@ trait ProcBuilder {
    * The short name of the engine process builder, we use this for form the engine jar paths now
    * see `mainResource`
    */
-  protected def shortName: String
+  def shortName: String
 
   /**
    * executable, it is `JAVA_HOME/bin/java` by default
@@ -97,13 +97,11 @@ trait ProcBuilder {
 
   protected def proxyUser: String
 
-  protected def commands: Array[String]
+  protected val commands: Array[String]
 
-  protected def conf: KyuubiConf
+  def conf: KyuubiConf
 
   protected def env: Map[String, String] = conf.getEnvs
-
-  protected def childProcEnv: Map[String, String] = env
 
   protected val extraEngineLog: Option[OperationLog]
 
@@ -137,7 +135,7 @@ trait ProcBuilder {
     val pb = new ProcessBuilder(commands: _*)
 
     val envs = pb.environment()
-    envs.putAll(childProcEnv.asJava)
+    envs.putAll(env.asJava)
     pb.directory(workingDir.toFile)
     pb.redirectError(engineLog)
     pb.redirectOutput(engineLog)
@@ -237,18 +235,12 @@ trait ProcBuilder {
     process
   }
 
-  /**
-   * Use Left to represent engineRefId and Right to represent line.
-   */
-  def killApplication(clue: Either[String, String] = Right(lastRowsOfLog.toArray.mkString("\n")))
-      : String = ""
-
-  def close(): Unit = synchronized {
+  def close(destroyProcess: Boolean = !waitCompletion): Unit = synchronized {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
       logCaptureThread = null
     }
-    if (!waitCompletion && process != null) {
+    if (destroyProcess && process != null) {
       info("Destroy the process, since waitCompletion is false.")
       process.destroyForcibly()
       process = null
@@ -278,7 +270,7 @@ trait ProcBuilder {
     if (commands == null) {
       super.toString()
     } else {
-      commands.map {
+      Utils.redactCommandLineArgs(conf, commands).map {
         case arg if arg.startsWith("--") => s"\\\n\t$arg"
         case arg => arg
       }.mkString(" ")
@@ -331,6 +323,8 @@ trait ProcBuilder {
       s"configuring $requiredEnv, please visit https://kyuubi.apache.org/docs/latest/" +
       s"deployment/settings.html#environments")
   }
+
+  def clusterManager(): Option[String] = None
 
 }
 

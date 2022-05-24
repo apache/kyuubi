@@ -20,9 +20,11 @@ package org.apache.kyuubi.engine.hive.session
 import java.io.File
 import java.util.concurrent.Future
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hive.service.cli.{SessionHandle => ImportedSessionHandle}
-import org.apache.hive.service.cli.session.{HiveSessionImpl => ImportedHiveSessionImpl, SessionManager => ImportedHiveSessionManager}
+import org.apache.hive.service.cli.session.{HiveSessionImplwithUGI => ImportedHiveSessionImpl, HiveSessionProxy, SessionManager => ImportedHiveSessionManager}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
@@ -72,14 +74,20 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       conf: Map[String, String]): Session = {
     val sessionHandle = SessionHandle(protocol)
     val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
-    val hive = new ImportedHiveSessionImpl(
-      new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
-      protocol,
-      user,
-      password,
-      HiveSQLEngine.hiveConf,
-      ipAddress,
-      null)
+    val hive = {
+      val sessionWithUGI = new ImportedHiveSessionImpl(
+        new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
+        protocol,
+        user,
+        password,
+        HiveSQLEngine.hiveConf,
+        ipAddress,
+        null,
+        Seq(clientIp).asJava)
+      val proxy = HiveSessionProxy.getProxy(sessionWithUGI, sessionWithUGI.getSessionUgi)
+      sessionWithUGI.setProxySession(proxy)
+      proxy
+    }
     hive.setSessionManager(internalSessionManager)
     hive.setOperationManager(internalSessionManager.getOperationManager)
     operationLogRoot.foreach(dir => hive.setOperationLogSessionDir(new File(dir)))

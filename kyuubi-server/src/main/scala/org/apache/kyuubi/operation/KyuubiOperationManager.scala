@@ -21,12 +21,12 @@ import java.util.concurrent.TimeUnit
 
 import org.apache.hive.service.rpc.thrift.TRowSet
 
+import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.server.api.v1.BatchRequest
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionImpl, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -149,6 +149,18 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       foreignSchema,
       foreignTable)
     addOperation(operation)
+  }
+
+  override def getQueryId(operation: Operation): String = {
+    val kyuubiOperation = operation.asInstanceOf[KyuubiOperation]
+    val client = kyuubiOperation.client
+    val remoteHandle = kyuubiOperation.remoteOpHandle()
+    if (remoteHandle != null) {
+      val queryId = client.getQueryId(remoteHandle).getQueryId
+      queryId
+    } else {
+      null
+    }
   }
 
   def newLaunchEngineOperation(session: KyuubiSessionImpl, shouldRunAsync: Boolean): Operation = {

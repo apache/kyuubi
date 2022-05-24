@@ -17,15 +17,16 @@
 
 package org.apache.kyuubi.session
 
+import scala.collection.JavaConverters._
+
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.server.api.v1.BatchRequest
 
 class KyuubiBatchSessionImpl(
     protocol: TProtocolVersion,
@@ -38,14 +39,15 @@ class KyuubiBatchSessionImpl(
     batchRequest: BatchRequest)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
   override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
-  val batchId: String = handle.identifier.toString
 
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] =
-    sessionManager.validateBatchConf(Option(batchRequest.conf).getOrElse(Map.empty))
+    sessionManager.validateBatchConf(batchRequest.getConf.asScala.toMap)
+
+  batchRequest.setConf(normalizedConf.asJava)
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
-    .newBatchJobSubmissionOperation(this, batchRequest.copy(conf = normalizedConf))
+    .newBatchJobSubmissionOperation(this, batchRequest)
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
@@ -67,9 +69,6 @@ class KyuubiBatchSessionImpl(
   }
 
   override def close(): Unit = {
-    if (!OperationState.isTerminal(batchJobSubmissionOp.getStatus.state)) {
-      closeOperation(batchJobSubmissionOp.getHandle)
-    }
     super.close()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)

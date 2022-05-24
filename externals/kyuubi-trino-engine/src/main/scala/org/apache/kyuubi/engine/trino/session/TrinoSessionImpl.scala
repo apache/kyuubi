@@ -34,6 +34,9 @@ import org.apache.kyuubi.Utils.currentUser
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.engine.trino.TrinoConf
 import org.apache.kyuubi.engine.trino.TrinoContext
+import org.apache.kyuubi.engine.trino.event.TrinoSessionEvent
+import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.AbstractSession
 import org.apache.kyuubi.session.SessionManager
 
@@ -49,6 +52,8 @@ class TrinoSessionImpl(
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
 
+  private val sessionEvent = TrinoSessionEvent(this)
+
   override def open(): Unit = {
     normalizedConf.foreach {
       case ("use:database", database) => clientSession = createClientSession(database)
@@ -63,6 +68,7 @@ class TrinoSessionImpl(
     trinoContext = TrinoContext(httpClient, clientSession)
 
     super.open()
+    EventBus.post(sessionEvent)
   }
 
   private def createClientSession(schema: String = null): ClientSession = {
@@ -96,5 +102,16 @@ class TrinoSessionImpl(
       null,
       new Duration(clientRequestTimeout, TimeUnit.MILLISECONDS),
       true)
+  }
+
+  override protected def runOperation(operation: Operation): OperationHandle = {
+    sessionEvent.totalOperations += 1
+    super.runOperation(operation)
+  }
+
+  override def close(): Unit = {
+    sessionEvent.endTime = System.currentTimeMillis()
+    EventBus.post(sessionEvent)
+    super.close()
   }
 }

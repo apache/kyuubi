@@ -30,6 +30,7 @@ import org.apache.thrift.server.{ServerContext, TServerEventHandler}
 import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -423,7 +424,10 @@ abstract class TFrontendService(name: String)
       operationStatus.exception.foreach { e =>
         resp.setSqlState(e.getSQLState)
         resp.setErrorCode(e.getErrorCode)
-        resp.setErrorMessage(e.getMessage)
+        resp.setErrorMessage(stringifyException(e))
+      }
+      operationStatus.operationProgressUpdate.foreach { p =>
+        resp.setProgressUpdateResponse(p)
       }
       resp.setStatus(OK_STATUS)
     } catch {
@@ -528,13 +532,30 @@ abstract class TFrontendService(name: String)
   override def GetQueryId(req: TGetQueryIdReq): TGetQueryIdResp = {
     debug(req.toString)
     val resp = new TGetQueryIdResp
+    val queryId = be.getQueryId(OperationHandle(req.getOperationHandle))
+    resp.setQueryId(queryId)
     resp
   }
 
   override def SetClientInfo(req: TSetClientInfoReq): TSetClientInfoResp = {
     debug(req.toString)
     val resp = new TSetClientInfoResp
-    resp.setStatus(KyuubiSQLException.featureNotSupported().toTStatus)
+    if (req.isSetConfiguration) {
+      val sessionHandle = SessionHandle(req.getSessionHandle)
+      val stringBuilder = new StringBuilder("Client information for ")
+        .append(sessionHandle)
+        .append(": ")
+      val entries = req.getConfiguration.entrySet.asScala.toSeq
+      entries.headOption.foreach(e => {
+        stringBuilder.append(e.getKey).append(" = ").append(e.getValue)
+      })
+      entries.tail.foreach { e =>
+        stringBuilder.append(", ")
+        stringBuilder.append(e.getKey).append(" = ").append(e.getValue)
+      }
+      info(stringBuilder.toString())
+    }
+    resp.setStatus(OK_STATUS)
     resp
   }
 

@@ -146,7 +146,7 @@ yarn.application.id: application_00000000XX_00XX
 
 Either `HADOOP_CONF_DIR` or `YARN_CONF_DIR` is configured and points to the Hadoop client configurations directory, usually, `$HADOOP_HOME/etc/hadoop`.
 
-If the `HADOOP_CONF_DIR` points the YARN and HDFS cluster correctly, and the `HADOOP_CLASSPATH` environment variable is set, you can launch a Flink on YARN session, and submit an example job:
+If the `HADOOP_CONF_DIR` points to the YARN and HDFS cluster correctly, and the `HADOOP_CLASSPATH` environment variable is set, you can launch a Flink on YARN session, and submit an example job:
 ```bash
 # we assume to be in the root directory of 
 # the unzipped Flink distribution
@@ -169,12 +169,33 @@ export HADOOP_CLASSPATH=`hadoop classpath`
 echo "stop" | ./bin/yarn-session.sh -id application_XXXXX_XXX
  ```
 
-If the `TopSpeedWindowing` passes, configure it in `$KYUUBI_HOME/conf/kyuubi-env.sh` or `$FLINK_HOME/bin/config.sh`, e.g.
+If the `TopSpeedWindowing` passes, configure it in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 
 ```bash
 $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi-env.sh
 ```
 
+#### Required Environment Variable
+
+The `FLINK_HADOOP_CLASSPATH` is required, too.
+
+For users who are using Hadoop 3.x, Hadoop shaded client is recommended instead of Hadoop vanilla jars. 
+For users who are using Hadoop 2.x, `FLINK_HADOOP_CLASSPATH` should be set to hadoop classpath to use Hadoop 
+vanilla jars. For users which does not use Hadoop services, e.g. HDFS, YARN at all, Hadoop client jars 
+is also required, and recommend to use Hadoop shaded client as Hadoop 3.x's users do.
+
+See [HADOOP-11656](https://issues.apache.org/jira/browse/HADOOP-11656) for details of Hadoop shaded client.
+
+To use Hadoop shaded client, please configure $KYUUBI_HOME/conf/kyuubi-env.sh as follows:
+
+```bash
+$ echo "export FLINK_HADOOP_CLASSPATH=/path/to/hadoop-client-runtime-3.3.2.jar:/path/to/hadoop-client-api-3.3.2.jar" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+```
+To use Hadoop vanilla jars, please configure $KYUUBI_HOME/conf/kyuubi-env.sh as follows:
+
+```bash
+$ echo "export FLINK_HADOOP_CLASSPATH=`hadoop classpath`" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+```
 ### Deployment Modes Supported by Flink on YARN
 
 For experiment use, we recommend deploying Kyuubi Flink SQL engine in [Session Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/yarn/#session-mode).
@@ -186,3 +207,57 @@ As Kyuubi Flink SQL engine wraps the Flink SQL client that currently does not su
 so `security.kerberos.login.keytab` and `security.kerberos.login.principal` should not use now.
 
 Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](settings.html#kinit).
+
+## Deploy Kyuubi Hive Engine on Yarn
+
+### Requirements
+
+When you want to deploy Kyuubi's Hive SQL engines on YARN, you'd better have cognition upon the following things.
+
+- Knowing the basics about [Running Hive on YARN](https://cwiki.apache.org/confluence/display/Hive/GettingStarted)
+- A binary distribution of Hive
+  - You can use the built-in Hive distribution
+  - Download a recent Hive distribution from the [Hive official website](https://hive.apache.org/downloads.html) and unpack it
+  - You can [Build Hive](https://cwiki.apache.org/confluence/display/Hive//GettingStarted#GettingStarted-BuildingHivefromSource)
+- An active [Apache Hadoop YARN](https://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) cluster
+  - Make sure your YARN cluster is ready for accepting Hive applications by running yarn top. It should show no error messages
+- An active [Apache Hadoop HDFS](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html) cluster
+- Setup Hadoop client configurations at the machine the Kyuubi server locates
+- An active [Hive Metastore Service](https://cwiki.apache.org/confluence/display/hive/design#Design-Metastore)
+
+### Configurations
+
+#### Environment
+
+Either `HADOOP_CONF_DIR` or `YARN_CONF_DIR` is configured and points to the Hadoop client configurations directory, usually, `$HADOOP_HOME/etc/hadoop`.
+
+If the `HADOOP_CONF_DIR` points to the YARN and HDFS cluster correctly, you should be able to run the `Hive SQL` example on YARN.
+
+```bash
+$ $HIVE_HOME/bin/hiveserver2
+# In another terminal
+$ $HIVE_HOME/bin/beeline -u 'jdbc:hive2://localhost:10000/default'
+0: jdbc:hive2://localhost:10000/default> CREATE TABLE pokes (foo INT, bar STRING);
+0: jdbc:hive2://localhost:10000/default> INSERT INTO TABLE pokes VALUES (1, 'hello');
+```
+
+If the `Hive SQL` passes and there is a job in Yarn Web UI, It indicates the hive environment is normal.
+
+#### Required Environment Variable
+
+The `HIVE_HADOOP_CLASSPATH` is required, too. It should contain `commons-collections-*.jar`, 
+`hadoop-client-runtime-*.jar`, `hadoop-client-api-*.jar` and `htrace-core4-*.jar`.
+All four jars are in the `HADOOP_HOME`. 
+
+For example, in Hadoop 3.1.0 version, the following is their location. 
+- `${HADOOP_HOME}/share/hadoop/common/lib/commons-collections-3.2.2.jar`
+- `${HADOOP_HOME}/share/hadoop/client/hadoop-client-runtime-3.1.0.jar`
+- `${HADOOP_HOME}/share/hadoop/client/hadoop-client-api-3.1.0.jar`
+- `${HADOOP_HOME}/share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar`
+
+Configure them in `$KYUUBI_HOME/conf/kyuubi-env.sh` or `$HIVE_HOME/conf/hive-env.sh`, e.g.
+
+```bash
+$ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+$ echo "export HIVE_HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/common/lib/commons-collections-3.2.2.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-runtime-3.1.0.jar:${HADOOP_HOME}/share/hadoop/client/hadoop-client-api-3.1.0.jar:${HADOOP_HOME}/share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar" >> $KYUUBI_HOME/conf/kyuubi-env.sh
+```

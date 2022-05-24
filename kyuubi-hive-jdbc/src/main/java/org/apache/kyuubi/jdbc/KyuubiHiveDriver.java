@@ -18,7 +18,6 @@
 package org.apache.kyuubi.jdbc;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.sql.*;
 import java.util.Properties;
@@ -48,7 +47,11 @@ public class KyuubiHiveDriver implements Driver {
 
   @Override
   public boolean acceptsURL(String url) throws SQLException {
-    return url.startsWith(Utils.URL_PREFIX);
+    return url != null
+        && Utils.URL_PREFIX_LIST.stream()
+            .filter(pre -> url.startsWith(pre))
+            .findFirst()
+            .isPresent();
   }
 
   @Override
@@ -77,7 +80,7 @@ public class KyuubiHiveDriver implements Driver {
       info = new Properties();
     }
 
-    if ((url != null) && url.startsWith(Utils.URL_PREFIX)) {
+    if (acceptsURL(url)) {
       info = parseURLForPropertyInfo(url, info);
     }
 
@@ -121,16 +124,13 @@ public class KyuubiHiveDriver implements Driver {
   private Properties parseURLForPropertyInfo(String url, Properties defaults) throws SQLException {
     Properties urlProps = (defaults != null) ? new Properties(defaults) : new Properties();
 
-    if (url == null || !url.startsWith(Utils.URL_PREFIX)) {
+    if (!acceptsURL(url)) {
       throw new SQLException("Invalid connection url: " + url);
     }
 
     Utils.JdbcConnectionParams params;
     try {
-      Method parseURLMethod =
-          Utils.class.getDeclaredMethod("parseURL", String.class, Properties.class);
-      parseURLMethod.setAccessible(true);
-      params = (Utils.JdbcConnectionParams) parseURLMethod.invoke(null, url, defaults);
+      params = Utils.parseURL(url, defaults);
     } catch (Exception e) {
       throw new SQLException(e);
     }

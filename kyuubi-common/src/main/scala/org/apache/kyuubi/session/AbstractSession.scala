@@ -90,11 +90,12 @@ abstract class AbstractSession(
   protected def runOperation(operation: Operation): OperationHandle = {
     try {
       val opHandle = operation.getHandle
-      operation.run()
       opHandleSet.add(opHandle)
+      operation.run()
       opHandle
     } catch {
       case e: KyuubiSQLException =>
+        opHandleSet.remove(operation.getHandle)
         sessionManager.operationManager.closeOperation(operation.getHandle)
         throw e
     }
@@ -105,6 +106,7 @@ abstract class AbstractSession(
       case TGetInfoType.CLI_SERVER_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
       case TGetInfoType.CLI_DBMS_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.kyuubi.KYUUBI_VERSION)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
           TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
           TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
@@ -198,6 +200,12 @@ abstract class AbstractSession(
         foreignSchema,
         foreignTable)
     runOperation(operation)
+  }
+
+  override def getQueryId(operationHandle: OperationHandle): String = {
+    val operation = sessionManager.operationManager.getOperation(operationHandle)
+    val queryId = sessionManager.operationManager.getQueryId(operation)
+    queryId
   }
 
   override def cancelOperation(operationHandle: OperationHandle): Unit = withAcquireRelease() {

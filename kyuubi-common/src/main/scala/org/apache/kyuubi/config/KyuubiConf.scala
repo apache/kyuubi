@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf._
@@ -693,7 +694,7 @@ object KyuubiConf {
     .doc("The timeout of awaiting response after sending request to remote sql query engine")
     .version("1.4.0")
     .timeConf
-    .createWithDefault(Duration.ofSeconds(60).toMillis)
+    .createWithDefault(0)
 
   val ENGINE_ALIVE_PROBE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.alive.probe.enabled")
@@ -1143,6 +1144,31 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val ENGINE_USER_ISOLATED_SPARK_SESSION: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.user.isolated.spark.session")
+      .doc("When set to false, if the engine is running in a group or server share level, " +
+        "all the JDBC/ODBC connections will be isolated against the user. Including: " +
+        "the temporary views, function registries, SQL configuration and the current database. " +
+        "Note that, it does not affect if the share level is connection or user.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.user.isolated.spark.session.idle.timeout")
+      .doc(s"If ${ENGINE_USER_ISOLATED_SPARK_SESSION.key} is false, we will release the " +
+        s"spark session if its corresponding user is inactive after this configured timeout.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofHours(6).toMillis)
+
+  val ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.user.isolated.spark.session.idle.interval")
+      .doc(s"The interval to check if the user isolated spark session is timeout.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(1).toMillis)
+
   val SERVER_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("kyuubi.backend.server.event.json.log.path")
       .doc("The location of server events go for the builtin JSON logger")
@@ -1224,21 +1250,26 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.security.enabled")
-      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
+      .internal
+      .doc("Whether to enable the internal secure access. Before 1.6.0, it is used for the secure" +
+        " access between kyuubi server and kyuubi engine. Since 1.6.0, kyuubi supports internal" +
+        " secure across kyuubi server instances.")
       .version("1.5.0")
       .booleanConf
       .createWithDefault(false)
 
   val ENGINE_SECURITY_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
     buildConf("kyuubi.engine.security.token.max.lifetime")
-      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
+      .internal
+      .doc("The max lifetime of the token used for internal secure access.")
       .version("1.5.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(10).toMillis)
 
   val ENGINE_SECURITY_SECRET_PROVIDER: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.secret.provider")
-      .doc("The class used to manage the engine security secret. This class must be a " +
+      .internal
+      .doc("The class used to manage the internal security secret. This class must be a " +
         "subclass of EngineSecuritySecretProvider.")
       .version("1.5.0")
       .stringConf
@@ -1247,6 +1278,7 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
     buildConf("kyuubi.engine.security.crypto.keyLength")
+      .internal
       .doc("The length in bits of the encryption key to generate. " +
         "Valid values are 128, 192 and 256")
       .version("1.5.0")
@@ -1256,6 +1288,7 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_IV_LENGTH: ConfigEntry[Int] =
     buildConf("kyuubi.engine.security.crypto.ivLength")
+      .internal
       .doc("Initial vector length, in bytes.")
       .version("1.5.0")
       .intConf
@@ -1263,6 +1296,7 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.crypto.keyAlgorithm")
+      .internal
       .doc("The algorithm for generated secret keys.")
       .version("1.5.0")
       .stringConf
@@ -1270,7 +1304,8 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.crypto.cipher")
-      .doc("The cipher transformation to use for encrypting engine access token.")
+      .internal
+      .doc("The cipher transformation to use for encrypting internal access token.")
       .version("1.5.0")
       .stringConf
       .createWithDefault("AES/CBC/PKCS5PADDING")
@@ -1311,7 +1346,12 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .toSequence()
-      .createWithDefault(Seq("ResetCommand", "SetCommand", "SetNamespaceCommand", "UseStatement"))
+      .createWithDefault(Seq(
+        "ResetCommand",
+        "SetCommand",
+        "SetNamespaceCommand",
+        "UseStatement",
+        "SetCatalogAndNamespace"))
 
   object OperationLanguages extends Enumeration {
     type OperationLanguage = Value
@@ -1412,6 +1452,28 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_FLINK_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.flink.memory")
+      .doc("The heap memory for the flink sql engine")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_FLINK_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.flink.java.options")
+      .doc("The extra java options for the flink sql engine")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_FLINK_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.flink.extra.classpath")
+      .doc("The extra classpath for the flink sql engine, for configuring location" +
+        " of hadoop client jars, etc")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
   val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.connections.per.user")
       .doc("Maximum kyuubi server connections per user." +
@@ -1435,4 +1497,28 @@ object KyuubiConf {
       .version("1.6.0")
       .intConf
       .createOptional
+
+  val SESSION_PROGRESS_ENABLE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.progress.enabled")
+      .doc("Whether to enable the operation progress. When true," +
+        " the operation progress will be returned in `GetOperationStatus`.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val SERVER_SECRET_REDACTION_PATTERN: OptionalConfigEntry[Regex] =
+    buildConf("kyuubi.server.redaction.regex")
+      .doc("Regex to decide which Kyuubi contain sensitive information. When this regex matches " +
+        "a property key or value, the value is redacted from the various logs.")
+      .version("1.6.0")
+      .regexConf
+      .createOptional
+
+  val OPERATION_SPARK_LISTENER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.spark.listener.enabled")
+      .doc("When set to true, Spark engine registers a SQLOperationListener before executing " +
+        "the statement, logs a few summary statistics when each stage completes.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
 }

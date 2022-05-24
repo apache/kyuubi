@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark
 import java.io.File
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
+import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 
 import org.scalatest.time.SpanSugar._
@@ -73,7 +74,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("engine log truncation") {
-    val msg = "org.apache.spark.sql.hive."
     val pb =
       new SparkProcessBuilder("kentyao", conf.set("spark.hive.metastore.uris", "thrift://dummy"))
     pb.start
@@ -81,7 +81,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       val error1 = pb.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
-      assert(error1.getMessage.contains(msg))
     }
 
     val pb2 = new SparkProcessBuilder(
@@ -93,7 +92,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       val error1 = pb2.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
-      assert(!error1.getMessage.contains(msg), "stack trace shall be truncated")
     }
 
     val pb3 =
@@ -103,7 +101,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       val error1 = pb3.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
-      assert(error1.getMessage.contains("Exception in thread"))
+      assert(error1.getMessage.contains("Only one of --proxy-user or --principal can be provided"))
     }
   }
 
@@ -260,11 +258,21 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
     val b1 = new SparkProcessBuilder("test", conf)
     assert(b1.toString.contains(s"--conf spark.files=$testKeytab"))
+  }
 
+  test("SparkProcessBuilder commands immutable") {
+    val conf = KyuubiConf(false)
+    val engineRefId = UUID.randomUUID().toString
+    val pb = new SparkProcessBuilder("", conf, engineRefId)
+    assert(pb.toString.contains(engineRefId))
+    val engineRefId2 = UUID.randomUUID().toString
+    conf.set("spark.yarn.tags", engineRefId2)
+    assert(!pb.toString.contains(engineRefId2))
+    assert(pb.toString.contains(engineRefId))
   }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)
   extends SparkProcessBuilder("fake", config) {
-  override protected def commands: Array[String] = Array("ls")
+  override protected val commands: Array[String] = Array("ls")
 }

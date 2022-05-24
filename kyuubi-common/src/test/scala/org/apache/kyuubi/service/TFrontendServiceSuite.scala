@@ -172,6 +172,8 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
       req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
       assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
+      req.setInfoType(TGetInfoType.CLI_ODBC_KEYWORDS)
+      assert(client.GetInfo(req).getInfoValue.getStringValue === "Unimplemented")
       req.setInfoType(TGetInfoType.CLI_MAX_COLUMN_NAME_LEN)
       assert(client.GetInfo(req).getInfoValue.getLenValue === 128)
       req.setInfoType(TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN)
@@ -356,6 +358,20 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
+  test("get query id") {
+    withSessionHandle { (client, handle) =>
+      val req = new TExecuteStatementReq()
+      req.setStatement("select 1")
+      req.setSessionHandle(handle)
+      req.setRunAsync(false)
+      val resp = client.ExecuteStatement(req)
+      val opHandle = resp.getOperationHandle
+      val req1 = new TGetQueryIdReq(opHandle)
+      val resp1 = client.GetQueryId(req1)
+      assert(resp1.getQueryId === "noop_query_id")
+    }
+  }
+
   test("get operation status") {
     withSessionHandle { (client, handle) =>
       val opHandle =
@@ -380,7 +396,8 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       val resp4 = client.GetOperationStatus(req2)
       assert(resp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       assert(resp4.getOperationState === TOperationState.ERROR_STATE)
-      assert(resp4.getErrorMessage === "noop operation err")
+      assert(resp4.getErrorMessage startsWith "org.apache.kyuubi.KyuubiSQLException:" +
+        " noop operation err\n\tat org.apache.kyuubi.KyuubiSQLException")
     }
   }
 

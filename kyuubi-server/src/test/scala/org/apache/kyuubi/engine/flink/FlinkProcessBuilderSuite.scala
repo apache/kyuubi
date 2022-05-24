@@ -17,36 +17,101 @@
 
 package org.apache.kyuubi.engine.flink
 
-import org.apache.kyuubi.KyuubiFunSuite
+import java.io.File
+
+import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
+
+import org.apache.kyuubi.{FLINK_COMPILE_VERSION, KyuubiException, KyuubiFunSuite, SCALA_COMPILE_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
 
 class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
+    .set(ENGINE_FLINK_MEMORY, "512m")
+    .set(
+      ENGINE_FLINK_JAVA_OPTIONS,
+      "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
 
-  test("flink engine process builder") {
-    val builder = new FlinkProcessBuilder("vinoyang", conf)
-    val commands = builder.toString.split(' ')
-    assert(commands.exists(_ endsWith "flink-sql-engine.sh"))
+  private def envDefault: ListMap[String, String] = ListMap(
+    "JAVA_HOME" -> s"${File.separator}jdk")
+  private def envWithoutHadoopCLASSPATH: ListMap[String, String] = envDefault +
+    ("HADOOP_CONF_DIR" -> s"${File.separator}hadoop${File.separator}conf") +
+    ("YARN_CONF_DIR" -> s"${File.separator}yarn${File.separator}conf") +
+    ("HBASE_CONF_DIR" -> s"${File.separator}hbase${File.separator}conf")
+  private def envWithAllHadoop: ListMap[String, String] = envWithoutHadoopCLASSPATH +
+    ("FLINK_HADOOP_CLASSPATH" -> s"${File.separator}hadoop")
+  private def confStr: String = {
+    conf.clone.set("yarn.tags", "KYUUBI").getAll.map {
+      case (k, v) => s"\\\n\t--conf $k=$v"
+    }.mkString(" ")
+  }
+  private def compareActualAndExpected(builder: FlinkProcessBuilder) = {
+    val actualCommands = builder.toString
+    val classpathStr: String = constructClasspathStr(builder)
+    val expectedCommands = s"$javaPath -Xmx512m " +
+      s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 " +
+      s"-cp $classpathStr $mainClassStr \\\n\t--conf kyuubi.session.user=vinoyang " +
+      s"$confStr"
+    info(s"\n\n actualCommands $actualCommands")
+    info(s"\n\n expectedCommands $expectedCommands")
+    assert(actualCommands == expectedCommands)
   }
 
-  test("kill application") {
-    val processBuilder = new FakeFlinkProcessBuilder(conf) {
-      override protected def env: Map[String, String] = Map("FLINK_HOME" -> "")
+  private def constructClasspathStr(builder: FlinkProcessBuilder) = {
+    val classpathEntries = new java.util.LinkedHashSet[String]
+    builder.mainResource.foreach(classpathEntries.add)
+
+    val flinkHomeField = classOf[FlinkProcessBuilder].getDeclaredField("flinkHome")
+    flinkHomeField.setAccessible(true)
+    val flinkHome = flinkHomeField.get(builder).asInstanceOf[String]
+
+    val flinkSqlClientJarPath = s"$flinkHome$flinkSqlClientJarPathSuffix"
+    val flinkLibPath = s"$flinkHome$flinkLibPathSuffix"
+    val flinkConfPath = s"$flinkHome$flinkConfPathSuffix"
+    classpathEntries.add(flinkSqlClientJarPath)
+    classpathEntries.add(flinkLibPath)
+    classpathEntries.add(flinkConfPath)
+    val envMethod = classOf[FlinkProcessBuilder].getDeclaredMethod("env")
+    envMethod.setAccessible(true)
+    val envMap = envMethod.invoke(builder).asInstanceOf[Map[String, String]]
+    envMap.foreach { case (k, v) =>
+      if (!k.equals("JAVA_HOME")) {
+        classpathEntries.add(v)
+      }
     }
-    val exit1 = processBuilder.killApplication(
-      Right("""
-              |[INFO] SQL update statement has been successfully submitted to the cluster:
-              |Job ID: 6b1af540c0c0bb3fcfcad50ac037c862
-              |""".stripMargin))
-    assert(exit1.contains("6b1af540c0c0bb3fcfcad50ac037c862")
-      && !exit1.contains("FLINK_HOME is not set!"))
-
-    val exit2 = processBuilder.killApplication(Right("unknow"))
-    assert(exit2.equals(""))
+    val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
+    extraCp.foreach(classpathEntries.add)
+    val classpathStr = classpathEntries.asScala.mkString(File.pathSeparator)
+    classpathStr
   }
-}
 
-class FakeFlinkProcessBuilder(config: KyuubiConf)
-  extends FlinkProcessBuilder("fake", config) {
-  override protected def commands: Array[String] = Array("ls")
+  private val javaPath = s"${envDefault("JAVA_HOME")}${File.separator}bin${File.separator}java"
+  private val flinkSqlClientJarPathSuffix = s"${File.separator}opt${File.separator}" +
+    s"flink-sql-client_$SCALA_COMPILE_VERSION-$FLINK_COMPILE_VERSION.jar"
+  private val flinkLibPathSuffix = s"${File.separator}lib${File.separator}*"
+  private val flinkConfPathSuffix = s"${File.separator}conf"
+  private val mainClassStr = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
+
+  test("all hadoop related environment variables are configured") {
+    val builder = new FlinkProcessBuilder("vinoyang", conf) {
+      override protected def env: Map[String, String] = envWithAllHadoop
+
+    }
+    compareActualAndExpected(builder)
+  }
+
+  test("all hadoop related environment variables are configured except FLINK_HADOOP_CLASSPATH") {
+    assertThrows[KyuubiException](new FlinkProcessBuilder("vinoyang", conf) {
+      override def env: Map[String, String] = envWithoutHadoopCLASSPATH
+    })
+  }
+
+  test("only FLINK_HADOOP_CLASSPATH environment variables are configured") {
+    val builder = new FlinkProcessBuilder("vinoyang", conf) {
+      override def env: Map[String, String] = envDefault +
+        ("FLINK_HADOOP_CLASSPATH" -> s"${File.separator}hadoop")
+    }
+    compareActualAndExpected(builder)
+  }
 }

@@ -34,12 +34,12 @@ import org.apache.hive.service.rpc.thrift.TOperationState
 import org.apache.hive.service.rpc.thrift.TStatusCode
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, OPERATION_INCREMENTAL_COLLECT}
+import org.apache.kyuubi.engine.trino.TrinoQueryTests
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
+class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_TRINO_CONNECTION_CATALOG.key -> "memory")
 
@@ -609,19 +609,27 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
       val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
       assertResult(Seq(1L))(idSeq2)
 
-      // fetch prior from second row, expected got first row
       val tFetchResultsReq3 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_PRIOR, 1)
       val tFetchResultsResp3 = client.FetchResults(tFetchResultsReq3)
-      assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
-      assertResult(Seq(0L))(idSeq3)
+      if (kyuubiConf.get(OPERATION_INCREMENTAL_COLLECT)) {
+        assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      } else {
+        assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq3 =
+          tFetchResultsResp3.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+        assertResult(Seq(0L))(idSeq3)
+      }
 
-      // fetch first
       val tFetchResultsReq4 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_FIRST, 3)
       val tFetchResultsResp4 = client.FetchResults(tFetchResultsReq4)
-      assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
-      assertResult(Seq(0L, 1L))(idSeq4)
+      if (kyuubiConf.get(OPERATION_INCREMENTAL_COLLECT)) {
+        assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      } else {
+        assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq4 =
+          tFetchResultsResp4.getResults.getColumns.get(0).getI32Val.getValues.asScala.toSeq
+        assertResult(Seq(0L, 1L))(idSeq4)
+      }
     }
   }
 

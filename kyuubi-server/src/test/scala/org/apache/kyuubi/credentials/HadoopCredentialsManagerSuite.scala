@@ -158,6 +158,18 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
       eventually(timeout(9000.milliseconds), interval(100.milliseconds)) {
         assert(manager.userCredentialsRefMap.size == 0)
       }
+
+      // New userRef is created
+      val newUserRef = manager.getOrCreateUserCredentialsRef(appUser)
+      assert(manager.userCredentialsRefMap.size == 1)
+
+      // Old renewal schedule is stopped
+      val epoch = userRef.getEpoch
+      Thread.sleep(2000L)
+      assert(userRef.getEpoch == epoch)
+
+      // New renewal schedule is running
+      assert(newUserRef.getEpoch >= 1)
     }
   }
 

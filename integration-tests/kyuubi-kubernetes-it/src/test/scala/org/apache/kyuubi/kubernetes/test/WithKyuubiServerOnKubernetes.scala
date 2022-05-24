@@ -24,7 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
   protected val kyuubiServerConf: KyuubiConf = KyuubiConf()
-  protected val connectionConf: Map[String, String]
+  protected def connectionConf: Map[String, String] = Map.empty
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
   final override protected lazy val conf: KyuubiConf = {

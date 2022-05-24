@@ -17,24 +17,24 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.kyuubi.SQLOperationListener
+import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
+import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.events.EventBus
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationStatus, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
     session: Session,
@@ -44,12 +44,26 @@ class ExecuteStatement(
     incrementalCollect: Boolean)
   extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
 
-  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
-
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
+  private val operationSparkListenerEnabled =
+    spark.conf.getOption(OPERATION_SPARK_LISTENER_ENABLED.key) match {
+      case Some(s) => s.toBoolean
+      case _ => session.sessionManager.getConf.get(OPERATION_SPARK_LISTENER_ENABLED)
+    }
+
+  private val operationListener: Option[SQLOperationListener] =
+    if (operationSparkListenerEnabled) {
+      Some(new SQLOperationListener(this, spark))
+    } else {
+      None
+    }
+
+  private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
+    case Some(s) => s.toBoolean
+    case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
+  }
 
   EventBus.post(SparkOperationEvent(this))
 
@@ -76,12 +90,8 @@ class ExecuteStatement(
       setState(OperationState.RUNNING)
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      // TODO: Make it configurable
-      spark.sparkContext.addSparkListener(operationListener)
+      operationListener.foreach(spark.sparkContext.addSparkListener(_))
       result = spark.sql(statement)
-      // TODO #921: COMPILED need consider eagerly executed commands
-      setState(OperationState.COMPILED)
-      debug(result.queryExecution)
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
@@ -97,16 +107,17 @@ class ExecuteStatement(
             new ArrayFetchIterator(result.take(resultMaxRows))
           }
         }
+      setCompiledStateIfNeeded()
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
     } finally {
-      statementTimeoutCleaner.foreach(_.shutdown())
+      shutdownTimeoutMonitor()
     }
   }
 
   override protected def runInternal(): Unit = {
-    addTimeoutMonitor()
+    addTimeoutMonitor(queryTimeout)
     if (shouldRunAsync) {
       val asyncOperation = new Runnable {
         override def run(): Unit = {
@@ -132,30 +143,51 @@ class ExecuteStatement(
     }
   }
 
-  private def addTimeoutMonitor(): Unit = {
-    if (queryTimeout > 0) {
-      val timeoutExecutor =
-        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
-      timeoutExecutor.schedule(
-        new Runnable {
-          override def run(): Unit = {
-            cleanup(OperationState.TIMEOUT)
-          }
-        },
-        queryTimeout,
-        TimeUnit.SECONDS)
-      statementTimeoutCleaner = Some(timeoutExecutor)
-    }
-  }
-
   override def cleanup(targetState: OperationState): Unit = {
-    spark.sparkContext.removeSparkListener(operationListener)
+    operationListener.foreach(spark.sparkContext.removeSparkListener(_))
     super.cleanup(targetState)
   }
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
     EventBus.post(
-      SparkOperationEvent(this, operationListener.getExecutionId))
+      SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+  }
+
+  override def getStatus: OperationStatus = {
+    if (progressEnable) {
+      val progressMonitor = new SparkProgressMonitor(spark, statementId)
+      setOperationJobProgress(new TProgressUpdateResp(
+        progressMonitor.headers,
+        progressMonitor.rows,
+        progressMonitor.progressedPercentage,
+        progressMonitor.executionStatus,
+        progressMonitor.footerSummary,
+        startTime))
+    }
+    super.getStatus
+  }
+
+  def setCompiledStateIfNeeded(): Unit = synchronized {
+    if (getStatus.state == OperationState.RUNNING) {
+      val lastAccessCompiledTime =
+        if (result != null) {
+          val phase = result.queryExecution.tracker.phases
+          if (phase.contains("parsing") && phase.contains("planning")) {
+            val compiledTime = phase("planning").endTimeMs - phase("parsing").startTimeMs
+            lastAccessTime + compiledTime
+          } else {
+            0L
+          }
+        } else {
+          0L
+        }
+      super.setState(OperationState.COMPILED)
+      if (lastAccessCompiledTime > 0L) {
+        lastAccessTime = lastAccessCompiledTime
+      }
+      EventBus.post(
+        SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+    }
   }
 }

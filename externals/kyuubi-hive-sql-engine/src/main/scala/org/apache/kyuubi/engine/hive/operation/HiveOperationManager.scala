@@ -17,16 +17,11 @@
 
 package org.apache.kyuubi.engine.hive.operation
 
-import java.sql.SQLException
 import java.util.List
 
-import scala.collection.JavaConverters._
-
-import org.apache.hadoop.hive.metastore.api.{FieldSchema, Schema}
-import org.apache.hive.service.cli.{RowSetFactory, TableSchema}
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hive.service.rpc.thrift.TRowSet
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationManager}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
@@ -129,36 +124,13 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
       opHandle: OperationHandle,
       order: FetchOrientation,
       maxRows: Int): TRowSet = {
-    def getLogSchema: TableSchema = {
-      val schema = new Schema
-      val fieldSchema = new FieldSchema
-      fieldSchema.setName("operation_log")
-      fieldSchema.setType("string")
-      schema.addToFieldSchemas(fieldSchema)
-      new TableSchema(schema)
-    }
-
     val operation = getOperation(opHandle).asInstanceOf[HiveOperation]
-    val internalHiveOperation = operation.internalHiveOperation
+    operation.getOperationLogRowSet(order, maxRows)
+  }
 
-    val rowSet = RowSetFactory.create(getLogSchema, operation.getProtocolVersion, false)
-    val operationLog = internalHiveOperation.getOperationLog
-    if (operationLog == null) {
-      // TODO: #2029 Operation Log support: set and read hive one directly
-      // throw KyuubiSQLException("Couldn't find log associated with operation handle: " + opHandle)
-      return rowSet.toTRowSet
-    }
-
-    try {
-      val logs = operationLog.readOperationLog(false, maxRows)
-      for (log <- logs.asScala) {
-        rowSet.addRow(Array(log))
-      }
-    } catch {
-      case e: SQLException =>
-        throw new KyuubiSQLException(e.getMessage, e.getCause)
-    }
-
-    rowSet.toTRowSet
+  override def getQueryId(operation: Operation): String = {
+    val hiveOperation = operation.asInstanceOf[HiveOperation]
+    val internalHiveOperation = hiveOperation.internalHiveOperation
+    internalHiveOperation.getParentSession.getHiveConf.getVar(ConfVars.HIVEQUERYID)
   }
 }

@@ -39,7 +39,7 @@ import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore}
 import org.apache.kyuubi.engine.spark.events.handler.{SparkHistoryLoggingEventHandler, SparkJsonLoggingEventHandler}
 import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies}
+import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
 
@@ -48,8 +48,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   override val backendService = new SparkSQLBackendService(spark)
   override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
 
-  @volatile private var shutdown = false
-  @volatile private var deregistered = false
+  private val shutdown = new AtomicBoolean(false)
 
   private val lifetimeTerminatingChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-lifetime-checker")
@@ -78,10 +77,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     })
   }
 
-  override def stop(): Unit = synchronized {
+  override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
     super.stop()
-
-    shutdown = true
     val shutdownTimeout = conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
     ThreadUtils.shutdown(
       lifetimeTerminatingChecker,
@@ -95,24 +92,20 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   private[kyuubi] def startLifetimeTerminatingChecker(stop: () => Unit): Unit = {
     val interval = conf.get(ENGINE_CHECK_INTERVAL)
     val maxLifetime = conf.get(ENGINE_SPARK_MAX_LIFETIME)
+    val deregistered = new AtomicBoolean(false)
     if (maxLifetime > 0) {
-      val checkTask = new Runnable {
-        override def run(): Unit = {
-          if (!shutdown && System.currentTimeMillis() - getStartTime > maxLifetime) {
-            if (!deregistered) {
-              info(s"Spark engine has been running for more than $maxLifetime ms," +
-                s" deregistering from engine discovery space.")
-              frontendServices.flatMap(_.discoveryService).map {
-                case engineServiceDiscovery: EngineServiceDiscovery => engineServiceDiscovery.stop()
-              }
-              deregistered = true
-            }
+      val checkTask: Runnable = () => {
+        if (!shutdown.get && System.currentTimeMillis() - getStartTime > maxLifetime) {
+          if (deregistered.compareAndSet(false, true)) {
+            info(s"Spark engine has been running for more than $maxLifetime ms," +
+              s" deregistering from engine discovery space.")
+            frontendServices.flatMap(_.discoveryService).foreach(_.stop())
+          }
 
-            if (backendService.sessionManager.getOpenSessionCount <= 0) {
-              info(s"Spark engine has been running for more than $maxLifetime ms" +
-                s" and no open session now, terminating")
-              stop()
-            }
+          if (backendService.sessionManager.getOpenSessionCount <= 0) {
+            info(s"Spark engine has been running for more than $maxLifetime ms" +
+              s" and no open session now, terminating")
+            stop()
           }
         }
       }
@@ -153,6 +146,10 @@ object SparkSQLEngine extends Logging {
     _sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     _sparkConf.setIfMissing("spark.master", "local")
     _sparkConf.setIfMissing("spark.ui.port", "0")
+    _sparkConf.set(
+      "spark.redaction.regex",
+      _sparkConf.get("spark.redaction.regex", "(?i)secret|password|token|access[.]key")
+        + "|zookeeper.auth.digest")
     // register the repl's output dir with the file server.
     // see also `spark.repl.classdir`
     _sparkConf.set("spark.repl.class.outputDir", outputDir.toFile.getAbsolutePath)
@@ -183,16 +180,9 @@ object SparkSQLEngine extends Logging {
 
   def createSpark(): SparkSession = {
     val session = SparkSession.builder.config(_sparkConf).getOrCreate
-    (kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
-      .foreach { sqlStr =>
-        session.sparkContext.setJobGroup(
-          "engine_initializing_queries",
-          sqlStr,
-          interruptOnCancel = true)
-        debug(s"Execute session initializing sql: $sqlStr")
-        session.sql(sqlStr).isEmpty
-        session.sparkContext.clearJobGroup()
-      }
+    KyuubiSparkUtil.initializeSparkSession(
+      session,
+      kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
     session
   }
 
@@ -285,7 +275,8 @@ object SparkSQLEngine extends Logging {
           case e: KyuubiException => currentEngine match {
               case Some(engine) =>
                 engine.stop()
-                val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
+                val event = EngineEvent(engine)
+                  .copy(endTime = System.currentTimeMillis(), diagnostic = e.getMessage)
                 EventBus.post(event)
                 error(event, e)
               case _ => error("Current SparkSQLEngine is not created.")

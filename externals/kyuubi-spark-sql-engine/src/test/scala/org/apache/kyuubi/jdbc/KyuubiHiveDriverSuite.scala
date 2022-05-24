@@ -22,7 +22,7 @@ import java.util.Properties
 import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.jdbc.hive.KyuubiStatement
+import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiStatement}
 import org.apache.kyuubi.tags.IcebergTest
 
 @IcebergTest
@@ -101,5 +101,14 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
       statement.close()
       connection.close()
     }
+  }
+
+  test("wrapable KyuubiConnection") {
+    val driver = new KyuubiHiveDriver()
+    val connection = driver.connect(getJdbcUrl, new Properties())
+    assert(connection.isWrapperFor(classOf[KyuubiConnection]))
+    val kyuubiConnection = connection.unwrap(classOf[KyuubiConnection])
+    assert(kyuubiConnection != null)
+    connection.close()
   }
 }

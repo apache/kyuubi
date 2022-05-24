@@ -31,9 +31,9 @@ import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationState}
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.service.authentication.EngineSecurityAccessor
+import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -64,7 +64,8 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  val engine: EngineRef = new EngineRef(sessionConf, user)
+  val engine: EngineRef =
+    new EngineRef(sessionConf, user, handle.identifier.toString, sessionManager.applicationManager)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
@@ -97,7 +98,7 @@ class KyuubiSessionImpl(
       val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
       val passwd =
         if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
-          EngineSecurityAccessor.get().issueToken()
+          InternalSecurityAccessor.get().issueToken()
         } else {
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }
@@ -112,7 +113,8 @@ class KyuubiSessionImpl(
             e)
           throw e
       }
-      logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
+      logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
+        s" with ${_engineSessionHandle}]")
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
       _client.engineId.foreach(e => sessionEvent.engineId = e)
@@ -153,14 +155,12 @@ class KyuubiSessionImpl(
   }
 
   override def close(): Unit = {
-    if (!OperationState.isTerminal(launchEngineOp.getStatus.state)) {
-      closeOperation(launchEngineOp.getHandle)
-    }
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
       if (_client != null) _client.closeSession()
     } finally {
+      if (engine != null) engine.close()
       sessionEvent.endTime = System.currentTimeMillis()
       EventBus.post(sessionEvent)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))

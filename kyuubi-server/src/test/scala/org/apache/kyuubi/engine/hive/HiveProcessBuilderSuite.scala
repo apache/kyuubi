@@ -28,7 +28,7 @@ class HiveProcessBuilderSuite extends KyuubiFunSuite {
     val builder = new HiveProcessBuilder("kyuubi", conf)
     val commands = builder.toString.split('\n')
     assert(commands.head.endsWith("bin/java"), "wrong exec")
-    assert(commands.contains("-Dkyuubi.session.user=kyuubi"))
+    assert(builder.toString.contains("--conf\nkyuubi.session.user=kyuubi"))
     assert(commands.exists(ss => ss.contains("kyuubi-hive-sql-engine")), "wrong classpath")
     assert(builder.toString.contains("--conf\nkyuubi.on=off"))
   }

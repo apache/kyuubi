@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,22 +25,11 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.util.*;
+import org.apache.commons.lang.StringUtils;
+import org.apache.hive.service.cli.FetchType;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
-import org.apache.hive.service.rpc.thrift.TCLIService;
-import org.apache.hive.service.rpc.thrift.TCancelOperationReq;
-import org.apache.hive.service.rpc.thrift.TCancelOperationResp;
-import org.apache.hive.service.rpc.thrift.TCloseOperationReq;
-import org.apache.hive.service.rpc.thrift.TCloseOperationResp;
-import org.apache.hive.service.rpc.thrift.TExecuteStatementReq;
-import org.apache.hive.service.rpc.thrift.TExecuteStatementResp;
-import org.apache.hive.service.rpc.thrift.TFetchOrientation;
-import org.apache.hive.service.rpc.thrift.TFetchResultsReq;
-import org.apache.hive.service.rpc.thrift.TFetchResultsResp;
-import org.apache.hive.service.rpc.thrift.TGetOperationStatusReq;
-import org.apache.hive.service.rpc.thrift.TGetOperationStatusResp;
-import org.apache.hive.service.rpc.thrift.TOperationHandle;
-import org.apache.hive.service.rpc.thrift.TSessionHandle;
+import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
@@ -192,18 +182,28 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
     warningChain = null;
   }
 
-  void closeClientOperation() throws SQLException {
+  /**
+   * Closes the statement if there is one running. Do not change the the flags.
+   *
+   * @throws SQLException If there is an error closing the statement
+   */
+  private void closeStatementIfNeeded() throws SQLException {
     try {
       if (stmtHandle != null) {
         TCloseOperationReq closeReq = new TCloseOperationReq(stmtHandle);
         TCloseOperationResp closeResp = client.CloseOperation(closeReq);
         Utils.verifySuccessWithInfo(closeResp.getStatus());
+        stmtHandle = null;
       }
     } catch (SQLException e) {
       throw e;
     } catch (Exception e) {
       throw new SQLException(e.toString(), "08S01", e);
     }
+  }
+
+  void closeClientOperation() throws SQLException {
+    closeStatementIfNeeded();
     isQueryClosed = true;
     isExecuteStatementFailed = false;
     stmtHandle = null;
@@ -304,8 +304,7 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
   private void runAsyncOnServer(String sql, Map<String, String> confOneTime) throws SQLException {
     checkConnection("execute");
 
-    closeClientOperation();
-    initFlags();
+    reInitState();
 
     TExecuteStatementReq execReq = new TExecuteStatementReq(sessHandle, sql);
     /**
@@ -389,7 +388,12 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
               break;
             case CANCELED_STATE:
               // 01000 -> warning
-              throw new SQLException("Query was cancelled", "01000");
+              String errMsg = statusResp.getErrorMessage();
+              if (errMsg != null && !errMsg.isEmpty()) {
+                throw new SQLException("Query was cancelled. " + errMsg, "01000");
+              } else {
+                throw new SQLException("Query was cancelled", "01000");
+              }
             case TIMEDOUT_STATE:
               throw new SQLTimeoutException("Query timed out after " + queryTimeout + " seconds");
             case ERROR_STATE:
@@ -428,7 +432,13 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
     }
   }
 
-  private void initFlags() {
+  /**
+   * Close statement if needed, and reset the flags.
+   *
+   * @throws SQLException
+   */
+  private void reInitState() throws SQLException {
+    closeStatementIfNeeded();
     isCancelled = false;
     isQueryClosed = false;
     isLogBeingGenerated = true;
@@ -932,7 +942,7 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
       if (stmtHandle != null) {
         TFetchResultsReq tFetchResultsReq =
             new TFetchResultsReq(stmtHandle, getFetchOrientation(incremental), fetchSize);
-        tFetchResultsReq.setFetchType((short) 1);
+        tFetchResultsReq.setFetchType(FetchType.LOG.toTFetchType());
         tFetchResultsResp = client.FetchResults(tFetchResultsReq);
         Utils.verifySuccessWithInfo(tFetchResultsResp.getStatus());
       } else {
@@ -987,6 +997,30 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
       return guid64;
     }
     return null;
+  }
+
+  /**
+   * Returns the Query ID if it is running. This method is a public API for usage outside of Hive,
+   * although it is not part of the interface java.sql.Statement.
+   *
+   * @return Valid query ID if it is running else returns NULL.
+   * @throws SQLException If any internal failures.
+   */
+  @VisibleForTesting
+  public String getQueryId() throws SQLException {
+    if (stmtHandle == null) {
+      // If query is not running or already closed.
+      return null;
+    }
+
+    try {
+      final String queryId = client.GetQueryId(new TGetQueryIdReq(stmtHandle)).getQueryId();
+
+      // queryId can be empty string if query was already closed. Need to return null in such case.
+      return StringUtils.isBlank(queryId) ? null : queryId;
+    } catch (TException e) {
+      throw new SQLException(e);
+    }
   }
 
   /**

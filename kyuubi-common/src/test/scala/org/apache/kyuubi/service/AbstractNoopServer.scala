@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.service
 
-import org.apache.kyuubi.KyuubiException
-
 abstract class AbstractNoopServer(name: String) extends Serverable(name) {
 
   override val backendService = new NoopBackendService
@@ -33,6 +31,6 @@ abstract class AbstractNoopServer(name: String) extends Serverable(name) {
   }
 
   override protected def stopServer(): Unit = {
-    throw new KyuubiException("no need to stop me")
+    logger.info(s"$name stopped.")
   }
 }

@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine
 
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import scala.util.Random
@@ -36,10 +35,8 @@ import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
-import org.apache.kyuubi.ha.client.DiscoveryClient
-import org.apache.kyuubi.ha.client.DiscoveryPaths
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ENGINE_REF_ID, HA_ZK_NAMESPACE}
+import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
@@ -54,7 +51,8 @@ import org.apache.kyuubi.operation.log.OperationLog
 private[kyuubi] class EngineRef(
     conf: KyuubiConf,
     user: String,
-    engineRefId: String = UUID.randomUUID().toString)
+    engineRefId: String,
+    engineManager: KyuubiApplicationManager)
   extends Logging {
   // The corresponding ServerSpace where the engine belongs to
   private val serverSpace: String = conf.get(HA_ZK_NAMESPACE)
@@ -72,6 +70,12 @@ private[kyuubi] class EngineRef(
   private val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
+
+  // In case the multi kyuubi instances have the small gap of timeout, here we add
+  // a small amount of time for timeout
+  private val LOCK_TIMEOUT_SPAN_FACTOR = if (Utils.isTesting) 0.5 else 0.1
+
+  private var builder: ProcBuilder = _
 
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
@@ -147,10 +151,12 @@ private[kyuubi] class EngineRef(
       case _ =>
         val lockPath =
           DiscoveryPaths.makePath(
-            s"${serverSpace}_$shareLevel",
+            s"${serverSpace}_${shareLevel}_$engineType",
             "lock",
             Array(appUser, subdomain))
-        discoveryClient.tryWithLock(lockPath, timeout, TimeUnit.MILLISECONDS)(f)
+        discoveryClient.tryWithLock(
+          lockPath,
+          timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong)(f)
     }
 
   private def create(
@@ -164,31 +170,23 @@ private[kyuubi] class EngineRef(
     conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
     val started = System.currentTimeMillis()
     conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
-    val builder = engineType match {
+    builder = engineType match {
       case SPARK_SQL =>
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-        // tag is a seq type with comma-separated
-        conf.set(
-          SparkProcessBuilder.TAG_KEY,
-          conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") +
-            "KYUUBI," + engineRefId)
-        new SparkProcessBuilder(appUser, conf, extraEngineLog)
+        new SparkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case FLINK_SQL =>
         conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
-        // tag is a seq type with comma-separated
-        conf.set(
-          FlinkProcessBuilder.TAG_KEY,
-          conf.getOption(FlinkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
-        new FlinkProcessBuilder(appUser, conf, extraEngineLog)
+        new FlinkProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case TRINO =>
-        new TrinoProcessBuilder(appUser, conf, extraEngineLog)
+        new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
-        new HiveProcessBuilder(appUser, conf, extraEngineLog)
+        new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
     }
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
-      info(s"Launching engine:\n$builder")
+      val redactedCmd = builder.toString
+      info(s"Launching engine:\n$redactedCmd")
       val process = builder.start
       var exitValue: Option[Int] = None
       while (engineRef.isEmpty) {
@@ -204,14 +202,11 @@ private[kyuubi] class EngineRef(
           }
         }
         if (started + timeout <= System.currentTimeMillis()) {
-          val killMessage = engineType match {
-            case SPARK_SQL => builder.killApplication(Left(engineRefId))
-            case _ => builder.killApplication()
-          }
+          val killMessage = engineManager.killApplication(builder.clusterManager(), engineRefId)
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
-            s"Timeout($timeout ms) to launched $engineType engine with $builder. $killMessage",
+            s"Timeout($timeout ms) to launched $engineType engine with $redactedCmd. $killMessage",
             builder.getError)
         }
         engineRef = discoveryClient.getEngineByRefId(engineSpace, engineRefId)
@@ -237,5 +232,18 @@ private[kyuubi] class EngineRef(
       .getOrElse {
         create(discoveryClient, extraEngineLog)
       }
+  }
+
+  def close(): Unit = {
+    if (shareLevel == CONNECTION && builder != null) {
+      try {
+        val clusterManager = builder.clusterManager()
+        builder.close(true)
+        engineManager.killApplication(clusterManager, engineRefId)
+      } catch {
+        case e: Exception =>
+          warn(s"Error closing engine builder, engineRefId: $engineRefId", e)
+      }
+    }
   }
 }

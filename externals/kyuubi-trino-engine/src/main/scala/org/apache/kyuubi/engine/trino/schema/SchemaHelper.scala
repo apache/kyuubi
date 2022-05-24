@@ -36,6 +36,8 @@ import org.apache.hive.service.rpc.thrift.TTypeQualifierValue
 
 object SchemaHelper {
 
+  private[schema] val UNKNOWN: String = "unknown"
+
   private lazy val STRING_TYPES = Set(
     HYPER_LOG_LOG,
     QDIGEST,
@@ -70,6 +72,7 @@ object SchemaHelper {
     case MAP => TTypeId.MAP_TYPE
     case ROW => TTypeId.STRUCT_TYPE
     case stringType if STRING_TYPES.contains(stringType) => TTypeId.STRING_TYPE
+    case UNKNOWN => TTypeId.NULL_TYPE
     case other =>
       throw new IllegalArgumentException(s"Unrecognized trino type name: $other")
   }

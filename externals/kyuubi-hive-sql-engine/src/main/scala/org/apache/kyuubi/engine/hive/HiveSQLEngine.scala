@@ -18,26 +18,30 @@
 package org.apache.kyuubi.engine.hive
 
 import java.net.InetAddress
+import java.security.PrivilegedExceptionAction
 
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
+import org.apache.kyuubi.engine.hive.HiveSQLEngine.currentEngine
 import org.apache.kyuubi.engine.hive.events.HiveEngineEvent
 import org.apache.kyuubi.engine.hive.events.handler.HiveJsonLoggingEventHandler
 import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
-import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable}
+import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 
 class HiveSQLEngine extends Serverable("HiveSQLEngine") {
   override val backendService: AbstractBackendService = new HiveBackendService(this)
   override val frontendServices: Seq[AbstractFrontendService] =
     Seq(new HiveTBinaryFrontendService(this))
+  private[hive] val engineStartTime = System.currentTimeMillis()
 
   override def start(): Unit = {
     super.start()
@@ -46,7 +50,18 @@ class HiveSQLEngine extends Serverable("HiveSQLEngine") {
     backendService.sessionManager.startTerminatingChecker(() => stop())
   }
 
-  override protected def stopServer(): Unit = {}
+  override protected def stopServer(): Unit = {
+    currentEngine.foreach { engine =>
+      val event = HiveEngineEvent(engine)
+        .copy(state = ServiceState.STOPPED, endTime = System.currentTimeMillis())
+      EventBus.post(event)
+    }
+
+    // #2351
+    // https://issues.apache.org/jira/browse/HIVE-23164
+    // Server is not properly terminated because of non-daemon threads
+    System.exit(0)
+  }
 }
 
 object HiveSQLEngine extends Logging {
@@ -55,7 +70,7 @@ object HiveSQLEngine extends Logging {
   val kyuubiConf = new KyuubiConf()
   kyuubiConf.set(ENGINE_EVENT_LOGGERS.key, "JSON")
 
-  def startEngine(): HiveSQLEngine = {
+  def startEngine(): Unit = {
     try {
       // TODO: hive 2.3.x has scala 2.11 deps.
       initLoggerEventHandler(kyuubiConf)
@@ -93,9 +108,10 @@ object HiveSQLEngine extends Logging {
     val event = HiveEngineEvent(engine)
     info(event)
     EventBus.post(event)
-    Utils.addShutdownHook(() => engine.stop())
+    Utils.addShutdownHook(() => {
+      engine.getServices.foreach(_.stop())
+    })
     currentEngine = Some(engine)
-    engine
   }
 
   private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
@@ -119,12 +135,24 @@ object HiveSQLEngine extends Logging {
     SignalRegister.registerLogger(logger)
     try {
       Utils.fromCommandLineArgs(args, kyuubiConf)
-      startEngine()
+      val sessionUser = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY)
+      val realUser = UserGroupInformation.getLoginUser
+
+      if (sessionUser.isEmpty || sessionUser.get == realUser.getShortUserName) {
+        startEngine()
+      } else {
+        val effectiveUser = UserGroupInformation.createProxyUser(sessionUser.get, realUser)
+        effectiveUser.doAs(new PrivilegedExceptionAction[Unit] {
+          override def run(): Unit = startEngine()
+        })
+      }
+
     } catch {
       case t: Throwable => currentEngine match {
           case Some(engine) =>
             engine.stop()
-            val event = HiveEngineEvent(engine).copy(diagnostic = t.getMessage)
+            val event = HiveEngineEvent(engine)
+              .copy(endTime = System.currentTimeMillis(), diagnostic = t.getMessage)
             EventBus.post(event)
           case _ =>
             error(s"Failed to start Hive SQL engine: ${t.getMessage}.", t)

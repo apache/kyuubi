@@ -24,34 +24,39 @@ import java.util.LinkedHashSet
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import com.google.common.annotations.VisibleForTesting
+
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
 
 class HiveProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
+    val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
-  private val hiveHome: String = getEngineHome("hive")
+  @VisibleForTesting
+  def this(proxyUser: String, conf: KyuubiConf) {
+    this(proxyUser, conf, "")
+  }
+
+  private val hiveHome: String = getEngineHome(shortName)
+
+  private val HIVE_HADOOP_CLASSPATH: String = "HIVE_HADOOP_CLASSPATH"
 
   override protected def module: String = "kyuubi-hive-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.hive.HiveSQLEngine"
 
-  override protected def commands: Array[String] = {
+  override protected val commands: Array[String] = {
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
     buffer += executable
-
-    // TODO: How shall we deal with proxyUser,
-    // user.name
-    // kyuubi.session.user
-    // or just leave it, because we can handle it at operation layer
-    buffer += s"-D$KYUUBI_SESSION_USER_KEY=$proxyUser"
 
     val memory = conf.get(ENGINE_HIVE_MEMORY)
     buffer += s"-Xmx$memory"
@@ -77,24 +82,31 @@ class HiveProcessBuilder(
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
     // jars from hive distribution
     classpathEntries.add(s"$hiveHome${File.separator}lib${File.separator}*")
+    val hadoopCp = env.get(HIVE_HADOOP_CLASSPATH)
+    hadoopCp.foreach(classpathEntries.add)
     val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
-    if (extraCp.isEmpty) {
-      warn(s"The conf of kyuubi.engine.hive.extra.classpath is empty.")
+    if (hadoopCp.isEmpty && extraCp.isEmpty) {
+      warn(s"The conf of ${HIVE_HADOOP_CLASSPATH} and ${ENGINE_HIVE_EXTRA_CLASSPATH.key} is empty.")
+      debug("Detected development environment")
       mainResource.foreach { path =>
         val devHadoopJars = Paths.get(path).getParent
           .resolve(s"scala-$SCALA_COMPILE_VERSION")
           .resolve("jars")
         if (!Files.exists(devHadoopJars)) {
-          throw new KyuubiException(s"The path $devHadoopJars does not exists. Please set " +
-            s"kyuubi.engine.hive.extra.classpath for configuring location of " +
-            s"hadoop client jars, etc")
+          throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
+            s"Please set ${HIVE_HADOOP_CLASSPATH} or ${ENGINE_HIVE_EXTRA_CLASSPATH.key} for " +
+            s"configuring location of hadoop client jars, etc")
         }
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }
     }
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass
+
+    buffer += "--conf"
+    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+
     for ((k, v) <- conf.getAll) {
       buffer += "--conf"
       buffer += s"$k=$v"
@@ -102,7 +114,7 @@ class HiveProcessBuilder(
     buffer.toArray
   }
 
-  override def toString: String = commands.mkString("\n")
+  override def toString: String = Utils.redactCommandLineArgs(conf, commands).mkString("\n")
 
-  override protected def shortName: String = "hive"
+  override def shortName: String = "hive"
 }

@@ -315,7 +315,6 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
         () => metaData.storesLowerCaseQuotedIdentifiers(),
         () => metaData.storesMixedCaseIdentifiers(),
         () => metaData.storesMixedCaseQuotedIdentifiers(),
-        () => metaData.getSQLKeywords,
         () => metaData.nullPlusNonNullIsNull,
         () => metaData.supportsConvert,
         () => metaData.supportsTableCorrelationNames,
@@ -396,7 +395,6 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
         () => metaData.getRowIdLifetime,
         () => metaData.supportsStoredFunctionsUsingCallSyntax,
         () => metaData.autoCommitFailureClosesAllResultSets,
-        () => metaData.getClientInfoProperties,
         () => metaData.getFunctionColumns("", "%", "%", "%"),
         () => metaData.getPseudoColumns("", "%", "%", "%"),
         () => metaData.generatedKeyAlwaysReturned).foreach { func =>
@@ -405,6 +403,7 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
       }
 
       assert(metaData.allTablesAreSelectable)
+      assert(metaData.getClientInfoProperties.next)
       assert(metaData.getDatabaseProductName === "Apache Kyuubi (Incubating)")
       assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
       assert(metaData.getDriverName === "Kyuubi Project Hive JDBC Shaded Client")
@@ -431,20 +430,18 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
       assert(metaData.supportsLimitedOuterJoins)
       assert(metaData.getSchemaTerm === "database")
       assert(metaData.getProcedureTerm === "UDF")
-      assert(metaData.getCatalogTerm === "instance")
+      assert(metaData.getCatalogTerm === "catalog")
       assert(metaData.getCatalogSeparator === ".")
       assert(metaData.supportsSchemasInDataManipulation)
       assert(!metaData.supportsSchemasInProcedureCalls)
       assert(metaData.supportsSchemasInTableDefinitions)
       assert(!metaData.supportsSchemasInIndexDefinitions)
       assert(!metaData.supportsSchemasInPrivilegeDefinitions)
-      // This is actually supported, but hive jdbc package return false
-      assert(!metaData.supportsCatalogsInDataManipulation)
-      assert(!metaData.supportsCatalogsInProcedureCalls)
-      // This is actually supported, but hive jdbc package return false
-      assert(!metaData.supportsCatalogsInTableDefinitions)
-      assert(!metaData.supportsCatalogsInIndexDefinitions)
-      assert(!metaData.supportsCatalogsInPrivilegeDefinitions)
+      assert(metaData.supportsCatalogsInDataManipulation)
+      assert(metaData.supportsCatalogsInProcedureCalls)
+      assert(metaData.supportsCatalogsInTableDefinitions)
+      assert(metaData.supportsCatalogsInIndexDefinitions)
+      assert(metaData.supportsCatalogsInPrivilegeDefinitions)
       assert(!metaData.supportsPositionedDelete)
       assert(!metaData.supportsPositionedUpdate)
       assert(!metaData.supportsSelectForUpdate)

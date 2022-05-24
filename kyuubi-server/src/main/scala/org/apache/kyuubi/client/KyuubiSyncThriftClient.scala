@@ -53,7 +53,7 @@ class KyuubiSyncThriftClient private (
   @volatile private var remoteEngineBroken: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
-  private var engineLastAlive: Long = _
+  @volatile private var engineLastAlive: Long = _
 
   private def startEngineAliveProbe(): Unit = {
     engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
@@ -85,7 +85,7 @@ class KyuubiSyncThriftClient private (
       }
     }
     engineLastAlive = System.currentTimeMillis()
-    engineAliveThreadPool.scheduleAtFixedRate(
+    engineAliveThreadPool.scheduleWithFixedDelay(
       task,
       engineAliveProbeInterval,
       engineAliveProbeInterval,
@@ -308,6 +308,12 @@ class KyuubiSyncThriftClient private (
     val resp = withRetryingRequest(GetCrossReference(req), "GetCrossReference")
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
+  }
+
+  def getQueryId(operationHandle: TOperationHandle): TGetQueryIdResp = {
+    val req = new TGetQueryIdReq(operationHandle)
+    val resp = withRetryingRequest(GetQueryId(req), "GetQueryId")
+    resp
   }
 
   def getOperationStatus(operationHandle: TOperationHandle): TGetOperationStatusResp = {

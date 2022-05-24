@@ -116,4 +116,8 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       foreignTable: String): Operation = {
     throw KyuubiSQLException.featureNotSupported()
   }
+
+  override def getQueryId(operation: Operation): String = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 }

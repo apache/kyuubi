@@ -17,10 +17,10 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.Future
+import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TProgressUpdateResp, TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
@@ -29,6 +29,7 @@ import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThreadUtils
 
 abstract class AbstractOperation(opType: OperationType, session: Session)
   extends Operation with Logging {
@@ -41,6 +42,29 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   final private[kyuubi] val statementId = handle.identifier.toString
 
+  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
+
+  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
+    if (!isTerminalState(state)) {
+      setState(targetState)
+      Option(getBackgroundHandle).foreach(_.cancel(true))
+    }
+  }
+
+  protected def addTimeoutMonitor(queryTimeout: Long): Unit = {
+    if (queryTimeout > 0) {
+      val timeoutExecutor =
+        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
+      val action: Runnable = () => cleanup(OperationState.TIMEOUT)
+      timeoutExecutor.schedule(action, queryTimeout, TimeUnit.SECONDS)
+      statementTimeoutCleaner = Some(timeoutExecutor)
+    }
+  }
+
+  protected def shutdownTimeoutMonitor(): Unit = {
+    statementTimeoutCleaner.foreach(_.shutdown())
+  }
+
   override def getOperationLog: Option[OperationLog] = None
 
   @volatile protected var state: OperationState = INITIALIZED
@@ -49,6 +73,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   @volatile protected var lastAccessTime: Long = createTime
 
   @volatile protected var operationException: KyuubiSQLException = _
+  @volatile protected var operationJobProgress: TProgressUpdateResp = _
+
   @volatile protected var hasResultSet: Boolean = false
 
   @volatile private var _backgroundHandle: Future[_] = _
@@ -70,6 +96,10 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   protected def setOperationException(opEx: KyuubiSQLException): Unit = {
     this.operationException = opEx
+  }
+
+  def setOperationJobProgress(opJobProgress: TProgressUpdateResp): Unit = {
+    this.operationJobProgress = opJobProgress
   }
 
   protected def setState(newState: OperationState): Unit = {
@@ -174,6 +204,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   override def getHandle: OperationHandle = handle
 
   override def getStatus: OperationStatus = {
+    lastAccessTime = System.currentTimeMillis()
     OperationStatus(
       state,
       createTime,
@@ -181,7 +212,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
       lastAccessTime,
       completedTime,
       hasResultSet,
-      Option(operationException))
+      Option(operationException),
+      Option(operationJobProgress))
   }
 
   override def shouldRunAsync: Boolean

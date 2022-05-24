@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient
 import org.apache.kyuubi.service.{AbstractService, FrontendService}
 
 /**
@@ -50,7 +49,7 @@ abstract class ServiceDiscovery(
     this.conf = conf
 
     _namespace = conf.get(HA_ZK_NAMESPACE)
-    _discoveryClient = new ZookeeperDiscoveryClient(conf)
+    _discoveryClient = DiscoveryClientProvider.createDiscoveryClient(conf)
     discoveryClient.monitorState(this)
     discoveryClient.createClient()
 
@@ -64,8 +63,8 @@ abstract class ServiceDiscovery(
 
   // stop the server genteelly
   def stopGracefully(isLost: Boolean = false): Unit = {
-    while (fe.be != null && fe.be.sessionManager.getOpenSessionCount > 0) {
-      debug(s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
+    while (fe.be.sessionManager.getOpenSessionCount > 0) {
+      info(s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
       Thread.sleep(1000 * 60)
     }
     isServerLost.set(isLost)

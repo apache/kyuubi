@@ -77,12 +77,6 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-runtime</artifactId>
             <scope>runtime</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.code.findbugs</groupId>
-                    <artifactId>jsr305</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -134,6 +128,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>failureaccess</artifactId>
             <scope>test</scope>
@@ -180,6 +180,8 @@
                                     <arg value="${spark.version}"/>
                                     <arg value="${hive.version}"/>
                                     <arg value="${hadoop.version}"/>
+                                    <arg value="${flink.version}"/>
+                                    <arg value="${trino.client.version}"/>
                                 </exec>
                             </target>
                         </configuration>

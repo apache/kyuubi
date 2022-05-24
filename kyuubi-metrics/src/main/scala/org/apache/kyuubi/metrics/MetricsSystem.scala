@@ -113,4 +113,8 @@ object MetricsSystem {
       tracing(_.updateTimer(name, System.nanoTime() - startTime, TimeUnit.NANOSECONDS))
     }
   }
+
+  def counterValue(name: String): Option[Long] = {
+    maybeSystem.map(_.registry.counter(name).getCount)
+  }
 }

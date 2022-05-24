@@ -30,6 +30,8 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
 
   def jdbcDriverClass: String = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
 
+  protected val URL_PREFIX = "jdbc:hive2://"
+
   protected def matchAllPatterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
 
   override protected lazy val user: String = Utils.currentUser
@@ -46,8 +48,8 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
 
   def withSessionConf[T](
       sessionConfigs: Map[String, String] = Map.empty)(
-      jdbcConfigs: Map[String, String])(
-      jdbcVars: Map[String, String])(f: => T): T = {
+      jdbcConfigs: Map[String, String] = Map.empty)(
+      jdbcVars: Map[String, String] = Map.empty)(f: => T): T = {
     this._sessionConfigs = sessionConfigs
     this._jdbcConfigs = jdbcConfigs
     this._jdbcVars = jdbcVars
@@ -77,12 +79,24 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
   }
 
   def withThriftClient[T](f: TCLIService.Iface => T): T = {
-    TClientTestUtils.withThriftClient(jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head)(f)
+    withThriftClient()(f)
+  }
+
+  def withThriftClient[T](user: Option[String] = None)(f: TCLIService.Iface => T): T = {
+    TClientTestUtils.withThriftClient(
+      jdbcUrl.stripPrefix(URL_PREFIX).split("/;").head,
+      user)(f)
   }
 
   def withSessionHandle[T](f: (TCLIService.Iface, TSessionHandle) => T): T = {
-    val hostAndPort = jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head
+    val hostAndPort = jdbcUrl.stripPrefix(URL_PREFIX).split("/;").head
     TClientTestUtils.withSessionHandle(hostAndPort, sessionConfigs)(f)
+  }
+
+  def withSessionAndLaunchEngineHandle[T](
+      f: (TCLIService.Iface, TSessionHandle, Option[TOperationHandle]) => T): T = {
+    val hostAndPort = jdbcUrl.stripPrefix(URL_PREFIX).split("/;").head
+    TClientTestUtils.withSessionAndLaunchEngineHandle(hostAndPort, sessionConfigs)(f)
   }
 
   def checkGetSchemas(rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {

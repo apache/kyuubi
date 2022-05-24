@@ -22,16 +22,17 @@ import java.util.UUID
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.{KyuubiSQLException, Utils}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.HandleIdentifier
+import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
+import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.api.v1.BatchRequest
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   import KyuubiSessionManager._
@@ -42,13 +43,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   val credentialsManager = new HadoopCredentialsManager()
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
+  val applicationManager = new KyuubiApplicationManager()
 
   private var limiter: Option[SessionLimiter] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
+    addService(applicationManager)
     addService(credentialsManager)
-    val absPath = Utils.getAbsolutePathFromWork(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
-    _operationLogRoot = Some(absPath.toAbsolutePath.toString)
     initSessionLimiter(conf)
     super.initialize(conf)
   }
@@ -95,8 +96,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     val session = getSession(sessionHandle)
-    super.closeSession(sessionHandle)
-    limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+    try {
+      super.closeSession(sessionHandle)
+    } finally {
+      limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+    }
   }
 
   def openBatchSession(
@@ -114,7 +118,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress,
       conf,
       this,
-      // TODO: user defaults conf for batch session
       this.getConf.getUserDefaults(user),
       batchRequest)
     try {
@@ -144,6 +147,32 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def newBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
     SessionHandle(HandleIdentifier(UUID.randomUUID(), STATIC_BATCH_SECRET_UUID), protocol)
+  }
+
+  def getBatchSessionHandle(batchId: String, protocol: TProtocolVersion): SessionHandle = {
+    SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
+  }
+
+  def getBatchSessionImpl(batchId: String, protocol: TProtocolVersion): KyuubiBatchSessionImpl = {
+    getSession(getBatchSessionHandle(batchId, protocol)).asInstanceOf[KyuubiBatchSessionImpl]
+  }
+
+  def getBatchSessionImpl(sessionHandle: SessionHandle): KyuubiBatchSessionImpl = {
+    getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+  }
+
+  def getBatchSessionList(batchType: String, from: Int, size: Int): Seq[Session] = {
+    val sessions =
+      if (batchType == null) {
+        allSessions().filter(_.isInstanceOf[KyuubiBatchSessionImpl])
+      } else {
+        allSessions().filter {
+          case batchSession: KyuubiBatchSessionImpl =>
+            batchSession.batchJobSubmissionOp.batchType.equalsIgnoreCase(batchType)
+          case _ => false
+        }
+      }
+    sessions.toSeq.sortBy(_.handle.identifier.toString).slice(from, from + size)
   }
 
   override def start(): Unit = synchronized {

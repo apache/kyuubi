@@ -60,4 +60,4 @@ You can make various types of contributions to Kyuubi, including the following b
 TBD, please be patient for the surprise.
 
 ## IDE Setup Guide
-[IntelliJ IDEA Setup Guide](https://kyuubi.apache.org/docs/latest/develop_tools/idea_setup.html)
+[IntelliJ IDEA Setup Guide](https://kyuubi.readthedocs.io/en/latest/develop_tools/idea_setup.html)

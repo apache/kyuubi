@@ -89,6 +89,7 @@ trait BackendService {
       foreignCatalog: String,
       foreignSchema: String,
       foreignTable: String): OperationHandle
+  def getQueryId(operationHandle: OperationHandle): String
 
   def getOperationStatus(operationHandle: OperationHandle): OperationStatus
   def cancelOperation(operationHandle: OperationHandle): Unit

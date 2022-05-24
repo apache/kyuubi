@@ -28,6 +28,7 @@ import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 
 import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, OpenAPIConfig}
 
@@ -54,6 +55,9 @@ private[v1] class ApiRootResource extends ApiRequestContext {
 
   @Path("operations")
   def operations: Class[OperationsResource] = classOf[OperationsResource]
+
+  @Path("batches")
+  def batches: Class[BatchesResource] = classOf[BatchesResource]
 
   @GET
   @Path("exception")

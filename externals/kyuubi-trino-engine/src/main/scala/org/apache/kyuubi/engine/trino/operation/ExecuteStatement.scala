@@ -17,18 +17,19 @@
 
 package org.apache.kyuubi.engine.trino.operation
 
-import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.RejectedExecutionException
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Logging
+import org.apache.hive.service.rpc.thrift.TRowSet
+
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.trino.TrinoStatement
-import org.apache.kyuubi.operation.ArrayFetchIterator
-import org.apache.kyuubi.operation.IterableFetchIterator
-import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.engine.trino.event.TrinoOperationEvent
+import org.apache.kyuubi.engine.trino.schema.RowSet
+import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, OperationState, OperationType}
+import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
     session: Session,
@@ -37,8 +38,6 @@ class ExecuteStatement(
     queryTimeout: Long,
     incrementalCollect: Boolean)
   extends TrinoOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
-
-  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
@@ -54,7 +53,7 @@ class ExecuteStatement(
   }
 
   override protected def runInternal(): Unit = {
-    addTimeoutMonitor()
+    addTimeoutMonitor(queryTimeout)
     val trinoStatement = TrinoStatement(trinoContext, session.sessionManager.getConf, statement)
     trino = trinoStatement.getTrinoClient
     if (shouldRunAsync) {
@@ -82,6 +81,24 @@ class ExecuteStatement(
     }
   }
 
+  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+    validateDefaultFetchOrientation(order)
+    assertState(OperationState.FINISHED)
+    setHasResultSet(true)
+    (order, incrementalCollect) match {
+      case (FETCH_NEXT, _) => iter.fetchNext()
+      case (FETCH_PRIOR, false) => iter.fetchPrior(rowSetSize)
+      case (FETCH_FIRST, false) => iter.fetchAbsolute(0)
+      case _ =>
+        val mode = if (incrementalCollect) "incremental collect" else "full collect"
+        throw KyuubiSQLException(s"Fetch orientation[$order] is not supported in $mode mode")
+    }
+    val taken = iter.take(rowSetSize)
+    val resultRowSet = RowSet.toTRowSet(taken.toList, schema, getProtocolVersion)
+    resultRowSet.setStartRowOffset(iter.getPosition)
+    resultRowSet
+  }
+
   private def executeStatement(trinoStatement: TrinoStatement): Unit = {
     setState(OperationState.RUNNING)
     try {
@@ -90,26 +107,20 @@ class ExecuteStatement(
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
-          new IterableFetchIterator(resultSet)
+          FetchIterator.fromIterator(resultSet)
         } else {
           info("Execute in full collect mode")
+          // trinoStatement.execute return iterator is lazy,
+          // call toArray to strict evaluation will pull all result data into memory
           new ArrayFetchIterator(resultSet.toArray)
         }
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
     } finally {
-      statementTimeoutCleaner.foreach(_.shutdown())
+      shutdownTimeoutMonitor()
     }
   }
 
-  private def addTimeoutMonitor(): Unit = {
-    if (queryTimeout > 0) {
-      val timeoutExecutor =
-        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
-      val action: Runnable = () => cleanup(OperationState.TIMEOUT)
-      timeoutExecutor.schedule(action, queryTimeout, TimeUnit.SECONDS)
-      statementTimeoutCleaner = Some(timeoutExecutor)
-    }
-  }
+  EventBus.post(TrinoOperationEvent(this))
 }

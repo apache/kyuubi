@@ -77,6 +77,8 @@ Metrics Prefix | Metrics Suffix | Type | Since | Description
 `kyuubi.backend_service.fetch_results`           | | timer | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `fetchResults` method execution time and rate </div>
 `kyuubi.backend_service.fetch_log_rows_rate`     | | meter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `fetchResults` method that fetch log rows rate </div>
 `kyuubi.backend_service.fetch_result_rows_rate`  | | meter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `fetchResults` method that fetch result rows rate </div>
+`kyuubi.backend_service.get_primary_keys`  | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `get_primary_keys` method execution time and rate </div>
+`kyuubi.backend_service.get_cross_reference`  | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `get_cross_reference` method execution time and rate </div>
 
 Before v1.5.0, if you use these metrics:
 - `kyuubi.statement.total`

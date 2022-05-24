@@ -113,12 +113,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-yarn_${scala.binary.version}</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- tests -->
         <dependency>
             <groupId>org.apache.kyuubi</groupId>

@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest
 import scala.xml.Node
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.internal.config.SECRET_REDACTION_PATTERN
 import org.apache.spark.ui.UIUtils._
 import org.apache.spark.util.Utils
 
@@ -30,6 +31,10 @@ import org.apache.spark.util.Utils
 case class EngineSessionPage(parent: EngineTab)
   extends WebUIPage("session") with Logging {
   val store = parent.store
+
+  private def propertyHeader = Seq("Name", "Value")
+  private def headerClasses = Seq("sorttable_alpha", "sorttable_alpha")
+  private def propertyRow(kv: (String, String)) = <tr><td>{kv._1}</td><td>{kv._2}</td></tr>
 
   /** Render the page */
   def render(request: HttpServletRequest): Seq[Node] = {
@@ -40,6 +45,34 @@ case class EngineSessionPage(parent: EngineTab)
       val sessionStat = store.getSession(parameterId).getOrElse(null)
       require(sessionStat != null, "Invalid sessionID[" + parameterId + "]")
 
+      val redactionPattern = parent.sparkUI match {
+        case Some(ui) => Some(ui.conf.get(SECRET_REDACTION_PATTERN))
+        case None => SECRET_REDACTION_PATTERN.defaultValue
+      }
+
+      val sessionPropertiesTable =
+        if (sessionStat.conf != null && !sessionStat.conf.isEmpty) {
+          val table = UIUtils.listingTable(
+            propertyHeader,
+            propertyRow,
+            Utils.redact(redactionPattern, sessionStat.conf.toSeq.sorted),
+            fixedWidth = true,
+            headerClasses = headerClasses)
+          <span class="collapse-aggregated-kyuubiSessioinProperties collapse-table"
+                onClick="collapseTable('collapse-aggregated-kyuubiSessioinProperties',
+            'aggregated-kyuubiSessioinProperties')">
+            <h4>
+              <span class="collapse-table-arrow arrow-open"></span>
+              <a>Session Properties</a>
+            </h4>
+          </span>
+          <div class="aggregated-kyuubiSessioinProperties collapsible-table">
+            {table}
+          </div>
+        } else {
+          Seq()
+        }
+
       generateBasicStats() ++
         <br/> ++
         <h4>
@@ -49,6 +82,7 @@ case class EngineSessionPage(parent: EngineTab)
           Session created at {formatDate(sessionStat.startTime)},
           Total run {sessionStat.totalOperations} SQL
         </h4> ++
+        sessionPropertiesTable ++
         generateSQLStatsTable(request, sessionStat.sessionId)
     }
     UIUtils.headerSparkPage(request, parent.name + " Session", content, parent)

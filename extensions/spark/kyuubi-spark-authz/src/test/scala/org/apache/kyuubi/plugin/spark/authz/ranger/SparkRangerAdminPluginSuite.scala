@@ -18,12 +18,14 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.hadoop.security.UserGroupInformation
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
 
-class SparkRangerAdminPluginSuite extends KyuubiFunSuite {
+class SparkRangerAdminPluginSuite extends AnyFunSuite {
+// scalastyle:on
 
   test("get filter expression") {
     val bob = UserGroupInformation.createRemoteUser("bob")

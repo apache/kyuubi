@@ -153,9 +153,18 @@ object HighAvailabilityConf {
 
   val HA_ZK_ENGINE_SECURE_SECRET_NODE: OptionalConfigEntry[String] =
     buildConf("kyuubi.ha.zookeeper.engine.secure.secret.node")
-      .doc("The zk node contains the secret that used for internal secure between Kyuubi server " +
-        "and Kyuubi engine, please make sure that it is only visible for Kyuubi.")
+      .internal
+      .doc("The zk node contains the secret that used for internal secure, please make sure " +
+        "that it is only visible for Kyuubi.")
       .version("1.5.0")
       .stringConf
       .createOptional
+
+  val HA_DISCOVERY_CLIENT_CLASS: ConfigEntry[String] =
+    buildConf("kyuubi.ha.service.discovery.client.class")
+      .doc("Class name for service discovery client.")
+      .version("1.6.0")
+      .stringConf
+      .checkValue(_.nonEmpty, "must not be empty")
+      .createWithDefault("org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient")
 }

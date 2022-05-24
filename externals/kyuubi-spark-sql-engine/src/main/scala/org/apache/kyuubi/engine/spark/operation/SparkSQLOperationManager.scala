@@ -151,4 +151,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       foreignTable: String): Operation = {
     throw KyuubiSQLException.featureNotSupported()
   }
+
+  override def getQueryId(operation: Operation): String = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 }

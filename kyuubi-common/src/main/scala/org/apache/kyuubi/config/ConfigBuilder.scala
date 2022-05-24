@@ -18,8 +18,10 @@
 package org.apache.kyuubi.config
 
 import java.time.Duration
+import java.util.regex.PatternSyntaxException
 
 import scala.util.{Failure, Success, Try}
+import scala.util.matching.Regex
 
 private[kyuubi] case class ConfigBuilder(key: String) {
 
@@ -119,6 +121,18 @@ private[kyuubi] case class ConfigBuilder(key: String) {
     _onCreate.foreach(_(entry))
     entry
   }
+
+  def regexConf: TypedConfigBuilder[Regex] = {
+    def regexFromString(str: String, key: String): Regex = {
+      try str.r
+      catch {
+        case e: PatternSyntaxException =>
+          throw new IllegalArgumentException(s"$key should be a regex, but was $str", e)
+      }
+    }
+
+    new TypedConfigBuilder(this, regexFromString(_, this.key), _.toString)
+  }
 }
 
 private[kyuubi] case class TypedConfigBuilder[T](
@@ -136,7 +150,9 @@ private[kyuubi] case class TypedConfigBuilder[T](
   /** Checks if the user-provided value for the config matches the validator. */
   def checkValue(validator: T => Boolean, errMsg: String): TypedConfigBuilder[T] = {
     transform { v =>
-      if (!validator(v)) throw new IllegalArgumentException(errMsg)
+      if (!validator(v)) {
+        throw new IllegalArgumentException(s"'$v' in ${parent.key} is invalid. $errMsg")
+      }
       v
     }
   }

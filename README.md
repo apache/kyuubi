@@ -107,6 +107,10 @@ Ready? [Getting Started](https://kyuubi.apache.org/docs/latest/quick_start/quick
 
 ## [Contributing](./CONTRIBUTING.md)
 
+## Contributor over time
+
+[![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?chart=contributorOverTime&repo=apache/incubator-kyuubi)](https://api7.ai/contributor-graph?chart=contributorOverTime&repo=apache/incubator-kyuubi)
+
 ## Aside
 
 The project took its name from a character of a popular Japanese manga - `Naruto`.

@@ -25,12 +25,15 @@ import scala.util.Try
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
+import org.scalatest.BeforeAndAfterAll
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 
-abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessionProvider {
-
+abstract class RangerSparkExtensionSuite extends AnyFunSuite
+  with SparkSessionProvider with BeforeAndAfterAll {
+// scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
   private def doAs[T](user: String, f: => T): T = {
@@ -48,7 +51,7 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
   private def errorMessage(
       privilege: String,
       resource: String = "default/src",
-      user: String = Utils.currentUser): String = {
+      user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
   }
 
@@ -251,6 +254,87 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite with SparkSessio
             Seq(Row(1, DigestUtils.md5Hex("1"))))
           assert(Try(sql(s"select * from $db.$table").show(1)).isSuccess)
         })
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
+    }
+  }
+
+  test("show tables") {
+    val db = "default2"
+    val table = "src"
+    try {
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.$table (key int) USING $format"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.${table}for_show (key int) USING $format"))
+
+      doAs("admin", assert(sql(s"show tables from $db").collect().length === 2))
+      doAs("bob", assert(sql(s"show tables from $db").collect().length === 0))
+      doAs("i_am_invisible", assert(sql(s"show tables from $db").collect().length === 0))
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}for_show"))
+      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+    }
+  }
+
+  test("show databases") {
+    val db = "default2"
+    try {
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
+      doAs("admin", assert(sql(s"SHOW DATABASES").collect().length == 2))
+      doAs("admin", assert(sql(s"SHOW DATABASES").collectAsList().get(0).getString(0) == "default"))
+      doAs("admin", assert(sql(s"SHOW DATABASES").collectAsList().get(1).getString(0) == s"$db"))
+
+      doAs("bob", assert(sql(s"SHOW DATABASES").collect().length == 1))
+      doAs("bob", assert(sql(s"SHOW DATABASES").collectAsList().get(0).getString(0) == "default"))
+    } finally {
+      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+    }
+  }
+
+  test("show functions") {
+    val default = "default"
+    val db3 = "default3"
+    val function1 = "function1"
+    try {
+      doAs("admin", sql(s"CREATE FUNCTION $function1 AS 'Function1'"))
+      doAs("admin", assert(sql(s"show user functions $default.$function1").collect().length == 1))
+      doAs("bob", assert(sql(s"show user functions $default.$function1").collect().length == 0))
+
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db3"))
+      doAs("admin", sql(s"CREATE FUNCTION $db3.$function1 AS 'Function1'"))
+
+      doAs("admin", assert(sql(s"show user functions $db3.$function1").collect().length == 1))
+      doAs("bob", assert(sql(s"show user functions $db3.$function1").collect().length == 0))
+
+      doAs("admin", assert(sql(s"show system functions").collect().length > 0))
+      doAs("bob", assert(sql(s"show system functions").collect().length > 0))
+
+      val adminSystemFunctionCount = doAs("admin", sql(s"show system functions").collect().length)
+      val bobSystemFunctionCount = doAs("bob", sql(s"show system functions").collect().length)
+      assert(adminSystemFunctionCount == bobSystemFunctionCount)
+    } finally {
+      doAs("admin", sql(s"DROP FUNCTION IF EXISTS $default.$function1"))
+      doAs("admin", sql(s"DROP FUNCTION IF EXISTS $db3.$function1"))
+      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db3"))
+    }
+  }
+
+  test("show columns") {
+    val db = "default"
+    val table = "src"
+    val col = "key"
+    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
+    try {
+      doAs("admin", sql(create))
+
+      doAs("admin", assert(sql(s"SHOW COLUMNS IN $table").count() == 2))
+      doAs("admin", assert(sql(s"SHOW COLUMNS IN $db.$table").count() == 2))
+      doAs("admin", assert(sql(s"SHOW COLUMNS IN $table IN $db").count() == 2))
+
+      doAs("kent", assert(sql(s"SHOW COLUMNS IN $table").count() == 1))
+      doAs("kent", assert(sql(s"SHOW COLUMNS IN $db.$table").count() == 1))
+      doAs("kent", assert(sql(s"SHOW COLUMNS IN $table IN $db").count() == 1))
     } finally {
       doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
     }

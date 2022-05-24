@@ -213,12 +213,15 @@ org.apache.hive.shims:hive-shims-common
 org.apache.hive.shims:hive-shims-0.23
 org.apache.hive:hive-common
 org.apache.hive:hive-metastore
+org.apache.hive:hive-standalone-metastore
+org.apache.hive:hive-llap-client
 org.apache.hive:hive-serde
 org.apache.hive:hive-service
 com.google.guava:failureaccess
 com.google.guava:guava
 commons-codec:commons-codec
 commons-lang:commons-lang
+org.apache.commons:commons-lang3
 org.apache.curator:curator-framework
 org.apache.curator:curator-client
 org.apache.httpcomponents:httpclient

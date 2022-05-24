@@ -18,17 +18,19 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
-import java.lang.ProcessBuilder.Redirect
 import java.nio.file.Paths
+import java.util.LinkedHashSet
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ProcBuilder
-import org.apache.kyuubi.engine.flink.FlinkProcessBuilder.FLINK_ENGINE_BINARY_FILE
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
+import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
 
 /**
@@ -37,112 +39,87 @@ import org.apache.kyuubi.operation.log.OperationLog
 class FlinkProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
+    val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
-  extends ProcBuilder with Logging {
+  extends ProcBuilder {
 
-  override protected def executable: String = {
-    val flinkEngineHomeOpt = env.get("FLINK_ENGINE_HOME").orElse {
-      val cwd = Utils.getCodeSourceLocation(getClass)
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve("kyuubi-flink-sql-engine")
-          .toFile)
-        .map(_.getAbsolutePath)
-    }
-
-    flinkEngineHomeOpt.map { dir =>
-      Paths.get(dir, "bin", FLINK_ENGINE_BINARY_FILE).toAbsolutePath.toFile.getCanonicalPath
-    } getOrElse {
-      throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
-        "For more detail information on installing and configuring Flink, please visit " +
-        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
-    }
+  @VisibleForTesting
+  def this(proxyUser: String, conf: KyuubiConf) {
+    this(proxyUser, conf, "")
   }
+
+  private val flinkHome: String = getEngineHome(shortName)
+
+  private val FLINK_HADOOP_CLASSPATH: String = "FLINK_HADOOP_CLASSPATH"
 
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
-  override protected def childProcEnv: Map[String, String] = conf.getEnvs +
-    ("FLINK_HOME" -> FLINK_HOME) +
-    ("FLINK_CONF_DIR" -> s"$FLINK_HOME/conf") +
-    ("FLINK_SQL_ENGINE_JAR" -> mainResource.get) +
-    ("FLINK_SQL_ENGINE_DYNAMIC_ARGS" ->
-      conf.getAll.filter { case (k, _) =>
-        k.startsWith("kyuubi.") || k.startsWith("flink.") ||
-          k.startsWith("hadoop.") || k.startsWith("yarn.")
-      }.map { case (k, v) => s"-D$k=$v" }.mkString(" "))
+  override protected val commands: Array[String] = {
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
+    val buffer = new ArrayBuffer[String]()
+    buffer += executable
 
-  override protected def commands: Array[String] = Array(executable)
+    val memory = conf.get(ENGINE_FLINK_MEMORY)
+    buffer += s"-Xmx$memory"
+    val javaOptions = conf.get(ENGINE_FLINK_JAVA_OPTIONS)
+    if (javaOptions.isDefined) {
+      buffer += javaOptions.get
+    }
 
-  override def killApplication(clue: Either[String, String]): String = clue match {
-    case Left(_) => ""
-    case Right(line) => killApplicationByLog(line)
-  }
-
-  def killApplicationByLog(line: String = lastRowsOfLog.toArray.mkString("\n")): String = {
-    "Job ID: .*".r.findFirstIn(line) match {
-      case Some(jobIdLine) =>
-        val jobId = jobIdLine.split("Job ID: ")(1).trim
-        env.get("FLINK_HOME") match {
-          case Some(flinkHome) =>
-            val pb = new ProcessBuilder("/bin/sh", s"$flinkHome/bin/flink", "stop", jobId)
-            pb.environment()
-              .putAll(childProcEnv.asJava)
-            pb.redirectError(Redirect.appendTo(engineLog))
-            pb.redirectOutput(Redirect.appendTo(engineLog))
-            val process = pb.start()
-            process.waitFor() match {
-              case id if id != 0 => s"Failed to kill Application $jobId, please kill it manually. "
-              case _ => s"Killed Application $jobId successfully. "
-            }
-          case None =>
-            s"FLINK_HOME is not set! Failed to kill Application $jobId, please kill it manually."
+    buffer += "-cp"
+    val classpathEntries = new LinkedHashSet[String]
+    // flink engine runtime jar
+    mainResource.foreach(classpathEntries.add)
+    // flink sql client jar
+    val flinkSqlClientPath = Paths.get(flinkHome)
+      .resolve("opt")
+      .toFile
+      .listFiles(new FilenameFilter {
+        override def accept(dir: File, name: String): Boolean = {
+          name.toLowerCase.startsWith("flink-sql-client")
         }
-      case None => ""
+      }).head.getAbsolutePath
+    classpathEntries.add(flinkSqlClientPath)
+
+    // jars from flink lib
+    classpathEntries.add(s"$flinkHome${File.separator}lib${File.separator}*")
+
+    // classpath contains flink configurations, default to flink.home/conf
+    classpathEntries.add(env.getOrElse("FLINK_CONF_DIR", s"$flinkHome${File.separator}conf"))
+    // classpath contains hadoop configurations
+    env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
+    env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
+    env.get("HBASE_CONF_DIR").foreach(classpathEntries.add)
+    val hadoopCp = env.get(FLINK_HADOOP_CLASSPATH)
+    hadoopCp.foreach(classpathEntries.add)
+    val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
+    extraCp.foreach(classpathEntries.add)
+    if (hadoopCp.isEmpty && extraCp.isEmpty) {
+      throw new KyuubiException(s"The conf of ${FLINK_HADOOP_CLASSPATH} and " +
+        s"${ENGINE_FLINK_EXTRA_CLASSPATH.key} is empty." +
+        s"Please set ${FLINK_HADOOP_CLASSPATH} or ${ENGINE_FLINK_EXTRA_CLASSPATH.key} for " +
+        s"configuring location of hadoop client jars, etc")
     }
+
+    buffer += classpathEntries.asScala.mkString(File.pathSeparator)
+    buffer += mainClass
+
+    buffer += "--conf"
+    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+
+    for ((k, v) <- conf.getAll) {
+      buffer += "--conf"
+      buffer += s"$k=$v"
+    }
+    buffer.toArray
   }
 
-  @VisibleForTesting
-  def FLINK_HOME: String = {
-    // prepare FLINK_HOME
-    val flinkHomeOpt = env.get("FLINK_HOME").orElse {
-      val cwd = Utils.getCodeSourceLocation(getClass)
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve("kyuubi-download")
-          .resolve("target")
-          .toFile
-          .listFiles(new FilenameFilter {
-            override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.startsWith("flink-")
-            }
-          }))
-        .flatMap(_.headOption)
-        .map(_.getAbsolutePath)
-    }
-
-    flinkHomeOpt.map { dir =>
-      dir
-    } getOrElse {
-      throw KyuubiSQLException("FLINK_HOME is not set! " +
-        "For more detail information on installing and configuring Flink, please visit " +
-        "https://kyuubi.apache.org/docs/latest/deployment/settings.html#environments")
-    }
-  }
-
-  override protected def shortName: String = "flink"
+  override def shortName: String = "flink"
 }
 
 object FlinkProcessBuilder {
   final val APP_KEY = "yarn.application.name"
   final val TAG_KEY = "yarn.tags"
-
-  final private val FLINK_ENGINE_BINARY_FILE = "flink-sql-engine.sh"
 }

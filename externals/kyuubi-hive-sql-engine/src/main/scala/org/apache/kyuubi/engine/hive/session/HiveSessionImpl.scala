@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.cli.session.HiveSession
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.engine.hive.events.SessionEvent
+import org.apache.kyuubi.engine.hive.events.HiveSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
@@ -41,7 +41,7 @@ class HiveSessionImpl(
     val hive: HiveSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  private val sessionEvent = SessionEvent(this)
+  private val sessionEvent = HiveSessionEvent(this)
 
   def serverIpAddress(): String = serverIpAddress
 

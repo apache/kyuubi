@@ -19,7 +19,9 @@ package org.apache.kyuubi.server.api
 
 import javax.servlet.ServletContext
 import javax.servlet.http.HttpServletRequest
-import javax.ws.rs.core.Context
+import javax.ws.rs.WebApplicationException
+import javax.ws.rs.core.{Context, MediaType, Response}
+import javax.ws.rs.ext.{ExceptionMapper, Provider}
 
 import org.eclipse.jetty.server.handler.ContextHandler
 
@@ -34,6 +36,24 @@ private[api] trait ApiRequestContext {
   protected var httpRequest: HttpServletRequest = _
 
   final protected def fe: KyuubiRestFrontendService = FrontendServiceContext.get(servletContext)
+}
+
+@Provider
+class RestExceptionMapper extends ExceptionMapper[Exception] {
+  override def toResponse(exception: Exception): Response = {
+    exception match {
+      case e: WebApplicationException =>
+        Response.status(e.getResponse.getStatus)
+          .`type`(e.getResponse.getMediaType)
+          .entity(e.getMessage)
+          .build()
+      case e =>
+        Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .`type`(MediaType.APPLICATION_JSON)
+          .entity(e.getMessage)
+          .build()
+    }
+  }
 }
 
 private[api] object FrontendServiceContext {

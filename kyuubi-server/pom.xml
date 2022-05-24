@@ -69,6 +69,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-rest-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-api</artifactId>
         </dependency>
@@ -81,6 +87,18 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
+            <version>${hive.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-standalone-metastore</artifactId>
             <version>${hive.version}</version>
             <exclusions>
                 <exclusion>
@@ -236,7 +254,7 @@
 
         <dependency>
             <groupId>org.apache.hive</groupId>
-            <artifactId>hive-metastore</artifactId>
+            <artifactId>hive-standalone-metastore</artifactId>
             <version>${hive.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -302,6 +320,13 @@
 
         <dependency>
             <groupId>org.apache.hive</groupId>
+            <artifactId>hive-storage-api</artifactId>
+            <version>${hive.client.storage-api.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <classifier>core</classifier>
             <version>${hive.version}</version>
@@ -345,14 +370,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-spark3_${scala.binary.version}</artifactId>
+            <groupId>org.apache.parquet</groupId>
+            <artifactId>parquet-avro</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.parquet</groupId>
-            <artifactId>parquet-avro</artifactId>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-common</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -365,6 +390,12 @@
         <dependency>
             <groupId>org.apache.hudi</groupId>
             <artifactId>hudi-spark_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-spark3.1.x_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -407,6 +438,12 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

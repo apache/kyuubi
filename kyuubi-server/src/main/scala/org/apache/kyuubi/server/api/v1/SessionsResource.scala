@@ -17,22 +17,24 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces, _}
+import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
-import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
-import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
+import org.apache.kyuubi.session.KyuubiSession
 import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 
 @Tag(name = "Session")
@@ -44,16 +46,20 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      array = new ArraySchema(schema = new Schema(implementation = classOf[SessionData])))),
     description = "get the list of all live sessions")
   @GET
   def sessions(): Seq[SessionData] = {
     sessionManager.allSessions().map { session =>
-      SessionData(
-        session.handle,
+      new SessionData(
+        new SessionHandle(
+          session.handle.identifier.publicId,
+          session.handle.identifier.secretId,
+          session.handle.protocol.getValue),
         session.user,
         session.ipAddress,
-        session.conf,
+        session.conf.asJava,
         session.createTime,
         session.lastAccessTime - session.createTime,
         session.getNoOperationTime)
@@ -63,7 +69,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[KyuubiEvent]))),
     description = "get a session event via session handle identifier")
   @GET
   @Path("{sessionHandle}")
@@ -81,7 +88,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[InfoDetail]))),
     description =
       "get a information detail via session handle identifier and a specific information type")
   @GET
@@ -92,7 +100,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       val info = TGetInfoType.findByValue(infoType)
       val infoValue = fe.be.getInfo(parseSessionHandle(sessionHandleStr), info)
-      InfoDetail(info.toString, infoValue.getStringValue)
+      new InfoDetail(info.toString, infoValue.getStringValue)
     } catch {
       case NonFatal(e) =>
         error(s"Unrecognized GetInfoType value: $infoType", e)
@@ -103,23 +111,25 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[SessionOpenCount]))),
     description = "Get the current open session count")
   @GET
   @Path("count")
   def sessionCount(): SessionOpenCount = {
-    SessionOpenCount(sessionManager.getOpenSessionCount)
+    new SessionOpenCount(sessionManager.getOpenSessionCount)
   }
 
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ExecPoolStatistic]))),
     description = "Get statistic info of background executors")
   @GET
   @Path("execPool/statistic")
   def execPoolStatistic(): ExecPoolStatistic = {
-    ExecPoolStatistic(
+    new ExecPoolStatistic(
       sessionManager.getExecPoolSize,
       sessionManager.getActiveCount)
   }
@@ -127,19 +137,24 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[SessionHandle]))),
     description = "Open(create) a session")
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): SessionHandle = {
-    val userName = fe.getUserName(request)
+    val userName = fe.getUserName(request.getConfigs.asScala.toMap)
     val ipAddress = AuthenticationFilter.getUserIpAddress
-    fe.be.openSession(
-      TProtocolVersion.findByValue(request.protocolVersion),
+    val handle = fe.be.openSession(
+      TProtocolVersion.findByValue(request.getProtocolVersion),
       userName,
-      request.password,
+      request.getPassword,
       ipAddress,
-      Option(request.configs).getOrElse(Map.empty[String, String]))
+      request.getConfigs.asScala.toMap)
+    new SessionHandle(
+      handle.identifier.publicId,
+      handle.identifier.secretId,
+      handle.protocol.getValue)
   }
 
   @ApiResponse(
@@ -157,7 +172,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with EXECUTE_STATEMENT type")
   @POST
   @Path("{sessionHandle}/operations/statement")
@@ -167,10 +183,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       fe.be.executeStatement(
         parseSessionHandle(sessionHandleStr),
-        request.statement,
+        request.getStatement,
         Map.empty,
-        request.runAsync,
-        request.queryTimeout)
+        request.isRunAsync,
+        request.getQueryTimeout)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error executing statement"
@@ -182,7 +198,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_TYPE_INFO type")
   @POST
   @Path("{sessionHandle}/operations/typeInfo")
@@ -200,7 +217,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_CATALOGS type")
   @POST
   @Path("{sessionHandle}/operations/catalogs")
@@ -218,7 +236,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_SCHEMAS type")
   @POST
   @Path("{sessionHandle}/operations/schemas")
@@ -229,8 +248,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       val sessionHandle = parseSessionHandle(sessionHandleStr)
       val operationHandle = fe.be.getSchemas(
         sessionHandle,
-        request.catalogName,
-        request.schemaName)
+        request.getCatalogName,
+        request.getSchemaName)
       operationHandle
     } catch {
       case NonFatal(e) =>
@@ -243,7 +262,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_TABLES type")
   @POST
   @Path("{sessionHandle}/operations/tables")
@@ -253,10 +273,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       fe.be.getTables(
         parseSessionHandle(sessionHandleStr),
-        request.catalogName,
-        request.schemaName,
-        request.tableName,
-        request.tableTypes)
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getTableName,
+        request.getTableTypes)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting tables"
@@ -268,7 +288,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_TABLE_TYPES type")
   @POST
   @Path("{sessionHandle}/operations/tableTypes")
@@ -286,7 +307,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_COLUMNS type")
   @POST
   @Path("{sessionHandle}/operations/columns")
@@ -296,10 +318,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       fe.be.getColumns(
         parseSessionHandle(sessionHandleStr),
-        request.catalogName,
-        request.schemaName,
-        request.tableName,
-        request.columnName)
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getTableName,
+        request.getColumnName)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting columns"
@@ -311,7 +333,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_FUNCTIONS type")
   @POST
   @Path("{sessionHandle}/operations/functions")
@@ -321,9 +344,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       fe.be.getFunctions(
         parseSessionHandle(sessionHandleStr),
-        request.catalogName,
-        request.schemaName,
-        request.functionName)
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getFunctionName)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting functions"
@@ -335,7 +358,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_FUNCTIONS type")
   @POST
   @Path("{sessionHandle}/operations/primaryKeys")
@@ -345,9 +369,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       fe.be.getPrimaryKeys(
         parseSessionHandle(sessionHandleStr),
-        request.catalogName,
-        request.schemaName,
-        request.tableName)
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getTableName)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting primary keys"
@@ -359,7 +383,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
     description = "Create an operation with GET_FUNCTIONS type")
   @POST
   @Path("{sessionHandle}/operations/crossReference")
@@ -369,12 +394,12 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     try {
       fe.be.getCrossReference(
         parseSessionHandle(sessionHandleStr),
-        request.primaryCatalog,
-        request.primarySchema,
-        request.primaryTable,
-        request.foreignCatalog,
-        request.foreignSchema,
-        request.foreignTable)
+        request.getPrimaryCatalog,
+        request.getPrimarySchema,
+        request.getPrimaryTable,
+        request.getForeignCatalog,
+        request.getForeignSchema,
+        request.getForeignTable)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting cross reference"
