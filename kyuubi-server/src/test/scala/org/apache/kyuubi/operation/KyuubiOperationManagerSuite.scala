@@ -65,9 +65,11 @@ class KyuubiOperationManagerSuite extends WithKyuubiServer with HiveJDBCTestHelp
     withJdbcStatement() { statement =>
       val catalog = statement.getConnection.getCatalog
       assert(catalog == "spark_catalog")
-      statement.getConnection.setCatalog("dummy_catalog")
       // The server starts the spark engine without other catalogs
-      val e = intercept[SQLException](statement.getConnection.getCatalog)
+      val e = intercept[SQLException] {
+        statement.getConnection.setCatalog("dummy_catalog")
+        statement.getConnection.getCatalog
+      }
       assert(e.getMessage.contains("dummy_catalog"))
     }
   }
