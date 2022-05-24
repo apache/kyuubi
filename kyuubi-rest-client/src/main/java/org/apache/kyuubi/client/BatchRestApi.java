@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
@@ -40,7 +41,12 @@ public class BatchRestApi {
   }
 
   public Batch createBatch(BatchRequest request) throws KyuubiRestException {
-    String jsonBody = new Gson().toJson(request);
+    String jsonBody = null;
+    try {
+      jsonBody = new ObjectMapper().writeValueAsString(request);
+    } catch (JsonProcessingException e) {
+      throw new KyuubiRestException("cannot convert batch request body to json", e);
+    }
 
     return this.getClient().post(jsonBody, new TypeReference<Batch>() {});
   }
@@ -65,7 +71,7 @@ public class BatchRestApi {
     params.put("from", from);
     params.put("size", size);
     return this.getClient()
-        .get(batchId + "/locallog", params, new TypeReference<OperationLog>() {});
+        .get(batchId + "/localLog", params, new TypeReference<OperationLog>() {});
   }
 
   public void deleteBatch(String batchId, boolean killApp, String hs2ProxyUser)

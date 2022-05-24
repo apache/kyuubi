@@ -19,7 +19,7 @@ package org.apache.kyuubi.client;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -96,20 +96,20 @@ public class BatchRestClientTest {
         resp.setStatus(HttpServletResponse.SC_OK);
 
         Batch batch = generateTestBatch();
-        resp.getWriter().write(new Gson().toJson(batch));
+        resp.getWriter().write(new ObjectMapper().writeValueAsString(batch));
         resp.getWriter().flush();
       } else if (req.getPathInfo().matches("/api/v1/batch")
           && req.getQueryString().matches("[\\w]+(=[\\w]*)(&[\\w]+(=[\\w]*))+$")) {
         resp.setStatus(HttpServletResponse.SC_OK);
 
         GetBatchesResponse batchesResponse = generateTestBatchesResponse();
-        resp.getWriter().write(new Gson().toJson(batchesResponse));
+        resp.getWriter().write(new ObjectMapper().writeValueAsString(batchesResponse));
         resp.getWriter().flush();
-      } else if (req.getPathInfo().matches("/api/v1/batch/\\d+/locallog")) {
+      } else if (req.getPathInfo().matches("/api/v1/batch/\\d+/localLog")) {
         resp.setStatus(HttpServletResponse.SC_OK);
 
         OperationLog log = generateTestOperationLog();
-        resp.getWriter().write(new Gson().toJson(log));
+        resp.getWriter().write(new ObjectMapper().writeValueAsString(log));
         resp.getWriter().flush();
       } else {
         resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -125,7 +125,7 @@ public class BatchRestClientTest {
         resp.setStatus(HttpServletResponse.SC_OK);
 
         Batch batch = generateTestBatch();
-        resp.getWriter().write(new Gson().toJson(batch));
+        resp.getWriter().write(new ObjectMapper().writeValueAsString(batch));
         resp.getWriter().flush();
       } else {
         resp.setStatus(HttpServletResponse.SC_NOT_FOUND);

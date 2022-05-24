@@ -128,7 +128,6 @@
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
         <hive.archive.download.skip>false</hive.archive.download.skip>
-        <httpclient.version>4.5.13</httpclient.version>
         <hudi.version>0.11.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
         <iceberg.version>0.13.1</iceberg.version>
@@ -139,7 +138,6 @@
         <jersey.version>2.35</jersey.version>
         <jetty.version>9.4.41.v20210516</jetty.version>
         <jline.version>0.9.94</jline.version>
-        <junit.version>4.13.2</junit.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
