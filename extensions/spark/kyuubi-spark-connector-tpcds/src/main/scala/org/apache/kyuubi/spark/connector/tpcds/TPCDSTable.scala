@@ -45,7 +45,7 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
   // https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v3.2.0.pdf
   val useTableSchema_2_6: Boolean = options.getBoolean("useTableSchema_2_6", true)
 
-  // #2543, one split represents the number of rows generated per second
+  // #2543, one split represents the number of rows generated per ten seconds
   // in TPCDSTableGenerateBenchmark
   val splitPerTask: Int = options.getInt("splitPerTask", 1)
 

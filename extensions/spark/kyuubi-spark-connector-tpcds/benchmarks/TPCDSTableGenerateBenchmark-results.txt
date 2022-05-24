@@ -2,14 +2,14 @@ Java HotSpot(TM) 64-Bit Server VM 1.8.0_311-b11 on Windows 10 10.0
 AMD64 Family 23 Model 96 Stepping 1, AuthenticAMD
 TPCDS table generates 1000000 rows benchmark:  Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
 ----------------------------------------------------------------------------------------------------------------------------
-catalog_returns benchmark                             13264          13293          50          0.1       13263.8       1.0X
-catalog_sales benchmark                               11906          11932          23          0.1       11905.9       1.1X
-customer benchmark                                     7346           7359          22          0.1        7345.6       1.8X
-customer_address benchmark                             4768           4780          10          0.2        4767.5       2.8X
-customer_demographics benchmark                         862            862           0          1.2         861.7      15.4X
-inventory benchmark                                     536            539           3          1.9         535.6      24.8X
-store_returns benchmark                               11524          11530           7          0.1       11524.3       1.2X
-store_sales benchmark                                  9247           9263          15          0.1        9247.5       1.4X
-web_returns benchmark                                 13307          13316           7          0.1       13307.3       1.0X
-web_sales benchmark                                   12422          12425           4          0.1       12421.8       1.1X
+catalog_returns benchmark                             13240          13688         689          0.1       13239.8       1.0X
+catalog_sales benchmark                               12032          12070          35          0.1       12032.4       1.1X
+customer benchmark                                     7324           7377          51          0.1        7324.1       1.8X
+customer_address benchmark                             4791           4813          20          0.2        4791.1       2.8X
+customer_demographics benchmark                         853            894          42          1.2         852.7      15.5X
+inventory benchmark                                     525            534          16          1.9         524.7      25.2X
+store_returns benchmark                               11608          11809         210          0.1       11608.0       1.1X
+store_sales benchmark                                  9248           9284          31          0.1        9248.2       1.4X
+web_returns benchmark                                 13815          13868          48          0.1       13815.4       1.0X
+web_sales benchmark                                   12415          12485          61          0.1       12414.8       1.1X
 

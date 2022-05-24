@@ -123,7 +123,7 @@ class TPCDSTableSuite extends KyuubiFunSuite {
   }
 
   test("test splitPerTask") {
-    val splitPerTask = 10
+    val splitPerTask = 1
     val sparkConf = new SparkConf().setMaster("local[1]")
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")

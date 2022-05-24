@@ -90,8 +90,8 @@ class TPCDSTableGenerateBenchmark extends KyuubiFunSuite with KyuubiBenchmarkBas
 
     val mapBody = results.map { result =>
       val tableName = result.name.split(" ")(0).toUpperCase
-      val rowsPreSecond = (numRows / (result.avgMs / 1000)).toLong
-      s"    $tableName -> $rowsPreSecond"
+      val rowsPerTenSecond = (numRows / (result.avgMs / 10 / 1000)).toLong
+      s"    $tableName -> $rowsPerTenSecond"
     }.mkString(",\n")
 
     write(
