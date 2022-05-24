@@ -151,6 +151,7 @@ class ExecuteStatement(
           case TypedResult.ResultType.PAYLOAD =>
             (1 to result.getPayload).foreach { page =>
               if (rows.size < resultMaxRows) {
+                // FLINK-24461 retrieveResultPage method changes the return type from Row to RowData
                 val result = executor.retrieveResultPage(resultId, page).asScala.toList
                 result.headOption match {
                   case None =>

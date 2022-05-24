@@ -31,7 +31,7 @@ import org.apache.flink.table.client.cli.CliOptionsParser._
 import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.flink.table.client.gateway.local.LocalExecutor
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 
 object FlinkEngineUtils extends Logging {
 
@@ -40,10 +40,13 @@ object FlinkEngineUtils extends Logging {
 
   def checkFlinkVersion(): Unit = {
     val flinkVersion = EnvironmentInformation.getVersion
-    flinkVersion.split(".").map(_.toInt) match {
-      case Array(_, v, _) if v < 14 =>
-        throw new RuntimeException("Only Flink version >= 1.14 is supported now!")
+    Utils.majorMinorVersion(flinkVersion) match {
+      case (1, 14 | 15) =>
+        logger.info(s"The current Flink version is $flinkVersion")
       case _ =>
+        throw new UnsupportedOperationException(
+          s"The current Flink version is $flinkVersion, " +
+            s"Only Flink 1.14.x and 1.15 are supported, not supported in other versions")
     }
   }
 
