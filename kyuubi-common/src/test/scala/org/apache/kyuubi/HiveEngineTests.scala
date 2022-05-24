@@ -454,6 +454,7 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
   }
 
   test("test set/get catalog") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
     withJdbcStatement()({ statement =>
       val catalog = statement.getConnection.getCatalog
       assert(catalog == "")
@@ -464,6 +465,7 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
   }
 
   test("test set/get database") {
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
     withJdbcStatement()({ statement =>
       statement.execute("create database test_hive_db")
       val schema = statement.getConnection.getSchema
