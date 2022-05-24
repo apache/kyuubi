@@ -27,6 +27,7 @@ class SetCurrentCatalog(session: Session, catalog: String)
     try {
       val conf = Map(KYUUBI_OPERATION_SET_CURRENT_CATALOG -> catalog)
       _remoteOpHandle = client.executeStatement("", conf, false, 0L)
+      setHasResultSet(_remoteOpHandle.isHasResultSet)
     } catch onError()
   }
 }

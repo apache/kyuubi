@@ -1530,11 +1530,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (isClosed) {
       throw new SQLException("Connection is closed");
     }
-    try (KyuubiStatement stmt = createKyuubiStatement();
-        ResultSet res = stmt.executeSetCurrentCatalog(catalog)) {
-      if (!res.next()) {
-        throw new SQLException("Failed to set catalog");
-      }
+    try (KyuubiStatement stmt = createKyuubiStatement()) {
+      stmt.executeSetCurrentCatalog(catalog);
     }
   }
 
@@ -1657,11 +1654,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (schema == null || schema.isEmpty()) {
       throw new SQLException("Schema name is null or empty");
     }
-    try (KyuubiStatement stmt = createKyuubiStatement();
-        ResultSet res = stmt.executeSetCurrentDatabase(schema)) {
-      if (!res.next()) {
-        throw new SQLException("Failed to set schema");
-      }
+    try (KyuubiStatement stmt = createKyuubiStatement()) {
+      stmt.executeSetCurrentDatabase(schema);
     }
   }
 

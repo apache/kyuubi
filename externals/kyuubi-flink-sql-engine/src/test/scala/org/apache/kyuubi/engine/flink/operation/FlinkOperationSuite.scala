@@ -665,11 +665,35 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     })
   }
 
+  test("execute statement - set/get catalog") {
+    withJdbcStatement()({ statement =>
+      statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
+      val catalog = statement.getConnection.getCatalog
+      assert(catalog == "default_catalog")
+      statement.getConnection.setCatalog("cat_a")
+      val changedCatalog = statement.getConnection.getCatalog
+      assert(changedCatalog == "cat_a")
+      assert(statement.execute("drop catalog cat_a"))
+    })
+  }
+
   test("execute statement - create/alter/drop database") {
     // TODO: validate table results after FLINK-25558 is resolved
     withJdbcStatement()({ statement =>
       statement.executeQuery("create database db_a")
       assert(statement.execute("alter database db_a set ('k1' = 'v1')"))
+      assert(statement.execute("drop database db_a"))
+    })
+  }
+
+  test("execute statement - set/get database") {
+    withJdbcStatement()({ statement =>
+      statement.executeQuery("create database db_a")
+      val schema = statement.getConnection.getSchema
+      assert(schema == "default_database")
+      statement.getConnection.setSchema("db_a")
+      val changedSchema = statement.getConnection.getSchema
+      assert(changedSchema == "db_a")
       assert(statement.execute("drop database db_a"))
     })
   }

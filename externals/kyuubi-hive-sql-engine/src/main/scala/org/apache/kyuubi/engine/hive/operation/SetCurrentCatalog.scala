@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.hive.operation
 
+import scala.collection.JavaConverters._
+
 import org.apache.hive.service.cli.operation.Operation
 
 import org.apache.kyuubi.operation.OperationType
@@ -26,5 +28,10 @@ class SetCurrentCatalog(session: Session, catalog: String)
   extends HiveOperation(OperationType.EXECUTE_STATEMENT, session) {
   // Hive does not support catalog
   override val internalHiveOperation: Operation =
-    delegatedOperationManager.newGetCatalogsOperation(hive)
+    delegatedOperationManager.newExecuteStatementOperation(
+      hive,
+      "SELECT '' AS TABLE_CAT",
+      Map.empty[String, String].asJava,
+      false,
+      0)
 }

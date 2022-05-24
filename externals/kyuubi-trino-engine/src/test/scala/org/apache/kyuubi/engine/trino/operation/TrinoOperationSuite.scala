@@ -738,4 +738,26 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
+
+  test("trino - set/get catalog") {
+    withJdbcStatement() { statement =>
+      val catalog = statement.getConnection.getCatalog
+      assert(catalog == "memory")
+      statement.getConnection.setCatalog("system")
+      val changedCatalog = statement.getConnection.getCatalog
+      assert(changedCatalog == "system")
+    }
+  }
+
+  test("trino - set/get database") {
+    withJdbcStatement() { statement =>
+      statement.execute("CREATE SCHEMA IF NOT EXISTS memory.test_trino_db")
+      val schema = statement.getConnection.getSchema
+      assert(schema == "default")
+      statement.getConnection.setSchema("test_trino_db")
+      val changedSchema = statement.getConnection.getSchema
+      assert(changedSchema == "test_trino_db")
+      statement.execute("DROP SCHEMA memory.test_trino_db")
+    }
+  }
 }
