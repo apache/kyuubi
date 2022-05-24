@@ -2,33 +2,14 @@ Java HotSpot(TM) 64-Bit Server VM 1.8.0_311-b11 on Windows 10 10.0
 AMD64 Family 23 Model 96 Stepping 1, AuthenticAMD
 TPCDS table generates 1000000 rows benchmark:  Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
 ----------------------------------------------------------------------------------------------------------------------------
-catalog_returns benchmark                             13519          13685         166          0.1       13519.1       1.0X
-catalog_sales benchmark                               11968          12075         134          0.1       11968.2       1.1X
-customer benchmark                                     7319           7666         600          0.1        7319.3       1.8X
-customer_address benchmark                             4756           4814         132          0.2        4755.7       2.8X
-customer_demographics benchmark                         857            864           4          1.2         857.4      15.8X
-inventory benchmark                                     524            526           2          1.9         524.2      25.8X
-store_returns benchmark                               11568          11646          89          0.1       11567.6       1.2X
-store_sales benchmark                                  9371           9446          59          0.1        9370.8       1.4X
-web_returns benchmark                                 13335          13395          35          0.1       13334.8       1.0X
-web_sales benchmark                                   12491          12548          60          0.1       12491.5       1.1X
-
-Java HotSpot(TM) 64-Bit Server VM 1.8.0_311-b11 on Windows 10 10.0
-AMD64 Family 23 Model 96 Stepping 1, AuthenticAMD
-TPCDS table generates all rows benchmark:  Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
-------------------------------------------------------------------------------------------------------------------------
-call_center benchmark                                 1              1           0          0.0      Infinity       1.0X
-catalog_page benchmark                              247            250           2          0.0      Infinity       0.0X
-date_dim benchmark                                  457            461           2          0.0      Infinity       0.0X
-household_demographics benchmark                      4              4           1          0.0      Infinity       0.3X
-income_band benchmark                                 0              0           0          0.0      Infinity      69.1X
-item benchmark                                     6947           6998          44          0.0      Infinity       0.0X
-promotion benchmark                                  13             13           1          0.0      Infinity       0.1X
-reason benchmark                                      0              0           0          0.0      Infinity      26.3X
-ship_mode benchmark                                   0              0           0          0.0      Infinity      46.9X
-store benchmark                                      35             36           1          0.0      Infinity       0.0X
-time_dim benchmark                                   79             81           1          0.0      Infinity       0.0X
-warehouse benchmark                                   0              0           0          0.0      Infinity       7.5X
-web_page benchmark                                   21             21           1          0.0      Infinity       0.1X
-web_site benchmark                                    2              2           0          0.0      Infinity       0.6X
+catalog_returns benchmark                             13264          13293          50          0.1       13263.8       1.0X
+catalog_sales benchmark                               11906          11932          23          0.1       11905.9       1.1X
+customer benchmark                                     7346           7359          22          0.1        7345.6       1.8X
+customer_address benchmark                             4768           4780          10          0.2        4767.5       2.8X
+customer_demographics benchmark                         862            862           0          1.2         861.7      15.4X
+inventory benchmark                                     536            539           3          1.9         535.6      24.8X
+store_returns benchmark                               11524          11530           7          0.1       11524.3       1.2X
+store_sales benchmark                                  9247           9263          15          0.1        9247.5       1.4X
+web_returns benchmark                                 13307          13316           7          0.1       13307.3       1.0X
+web_sales benchmark                                   12422          12425           4          0.1       12421.8       1.1X
 

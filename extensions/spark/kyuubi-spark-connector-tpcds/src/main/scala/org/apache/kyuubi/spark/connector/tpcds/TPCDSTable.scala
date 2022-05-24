@@ -45,6 +45,10 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
   // https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v3.2.0.pdf
   val useTableSchema_2_6: Boolean = options.getBoolean("useTableSchema_2_6", true)
 
+  // #2543, one split represents the number of rows generated per second
+  // in TPCDSTableGenerateBenchmark
+  val splitPerTask: Int = options.getInt("splitPerTask", 1)
+
   val tpcdsTable: Table = Table.getTable(tbl)
 
   override def name: String = s"sf$scale.$tbl"
@@ -78,7 +82,7 @@ class TPCDSTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
     Set(TableCapability.BATCH_READ).asJava
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder =
-    new TPCDSBatchScan(tpcdsTable, scale, schema)
+    new TPCDSBatchScan(tpcdsTable, scale, splitPerTask, schema)
 
   def toSparkDataType(tpcdsType: ColumnType): DataType = {
     (tpcdsType.getBase, tpcdsType.getPrecision.asScala, tpcdsType.getScale.asScala) match {
