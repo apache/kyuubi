@@ -59,12 +59,13 @@ class AccessResourceSuite extends AnyFunSuite {
     assert(resource4.getColumns === Seq("my_col_1", "my_col_2"))
   }
 }
+// scalastyle:off
 abstract class AccessResourceWithSparkSessionSuite
   extends AnyFunSuite
   with SparkSessionProvider
   with BeforeAndAfterAll
   with BeforeAndAfterEach {
-
+  // scalastyle:on
   override def afterAll(): Unit = {
     spark.stop()
     super.afterAll()
