@@ -25,8 +25,13 @@ import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.kyuubi.client.util.AuthUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KyuubiRestClient {
+
+  private static final Logger LOG = LoggerFactory.getLogger(KyuubiRestClient.class);
 
   private RestClient httpClient;
 
@@ -39,12 +44,29 @@ public class KyuubiRestClient {
     }
   }
 
+  public enum AuthSchema {
+    BASIC,
+    SPNEGO;
+  }
+
   public KyuubiRestClient(Builder builder) {
     // Remove the trailing "/" from the hostUrl if present
     String hostUrl = builder.hostUrl.replaceAll("/$", "");
     String baseUrl =
         String.format("%s/%s/%s", hostUrl, builder.version.getApiNamespace(), builder.apiBasePath);
 
+    CloseableHttpClient httpclient = initHttpClient(builder);
+
+    String header = initAuthHeader(builder);
+
+    this.httpClient = new RestClient(baseUrl, httpclient, header);
+  }
+
+  public RestClient getHttpClient() {
+    return httpClient;
+  }
+
+  private CloseableHttpClient initHttpClient(Builder builder) {
     RequestConfig requestConfig =
         RequestConfig.custom()
             .setSocketTimeout(builder.socketTimeout)
@@ -65,12 +87,28 @@ public class KyuubiRestClient {
             .setDefaultRequestConfig(requestConfig)
             .setSSLSocketFactory(sslSocketFactory)
             .build();
-
-    this.httpClient = new RestClient(baseUrl, httpclient);
+    return httpclient;
   }
 
-  public RestClient getHttpClient() {
-    return httpClient;
+  private String initAuthHeader(Builder builder) {
+    String header = "";
+    switch (builder.authSchema) {
+      case BASIC:
+        header = AuthUtil.generateBasicAuthHeader(builder.username, builder.password);
+        break;
+      case SPNEGO:
+        try {
+          header = AuthUtil.generateSpnegoAuthHeader(builder.hostUrl);
+        } catch (Exception e) {
+          LOG.error("Error: ", e);
+          throw new RuntimeException(
+              "Failed to generate spnego auth header for " + builder.hostUrl);
+        }
+        break;
+      default:
+        throw new RuntimeException("Unsupported auth schema");
+    }
+    return header;
   }
 
   public static class Builder {
@@ -80,6 +118,12 @@ public class KyuubiRestClient {
     private String apiBasePath;
 
     private ApiVersion version = ApiVersion.V1;
+
+    private AuthSchema authSchema = AuthSchema.BASIC;
+
+    private String username;
+
+    private String password;
 
     private int socketTimeout = 3000;
 
@@ -92,6 +136,21 @@ public class KyuubiRestClient {
 
     public Builder apiVersion(ApiVersion version) {
       this.version = version;
+      return this;
+    }
+
+    public Builder authSchema(AuthSchema authSchema) {
+      this.authSchema = authSchema;
+      return this;
+    }
+
+    public Builder username(String username) {
+      this.username = username;
+      return this;
+    }
+
+    public Builder password(String password) {
+      this.password = password;
       return this;
     }
 

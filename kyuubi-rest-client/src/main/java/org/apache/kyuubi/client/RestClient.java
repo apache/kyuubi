@@ -36,7 +36,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.kyuubi.KyuubiException;
-import org.apache.kyuubi.client.util.AuthUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,9 +47,12 @@ public class RestClient implements AutoCloseable {
 
   private String baseUrl;
 
-  public RestClient(String baseUrl, CloseableHttpClient httpclient) {
+  private String authHeader;
+
+  public RestClient(String baseUrl, CloseableHttpClient httpclient, String authHeader) {
     this.httpclient = httpclient;
     this.baseUrl = baseUrl;
+    this.authHeader = authHeader;
   }
 
   @Override
@@ -103,8 +105,7 @@ public class RestClient implements AutoCloseable {
           requestBuilder
               .setUri(uri)
               .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-              .setHeader(
-                  HttpHeaders.AUTHORIZATION, "NEGOTIATE" + AuthUtil.generateToken(uri.getHost()))
+              .setHeader(HttpHeaders.AUTHORIZATION, authHeader)
               .build();
 
       LOG.info("Executing {} request: {}", httpRequest.getMethod(), uri);

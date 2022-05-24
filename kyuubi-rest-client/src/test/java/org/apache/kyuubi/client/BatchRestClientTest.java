@@ -40,10 +40,14 @@ import org.junit.Test;
 
 public class BatchRestClientTest {
 
-  private BatchRestApi batchRestApi;
+  private BatchRestApi spnegoBatchRestApi;
+  private BatchRestApi basicBatchRestApi;
 
   private KerberizedTestHelper kerberizedTestHelper;
   private ServerTestHelper serverTestHelper;
+
+  private static final String BASIC_AUTH = "BASIC";
+  private static final String NEGOTIATE_AUTH = "NEGOTIATE";
 
   @Before
   public void setUp() throws Exception {
@@ -53,9 +57,20 @@ public class BatchRestClientTest {
     kerberizedTestHelper.setup();
     serverTestHelper.setup(TestServlet.class);
 
-    KyuubiRestClient client =
-        new KyuubiRestClient.Builder("https://localhost:8443", "batch").build();
-    this.batchRestApi = new BatchRestApi(client);
+    kerberizedTestHelper.login();
+    KyuubiRestClient spnegoClient =
+        new KyuubiRestClient.Builder("https://localhost:8443", "batch")
+            .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
+            .build();
+    spnegoBatchRestApi = new BatchRestApi(spnegoClient);
+
+    KyuubiRestClient basicClient =
+        new KyuubiRestClient.Builder("https://localhost:8443", "batch")
+            .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+            .username("test")
+            .password("test")
+            .build();
+    basicBatchRestApi = new BatchRestApi(basicClient);
   }
 
   @After
@@ -66,10 +81,16 @@ public class BatchRestClientTest {
 
   public static class TestServlet extends HttpServlet {
 
+    private static String authSchema = BASIC_AUTH;
+
+    public static void setAuthSchema(String schema) {
+      authSchema = schema;
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
-      if (checkAuthHeader(req, resp)) return;
+      if (!validAuthHeader(req, resp)) return;
 
       if (req.getPathInfo().matches("/api/v1/batch/\\d+")) {
         resp.setStatus(HttpServletResponse.SC_OK);
@@ -98,7 +119,7 @@ public class BatchRestClientTest {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
-      if (checkAuthHeader(req, resp)) return;
+      if (!validAuthHeader(req, resp)) return;
 
       if (req.getPathInfo().equalsIgnoreCase("/api/v1/batch")) {
         resp.setStatus(HttpServletResponse.SC_OK);
@@ -120,7 +141,7 @@ public class BatchRestClientTest {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
-      if (checkAuthHeader(req, resp)) return;
+      if (!validAuthHeader(req, resp)) return;
 
       if (req.getPathInfo().matches("/api/v1/batch/\\d+")
           && req.getQueryString().matches("[\\w.]+(=[\\w]*)(&[\\w.]+(=[\\w]*))+$")) {
@@ -130,18 +151,29 @@ public class BatchRestClientTest {
       }
     }
 
-    private boolean checkAuthHeader(HttpServletRequest req, HttpServletResponse resp) {
-      if (req.getHeader("Authorization") == null) {
+    private boolean validAuthHeader(HttpServletRequest req, HttpServletResponse resp) {
+      // check auth header existence
+      String authHeader = req.getHeader("Authorization");
+      if (authHeader == null) {
         resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        return true;
+        return false;
       }
-      return false;
+
+      // check auth schema
+      String schema = authHeader.split(" ")[0].trim();
+      if (!schema.equals(authSchema)) {
+        resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        return false;
+      }
+
+      return true;
     }
   }
 
   @Test
   public void createBatchTest() throws IOException, KyuubiException {
-    kerberizedTestHelper.login();
+    // test spnego auth
+    TestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
     BatchRequest batchRequest =
         new BatchRequest(
@@ -150,7 +182,15 @@ public class BatchRestClientTest {
             "org.apache.kyuubi.engine.spark.SparkSQLEngine",
             "test_batch");
     Batch expectedBatch = generateTestBatch();
-    Batch result = batchRestApi.createBatch(batchRequest);
+    Batch result = spnegoBatchRestApi.createBatch(batchRequest);
+
+    assertEquals(result.getId(), expectedBatch.getId());
+    assertEquals(result.getBatchType(), expectedBatch.getBatchType());
+    assertEquals(result.getState(), expectedBatch.getState());
+
+    // test basic auth
+    TestServlet.setAuthSchema(BASIC_AUTH);
+    result = basicBatchRestApi.createBatch(batchRequest);
 
     assertEquals(result.getId(), expectedBatch.getId());
     assertEquals(result.getBatchType(), expectedBatch.getBatchType());
@@ -159,10 +199,20 @@ public class BatchRestClientTest {
 
   @Test
   public void getBatchByIdTest() throws IOException, KyuubiException {
-    kerberizedTestHelper.login();
+    // test spnego auth
+    TestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
     Batch expectedBatch = generateTestBatch();
-    Batch result = batchRestApi.getBatchById("71535");
+    Batch result = spnegoBatchRestApi.getBatchById("71535");
+
+    assertEquals(result.getId(), expectedBatch.getId());
+    assertEquals(result.getBatchType(), expectedBatch.getBatchType());
+    assertEquals(result.getState(), expectedBatch.getState());
+
+    // test basic auth
+    TestServlet.setAuthSchema(BASIC_AUTH);
+
+    result = basicBatchRestApi.getBatchById("71535");
 
     assertEquals(result.getId(), expectedBatch.getId());
     assertEquals(result.getBatchType(), expectedBatch.getBatchType());
@@ -171,10 +221,20 @@ public class BatchRestClientTest {
 
   @Test
   public void getBatchInfoListTest() throws IOException, KyuubiException {
-    kerberizedTestHelper.login();
+    // test spnego auth
+    TestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
     GetBatchesResponse expectedBatchesInfo = generateTestBatchesResponse();
-    GetBatchesResponse result = batchRestApi.getBatchInfoList("spark", 0, 10);
+    GetBatchesResponse result = spnegoBatchRestApi.getBatchInfoList("spark", 0, 10);
+
+    assertEquals(expectedBatchesInfo.getBatches().size(), result.getBatches().size());
+    assertEquals(expectedBatchesInfo.getFrom(), result.getFrom());
+    assertEquals(expectedBatchesInfo.getTotal(), result.getTotal());
+
+    // test basic auth
+    TestServlet.setAuthSchema(BASIC_AUTH);
+
+    result = basicBatchRestApi.getBatchInfoList("spark", 0, 10);
 
     assertEquals(expectedBatchesInfo.getBatches().size(), result.getBatches().size());
     assertEquals(expectedBatchesInfo.getFrom(), result.getFrom());
@@ -183,18 +243,31 @@ public class BatchRestClientTest {
 
   @Test
   public void getOperationLogTest() throws IOException, KyuubiException {
-    kerberizedTestHelper.login();
+    // test spnego auth
+    TestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
     OperationLog expectedOperationLog = generateTestOperationLog();
-    OperationLog result = batchRestApi.getOperationLog("71535", 0, 2);
+    OperationLog result = spnegoBatchRestApi.getOperationLog("71535", 0, 2);
+
+    assertEquals(expectedOperationLog.getRowCount(), result.getRowCount());
+
+    // test basic auth
+    TestServlet.setAuthSchema(BASIC_AUTH);
+
+    result = basicBatchRestApi.getOperationLog("71535", 0, 2);
 
     assertEquals(expectedOperationLog.getRowCount(), result.getRowCount());
   }
 
   @Test
   public void deleteBatchTest() throws IOException, KyuubiException {
-    kerberizedTestHelper.login();
-    batchRestApi.deleteBatch("71535", true, "b_test");
+    // test spnego auth
+    TestServlet.setAuthSchema(NEGOTIATE_AUTH);
+    spnegoBatchRestApi.deleteBatch("71535", true, "b_test");
+
+    // test basic auth
+    TestServlet.setAuthSchema(BASIC_AUTH);
+    basicBatchRestApi.deleteBatch("71535", true, "b_test");
   }
 
   private static Batch generateTestBatch() {
