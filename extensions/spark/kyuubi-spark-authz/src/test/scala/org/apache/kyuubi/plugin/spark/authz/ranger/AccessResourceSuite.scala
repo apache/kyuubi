@@ -17,11 +17,11 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.plugin.spark.authz.{OperationType, PrivilegesBuilder, SparkSessionProvider}
+import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType, PrivilegesBuilder, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 
 class AccessResourceSuite extends AnyFunSuite {
@@ -60,12 +60,32 @@ class AccessResourceSuite extends AnyFunSuite {
   }
 }
 abstract class AccessResourceWithSparkSessionSuite
-  extends KyuubiFunSuite
-  with SparkSessionProvider {
+  extends AnyFunSuite
+  with SparkSessionProvider
+  with BeforeAndAfterAll
+  with BeforeAndAfterEach {
 
   override def afterAll(): Unit = {
     spark.stop()
     super.afterAll()
+  }
+
+  test("create AccessResource without database") {
+    val dbName = "AccessResource"
+    try {
+      val resource1 = AccessResource(ObjectType.COLUMN, null, "table", "col", spark)
+      assert(resource1.getDatabase equalsIgnoreCase "default")
+      val resource2 = AccessResource(ObjectType.COLUMN, "", "table", "col", spark)
+      assert(resource2.getDatabase equalsIgnoreCase "default")
+
+      sql(s"CREATE DATABASE $dbName")
+      sql(s"USE $dbName")
+      val resource3 = AccessResource(ObjectType.COLUMN, null, "table", "col", spark)
+      assert(resource3.getDatabase equalsIgnoreCase dbName)
+    } finally {
+      sql(s"DROP DATABASE IF EXISTS $dbName")
+    }
+
   }
 
   test("get database name from spark catalog when privilegeObject's dbname is null") {

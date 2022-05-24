@@ -25,6 +25,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
 class AccessResource private (val objectType: ObjectType) extends RangerAccessResourceImpl {
   implicit def asString(obj: Object): String = if (obj != null) obj.asInstanceOf[String] else null
@@ -47,13 +48,23 @@ object AccessResource {
       spark: SparkSession = null): AccessResource = {
     val resource = new AccessResource(objectType)
 
-    val firstLevelResource =
+    def firstLevelResource: String = {
       if (spark != null
         && (firstLevelResourceOrNull == null || firstLevelResourceOrNull.isEmpty)) {
-        spark.catalog.currentDatabase
-      } else {
-        firstLevelResourceOrNull
+        if (AuthZUtils.isSparkVersionAtMost("2.4")) {
+          spark.catalog.currentDatabase
+        } else if (AuthZUtils.isSparkVersionAtLeast("3.0")) {
+          val catalogManager = AuthZUtils.invoke(spark.sessionState, "catalogManager")
+          val currentNamespace =
+            AuthZUtils.invoke(catalogManager.asInstanceOf[AnyRef], "currentNamespace")
+          val namespaces: Array[String] = currentNamespace.asInstanceOf[Array[String]]
+          if (namespaces != null && namespaces.length == 1) {
+            return namespaces.head
+          }
+        }
       }
+      firstLevelResourceOrNull
+    }
 
     resource.objectType match {
       case DATABASE => resource.setValue("database", firstLevelResource)
