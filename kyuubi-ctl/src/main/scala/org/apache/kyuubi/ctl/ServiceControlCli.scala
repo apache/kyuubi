@@ -79,9 +79,10 @@ private[kyuubi] class ServiceControlCli extends Logging {
   private def create(args: ServiceControlCliArguments): Unit = {
     val kyuubiConf = args.conf
 
-    kyuubiConf.setIfMissing(HA_ZK_QUORUM, args.cliArgs.zkQuorum)
+    kyuubiConf.setIfMissing(HA_ADDRESSES, args.cliArgs.zkQuorum)
     withDiscoveryClient(kyuubiConf) { discoveryClient =>
-      val fromNamespace = DiscoveryPaths.makePath(null, kyuubiConf.get(HA_ZK_NAMESPACE))
+      val fromNamespace =
+        DiscoveryPaths.makePath(null, kyuubiConf.get(HA_NAMESPACE))
       val toNamespace = getZkNamespace(args)
 
       val currentServerNodes = discoveryClient.getServiceNodesInfo(fromNamespace)
@@ -104,10 +105,10 @@ private[kyuubi] class ServiceControlCli extends Logging {
           }
         }
 
-        if (kyuubiConf.get(HA_ZK_QUORUM) == args.cliArgs.zkQuorum) {
+        if (kyuubiConf.get(HA_ADDRESSES) == args.cliArgs.zkQuorum) {
           doCreate(discoveryClient)
         } else {
-          kyuubiConf.set(HA_ZK_QUORUM, args.cliArgs.zkQuorum)
+          kyuubiConf.set(HA_ADDRESSES, args.cliArgs.zkQuorum)
           withDiscoveryClient(kyuubiConf)(doCreate)
         }
       }

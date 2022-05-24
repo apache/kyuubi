@@ -24,7 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_NAMESPACE, HA_ZK_QUORUM}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.{DiscoveryClientProvider, ServiceNodeInfo}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
@@ -90,7 +90,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
   val zkServer = new EmbeddedZookeeper()
   val conf: KyuubiConf = KyuubiConf()
-  var envZkNamespaceProperty: String = System.getProperty(HA_ZK_NAMESPACE.key)
+  var envZkNamespaceProperty: String = System.getProperty(HA_NAMESPACE.key)
   val namespace = "kyuubiserver"
   val host = "localhost"
   val port = "10000"
@@ -99,7 +99,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   val counter = new AtomicInteger(0)
 
   override def beforeAll(): Unit = {
-    setSystemProperty(HA_ZK_NAMESPACE.key, namespace)
+    setSystemProperty(HA_NAMESPACE.key, namespace)
     conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
     zkServer.initialize(conf)
     zkServer.start()
@@ -107,10 +107,10 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   }
 
   override def afterAll(): Unit = {
-    setSystemProperty(HA_ZK_NAMESPACE.key, envZkNamespaceProperty)
+    setSystemProperty(HA_NAMESPACE.key, envZkNamespaceProperty)
     conf.unset(KyuubiConf.SERVER_KEYTAB)
     conf.unset(KyuubiConf.SERVER_PRINCIPAL)
-    conf.unset(HA_ZK_QUORUM)
+    conf.unset(HA_ADDRESSES)
     zkServer.stop()
     super.afterAll()
   }
@@ -135,8 +135,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
-      .set(HA_ZK_NAMESPACE, namespace)
+      .set(HA_ADDRESSES, zkServer.getConnectString)
+      .set(HA_NAMESPACE, namespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     val args = Array(
@@ -157,7 +157,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(HA_ADDRESSES, zkServer.getConnectString)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     val args2 = Array(
@@ -176,8 +176,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
-      .set(HA_ZK_NAMESPACE, namespace)
+      .set(HA_ADDRESSES, zkServer.getConnectString)
+      .set(HA_NAMESPACE, namespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     val args = Array(
@@ -219,10 +219,10 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
-      .set(HA_ZK_NAMESPACE, uniqueNamespace)
+      .set(HA_ADDRESSES, zkServer.getConnectString)
+      .set(HA_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    System.setProperty(HA_ZK_NAMESPACE.key, uniqueNamespace)
+    System.setProperty(HA_NAMESPACE.key, uniqueNamespace)
 
     withDiscoveryClient(conf) { framework =>
       framework.createAndGetServiceNode(conf, uniqueNamespace, "localhost:10000")
@@ -284,8 +284,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
-      .set(HA_ZK_NAMESPACE, uniqueNamespace)
+      .set(HA_ADDRESSES, zkServer.getConnectString)
+      .set(HA_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withDiscoveryClient(conf) { framework =>
@@ -313,8 +313,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
-      .set(HA_ZK_NAMESPACE, uniqueNamespace)
+      .set(HA_ADDRESSES, zkServer.getConnectString)
+      .set(HA_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withDiscoveryClient(conf) { framework =>
@@ -345,8 +345,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
-      .set(HA_ZK_NAMESPACE, uniqueNamespace)
+      .set(HA_ADDRESSES, zkServer.getConnectString)
+      .set(HA_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withDiscoveryClient(conf) { framework =>
@@ -379,8 +379,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
-      .set(HA_ZK_NAMESPACE, uniqueNamespace)
+      .set(HA_ADDRESSES, zkServer.getConnectString)
+      .set(HA_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withDiscoveryClient(conf) { framework =>
