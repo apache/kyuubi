@@ -75,7 +75,12 @@ class SparkSQLEngineDeregisterMsgSuite extends SparkSQLEngineDeregisterSuite {
       // Upper case SQL types in error messages
       // see https://issues.apache.org/jira/browse/SPARK-39007
       // Use double quotes for SQL configs in error messages
-      "to int causes overflow,to \"INT\" causes overflow")
+      // see https://issues.apache.org/jira/browse/SPARK-39214
+      // Improve errors related to CAST
+      """to int causes overflow,
+        |to "INT" causes overflow,
+        |cannot be cast to "INT" due to an overflow
+        |""".stripMargin)
   }
 }
 
