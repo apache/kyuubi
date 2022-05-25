@@ -17,13 +17,15 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.OperationModes.NONE
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class FlinkCatalogDatabaseOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] =
-    Map(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> "true")
+    Map(OPERATION_PLAN_ONLY_MODE.key -> NONE.toString,
+      ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> "true")
 
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
