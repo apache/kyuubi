@@ -35,7 +35,7 @@ import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ENGINE_REF_ID, HA_ZK_NAMESPACE}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_NAMESPACE, HA_ZK_ENGINE_REF_ID}
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -55,7 +55,7 @@ private[kyuubi] class EngineRef(
     engineManager: KyuubiApplicationManager)
   extends Logging {
   // The corresponding ServerSpace where the engine belongs to
-  private val serverSpace: String = conf.get(HA_ZK_NAMESPACE)
+  private val serverSpace: String = conf.get(HA_NAMESPACE)
 
   private val timeout: Long = conf.get(ENGINE_INIT_TIMEOUT)
 
@@ -166,7 +166,7 @@ private[kyuubi] class EngineRef(
     var engineRef = discoveryClient.getServerHost(engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
 
-    conf.set(HA_ZK_NAMESPACE, engineSpace)
+    conf.set(HA_NAMESPACE, engineSpace)
     conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
     val started = System.currentTimeMillis()
     conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))

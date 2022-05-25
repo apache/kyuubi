@@ -57,7 +57,7 @@ class ZookeeperDiscoveryClientSuite extends KerberizedTestHelper {
   override def afterAll(): Unit = {
     conf.unset(KyuubiConf.SERVER_KEYTAB)
     conf.unset(KyuubiConf.SERVER_PRINCIPAL)
-    conf.unset(HA_ZK_QUORUM)
+    conf.unset(HA_ADDRESSES)
     zkServer.stop()
     super.afterAll()
   }
@@ -68,8 +68,8 @@ class ZookeeperDiscoveryClientSuite extends KerberizedTestHelper {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
-      .set(HA_ZK_NAMESPACE, namespace)
+      .set(HA_ADDRESSES, zkServer.getConnectString)
+      .set(HA_NAMESPACE, namespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     var serviceDiscovery: KyuubiServiceDiscovery = null
@@ -169,8 +169,8 @@ class ZookeeperDiscoveryClientSuite extends KerberizedTestHelper {
       conf
         .unset(KyuubiConf.SERVER_KEYTAB)
         .unset(KyuubiConf.SERVER_PRINCIPAL)
-        .set(HA_ZK_QUORUM, zkServer.getConnectString)
-        .set(HA_ZK_NAMESPACE, namespace)
+        .set(HA_ADDRESSES, zkServer.getConnectString)
+        .set(HA_NAMESPACE, namespace)
         .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
         .set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
 
@@ -253,7 +253,7 @@ class ZookeeperDiscoveryClientSuite extends KerberizedTestHelper {
       }
       conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
         .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
-        .set(HA_ZK_QUORUM, zkServer.getConnectString)
+        .set(HA_ADDRESSES, zkServer.getConnectString)
         .set(HA_ZK_SESSION_TIMEOUT, 2000)
         .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
       server.initialize(conf)

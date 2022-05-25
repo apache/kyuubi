@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.trino.operation
 
 import org.apache.kyuubi.engine.trino.TrinoStatement
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
 import org.apache.kyuubi.session.Session
 
 class GetTypeInfo(session: Session)
@@ -38,7 +38,7 @@ class GetTypeInfo(session: Session)
           |""".stripMargin)
       schema = trinoStatement.getColumns
       val resultSet = trinoStatement.execute()
-      iter = new IterableFetchIterator(resultSet)
+      iter = new ArrayFetchIterator(resultSet.toArray)
     } catch onError()
   }
 }

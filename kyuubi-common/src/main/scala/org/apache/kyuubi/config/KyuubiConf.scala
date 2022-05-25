@@ -1522,6 +1522,56 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val ENGINE_JDBC_DRIVER_CLASS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.driver.class")
+      .doc("The driver class for jdbc engine connection")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_URL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.url")
+      .doc("The server url that engine will connect to")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.user")
+      .doc("The user is used for connecting to server")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.password")
+      .doc("The password is used for connecting to server")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_PROPERTIES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.jdbc.connection.properties")
+      .doc("The additional properties are used for connecting to server")
+      .version("1.6.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
+  val ENGINE_JDBC_CONNECTION_PROVIDER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.provider")
+      .doc("The connection provider is used for getting a connection from server")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_SHORT_NAME: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.type")
+      .doc("The short name of jdbc type")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.operation.convert.catalog.database.enabled")
       .doc("When set to true, The engine converts the JDBC methods of set/get Catalog " +

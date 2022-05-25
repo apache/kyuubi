@@ -19,11 +19,15 @@ package org.apache.kyuubi.engine.trino.operation
 
 import java.util.concurrent.RejectedExecutionException
 
+import org.apache.hive.service.rpc.thrift.TRowSet
+
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.trino.TrinoStatement
 import org.apache.kyuubi.engine.trino.event.TrinoOperationEvent
+import org.apache.kyuubi.engine.trino.schema.RowSet
 import org.apache.kyuubi.events.EventBus
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, OperationState, OperationType}
+import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -77,6 +81,24 @@ class ExecuteStatement(
     }
   }
 
+  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+    validateDefaultFetchOrientation(order)
+    assertState(OperationState.FINISHED)
+    setHasResultSet(true)
+    (order, incrementalCollect) match {
+      case (FETCH_NEXT, _) => iter.fetchNext()
+      case (FETCH_PRIOR, false) => iter.fetchPrior(rowSetSize)
+      case (FETCH_FIRST, false) => iter.fetchAbsolute(0)
+      case _ =>
+        val mode = if (incrementalCollect) "incremental collect" else "full collect"
+        throw KyuubiSQLException(s"Fetch orientation[$order] is not supported in $mode mode")
+    }
+    val taken = iter.take(rowSetSize)
+    val resultRowSet = RowSet.toTRowSet(taken.toList, schema, getProtocolVersion)
+    resultRowSet.setStartRowOffset(iter.getPosition)
+    resultRowSet
+  }
+
   private def executeStatement(trinoStatement: TrinoStatement): Unit = {
     setState(OperationState.RUNNING)
     try {
@@ -85,9 +107,11 @@ class ExecuteStatement(
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
-          new IterableFetchIterator(resultSet)
+          FetchIterator.fromIterator(resultSet)
         } else {
           info("Execute in full collect mode")
+          // trinoStatement.execute return iterator is lazy,
+          // call toArray to strict evaluation will pull all result data into memory
           new ArrayFetchIterator(resultSet.toArray)
         }
       setState(OperationState.FINISHED)

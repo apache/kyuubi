@@ -26,8 +26,8 @@ class KyuubiJdbcDriverHASuite extends WithKyuubiServer with SparkMetadataTests {
   override protected val conf: KyuubiConf = KyuubiConf()
 
   override protected def jdbcUrl: String = {
-    val quorum = conf.get(HighAvailabilityConf.HA_ZK_QUORUM)
-    val ns = conf.get(HighAvailabilityConf.HA_ZK_NAMESPACE)
+    val quorum = conf.get(HighAvailabilityConf.HA_ADDRESSES)
+    val ns = conf.get(HighAvailabilityConf.HA_NAMESPACE)
     s"jdbc:hive2://$quorum/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=$ns"
   }
 }
