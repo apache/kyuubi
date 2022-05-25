@@ -24,7 +24,8 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class FlinkCatalogDatabaseOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] =
-    Map(OPERATION_PLAN_ONLY_MODE.key -> NONE.toString,
+    Map(
+      OPERATION_PLAN_ONLY_MODE.key -> NONE.toString,
       ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> "true")
 
   override protected def jdbcUrl: String =
