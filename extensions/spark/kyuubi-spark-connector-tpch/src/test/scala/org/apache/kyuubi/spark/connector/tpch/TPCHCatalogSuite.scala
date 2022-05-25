@@ -34,6 +34,12 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
       .getOrCreate()
   }
 
+  test("supports namespaces") {
+    spark.sql("use tpch")
+    assert(spark.sql(s"SHOW DATABASES").collect().length == 11)
+    assert(spark.sql(s"SHOW NAMESPACES IN tpch.sf1").collect().length == 0)
+  }
+
   test("tpch.sf1 count") {
     assert(spark.table("tpch.sf1.customer").count === 150000)
     assert(spark.table("tpch.sf1.orders").count === 1500000)
