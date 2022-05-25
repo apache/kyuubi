@@ -18,6 +18,7 @@
 package org.apache.kyuubi.client;
 
 import javax.net.ssl.SSLContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -79,6 +80,7 @@ public class KyuubiRestClient {
           SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
       sslSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
     } catch (Exception e) {
+      LOG.error("Error: ", e);
       throw new RuntimeException(e);
     }
 
@@ -164,7 +166,19 @@ public class KyuubiRestClient {
       return this;
     }
 
+    private void validate() throws IllegalArgumentException {
+      StringBuilder errorMessageBuilder = new StringBuilder();
+      if (authSchema == AuthSchema.BASIC
+          && (StringUtils.isBlank(username) || StringUtils.isBlank(password))) {
+        errorMessageBuilder.append("username/password cannot be empty when auth schema is BASIC.");
+      }
+      if (errorMessageBuilder.length() > 0) {
+        throw new IllegalArgumentException(errorMessageBuilder.toString());
+      }
+    }
+
     public KyuubiRestClient build() {
+      validate();
       return new KyuubiRestClient(this);
     }
   }

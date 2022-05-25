@@ -36,10 +36,6 @@ public class BatchRestApi {
     this.client = client;
   }
 
-  public RestClient getClient() {
-    return this.client.getHttpClient();
-  }
-
   public Batch createBatch(BatchRequest request) throws KyuubiRestException {
     String jsonBody = null;
     try {
@@ -80,5 +76,9 @@ public class BatchRestApi {
     params.put("killApp", killApp);
     params.put("hive.server2.proxy.user", hs2ProxyUser);
     this.getClient().delete(batchId, params);
+  }
+
+  private RestClient getClient() {
+    return this.client.getHttpClient();
   }
 }
