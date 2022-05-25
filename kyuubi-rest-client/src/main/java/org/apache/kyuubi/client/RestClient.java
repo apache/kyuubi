@@ -77,9 +77,9 @@ public class RestClient implements AutoCloseable {
     return doRequest(buildURI(path, params), RequestBuilder.get());
   }
 
-  public <T> T post(String body, TypeReference<T> type) throws KyuubiRestException {
+  public <T> T post(String path, String body, TypeReference<T> type) throws KyuubiRestException {
     try {
-      String responseJson = post(body);
+      String responseJson = post(path, body);
       return new ObjectMapper().readValue(responseJson, type);
     } catch (JsonProcessingException e) {
       throw new KyuubiRestException(
@@ -87,10 +87,10 @@ public class RestClient implements AutoCloseable {
     }
   }
 
-  public String post(String body) throws KyuubiRestException {
+  public String post(String path, String body) throws KyuubiRestException {
     RequestBuilder postRequestBuilder =
         RequestBuilder.post().setEntity(new StringEntity(body, StandardCharsets.UTF_8));
-    return doRequest(buildURI(), postRequestBuilder);
+    return doRequest(buildURI(path), postRequestBuilder);
   }
 
   public String delete(String path, Map<String, Object> params) throws KyuubiRestException {
@@ -128,8 +128,8 @@ public class RestClient implements AutoCloseable {
     return response;
   }
 
-  private URI buildURI() throws KyuubiRestException {
-    return buildURI(null, null);
+  private URI buildURI(String path) throws KyuubiRestException {
+    return buildURI(path, null);
   }
 
   private URI buildURI(String path, Map<String, Object> params) throws KyuubiRestException {

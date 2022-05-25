@@ -59,13 +59,13 @@ public class BatchRestClientTest {
 
     kerberizedTestHelper.login();
     KyuubiRestClient spnegoClient =
-        new KyuubiRestClient.Builder("https://localhost:8443", "batch")
+        new KyuubiRestClient.Builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
             .build();
     spnegoBatchRestApi = new BatchRestApi(spnegoClient);
 
     KyuubiRestClient basicClient =
-        new KyuubiRestClient.Builder("https://localhost:8443", "batch")
+        new KyuubiRestClient.Builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.BASIC)
             .username("test")
             .password("test")
@@ -92,20 +92,20 @@ public class BatchRestClientTest {
         throws ServletException, IOException {
       if (!validAuthHeader(req, resp)) return;
 
-      if (req.getPathInfo().matches("/api/v1/batch/\\d+")) {
+      if (req.getPathInfo().matches("/api/v1/batches/\\d+")) {
         resp.setStatus(HttpServletResponse.SC_OK);
 
         Batch batch = generateTestBatch();
         resp.getWriter().write(new ObjectMapper().writeValueAsString(batch));
         resp.getWriter().flush();
-      } else if (req.getPathInfo().matches("/api/v1/batch")
+      } else if (req.getPathInfo().matches("/api/v1/batches")
           && req.getQueryString().matches("[\\w]+(=[\\w]*)(&[\\w]+(=[\\w]*))+$")) {
         resp.setStatus(HttpServletResponse.SC_OK);
 
         GetBatchesResponse batchesResponse = generateTestBatchesResponse();
         resp.getWriter().write(new ObjectMapper().writeValueAsString(batchesResponse));
         resp.getWriter().flush();
-      } else if (req.getPathInfo().matches("/api/v1/batch/\\d+/localLog")) {
+      } else if (req.getPathInfo().matches("/api/v1/batches/\\d+/localLog")) {
         resp.setStatus(HttpServletResponse.SC_OK);
 
         OperationLog log = generateTestOperationLog();
@@ -121,7 +121,7 @@ public class BatchRestClientTest {
         throws ServletException, IOException {
       if (!validAuthHeader(req, resp)) return;
 
-      if (req.getPathInfo().equalsIgnoreCase("/api/v1/batch")) {
+      if (req.getPathInfo().equalsIgnoreCase("/api/v1/batches")) {
         resp.setStatus(HttpServletResponse.SC_OK);
 
         Batch batch = generateTestBatch();
@@ -143,7 +143,7 @@ public class BatchRestClientTest {
         throws ServletException, IOException {
       if (!validAuthHeader(req, resp)) return;
 
-      if (req.getPathInfo().matches("/api/v1/batch/\\d+")
+      if (req.getPathInfo().matches("/api/v1/batches/\\d+")
           && req.getQueryString().matches("[\\w.]+(=[\\w]*)(&[\\w.]+(=[\\w]*))+$")) {
         resp.setStatus(HttpServletResponse.SC_OK);
       } else {
@@ -171,16 +171,16 @@ public class BatchRestClientTest {
   }
 
   @Test(expected = KyuubiRestException.class)
-  public void testInvalidClient() throws KyuubiRestException {
+  public void testInvalidUrl() throws KyuubiRestException {
     KyuubiRestClient basicClient =
-        new KyuubiRestClient.Builder("https://localhost:8443", "invalid_batch")
+        new KyuubiRestClient.Builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.BASIC)
             .username("test")
             .password("test")
             .build();
     BatchRestApi invalidBasicBatchRestApi = new BatchRestApi(basicClient);
 
-    invalidBasicBatchRestApi.getBatchById("71535");
+    invalidBasicBatchRestApi.getBatchById("fake");
   }
 
   @Test

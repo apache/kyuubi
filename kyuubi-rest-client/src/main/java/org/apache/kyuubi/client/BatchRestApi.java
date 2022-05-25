@@ -32,6 +32,8 @@ public class BatchRestApi {
 
   private KyuubiRestClient client;
 
+  private static final String API_BASE_PATH = "batches";
+
   public BatchRestApi(KyuubiRestClient client) {
     this.client = client;
   }
@@ -44,11 +46,12 @@ public class BatchRestApi {
       throw new KyuubiRestException("cannot convert batch request body to json", e);
     }
 
-    return this.getClient().post(jsonBody, new TypeReference<Batch>() {});
+    return this.getClient().post(API_BASE_PATH, jsonBody, new TypeReference<Batch>() {});
   }
 
   public Batch getBatchById(String batchId) throws KyuubiRestException {
-    return this.getClient().get(batchId, null, new TypeReference<Batch>() {});
+    String path = String.format("%s/%s", API_BASE_PATH, batchId);
+    return this.getClient().get(path, null, new TypeReference<Batch>() {});
   }
 
   public GetBatchesResponse getBatchInfoList(String batchType, int from, int size)
@@ -57,7 +60,7 @@ public class BatchRestApi {
     params.put("batchType", batchType);
     params.put("from", from);
     params.put("size", size);
-    return this.getClient().get(null, params, new TypeReference<GetBatchesResponse>() {});
+    return this.getClient().get(API_BASE_PATH, params, new TypeReference<GetBatchesResponse>() {});
   }
 
   public OperationLog getOperationLog(String batchId, int from, int size)
@@ -66,8 +69,9 @@ public class BatchRestApi {
     params.put("batchId", batchId);
     params.put("from", from);
     params.put("size", size);
-    return this.getClient()
-        .get(batchId + "/localLog", params, new TypeReference<OperationLog>() {});
+
+    String path = String.format("%s/%s/localLog", API_BASE_PATH, batchId);
+    return this.getClient().get(path, params, new TypeReference<OperationLog>() {});
   }
 
   public void deleteBatch(String batchId, boolean killApp, String hs2ProxyUser)
@@ -75,7 +79,9 @@ public class BatchRestApi {
     Map<String, Object> params = new HashMap<>();
     params.put("killApp", killApp);
     params.put("hive.server2.proxy.user", hs2ProxyUser);
-    this.getClient().delete(batchId, params);
+
+    String path = String.format("%s/%s", API_BASE_PATH, batchId);
+    this.getClient().delete(path, params);
   }
 
   private RestClient getClient() {

@@ -53,8 +53,7 @@ public class KyuubiRestClient {
   public KyuubiRestClient(Builder builder) {
     // Remove the trailing "/" from the hostUrl if present
     String hostUrl = builder.hostUrl.replaceAll("/$", "");
-    String baseUrl =
-        String.format("%s/%s/%s", hostUrl, builder.version.getApiNamespace(), builder.apiBasePath);
+    String baseUrl = String.format("%s/%s", hostUrl, builder.version.getApiNamespace());
 
     CloseableHttpClient httpclient = initHttpClient(builder);
 
@@ -117,8 +116,6 @@ public class KyuubiRestClient {
 
     private String hostUrl;
 
-    private String apiBasePath;
-
     private ApiVersion version = ApiVersion.V1;
 
     private AuthSchema authSchema = AuthSchema.BASIC;
@@ -131,9 +128,8 @@ public class KyuubiRestClient {
 
     private int connectTimeout = 3000;
 
-    public Builder(String hostUrl, String apiBasePath) {
+    public Builder(String hostUrl) {
       this.hostUrl = hostUrl;
-      this.apiBasePath = apiBasePath;
     }
 
     public Builder apiVersion(ApiVersion version) {
