@@ -221,8 +221,8 @@ class EngineRefSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test")
-    conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, zkServer.getConnectString)
     val engine = new EngineRef(conf, user, id, null)
 
     var port1 = 0

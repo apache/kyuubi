@@ -18,7 +18,7 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 
 class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
   val zkQuorum = "localhost:2181"
@@ -102,7 +102,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       }
     }
 
-    withSystemProperty(HA_ZK_NAMESPACE.key, namespace) {
+    withSystemProperty(HA_NAMESPACE.key, namespace) {
       val op = "create"
       val service = "server"
       val newNamespace = s"${namespace}_new"
@@ -267,7 +267,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("test create action arguments") {
-    withSystemProperty(HA_ZK_NAMESPACE.key, namespace) {
+    withSystemProperty(HA_NAMESPACE.key, namespace) {
       val newNamespace = s"${namespace}_new"
       val op = "create"
       val args = Array(

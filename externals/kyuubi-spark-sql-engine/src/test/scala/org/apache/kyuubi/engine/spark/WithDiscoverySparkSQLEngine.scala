@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_AUTH_TYPE, HA_ZK_NAMESPACE, HA_ZK_QUORUM}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE, HA_ZK_AUTH_TYPE}
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.ha.client.DiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
@@ -31,9 +31,9 @@ trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
   override def withKyuubiConf: Map[String, String] = {
     assert(zkServer != null)
     Map(
-      HA_ZK_QUORUM.key -> zkServer.getConnectString,
+      HA_ADDRESSES.key -> zkServer.getConnectString,
       HA_ZK_AUTH_TYPE.key -> AuthTypes.NONE.toString,
-      HA_ZK_NAMESPACE.key -> namespace)
+      HA_NAMESPACE.key -> namespace)
   }
 
   override def beforeAll(): Unit = {

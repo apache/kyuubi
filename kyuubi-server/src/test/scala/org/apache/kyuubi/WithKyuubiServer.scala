@@ -20,7 +20,7 @@ package org.apache.kyuubi
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_AUTH_TYPE, HA_ZK_QUORUM}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_ZK_AUTH_TYPE}
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
@@ -47,7 +47,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
     zkServer.initialize(conf)
     zkServer.start()
-    conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
+    conf.set(HA_ADDRESSES, zkServer.getConnectString)
     conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
 
     conf.set("spark.ui.enabled", "false")

@@ -164,7 +164,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
   private def useDefaultPropertyValueIfMissing(value: CliArguments): CliArguments = {
     var arguments: CliArguments = value.copy()
     if (value.zkQuorum == null) {
-      conf.getOption(HA_ZK_QUORUM.key).foreach { v =>
+      conf.getOption(HA_ADDRESSES.key).foreach { v =>
         if (arguments.verbose) {
           super.info(s"Zookeeper quorum is not specified, use value from default conf:$v")
         }
@@ -173,7 +173,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     }
 
     if (arguments.namespace == null) {
-      arguments = arguments.copy(namespace = conf.get(HA_ZK_NAMESPACE))
+      arguments = arguments.copy(namespace = conf.get(HA_NAMESPACE))
       if (arguments.verbose) {
         super.info(s"Zookeeper namespace is not specified, use value from default conf:" +
           s"${arguments.namespace}")
@@ -206,8 +206,8 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     }
     validateZkArguments()
 
-    val defaultNamespace = conf.getOption(HA_ZK_NAMESPACE.key)
-      .getOrElse(HA_ZK_NAMESPACE.defaultValStr)
+    val defaultNamespace = conf.getOption(HA_NAMESPACE.key)
+      .getOrElse(HA_NAMESPACE.defaultValStr)
     if (defaultNamespace.equals(cliArgs.namespace)) {
       fail(
         s"""
@@ -234,8 +234,8 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
   }
 
   private def mergeArgsIntoKyuubiConf(): Unit = {
-    conf.set(HA_ZK_QUORUM.key, cliArgs.zkQuorum)
-    conf.set(HA_ZK_NAMESPACE.key, cliArgs.namespace)
+    conf.set(HA_ADDRESSES.key, cliArgs.zkQuorum)
+    conf.set(HA_NAMESPACE.key, cliArgs.namespace)
   }
 
   private def validateZkArguments(): Unit = {
