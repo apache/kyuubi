@@ -170,6 +170,19 @@ public class BatchRestClientTest {
     }
   }
 
+  @Test(expected = KyuubiRestException.class)
+  public void testInvalidClient() throws KyuubiRestException {
+    KyuubiRestClient basicClient =
+        new KyuubiRestClient.Builder("https://localhost:8443", "invalid_batch")
+            .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+            .username("test")
+            .password("test")
+            .build();
+    BatchRestApi invalidBasicBatchRestApi = new BatchRestApi(basicClient);
+
+    invalidBasicBatchRestApi.getBatchById("71535");
+  }
+
   @Test
   public void createBatchTest() throws IOException, KyuubiRestException {
     // test spnego auth
