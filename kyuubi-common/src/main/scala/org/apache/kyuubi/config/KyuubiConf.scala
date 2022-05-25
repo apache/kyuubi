@@ -1521,4 +1521,12 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
+
+  val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.operation.convert.catalog.database.enabled")
+      .doc("When set to true, The engine converts the JDBC methods of set/get Catalog " +
+        "and set/get Schema to the implementation of different engines")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
 }

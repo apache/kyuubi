@@ -58,10 +58,6 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val catalogDatabaseOperation = processCatalogDatabase(session, confOverlay)
-    if (catalogDatabaseOperation != null) {
-      return catalogDatabaseOperation
-    }
     val operation =
       new ExecuteStatement(session, statement, confOverlay, runAsync, getQueryTimeout(queryTimeout))
     addOperation(operation)
@@ -75,24 +71,21 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     operation
   }
 
+  // The server does not use these 4 operations
   override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
-    val operation = new SetCurrentCatalog(session, catalog)
-    addOperation(operation)
+    null
   }
 
   override def newGetCurrentCatalogOperation(session: Session): Operation = {
-    val operation = new GetCurrentCatalog(session)
-    addOperation(operation)
+    null
   }
 
   override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
-    val operation = new SetCurrentDatabase(session, database)
-    addOperation(operation)
+    null
   }
 
   override def newGetCurrentDatabaseOperation(session: Session): Operation = {
-    val operation = new GetCurrentDatabase(session)
-    addOperation(operation)
+    null
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {

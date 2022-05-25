@@ -15,32 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.operation
 
-import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
+import java.sql.SQLException
 
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 
-class SparkCatalogDatabaseOperationSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
-
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  override def withKyuubiConf: Map[String, String] =
-    Map(
-      "spark.sql.catalog.dummy" -> classOf[DummyCatalog].getName,
-      ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> "true")
+class KyuubiCatalogDatabaseOperationManagerSuite extends WithKyuubiServer with HiveJDBCTestHelper {
+  override protected val conf: KyuubiConf = {
+    KyuubiConf().set(OPERATION_QUERY_TIMEOUT.key, "PT1S")
+      .set(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key, "true")
+  }
 
   test("set/get current catalog") {
     withJdbcStatement() { statement =>
       val catalog = statement.getConnection.getCatalog
-      assert(catalog == SparkCatalogShim.SESSION_CATALOG)
-      statement.getConnection.setCatalog("dummy")
-      val changedCatalog = statement.getConnection.getCatalog
-      assert(changedCatalog == "dummy")
+      assert(catalog == "spark_catalog")
+      // The server starts the spark engine without other catalogs
+      val e = intercept[SQLException] {
+        statement.getConnection.setCatalog("dummy_catalog")
+        statement.getConnection.getCatalog
+      }
+      assert(e.getMessage.contains("dummy_catalog"))
     }
   }
 
@@ -54,16 +52,6 @@ class SparkCatalogDatabaseOperationSuite extends WithSparkSQLEngine with HiveJDB
       assert(changedSchema == "test_database")
     }
   }
-}
 
-class DummyCatalog extends CatalogPlugin {
-  override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
-    _name = name
-  }
-
-  private var _name: String = null
-
-  override def name(): String = _name
-
-  override def defaultNamespace(): Array[String] = Array("a", "b")
+  override protected def jdbcUrl: String = getJdbcUrl
 }

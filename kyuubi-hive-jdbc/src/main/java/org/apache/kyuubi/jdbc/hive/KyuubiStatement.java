@@ -512,36 +512,6 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
     return resultSet;
   }
 
-  public void executeSetCurrentCatalog(String catalog) throws SQLException {
-    if (executeWithConfOverlay(
-        "", Collections.singletonMap("kyuubi.operation.set.current.catalog", catalog))) {
-      resultSet.close();
-    }
-  }
-
-  public ResultSet executeGetCurrentCatalog() throws SQLException {
-    if (!executeWithConfOverlay(
-        "", Collections.singletonMap("kyuubi.operation.get.current.catalog", ""))) {
-      throw new SQLException("The query did not generate a result set!");
-    }
-    return resultSet;
-  }
-
-  public void executeSetCurrentDatabase(String database) throws SQLException {
-    if (executeWithConfOverlay(
-        "", Collections.singletonMap("kyuubi.operation.set.current.database", database))) {
-      resultSet.close();
-    }
-  }
-
-  public ResultSet executeGetCurrentDatabase() throws SQLException {
-    if (!executeWithConfOverlay(
-        "", Collections.singletonMap("kyuubi.operation.get.current.database", ""))) {
-      throw new SQLException("The query did not generate a result set!");
-    }
-    return resultSet;
-  }
-
   /*
    * (non-Javadoc)
    *

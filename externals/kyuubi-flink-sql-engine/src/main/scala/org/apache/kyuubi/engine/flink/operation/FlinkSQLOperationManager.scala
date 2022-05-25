@@ -42,7 +42,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val catalogDatabaseOperation = processCatalogDatabase(session, confOverlay)
+    val catalogDatabaseOperation = processCatalogDatabase(session, statement, getConf)
     if (catalogDatabaseOperation != null) {
       return catalogDatabaseOperation
     }

@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.SQLException
 import java.sql.SQLTimeoutException
 
 import org.apache.kyuubi.WithKyuubiServer
@@ -58,30 +57,6 @@ class KyuubiOperationManagerSuite extends WithKyuubiServer with HiveJDBCTestHelp
         }.getMessage
         assert(e.contains("Query timed out after"))
       }
-    }
-  }
-
-  test("set/get current catalog") {
-    withJdbcStatement() { statement =>
-      val catalog = statement.getConnection.getCatalog
-      assert(catalog == "spark_catalog")
-      // The server starts the spark engine without other catalogs
-      val e = intercept[SQLException] {
-        statement.getConnection.setCatalog("dummy_catalog")
-        statement.getConnection.getCatalog
-      }
-      assert(e.getMessage.contains("dummy_catalog"))
-    }
-  }
-
-  test("set/get current database") {
-    withDatabases("test_database") { statement =>
-      statement.execute("create database test_database")
-      val schema = statement.getConnection.getSchema
-      assert(schema == "default")
-      statement.getConnection.setSchema("test_database")
-      val changedSchema = statement.getConnection.getSchema
-      assert(changedSchema == "test_database")
     }
   }
 

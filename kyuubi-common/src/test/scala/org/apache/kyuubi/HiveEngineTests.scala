@@ -452,28 +452,4 @@ trait HiveEngineTests extends HiveJDBCTestHelper {
       assert(resultSet.getString(1) === "hive.query.name=test")
     }
   }
-
-  test("test set/get catalog") {
-    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
-    withJdbcStatement()({ statement =>
-      val catalog = statement.getConnection.getCatalog
-      assert(catalog == "")
-      statement.getConnection.setCatalog("hive_not_support_catalog")
-      val changedCatalog = statement.getConnection.getCatalog
-      assert(changedCatalog == "")
-    })
-  }
-
-  test("test set/get database") {
-    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
-    withJdbcStatement()({ statement =>
-      statement.execute("create database test_hive_db")
-      val schema = statement.getConnection.getSchema
-      assert(schema == "default")
-      statement.getConnection.setSchema("test_hive_db")
-      val changedSchema = statement.getConnection.getSchema
-      assert(changedSchema == "test_hive_db")
-      statement.execute("drop database test_hive_db")
-    })
-  }
 }

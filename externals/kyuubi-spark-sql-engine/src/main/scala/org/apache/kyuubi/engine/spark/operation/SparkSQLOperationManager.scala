@@ -53,7 +53,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val spark = session.asInstanceOf[SparkSessionImpl].spark
-    val catalogDatabaseOperation = processCatalogDatabase(session, confOverlay)
+    val catalogDatabaseOperation = processCatalogDatabase(session, statement, getConf)
     if (catalogDatabaseOperation != null) {
       return catalogDatabaseOperation
     }
