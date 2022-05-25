@@ -38,7 +38,7 @@ class TPCHTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
 
   val tpchTable: TpchTable[_] = TpchTable.getTable(tbl)
 
-  override def name: String = s"`sf$scale`.`$tbl`"
+  override def name: String = s"sf$scale.$tbl"
 
   override def toString: String = s"TPCHTable($name)"
 

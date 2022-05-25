@@ -39,10 +39,13 @@ class TPCHCatalog extends TableCatalog {
 
   var options: CaseInsensitiveStringMap = _
 
-  override def name: String = "tpch"
+  var _name: Option[String] = None
+
+  override def name: String = _name.getOrElse("tpch")
 
   override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
     this.options = options
+    this._name = Some(name)
   }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = namespace match {

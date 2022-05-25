@@ -54,7 +54,6 @@
         <dependency>
             <groupId>io.trino.tpch</groupId>
             <artifactId>tpch</artifactId>
-            <version>1.1</version>
         </dependency>
 
         <dependency>
@@ -164,6 +163,13 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.google.common</shadedPattern>
                             <includes>
                                 <include>com.google.common.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.trino.tpch</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.trino.tpch</shadedPattern>
+                            <includes>
+                                <include>io.trino.tpch.**</include>
                             </includes>
                         </relocation>
                     </relocations>
