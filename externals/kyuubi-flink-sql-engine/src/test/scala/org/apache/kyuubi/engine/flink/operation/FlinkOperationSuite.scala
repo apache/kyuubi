@@ -21,8 +21,6 @@ import java.nio.file.Files
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
-import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_CATALOG
-import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_DATABASE
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -349,16 +347,18 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
       var resultSet = metaData.getSchemas(null, null)
+      val defaultCatalog = "default_catalog"
+      val defaultDatabase = "default_database"
       while (resultSet.next()) {
-        assert(resultSet.getString(TABLE_SCHEM) === DEFAULT_BUILTIN_DATABASE)
-        assert(resultSet.getString(TABLE_CATALOG) === DEFAULT_BUILTIN_CATALOG)
+        assert(resultSet.getString(TABLE_SCHEM) === defaultDatabase)
+        assert(resultSet.getString(TABLE_CATALOG) === defaultCatalog)
       }
       resultSet = metaData.getSchemas(
-        DEFAULT_BUILTIN_CATALOG.split("_").apply(0),
-        DEFAULT_BUILTIN_DATABASE.split("_").apply(0))
+        defaultCatalog.split("_").apply(0),
+        defaultDatabase.split("_").apply(0))
       while (resultSet.next()) {
-        assert(resultSet.getString(TABLE_SCHEM) === DEFAULT_BUILTIN_DATABASE)
-        assert(resultSet.getString(TABLE_CATALOG) === DEFAULT_BUILTIN_CATALOG)
+        assert(resultSet.getString(TABLE_SCHEM) === defaultDatabase)
+        assert(resultSet.getString(TABLE_CATALOG) === defaultCatalog)
       }
     }
   }

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.time.LocalDate
+import java.util
 import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
@@ -26,15 +28,21 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.calcite.rel.metadata.{DefaultRelMetadataProvider, JaninoRelMetadataProvider, RelMetadataQueryBase}
 import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.client.gateway.{Executor, TypedResult}
+import org.apache.flink.table.data.{GenericArrayData, GenericMapData, RowData}
+import org.apache.flink.table.data.binary.{BinaryArrayData, BinaryMapData}
 import org.apache.flink.table.operations.{Operation, QueryOperation}
 import org.apache.flink.table.operations.command._
+import org.apache.flink.table.types.DataType
+import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.flink.result.ResultSet
+import org.apache.kyuubi.engine.flink.schema.RowSet.toHiveString
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.RowSetUtils
 
 class ExecuteStatement(
     session: Session,
@@ -127,6 +135,7 @@ class ExecuteStatement(
     var resultId: String = null
     try {
       val resultDescriptor = executor.executeQuery(sessionId, operation)
+      val dataTypes = resultDescriptor.getResultSchema.getColumnDataTypes.asScala.toList
 
       resultId = resultDescriptor.getResultId
 
@@ -142,7 +151,19 @@ class ExecuteStatement(
           case TypedResult.ResultType.PAYLOAD =>
             (1 to result.getPayload).foreach { page =>
               if (rows.size < resultMaxRows) {
-                rows ++= executor.retrieveResultPage(resultId, page).asScala
+                // FLINK-24461 retrieveResultPage method changes the return type from Row to RowData
+                val result = executor.retrieveResultPage(resultId, page).asScala.toList
+                result.headOption match {
+                  case None =>
+                  case Some(r) =>
+                    // for flink 1.14
+                    if (r.getClass == classOf[Row]) {
+                      rows ++= result.asInstanceOf[List[Row]]
+                    } else {
+                      // for flink 1.15+
+                      rows ++= result.map(r => convertToRow(r.asInstanceOf[RowData], dataTypes))
+                    }
+                }
               } else {
                 loop = false
               }
@@ -178,4 +199,88 @@ class ExecuteStatement(
         warn(s"Failed to clean result set $resultId in session $sessionId", t)
     }
   }
+
+  private[this] def convertToRow(r: RowData, dataTypes: List[DataType]): Row = {
+    val row = Row.withPositions(r.getRowKind, r.getArity)
+    for (i <- 0 until r.getArity) {
+      val dataType = dataTypes(i)
+      dataType.getLogicalType match {
+        case arrayType: ArrayType =>
+          val arrayData = r.getArray(i)
+          if (arrayData == null) {
+            row.setField(i, null)
+          }
+          arrayData match {
+            case d: GenericArrayData =>
+              row.setField(i, d.toObjectArray)
+            case d: BinaryArrayData =>
+              row.setField(i, d.toObjectArray(arrayType.getElementType))
+            case _ =>
+          }
+        case _: BinaryType =>
+          row.setField(i, r.getBinary(i))
+        case _: BigIntType =>
+          row.setField(i, r.getLong(i))
+        case _: BooleanType =>
+          row.setField(i, r.getBoolean(i))
+        case _: VarCharType | _: CharType =>
+          row.setField(i, r.getString(i))
+        case t: DecimalType =>
+          row.setField(i, r.getDecimal(i, t.getPrecision, t.getScale).toBigDecimal)
+        case _: DateType =>
+          val date = RowSetUtils.formatLocalDate(LocalDate.ofEpochDay(r.getInt(i)))
+          row.setField(i, date)
+        case t: TimestampType =>
+          val ts = RowSetUtils
+            .formatLocalDateTime(r.getTimestamp(i, t.getPrecision)
+              .toLocalDateTime)
+          row.setField(i, ts)
+        case _: TinyIntType =>
+          row.setField(i, r.getByte(i))
+        case _: SmallIntType =>
+          row.setField(i, r.getShort(i))
+        case _: IntType =>
+          row.setField(i, r.getInt(i))
+        case _: FloatType =>
+          row.setField(i, r.getFloat(i))
+        case mapType: MapType =>
+          val mapData = r.getMap(i)
+          if (mapData != null && mapData.size > 0) {
+            val keyType = mapType.getKeyType
+            val valueType = mapType.getValueType
+            mapData match {
+              case d: BinaryMapData =>
+                val kvArray = toArray(keyType, valueType, d)
+                val map: util.Map[Any, Any] = new util.HashMap[Any, Any]
+                for (i <- 0 until kvArray._1.length) {
+                  val value: Any = kvArray._2(i)
+                  map.put(kvArray._1(i), value)
+                }
+                row.setField(i, map)
+              case d: GenericMapData => // TODO
+            }
+          } else {
+            row.setField(i, null)
+          }
+        case _: DoubleType =>
+          row.setField(i, r.getDouble(i))
+        case t: RowType =>
+          val v = r.getRow(i, t.getFieldCount)
+          row.setField(i, v)
+        case t =>
+          val hiveString = toHiveString((row.getField(i), t))
+          row.setField(i, hiveString)
+      }
+    }
+    row
+  }
+
+  private[this] def toArray(
+      keyType: LogicalType,
+      valueType: LogicalType,
+      arrayData: BinaryMapData): (Array[_], Array[_]) = {
+
+    arrayData.keyArray().toObjectArray(keyType) -> arrayData.valueArray().toObjectArray(valueType)
+  }
+
 }

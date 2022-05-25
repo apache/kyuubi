@@ -111,6 +111,7 @@
         <delta.version>1.2.1</delta.version>
         <fb303.version>0.9.3</fb303.version>
         <flink.version>1.14.4</flink.version>
+        <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
@@ -1295,13 +1296,13 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+                <artifactId>flink-streaming-java${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-clients_${scala.binary.version}</artifactId>
+                <artifactId>flink-clients${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
@@ -1319,7 +1320,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-api-java-bridge_${scala.binary.version}</artifactId>
+                <artifactId>flink-table-api-java-bridge${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
@@ -1331,7 +1332,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-runtime_${scala.binary.version}</artifactId>
+                <artifactId>flink-table-runtime${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
                 <scope>provided</scope>
             </dependency>
@@ -1344,19 +1345,13 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-yarn_${scala.binary.version}</artifactId>
+                <artifactId>flink-sql-client${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-sql-client_${scala.binary.version}</artifactId>
-                <version>${flink.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.flink</groupId>
-                <artifactId>flink-test-utils_${scala.binary.version}</artifactId>
+                <artifactId>flink-test-utils${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
                 <exclusions>
                     <exclusion>
@@ -2024,6 +2019,21 @@
             <properties>
                 <spark.version>3.4.0-SNAPSHOT</spark.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>flink-1.14</id>
+            <properties>
+                <flink.version>1.14.4</flink.version>
+                <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
+            </properties>
+        </profile>
+        <profile>
+            <id>flink-1.15</id>
+            <properties>
+                <flink.version>1.15.0</flink.version>
+                <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
 
