@@ -23,12 +23,12 @@ import scala.collection.JavaConverters._
 
 import io.trino.tpch.TpchTable
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
-import org.apache.spark.sql.connector.catalog.{Identifier, Table => SparkTable, TableCatalog, TableChange}
+import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table => SparkTable, TableCatalog, TableChange}
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCHCatalog extends TableCatalog {
+class TPCHCatalog extends TableCatalog with SupportsNamespaces {
 
   val tables: Array[String] = TpchTable.getTables.asScala
     .map(_.getTableName).toArray
@@ -73,6 +73,34 @@ class TPCHCatalog extends TableCatalog {
     throw new UnsupportedOperationException
 
   override def renameTable(oldIdent: Identifier, newIdent: Identifier): Unit =
+    throw new UnsupportedOperationException
+
+  override def listNamespaces(): Array[Array[String]] = databases.map(Array(_))
+
+  override def listNamespaces(namespace: Array[String]): Array[Array[String]] = namespace match {
+    case Array() => listNamespaces()
+    case Array(db) if databases contains db => Array.empty
+    case _ => throw new NoSuchNamespaceException(namespace)
+  }
+
+  override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] =
+    namespace match {
+      case Array(_) => Map.empty[String, String].asJava
+      case _ => throw new NoSuchNamespaceException(namespace)
+    }
+
+  override def createNamespace(namespace: Array[String], metadata: util.Map[String, String]): Unit =
+    throw new UnsupportedOperationException
+
+  override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
+    throw new UnsupportedOperationException
+
+  // Removed in SPARK-37929
+  def dropNamespace(namespace: Array[String]): Boolean =
+    throw new UnsupportedOperationException
+
+  // Introduced in SPARK-37929
+  def dropNamespace(namespace: Array[String], cascade: Boolean): Boolean =
     throw new UnsupportedOperationException
 
 }
