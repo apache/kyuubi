@@ -34,11 +34,9 @@ class KyuubiCatalogDatabaseOperationManagerSuite extends WithKyuubiServer with H
       val catalog = statement.getConnection.getCatalog
       assert(catalog == "spark_catalog")
       // The server starts the spark engine without other catalogs
-      val e = intercept[SQLException] {
-        statement.getConnection.setCatalog("dummy_catalog")
-        statement.getConnection.getCatalog
-      }
-      assert(e.getMessage.contains("dummy_catalog"))
+      statement.getConnection.setCatalog("dummy_catalog")
+      val changedCatalog = statement.getConnection.getCatalog
+      assert(changedCatalog == "spark_catalog")
     }
   }
 
