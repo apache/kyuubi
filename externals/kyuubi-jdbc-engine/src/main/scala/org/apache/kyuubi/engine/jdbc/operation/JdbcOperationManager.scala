@@ -122,4 +122,20 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
   override def getQueryId(operation: Operation): String = {
     throw KyuubiSQLException.featureNotSupported()
   }
+
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
 }
