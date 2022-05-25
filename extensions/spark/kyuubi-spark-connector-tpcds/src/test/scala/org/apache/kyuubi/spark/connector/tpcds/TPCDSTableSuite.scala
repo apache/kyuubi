@@ -21,7 +21,6 @@ import io.trino.tpcds.Table
 import io.trino.tpcds.generator.CallCenterGeneratorColumn
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.tpcds.LocalSparkSession.withSparkSession
@@ -119,29 +118,6 @@ class TPCDSTableSuite extends KyuubiFunSuite {
         assert(TPCDSSchemaUtils.reviseNullColumnIndex(Table.CALL_CENTER, i) ==
           CallCenterGeneratorColumn.valueOf(getValuesColumns(i)).getGlobalColumnNumber -
           CallCenterGeneratorColumn.CC_CALL_CENTER_SK.getGlobalColumnNumber)
-    }
-  }
-
-  test("test splitPerTask") {
-    val splitPerTask = 1
-    val sparkConf = new SparkConf().setMaster("local[1]")
-      .set("spark.ui.enabled", "false")
-      .set("spark.sql.catalogImplementation", "in-memory")
-      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
-      .set("spark.sql.catalog.tpcds.splitPerTask", String.valueOf(splitPerTask))
-
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      val scale = TPCDSStatisticsUtils.SCALES.last
-      TPCDSSchemaUtils.BASE_TABLES.filter(!_.isSmall).foreach { table =>
-        val df = spark.sql(s"select * from tpcds.sf$scale.${table.getName}")
-        val splits = df.queryExecution.executedPlan.collectFirst {
-          case scanExec: BatchScanExec if scanExec.scan.isInstanceOf[TPCDSBatchScan] =>
-            scanExec.scan.asInstanceOf[TPCDSBatchScan].planInputPartitions.length
-        }
-        assert(splits.isDefined)
-        val expectedSplits = TPCDSSplitUtils.getSplits(table, scale, splitPerTask)
-        assert(splits.get == expectedSplits)
-      }
     }
   }
 }
