@@ -42,7 +42,7 @@ class TPCDSTableGenerateBenchmark extends KyuubiFunSuite with KyuubiBenchmarkBas
   private val scale = TPCDSStatisticsUtils.SCALES.last
 
   test("benchmark") {
-//    assume(runBenchmark)
+    assume(runBenchmark)
     withHeader {
       numRowsTableBenchmark()
     }
