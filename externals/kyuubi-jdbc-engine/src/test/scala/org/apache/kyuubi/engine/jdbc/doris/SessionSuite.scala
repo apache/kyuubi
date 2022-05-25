@@ -14,14 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc.doris
 
-package org.apache.kyuubi.engine
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+class SessionSuite extends WithDorisEngine with HiveJDBCTestHelper {
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, JDBC = Value
+  test("test session") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery(
+        "select '1' as id")
+      val metadata = resultSet.getMetaData
+      for (i <- 1 to metadata.getColumnCount) {
+        assert(metadata.getColumnName(i) == "id")
+      }
+      while (resultSet.next()) {
+        val id = resultSet.getObject(1)
+        assert(id == "1")
+      }
+    }
+  }
+
+  override protected def jdbcUrl: String = getJdbcUrl
 }

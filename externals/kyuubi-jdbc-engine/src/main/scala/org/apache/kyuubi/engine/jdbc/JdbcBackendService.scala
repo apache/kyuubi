@@ -14,14 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc
 
-package org.apache.kyuubi.engine
+import org.apache.kyuubi.engine.jdbc.session.JdbcSessionManager
+import org.apache.kyuubi.service.AbstractBackendService
+import org.apache.kyuubi.session.SessionManager
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+class JdbcBackendService
+  extends AbstractBackendService("JdbcBackendService") {
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, JDBC = Value
+  override val sessionManager: SessionManager = new JdbcSessionManager()
+
 }

@@ -14,14 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.engine.jdbc.mysql
 
-package org.apache.kyuubi.engine
+import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+class Mysql8ConnectionProvider extends JdbcConnectionProvider {
 
-  val SPARK_SQL, FLINK_SQL, TRINO, HIVE_SQL, JDBC = Value
+  override val name: String = classOf[Mysql8ConnectionProvider].getSimpleName
+
+  override val driverClass: String = "com.mysql.cj.jdbc.Driver"
+
+  override def canHandle(providerClass: String): Boolean = {
+    driverClass.equalsIgnoreCase(providerClass)
+  }
+
 }
