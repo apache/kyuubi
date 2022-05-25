@@ -30,8 +30,13 @@ class SetCurrentCatalog(session: Session, catalog: String)
   override val internalHiveOperation: Operation =
     delegatedOperationManager.newExecuteStatementOperation(
       hive,
-      "SELECT '' AS TABLE_CAT",
+      "SELECT ''",
       Map.empty[String, String].asJava,
       false,
       0)
+
+  override def runInternal(): Unit = {
+    super.runInternal()
+    setHasResultSet(false)
+  }
 }

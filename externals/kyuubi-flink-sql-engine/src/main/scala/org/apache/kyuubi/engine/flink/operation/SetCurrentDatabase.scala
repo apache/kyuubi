@@ -17,9 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import org.apache.kyuubi.engine.flink.result.ResultSetUtil
 import org.apache.kyuubi.operation.OperationType
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_SCHEM
 import org.apache.kyuubi.session.Session
 
 class SetCurrentDatabase(session: Session, database: String)
@@ -29,7 +27,7 @@ class SetCurrentDatabase(session: Session, database: String)
     try {
       val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
       tableEnv.useDatabase(database)
-      resultSet = ResultSetUtil.stringListToResultSet(List(""), TABLE_SCHEM)
+      setHasResultSet(false)
     } catch onError()
   }
 }

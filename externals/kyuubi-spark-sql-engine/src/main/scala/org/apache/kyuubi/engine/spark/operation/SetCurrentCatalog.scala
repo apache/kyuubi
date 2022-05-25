@@ -17,25 +17,23 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
+import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class SetCurrentCatalog(session: Session, catalog: String)
   extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) {
 
   override protected def resultSchema: StructType = {
-    new StructType().add(TABLE_CAT, "string")
+    new StructType()
   }
 
   override protected def runInternal(): Unit = {
     try {
       SparkCatalogShim().setCurrentCatalog(spark, catalog)
-      iter = new IterableFetchIterator(Seq(Row("")))
+      setHasResultSet(false)
     } catch onError()
   }
 }

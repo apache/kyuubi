@@ -17,12 +17,9 @@
 
 package org.apache.kyuubi.engine.trino.operation
 
-import com.google.common.collect.ImmutableList
-import io.trino.client.{ClientSession, ClientTypeSignature, ClientTypeSignatureParameter, Column}
-import io.trino.client.ClientStandardTypes.VARCHAR
-import io.trino.client.ClientTypeSignature.VARCHAR_UNBOUNDED_LENGTH
+import io.trino.client.ClientSession
 
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class SetCurrentDatabase(session: Session, database: String)
@@ -34,13 +31,7 @@ class SetCurrentDatabase(session: Session, database: String)
       var builder = ClientSession.builder(session)
       builder = builder.withSchema(database)
       trinoContext.clientSession.set(builder.build())
-
-      val clientTypeSignature = new ClientTypeSignature(
-        VARCHAR,
-        ImmutableList.of(ClientTypeSignatureParameter.ofLong(VARCHAR_UNBOUNDED_LENGTH)))
-      val column = new Column("TABLE_SCHEM", VARCHAR, clientTypeSignature)
-      schema = List[Column](column)
-      iter = new IterableFetchIterator(List(List("")))
+      setHasResultSet(false)
     } catch onError()
   }
 }

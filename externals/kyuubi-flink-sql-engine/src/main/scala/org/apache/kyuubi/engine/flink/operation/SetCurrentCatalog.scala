@@ -17,9 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import org.apache.kyuubi.engine.flink.result.ResultSetUtil
 import org.apache.kyuubi.operation.OperationType
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 import org.apache.kyuubi.session.Session
 
 class SetCurrentCatalog(session: Session, catalog: String)
@@ -29,7 +27,7 @@ class SetCurrentCatalog(session: Session, catalog: String)
     try {
       val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
       tableEnv.useCatalog(catalog)
-      resultSet = ResultSetUtil.stringListToResultSet(List(""), TABLE_CAT)
+      setHasResultSet(false)
     } catch onError()
   }
 }
