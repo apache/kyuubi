@@ -21,7 +21,7 @@ import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_OPERATION_GET_CURRENT_CATALOG, KYUUBI_OPERATION_GET_CURRENT_DATABASE, KYUUBI_OPERATION_SET_CURRENT_CATALOG, KYUUBI_OPERATION_SET_CURRENT_DATABASE}
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.log.LogDivertAppender
