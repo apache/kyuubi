@@ -36,17 +36,24 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
 
   private lazy val resultMaxRowsDefault = getConf.get(ENGINE_FLINK_MAX_ROWS)
 
+  private lazy val operationConvertCatalogDatabaseDefault =
+    getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val catalogDatabaseOperation = processCatalogDatabase(session, statement, getConf)
-    if (catalogDatabaseOperation != null) {
-      return catalogDatabaseOperation
-    }
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
+    if (flinkSession.sessionContext.getConfigMap.getOrDefault(
+        ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key,
+        operationConvertCatalogDatabaseDefault.toString).toBoolean) {
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      if (catalogDatabaseOperation != null) {
+        return catalogDatabaseOperation
+      }
+    }
     val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
       OPERATION_PLAN_ONLY_MODE.key,
       operationModeDefault)

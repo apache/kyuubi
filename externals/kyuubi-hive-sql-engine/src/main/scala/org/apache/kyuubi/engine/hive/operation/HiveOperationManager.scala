@@ -22,6 +22,7 @@ import java.util.List
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hive.service.rpc.thrift.TRowSet
 
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationManager}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
@@ -36,9 +37,11 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val catalogDatabaseOperation = processCatalogDatabase(session, statement, getConf)
-    if (catalogDatabaseOperation != null) {
-      return catalogDatabaseOperation
+    if (session.sessionManager.getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)) {
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      if (catalogDatabaseOperation != null) {
+        return catalogDatabaseOperation
+      }
     }
     val operation = new ExecuteStatement(session, statement, confOverlay, runAsync, queryTimeout)
     addOperation(operation)

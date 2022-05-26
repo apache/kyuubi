@@ -55,7 +55,12 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
   }
 
   override def setCurrentCatalog(spark: SparkSession, catalog: String): Unit = {
-    spark.sessionState.catalogManager.setCurrentCatalog(catalog)
+    // SPARK-36841(3.3.0) Ensure setCurrentCatalog method catalog must exist
+    if (spark.sessionState.catalogManager.isCatalogRegistered(catalog)) {
+      spark.sessionState.catalogManager.setCurrentCatalog(catalog)
+    } else {
+      throw new IllegalArgumentException(s"Cannot find catalog plugin class for catalog '$catalog'")
+    }
   }
 
   override def getCurrentCatalog(spark: SparkSession): Row = {

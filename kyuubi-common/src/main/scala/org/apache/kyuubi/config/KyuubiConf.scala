@@ -1578,5 +1578,5 @@ object KyuubiConf {
         "and set/get Schema to the implementation of different engines")
       .version("1.6.0")
       .booleanConf
-      .createWithDefault(false)
+      .createWithDefault(true)
 }

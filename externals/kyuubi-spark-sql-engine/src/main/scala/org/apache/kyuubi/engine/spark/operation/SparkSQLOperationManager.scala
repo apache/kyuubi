@@ -38,6 +38,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY_MODE)
   private lazy val operationIncrementalCollectDefault = getConf.get(OPERATION_INCREMENTAL_COLLECT)
   private lazy val operationLanguageDefault = getConf.get(OPERATION_LANGUAGE)
+  private lazy val operationConvertCatalogDatabaseDefault =
+    getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)
 
   private val sessionToRepl = new ConcurrentHashMap[SessionHandle, KyuubiSparkILoop]().asScala
 
@@ -53,9 +55,12 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val spark = session.asInstanceOf[SparkSessionImpl].spark
-    val catalogDatabaseOperation = processCatalogDatabase(session, statement, getConf)
-    if (catalogDatabaseOperation != null) {
-      return catalogDatabaseOperation
+    if (spark.conf.getOption(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key)
+        .map(_.toBoolean).getOrElse(operationConvertCatalogDatabaseDefault)) {
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      if (catalogDatabaseOperation != null) {
+        return catalogDatabaseOperation
+      }
     }
     val lang = confOverlay.getOrElse(
       OPERATION_LANGUAGE.key,

@@ -21,7 +21,7 @@ import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.log.LogDivertAppender
@@ -160,7 +160,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     }
   }
 
-  private val PATTERN_FOR_SET_CATALOG = "_SET_CATALOG_(.+)".r
+  private val PATTERN_FOR_SET_CATALOG = "_SET_CATALOG"
   private val PATTERN_FOR_GET_CATALOG = "_GET_CATALOG"
   private val PATTERN_FOR_SET_SCHEMA = "(?i)use (.*)".r
   private val PATTERN_FOR_GET_SCHEMA = "select current_database()"
@@ -168,20 +168,19 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   final def processCatalogDatabase(
       session: Session,
       statement: String,
-      conf: KyuubiConf): Operation = {
-    if (conf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)) {
-      statement match {
-        case PATTERN_FOR_SET_CATALOG(catalog) =>
-          newSetCurrentCatalogOperation(session, catalog)
-        case _ if PATTERN_FOR_GET_CATALOG == statement =>
-          newGetCurrentCatalogOperation(session)
-        case PATTERN_FOR_SET_SCHEMA(database) =>
-          newSetCurrentDatabaseOperation(session, database)
-        case _ if PATTERN_FOR_GET_SCHEMA == statement.toLowerCase =>
-          newGetCurrentDatabaseOperation(session)
-        case _ =>
-          null
-      }
+      confOverlay: Map[String, String]): Operation = {
+    if (confOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_CATALOG)
+      && statement == PATTERN_FOR_SET_CATALOG) {
+      newSetCurrentCatalogOperation(session, confOverlay(KYUUBI_OPERATION_SET_CURRENT_CATALOG))
+    } else if (confOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_CATALOG)
+      && statement == PATTERN_FOR_GET_CATALOG) {
+      newGetCurrentCatalogOperation(session)
+    } else if (confOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_DATABASE)
+      && PATTERN_FOR_SET_SCHEMA.unapplySeq(statement).isDefined) {
+      newSetCurrentDatabaseOperation(session, confOverlay(KYUUBI_OPERATION_SET_CURRENT_DATABASE))
+    } else if (confOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_DATABASE)
+      && PATTERN_FOR_GET_SCHEMA == statement.toLowerCase) {
+      newGetCurrentDatabaseOperation(session)
     } else {
       null
     }
