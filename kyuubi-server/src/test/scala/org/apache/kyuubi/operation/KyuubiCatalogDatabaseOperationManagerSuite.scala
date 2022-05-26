@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.SQLException
-
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
