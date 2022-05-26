@@ -37,10 +37,13 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
   var options: CaseInsensitiveStringMap = _
 
-  override def name: String = "tpcds"
+  var _name: String = _
+
+  override def name: String = _name
 
   override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
     this.options = options
+    this._name = name
   }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = namespace match {

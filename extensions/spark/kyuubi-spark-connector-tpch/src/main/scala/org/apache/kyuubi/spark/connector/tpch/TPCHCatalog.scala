@@ -39,13 +39,13 @@ class TPCHCatalog extends TableCatalog with SupportsNamespaces {
 
   var options: CaseInsensitiveStringMap = _
 
-  var _name: Option[String] = None
+  var _name: String = _
 
-  override def name: String = _name.getOrElse("tpch")
+  override def name: String = _name
 
   override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
     this.options = options
-    this._name = Some(name)
+    this._name = name
   }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = namespace match {

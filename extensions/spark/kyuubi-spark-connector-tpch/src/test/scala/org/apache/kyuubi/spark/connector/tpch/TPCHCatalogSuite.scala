@@ -18,6 +18,7 @@
 package org.apache.kyuubi.spark.connector.tpch
 
 import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.KyuubiFunSuite
 
@@ -32,6 +33,13 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
       .config("spark.sql.cbo.enabled", "true")
       .config("spark.sql.cbo.planStats.enabled", "true")
       .getOrCreate()
+  }
+
+  test("get catalog name") {
+    val catalog = new TPCHCatalog
+    val catalogName = "test"
+    catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())
+    assert(catalog._name == catalogName)
   }
 
   test("supports namespaces") {
