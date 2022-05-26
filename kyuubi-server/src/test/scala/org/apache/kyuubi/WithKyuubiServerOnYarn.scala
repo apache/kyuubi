@@ -25,6 +25,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.engine.YarnApplicationOperation
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.operation.{FetchOrientation, HiveJDBCTestHelper, OperationState}
@@ -73,6 +74,9 @@ sealed trait WithKyuubiServerOnYarn extends WithKyuubiServer {
 class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJDBCTestHelper {
 
   private val preDefinedAppName = "kyuubi-batch-job"
+
+  override protected val frontendProtocols: Seq[FrontendProtocol] =
+    FrontendProtocols.THRIFT_BINARY :: FrontendProtocols.REST :: Nil
 
   override protected val conf: KyuubiConf = {
     new KyuubiConf()
