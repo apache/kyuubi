@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,12 +15,58 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-  __  __                           __
- /\ \/\ \                         /\ \      __
- \ \ \/'/'  __  __  __  __  __  __\ \ \____/\_\
-  \ \ , <  /\ \/\ \/\ \/\ \/\ \/\ \\ \ '__`\/\ \
-   \ \ \\`\\ \ \_\ \ \ \_\ \ \ \_\ \\ \ \L\ \ \ \
-    \ \_\ \_\/`____ \ \____/\ \____/ \ \_,__/\ \_\
-     \/_/\/_/`/___/> \/___/  \/___/   \/___/  \/_/
-                /\___/
-                \/__/
+
+# Bugzilla 37848: When no TTY is available, don't output to console
+have_tty=0
+# shellcheck disable=SC2006
+if [[ "`tty`" != "not a tty" ]]; then
+    have_tty=1
+fi
+
+# Bugzilla 37848: When no TTY is available, don't output to console
+have_tty=0
+# shellcheck disable=SC2006
+if [[ "`tty`" != "not a tty" ]]; then
+    have_tty=1
+fi
+
+ # Only use colors if connected to a terminal
+if [[ ${have_tty} -eq 1 ]]; then
+  RAINBOW="
+    $(printf '\033[38;5;202m')
+    $(printf '\033[38;5;226m')
+    $(printf '\033[38;5;082m')
+    $(printf '\033[38;5;082m')
+    $(printf '\033[38;5;163m')
+    $(printf '\033[38;5;093m')
+  "
+  GREEN=$(printf '\033[32m')
+  YELLOW=$(printf '\033[33m')
+  BLUE=$(printf '\033[34m')
+  BLUE=$(printf '\033[34m')
+  RESET=$(printf '\033[0m')
+else
+  RAINBOW=""
+  GREEN=""
+  YELLOW=""
+  BLUE=""
+  BLUE=""
+  RESET=""
+fi
+
+print_logo() {
+  printf '\n\n'
+  printf '%s            __  __%s         %s        %s      %s     __    %s                      %s\n' $RAINBOW $RESET
+  printf '%s           /` \/` \%s         %s        %s      %s   /` \    %s   __                %s\n' $RAINBOW $RESET
+  printf '%s           \ \ \/ /%s    __  __%s  __  __%s   __ __%s\ \ \____%s /\_\               %s\n' $RAINBOW $RESET
+  printf '%s            \ \ , <  %s /` \/` \%s/` \/` \%s/` \/` \%s\ \ \__` %s\/` \              %s\n' $RAINBOW $RESET
+  printf '%s             \ \ \ \`\%s\ \ \_\ \%s\ \_\  \%s\ \_\  \%s\ \ \L\  %s\ \ \             %s\n' $RAINBOW $RESET
+  printf '%s              \ \_\ \_%s \/`____ \%s \____/ %s\ \____`%s\ \_,__/ %s\ \_\            %s\n' $RAINBOW $RESET
+  printf '%s               \/_/\/_/%s `/___/> \%s/___/   %s\/___/  %s\/___/   %s\/_/            %s\n' $RAINBOW $RESET
+  printf '%s                        %s   /\___/ %s        %s         %s           %s            %s\n' $RAINBOW $RESET
+  printf '%s                         %s  \/__\/  %s        %s         %s           %s           %s\n' $RAINBOW $RESET
+  printf '\n\n'
+}
+
+print_logo
+
