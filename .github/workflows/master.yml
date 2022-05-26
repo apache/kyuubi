@@ -60,7 +60,7 @@ jobs:
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.2'
-            spark-archive: '-Dspark.archive.mirror=https://dist.apache.org/repos/dist/dev/spark/v3.3.0-rc2-bin -Dspark.archive.name=spark-3.3.0-bin-hadoop3.tgz'
+            spark-archive: '-Dspark.archive.mirror=https://dist.apache.org/repos/dist/dev/spark/v3.3.0-rc3-bin -Dspark.archive.name=spark-3.3.0-bin-hadoop3.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
     env:
       SPARK_LOCAL_IP: localhost
