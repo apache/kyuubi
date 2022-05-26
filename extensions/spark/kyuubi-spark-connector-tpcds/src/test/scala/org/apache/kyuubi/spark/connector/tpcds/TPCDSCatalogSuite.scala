@@ -39,8 +39,7 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     val catalog = new TPCDSCatalog
     val catalogName = "test"
     catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())
-    assert(catalog._name.get == catalogName)
-
+    assert(catalog._name == catalogName)
   }
 
   test("supports namespaces") {
