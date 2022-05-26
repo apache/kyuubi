@@ -140,7 +140,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       valueAsString(metadata.requestConf),
       valueAsString(metadata.requestArgs),
       metadata.createTime,
-      metadata.engineType)
+      Option(metadata.engineType).map(_.toUpperCase(Locale.ROOT)).orNull)
   }
 
   override def getMetadata(identifier: String, stateOnly: Boolean): Metadata = {

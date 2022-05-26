@@ -53,7 +53,7 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
   test("jdbc state store") {
     val batchId = UUID.randomUUID().toString
     val kyuubiInstance = "localhost:10099"
-    val batchMetadata = Metadata(
+    var batchMetadata = Metadata(
       identifier = batchId,
       realUser = "kyuubi",
       username = "kyuubi",
@@ -68,13 +68,19 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
       createTime = System.currentTimeMillis(),
       engineType = "spark")
 
-    val batchStateOnlyMetadata = batchMetadata.copy(
+    var batchStateOnlyMetadata = batchMetadata.copy(
       resource = null,
       className = null,
       requestConf = Map.empty,
       requestArgs = Seq.empty)
 
     jdbcStateStore.insertMetadata(batchMetadata)
+    assert(jdbcStateStore.getMetadata(batchId, true) != batchStateOnlyMetadata)
+    assert(jdbcStateStore.getMetadata(batchId, false) != batchMetadata)
+
+    // the engine type is formatted with UPPER
+    batchMetadata = batchMetadata.copy(engineType = "SPARK")
+    batchStateOnlyMetadata = batchStateOnlyMetadata.copy(engineType = "SPARK")
     assert(jdbcStateStore.getMetadata(batchId, true) == batchStateOnlyMetadata)
     assert(jdbcStateStore.getMetadata(batchId, false) == batchMetadata)
 
