@@ -15,7 +15,6 @@
  - limitations under the License.
  -->
 
-<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" width="25%" align="center" />
 
 
 # Installing and Configuring Kyuubi Spark AuthZ Plugin

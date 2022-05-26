@@ -13,8 +13,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-.. image:: ../../imgs/kyuubi_logo.png
-   :align: center
 
 The Spark SQL Engine Configuration Guide
 ========================================
@@ -27,7 +25,6 @@ Even if you don't use Kyuubi, as a simple Spark user, I'm sure you'll find the n
 
 .. toctree::
     :maxdepth: 2
-    :numbered: 2
     :glob:
 
     dynamic_allocation

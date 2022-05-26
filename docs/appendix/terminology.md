@@ -15,12 +15,6 @@
  - limitations under the License.
  -->
 
-<div align=center>
-
-![](../imgs/kyuubi_logo.png)
-
-</div>
-
 # Terminologies
 
 ## Kyuubi

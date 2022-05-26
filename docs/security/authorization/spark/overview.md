@@ -17,7 +17,6 @@
 
 # Kyuubi AuthZ Plugin For Spark SQL
 
-<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" width="25%" align="right" />
 
 Security is one of the fundamental features for enterprise adoption with Kyuubi.
 When deploying Kyuubi against secured clusters,

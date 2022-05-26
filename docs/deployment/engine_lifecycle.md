@@ -15,12 +15,6 @@
  - limitations under the License.
  -->
 
-<div align=center>
-
-![](../imgs/kyuubi_logo.png)
-
-</div>
-
 # The TTL Of Kyuubi Engines
 
 For a multi-tenant cluster, its overall resource utilization is a KPI that measures how effectively its resource is utilized against its availability or capacity.

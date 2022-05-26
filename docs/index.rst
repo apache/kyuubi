@@ -18,11 +18,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: imgs/kyuubi_logo.png
-   :align: center
-
-Welcome to Kyuubi's documentation!
-==================================
+HOME
+====
 
 Kyuubi™ is a unified multi-tenant JDBC interface for large-scale data processing and analytics, built on top of `Apache Spark™ <http://spark.apache.org/>`_.
 

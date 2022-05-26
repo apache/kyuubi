@@ -15,12 +15,6 @@
  - limitations under the License.
  -->
 
-<div align=center>
-
-![](../imgs/kyuubi_logo.png)
-
-</div>
-
 # Running Tests
 
 **Kyuubi** can be tested based on [Apache Maven](http://maven.apache.org) and the ScalaTest Maven Plugin,

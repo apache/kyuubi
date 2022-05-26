@@ -13,8 +13,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-.. image:: ../imgs/kyuubi_logo.png
-   :align: center
 
 Deploying Kyuubi
 ================
@@ -26,7 +24,6 @@ Basics
 
 .. toctree::
     :maxdepth: 2
-    :numbered: 3
     :glob:
 
     kyuubi_on_kubernetes
@@ -38,7 +35,6 @@ Configurations
 
 .. toctree::
     :maxdepth: 2
-    :numbered: 3
     :glob:
 
     settings
@@ -48,7 +44,6 @@ Engines
 
 .. toctree::
     :maxdepth: 2
-    :numbered: 3
     :glob:
 
     engine_on_yarn
