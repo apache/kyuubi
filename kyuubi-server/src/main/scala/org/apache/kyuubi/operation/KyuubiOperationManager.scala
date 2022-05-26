@@ -71,6 +71,23 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     operation
   }
 
+  // The server does not use these 4 operations
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    null
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    null
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    null
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    null
+  }
+
   override def newGetTypeInfoOperation(session: Session): Operation = {
     val operation = new GetTypeInfo(session)
     addOperation(operation)

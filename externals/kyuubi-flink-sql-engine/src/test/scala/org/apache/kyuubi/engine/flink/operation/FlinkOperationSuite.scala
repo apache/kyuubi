@@ -26,7 +26,7 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsRe
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.OperationModes.NONE
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
@@ -37,7 +37,7 @@ import org.apache.kyuubi.service.ServiceState._
 
 class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] =
-    Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> NONE.toString)
+    Map(OPERATION_PLAN_ONLY_MODE.key -> NONE.toString)
 
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
@@ -665,6 +665,22 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     })
   }
 
+  test("execute statement - set/get catalog") {
+    withSessionConf()(
+      Map(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> "true"))(
+      Map.empty) {
+      withJdbcStatement() { statement =>
+        statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
+        val catalog = statement.getConnection.getCatalog
+        assert(catalog == "default_catalog")
+        statement.getConnection.setCatalog("cat_a")
+        val changedCatalog = statement.getConnection.getCatalog
+        assert(changedCatalog == "cat_a")
+        assert(statement.execute("drop catalog cat_a"))
+      }
+    }
+  }
+
   test("execute statement - create/alter/drop database") {
     // TODO: validate table results after FLINK-25558 is resolved
     withJdbcStatement()({ statement =>
@@ -672,6 +688,22 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(statement.execute("alter database db_a set ('k1' = 'v1')"))
       assert(statement.execute("drop database db_a"))
     })
+  }
+
+  test("execute statement - set/get database") {
+    withSessionConf()(
+      Map(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> "true"))(
+      Map.empty) {
+      withJdbcStatement()({ statement =>
+        statement.executeQuery("create database db_a")
+        val schema = statement.getConnection.getSchema
+        assert(schema == "default_database")
+        statement.getConnection.setSchema("db_a")
+        val changedSchema = statement.getConnection.getSchema
+        assert(changedSchema == "db_a")
+        assert(statement.execute("drop database db_a"))
+      })
+    }
   }
 
   test("execute statement - create/alter/drop table") {
@@ -777,7 +809,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("ensure result max rows") {
-    withSessionConf()(Map(KyuubiConf.ENGINE_FLINK_MAX_ROWS.key -> "200"))(Map.empty) {
+    withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "200"))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.execute("create table tbl_src (a bigint) with ('connector' = 'datagen')")
         val resultSet = statement.executeQuery(s"select a from tbl_src")

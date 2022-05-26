@@ -52,6 +52,8 @@ class TrinoStatement(
 
   def getTrinoClient: StatementClient = trino
 
+  def getCurrentCatalog: String = trinoContext.clientSession.get.getCatalog
+
   def getCurrentDatabase: String = trinoContext.clientSession.get.getSchema
 
   def getColumns: List[Column] = {

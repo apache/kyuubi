@@ -36,6 +36,9 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
 
   private lazy val resultMaxRowsDefault = getConf.get(ENGINE_FLINK_MAX_ROWS)
 
+  private lazy val operationConvertCatalogDatabaseDefault =
+    getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
@@ -43,6 +46,14 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
+    if (flinkSession.sessionContext.getConfigMap.getOrDefault(
+        ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key,
+        operationConvertCatalogDatabaseDefault.toString).toBoolean) {
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      if (catalogDatabaseOperation != null) {
+        return catalogDatabaseOperation
+      }
+    }
     val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
       OPERATION_PLAN_ONLY_MODE.key,
       operationModeDefault)
@@ -56,6 +67,26 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       case mode =>
         new PlanOnlyStatement(session, statement, mode)
     }
+    addOperation(op)
+  }
+
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    val op = new SetCurrentCatalog(session, catalog)
+    addOperation(op)
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    val op = new GetCurrentCatalog(session)
+    addOperation(op)
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    val op = new SetCurrentDatabase(session, database)
+    addOperation(op)
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    val op = new GetCurrentDatabase(session)
     addOperation(op)
   }
 
