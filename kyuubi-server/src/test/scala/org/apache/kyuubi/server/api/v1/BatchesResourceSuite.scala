@@ -70,7 +70,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
     var batch = response.readEntity(classOf[Batch])
     assert(batch.getKyuubiInstance === fe.connectionUrl)
-    assert(batch.getBatchType === "spark")
+    assert(batch.getBatchType === "SPARK")
 
     requestObj.setConf((requestObj.getConf.asScala ++
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> "root")).asJava)
@@ -86,7 +86,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == getBatchResponse.getStatus)
     batch = getBatchResponse.readEntity(classOf[Batch])
     assert(batch.getKyuubiInstance === fe.connectionUrl)
-    assert(batch.getBatchType === "spark")
+    assert(batch.getBatchType === "SPARK")
 
     // invalid batchId
     getBatchResponse = webTarget.path(s"api/v1/batches/invalidBatchId")
