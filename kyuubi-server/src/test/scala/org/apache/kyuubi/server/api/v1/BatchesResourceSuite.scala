@@ -46,7 +46,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     }
     sessionManager.getBatchesByType(null, 0, Int.MaxValue).foreach { batch =>
       sessionManager.applicationManager.killApplication(None, batch.getId)
-      sessionManager.cleanupBatchMetadata(batch.getId)
+      sessionManager.cleanupMetadata(batch.getId)
     }
   }
 
