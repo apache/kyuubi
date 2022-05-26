@@ -49,8 +49,6 @@ class KyuubiBatchSessionImpl(
       sessionManager.validateBatchConf(batchRequest.getConf.asScala.toMap)
   }
 
-  batchRequest.setConf(normalizedConf.asJava)
-
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
       this,
@@ -58,7 +56,7 @@ class KyuubiBatchSessionImpl(
       batchRequest.getName,
       batchRequest.getResource,
       batchRequest.getClassName,
-      batchRequest.getConf.asScala.toMap,
+      normalizedConf,
       batchRequest.getArgs.asScala)
 
   private val sessionEvent = KyuubiSessionEvent(this)
