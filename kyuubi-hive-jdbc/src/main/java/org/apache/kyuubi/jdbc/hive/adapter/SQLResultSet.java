@@ -28,82 +28,12 @@ import java.util.Map;
 public interface SQLResultSet extends ResultSet {
 
   @Override
-  default boolean next() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void close() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean wasNull() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getString(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean getBoolean(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default byte getByte(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default short getShort(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getInt(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default long getLong(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default float getFloat(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default double getDouble(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default byte[] getBytes(int columnIndex) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   @Override
-  default Date getDate(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default Time getTime(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Timestamp getTimestamp(int columnIndex) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -118,72 +48,12 @@ public interface SQLResultSet extends ResultSet {
   }
 
   @Override
-  default InputStream getBinaryStream(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getString(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean getBoolean(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default byte getByte(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default short getShort(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getInt(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default long getLong(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default float getFloat(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default double getDouble(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default byte[] getBytes(String columnLabel) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   @Override
-  default Date getDate(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default Time getTime(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Timestamp getTimestamp(String columnLabel) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -198,42 +68,7 @@ public interface SQLResultSet extends ResultSet {
   }
 
   @Override
-  default InputStream getBinaryStream(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default SQLWarning getWarnings() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void clearWarnings() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default String getCursorName() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSetMetaData getMetaData() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Object getObject(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Object getObject(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int findColumn(String columnLabel) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -244,16 +79,6 @@ public interface SQLResultSet extends ResultSet {
 
   @Override
   default Reader getCharacterStream(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default BigDecimal getBigDecimal(String columnLabel) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -323,42 +148,12 @@ public interface SQLResultSet extends ResultSet {
   }
 
   @Override
-  default int getFetchDirection() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default void setFetchSize(int rows) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   @Override
   default int getFetchSize() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getType() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getConcurrency() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean rowUpdated() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean rowInserted() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean rowDeleted() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -587,11 +382,6 @@ public interface SQLResultSet extends ResultSet {
 
   @Override
   default void moveToCurrentRow() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Statement getStatement() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 

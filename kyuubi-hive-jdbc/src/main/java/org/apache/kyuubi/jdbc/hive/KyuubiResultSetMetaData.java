@@ -19,7 +19,6 @@ package org.apache.kyuubi.jdbc.hive;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import org.apache.hadoop.hive.serde2.thrift.Type;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSetMetaData;
@@ -113,11 +112,6 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
   public boolean isCurrency(int column) throws SQLException {
     // Hive doesn't support a currency type
     return false;
-  }
-
-  @Override
-  public boolean isDefinitelyWritable(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   @Override

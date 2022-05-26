@@ -24,32 +24,7 @@ import java.sql.SQLFeatureNotSupportedException;
 public interface SQLResultSetMetaData extends ResultSetMetaData {
 
   @Override
-  default int getColumnCount() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean isAutoIncrement(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean isCaseSensitive(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default boolean isSearchable(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean isCurrency(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int isNullable(int column) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -59,32 +34,7 @@ public interface SQLResultSetMetaData extends ResultSetMetaData {
   }
 
   @Override
-  default int getColumnDisplaySize(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getColumnLabel(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getColumnName(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default String getSchemaName(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getPrecision(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getScale(int column) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -99,32 +49,12 @@ public interface SQLResultSetMetaData extends ResultSetMetaData {
   }
 
   @Override
-  default int getColumnType(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getColumnTypeName(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean isReadOnly(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default boolean isWritable(int column) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   @Override
   default boolean isDefinitelyWritable(int column) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getColumnClassName(int column) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 

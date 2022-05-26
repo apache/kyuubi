@@ -605,11 +605,6 @@ public interface SQLCallableStatement extends CallableStatement {
   }
 
   @Override
-  default ResultSet executeQuery() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default int executeUpdate() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1016,11 +1011,6 @@ public interface SQLCallableStatement extends CallableStatement {
 
   @Override
   default int[] executeBatch() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Connection getConnection() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 

@@ -21,7 +21,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -63,20 +62,6 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
   @Override
   public boolean allTablesAreSelectable() throws SQLException {
     return true;
-  }
-
-  @Override
-  public ResultSet getAttributes(
-      String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  public ResultSet getBestRowIdentifier(
-      String catalog, String schema, String table, int scope, boolean nullable)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   @Override
@@ -154,12 +139,6 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
   @Override
   public ResultSet getClientInfoProperties() throws SQLException {
     return new ClientInfoPropertiesResultSet();
-  }
-
-  @Override
-  public ResultSet getColumnPrivileges(
-      String catalog, String schema, String table, String columnNamePattern) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   /**
@@ -334,12 +313,6 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
   @Override
   public String getDriverVersion() throws SQLException {
     return KyuubiHiveDriver.fetchManifestAttribute(Attributes.Name.IMPLEMENTATION_VERSION);
-  }
-
-  @Override
-  public ResultSet getExportedKeys(String catalog, String schema, String table)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   @Override

@@ -27,11 +27,6 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default boolean allTablesAreSelectable() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default String getURL() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -64,36 +59,6 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   @Override
   default boolean nullsAreSortedAtEnd() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getDatabaseProductName() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getDatabaseProductVersion() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getDriverName() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getDriverVersion() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getDriverMajorVersion() {
-    return 0;
-  }
-
-  @Override
-  default int getDriverMinorVersion() {
-    return 0;
   }
 
   @Override
@@ -147,61 +112,6 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default String getIdentifierQuoteString() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getSQLKeywords() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getNumericFunctions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getStringFunctions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getSystemFunctions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getTimeDateFunctions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getSearchStringEscape() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getExtraNameCharacters() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsAlterTableWithAddColumn() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsAlterTableWithDropColumn() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsColumnAliasing() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default boolean nullPlusNonNullIsNull() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -237,11 +147,6 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default boolean supportsGroupBy() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default boolean supportsGroupByUnrelated() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -257,17 +162,7 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default boolean supportsMultipleResultSets() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default boolean supportsMultipleTransactions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsNonNullableColumns() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -307,112 +202,7 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default boolean supportsOuterJoins() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsFullOuterJoins() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsLimitedOuterJoins() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getSchemaTerm() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getProcedureTerm() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getCatalogTerm() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default boolean isCatalogAtStart() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default String getCatalogSeparator() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsSchemasInDataManipulation() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsSchemasInProcedureCalls() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsSchemasInTableDefinitions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsSchemasInIndexDefinitions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsCatalogsInDataManipulation() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsCatalogsInProcedureCalls() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsCatalogsInTableDefinitions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsPositionedDelete() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsPositionedUpdate() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsSelectForUpdate() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsStoredProcedures() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -438,16 +228,6 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
 
   @Override
   default boolean supportsCorrelatedSubqueries() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsUnion() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsUnionAll() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -478,11 +258,6 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
 
   @Override
   default int getMaxCharLiteralLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getMaxColumnNameLength() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -577,16 +352,6 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default int getDefaultTransactionIsolation() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsTransactions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default boolean supportsTransactionIsolationLevel(int level) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -608,48 +373,6 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
 
   @Override
   default boolean dataDefinitionIgnoredInTransactions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getProcedureColumns(
-      String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getTables(
-      String catalog, String schemaPattern, String tableNamePattern, String[] types)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getSchemas() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getCatalogs() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getTableTypes() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getColumns(
-      String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
-      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -679,49 +402,8 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default ResultSet getPrimaryKeys(String catalog, String schema, String table)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getImportedKeys(String catalog, String schema, String table)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default ResultSet getExportedKeys(String catalog, String schema, String table)
       throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getCrossReference(
-      String parentCatalog,
-      String parentSchema,
-      String parentTable,
-      String foreignCatalog,
-      String foreignSchema,
-      String foreignTable)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getTypeInfo() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getIndexInfo(
-      String catalog, String schema, String table, boolean unique, boolean approximate)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsResultSetType(int type) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -776,28 +458,6 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default boolean supportsBatchUpdates() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getUDTs(
-      String catalog, String schemaPattern, String typeNamePattern, int[] types)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Connection getConnection() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean supportsSavepoints() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default boolean supportsNamedParameters() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -832,37 +492,7 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default boolean supportsResultSetHoldability(int holdability) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default int getResultSetHoldability() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getDatabaseMajorVersion() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getDatabaseMinorVersion() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getJDBCMajorVersion() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getJDBCMinorVersion() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int getSQLStateType() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -882,28 +512,12 @@ public interface SQLDatabaseMetaData extends DatabaseMetaData {
   }
 
   @Override
-  default ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   @Override
   default boolean autoCommitFailureClosesAllResultSets() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getClientInfoProperties() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
-      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 

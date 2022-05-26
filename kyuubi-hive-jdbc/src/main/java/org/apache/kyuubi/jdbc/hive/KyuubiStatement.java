@@ -21,7 +21,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.util.*;
@@ -527,13 +526,6 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   @Override
   public boolean isPoolable() throws SQLException {
     return false;
-  }
-
-  @Override
-  public void setEscapeProcessing(boolean enable) throws SQLException {
-    if (enable) {
-      throw new SQLFeatureNotSupportedException("Method not supported");
-    }
   }
 
   @Override

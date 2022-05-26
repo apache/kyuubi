@@ -18,23 +18,12 @@
 package org.apache.kyuubi.jdbc.hive.adapter;
 
 import java.io.PrintWriter;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 public interface SQLDataSource extends DataSource {
-
-  @Override
-  default Connection getConnection() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Connection getConnection(String username, String password) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
 
   @Override
   default PrintWriter getLogWriter() throws SQLException {

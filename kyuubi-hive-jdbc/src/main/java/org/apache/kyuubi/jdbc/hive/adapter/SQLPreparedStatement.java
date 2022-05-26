@@ -19,7 +19,6 @@ package org.apache.kyuubi.jdbc.hive.adapter;
 
 import java.io.InputStream;
 import java.io.Reader;
-import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
@@ -27,82 +26,12 @@ import java.util.Calendar;
 public interface SQLPreparedStatement extends PreparedStatement {
 
   @Override
-  default ResultSet executeQuery() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default int executeUpdate() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setNull(int parameterIndex, int sqlType) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setBoolean(int parameterIndex, boolean x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setByte(int parameterIndex, byte x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setShort(int parameterIndex, short x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setInt(int parameterIndex, int x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setLong(int parameterIndex, long x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setFloat(int parameterIndex, float x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setDouble(int parameterIndex, double x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setString(int parameterIndex, String x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default void setBytes(int parameterIndex, byte[] x) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   @Override
-  default void setDate(int parameterIndex, Date x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default void setTime(int parameterIndex, Time x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -122,22 +51,7 @@ public interface SQLPreparedStatement extends PreparedStatement {
   }
 
   @Override
-  default void clearParameters() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setObject(int parameterIndex, Object x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default boolean execute() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -189,11 +103,6 @@ public interface SQLPreparedStatement extends PreparedStatement {
 
   @Override
   default void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -277,11 +186,6 @@ public interface SQLPreparedStatement extends PreparedStatement {
   }
 
   @Override
-  default void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -303,22 +207,6 @@ public interface SQLPreparedStatement extends PreparedStatement {
 
   @Override
   default void setNClob(int parameterIndex, Reader reader) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setObject(int parameterIndex, Object x, SQLType targetSqlType, int scaleOrLength)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default void setObject(int parameterIndex, Object x, SQLType targetSqlType) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default long executeLargeUpdate() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 }
