@@ -77,3 +77,7 @@ embedded_zookeeper/
 conf/log4j2.properties
 conf/kyuubi-defaults.conf
 conf/kyuubi-env.sh
+kyuubi-server/web-ui/web/
+kyuubi-server/web-ui/node/
+kyuubi-server/web-ui/node_modules/
+/kyuubi-server/web-ui/.angular/

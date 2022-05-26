@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+. "$(dirname "$0")/_/husky.sh"
+
+if ! git diff-index --cached --quiet HEAD -- "kyuubi-server/web-ui/*"; then
+  cd kyuubi-server/web-ui && npm run lint-staged
+fi
