@@ -88,7 +88,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     _stateStore.updateMetadata(metadata)
   }
 
-  def cleanupBatchById(batchId: String): Unit = {
+  def cleanupMetadataById(batchId: String): Unit = {
     _stateStore.cleanupMetadataByIdentifier(batchId)
   }
 

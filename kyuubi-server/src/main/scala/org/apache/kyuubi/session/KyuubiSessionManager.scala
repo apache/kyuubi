@@ -167,7 +167,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def insertMetadata(metadata: Metadata): Unit = {
-    sessionStateStore.insertMetadata(metadata)
+    Option(sessionStateStore).map(_.insertMetadata(metadata))
   }
 
   def updateBatchMetadata(
@@ -175,20 +175,24 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       state: OperationState,
       applicationStatus: Map[String, String],
       endTime: Long = 0L): Unit = {
-    sessionStateStore.updateBatchMetadata(batchId, state.toString, applicationStatus, endTime)
+    Option(sessionStateStore).map(_.updateBatchMetadata(
+      batchId,
+      state.toString,
+      applicationStatus,
+      endTime))
   }
 
   def getBatch(batchId: String): Batch = {
-    sessionStateStore.getBatch(batchId)
+    Option(sessionStateStore).map(_.getBatch(batchId)).orNull
   }
 
   def getBatchesByType(batchType: String, from: Int, size: Int): Seq[Batch] = {
-    sessionStateStore.getBatchesByType(batchType, from, size)
+    Option(sessionStateStore).map(_.getBatchesByType(batchType, from, size)).getOrElse(Seq.empty)
   }
 
   @VisibleForTesting
-  def cleanupBatchMetadata(batchId: String): Unit = {
-    sessionStateStore.cleanupBatchById(batchId)
+  def cleanupMetadata(identifier: String): Unit = {
+    Option(sessionStateStore).map(_.cleanupMetadataById(identifier))
   }
 
   override def start(): Unit = synchronized {
