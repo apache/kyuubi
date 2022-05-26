@@ -46,7 +46,7 @@ object TPCHStatisticsUtils {
       case (PART_SUPPLIER, scale) => 800000L * scale
       case (SUPPLIER, scale) => 10000L * scale
       case (NATION, _) => 25L
-      case (REGION, _) => 25L
+      case (REGION, _) => 5L
     }
   }
 

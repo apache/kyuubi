@@ -19,6 +19,7 @@ package org.apache.kyuubi.spark.connector.tpch
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.OptionalLong
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -38,7 +39,9 @@ class TPCHBatchScan(
     @transient table: TpchTable[_],
     scale: Int,
     schema: StructType) extends ScanBuilder
-  with Scan with Batch with Serializable {
+  with SupportsReportStatistics with Batch with Serializable {
+
+  private val _sizeInBytes: Long = TPCHStatisticsUtils.sizeInBytes(table, scale)
 
   private val _numRows: Long = TPCHStatisticsUtils.numRows(table, scale)
 
@@ -67,6 +70,11 @@ class TPCHBatchScan(
   def createReaderFactory: PartitionReaderFactory = (partition: InputPartition) => {
     val chuck = partition.asInstanceOf[TPCHTableChuck]
     new TPCHPartitionReader(chuck.table, chuck.scale, chuck.parallelism, chuck.index, schema)
+  }
+
+  override def estimateStatistics: Statistics = new Statistics {
+    override def sizeInBytes: OptionalLong = OptionalLong.of(_sizeInBytes)
+    override def numRows: OptionalLong = OptionalLong.of(_numRows)
   }
 
 }
