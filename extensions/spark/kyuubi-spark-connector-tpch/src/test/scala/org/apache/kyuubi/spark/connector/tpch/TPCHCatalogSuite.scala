@@ -68,15 +68,15 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
     assertStats("tpch.sf1.partsupp", 115200000, 800000)
     assertStats("tpch.sf1.supplier", 1590000, 10000)
     assertStats("tpch.sf1.nation", 3200, 25)
-    assertStats("tpch.sf1.region", 3100, 5)
+    assertStats("tpch.sf1.region", 620, 5)
 
   }
 
   test("nonexistent table") {
     val exception = intercept[AnalysisException] {
-      spark.table("tpcds.sf1.nonexistent_table")
+      spark.table("tpch.sf1.nonexistent_table")
     }
-    assert(exception.message === "Table or view not found: tpcds.sf1.nonexistent_table")
+    assert(exception.message === "Table or view not found: tpch.sf1.nonexistent_table")
   }
 
   override def afterAll(): Unit = {
