@@ -72,6 +72,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       s"${request.getBatchType} is not in the supported list: $SUPPORTED_BATCH_TYPES}")
     require(request.getResource != null, "resource is a required parameter")
     require(request.getClassName != null, "classname is a required parameter")
+    request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
+
     val userName = fe.getUserName(request.getConf.asScala.toMap)
     val ipAddress = AuthenticationFilter.getUserIpAddress
     val sessionHandle = sessionManager.openBatchSession(
