@@ -48,13 +48,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
-  private lazy val sessionStateStore = SessionStateStore.get()
+  private lazy val sessionStateStore = new SessionStateStore()
 
   private var limiter: Option[SessionLimiter] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(applicationManager)
     addService(credentialsManager)
+    addService(sessionStateStore)
     initSessionLimiter(conf)
     super.initialize(conf)
   }

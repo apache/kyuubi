@@ -29,7 +29,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
-import org.apache.kyuubi.server.statestore.SessionStateStore
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -48,13 +47,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
 
-  private val sessionStateStore = new SessionStateStore()
-
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
       .getOrElse(Utils.findLocalInetAddress.getHostAddress)
     server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
-    addService(sessionStateStore)
     super.initialize(conf)
   }
 
