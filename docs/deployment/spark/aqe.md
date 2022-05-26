@@ -15,11 +15,6 @@
  - limitations under the License.
  -->
 
-<div align=center>
-
-![](../../imgs/kyuubi_logo.png)
-
-</div>
 
 # How To Use Spark Adaptive Query Execution (AQE) in Kyuubi
 

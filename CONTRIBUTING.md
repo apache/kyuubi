@@ -17,8 +17,6 @@
 
 # Contributing to Apache Kyuubi
 
-<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/kyuubi-1.svg" alt="Kyuubi logo" width="50%" align="right" />
-
 Thanks for your interest in the Apache Kyuubi project.
 Contributions are welcome and are greatly appreciated!
 Every little bit helps, and a credit will always be given.

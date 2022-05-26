@@ -15,12 +15,6 @@
  - limitations under the License.
  -->
 
-<div align=center>
-
-![](../imgs/kyuubi_logo.png)
-
-</div>
-
 # Kinit Auxiliary Service
 
 Kinit auxiliary service is a critical service both for authentication between Kyuubi client/server 

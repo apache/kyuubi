@@ -13,8 +13,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-.. image:: ../imgs/kyuubi_logo.png
-   :align: center
 
 SQL References
 ==============
@@ -23,7 +21,6 @@ This part describes the use of the SQL References in Kyuubi, including lists of 
 
 .. toctree::
     :maxdepth: 2
-    :numbered: 3
 
     rules
     functions

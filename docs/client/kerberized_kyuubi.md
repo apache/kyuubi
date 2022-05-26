@@ -15,11 +15,6 @@
  - limitations under the License.
  -->
 
-<div align=center>
-
-![](../imgs/kyuubi_logo.png)
-
-</div>
 
 # Access Kerberized Kyuubi with Beeline & BI Tools
 
