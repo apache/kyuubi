@@ -25,7 +25,7 @@ CREATE TABLE metadata(
 
 CREATE INDEX metadata_kyuubi_instance_index ON metadata(kyuubi_instance);
 
-CREATE INDEX metadata_engine_id_index ON metadata(engine_id);
+CREATE INDEX metadata_identifier_index ON metadata(identifier);
 
 CREATE INDEX metadata_user_name_index ON metadata(user_name);
 

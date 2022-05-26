@@ -20,13 +20,9 @@ CREATE TABLE metadata(
     engine_url varchar(1024) COMMENT 'the engine tracking url',
     engine_state varchar(128) COMMENT 'the engine application state',
     engine_error mediumtext COMMENT 'the engine application diagnose',
-    end_time bigint COMMENT 'the metadata end time'
+    end_time bigint COMMENT 'the metadata end time',
+    INDEX kyuubi_instance_index(kyuubi_instance),
+    INDEX identifier_index(identifier),
+    INDEX user_name_index(user_name),
+    INDEX engine_type_index(engine_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE INDEX metadata_kyuubi_instance_index ON metadata(kyuubi_instance);
-
-CREATE INDEX metadata_engine_id_index ON metadata(engine_id);
-
-CREATE INDEX metadata_user_name_index ON metadata(user_name);
-
-CREATE INDEX metadata_engine_type_index ON metadata(engine_type);
