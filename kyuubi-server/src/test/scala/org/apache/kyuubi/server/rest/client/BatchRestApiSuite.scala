@@ -62,7 +62,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
     assert(batch.getBatchType === "spark")
 
     // get batch log
-    var log = batchRestApi.getOperationLog(batch.getId(), 0, 1)
+    var log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
     assert(log.getRowCount == 1)
 
     // delete batch

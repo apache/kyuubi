@@ -104,11 +104,13 @@ public class RestClient implements AutoCloseable {
     String response = "";
     CloseableHttpResponse httpResponse = null;
     try {
+      if (StringUtils.isNotBlank(authHeader)) {
+        requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
+      }
       HttpUriRequest httpRequest =
           requestBuilder
               .setUri(uri)
               .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-              .setHeader(HttpHeaders.AUTHORIZATION, authHeader)
               .build();
 
       LOG.info("Executing {} request: {}", httpRequest.getMethod(), uri);

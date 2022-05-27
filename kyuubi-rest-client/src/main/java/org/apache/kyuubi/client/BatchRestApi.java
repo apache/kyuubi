@@ -54,7 +54,7 @@ public class BatchRestApi {
     return this.getClient().get(path, null, new TypeReference<Batch>() {});
   }
 
-  public GetBatchesResponse getBatchInfoList(String batchType, int from, int size)
+  public GetBatchesResponse listBatches(String batchType, int from, int size)
       throws KyuubiRestException {
     Map<String, Object> params = new HashMap<>();
     params.put("batchType", batchType);
@@ -63,7 +63,7 @@ public class BatchRestApi {
     return this.getClient().get(API_BASE_PATH, params, new TypeReference<GetBatchesResponse>() {});
   }
 
-  public OperationLog getOperationLog(String batchId, int from, int size)
+  public OperationLog getBatchLocalLog(String batchId, int from, int size)
       throws KyuubiRestException {
     Map<String, Object> params = new HashMap<>();
     params.put("batchId", batchId);

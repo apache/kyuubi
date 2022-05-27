@@ -49,7 +49,7 @@ public class KyuubiRestClient {
 
   public enum AuthSchema {
     BASIC,
-    SPNEGO;
+    SPNEGO
   }
 
   public KyuubiRestClient(Builder builder) {
@@ -97,8 +97,13 @@ public class KyuubiRestClient {
     String header = "";
     switch (builder.authSchema) {
       case BASIC:
-        String account = String.format("%s:%s", builder.username, builder.password);
-        header = String.format("BASIC %s", Base64.getEncoder().encodeToString(account.getBytes()));
+        // no need to set auth header when username is empty
+        if (StringUtils.isNotBlank(builder.username)) {
+          String authorization = String.format("%s:%s", builder.username, builder.password);
+          header =
+              String.format(
+                  "BASIC %s", Base64.getEncoder().encodeToString(authorization.getBytes()));
+        }
         break;
       case SPNEGO:
         try {
@@ -176,19 +181,8 @@ public class KyuubiRestClient {
       return this;
     }
 
-    private void validate() throws IllegalArgumentException {
-      StringBuilder errorMessageBuilder = new StringBuilder();
-      if (authSchema == AuthSchema.BASIC
-          && (StringUtils.isBlank(username) || StringUtils.isBlank(password))) {
-        errorMessageBuilder.append("username/password cannot be empty when auth schema is BASIC.");
-      }
-      if (errorMessageBuilder.length() > 0) {
-        throw new IllegalArgumentException(errorMessageBuilder.toString());
-      }
-    }
-
     public KyuubiRestClient build() {
-      validate();
+      this.password = StringUtils.isNotBlank(password) ? password : "";
       return new KyuubiRestClient(this);
     }
   }
