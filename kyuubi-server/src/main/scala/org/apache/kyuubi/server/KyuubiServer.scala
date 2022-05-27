@@ -44,6 +44,8 @@ object KyuubiServer extends Logging {
   @volatile private[kyuubi] var hadoopConf: Configuration = _
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+    UserGroupInformation.setConfiguration(hadoopConf)
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
       zkServer.initialize(conf)
       zkServer.start()
@@ -92,8 +94,6 @@ object KyuubiServer extends Logging {
       s" ${Properties.javaVersion}")
     SignalRegister.registerLogger(logger)
     val conf = new KyuubiConf().loadFileDefaults()
-    hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-    UserGroupInformation.setConfiguration(hadoopConf)
     startServer(conf)
   }
 
