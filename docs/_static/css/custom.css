@@ -15,8 +15,33 @@
  * limitations under the License.
  */
 
-@import url("theme.css");
-
-.wy-nav-content {
-    max-width: 100%;
+table.docutils {
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border: 0;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+table.docutils th {
+    padding: 1px 8px 1px 5px;
+    border-top: 1px;
+    border-left: 1px;
+    border-right: 1px;
+    border-bottom: 1px solid #aaa;
+}
+table.docutils td {
+    word-break: break-word;
+    min-width: 10%;
+}
+table.docutils tr:hover {
+    background: #efefef;
+}
+table.docutils tbody tr:nth-child(2n) {
+    background: #9EBCE21E;
+}
+table.docutils td:nth-child(1) {
+    width: 22%;
+    word-break: break-all;
+    color: #dc145d;
 }

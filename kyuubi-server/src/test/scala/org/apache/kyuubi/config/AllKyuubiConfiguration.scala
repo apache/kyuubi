@@ -142,11 +142,11 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         entries.sortBy(_.key).foreach { c =>
           val dft = c.defaultValStr.replace("<", "&lt;").replace(">", "&gt;")
           val seq = Seq(
-            s"<code>${c.key}</code>",
-            s"<div style='width: 65pt;word-wrap: break-word;white-space: normal'>$dft</div>",
-            s"<div style='width: 170pt;word-wrap: break-word;white-space: normal'>${c.doc}</div>",
-            s"<div style='width: 30pt'>${c.typ}</div>",
-            s"<div style='width: 20pt'>${c.version}</div>")
+            s"${c.key}",
+            s"$dft",
+            s"${c.doc}",
+            s"${c.typ}",
+            s"${c.version}")
           newOutput += seq.mkString("|")
         }
         newOutput += ""
