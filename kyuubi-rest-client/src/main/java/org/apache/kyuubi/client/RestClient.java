@@ -27,14 +27,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,18 +112,30 @@ public class RestClient implements AutoCloseable {
               .build();
 
       LOG.info("Executing {} request: {}", httpRequest.getMethod(), uri);
-      httpResponse = httpclient.execute(httpRequest);
-      response = new BasicResponseHandler().handleResponse(httpResponse);
+
+      ResponseHandler<String> responseHandler =
+          resp -> {
+            int status = resp.getStatusLine().getStatusCode();
+            HttpEntity entity = resp.getEntity();
+            String entityStr = entity != null ? EntityUtils.toString(entity) : null;
+            if (status >= 200 && status < 300) {
+              return entityStr;
+            } else {
+              throw new HttpResponseException(status, entityStr);
+            }
+          };
+
+      response = httpclient.execute(httpRequest, responseHandler);
       LOG.info("Response: {}", response);
     } catch (Exception e) {
-      e.printStackTrace();
+      LOG.error("Error: ", e);
       throw new KyuubiRestException("Api request failed for " + uri.toString(), e);
     } finally {
       if (httpResponse != null) {
         try {
           httpResponse.close();
         } catch (IOException e) {
-          throw new KyuubiRestException("Close http response failed.", e);
+          throw new KyuubiRestException("Failed to close HttpResponse.", e);
         }
       }
     }
@@ -140,7 +155,9 @@ public class RestClient implements AutoCloseable {
 
       if (MapUtils.isNotEmpty(params)) {
         for (Map.Entry<String, Object> entry : params.entrySet()) {
-          builder.addParameter(entry.getKey(), entry.getValue().toString());
+          if (entry.getValue() != null) {
+            builder.addParameter(entry.getKey(), entry.getValue().toString());
+          }
         }
       }
 

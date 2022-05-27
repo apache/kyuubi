@@ -18,7 +18,6 @@
 package org.apache.kyuubi.client.util;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
@@ -80,19 +79,5 @@ public class AuthUtil {
               }
             });
     return challenge;
-  }
-
-  public static String generateSpnegoAuthHeader(String hostUrl) throws Exception {
-    URI uri = new URI(hostUrl);
-    String host = uri.getHost();
-    String header = String.format("NEGOTIATE %s", AuthUtil.generateToken(host));
-    return header;
-  }
-
-  public static String generateBasicAuthHeader(String username, String password) {
-    String account = username + ":" + password;
-    String header =
-        String.format("BASIC %s", Base64.getEncoder().encodeToString(account.getBytes()));
-    return header;
   }
 }

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client;
 
+import java.net.URI;
+import java.util.Base64;
 import javax.net.ssl.SSLContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
@@ -95,11 +97,16 @@ public class KyuubiRestClient {
     String header = "";
     switch (builder.authSchema) {
       case BASIC:
-        header = AuthUtil.generateBasicAuthHeader(builder.username, builder.password);
+        String account = String.format("%s:%s", builder.username, builder.password);
+        header = String.format("BASIC %s", Base64.getEncoder().encodeToString(account.getBytes()));
         break;
       case SPNEGO:
         try {
-          header = AuthUtil.generateSpnegoAuthHeader(builder.hostUrl);
+          String server =
+              StringUtils.isBlank(builder.server)
+                  ? new URI(builder.hostUrl).getHost()
+                  : builder.server;
+          header = String.format("NEGOTIATE %s", AuthUtil.generateToken(server));
         } catch (Exception e) {
           LOG.error("Error: ", e);
           throw new RuntimeException(
@@ -116,6 +123,8 @@ public class KyuubiRestClient {
 
     private String hostUrl;
 
+    private String server;
+
     private ApiVersion version = ApiVersion.V1;
 
     private AuthSchema authSchema = AuthSchema.BASIC;
@@ -130,6 +139,11 @@ public class KyuubiRestClient {
 
     public Builder(String hostUrl) {
       this.hostUrl = hostUrl;
+    }
+
+    public Builder server(String server) {
+      this.server = server;
+      return this;
     }
 
     public Builder apiVersion(ApiVersion version) {
