@@ -25,7 +25,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
-  test("test refresh frontend services hadoop conf") {
+  test("refresh Hadoop configuration of the kyuubi server") {
     var response = webTarget.path("api/v1/admin/refreshServerHadoopConf")
       .request()
       .post(null)
