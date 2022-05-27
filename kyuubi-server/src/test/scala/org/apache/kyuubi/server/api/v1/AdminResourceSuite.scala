@@ -19,9 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 import java.util.Base64
 
-import org.apache.hadoop.security.UserGroupInformation
-
-import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper, Utils}
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -31,7 +29,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(null)
     assert(405 == response.getStatus)
 
-    val adminUser = UserGroupInformation.getCurrentUser.getShortUserName
+    val adminUser = Utils.currentUser
     val encodeAuthorization = new String(
       Base64.getEncoder.encode(
         s"$adminUser:".getBytes()),
