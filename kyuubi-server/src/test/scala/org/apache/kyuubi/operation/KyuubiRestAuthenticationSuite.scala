@@ -55,13 +55,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
   }
 
   override protected lazy val conf: KyuubiConf = {
-    val config = new Configuration()
-    val authType = "hadoop.security.authentication"
-    config.set(authType, "KERBEROS")
     System.setProperty("java.security.krb5.conf", krb5ConfPath)
-    UserGroupInformation.setConfiguration(config)
-    assert(UserGroupInformation.isSecurityEnabled)
-
     KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
       .set(KyuubiConf.SERVER_KEYTAB.key, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
@@ -76,6 +70,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
       .set(
         KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
         classOf[UserDefinedEngineSecuritySecretProvider].getCanonicalName)
+      .set("hadoop.security.authentication", "KERBEROS")
   }
 
   test("test with LDAP authorization") {
