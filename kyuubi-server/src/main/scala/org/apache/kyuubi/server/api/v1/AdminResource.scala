@@ -29,31 +29,30 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
-import org.apache.kyuubi.service.AbstractFrontendService
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class AdminResource extends ApiRequestContext with Logging {
-  private def fes: Seq[AbstractFrontendService] = KyuubiServer.kyuubiServer.frontendServices
   private lazy val adminUser = UserGroupInformation.getCurrentUser.getShortUserName
 
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
-    description = "refresh the frontend services hadoop conf")
+    description = "refresh the Kyuubi server hadoop conf, note that, " +
+      "it only takes affect for frontend services now")
   @POST
-  @Path("{refreshFEsHadoopConf}")
+  @Path("{refreshServerHadoopConf}")
   def refreshFrontendHadoopConf(): Response = {
     val userName = fe.getUserName(Map.empty)
     val ipAddress = AuthenticationFilter.getUserIpAddress
-    info(s"Receive refresh frontend services hadoop conf request from $userName/$ipAddress")
+    info(s"Receive refresh server hadoop conf request from $userName/$ipAddress")
     if (!userName.equals(adminUser)) {
       throw new NotAllowedException(
-        s"$userName is not allowed to refresh the frontend services hadoop conf")
+        s"$userName is not allowed to refresh the Kyuubi server hadoop conf")
     }
-    info(s"Reloading the frontend services hadoop conf")
-    fes.foreach(_.reloadHadoopConf())
+    info(s"Reloading the Kyuubi server hadoop conf")
+    KyuubiServer.reloadHadoopConf()
     Response.ok().build()
   }
 }

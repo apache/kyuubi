@@ -40,6 +40,4 @@ abstract class AbstractFrontendService(name: String)
     discoveryService.foreach(addService)
     super.initialize(conf)
   }
-
-  private[kyuubi] def reloadHadoopConf(): Unit = {}
 }

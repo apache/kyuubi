@@ -19,6 +19,7 @@ package org.apache.kyuubi.server
 
 import java.util.Base64
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -31,6 +32,8 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
 final class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)
   extends TBinaryFrontendService("KyuubiTBinaryFrontend") {
+
+  override protected def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
   override lazy val discoveryService: Option[Service] = {
     if (ServiceDiscovery.supportServiceDiscovery(conf)) {
