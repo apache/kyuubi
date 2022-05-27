@@ -33,7 +33,7 @@ import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class AdminResource extends ApiRequestContext with Logging {
-  private lazy val adminUser = UserGroupInformation.getCurrentUser.getShortUserName
+  private lazy val administrator = UserGroupInformation.getCurrentUser.getShortUserName
 
   @ApiResponse(
     responseCode = "200",
@@ -46,8 +46,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   def refreshFrontendHadoopConf(): Response = {
     val userName = fe.getUserName(Map.empty)
     val ipAddress = AuthenticationFilter.getUserIpAddress
-    info(s"Receive refresh server hadoop conf request from $userName/$ipAddress")
-    if (!userName.equals(adminUser)) {
+    info(s"Receive refresh Kyuubi server hadoop conf request from $userName/$ipAddress")
+    if (!userName.equals(administrator)) {
       throw new NotAllowedException(
         s"$userName is not allowed to refresh the Kyuubi server hadoop conf")
     }
