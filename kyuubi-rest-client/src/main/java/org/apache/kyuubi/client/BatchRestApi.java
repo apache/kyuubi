@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
@@ -42,7 +41,7 @@ public class BatchRestApi {
     String jsonBody = null;
     try {
       jsonBody = new ObjectMapper().writeValueAsString(request);
-    } catch (JsonProcessingException e) {
+    } catch (Exception e) {
       throw new KyuubiRestException("cannot convert batch request body to json", e);
     }
 

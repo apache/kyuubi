@@ -80,15 +80,11 @@ class BatchRestApiSuite extends RestClientTestHelper {
         .build()
     val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
 
-    var errorMessage: String = ""
-    try {
+    val e = intercept[KyuubiRestException] {
       // get batch by id
       batchRestApi.getBatchById("1")
-    } catch {
-      case e: KyuubiRestException => errorMessage = e.getCause.toString
     }
-    val expectedMessage = s"Error validating LDAP user: uid=${customUser}"
-    assert(errorMessage.contains(expectedMessage))
+    assert(e.getCause.toString.contains(s"Error validating LDAP user: uid=${customUser}"))
   }
 
   test("spnego batch rest client") {

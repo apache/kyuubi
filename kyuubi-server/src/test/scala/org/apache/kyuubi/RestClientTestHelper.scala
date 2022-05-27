@@ -30,10 +30,6 @@ trait RestClientTestHelper extends RestFrontendTestHelper with KerberizedTestHel
   protected val customPasswd: String = "password"
   private val currentUser = UserGroupInformation.getCurrentUser
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-  }
-
   override def afterAll(): Unit = {
     System.clearProperty("java.security.krb5.conf")
     UserGroupInformation.setLoginUser(currentUser)

@@ -31,8 +31,12 @@ import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerTestHelper {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ServerTestHelper.class);
 
   private static final Constructor<?> CONSTRUCTOR;
   private static final Method GENERATE_METHOD;
@@ -59,7 +63,7 @@ public class ServerTestHelper {
           x500NameClass.getConstructor(
               String.class, String.class, String.class, String.class, String.class, String.class);
     } catch (Exception e) {
-      e.printStackTrace();
+      LOG.error("Error: ", e);
     }
 
     CONSTRUCTOR = constructor;
