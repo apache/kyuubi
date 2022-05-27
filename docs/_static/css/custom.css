@@ -41,7 +41,7 @@ table.docutils tbody tr:nth-child(2n) {
     background: #9EBCE21E;
 }
 table.docutils td:nth-child(1) {
-    width: 22%;
+    width: 25%;
     word-break: break-all;
-    color: #dc145d;
+    font-weight: 500;
 }
