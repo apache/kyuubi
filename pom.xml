@@ -128,6 +128,7 @@
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
         <hive.archive.download.skip>false</hive.archive.download.skip>
+        <httpclient.version>4.5.13</httpclient.version>
         <hudi.version>0.11.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
         <iceberg.version>0.13.1</iceberg.version>
@@ -170,7 +171,6 @@
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.commons-cli.version>1.2</hive.client.commons-cli.version>
-        <hive.client.httpcomponents-client.version>4.5.13</hive.client.httpcomponents-client.version>
         <hive.client.httpcomponents-core.version>4.4.13</hive.client.httpcomponents-core.version>
         <hive.client.jline.version>2.12</hive.client.jline.version>
         <hive.client.storage-api.version>2.7.2</hive.client.storage-api.version>
