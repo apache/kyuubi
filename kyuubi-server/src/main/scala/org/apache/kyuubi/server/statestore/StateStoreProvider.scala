@@ -23,18 +23,11 @@ import org.apache.kyuubi.util.ClassUtils
 
 object StateStoreProvider extends Logging {
   def createStateStore(conf: KyuubiConf): StateStore = {
-    val classLoader = Thread.currentThread.getContextClassLoader
     val className = conf.get(KyuubiConf.SERVER_STATE_STORE_CLASS)
     if (className.isEmpty) {
       throw new KyuubiException(
         s"${KyuubiConf.SERVER_STATE_STORE_CLASS.key} cannot be empty.")
     }
-    val cls = Class.forName(className, true, classLoader)
-    cls match {
-      case c if classOf[StateStore].isAssignableFrom(cls) =>
-        ClassUtils.createInstance[StateStore](c, conf)
-      case _ => throw new KyuubiException(
-          s"$className must extend of ${classOf[StateStore].getName}")
-    }
+    ClassUtils.createInstance(className, classOf[StateStore], conf)
   }
 }

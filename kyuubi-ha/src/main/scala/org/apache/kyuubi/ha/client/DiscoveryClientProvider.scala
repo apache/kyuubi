@@ -44,18 +44,11 @@ object DiscoveryClientProvider extends Logging {
   }
 
   def createDiscoveryClient(conf: KyuubiConf): DiscoveryClient = {
-    val classLoader = Thread.currentThread.getContextClassLoader
     val className = conf.get(HighAvailabilityConf.HA_CLIENT_CLASS)
     if (className.isEmpty) {
       throw new KyuubiException(
         s"${HighAvailabilityConf.HA_CLIENT_CLASS.key} cannot be empty.")
     }
-    val cls = Class.forName(className, true, classLoader)
-    cls match {
-      case c if classOf[DiscoveryClient].isAssignableFrom(cls) =>
-        ClassUtils.createInstance[DiscoveryClient](c, conf)
-      case _ => throw new KyuubiException(
-          s"$className must extend of ${DiscoveryClient.getClass.getName}")
-    }
+    ClassUtils.createInstance(className, classOf[DiscoveryClient], conf)
   }
 }
