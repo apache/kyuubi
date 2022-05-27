@@ -93,12 +93,12 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
         val opArgs = new ServiceControlCliArguments(args)
         assert(opArgs.cliArgs.action.toString.equalsIgnoreCase(op))
         assert(opArgs.cliArgs.service.toString.equalsIgnoreCase(service))
-        assert(opArgs.cliArgs.zkQuorum == zkQuorum)
-        assert(opArgs.cliArgs.namespace == namespace)
-        assert(opArgs.cliArgs.user == user)
-        assert(opArgs.cliArgs.host == host)
-        assert(opArgs.cliArgs.port == port)
-        assert(opArgs.cliArgs.version == KYUUBI_VERSION)
+        assert(opArgs.cliArgs.commonOpts.zkQuorum == zkQuorum)
+        assert(opArgs.cliArgs.commonOpts.namespace == namespace)
+        assert(opArgs.cliArgs.engineOpts.user == user)
+        assert(opArgs.cliArgs.commonOpts.host == host)
+        assert(opArgs.cliArgs.commonOpts.port == port)
+        assert(opArgs.cliArgs.commonOpts.version == KYUUBI_VERSION)
       }
     }
 
@@ -122,11 +122,11 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       val opArgs = new ServiceControlCliArguments(args)
       assert(opArgs.cliArgs.action.toString.equalsIgnoreCase(op))
       assert(opArgs.cliArgs.service.toString.equalsIgnoreCase(service))
-      assert(opArgs.cliArgs.zkQuorum == zkQuorum)
-      assert(opArgs.cliArgs.namespace == newNamespace)
-      assert(opArgs.cliArgs.host == host)
-      assert(opArgs.cliArgs.port == port)
-      assert(opArgs.cliArgs.version == KYUUBI_VERSION)
+      assert(opArgs.cliArgs.commonOpts.zkQuorum == zkQuorum)
+      assert(opArgs.cliArgs.commonOpts.namespace == newNamespace)
+      assert(opArgs.cliArgs.commonOpts.host == host)
+      assert(opArgs.cliArgs.commonOpts.port == port)
+      assert(opArgs.cliArgs.commonOpts.version == KYUUBI_VERSION)
     }
   }
 
@@ -302,8 +302,8 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       "--zk-quorum",
       zkQuorum)
     val opArgs = new ServiceControlCliArguments(args)
-    assert(opArgs.cliArgs.namespace == namespace)
-    assert(opArgs.cliArgs.version == KYUUBI_VERSION)
+    assert(opArgs.cliArgs.commonOpts.namespace == namespace)
+    assert(opArgs.cliArgs.commonOpts.version == KYUUBI_VERSION)
   }
 
   test("test use short options") {
@@ -327,12 +327,12 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
         val opArgs = new ServiceControlCliArguments(args)
         assert(opArgs.cliArgs.action.toString.equalsIgnoreCase(op))
         assert(opArgs.cliArgs.service.toString.equalsIgnoreCase(service))
-        assert(opArgs.cliArgs.zkQuorum == zkQuorum)
-        assert(opArgs.cliArgs.namespace == namespace)
-        assert(opArgs.cliArgs.user == user)
-        assert(opArgs.cliArgs.host == host)
-        assert(opArgs.cliArgs.port == port)
-        assert(opArgs.cliArgs.version == KYUUBI_VERSION)
+        assert(opArgs.cliArgs.commonOpts.zkQuorum == zkQuorum)
+        assert(opArgs.cliArgs.commonOpts.namespace == namespace)
+        assert(opArgs.cliArgs.engineOpts.user == user)
+        assert(opArgs.cliArgs.commonOpts.host == host)
+        assert(opArgs.cliArgs.commonOpts.port == port)
+        assert(opArgs.cliArgs.commonOpts.version == KYUUBI_VERSION)
       }
     }
 
@@ -343,7 +343,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       zkQuorum,
       "-b")
     val opArgs3 = new ServiceControlCliArguments(args2)
-    assert(opArgs3.cliArgs.verbose)
+    assert(opArgs3.cliArgs.commonOpts.verbose)
   }
 
   test("test --help") {

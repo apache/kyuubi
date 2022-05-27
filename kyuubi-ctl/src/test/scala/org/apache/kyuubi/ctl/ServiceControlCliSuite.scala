@@ -86,7 +86,6 @@ trait TestPrematureExit {
 
 class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   import DiscoveryClientProvider._
-  import ServiceControlCli._
 
   val zkServer = new EmbeddedZookeeper()
   val conf: KyuubiConf = KyuubiConf()
@@ -123,7 +122,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   private def getRenderedNodesInfoWithoutTitle(
       nodesInfo: Seq[ServiceNodeInfo],
       verbose: Boolean): String = {
-    val renderedInfo = renderServiceNodesInfo("", nodesInfo, verbose)
+    val renderedInfo = Render.renderServiceNodesInfo("", nodesInfo, verbose)
     if (verbose) {
       renderedInfo.substring(renderedInfo.indexOf("|"))
     } else {
@@ -198,7 +197,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     val title = "test render"
     val nodes = Seq(
       ServiceNodeInfo("/kyuubi", "serviceNode", "localhost", 10000, Some("version"), None))
-    val renderedInfo = renderServiceNodesInfo(title, nodes, true)
+    val renderedInfo = Render.renderServiceNodesInfo(title, nodes, true)
     val expected = {
       s"\n               $title               " +
         """
@@ -264,7 +263,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       zkServer.getConnectString,
       "--namespace",
       namespace)
-    assert(getZkNamespace(new ServiceControlCliArguments(arg1)) == s"/$namespace")
+    val scArgs1 = new ServiceControlCliArguments(arg1)
+    assert(scArgs1.command.getZkNamespace() == s"/$namespace")
 
     val arg2 = Array(
       "list",
@@ -275,7 +275,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       namespace,
       "--user",
       user)
-    assert(getZkNamespace(new ServiceControlCliArguments(arg2)) ==
+    val scArgs2 = new ServiceControlCliArguments(arg2)
+    assert(scArgs2.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
   }
 
@@ -414,7 +415,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       namespace,
       "--user",
       user)
-    assert(getZkNamespace(new ServiceControlCliArguments(arg1)) ==
+    val scArgs1 = new ServiceControlCliArguments(arg1)
+    assert(scArgs1.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
     val arg2 = Array(
@@ -428,7 +430,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-type",
       "FLINK_SQL")
-    assert(getZkNamespace(new ServiceControlCliArguments(arg2)) ==
+    val scArgs2 = new ServiceControlCliArguments(arg2)
+    assert(scArgs2.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_FLINK_SQL/$user/default")
 
     val arg3 = Array(
@@ -442,7 +445,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-type",
       "TRINO")
-    assert(getZkNamespace(new ServiceControlCliArguments(arg3)) ==
+    val scArgs3 = new ServiceControlCliArguments(arg3)
+    assert(scArgs3.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_TRINO/$user/default")
 
     val arg4 = Array(
@@ -458,7 +462,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "SPARK_SQL",
       "--engine-subdomain",
       "sub_1")
-    assert(getZkNamespace(new ServiceControlCliArguments(arg4)) ==
+    val scArgs4 = new ServiceControlCliArguments(arg4)
+    assert(scArgs4.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/sub_1")
 
     val arg5 = Array(
@@ -476,7 +481,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "SPARK_SQL",
       "--engine-subdomain",
       "sub_1")
-    assert(getZkNamespace(new ServiceControlCliArguments(arg5)) ==
+    val scArgs5 = new ServiceControlCliArguments(arg5)
+    assert(scArgs5.command.getZkNamespace() ==
       s"/${namespace}_1.5.0_USER_SPARK_SQL/$user/sub_1")
   }
 
@@ -490,7 +496,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       namespace,
       "--user",
       user)
-    assert(getZkNamespace(new ServiceControlCliArguments(arg1)) ==
+    val scArgs1 = new ServiceControlCliArguments(arg1)
+    assert(scArgs1.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
     val arg2 = Array(
@@ -504,7 +511,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-share-level",
       "CONNECTION")
-    assert(getZkNamespace(new ServiceControlCliArguments(arg2)) ==
+    val scArgs2 = new ServiceControlCliArguments(arg2)
+    assert(scArgs2.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL/$user/default")
 
     val arg3 = Array(
@@ -518,7 +526,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-share-level",
       "USER")
-    assert(getZkNamespace(new ServiceControlCliArguments(arg3)) ==
+    val scArgs3 = new ServiceControlCliArguments(arg3)
+    assert(scArgs3.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
     val arg4 = Array(
@@ -532,7 +541,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-share-level",
       "GROUP")
-    assert(getZkNamespace(new ServiceControlCliArguments(arg4)) ==
+    val scArgs4 = new ServiceControlCliArguments(arg4)
+    assert(scArgs4.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_GROUP_SPARK_SQL/$user/default")
 
     val arg5 = Array(
@@ -546,7 +556,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-share-level",
       "SERVER")
-    assert(getZkNamespace(new ServiceControlCliArguments(arg5)) ==
+    val scArgs5 = new ServiceControlCliArguments(arg5)
+    assert(scArgs5.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_SERVER_SPARK_SQL/$user/default")
   }
 }

@@ -14,22 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.kyuubi.ctl
 
-import scopt.OParser
+import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
-abstract private[kyuubi] class ServiceControlCliArgumentsParser {
+object Render {
 
-  /**
-   * Cli arguments parse rules.
-   */
-  def parser(): OParser[Unit, CliConfig]
-
-  /**
-   * Parse a list of kyuubi-ctl command line options.
-   *
-   * @throws IllegalArgumentException If an error is found during parsing.
-   */
-  def parse(args: Seq[String]): Unit
+  private[ctl] def renderServiceNodesInfo(
+      title: String,
+      serviceNodeInfo: Seq[ServiceNodeInfo],
+      verbose: Boolean): String = {
+    val header = Seq("Namespace", "Host", "Port", "Version")
+    val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
+      Seq(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
+    }
+    Tabulator.format(title, header, rows, verbose)
+  }
 }
