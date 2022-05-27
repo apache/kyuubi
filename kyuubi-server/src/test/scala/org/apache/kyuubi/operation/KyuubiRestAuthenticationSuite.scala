@@ -28,8 +28,11 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.RestClientTestHelper
-import org.apache.kyuubi.client.api.v1.dto.{SessionOpenCount, SessionOpenRequest}
+import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, SessionOpenRequest}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
+import org.apache.kyuubi.server.http.authentication.AuthSchemes
+import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
 class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
