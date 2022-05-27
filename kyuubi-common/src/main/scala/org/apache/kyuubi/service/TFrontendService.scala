@@ -31,6 +31,7 @@ import org.apache.thrift.transport.TTransport
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -46,7 +47,7 @@ abstract class TFrontendService(name: String)
   extends AbstractFrontendService(name) with TCLIService.Iface with Runnable with Logging {
   import TFrontendService._
   private val started = new AtomicBoolean(false)
-  private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
+  private var hadoopConf: Configuration = _
   private lazy val serverThread = new NamedThreadFactory(getName, false).newThread(this)
   private lazy val serverHost = conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
 
@@ -56,6 +57,11 @@ abstract class TFrontendService(name: String)
   protected lazy val serverSocket = new ServerSocket(portNum, -1, serverAddr)
   protected lazy val authFactory: KyuubiAuthenticationFactory =
     new KyuubiAuthenticationFactory(conf, isServer())
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    super.initialize(conf)
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+  }
 
   /**
    * Start the service itself(FE) and its composited (Discovery service, DS) in the order of:
@@ -78,6 +84,10 @@ abstract class TFrontendService(name: String)
         stopInternal()
         throw e
     }
+  }
+
+  override private[kyuubi] def reloadHadoopConf(): Unit = synchronized {
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
   }
 
   protected def stopServer(): Unit

@@ -45,13 +45,18 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private val isStarted = new AtomicBoolean(false)
 
-  private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
+  private var hadoopConf: Configuration = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
       .getOrElse(Utils.findLocalInetAddress.getHostAddress)
     server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
     super.initialize(conf)
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+  }
+
+  override private[kyuubi] def reloadHadoopConf(): Unit = synchronized {
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
   }
 
   override def connectionUrl: String = {
