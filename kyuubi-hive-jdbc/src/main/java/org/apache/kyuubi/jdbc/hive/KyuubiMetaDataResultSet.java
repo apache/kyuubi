@@ -29,17 +29,17 @@ public abstract class KyuubiMetaDataResultSet<M> extends KyuubiBaseResultSet {
       final List<String> columnNames, final List<String> columnTypes, final List<M> data)
       throws SQLException {
     if (data != null) {
-      this.data = new ArrayList<M>(data);
+      this.data = new ArrayList<>(data);
     }
 
     if (columnTypes != null) {
-      this.columnTypes = new ArrayList<String>(columnTypes);
+      this.columnTypes = new ArrayList<>(columnTypes);
     } else {
       this.columnTypes = Collections.emptyList();
     }
 
     if (columnNames != null) {
-      this.columnNames = new ArrayList<String>(columnNames);
+      this.columnNames = new ArrayList<>(columnNames);
       this.normalizedColumnNames = normalizeColumnNames(columnNames);
     } else {
       this.columnNames = Collections.emptyList();
@@ -48,7 +48,7 @@ public abstract class KyuubiMetaDataResultSet<M> extends KyuubiBaseResultSet {
   }
 
   private List<String> normalizeColumnNames(final List<String> columnNames) {
-    List<String> result = new ArrayList<String>(columnNames.size());
+    List<String> result = new ArrayList<>(columnNames.size());
     for (String colName : columnNames) {
       result.add(colName.toLowerCase());
     }
