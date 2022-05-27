@@ -21,8 +21,10 @@ import java.nio.file.Files
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
+import scala.collection.JavaConverters._
+
 import org.apache.flink.table.types.logical.LogicalTypeRoot
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq}
+import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
@@ -852,5 +854,37 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       }
       assert(!exists)
     })
+  }
+
+  test("set session conf - default database") {
+    def assertDefaultDatabase(
+        client: TCLIService.Iface,
+        database: String,
+        expectSuccess: Boolean): Unit = {
+      val req = new TOpenSessionReq()
+      req.setUsername("kyuubi")
+      req.setPassword("anonymous")
+      val conf = Map("use:database" -> database)
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      if (expectSuccess) {
+        assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      } else {
+        assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+        assert(status.getErrorMessage.contains(
+          s"A database with name [$database] does not exist"))
+      }
+    }
+
+    withThriftClient { client =>
+      assertDefaultDatabase(client, "default", true)
+    }
+    withThriftClient { client =>
+      assertDefaultDatabase(client, "default2", false)
+    }
+    withThriftClient { client =>
+      assertDefaultDatabase(client, "default_database", true)
+    }
   }
 }
