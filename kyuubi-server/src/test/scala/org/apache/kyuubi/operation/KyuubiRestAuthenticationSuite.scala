@@ -103,7 +103,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .get()
 
-    assert(HttpServletResponse.SC_INTERNAL_SERVER_ERROR == response.getStatus)
+    assert(HttpServletResponse.SC_FORBIDDEN == response.getStatus)
   }
 
   test("test without authorization") {
@@ -135,7 +135,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
       .header(AUTHORIZATION_HEADER, s"NEGOTIATE $encodeAuthorization")
       .get()
 
-    assert(HttpServletResponse.SC_INTERNAL_SERVER_ERROR == response.getStatus)
+    assert(HttpServletResponse.SC_FORBIDDEN == response.getStatus)
   }
 
   test("test with not supported auth scheme") {
