@@ -24,7 +24,7 @@ import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHOR
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   test("refresh Hadoop configuration of the kyuubi server") {
-    var response = webTarget.path("api/v1/admin/refreshServerHadoopConf")
+    var response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
       .request()
       .post(null)
     assert(405 == response.getStatus)
@@ -34,7 +34,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       Base64.getEncoder.encode(
         s"$adminUser:".getBytes()),
       "UTF-8")
-    response = webTarget.path("api/v1/admin/refreshServerHadoopConf")
+    response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
       .request()
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .post(null)

@@ -41,7 +41,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     description = "refresh the Kyuubi server hadoop conf, note that, " +
       "it only takes affect for frontend services now")
   @POST
-  @Path("{refreshServerHadoopConf}")
+  @Path("refresh/hadoop_conf")
   def refreshFrontendHadoopConf(): Response = {
     val userName = fe.getUserName(Map.empty)
     val ipAddress = AuthenticationFilter.getUserIpAddress
