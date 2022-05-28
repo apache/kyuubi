@@ -32,7 +32,7 @@ import org.apache.kyuubi.client.util.AuthUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KyuubiRestClient {
+public class KyuubiRestClient implements AutoCloseable {
 
   private static final Logger LOG = LoggerFactory.getLogger(KyuubiRestClient.class);
 
@@ -50,6 +50,11 @@ public class KyuubiRestClient {
   public enum AuthSchema {
     BASIC,
     SPNEGO
+  }
+
+  @Override
+  public void close() throws Exception {
+    httpClient.close();
   }
 
   public KyuubiRestClient(Builder builder) {
@@ -108,9 +113,9 @@ public class KyuubiRestClient {
       case SPNEGO:
         try {
           String server =
-              StringUtils.isBlank(builder.server)
+              StringUtils.isBlank(builder.spnegoHost)
                   ? new URI(builder.hostUrl).getHost()
-                  : builder.server;
+                  : builder.spnegoHost;
           header = String.format("NEGOTIATE %s", AuthUtil.generateToken(server));
         } catch (Exception e) {
           LOG.error("Error: ", e);
@@ -128,7 +133,7 @@ public class KyuubiRestClient {
 
     private String hostUrl;
 
-    private String server;
+    private String spnegoHost;
 
     private ApiVersion version = ApiVersion.V1;
 
@@ -146,8 +151,8 @@ public class KyuubiRestClient {
       this.hostUrl = hostUrl;
     }
 
-    public Builder server(String server) {
-      this.server = server;
+    public Builder spnegoHost(String host) {
+      this.spnegoHost = host;
       return this;
     }
 
@@ -182,6 +187,9 @@ public class KyuubiRestClient {
     }
 
     public KyuubiRestClient build() {
+      if (StringUtils.isBlank(hostUrl)) {
+        throw new IllegalArgumentException("hostUrl cannot be blank.");
+      }
       this.password = StringUtils.isNotBlank(password) ? password : "";
       return new KyuubiRestClient(this);
     }

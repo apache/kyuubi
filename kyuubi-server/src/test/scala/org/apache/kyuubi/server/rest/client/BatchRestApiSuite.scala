@@ -68,6 +68,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
     // delete batch
     batchRestApi.deleteBatch(batch.getId(), true, null)
 
+    basicKyuubiRestClient.close()
   }
 
   test("basic batch rest client with invalid user") {
@@ -85,13 +86,15 @@ class BatchRestApiSuite extends RestClientTestHelper {
       batchRestApi.getBatchById("1")
     }
     assert(e.getCause.toString.contains(s"Error validating LDAP user: uid=${customUser}"))
+
+    basicKyuubiRestClient.close()
   }
 
   test("spnego batch rest client") {
     val spnegoKyuubiRestClient: KyuubiRestClient =
       new KyuubiRestClient.Builder(baseUri.toString)
         .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
-        .server("localhost")
+        .spnegoHost("localhost")
         .build()
     val batchRestApi: BatchRestApi = new BatchRestApi(spnegoKyuubiRestClient)
     // create batch
@@ -111,5 +114,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
     val batch: Batch = batchRestApi.createBatch(requestObj)
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "spark")
+
+    spnegoKyuubiRestClient.close()
   }
 }

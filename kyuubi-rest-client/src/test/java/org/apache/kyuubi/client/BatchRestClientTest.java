@@ -31,6 +31,8 @@ import org.junit.Test;
 
 public class BatchRestClientTest {
 
+  private KyuubiRestClient spnegoClient;
+  private KyuubiRestClient basicClient;
   private BatchRestApi spnegoBatchRestApi;
   private BatchRestApi basicBatchRestApi;
 
@@ -46,13 +48,13 @@ public class BatchRestClientTest {
     serverTestHelper.setup(BatchTestServlet.class);
 
     kerberizedTestHelper.login();
-    KyuubiRestClient spnegoClient =
+    spnegoClient =
         new KyuubiRestClient.Builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
             .build();
     spnegoBatchRestApi = new BatchRestApi(spnegoClient);
 
-    KyuubiRestClient basicClient =
+    basicClient =
         new KyuubiRestClient.Builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.BASIC)
             .username(TEST_USERNAME)
@@ -65,6 +67,18 @@ public class BatchRestClientTest {
   public void tearDown() throws Exception {
     kerberizedTestHelper.stop();
     serverTestHelper.stop();
+    spnegoClient.close();
+    basicClient.close();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testEmptyHostUrl() {
+    KyuubiRestClient basicClient =
+        new KyuubiRestClient.Builder("")
+            .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+            .username("test")
+            .password("test")
+            .build();
   }
 
   @Test(expected = KyuubiRestException.class)
