@@ -18,12 +18,11 @@
 package org.apache.kyuubi.server.http.authentication
 
 import java.io.IOException
+import javax.security.sasl.AuthenticationException
 import javax.servlet.{Filter, FilterChain, FilterConfig, ServletException, ServletRequest, ServletResponse}
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import scala.collection.mutable.HashMap
-
-import org.apache.hadoop.security.authentication.client.AuthenticationException
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
