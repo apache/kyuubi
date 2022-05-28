@@ -32,6 +32,8 @@ import org.apache.kyuubi.client.api.v1.dto.OperationLog;
 
 public class BatchTestServlet extends HttpServlet {
 
+  private static ObjectMapper MAPPER = new ObjectMapper();
+
   private static String authSchema = BASIC_AUTH;
   private static boolean allowAnonymous;
 
@@ -52,20 +54,20 @@ public class BatchTestServlet extends HttpServlet {
       resp.setStatus(HttpServletResponse.SC_OK);
 
       Batch batch = generateTestBatch();
-      resp.getWriter().write(new ObjectMapper().writeValueAsString(batch));
+      resp.getWriter().write(MAPPER.writeValueAsString(batch));
       resp.getWriter().flush();
     } else if (req.getPathInfo().matches("/api/v1/batches")
         && req.getQueryString().matches("[\\w]+(=[\\w]*)(&[\\w]+(=[\\w]*))+$")) {
       resp.setStatus(HttpServletResponse.SC_OK);
 
       GetBatchesResponse batchesResponse = generateTestBatchesResponse();
-      resp.getWriter().write(new ObjectMapper().writeValueAsString(batchesResponse));
+      resp.getWriter().write(MAPPER.writeValueAsString(batchesResponse));
       resp.getWriter().flush();
     } else if (req.getPathInfo().matches("/api/v1/batches/\\d+/localLog")) {
       resp.setStatus(HttpServletResponse.SC_OK);
 
       OperationLog log = generateTestOperationLog();
-      resp.getWriter().write(new ObjectMapper().writeValueAsString(log));
+      resp.getWriter().write(MAPPER.writeValueAsString(log));
       resp.getWriter().flush();
     } else {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -81,7 +83,7 @@ public class BatchTestServlet extends HttpServlet {
       resp.setStatus(HttpServletResponse.SC_OK);
 
       Batch batch = generateTestBatch();
-      resp.getWriter().write(new ObjectMapper().writeValueAsString(batch));
+      resp.getWriter().write(MAPPER.writeValueAsString(batch));
       resp.getWriter().flush();
     } else {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);

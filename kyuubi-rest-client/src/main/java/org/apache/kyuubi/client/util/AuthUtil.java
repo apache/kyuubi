@@ -30,7 +30,7 @@ import org.ietf.jgss.GSSName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AuthUtil {
+public final class AuthUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(AuthUtil.class);
 

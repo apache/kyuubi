@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,6 +36,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
+import org.apache.kyuubi.client.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,29 +63,19 @@ public class RestClient implements AutoCloseable {
     }
   }
 
-  public <T> T get(String path, Map<String, Object> params, TypeReference<T> type)
+  public <T> T get(String path, Map<String, Object> params, Class<T> type)
       throws KyuubiRestException {
-    try {
-      String responseJson = get(path, params);
-      return new ObjectMapper().readValue(responseJson, type);
-    } catch (JsonProcessingException e) {
-      throw new KyuubiRestException(
-          "cannot convert response json to object: " + type.getType().getTypeName(), e);
-    }
+    String responseJson = get(path, params);
+    return JsonUtil.toObject(responseJson, type);
   }
 
   public String get(String path, Map<String, Object> params) throws KyuubiRestException {
     return doRequest(buildURI(path, params), RequestBuilder.get());
   }
 
-  public <T> T post(String path, String body, TypeReference<T> type) throws KyuubiRestException {
-    try {
-      String responseJson = post(path, body);
-      return new ObjectMapper().readValue(responseJson, type);
-    } catch (JsonProcessingException e) {
-      throw new KyuubiRestException(
-          "cannot convert response json to object: " + type.getType().getTypeName(), e);
-    }
+  public <T> T post(String path, String body, Class<T> type) throws KyuubiRestException {
+    String responseJson = post(path, body);
+    return JsonUtil.toObject(responseJson, type);
   }
 
   public String post(String path, String body) throws KyuubiRestException {

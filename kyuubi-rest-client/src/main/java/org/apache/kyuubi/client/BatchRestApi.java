@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.client;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
@@ -26,6 +24,7 @@ import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
+import org.apache.kyuubi.client.util.JsonUtil;
 
 public class BatchRestApi {
 
@@ -38,19 +37,13 @@ public class BatchRestApi {
   }
 
   public Batch createBatch(BatchRequest request) throws KyuubiRestException {
-    String jsonBody = null;
-    try {
-      jsonBody = new ObjectMapper().writeValueAsString(request);
-    } catch (Exception e) {
-      throw new KyuubiRestException("cannot convert batch request body to json", e);
-    }
-
-    return this.getClient().post(API_BASE_PATH, jsonBody, new TypeReference<Batch>() {});
+    String requestBody = JsonUtil.toJson(request);
+    return this.getClient().post(API_BASE_PATH, requestBody, Batch.class);
   }
 
   public Batch getBatchById(String batchId) throws KyuubiRestException {
     String path = String.format("%s/%s", API_BASE_PATH, batchId);
-    return this.getClient().get(path, null, new TypeReference<Batch>() {});
+    return this.getClient().get(path, null, Batch.class);
   }
 
   public GetBatchesResponse listBatches(String batchType, int from, int size)
@@ -59,7 +52,7 @@ public class BatchRestApi {
     params.put("batchType", batchType);
     params.put("from", from);
     params.put("size", size);
-    return this.getClient().get(API_BASE_PATH, params, new TypeReference<GetBatchesResponse>() {});
+    return this.getClient().get(API_BASE_PATH, params, GetBatchesResponse.class);
   }
 
   public OperationLog getBatchLocalLog(String batchId, int from, int size)
@@ -70,7 +63,7 @@ public class BatchRestApi {
     params.put("size", size);
 
     String path = String.format("%s/%s/localLog", API_BASE_PATH, batchId);
-    return this.getClient().get(path, params, new TypeReference<OperationLog>() {});
+    return this.getClient().get(path, params, OperationLog.class);
   }
 
   public void deleteBatch(String batchId, boolean killApp, String hs2ProxyUser)
