@@ -76,7 +76,6 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
       .set(
         KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
         classOf[UserDefinedEngineSecuritySecretProvider].getCanonicalName)
-      .set("hadoop.security.authentication", "KERBEROS")
   }
 
   test("test with LDAP authorization") {

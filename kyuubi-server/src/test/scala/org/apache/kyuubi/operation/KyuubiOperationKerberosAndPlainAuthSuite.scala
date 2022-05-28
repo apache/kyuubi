@@ -63,7 +63,6 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
       .set(
         KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
-      .set("hadoop.security.authentication", "KERBEROS")
   }
 
   test("test with KERBEROS authentication") {
