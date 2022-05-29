@@ -33,7 +33,7 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
   val scales: Array[Int] = TPCDSStatisticsUtils.SCALES
 
-  val databases: Array[String] = scales.map("sf" + _)
+  val databases: Array[String] = scales.map("sf" + _) :+ TPCDSStatisticsUtils.TINY_SCHEMA_NAME
 
   var options: CaseInsensitiveStringMap = _
 
@@ -53,7 +53,13 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
   override def loadTable(ident: Identifier): SparkTable = (ident.namespace, ident.name) match {
     case (Array(db), table) if (databases contains db) && tables.contains(table.toLowerCase) =>
-      new TPCDSTable(table.toLowerCase, scales(databases indexOf db), options)
+      val scale =
+        if (db == TPCDSStatisticsUtils.TINY_SCHEMA_NAME) {
+          TPCDSStatisticsUtils.TINY_SCALE_FACTOR
+        } else {
+          scales(databases indexOf db)
+        }
+      new TPCDSTable(table.toLowerCase, scale, options)
     case (_, _) => throw new NoSuchTableException(ident)
   }
 

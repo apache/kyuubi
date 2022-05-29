@@ -55,6 +55,14 @@ object TPCDSSchemaUtils {
       table.getGeneratorColumns.head.getGlobalColumnNumber
   }
 
+  def getDBNameByScale(scale: Double): String = {
+    if (scale == TPCDSStatisticsUtils.TINY_SCALE_FACTOR) {
+      s"${TPCDSStatisticsUtils.TINY_SCHEMA_NAME}"
+    } else {
+      s"sf${scale.asInstanceOf[Int]}"
+    }
+  }
+
   // Collected from `getValues` method of all Row classes,
   // like: io.trino.tpcds.row.CallCenterRow.getValues
   private val REVISED_NULL_COLUMN_MAP: Map[Table, Array[GeneratorColumn]] = Map(
