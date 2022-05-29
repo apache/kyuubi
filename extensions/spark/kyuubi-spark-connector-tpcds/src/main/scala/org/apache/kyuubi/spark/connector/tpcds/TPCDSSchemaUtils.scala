@@ -28,12 +28,12 @@ import io.trino.tpcds.generator._
 
 object TPCDSSchemaUtils {
 
-  val TINY_DB_NAME = "tiny"
-
   val TINY_SCALE = "0.01"
 
   val SCALES: Array[String] =
     Array("0", TINY_SCALE, "1", "10", "100", "300", "1000", "3000", "10000", "30000", "100000")
+
+  val TINY_DB_NAME = "tiny"
 
   val DATABASES: Array[String] = SCALES.map {
     case TINY_SCALE => TINY_DB_NAME
