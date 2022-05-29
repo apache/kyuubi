@@ -51,7 +51,7 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
   }
 
   test("exclude databases") {
-    Seq("sf1,sf10" -> 2, "sf1 , " -> 1, "none" -> 0).foreach {
+    Seq("TINY,sf10" -> 2, "sf1 , " -> 1, "none" -> 0).foreach {
       case (excludeDatabases, excludeNum) =>
         val sparkConf = new SparkConf().setMaster("local[*]")
           .set("spark.ui.enabled", "false")
