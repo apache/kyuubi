@@ -54,6 +54,12 @@ class DorisDialect extends JdbcDialect {
       schema: String,
       tableName: String,
       tableTypes: Set[String]): String = {
+    val tTypes =
+      if (tableTypes == null || tableTypes.isEmpty) {
+        Set("BASE TABLE", "SYSTEM VIEW", "VIEW")
+      } else {
+        tableTypes
+      }
     val query = new StringBuilder(
       s"""
          |SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE, ENGINE,
@@ -75,7 +81,7 @@ class DorisDialect extends JdbcDialect {
       filters += s"$TABLE_NAME LIKE '$tableName'"
     }
 
-    if (tableTypes.nonEmpty) {
+    if (tTypes.nonEmpty) {
       filters += s"(${tableTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
         .mkString(" OR ")})"
     }

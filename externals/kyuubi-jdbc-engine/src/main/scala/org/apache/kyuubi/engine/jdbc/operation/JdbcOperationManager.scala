@@ -81,13 +81,7 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       tableTypes: util.List[String]): Operation = {
-    val tTypes =
-      if (tableTypes == null || tableTypes.isEmpty) {
-        Set("BASE TABLE", "SYSTEM VIEW")
-      } else {
-        tableTypes.asScala.toSet
-      }
-    val query = dialect.getTablesQuery(catalogName, schemaName, tableName, tTypes)
+    val query = dialect.getTablesQuery(catalogName, schemaName, tableName, tableTypes.asScala.toSet)
     val executeStatement =
       new ExecuteStatement(OperationType.GET_TABLES, session, query, false, 0L, true)
     addOperation(executeStatement)

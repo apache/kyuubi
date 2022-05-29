@@ -37,6 +37,40 @@ class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
       val tableName1 = table1.getString(TABLE_NAME)
       assert(tableSchema1 == "db1")
       assert(tableName1 == "test1")
+
+      val table2 = meta.getTables(null, "db1", null, null)
+      table2.next()
+      val tableSchema2 = table2.getString(TABLE_SCHEMA)
+      val tableName2 = table2.getString(TABLE_NAME)
+      assert(tableSchema2 == "db1")
+      assert(tableName2 == "test1")
+
+      val table3 = meta.getTables(null, null, "test1", null)
+      table3.next()
+      val tableSchema3 = table3.getString(TABLE_SCHEMA)
+      val tableName3 = table3.getString(TABLE_NAME)
+      assert(tableSchema3 == "db1")
+      assert(tableName3 == "test1")
+
+      val table4 = meta.getTables(null, "db%", null, null)
+      table4.next()
+      val tableSchema4 = table4.getString(TABLE_SCHEMA)
+      val tableName4 = table4.getString(TABLE_NAME)
+      assert(tableSchema4 == "db1")
+      assert(tableName4 == "test1")
+
+      val table5 = meta.getTables(null, "db1", "test1", Array("SYSTEM VIEW"))
+      assert(!table5.next())
+
+      statement.execute("create view db1.view1 (k1) as select id from db1.test1")
+      val table6 = meta.getTables(null, null, null, Array("VIEW"))
+      table6.next()
+      val tableSchema6 = table6.getString(TABLE_SCHEMA)
+      val tableName6 = table6.getString(TABLE_NAME)
+      assert(tableSchema6 == "db1")
+      assert(tableName6 == "view1")
+
+      statement.execute("drop view db1.view1")
       statement.execute("drop table db1.test1")
       statement.execute("drop database db1")
     }
