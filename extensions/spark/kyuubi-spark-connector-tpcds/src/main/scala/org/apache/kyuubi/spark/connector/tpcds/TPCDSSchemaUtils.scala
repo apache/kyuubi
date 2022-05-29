@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
+import java.text.DecimalFormat
+
 import scala.collection.JavaConverters._
 
 import io.trino.tpcds.Table
@@ -25,6 +27,24 @@ import io.trino.tpcds.column._
 import io.trino.tpcds.generator._
 
 object TPCDSSchemaUtils {
+
+  val TINY_DB_NAME = "tiny"
+
+  val TINY_SCALE = "0.01"
+
+  val SCALES: Array[String] =
+    Array("0", TINY_SCALE, "1", "10", "100", "300", "1000", "3000", "10000", "30000", "100000")
+
+  val DATABASES: Array[String] = SCALES.map {
+    case TINY_SCALE => TINY_DB_NAME
+    case scale => s"sf$scale"
+  }
+
+  def normalize(scale: Double): String = new DecimalFormat("#.##").format(scale)
+
+  def dbName(scale: Double): String = DATABASES(SCALES.indexOf(normalize(scale)))
+
+  def scale(dbName: String): Double = SCALES(DATABASES.indexOf(dbName)).toDouble
 
   val BASE_TABLES: Array[Table] = Table.getBaseTables.asScala
     .filterNot(_.getName == "dbgen_version").toArray
@@ -53,14 +73,6 @@ object TPCDSSchemaUtils {
     assert(REVISED_NULL_COLUMN_MAP(table).length == table.getColumns.length)
     REVISED_NULL_COLUMN_MAP(table)(index).getGlobalColumnNumber -
       table.getGeneratorColumns.head.getGlobalColumnNumber
-  }
-
-  def getDBNameByScale(scale: Double): String = {
-    if (scale == TPCDSStatisticsUtils.TINY_SCALE_FACTOR) {
-      s"${TPCDSStatisticsUtils.TINY_SCHEMA_NAME}"
-    } else {
-      s"sf${scale.asInstanceOf[Int]}"
-    }
   }
 
   // Collected from `getValues` method of all Row classes,

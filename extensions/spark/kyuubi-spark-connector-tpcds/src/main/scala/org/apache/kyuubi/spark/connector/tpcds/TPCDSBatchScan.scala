@@ -55,7 +55,7 @@ class TPCDSBatchScan(
   override def toBatch: Batch = this
 
   override def description: String =
-    s"Scan TPC-DS ${TPCDSSchemaUtils.getDBNameByScale(scale)}.${table.getName}, " +
+    s"Scan TPC-DS ${TPCDSSchemaUtils.dbName(scale)}.${table.getName}, " +
       s"count: ${_numRows}, parallelism: $parallelism"
 
   override def readSchema: StructType = schema

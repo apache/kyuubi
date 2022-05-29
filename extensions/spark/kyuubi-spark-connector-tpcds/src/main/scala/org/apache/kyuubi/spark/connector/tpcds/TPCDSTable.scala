@@ -47,7 +47,7 @@ class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
 
   val tpcdsTable: Table = Table.getTable(tbl)
 
-  override def name: String = s"${TPCDSSchemaUtils.getDBNameByScale(scale)}.$tbl"
+  override def name: String = s"${TPCDSSchemaUtils.dbName(scale)}.$tbl"
 
   override def toString: String = s"TPCDSTable($name)"
 
