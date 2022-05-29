@@ -92,7 +92,7 @@ object TPCDSStatisticsUtils {
       case (WEB_SALES, "10000") => 7199963324L
       case (WEB_SALES, "30000") => 21600036511L
       case (WEB_SALES, "100000") => 71999670164L
-      case (t, _) => new Scaling(scale).getRowCount(t)
+      case (t, s) => new Scaling(s.toDouble).getRowCount(t)
     }
   }
 
