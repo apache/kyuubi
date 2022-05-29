@@ -31,8 +31,6 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
   val tables: Array[String] = TPCDSSchemaUtils.BASE_TABLES.map(_.getName)
 
-  val scales: Array[String] = TPCDSSchemaUtils.SCALES
-
   val databases: Array[String] = TPCDSSchemaUtils.DATABASES
 
   var options: CaseInsensitiveStringMap = _
