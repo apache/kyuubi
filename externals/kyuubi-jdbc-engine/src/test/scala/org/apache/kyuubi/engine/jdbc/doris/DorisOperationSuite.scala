@@ -17,7 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.doris
 
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_SCHEMA
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{TABLE_NAME, TABLE_SCHEMA}
 
 class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
 
@@ -25,16 +25,20 @@ class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       statement.execute("create database if not exists db1")
       statement.execute("use db1")
-      statement.execute("create table db1.test1(id bigint, name varchar(255), age int)" +
+      statement.execute("create table db1.test1(id bigint)" +
         "ENGINE=OLAP\n" +
         "DISTRIBUTED BY HASH(`id`) BUCKETS 32\n" +
-        "PROPERTIES (\n\"replication_num\" = \"1\", \"in_memory\" = \"true\")")
+        "PROPERTIES (\n\"replication_num\" = \"1\")")
+
       val meta = statement.getConnection.getMetaData
-      val table1 = meta.getTables(null, "db1", null, null)
+      val table1 = meta.getTables(null, "db1", "test1", null)
       table1.next()
       val tableSchema1 = table1.getString(TABLE_SCHEMA)
-      // scalastyle:off println
-      println(tableSchema1)
+      val tableName1 = table1.getString(TABLE_NAME)
+      assert(tableSchema1 == "db1")
+      assert(tableName1 == "test1")
+      statement.execute("drop table db1.test1")
+      statement.execute("drop database db1")
     }
   }
 
