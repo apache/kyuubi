@@ -75,7 +75,7 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     assert(spark.table("tpcds.tiny.web_site").count === 2)
   }
 
-  test("tpcds.tiny stats") {
+  test("tpcds.sf1 stats") {
     def assertStats(tableName: String, sizeInBytes: BigInt, rowCount: BigInt): Unit = {
       val stats = spark.table(tableName).queryExecution.analyzed.stats
       assert(stats.sizeInBytes == sizeInBytes)
@@ -85,30 +85,30 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
       }
     }
 
-    assertStats("tpcds.tiny.call_center", 610, 2)
-    assertStats("tpcds.tiny.catalog_page", 1628802, 11718)
-    assertStats("tpcds.tiny.catalog_returns", 1481218, 8923)
-    assertStats("tpcds.tiny.catalog_sales", 20296382, 89807)
-    assertStats("tpcds.tiny.customer", 132000, 1000)
-    assertStats("tpcds.tiny.customer_address", 110000, 1000)
-    assertStats("tpcds.tiny.customer_demographics", 80673600, 1920800)
-    assertStats("tpcds.tiny.date_dim", 10299909, 73049)
-    assertStats("tpcds.tiny.household_demographics", 151200, 7200)
-    assertStats("tpcds.tiny.income_band", 320, 20)
-    assertStats("tpcds.tiny.inventory", 4180176, 261261)
-    assertStats("tpcds.tiny.item", 562000, 2000)
-    assertStats("tpcds.tiny.promotion", 372, 3)
-    assertStats("tpcds.tiny.reason", 38, 1)
-    assertStats("tpcds.tiny.ship_mode", 1120, 20)
-    assertStats("tpcds.tiny.store", 526, 2)
-    assertStats("tpcds.tiny.store_returns", 1597950, 11925)
-    assertStats("tpcds.tiny.store_sales", 19766428, 120527)
-    assertStats("tpcds.tiny.time_dim", 5097600, 86400)
-    assertStats("tpcds.tiny.warehouse", 117, 1)
-    assertStats("tpcds.tiny.web_page", 192, 2)
-    assertStats("tpcds.tiny.web_returns", 186624, 1152)
-    assertStats("tpcds.tiny.web_sales", 2683976, 11876)
-    assertStats("tpcds.tiny.web_site", 584, 2)
+    assertStats("tpcds.sf1.call_center", 1830, 6)
+    assertStats("tpcds.sf1.catalog_page", 1628802, 11718)
+    assertStats("tpcds.sf1.catalog_returns", 23915122, 144067)
+    assertStats("tpcds.sf1.catalog_sales", 325789848, 1441548)
+    assertStats("tpcds.sf1.customer", 13200000, 100000)
+    assertStats("tpcds.sf1.customer_address", 5500000, 50000)
+    assertStats("tpcds.sf1.customer_demographics", 80673600, 1920800)
+    assertStats("tpcds.sf1.date_dim", 10299909, 73049)
+    assertStats("tpcds.sf1.household_demographics", 151200, 7200)
+    assertStats("tpcds.sf1.income_band", 320, 20)
+    assertStats("tpcds.sf1.inventory", 187920000, 11745000)
+    assertStats("tpcds.sf1.item", 5058000, 18000)
+    assertStats("tpcds.sf1.promotion", 37200, 300)
+    assertStats("tpcds.sf1.reason", 1330, 35)
+    assertStats("tpcds.sf1.ship_mode", 1120, 20)
+    assertStats("tpcds.sf1.store", 3156, 12)
+    assertStats("tpcds.sf1.store_returns", 38526876, 287514)
+    assertStats("tpcds.sf1.store_sales", 472386256, 2880404)
+    assertStats("tpcds.sf1.time_dim", 5097600, 86400)
+    assertStats("tpcds.sf1.warehouse", 585, 5)
+    assertStats("tpcds.sf1.web_page", 5760, 60)
+    assertStats("tpcds.sf1.web_returns", 11625606, 71763)
+    assertStats("tpcds.sf1.web_sales", 162580784, 719384)
+    assertStats("tpcds.sf1.web_site", 8760, 30)
   }
 
   test("nonexistent table") {
