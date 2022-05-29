@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
+import java.text.DecimalFormat
+
 import scala.collection.JavaConverters._
 
 import io.trino.tpcds.Table
@@ -25,6 +27,24 @@ import io.trino.tpcds.column._
 import io.trino.tpcds.generator._
 
 object TPCDSSchemaUtils {
+
+  val TINY_SCALE = "0.01"
+
+  val SCALES: Array[String] =
+    Array("0", TINY_SCALE, "1", "10", "100", "300", "1000", "3000", "10000", "30000", "100000")
+
+  val TINY_DB_NAME = "tiny"
+
+  val DATABASES: Array[String] = SCALES.map {
+    case TINY_SCALE => TINY_DB_NAME
+    case scale => s"sf$scale"
+  }
+
+  def normalize(scale: Double): String = new DecimalFormat("#.##").format(scale)
+
+  def scale(dbName: String): Double = SCALES(DATABASES.indexOf(dbName)).toDouble
+
+  def dbName(scale: Double): String = DATABASES(SCALES.indexOf(normalize(scale)))
 
   val BASE_TABLES: Array[Table] = Table.getBaseTables.asScala
     .filterNot(_.getName == "dbgen_version").toArray

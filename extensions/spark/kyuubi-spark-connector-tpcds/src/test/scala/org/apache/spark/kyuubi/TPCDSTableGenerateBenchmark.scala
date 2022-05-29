@@ -39,7 +39,7 @@ class TPCDSTableGenerateBenchmark extends KyuubiFunSuite with KyuubiBenchmarkBas
 
   private val runBenchmark = sys.env.contains("RUN_BENCHMARK")
   private val numRows: Long = 1 * 1000 * 1000
-  private val scale = TPCDSStatisticsUtils.SCALES.last
+  private val scale = TPCDSSchemaUtils.SCALES.last.toDouble
 
   test("benchmark") {
     assume(runBenchmark)

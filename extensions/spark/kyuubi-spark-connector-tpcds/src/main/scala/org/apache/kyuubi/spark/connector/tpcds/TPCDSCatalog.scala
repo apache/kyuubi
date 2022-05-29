@@ -29,11 +29,9 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
+  val databases: Array[String] = TPCDSSchemaUtils.DATABASES
+
   val tables: Array[String] = TPCDSSchemaUtils.BASE_TABLES.map(_.getName)
-
-  val scales: Array[Int] = TPCDSStatisticsUtils.SCALES
-
-  val databases: Array[String] = scales.map("sf" + _)
 
   var options: CaseInsensitiveStringMap = _
 
@@ -53,7 +51,8 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
   override def loadTable(ident: Identifier): SparkTable = (ident.namespace, ident.name) match {
     case (Array(db), table) if (databases contains db) && tables.contains(table.toLowerCase) =>
-      new TPCDSTable(table.toLowerCase, scales(databases indexOf db), options)
+      val scale = TPCDSSchemaUtils.scale(db)
+      new TPCDSTable(table.toLowerCase, scale, options)
     case (_, _) => throw new NoSuchTableException(ident)
   }
 
