@@ -42,9 +42,9 @@ object TPCDSSchemaUtils {
 
   def normalize(scale: Double): String = new DecimalFormat("#.##").format(scale)
 
-  def dbName(scale: Double): String = DATABASES(SCALES.indexOf(normalize(scale)))
-
   def scale(dbName: String): Double = SCALES(DATABASES.indexOf(dbName)).toDouble
+
+  def dbName(scale: Double): String = DATABASES(SCALES.indexOf(normalize(scale)))
 
   val BASE_TABLES: Array[Table] = Table.getBaseTables.asScala
     .filterNot(_.getName == "dbgen_version").toArray
