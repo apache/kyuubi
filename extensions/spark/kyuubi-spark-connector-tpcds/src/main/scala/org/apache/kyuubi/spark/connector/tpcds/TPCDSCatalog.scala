@@ -29,9 +29,9 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
-  val tables: Array[String] = TPCDSSchemaUtils.BASE_TABLES.map(_.getName)
-
   val databases: Array[String] = TPCDSSchemaUtils.DATABASES
+
+  val tables: Array[String] = TPCDSSchemaUtils.BASE_TABLES.map(_.getName)
 
   var options: CaseInsensitiveStringMap = _
 
