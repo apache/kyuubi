@@ -24,6 +24,8 @@ import io.trino.tpcds.Table._
 import io.trino.tpcds.column._
 import io.trino.tpcds.generator._
 
+import org.apache.kyuubi.spark.connector.tpcds.TPCDSStatisticsUtils.{DATABASES, SCALES, TINY_DB_NAME, TINY_SCALE}
+
 object TPCDSSchemaUtils {
 
   val BASE_TABLES: Array[Table] = Table.getBaseTables.asScala
@@ -55,11 +57,19 @@ object TPCDSSchemaUtils {
       table.getGeneratorColumns.head.getGlobalColumnNumber
   }
 
-  def getDBNameByScale(scale: Double): String = {
-    if (scale == TPCDSStatisticsUtils.TINY_SCALE_FACTOR) {
-      s"${TPCDSStatisticsUtils.TINY_SCHEMA_NAME}"
+  def dbName(scale: BigDecimal): String = {
+    if (scale == TINY_SCALE) {
+      TINY_DB_NAME
     } else {
-      s"sf${scale.asInstanceOf[Int]}"
+      s"sf$scale"
+    }
+  }
+
+  def scale(db: String): BigDecimal = {
+    if (db == TINY_DB_NAME) {
+      TINY_SCALE
+    } else {
+      SCALES(DATABASES indexOf db)
     }
   }
 
