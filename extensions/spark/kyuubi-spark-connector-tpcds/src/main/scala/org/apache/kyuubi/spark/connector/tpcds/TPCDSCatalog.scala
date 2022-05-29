@@ -21,15 +21,16 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
 import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table => SparkTable, TableCatalog, TableChange}
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
+class TPCDSCatalog extends TableCatalog with SupportsNamespaces with Logging {
 
-  val databases: Array[String] = TPCDSSchemaUtils.DATABASES
+  lazy val databases: Array[String] = TPCDSSchemaUtils.DATABASES diff excludeDatabases
 
   val tables: Array[String] = TPCDSSchemaUtils.BASE_TABLES.map(_.getName)
 
@@ -37,11 +38,18 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces {
 
   var _name: String = _
 
+  var excludeDatabases: Array[String] = _
+
   override def name: String = _name
 
   override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
-    this.options = options
     this._name = name
+    this.options = options
+    this.excludeDatabases = options.get("excludeDatabases")
+      .split(",").map(_.toLowerCase.trim).filter(_.nonEmpty)
+    (this.excludeDatabases diff TPCDSSchemaUtils.DATABASES).foreach { unknownDb =>
+      logWarning(s"Ignore unknown database $unknownDb in excluding list")
+    }
   }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = namespace match {

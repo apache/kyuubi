@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.spark.connector.tpcds.LocalSparkSession.withSparkSession
 
 class TPCDSCatalogSuite extends KyuubiFunSuite {
 
@@ -46,6 +48,20 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
     spark.sql("use tpcds")
     assert(spark.sql(s"SHOW DATABASES").collect().length == 11)
     assert(spark.sql(s"SHOW NAMESPACES IN tpcds.sf1").collect().length == 0)
+  }
+
+  test("exclude databases") {
+    Seq("sf1,sf10" -> 2, "sf1 , " -> 1, "none" -> 0).foreach {
+      case (excludeDatabases, excludeNum) =>
+        val sparkConf = new SparkConf().setMaster("local[*]")
+          .set("spark.ui.enabled", "false")
+          .set("spark.sql.catalogImplementation", "in-memory")
+          .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+          .set("spark.sql.catalog.tpcds.excludeDatabases", excludeDatabases)
+        withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+          assert(spark.sql(s"SHOW DATABASES IN tpcds").count == 11 - excludeNum)
+        }
+    }
   }
 
   test("tpcds.tiny count") {
