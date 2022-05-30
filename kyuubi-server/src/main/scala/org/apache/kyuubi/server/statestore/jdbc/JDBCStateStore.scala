@@ -33,7 +33,7 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.statestore.StateStore
-import org.apache.kyuubi.server.statestore.api.Metadata
+import org.apache.kyuubi.server.statestore.api.{Metadata, SessionType}
 import org.apache.kyuubi.server.statestore.jdbc.DatabaseType._
 
 class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
@@ -110,6 +110,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       s"""
          |INSERT INTO $METADATA_TABLE(
          |identifier,
+         |session_type,
          |real_user,
          |user_name,
          |ip_address,
@@ -123,7 +124,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |create_time,
          |engine_type
          |)
-         |VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         |VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          |""".stripMargin
 
     withConnection() { connection =>
@@ -131,6 +132,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
         connection,
         query,
         metadata.identifier,
+        metadata.sessionType.toString,
         metadata.realUser,
         metadata.username,
         metadata.ipAddress,
@@ -271,6 +273,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       val metadataList = ListBuffer[Metadata]()
       while (resultSet.next()) {
         val identifier = resultSet.getString("identifier")
+        val sessionType = SessionType.withName(resultSet.getString("session_type"))
         val realUser = resultSet.getString("real_user")
         val userName = resultSet.getString("user_name")
         val ipAddress = resultSet.getString("ip_address")
@@ -299,6 +302,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
         }
         val metadata = Metadata(
           identifier = identifier,
+          sessionType = sessionType,
           realUser = realUser,
           username = userName,
           ipAddress = ipAddress,
@@ -422,6 +426,7 @@ object JDBCStateStore {
   private val METADATA_TABLE = "metadata"
   private val METADATA_STATE_ONLY_COLUMNS = Seq(
     "identifier",
+    "session_type",
     "real_user",
     "user_name",
     "ip_address",
@@ -437,23 +442,9 @@ object JDBCStateStore {
     "engine_error",
     "end_time").mkString(",")
   private val METADATA_ALL_COLUMNS = Seq(
-    "identifier",
-    "real_user",
-    "user_name",
-    "ip_address",
-    "kyuubi_instance",
-    "state",
+    METADATA_STATE_ONLY_COLUMNS,
     "resource",
     "class_name",
-    "request_name",
     "request_conf",
-    "request_args",
-    "create_time",
-    "engine_type",
-    "engine_id",
-    "engine_name",
-    "engine_url",
-    "engine_state",
-    "engine_error",
-    "end_time").mkString(",")
+    "request_args").mkString(",")
 }

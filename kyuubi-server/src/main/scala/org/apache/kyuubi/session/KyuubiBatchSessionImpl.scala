@@ -29,7 +29,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.statestore.api.Metadata
+import org.apache.kyuubi.server.statestore.api.{Metadata, SessionType}
 
 class KyuubiBatchSessionImpl(
     protocol: TProtocolVersion,
@@ -74,6 +74,7 @@ class KyuubiBatchSessionImpl(
 
     val metaData = Metadata(
       identifier = handle.identifier.toString,
+      sessionType = SessionType.BATCH,
       // TODO: support real user
       realUser = user,
       username = user,

@@ -49,7 +49,7 @@ import org.apache.kyuubi.server.statestore.api.SessionType.SessionType
  */
 case class Metadata(
     identifier: String,
-    sessionType: SessionType,
+    sessionType: SessionType = null,
     realUser: String = null,
     username: String = null,
     ipAddress: String = null,
