@@ -342,7 +342,10 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     }
   }
 
-  def withResultSet[T](conn: Connection, sql: String, params: Any*)(f: ResultSet => T): T = {
+  private def withResultSet[T](
+      conn: Connection,
+      sql: String,
+      params: Any*)(f: ResultSet => T): T = {
     debug(s"executing sql $sql with result set")
     var statement: PreparedStatement = null
     var resultSet: ResultSet = null
