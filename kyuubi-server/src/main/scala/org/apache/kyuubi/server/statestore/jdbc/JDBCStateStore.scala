@@ -126,21 +126,24 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          |""".stripMargin
 
-    executeQuery(
-      query,
-      metadata.identifier,
-      metadata.realUser,
-      metadata.username,
-      metadata.ipAddress,
-      metadata.kyuubiInstance,
-      metadata.state,
-      metadata.resource,
-      metadata.className,
-      metadata.requestName,
-      valueAsString(metadata.requestConf),
-      valueAsString(metadata.requestArgs),
-      metadata.createTime,
-      Option(metadata.engineType).map(_.toUpperCase(Locale.ROOT)).orNull)
+    withConnection() { connection =>
+      execute(
+        connection,
+        query,
+        metadata.identifier,
+        metadata.realUser,
+        metadata.username,
+        metadata.ipAddress,
+        metadata.kyuubiInstance,
+        metadata.state,
+        metadata.resource,
+        metadata.className,
+        metadata.requestName,
+        valueAsString(metadata.requestConf),
+        valueAsString(metadata.requestArgs),
+        metadata.createTime,
+        Option(metadata.engineType).map(_.toUpperCase(Locale.ROOT)).orNull)
+    }
   }
 
   override def getMetadata(identifier: String, stateOnly: Boolean): Metadata = {
@@ -152,8 +155,9 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       }
 
     withConnection() { connection =>
-      val rs = execute(connection, query, identifier)
-      buildMetadata(rs, stateOnly).headOption.orNull
+      withResultSet(connection, query, identifier) { rs =>
+        buildMetadata(rs, stateOnly).headOption.orNull
+      }
     }
   }
 
@@ -195,8 +199,9 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     queryBuilder.append(" ORDER BY KEY_ID ")
     val query = databaseAdaptor.addLimitAndOffsetToQuery(queryBuilder.toString(), size, from)
     withConnection() { connection =>
-      val rs = execute(connection, query, params: _*)
-      buildMetadata(rs, stateOnly)
+      withResultSet(connection, query, params: _*) { rs =>
+        buildMetadata(rs, stateOnly)
+      }
     }
   }
 
@@ -240,18 +245,25 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     queryBuilder.append(" WHERE identifier = ? ")
     params += metadata.identifier
 
-    executeQuery(queryBuilder.toString(), params: _*)
+    withConnection() { connection =>
+      execute(connection, queryBuilder.toString(), params: _*)
+
+    }
   }
 
   override def cleanupMetadataByIdentifier(identifier: String): Unit = {
     val query = s"DELETE FROM $METADATA_TABLE WHERE identifier = ?"
-    executeQuery(query, identifier)
+    withConnection() { connection =>
+      execute(connection, query, identifier)
+    }
   }
 
   override def cleanupMetadataByAge(maxAge: Long): Unit = {
     val minEndTime = System.currentTimeMillis() - maxAge
     val query = s"DELETE FROM $METADATA_TABLE WHERE end_time IS NOT NULL AND end_time < ?"
-    executeQuery(query, minEndTime)
+    withConnection() { connection =>
+      execute(connection, query, minEndTime)
+    }
   }
 
   private def buildMetadata(resultSet: ResultSet, stateOnly: Boolean): Seq[Metadata] = {
@@ -313,31 +325,43 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     }
   }
 
-  private def execute(conn: Connection, sql: String, params: Any*): ResultSet = {
+  private def execute(conn: Connection, sql: String, params: Any*): Unit = {
     debug(s"executing sql $sql")
     var statement: PreparedStatement = null
-    var hasResult: Boolean = false
+    try {
+      statement = conn.prepareStatement(sql)
+      setStatementParams(statement, params: _*)
+      statement.execute()
+    } catch {
+      case e: SQLException =>
+        throw new KyuubiException(e.getMessage, e)
+    } finally {
+      if (statement != null) {
+        Utils.tryLogNonFatalError(statement.close())
+      }
+    }
+  }
+
+  def withResultSet[T](conn: Connection, sql: String, params: Any*)(f: ResultSet => T): T = {
+    debug(s"executing sql $sql with result set")
+    var statement: PreparedStatement = null
     var resultSet: ResultSet = null
     try {
       statement = conn.prepareStatement(sql)
       setStatementParams(statement, params: _*)
-      hasResult = statement.execute()
-      if (hasResult) {
-        statement.closeOnCompletion()
-        resultSet = statement.getResultSet
-      }
+      resultSet = statement.executeQuery()
+      f(resultSet)
     } catch {
       case e: SQLException =>
-        if (statement != null) {
-          Utils.tryLogNonFatalError(statement.close())
-        }
         throw new KyuubiException(e.getMessage, e)
     } finally {
-      if (!hasResult && statement != null) {
+      if (resultSet != null) {
+        Utils.tryLogNonFatalError(resultSet.close())
+      }
+      if (statement != null) {
         Utils.tryLogNonFatalError(statement.close())
       }
     }
-    resultSet
   }
 
   private def setStatementParams(statement: PreparedStatement, params: Any*): Unit = {
@@ -367,12 +391,6 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       if (connection != null) {
         connection.close()
       }
-    }
-  }
-
-  private def executeQuery(query: String, params: Any*): Unit = {
-    withConnection() { connection =>
-      execute(connection, query, params: _*)
     }
   }
 
