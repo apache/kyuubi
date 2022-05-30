@@ -37,6 +37,7 @@ class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
 object RuleAuthorization {
 
   def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
+    val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = OperationType(plan.nodeName)
     val (inputs, outputs) = PrivilegesBuilder.build(plan)
@@ -67,15 +68,15 @@ object RuleAuthorization {
           resource.getColumns.foreach { col =>
             val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
             val req = AccessRequest(cr, ugi, opType, request.accessType)
-            verify(req)
+            verify(req, auditHandler)
           }
-        case _ => verify(request)
+        case _ => verify(request, auditHandler)
       }
     }
   }
 
-  private def verify(req: AccessRequest): Unit = {
-    val ret = SparkRangerAdminPlugin.isAccessAllowed(req, null)
+  private def verify(req: AccessRequest, auditHandler: SparkRangerAuditHandler): Unit = {
+    val ret = SparkRangerAdminPlugin.isAccessAllowed(req, auditHandler)
     if (ret != null && !ret.getIsAllowed) {
       throw new RuntimeException(
         s"Permission denied: user [${req.getUser}] does not have [${req.getAccessType}] privilege" +
