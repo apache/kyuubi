@@ -30,7 +30,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class TPCDSCatalog extends TableCatalog with SupportsNamespaces with Logging {
 
-  lazy val databases: Array[String] = TPCDSSchemaUtils.DATABASES diff excludeDatabases
+  var databases: Array[String] = _
 
   val tables: Array[String] = TPCDSSchemaUtils.BASE_TABLES.map(_.getName)
 
@@ -38,18 +38,22 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces with Logging {
 
   var _name: String = _
 
-  var excludeDatabases: Array[String] = _
-
   override def name: String = _name
 
   override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
     this._name = name
     this.options = options
-    this.excludeDatabases = options.get("excludeDatabases")
+    val uncheckedExcludeDatabases = options.getOrDefault("excludeDatabases", "")
       .split(",").map(_.toLowerCase.trim).filter(_.nonEmpty)
-    (this.excludeDatabases diff TPCDSSchemaUtils.DATABASES).foreach { unknownDb =>
-      logWarning(s"Ignore unknown database $unknownDb in excluding list")
+    val invalidExcludeDatabases = uncheckedExcludeDatabases diff TPCDSSchemaUtils.DATABASES
+    if (invalidExcludeDatabases.nonEmpty) {
+      logWarning(
+        s"""Ignore unknown databases ${invalidExcludeDatabases.mkString(", ")} in excluding
+           |list. All known databases are ${TPCDSSchemaUtils.BASE_TABLES.mkString(", ")}
+           |""".stripMargin)
     }
+    val excludeDatabase = uncheckedExcludeDatabases diff invalidExcludeDatabases
+    this.databases = TPCDSSchemaUtils.DATABASES diff excludeDatabase
   }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = namespace match {
