@@ -57,4 +57,4 @@ jobs:
               fi
           done
       - name: JavaStyle with maven
-        run: build/mvn help:all-profiles -pl . | grep "Profile Id" | awk '{print $3}' | tr '\n' ',' | awk '{print "-P"$0}' | xarg build/mvn spotless:check
+        run: build/mvn help:all-profiles -pl . | grep "Profile Id" | awk '{print $3}' | tr '\n' ',' | awk '{print "-P"$0}' | xargs build/mvn spotless:check
