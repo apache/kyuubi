@@ -73,11 +73,11 @@ public class BatchRestClientTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testEmptyHostUrl() {
-      KyuubiRestClient.builder("")
-          .authSchema(KyuubiRestClient.AuthSchema.BASIC)
-          .username("test")
-          .password("test")
-          .build();
+    KyuubiRestClient.builder("")
+        .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+        .username("test")
+        .password("test")
+        .build();
   }
 
   @Test(expected = KyuubiRestException.class)
