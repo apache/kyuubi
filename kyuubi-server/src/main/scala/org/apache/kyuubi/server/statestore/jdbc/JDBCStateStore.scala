@@ -85,13 +85,13 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     }
     initSchemaStream.foreach { inputStream =>
       try {
-        val statements = new BufferedReader(new InputStreamReader(inputStream)).lines()
+        val ddlStatements = new BufferedReader(new InputStreamReader(inputStream)).lines()
           .collect(Collectors.joining("\n")).trim.split(";")
         withConnection() { connection =>
           Utils.tryLogNonFatalError {
-            statements.foreach { statement =>
-              execute(connection, statement)
-              info(s"Execute init schema query: $statement successfully.")
+            ddlStatements.foreach { ddlStatement =>
+              execute(connection, ddlStatement)
+              info(s"Execute init schema ddl: $ddlStatement successfully.")
             }
           }
         }
