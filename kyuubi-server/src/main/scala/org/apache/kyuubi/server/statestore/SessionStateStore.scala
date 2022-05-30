@@ -63,7 +63,15 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
   }
 
   def getBatchesByType(batchType: String, from: Int, size: Int): Seq[Batch] = {
-    _stateStore.getMetadataList(batchType, null, null, null, from, size, true).map(buildBatch)
+    _stateStore.getMetadataList(
+      SessionType.BATCH,
+      batchType,
+      null,
+      null,
+      null,
+      from,
+      size,
+      true).map(buildBatch)
   }
 
   def updateBatchMetadata(

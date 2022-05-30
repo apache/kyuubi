@@ -19,7 +19,8 @@ package org.apache.kyuubi.server.statestore
 
 import java.io.Closeable
 
-import org.apache.kyuubi.server.statestore.api._
+import org.apache.kyuubi.server.statestore.api.Metadata
+import org.apache.kyuubi.server.statestore.api.SessionType.SessionType
 
 trait StateStore extends Closeable {
 
@@ -38,6 +39,7 @@ trait StateStore extends Closeable {
 
   /**
    * Get the metadata list with filter conditions, offset and size.
+   * @param sessionType the session type.
    * @param engineType the engine type.
    * @param userName the user name.
    * @param state the state.
@@ -48,6 +50,7 @@ trait StateStore extends Closeable {
    * @return selected metadata list.
    */
   def getMetadataList(
+      sessionType: SessionType,
       engineType: String,
       userName: String,
       state: String,
