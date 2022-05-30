@@ -27,26 +27,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-spark-connector-tpch_2.12</artifactId>
-    <name>Kyuubi Spark TPC-H Connector</name>
+    <artifactId>kyuubi-spark-connector-common_2.12</artifactId>
+    <name>Kyuubi Spark Connector Common</name>
     <packaging>jar</packaging>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-spark-connector-common_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-spark-connector-common_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
@@ -65,15 +51,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>io.trino.tpch</groupId>
-            <artifactId>tpch</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -102,56 +79,6 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-runtime</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!--
-          Spark requires `commons-collections` and `commons-io` but got them from transitive
-          dependencies of `hadoop-client`. As we are using Hadoop Shaded Client, we need add
-          them explicitly. See more details at SPARK-33212.
-          -->
-        <dependency>
-            <groupId>commons-collections</groupId>
-            <artifactId>commons-collections</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -172,28 +99,6 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
                     <shadedArtifactAttached>false</shadedArtifactAttached>
-                    <artifactSet>
-                        <includes>
-                            <include>io.trino.tpch:tpch</include>
-                            <include>com.google.guava:guava</include>
-                        </includes>
-                    </artifactSet>
-                    <relocations>
-                        <relocation>
-                            <pattern>com.google.common</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.com.google.common</shadedPattern>
-                            <includes>
-                                <include>com.google.common.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>io.trino.tpch</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.io.trino.tpch</shadedPattern>
-                            <includes>
-                                <include>io.trino.tpch.**</include>
-                            </includes>
-                        </relocation>
-                    </relocations>
                 </configuration>
                 <executions>
                     <execution>
