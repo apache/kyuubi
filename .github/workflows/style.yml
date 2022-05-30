@@ -47,7 +47,7 @@ jobs:
           check-latest: false
       - name: Scalastyle with maven
         run: build/mvn help:all-profiles -pl . | grep "Profile Id" | awk '{print $3}' | tr '\n' ',' | awk '{print "-P"$0}' | xargs build/mvn scalastyle:check
-      - name: Upload scalastyle report
+      - name: Print scalastyle error report
         if: failure()
         run: >-
           for log in `find * -name "scalastyle-output.xml"`;
