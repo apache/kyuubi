@@ -3,6 +3,7 @@
 CREATE TABLE metadata(
     key_id bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'the auto increment key id',
     identifier varchar(36) NOT NULL COMMENT 'the identifier id, which is an UUID',
+    session_type varchar(128) NOT NULL COMMENT 'the session type, SQL or BATCH',
     real_user varchar(1024) NOT NULL COMMENT 'the real user',
     user_name varchar(1024) NOT NULL COMMENT 'the user name, might be a proxy user',
     ip_address varchar(512) COMMENT 'the client ip address',

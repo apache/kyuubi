@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server.statestore.api
 
+import org.apache.kyuubi.server.statestore.api.SessionType.SessionType
+
 /**
  * The metadata to store. It including three parts:
  * 1. session related metadata.
@@ -24,6 +26,7 @@ package org.apache.kyuubi.server.statestore.api
  * 3. engine related metadata.
  *
  * @param identifier the identifier id.
+ * @param sessionType the session type, SQL or BATCH.
  * @param realUser the real user.
  * @param username the final user name. If proxy user is used, it is the proxy user.
  *                 Otherwise, it is the real user.
@@ -46,6 +49,7 @@ package org.apache.kyuubi.server.statestore.api
  */
 case class Metadata(
     identifier: String,
+    sessionType: SessionType,
     realUser: String = null,
     username: String = null,
     ipAddress: String = null,
