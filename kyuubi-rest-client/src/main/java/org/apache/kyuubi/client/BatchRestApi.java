@@ -32,6 +32,8 @@ public class BatchRestApi {
 
   private static final String API_BASE_PATH = "batches";
 
+  private BatchRestApi() {}
+
   public BatchRestApi(KyuubiRestClient client) {
     this.client = client;
   }
