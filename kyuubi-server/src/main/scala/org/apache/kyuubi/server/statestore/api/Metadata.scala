@@ -24,7 +24,9 @@ package org.apache.kyuubi.server.statestore.api
  * 3. engine related metadata.
  *
  * @param identifier the identifier id.
- * @param username the user name.
+ * @param realUser the real user.
+ * @param username the final user name. If proxy user is used, it is the proxy user.
+ *                 Otherwise, it is the real user.
  * @param ipAddress the ip address.
  * @param kyuubiInstance the kyuubi instance.
  * @param state the state.

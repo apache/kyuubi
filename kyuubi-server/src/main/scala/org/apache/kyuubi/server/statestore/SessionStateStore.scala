@@ -48,10 +48,10 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
   }
 
   override def stop(): Unit = {
-    super.stop()
     ThreadUtils.shutdown(stateStoreCleaner)
     _stateStore.close()
     SessionStateStore.set(null)
+    super.stop()
   }
 
   def insertMetadata(metadata: Metadata): Unit = {
