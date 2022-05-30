@@ -38,8 +38,9 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
 
   override def afterAll(): Unit = {
     super.afterAll()
-    jdbcStateStore.getMetadataList(null, null, null, null, 0, Int.MaxValue, true).foreach { batch =>
-      jdbcStateStore.cleanupMetadataByIdentifier(batch.identifier)
+    jdbcStateStore.getMetadataList(null, null, null, null, null, 0, Int.MaxValue, true).foreach {
+      batch =>
+        jdbcStateStore.cleanupMetadataByIdentifier(batch.identifier)
     }
     jdbcStateStore.close()
   }
@@ -93,33 +94,95 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
     val batchState2 = batchStateOnlyMetadata.copy(identifier = UUID.randomUUID().toString)
     jdbcStateStore.insertMetadata(batchState2)
 
-    var batches = jdbcStateStore.getMetadataList("Spark", null, null, null, 0, 1, true)
+    var batches =
+      jdbcStateStore.getMetadataList(SessionType.BATCH, "Spark", null, null, null, 0, 1, true)
     assert(batches == Seq(batchStateOnlyMetadata))
 
-    batches = jdbcStateStore.getMetadataList("spark", "kyuubi", null, null, 0, Int.MaxValue, true)
+    batches = jdbcStateStore.getMetadataList(
+      SessionType.BATCH,
+      "spark",
+      "kyuubi",
+      null,
+      null,
+      0,
+      Int.MaxValue,
+      true)
     assert(batches == Seq(batchStateOnlyMetadata, batchState2))
 
     jdbcStateStore.cleanupMetadataByIdentifier(batchState2.identifier)
 
     batches =
-      jdbcStateStore.getMetadataList("SPARK", "kyuubi", "PENDING", null, 0, Int.MaxValue, true)
-    assert(batches == Seq(batchStateOnlyMetadata))
-
-    batches =
-      jdbcStateStore.getMetadataList("SPARK", "kyuubi", "RUNNING", null, 0, Int.MaxValue, true)
+      jdbcStateStore.getMetadataList(
+        SessionType.SQL,
+        "SPARK",
+        "kyuubi",
+        "PENDING",
+        null,
+        0,
+        Int.MaxValue,
+        true)
     assert(batches.isEmpty)
 
     batches =
-      jdbcStateStore.getMetadataList("SPARK", "no_kyuubi", "PENDING", null, 0, Int.MaxValue, true)
-    assert(batches.isEmpty)
-
-    batches = jdbcStateStore.getMetadataList("SPARK", null, "PENDING", null, 0, Int.MaxValue, true)
+      jdbcStateStore.getMetadataList(
+        SessionType.BATCH,
+        "SPARK",
+        "kyuubi",
+        "PENDING",
+        null,
+        0,
+        Int.MaxValue,
+        true)
     assert(batches == Seq(batchStateOnlyMetadata))
 
-    batches = jdbcStateStore.getMetadataList(null, null, null, null, 0, Int.MaxValue, true)
+    batches =
+      jdbcStateStore.getMetadataList(
+        SessionType.BATCH,
+        "SPARK",
+        "kyuubi",
+        "RUNNING",
+        null,
+        0,
+        Int.MaxValue,
+        true)
+    assert(batches.isEmpty)
+
+    batches =
+      jdbcStateStore.getMetadataList(
+        SessionType.BATCH,
+        "SPARK",
+        "no_kyuubi",
+        "PENDING",
+        null,
+        0,
+        Int.MaxValue,
+        true)
+    assert(batches.isEmpty)
+
+    batches = jdbcStateStore.getMetadataList(
+      SessionType.BATCH,
+      "SPARK",
+      null,
+      "PENDING",
+      null,
+      0,
+      Int.MaxValue,
+      true)
+    assert(batches == Seq(batchStateOnlyMetadata))
+
+    batches = jdbcStateStore.getMetadataList(
+      SessionType.BATCH,
+      null,
+      null,
+      null,
+      null,
+      0,
+      Int.MaxValue,
+      true)
     assert(batches == Seq(batchStateOnlyMetadata))
 
     var batchesToRecover = jdbcStateStore.getMetadataList(
+      SessionType.BATCH,
       null,
       null,
       "PENDING",
@@ -130,6 +193,7 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
     assert(batchesToRecover == Seq(batchMetadata))
 
     batchesToRecover = jdbcStateStore.getMetadataList(
+      SessionType.BATCH,
       null,
       null,
       "RUNNING",
@@ -155,6 +219,7 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
     assert(jdbcStateStore.getMetadata(batchId, true) == newBatchState)
 
     assert(jdbcStateStore.getMetadataList(
+      SessionType.BATCH,
       null,
       null,
       "PENDING",
@@ -164,6 +229,7 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
       false).isEmpty)
 
     assert(jdbcStateStore.getMetadataList(
+      SessionType.BATCH,
       null,
       null,
       "RUNNING",

@@ -21,17 +21,20 @@ import java.io.{BufferedReader, InputStream, InputStreamReader}
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException}
 import java.util.{Locale, Properties}
 import java.util.stream.Collectors
+
 import scala.collection.mutable.ListBuffer
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.google.common.annotations.VisibleForTesting
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.statestore.StateStore
-import org.apache.kyuubi.server.statestore.api.SessionType.SessionType
 import org.apache.kyuubi.server.statestore.api.{Metadata, SessionType}
+import org.apache.kyuubi.server.statestore.api.SessionType.SessionType
 import org.apache.kyuubi.server.statestore.jdbc.DatabaseType._
 
 class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
