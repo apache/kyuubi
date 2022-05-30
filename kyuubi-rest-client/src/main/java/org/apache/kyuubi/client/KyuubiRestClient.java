@@ -54,10 +54,14 @@ public class KyuubiRestClient implements AutoCloseable {
 
   @Override
   public void close() throws Exception {
-    httpClient.close();
+    if (httpClient != null) {
+      httpClient.close();
+    }
   }
 
-  public KyuubiRestClient(Builder builder) {
+  private KyuubiRestClient() {}
+
+  private KyuubiRestClient(Builder builder) {
     // Remove the trailing "/" from the hostUrl if present
     String hostUrl = builder.hostUrl.replaceAll("/$", "");
     String baseUrl = String.format("%s/%s", hostUrl, builder.version.getApiNamespace());
@@ -127,6 +131,10 @@ public class KyuubiRestClient implements AutoCloseable {
         throw new RuntimeException("Unsupported auth schema");
     }
     return header;
+  }
+
+  public static Builder builder(String hostUrl) {
+    return new Builder(hostUrl);
   }
 
   public static class Builder {
