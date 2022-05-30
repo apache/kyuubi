@@ -46,7 +46,7 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
   }
 
   test("supports namespaces") {
-    spark.sql("use tpcds")
+    spark.sql("USE tpcds")
     assert(spark.sql(s"SHOW DATABASES").collect().length == 11)
     assert(spark.sql(s"SHOW NAMESPACES IN tpcds.sf1").collect().length == 0)
   }
@@ -62,8 +62,9 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
         .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
         .set("spark.sql.catalog.tpcds.excludeDatabases", confValue)
       withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+        spark.sql("USE tpcds")
         checkAnswer(
-          spark.sql(s"SHOW DATABASES IN tpcds"),
+          spark.sql(s"SHOW DATABASES"),
           (TPCDSSchemaUtils.DATABASES diff expectedExcludeDatabases).map(Row(_)))
       }
     }
