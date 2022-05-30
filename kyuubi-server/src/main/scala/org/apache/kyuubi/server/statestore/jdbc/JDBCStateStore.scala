@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.statestore.jdbc
 
 import java.io.{BufferedReader, InputStream, InputStreamReader}
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException}
-import java.util.{Locale, Properties}
+import java.util.Locale
 import java.util.stream.Collectors
 
 import scala.collection.mutable.ListBuffer
@@ -31,11 +31,11 @@ import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.statestore.StateStore
 import org.apache.kyuubi.server.statestore.api.{Metadata, SessionType}
 import org.apache.kyuubi.server.statestore.api.SessionType.SessionType
 import org.apache.kyuubi.server.statestore.jdbc.DatabaseType._
+import org.apache.kyuubi.server.statestore.jdbc.JDBCStateStoreConf._
 
 class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   import JDBCStateStore._
@@ -55,11 +55,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     case CUSTOM => new GenericDatabaseDialect
   }
 
-  private val datasourceProperties = new Properties()
-  conf.getStateStoreJDBCDataSourceProperties.foreach { case (key, value) =>
-    datasourceProperties.put(key, value)
-  }
-
+  private val datasourceProperties = JDBCStateStoreConf.getStateStoreJDBCDataSourceProperties(conf)
   private val hikariConfig = new HikariConfig(datasourceProperties)
   hikariConfig.setDriverClassName(driverClass)
   hikariConfig.setJdbcUrl(conf.get(SERVER_STATE_STORE_JDBC_URL))

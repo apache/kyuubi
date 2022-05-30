@@ -24,16 +24,16 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.statestore.api.{Metadata, SessionType}
+import org.apache.kyuubi.server.statestore.jdbc.JDBCStateStoreConf._
 
 class JDBCStateStoreSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
     .set(SERVER_STATE_STORE_JDBC_DATABASE_TYPE, DatabaseType.DERBY.toString)
     .set(SERVER_STATE_STORE_JDBC_DATABASE_SCHEMA_INIT, true)
-    .set(s"$KYUUBI_STATE_STORE_JDBC_DATASOURCE_PREFIX.connectionTimeout", "3000")
-    .set(s"$KYUUBI_STATE_STORE_JDBC_DATASOURCE_PREFIX.maximumPoolSize", "99")
-    .set(s"$KYUUBI_STATE_STORE_JDBC_DATASOURCE_PREFIX.idleTimeout", "60000")
+    .set(s"$STATE_STORE_JDBC_DATASOURCE_PREFIX.connectionTimeout", "3000")
+    .set(s"$STATE_STORE_JDBC_DATASOURCE_PREFIX.maximumPoolSize", "99")
+    .set(s"$STATE_STORE_JDBC_DATASOURCE_PREFIX.idleTimeout", "60000")
   private val jdbcStateStore = new JDBCStateStore(conf)
 
   override def afterAll(): Unit = {
