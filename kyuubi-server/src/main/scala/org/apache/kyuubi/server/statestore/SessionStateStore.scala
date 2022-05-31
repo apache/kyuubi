@@ -40,7 +40,6 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     this.conf = conf
     _stateStore = StateStoreProvider.createStateStore(conf)
     super.initialize(conf)
-    SessionStateStore.set(this)
   }
 
   override def start(): Unit = {
@@ -51,7 +50,6 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
   override def stop(): Unit = {
     ThreadUtils.shutdown(stateStoreCleaner)
     _stateStore.close()
-    SessionStateStore.set(null)
     super.stop()
   }
 
@@ -139,17 +137,5 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
         interval,
         TimeUnit.MILLISECONDS)
     }
-  }
-}
-
-object SessionStateStore {
-  @volatile private var _sessionStateStore: SessionStateStore = null
-
-  private[kyuubi] def set(sessionStateStore: SessionStateStore): Unit = {
-    _sessionStateStore = sessionStateStore
-  }
-
-  def get(): SessionStateStore = {
-    _sessionStateStore
   }
 }

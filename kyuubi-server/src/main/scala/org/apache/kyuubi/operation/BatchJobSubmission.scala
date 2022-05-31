@@ -100,7 +100,7 @@ class BatchJobSubmission(
       batchId,
       getStatus.state,
       applicationStatus.getOrElse(Map.empty),
-      System.currentTimeMillis())
+      getStatus.lastModified)
   }
 
   override protected def runInternal(): Unit = {

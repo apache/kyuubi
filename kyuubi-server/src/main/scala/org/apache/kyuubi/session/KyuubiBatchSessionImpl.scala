@@ -90,7 +90,7 @@ class KyuubiBatchSessionImpl(
       requestName = batchRequest.getName,
       requestConf = normalizedConf,
       requestArgs = batchRequest.getArgs.asScala,
-      createTime = System.currentTimeMillis(),
+      createTime = createTime,
       engineType = batchRequest.getBatchType)
 
     sessionManager.insertMetadata(metaData)

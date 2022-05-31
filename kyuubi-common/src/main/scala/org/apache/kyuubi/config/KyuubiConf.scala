@@ -857,7 +857,7 @@ object KyuubiConf {
 
   val SERVER_STATE_STORE_CLASS: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.class")
-      .doc("Class name for server state store.")
+      .doc("Fully qualified class name for server state store.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("org.apache.kyuubi.server.statestore.jdbc.JDBCStateStore")

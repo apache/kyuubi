@@ -23,7 +23,7 @@ import org.apache.kyuubi.config.KyuubiConf
 object ClassUtils {
 
   /**
-   * Create an object instance with given className and [[KyuubiConf]].
+   * Create an object instance with given class name and [[KyuubiConf]].
    * @param className the class name
    * @param expected the expected class type
    * @param conf configuration ([[KyuubiConf]])
