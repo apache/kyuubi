@@ -14,10 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.kyuubi.ctl
 
-import org.apache.kyuubi.KyuubiException
+import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
-private[kyuubi] case class ServiceControlCliException(exitCode: Int)
-  extends KyuubiException(s"Kyuubi service control cli exited with $exitCode")
+object Render {
+
+  private[ctl] def renderServiceNodesInfo(
+      title: String,
+      serviceNodeInfo: Seq[ServiceNodeInfo],
+      verbose: Boolean): String = {
+    val header = Seq("Namespace", "Host", "Port", "Version")
+    val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
+      Seq(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
+    }
+    Tabulator.format(title, header, rows, verbose)
+  }
+}
