@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
+import javax.security.sasl.AuthenticationException;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
@@ -74,7 +74,7 @@ public final class AuthUtil {
                       Base64.getEncoder().encode(outToken), StandardCharsets.US_ASCII);
                 } catch (GSSException e) {
                   LOG.error("Error: ", e);
-                  throw new AuthenticationException(e);
+                  throw new AuthenticationException("Failed to generate token", e);
                 }
               }
             });
