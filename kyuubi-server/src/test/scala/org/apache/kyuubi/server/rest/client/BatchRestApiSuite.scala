@@ -62,7 +62,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
     assert(batch.getBatchType === "SPARK")
 
     // get batch log
-    var log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
+    val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
     assert(log.getRowCount == 1)
 
     // delete batch
@@ -121,7 +121,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
     assert(batch.getBatchType === "SPARK")
 
     // get batch log
-    var log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
+    val log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
     assert(log.getRowCount == 1)
 
     // delete batch
