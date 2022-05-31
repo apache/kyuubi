@@ -141,22 +141,24 @@ class SparkProcessBuilder(
 
   override def shortName: String = "spark"
 
-  protected lazy val defaultMaster: Option[String] = {
+  protected lazy val defaultConf: Map[String, String] = {
     val confDir = env.getOrElse(SPARK_CONF_DIR, s"$sparkHome${File.separator}conf")
-    val defaults =
-      try {
-        val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
-        if (confFile.exists()) {
-          Utils.getPropertiesFromFile(Some(confFile))
-        } else {
-          Map.empty[String, String]
-        }
-      } catch {
-        case _: Exception =>
-          warn(s"Failed to load spark configurations from $confDir")
-          Map.empty[String, String]
+    try {
+      val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
+      if (confFile.exists()) {
+        Utils.getPropertiesFromFile(Some(confFile))
+      } else {
+        Map.empty[String, String]
       }
-    defaults.get(MASTER_KEY)
+    } catch {
+      case _: Exception =>
+        warn(s"Failed to load spark configurations from $confDir")
+        Map.empty[String, String]
+    }
+  }
+
+  protected lazy val defaultMaster: Option[String] = {
+    defaultConf.get(MASTER_KEY)
   }
 
   override def clusterManager(): Option[String] = {
@@ -168,6 +170,8 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
+  final val DEPLOY_MODE_KEY = "spark.submit.deployMode"
+  final val YARN_SUBMIT_WAIT_APP_COMPLETION_KEY = "spark.yarn.submit.waitAppCompletion"
 
   final private[spark] val CONF = "--conf"
   final private[spark] val CLASS = "--class"

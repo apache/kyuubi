@@ -21,17 +21,20 @@ import java.util.EnumSet
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.servlet.DispatcherType
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
 import org.eclipse.jetty.servlet.FilterHolder
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
+import org.apache.kyuubi.server.KyuubiRestFrontendService.getConnectionUrl
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
+import org.apache.kyuubi.session.KyuubiSessionManager
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -45,6 +48,11 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private val isStarted = new AtomicBoolean(false)
 
   private def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
+
+  private def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
+
+  @VisibleForTesting
+  private[kyuubi] var batchSessionsRecoveryThread: Thread = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
@@ -71,10 +79,24 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     server.addRedirectHandler("/docs", "/swagger")
   }
 
+  @VisibleForTesting
+  private[kyuubi] def recoverBatchSessions(): Unit = {
+    val batchSessionsToRecover = sessionManager.getBatchSessionsToRecover(getConnectionUrl)
+    batchSessionsRecoveryThread = new Thread(
+      () => {
+        batchSessionsToRecover.foreach { batchSession =>
+          Utils.tryLogNonFatalError(sessionManager.openBatchSession(batchSession))
+        }
+      },
+      "BatchSessionsRecoveryThread")
+    batchSessionsRecoveryThread.start()
+  }
+
   override def start(): Unit = synchronized {
     if (!isStarted.get) {
       try {
         server.start()
+        recoverBatchSessions()
         isStarted.set(true)
         info(s"$getName has started at ${server.getServerUri}")
         startInternal()
@@ -89,6 +111,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   override def stop(): Unit = synchronized {
     if (isStarted.getAndSet(false)) {
       server.stop()
+      if (batchSessionsRecoveryThread != null) {
+        batchSessionsRecoveryThread.interrupt()
+        batchSessionsRecoveryThread = null
+      }
     }
     super.stop()
   }

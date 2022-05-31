@@ -40,11 +40,16 @@ class KyuubiBatchSessionImpl(
     conf: Map[String, String],
     override val sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
-    batchRequest: BatchRequest)
+    batchRequest: BatchRequest,
+    recoveryMetadata: Option[SessionMetadata] = None)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
   override val sessionType: SessionType = SessionType.BATCH
 
-  override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
+  override val handle: SessionHandle = recoveryMetadata.map { metadata =>
+    sessionManager.getBatchSessionHandle(metadata.identifier, protocol)
+  }.getOrElse(sessionManager.newBatchSessionHandle(protocol))
+
+  override def createTime: Long = recoveryMetadata.map(_.createTime).getOrElse(super.createTime)
 
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] = {
@@ -60,7 +65,8 @@ class KyuubiBatchSessionImpl(
       batchRequest.getResource,
       batchRequest.getClassName,
       normalizedConf,
-      batchRequest.getArgs.asScala)
+      batchRequest.getArgs.asScala,
+      recoveryMetadata)
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
@@ -75,25 +81,27 @@ class KyuubiBatchSessionImpl(
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
 
-    val metaData = SessionMetadata(
-      identifier = handle.identifier.toString,
-      sessionType = sessionType,
-      // TODO: support real user
-      realUser = user,
-      username = user,
-      ipAddress = ipAddress,
-      // TODO: support to transfer fe connection url when opening session
-      kyuubiInstance = KyuubiRestFrontendService.getConnectionUrl,
-      state = OperationState.PENDING.toString,
-      resource = batchRequest.getResource,
-      className = batchRequest.getClassName,
-      requestName = batchRequest.getName,
-      requestConf = normalizedConf,
-      requestArgs = batchRequest.getArgs.asScala,
-      createTime = createTime,
-      engineType = batchRequest.getBatchType)
+    if (recoveryMetadata.isEmpty) {
+      val metaData = SessionMetadata(
+        identifier = handle.identifier.toString,
+        sessionType = sessionType,
+        // TODO: support real user
+        realUser = user,
+        username = user,
+        ipAddress = ipAddress,
+        // TODO: support to transfer fe connection url when opening session
+        kyuubiInstance = KyuubiRestFrontendService.getConnectionUrl,
+        state = OperationState.PENDING.toString,
+        resource = batchRequest.getResource,
+        className = batchRequest.getClassName,
+        requestName = batchRequest.getName,
+        requestConf = normalizedConf,
+        requestArgs = batchRequest.getArgs.asScala,
+        createTime = createTime,
+        engineType = batchRequest.getBatchType)
 
-    sessionManager.insertMetadata(metaData)
+      sessionManager.insertMetadata(metaData)
+    }
 
     // we should call super.open before running batch job submission operation
     super.open()

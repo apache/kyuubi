@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
+import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
@@ -36,6 +37,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -58,7 +60,8 @@ class BatchJobSubmission(
     resource: String,
     className: String,
     batchConf: Map[String, String],
-    batchArgs: Seq[String])
+    batchArgs: Seq[String],
+    recoveryMetadata: Option[SessionMetadata])
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
 
   override def statement: String = "BATCH_JOB_SUBMISSION"
@@ -76,7 +79,8 @@ class BatchJobSubmission(
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
 
-  private val builder: ProcBuilder = {
+  @VisibleForTesting
+  private[kyuubi] val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
       case Some("SPARK") =>
         new SparkBatchProcessBuilder(
@@ -143,7 +147,21 @@ class BatchJobSubmission(
     val asyncOperation: Runnable = () => {
       setStateIfNotCanceled(OperationState.RUNNING)
       try {
-        submitBatchJob()
+        // If the batch submission is in recovery mode, try to get submitted applicationId
+        // from metadata or resource manager application status. If got, monitor the submitted
+        // application. Otherwise, resubmit the batch job.
+        val submittedAppId = recoveryMetadata.map { metadata =>
+          info(s"The batch job submission is in recovery mode with metadata $metadata")
+          Option(metadata.engineId).filter(_.nonEmpty).orElse {
+            currentApplicationState.flatMap(_.get(ApplicationOperation.APP_ID_KEY))
+          }
+        }.getOrElse(None)
+
+        submittedAppId match {
+          case Some(appId) => monitorSubmittedApp(appId)
+          case None => submitBatchJob()
+        }
+
         setStateIfNotCanceled(OperationState.FINISHED)
       } catch {
         onError()
@@ -167,6 +185,11 @@ class BatchJobSubmission(
   private def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
     applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
       s.contains("KILLED") || s.contains("FAILED"))
+  }
+
+  private def applicationTerminated(applicationStatus: Option[Map[String, String]]): Boolean = {
+    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
+      s.contains("KILLED") || s.contains("FAILED") || s.contains("FINISHED"))
   }
 
   private def submitBatchJob(): Unit = {
@@ -195,6 +218,36 @@ class BatchJobSubmission(
       }
     } finally {
       builder.close()
+    }
+  }
+
+  private def monitorSubmittedApp(appId: String): Unit = {
+    info(s"Monitoring submitted $batchType batch application: $appId")
+    applicationStatus = currentApplicationState
+    if (applicationStatus.isEmpty) {
+      info("The batch application not found, assume that it has finished.")
+    } else if (applicationFailed(applicationStatus)) {
+      throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
+    } else {
+      val waitSubmittedAppCompletion = builder match {
+        case sbp: SparkBatchProcessBuilder => sbp.waitAppCompletion()
+        case _ => false
+      }
+
+      if (!waitSubmittedAppCompletion) {
+        info(s"The batch application has been submitted successfully:" +
+          applicationStatus.get.mkString(","))
+      } else {
+        // TODO: add limit for max batch job submission lifetime
+        while (applicationStatus.isDefined && !applicationTerminated(applicationStatus)) {
+          Thread.sleep(applicationCheckInterval)
+          applicationStatus = currentApplicationState
+        }
+
+        if (applicationFailed(applicationStatus)) {
+          throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
+        }
+      }
     }
   }
 

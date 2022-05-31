@@ -32,12 +32,16 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.engine.spark.{SparkBatchProcessBuilder, SparkProcessBuilder}
+import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionType}
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+  private val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
 
   override def afterEach(): Unit = {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -52,7 +56,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("open batch session") {
-    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val appName = "spark-batch-submission"
     val requestObj = new BatchRequest(
       "spark",
@@ -322,8 +325,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("negative request") {
-    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
-
     // open batch session
     Seq(
       (
@@ -366,5 +367,96 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(404 == response.getStatus)
       assert(response.readEntity(classOf[String]).contains(msg))
     }
+  }
+
+  test("batch sessions recovery") {
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val kyuubiInstance = fe.connectionUrl
+
+    assert(sessionManager.getOpenSessionCount == 0)
+    val batchId1 = UUID.randomUUID().toString
+    val batchId2 = UUID.randomUUID().toString
+
+    val batchMetadata = SessionMetadata(
+      identifier = batchId1,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      ipAddress = "localhost",
+      kyuubiInstance = kyuubiInstance,
+      state = OperationState.PENDING.toString,
+      resource = sparkProcessBuilder.mainResource.get,
+      className = sparkProcessBuilder.mainClass,
+      requestName = "PENDING_RECOVERY",
+      requestConf = Map(
+        "spark.master" -> "local",
+        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "3000",
+        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
+      requestArgs = Seq.empty,
+      createTime = System.currentTimeMillis(),
+      engineType = "SPARK")
+
+    val batchMetadata2 = batchMetadata.copy(
+      identifier = batchId2,
+      requestName = "RUNNING_RECOVERY")
+    sessionManager.insertMetadata(batchMetadata)
+    sessionManager.insertMetadata(batchMetadata2)
+
+    assert(sessionManager.getBatchFromStateStore(batchId1).getState.equals("PENDING"))
+    assert(sessionManager.getBatchFromStateStore(batchId2).getState.equals("PENDING"))
+
+    val sparkBatchProcessBuilder = new SparkBatchProcessBuilder(
+      "kyuubi",
+      conf,
+      batchId2,
+      "RUNNING_RECOVERY",
+      sparkProcessBuilder.mainResource,
+      sparkProcessBuilder.mainClass,
+      batchMetadata2.requestConf,
+      batchMetadata2.requestArgs,
+      None)
+    sparkBatchProcessBuilder.start
+
+    var applicationStatus: Option[Map[String, String]] = None
+    eventually(timeout(5.seconds)) {
+      applicationStatus = sessionManager.applicationManager.getApplicationInfo(None, batchId2)
+      assert(applicationStatus.isDefined)
+    }
+
+    sessionManager.updateBatchMetadata(
+      batchId2,
+      OperationState.RUNNING,
+      applicationStatus.get)
+
+    val restFe = fe.asInstanceOf[KyuubiRestFrontendService]
+    restFe.recoverBatchSessions()
+    restFe.batchSessionsRecoveryThread.join()
+    assert(sessionManager.getOpenSessionCount == 2)
+
+    val sessionHandle1 =
+      sessionManager.getBatchSessionHandle(batchId1, BatchesResource.REST_BATCH_PROTOCOL)
+    val sessionHandle2 =
+      sessionManager.getBatchSessionHandle(batchId2, BatchesResource.REST_BATCH_PROTOCOL)
+    val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSessionImpl]
+    val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSessionImpl]
+    assert(session1.createTime === batchMetadata.createTime)
+    assert(session2.createTime === batchMetadata2.createTime)
+
+    eventually(timeout(5.seconds)) {
+      assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING)
+      assert(session1.batchJobSubmissionOp.builder.processLaunched)
+
+      assert(session2.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING)
+      assert(!session2.batchJobSubmissionOp.builder.processLaunched)
+    }
+
+    assert(sessionManager.getBatchesFromStateStore(
+      "SPARK",
+      null,
+      null,
+      0,
+      0,
+      0,
+      Int.MaxValue).size == 2)
   }
 }
