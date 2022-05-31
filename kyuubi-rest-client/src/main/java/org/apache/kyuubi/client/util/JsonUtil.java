@@ -24,7 +24,7 @@ public final class JsonUtil {
 
   private static ObjectMapper MAPPER = new ObjectMapper();
 
-  public static String toJson(Object object) throws KyuubiRestException {
+  public static String toJson(Object object) {
     try {
       return MAPPER.writeValueAsString(object);
     } catch (Exception e) {
@@ -32,7 +32,7 @@ public final class JsonUtil {
     }
   }
 
-  public static <T> T toObject(String json, Class<T> clazz) throws KyuubiRestException {
+  public static <T> T toObject(String json, Class<T> clazz) {
     try {
       return MAPPER.readValue(json, clazz);
     } catch (Exception e) {
