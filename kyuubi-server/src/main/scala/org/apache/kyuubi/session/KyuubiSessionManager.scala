@@ -19,11 +19,14 @@ package org.apache.kyuubi.session
 
 import java.util.UUID
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
+
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
@@ -32,9 +35,10 @@ import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.KyuubiOperationManager
+import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.server.api.v1.BatchesResource
 import org.apache.kyuubi.server.statestore.SessionStateStore
 import org.apache.kyuubi.server.statestore.api.Metadata
 
@@ -198,8 +202,82 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
     }
-    // TODO: support to recover batch sessions with session state store
+    recoverBatchSessions()
     super.start()
+  }
+
+  private def recoverBatchSessions(): Unit = {
+    val restHost = conf.get(FRONTEND_REST_BIND_HOST)
+      .getOrElse(Utils.findLocalInetAddress.getHostAddress)
+    val restPort = conf.get(FRONTEND_REST_BIND_PORT)
+    val kyuubiInstance = s"$restHost:$restPort"
+    val recoverPerBatch = conf.get(SERVER_STATE_STORE_RECOVERY_PER_BATCH)
+
+    val batchSessions = ListBuffer[KyuubiBatchSessionImpl]()
+    Seq(OperationState.PENDING, OperationState.RUNNING).foreach { stateToRecover =>
+      var offset = 0
+      var lastRecoveryNum = Int.MaxValue
+
+      while (lastRecoveryNum < recoverPerBatch) {
+        val metadataList = sessionStateStore.getBatchesRecoveryMetadata(
+          stateToRecover.toString,
+          kyuubiInstance,
+          offset,
+          recoverPerBatch)
+        metadataList.foreach { metadata =>
+          val batchRequest = new BatchRequest(
+            metadata.engineType,
+            metadata.resource,
+            metadata.className,
+            metadata.requestName,
+            metadata.requestConf.asJava,
+            metadata.requestArgs.asJava)
+
+          val batchSession = new KyuubiBatchSessionImpl(
+            BatchesResource.REST_BATCH_PROTOCOL,
+            metadata.username,
+            "",
+            metadata.ipAddress,
+            metadata.requestConf,
+            this,
+            conf.getUserDefaults(metadata.username),
+            batchRequest,
+            Some(metadata))
+
+          batchSessions += batchSession
+        }
+
+        lastRecoveryNum = metadataList.size
+        offset += lastRecoveryNum
+      }
+    }
+
+    batchSessions.foreach { batchSession =>
+      val user = batchSession.user
+      val ipAddress = batchSession.ipAddress
+      try {
+        val handle = batchSession.handle
+        batchSession.open()
+        setSession(handle, batchSession)
+        info(s"$user's batch session with $handle is recovered, current opening sessions" +
+          s" $getOpenSessionCount")
+        handle
+      } catch {
+        case e: Exception =>
+          try {
+            batchSession.close()
+          } catch {
+            case t: Throwable =>
+              warn(s"Error closing batch session for $user client ip: $ipAddress", t)
+          }
+          MetricsSystem.tracing { ms =>
+            ms.incCount(CONN_FAIL)
+            ms.incCount(MetricRegistry.name(CONN_FAIL, user))
+          }
+          error(s"Error recovering batch session for $user client ip $ipAddress," +
+            s" due to ${e.getMessage}")
+      }
+    }
   }
 
   override protected def isServer: Boolean = true

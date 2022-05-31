@@ -31,6 +31,7 @@ import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.server.statestore.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -41,7 +42,8 @@ class BatchJobSubmission(
     resource: String,
     className: String,
     batchConf: Map[String, String],
-    batchArgs: Seq[String])
+    batchArgs: Seq[String],
+    recoveryMetadata: Option[Metadata])
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
 
   override def statement: String = "BATCH_JOB_SUBMISSION"
@@ -107,6 +109,14 @@ class BatchJobSubmission(
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
       try {
+        recoveryMetadata.map { metadata =>
+          Option(metadata.engineId).filter(_.nonEmpty).orElse {
+            currentApplicationState.flatMap(_.get(ApplicationOperation.APP_ID_KEY))
+          } match {
+            case Some(appId) => monitorSubmittedApp(appId)
+            case _ => submitBatchJob()
+          }
+        }.getOrElse(submitBatchJob())
         submitBatchJob()
         setState(OperationState.FINISHED)
       } catch onError()
@@ -151,6 +161,18 @@ class BatchJobSubmission(
       }
     } finally {
       builder.close()
+    }
+  }
+
+  private def monitorSubmittedApp(appId: String): Unit = {
+    info(s"Monitoring $batchType batch application: $appId")
+    applicationStatus = currentApplicationState
+    if (applicationStatus.isEmpty) {
+      info("The batch application not found, assume that it has finished.")
+    } else {
+      if (applicationFailed(applicationStatus)) {
+        throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
+      }
     }
   }
 

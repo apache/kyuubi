@@ -360,6 +360,7 @@ kyuubi.server.state.store.jdbc.password||The password for server jdbc state stor
 kyuubi.server.state.store.jdbc.url|jdbc:derby:memory:kyuubi_state_store_db;create=true|The jdbc url for server jdbc state store. By defaults, it is a DERBY in-memory database url, and the state information is not shared across kyuubi instances. To enable multiple kyuubi instances high available, please specify a production jdbc url.|string|1.6.0
 kyuubi.server.state.store.jdbc.user||The username for server jdbc state store.|string|1.6.0
 kyuubi.server.state.store.max.age|PT72H|The maximum age of state info in state store.|duration|1.6.0
+kyuubi.server.state.store.recovery.per.batch|100|The number to recover from state store per batch.|int|1.6.0
 
 
 ### Session

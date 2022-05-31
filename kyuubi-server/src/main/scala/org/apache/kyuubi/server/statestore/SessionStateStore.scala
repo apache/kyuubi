@@ -75,6 +75,22 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
       true).map(buildBatch)
   }
 
+  def getBatchesRecoveryMetadata(
+      state: String,
+      kyuubiInstance: String,
+      from: Int,
+      size: Int): Seq[Metadata] = {
+    _stateStore.getMetadataList(
+      SessionType.BATCH,
+      null,
+      null,
+      state,
+      kyuubiInstance,
+      from,
+      size,
+      false)
+  }
+
   def updateBatchMetadata(
       batchId: String,
       state: String,

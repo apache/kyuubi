@@ -884,6 +884,13 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
+  val SERVER_STATE_STORE_RECOVERY_PER_BATCH: ConfigEntry[Int] =
+    buildConf("kyuubi.server.state.store.recovery.per.batch")
+      .doc("The number to recover from state store per batch.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(100)
+
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")
       .doc("Size of the wait queue for the operation execution thread pool in SQL engine" +
