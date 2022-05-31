@@ -22,8 +22,8 @@ import scopt.OParser
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.ctl.cmd._
 
-class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
-  extends ServiceControlCliArgumentsParser with Logging {
+class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
+  extends ControlCliArgumentsParser with Logging {
 
   var cliArgs: CliConfig = null
 

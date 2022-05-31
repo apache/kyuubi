@@ -20,7 +20,7 @@ package org.apache.kyuubi.ctl
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 
-class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
+class ControlCliArgumentsSuite extends KyuubiFunSuite {
   val zkQuorum = "localhost:2181"
   val namespace = "kyuubi"
   val user = "kyuubi"
@@ -34,7 +34,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       val thread = new Thread {
         override def run(): Unit =
           try {
-            new ServiceControlCliArguments(args)
+            new ControlCliArguments(args)
           } catch {
             case e: Exception =>
               error(e)
@@ -54,7 +54,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       val thread = new Thread {
         override def run(): Unit =
           try {
-            new ServiceControlCliArguments(args) {
+            new ControlCliArguments(args) {
               override private[kyuubi] lazy val effectSetup = new KyuubiOEffectSetup {
                 // nothing to do, to handle out stream.
                 override def terminate(exitState: Either[String, Unit]): Unit = ()
@@ -90,7 +90,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
           port,
           "--version",
           KYUUBI_VERSION)
-        val opArgs = new ServiceControlCliArguments(args)
+        val opArgs = new ControlCliArguments(args)
         assert(opArgs.cliArgs.action.toString.equalsIgnoreCase(op))
         assert(opArgs.cliArgs.service.toString.equalsIgnoreCase(service))
         assert(opArgs.cliArgs.commonOpts.zkQuorum == zkQuorum)
@@ -119,7 +119,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
         port,
         "--version",
         KYUUBI_VERSION)
-      val opArgs = new ServiceControlCliArguments(args)
+      val opArgs = new ControlCliArguments(args)
       assert(opArgs.cliArgs.action.toString.equalsIgnoreCase(op))
       assert(opArgs.cliArgs.service.toString.equalsIgnoreCase(service))
       assert(opArgs.cliArgs.commonOpts.zkQuorum == zkQuorum)
@@ -166,7 +166,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       zkQuorum,
       "--namespace",
       namespace)
-    val opArgs = new ServiceControlCliArguments(args2)
+    val opArgs = new ControlCliArguments(args2)
     assert(opArgs.cliArgs.action == ServiceControlAction.LIST)
   }
 
@@ -218,7 +218,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
         host,
         "--port",
         port)
-      val opArgs6 = new ServiceControlCliArguments(args5)
+      val opArgs6 = new ControlCliArguments(args5)
       assert(opArgs6.cliArgs.action.toString.equalsIgnoreCase(op))
     }
   }
@@ -281,7 +281,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
         zkQuorum,
         "--namespace",
         newNamespace)
-      val opArgs2 = new ServiceControlCliArguments(args2)
+      val opArgs2 = new ControlCliArguments(args2)
       assert(opArgs2.cliArgs.action.toString.equalsIgnoreCase(op))
 
       val args4 = Array(
@@ -301,7 +301,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       "list",
       "--zk-quorum",
       zkQuorum)
-    val opArgs = new ServiceControlCliArguments(args)
+    val opArgs = new ControlCliArguments(args)
     assert(opArgs.cliArgs.commonOpts.namespace == namespace)
     assert(opArgs.cliArgs.commonOpts.version == KYUUBI_VERSION)
   }
@@ -324,7 +324,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
           port,
           "-v",
           KYUUBI_VERSION)
-        val opArgs = new ServiceControlCliArguments(args)
+        val opArgs = new ControlCliArguments(args)
         assert(opArgs.cliArgs.action.toString.equalsIgnoreCase(op))
         assert(opArgs.cliArgs.service.toString.equalsIgnoreCase(service))
         assert(opArgs.cliArgs.commonOpts.zkQuorum == zkQuorum)
@@ -342,7 +342,7 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       "-zk",
       zkQuorum,
       "-b")
-    val opArgs3 = new ServiceControlCliArguments(args2)
+    val opArgs3 = new ControlCliArguments(args2)
     assert(opArgs3.cliArgs.commonOpts.verbose)
   }
 

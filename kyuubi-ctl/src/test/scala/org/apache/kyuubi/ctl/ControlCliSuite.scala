@@ -49,7 +49,7 @@ trait TestPrematureExit {
   private[kyuubi] def testPrematureExit(
       input: Array[String],
       searchString: String,
-      mainObject: CommandLineUtils = ServiceControlCli): Unit = {
+      mainObject: CommandLineUtils = ControlCli): Unit = {
     val printStream = new BufferPrintStream()
     mainObject.printStream = printStream
 
@@ -84,7 +84,7 @@ trait TestPrematureExit {
   }
 }
 
-class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
+class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   import DiscoveryClientProvider._
 
   val zkServer = new EmbeddedZookeeper()
@@ -94,7 +94,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   val host = "localhost"
   val port = "10000"
   val user = "kyuubi"
-  val ctl = new ServiceControlCli()
+  val ctl = new ControlCli()
   val counter = new AtomicInteger(0)
 
   override def beforeAll(): Unit = {
@@ -263,7 +263,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       zkServer.getConnectString,
       "--namespace",
       namespace)
-    val scArgs1 = new ServiceControlCliArguments(arg1)
+    val scArgs1 = new ControlCliArguments(arg1)
     assert(scArgs1.command.getZkNamespace() == s"/$namespace")
 
     val arg2 = Array(
@@ -275,7 +275,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       namespace,
       "--user",
       user)
-    val scArgs2 = new ServiceControlCliArguments(arg2)
+    val scArgs2 = new ControlCliArguments(arg2)
     assert(scArgs2.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
   }
@@ -415,7 +415,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       namespace,
       "--user",
       user)
-    val scArgs1 = new ServiceControlCliArguments(arg1)
+    val scArgs1 = new ControlCliArguments(arg1)
     assert(scArgs1.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
@@ -430,7 +430,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-type",
       "FLINK_SQL")
-    val scArgs2 = new ServiceControlCliArguments(arg2)
+    val scArgs2 = new ControlCliArguments(arg2)
     assert(scArgs2.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_FLINK_SQL/$user/default")
 
@@ -445,7 +445,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-type",
       "TRINO")
-    val scArgs3 = new ServiceControlCliArguments(arg3)
+    val scArgs3 = new ControlCliArguments(arg3)
     assert(scArgs3.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_TRINO/$user/default")
 
@@ -462,7 +462,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "SPARK_SQL",
       "--engine-subdomain",
       "sub_1")
-    val scArgs4 = new ServiceControlCliArguments(arg4)
+    val scArgs4 = new ControlCliArguments(arg4)
     assert(scArgs4.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/sub_1")
 
@@ -481,7 +481,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "SPARK_SQL",
       "--engine-subdomain",
       "sub_1")
-    val scArgs5 = new ServiceControlCliArguments(arg5)
+    val scArgs5 = new ControlCliArguments(arg5)
     assert(scArgs5.command.getZkNamespace() ==
       s"/${namespace}_1.5.0_USER_SPARK_SQL/$user/sub_1")
   }
@@ -496,7 +496,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       namespace,
       "--user",
       user)
-    val scArgs1 = new ServiceControlCliArguments(arg1)
+    val scArgs1 = new ControlCliArguments(arg1)
     assert(scArgs1.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
@@ -511,7 +511,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-share-level",
       "CONNECTION")
-    val scArgs2 = new ServiceControlCliArguments(arg2)
+    val scArgs2 = new ControlCliArguments(arg2)
     assert(scArgs2.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL/$user/default")
 
@@ -526,7 +526,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-share-level",
       "USER")
-    val scArgs3 = new ServiceControlCliArguments(arg3)
+    val scArgs3 = new ControlCliArguments(arg3)
     assert(scArgs3.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
@@ -541,7 +541,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-share-level",
       "GROUP")
-    val scArgs4 = new ServiceControlCliArguments(arg4)
+    val scArgs4 = new ControlCliArguments(arg4)
     assert(scArgs4.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_GROUP_SPARK_SQL/$user/default")
 
@@ -556,7 +556,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       user,
       "--engine-share-level",
       "SERVER")
-    val scArgs5 = new ServiceControlCliArguments(arg5)
+    val scArgs5 = new ControlCliArguments(arg5)
     assert(scArgs5.command.getZkNamespace() ==
       s"/${namespace}_${KYUUBI_VERSION}_SERVER_SPARK_SQL/$user/default")
   }

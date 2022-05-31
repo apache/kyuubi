@@ -22,7 +22,7 @@ import org.apache.kyuubi.Logging
 /**
  * Main gateway of launching a Kyuubi Ctl action.
  */
-private[kyuubi] class ServiceControlCli extends Logging {
+private[kyuubi] class ControlCli extends Logging {
 
   def doAction(args: Array[String]): Unit = {
     // Initialize logging if it hasn't been done yet.
@@ -44,18 +44,18 @@ private[kyuubi] class ServiceControlCli extends Logging {
     ctlArgs.command.run()
   }
 
-  protected def parseArguments(args: Array[String]): ServiceControlCliArguments = {
-    new ServiceControlCliArguments(args)
+  protected def parseArguments(args: Array[String]): ControlCliArguments = {
+    new ControlCliArguments(args)
   }
 
 }
 
-object ServiceControlCli extends CommandLineUtils with Logging {
+object ControlCli extends CommandLineUtils with Logging {
   override def main(args: Array[String]): Unit = {
-    val ctl = new ServiceControlCli() {
+    val ctl = new ControlCli() {
       self =>
-      override protected def parseArguments(args: Array[String]): ServiceControlCliArguments = {
-        new ServiceControlCliArguments(args) {
+      override protected def parseArguments(args: Array[String]): ControlCliArguments = {
+        new ControlCliArguments(args) {
           override def info(msg: => Any): Unit = self.info(msg)
 
           override def warn(msg: => Any): Unit = self.warn(msg)
@@ -85,7 +85,7 @@ object ServiceControlCli extends CommandLineUtils with Logging {
           super.doAction(args)
           exitFn(0)
         } catch {
-          case e: ServiceControlCliException =>
+          case e: ControlCliException =>
             exitFn(e.exitCode)
         }
       }

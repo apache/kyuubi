@@ -22,7 +22,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SHARE_LEVEL_SUBDOMAIN, ENGINE_TYPE}
 import org.apache.kyuubi.ctl.{CliConfig, ServiceControlObject}
-import org.apache.kyuubi.ctl.ServiceControlCli.printMessage
+import org.apache.kyuubi.ctl.ControlCli.printMessage
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths, ServiceNodeInfo}
 

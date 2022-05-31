@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl
 
 import scopt.OParser
 
-abstract private[kyuubi] class ServiceControlCliArgumentsParser {
+abstract private[kyuubi] class ControlCliArgumentsParser {
 
   /**
    * Cli arguments parse rules.
