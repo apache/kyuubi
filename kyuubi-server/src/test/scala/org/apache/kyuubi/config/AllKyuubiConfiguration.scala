@@ -26,6 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.kyuubi.{KyuubiFunSuite, TestUtils, Utils}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.metrics.MetricsConf
+import org.apache.kyuubi.server.statestore.jdbc.JDBCStateStoreConf
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
 // scalastyle:off line.size.limit
@@ -68,6 +69,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
 
   test("Check all kyuubi configs") {
     KyuubiConf
+    JDBCStateStoreConf
     HighAvailabilityConf
     MetricsConf
     ZookeeperConf

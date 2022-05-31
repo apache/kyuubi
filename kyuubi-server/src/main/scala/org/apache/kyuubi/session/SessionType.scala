@@ -14,24 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.kyuubi.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+object SessionType extends Enumeration {
+  type SessionType = Value
 
-import org.apache.kyuubi.events.KyuubiSessionEvent
-import org.apache.kyuubi.session.SessionType.SessionType
-
-abstract class KyuubiSession(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
-    sessionManager: KyuubiSessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-
-  val sessionType: SessionType
-
-  def getSessionEvent: Option[KyuubiSessionEvent]
-
+  val SQL, BATCH = Value
 }

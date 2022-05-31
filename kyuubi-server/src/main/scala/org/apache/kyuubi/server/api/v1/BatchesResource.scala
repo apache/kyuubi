@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.util.Locale
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
@@ -32,7 +33,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.server.api.v1.BatchesResource.REST_BATCH_PROTOCOL
+import org.apache.kyuubi.server.api.v1.BatchesResource.{supportedBatchType, REST_BATCH_PROTOCOL, SUPPORTED_BATCH_TYPES}
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle}
@@ -66,8 +67,13 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openBatchSession(request: BatchRequest): Batch = {
-    require(request.getBatchType != null, "batchType is a required parameter")
+    require(
+      supportedBatchType(request.getBatchType),
+      s"${request.getBatchType} is not in the supported list: $SUPPORTED_BATCH_TYPES}")
     require(request.getResource != null, "resource is a required parameter")
+    require(request.getClassName != null, "classname is a required parameter")
+    request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
+
     val userName = fe.getUserName(request.getConf.asScala.toMap)
     val ipAddress = AuthenticationFilter.getUserIpAddress
     val sessionHandle = sessionManager.openBatchSession(
@@ -89,13 +95,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @GET
   @Path("{batchId}")
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
-    try {
-      val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
-      buildBatch(sessionHandle)
-    } catch {
-      case NonFatal(e) =>
-        error(s"Invalid batchId: $batchId", e)
-        throw new NotFoundException(s"Invalid batchId: $batchId")
+    Option(sessionManager.getBatch(batchId)).getOrElse {
+      error(s"Invalid batchId: $batchId")
+      throw new NotFoundException(s"Invalid batchId: $batchId")
     }
   }
 
@@ -111,11 +113,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("batchType") batchType: String,
       @QueryParam("from") from: Int,
       @QueryParam("size") size: Int): GetBatchesResponse = {
-    val sessions = sessionManager.getBatchSessionList(batchType, from, size)
-    val batches = sessions.map { session =>
-      val batchSession = session.asInstanceOf[KyuubiBatchSessionImpl]
-      buildBatch(batchSession)
-    }
+    val batches = sessionManager.getBatchesByType(batchType, from, size)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 
@@ -198,4 +196,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
 object BatchesResource {
   val REST_BATCH_PROTOCOL = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11
+  val SUPPORTED_BATCH_TYPES = Seq("SPARK")
+
+  def supportedBatchType(batchType: String): Boolean = {
+    Option(batchType).exists(bt => SUPPORTED_BATCH_TYPES.contains(bt.toUpperCase(Locale.ROOT)))
+  }
 }

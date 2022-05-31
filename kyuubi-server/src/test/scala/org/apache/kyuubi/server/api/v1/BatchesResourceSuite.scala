@@ -31,26 +31,23 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_CHECK_INTERVAL, ENGINE_SPARK_MAX_LIFETIME}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
+import org.apache.kyuubi.session.KyuubiSessionManager
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   override def afterEach(): Unit = {
-    val sessionManager = fe.be.sessionManager
-    sessionManager.asInstanceOf[KyuubiSessionManager]
-      .getBatchSessionList(null, 0, Int.MaxValue)
-      .map(_.asInstanceOf[KyuubiBatchSessionImpl])
-      .foreach { session =>
-        try {
-          session.batchJobSubmissionOp.killBatchApplication()
-        } finally {
-          sessionManager.closeSession(session.handle)
-        }
-      }
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    sessionManager.allSessions().foreach { session =>
+      sessionManager.closeSession(session.handle)
+    }
+    sessionManager.getBatchesByType(null, 0, Int.MaxValue).foreach { batch =>
+      sessionManager.applicationManager.killApplication(None, batch.getId)
+      sessionManager.cleanupMetadata(batch.getId)
+    }
   }
 
   test("open batch session") {
@@ -73,7 +70,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
     var batch = response.readEntity(classOf[Batch])
     assert(batch.getKyuubiInstance === fe.connectionUrl)
-    assert(batch.getBatchType === "spark")
+    assert(batch.getBatchType === "SPARK")
 
     requestObj.setConf((requestObj.getConf.asScala ++
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> "root")).asJava)
@@ -89,7 +86,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == getBatchResponse.getStatus)
     batch = getBatchResponse.readEntity(classOf[Batch])
     assert(batch.getKyuubiInstance === fe.connectionUrl)
-    assert(batch.getBatchType === "spark")
+    assert(batch.getBatchType === "SPARK")
 
     // invalid batchId
     getBatchResponse = webTarget.path(s"api/v1/batches/invalidBatchId")
@@ -304,14 +301,14 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
           sparkProcessBuilder.mainResource.get,
           sparkProcessBuilder.mainClass,
           "test-name"),
-        "batchType is a required parameter"),
+        "is not in the supported list"),
       (
         new BatchRequest(
           "sp",
           sparkProcessBuilder.mainResource.get,
           sparkProcessBuilder.mainClass,
           "test-name"),
-        "due to Batch type sp unsupported"),
+        "is not in the supported list"),
       (
         new BatchRequest(
           "SPARK",

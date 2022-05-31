@@ -14,24 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+package org.apache.kyuubi.server.statestore.jdbc
 
-import org.apache.kyuubi.events.KyuubiSessionEvent
-import org.apache.kyuubi.session.SessionType.SessionType
-
-abstract class KyuubiSession(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
-    sessionManager: KyuubiSessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-
-  val sessionType: SessionType
-
-  def getSessionEvent: Option[KyuubiSessionEvent]
-
+trait JdbcDatabaseDialect {
+  def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String
 }
+
+class DerbyDatabaseDialect extends JdbcDatabaseDialect {
+  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
+    s"$sql OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY"
+  }
+}
+
+class GenericDatabaseDialect extends JdbcDatabaseDialect {
+  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
+    s"$sql LIMIT $limit OFFSET $offset"
+  }
+}
+
+class MysqlDatabaseDialect extends GenericDatabaseDialect {}
