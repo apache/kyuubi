@@ -30,7 +30,7 @@ import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCHTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
+class TPCHTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
   extends SparkTable with SupportsRead {
 
   // When true, use CHAR VARCHAR; otherwise use STRING
@@ -38,7 +38,7 @@ class TPCHTable(tbl: String, scale: Int, options: CaseInsensitiveStringMap)
 
   val tpchTable: TpchTable[_] = TpchTable.getTable(tbl)
 
-  override def name: String = s"sf$scale.$tbl"
+  override def name: String = s"${TPCHSchemaUtils.dbName(scale)}.$tbl"
 
   override def toString: String = s"TPCHTable($name)"
 
