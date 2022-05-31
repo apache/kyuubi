@@ -118,7 +118,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
     // get batch by id
     batch = batchRestApi.getBatchById(batch.getId())
     assert(batch.getKyuubiInstance === fe.connectionUrl)
-    assert(batch.getBatchType === "spark")
+    assert(batch.getBatchType === "SPARK")
 
     // get batch log
     var log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
