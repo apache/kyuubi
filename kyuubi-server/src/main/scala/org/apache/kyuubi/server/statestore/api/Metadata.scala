@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.statestore.api
 
-import org.apache.kyuubi.server.statestore.api.SessionType.SessionType
+import org.apache.kyuubi.session.SessionType.SessionType
 
 /**
  * The metadata to store. It including three parts:

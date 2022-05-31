@@ -20,7 +20,7 @@ package org.apache.kyuubi.server.statestore
 import java.io.Closeable
 
 import org.apache.kyuubi.server.statestore.api.Metadata
-import org.apache.kyuubi.server.statestore.api.SessionType.SessionType
+import org.apache.kyuubi.session.SessionType.SessionType
 
 trait StateStore extends Closeable {
 

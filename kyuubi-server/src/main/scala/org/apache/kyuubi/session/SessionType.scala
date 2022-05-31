@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore.api
+package org.apache.kyuubi.session
 
 object SessionType extends Enumeration {
   type SessionType = Value

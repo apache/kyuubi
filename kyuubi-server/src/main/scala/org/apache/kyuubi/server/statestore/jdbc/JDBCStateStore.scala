@@ -32,10 +32,11 @@ import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.statestore.StateStore
-import org.apache.kyuubi.server.statestore.api.{Metadata, SessionType}
-import org.apache.kyuubi.server.statestore.api.SessionType.SessionType
+import org.apache.kyuubi.server.statestore.api.Metadata
 import org.apache.kyuubi.server.statestore.jdbc.DatabaseType._
 import org.apache.kyuubi.server.statestore.jdbc.JDBCStateStoreConf._
+import org.apache.kyuubi.session.SessionType
+import org.apache.kyuubi.session.SessionType.SessionType
 
 class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   import JDBCStateStore._

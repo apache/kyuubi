@@ -29,7 +29,8 @@ import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.statestore.api.{Metadata, SessionType}
+import org.apache.kyuubi.server.statestore.api.Metadata
+import org.apache.kyuubi.session.SessionType.SessionType
 
 class KyuubiBatchSessionImpl(
     protocol: TProtocolVersion,
@@ -41,6 +42,8 @@ class KyuubiBatchSessionImpl(
     val sessionConf: KyuubiConf,
     batchRequest: BatchRequest)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  override protected val sessionType: SessionType = SessionType.BATCH
+
   override val handle: SessionHandle = sessionManager.newBatchSessionHandle(protocol)
 
   // TODO: Support batch conf advisor
@@ -74,7 +77,7 @@ class KyuubiBatchSessionImpl(
 
     val metaData = Metadata(
       identifier = handle.identifier.toString,
-      sessionType = SessionType.BATCH,
+      sessionType = sessionType,
       // TODO: support real user
       realUser = user,
       username = user,

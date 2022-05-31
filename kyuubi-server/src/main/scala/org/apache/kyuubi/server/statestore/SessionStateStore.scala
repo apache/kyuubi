@@ -25,8 +25,9 @@ import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SERVER_STATE_STORE_MAX_AGE
 import org.apache.kyuubi.engine.ApplicationOperation._
-import org.apache.kyuubi.server.statestore.api._
+import org.apache.kyuubi.server.statestore.api.Metadata
 import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.ThreadUtils
 
 class SessionStateStore extends AbstractService("SessionStateStore") {

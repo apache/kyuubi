@@ -24,8 +24,9 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.statestore.api.{Metadata, SessionType}
+import org.apache.kyuubi.server.statestore.api.Metadata
 import org.apache.kyuubi.server.statestore.jdbc.JDBCStateStoreConf._
+import org.apache.kyuubi.session.SessionType
 
 class JDBCStateStoreSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
