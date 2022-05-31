@@ -45,19 +45,19 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
 
   test("supports namespaces") {
     spark.sql("use tpch")
-    assert(spark.sql(s"SHOW DATABASES").collect().length == 11)
+    assert(spark.sql(s"SHOW DATABASES").collect().length == 12)
     assert(spark.sql(s"SHOW NAMESPACES IN tpch.sf1").collect().length == 0)
   }
 
-  test("tpch.sf1 count") {
-    assert(spark.table("tpch.sf1.customer").count === 150000)
-    assert(spark.table("tpch.sf1.orders").count === 1500000)
-    assert(spark.table("tpch.sf1.lineitem").count === 6001215)
-    assert(spark.table("tpch.sf1.part").count === 200000)
-    assert(spark.table("tpch.sf1.partsupp").count === 800000)
-    assert(spark.table("tpch.sf1.supplier").count === 10000)
-    assert(spark.table("tpch.sf1.nation").count === 25)
-    assert(spark.table("tpch.sf1.region").count === 5)
+  test("tpch.tiny count") {
+    assert(spark.table("tpch.tiny.customer").count === 1500)
+    assert(spark.table("tpch.tiny.orders").count === 15000)
+    assert(spark.table("tpch.tiny.lineitem").count === 60175)
+    assert(spark.table("tpch.tiny.part").count === 2000)
+    assert(spark.table("tpch.tiny.partsupp").count === 8000)
+    assert(spark.table("tpch.tiny.supplier").count === 100)
+    assert(spark.table("tpch.tiny.nation").count === 25)
+    assert(spark.table("tpch.tiny.region").count === 5)
   }
 
   test("tpch.sf1 stats") {

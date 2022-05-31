@@ -32,12 +32,12 @@ import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-case class TPCHTableChuck(table: String, scale: Int, parallelism: Int, index: Int)
+case class TPCHTableChuck(table: String, scale: Double, parallelism: Int, index: Int)
   extends InputPartition
 
 class TPCHBatchScan(
     @transient table: TpchTable[_],
-    scale: Int,
+    scale: Double,
     schema: StructType) extends ScanBuilder
   with SupportsReportStatistics with Batch with Serializable {
 
@@ -58,7 +58,8 @@ class TPCHBatchScan(
   override def toBatch: Batch = this
 
   override def description: String =
-    s"Scan TPC-H sf$scale.${table.getTableName}, count: ${_numRows}, parallelism: $parallelism"
+    s"Scan TPC-H ${TPCHSchemaUtils.dbName(scale)}.${table.getTableName}, " +
+      s"count: ${_numRows}, parallelism: $parallelism"
 
   override def readSchema: StructType = schema
 
@@ -81,7 +82,7 @@ class TPCHBatchScan(
 
 class TPCHPartitionReader(
     table: String,
-    scale: Int,
+    scale: Double,
     parallelism: Int,
     index: Int,
     schema: StructType) extends PartitionReader[InternalRow] {

@@ -20,37 +20,39 @@ package org.apache.kyuubi.spark.connector.tpch
 import io.trino.tpch.TpchTable
 import io.trino.tpch.TpchTable._
 
+import org.apache.kyuubi.spark.connector.tpch.TPCHSchemaUtils.{normalize, SCALES}
+
 // https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-h_v3.0.0.pdf
 // Page 88 Table 3: Estimated Database Size
 object TPCHStatisticsUtils {
 
-  val SCALES: Array[Int] = Array(0, 1, 10, 30, 100, 300, 1000, 3000, 10000, 30000, 100000)
-
-  def numRows(table: TpchTable[_], scale: Int): Long = {
-    require(SCALES.contains(scale), s"Unsupported scale $scale")
-    (table, scale) match {
-      case (_, 0) => 0L
-      case (CUSTOMER, scale) => 150000L * scale
-      case (ORDERS, scale) => 1500000L * scale
-      case (LINE_ITEM, 1) => 6001215L
-      case (LINE_ITEM, 10) => 59986052L
-      case (LINE_ITEM, 30) => 179998372L
-      case (LINE_ITEM, 100) => 600037902L
-      case (LINE_ITEM, 300) => 1799989091L
-      case (LINE_ITEM, 1000) => 5999989709L
-      case (LINE_ITEM, 3000) => 18000048306L
-      case (LINE_ITEM, 10000) => 59999994267L
-      case (LINE_ITEM, 30000) => 179999978268L
-      case (LINE_ITEM, 100000) => 599999969200L
-      case (PART, scale) => 200000L * scale
-      case (PART_SUPPLIER, scale) => 800000L * scale
-      case (SUPPLIER, scale) => 10000L * scale
+  def numRows(table: TpchTable[_], scale: Double): Long = {
+    val nScale = normalize(scale)
+    require(SCALES.contains(nScale), s"Unsupported scale $nScale")
+    (table, nScale) match {
+      case (_, "0") => 0L
+      case (CUSTOMER, nScale) => (150000L * nScale.toDouble).toLong
+      case (ORDERS, nScale) => (1500000L * nScale.toDouble).toLong
+      case (LINE_ITEM, "0.01") => 60175L
+      case (LINE_ITEM, "1") => 6001215L
+      case (LINE_ITEM, "10") => 59986052L
+      case (LINE_ITEM, "30") => 179998372L
+      case (LINE_ITEM, "100") => 600037902L
+      case (LINE_ITEM, "300") => 1799989091L
+      case (LINE_ITEM, "1000") => 5999989709L
+      case (LINE_ITEM, "3000") => 18000048306L
+      case (LINE_ITEM, "10000") => 59999994267L
+      case (LINE_ITEM, "30000") => 179999978268L
+      case (LINE_ITEM, "100000") => 599999969200L
+      case (PART, nScale) => (200000L * nScale.toDouble).toLong
+      case (PART_SUPPLIER, nScale) => (800000L * nScale.toDouble).toLong
+      case (SUPPLIER, nScale) => (10000L * nScale.toDouble).toLong
       case (NATION, _) => 25L
       case (REGION, _) => 5L
     }
   }
 
-  def sizeInBytes(table: TpchTable[_], scale: Int): Long =
+  def sizeInBytes(table: TpchTable[_], scale: Double): Long =
     numRows(table, scale) * TABLE_AVG_ROW_BYTES(table)
 
   private val TABLE_AVG_ROW_BYTES: Map[TpchTable[_], Long] = Map(

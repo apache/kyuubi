@@ -21,7 +21,6 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import io.trino.tpch.TpchTable
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
 import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table => SparkTable, TableCatalog, TableChange}
 import org.apache.spark.sql.connector.expressions.Transform
@@ -30,12 +29,9 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class TPCHCatalog extends TableCatalog with SupportsNamespaces {
 
-  val tables: Array[String] = TpchTable.getTables.asScala
-    .map(_.getTableName).toArray
+  val databases: Array[String] = TPCHSchemaUtils.DATABASES
 
-  val scales: Array[Int] = TPCHStatisticsUtils.SCALES
-
-  val databases: Array[String] = scales.map("sf" + _)
+  val tables: Array[String] = TPCHSchemaUtils.BASE_TABLES.map(_.getTableName)
 
   var options: CaseInsensitiveStringMap = _
 
@@ -55,7 +51,8 @@ class TPCHCatalog extends TableCatalog with SupportsNamespaces {
 
   override def loadTable(ident: Identifier): SparkTable = (ident.namespace, ident.name) match {
     case (Array(db), table) if (databases contains db) && tables.contains(table.toLowerCase) =>
-      new TPCHTable(table.toLowerCase, scales(databases indexOf db), options)
+      val scale = TPCHSchemaUtils.scale(db)
+      new TPCHTable(table.toLowerCase, scale, options)
     case (_, _) => throw new NoSuchTableException(ident)
   }
 
