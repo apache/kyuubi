@@ -116,3 +116,6 @@
 
 "module:extensions":
   - "extension/**/*"
+
+"module:rest-client":
+  - "kyuubi-rest-client/**/*"

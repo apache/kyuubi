@@ -49,13 +49,13 @@ public class BatchRestClientTest {
 
     kerberizedTestHelper.login();
     spnegoClient =
-        new KyuubiRestClient.Builder("https://localhost:8443")
+        KyuubiRestClient.builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
             .build();
     spnegoBatchRestApi = new BatchRestApi(spnegoClient);
 
     basicClient =
-        new KyuubiRestClient.Builder("https://localhost:8443")
+        KyuubiRestClient.builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.BASIC)
             .username(TEST_USERNAME)
             .password(TEST_PASSWORD)
@@ -73,18 +73,17 @@ public class BatchRestClientTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testEmptyHostUrl() {
-    KyuubiRestClient basicClient =
-        new KyuubiRestClient.Builder("")
-            .authSchema(KyuubiRestClient.AuthSchema.BASIC)
-            .username("test")
-            .password("test")
-            .build();
+    KyuubiRestClient.builder("")
+        .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+        .username("test")
+        .password("test")
+        .build();
   }
 
   @Test(expected = KyuubiRestException.class)
   public void testInvalidUrl() throws KyuubiRestException {
     KyuubiRestClient basicClient =
-        new KyuubiRestClient.Builder("https://localhost:8443")
+        KyuubiRestClient.builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.BASIC)
             .username("test")
             .password("test")
@@ -100,7 +99,7 @@ public class BatchRestClientTest {
     BatchTestServlet.allowAnonymous(true);
 
     KyuubiRestClient noPasswordBasicClient =
-        new KyuubiRestClient.Builder("https://localhost:8443")
+        KyuubiRestClient.builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.BASIC)
             .username(TEST_USERNAME)
             .build();
@@ -121,7 +120,7 @@ public class BatchRestClientTest {
     BatchTestServlet.allowAnonymous(true);
 
     KyuubiRestClient anonymousBasicClient =
-        new KyuubiRestClient.Builder("https://localhost:8443")
+        KyuubiRestClient.builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.BASIC)
             .build();
     BatchRestApi anonymousBasicBatchRestApi = new BatchRestApi(anonymousBasicClient);

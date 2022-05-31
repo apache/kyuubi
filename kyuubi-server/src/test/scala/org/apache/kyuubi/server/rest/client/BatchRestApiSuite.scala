@@ -30,7 +30,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
 
   test("basic batch rest client") {
     val basicKyuubiRestClient: KyuubiRestClient =
-      new KyuubiRestClient.Builder(baseUri.toString)
+      KyuubiRestClient.builder(baseUri.toString)
         .authSchema(KyuubiRestClient.AuthSchema.BASIC)
         .username(ldapUser)
         .password(ldapUserPasswd)
@@ -73,7 +73,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
 
   test("basic batch rest client with invalid user") {
     val basicKyuubiRestClient: KyuubiRestClient =
-      new KyuubiRestClient.Builder(baseUri.toString)
+      KyuubiRestClient.builder(baseUri.toString)
         .authSchema(KyuubiRestClient.AuthSchema.BASIC)
         .username(customUser)
         .password(customPasswd)
@@ -92,7 +92,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
 
   test("spnego batch rest client") {
     val spnegoKyuubiRestClient: KyuubiRestClient =
-      new KyuubiRestClient.Builder(baseUri.toString)
+      KyuubiRestClient.builder(baseUri.toString)
         .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
         .spnegoHost("localhost")
         .build()
