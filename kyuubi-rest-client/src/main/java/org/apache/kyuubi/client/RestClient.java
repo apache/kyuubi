@@ -48,12 +48,9 @@ public class RestClient implements AutoCloseable {
 
   private String baseUrl;
 
-  private String authHeader;
-
-  public RestClient(String baseUrl, CloseableHttpClient httpclient, String authHeader) {
+  public RestClient(String baseUrl, CloseableHttpClient httpclient) {
     this.httpclient = httpclient;
     this.baseUrl = baseUrl;
-    this.authHeader = authHeader;
   }
 
   @Override
@@ -63,32 +60,36 @@ public class RestClient implements AutoCloseable {
     }
   }
 
-  public <T> T get(String path, Map<String, Object> params, Class<T> type)
+  public <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader)
       throws KyuubiRestException {
-    String responseJson = get(path, params);
+    String responseJson = get(path, params, authHeader);
     return JsonUtil.toObject(responseJson, type);
   }
 
-  public String get(String path, Map<String, Object> params) throws KyuubiRestException {
-    return doRequest(buildURI(path, params), RequestBuilder.get());
+  public String get(String path, Map<String, Object> params, String authHeader)
+      throws KyuubiRestException {
+    return doRequest(buildURI(path, params), authHeader, RequestBuilder.get());
   }
 
-  public <T> T post(String path, String body, Class<T> type) throws KyuubiRestException {
-    String responseJson = post(path, body);
+  public <T> T post(String path, String body, Class<T> type, String authHeader)
+      throws KyuubiRestException {
+    String responseJson = post(path, body, authHeader);
     return JsonUtil.toObject(responseJson, type);
   }
 
-  public String post(String path, String body) throws KyuubiRestException {
+  public String post(String path, String body, String authHeader) throws KyuubiRestException {
     RequestBuilder postRequestBuilder =
         RequestBuilder.post().setEntity(new StringEntity(body, StandardCharsets.UTF_8));
-    return doRequest(buildURI(path), postRequestBuilder);
+    return doRequest(buildURI(path), authHeader, postRequestBuilder);
   }
 
-  public String delete(String path, Map<String, Object> params) throws KyuubiRestException {
-    return doRequest(buildURI(path, params), RequestBuilder.delete());
+  public String delete(String path, Map<String, Object> params, String authHeader)
+      throws KyuubiRestException {
+    return doRequest(buildURI(path, params), authHeader, RequestBuilder.delete());
   }
 
-  private String doRequest(URI uri, RequestBuilder requestBuilder) throws KyuubiRestException {
+  private String doRequest(URI uri, String authHeader, RequestBuilder requestBuilder)
+      throws KyuubiRestException {
     String response = "";
     CloseableHttpResponse httpResponse = null;
     try {
