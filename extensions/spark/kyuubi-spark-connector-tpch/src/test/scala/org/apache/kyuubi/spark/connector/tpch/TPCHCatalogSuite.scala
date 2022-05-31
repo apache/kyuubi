@@ -21,6 +21,7 @@ import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.spark.connector.common.SparkUtils
 
 class TPCHCatalogSuite extends KyuubiFunSuite {
 

@@ -23,7 +23,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.spark.connector.tpcds.LocalSparkSession.withSparkSession
+import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
 class TPCDSQuerySuite extends KyuubiFunSuite {
 

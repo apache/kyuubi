@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.spark.connector.tpcds
+package org.apache.kyuubi.spark.connector.common
 
 import org.apache.spark.sql.SparkSession
 
