@@ -15,31 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark
+package org.apache.kyuubi.ha.client.etcd
 
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
-import org.apache.kyuubi.ha.client.DiscoveryClient
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider
+import java.nio.charset.StandardCharsets.UTF_8
 
-trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
+import scala.language.implicitConversions
 
-  def namespace: String
+import io.etcd.jetcd.ByteSequence
 
-  override def withKyuubiConf: Map[String, String] = {
-    Map(HA_NAMESPACE.key -> namespace)
+object EtcdUtils {
+  implicit def stringToByteSequence(str: String): ByteSequence = {
+    ByteSequence.from(str.getBytes())
   }
 
-  override protected def beforeEach(): Unit = {
-    super.beforeEach()
-    startSparkEngine()
+  implicit def byteSequenceToString(bsq: ByteSequence): String = {
+    bsq.toString(UTF_8)
   }
 
-  override protected def afterEach(): Unit = {
-    super.afterEach()
-    stopSparkEngine()
-  }
-
-  def withDiscoveryClient(f: DiscoveryClient => Unit): Unit = {
-    DiscoveryClientProvider.withDiscoveryClient(kyuubiConf)(f)
+  implicit def byteSequenceToString(bsqList: List[ByteSequence]): List[String] = {
+    bsqList.map(byteSequenceToString)
   }
 }

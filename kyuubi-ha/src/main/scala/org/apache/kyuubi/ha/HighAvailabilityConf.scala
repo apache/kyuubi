@@ -180,4 +180,13 @@ object HighAvailabilityConf {
       .version("1.5.0")
       .stringConf
       .createOptional
+
+  val HA_ETCD_LEASE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.ha.etcd.lease.timeout")
+      .doc("Timeout for etcd keep alive lease. The kyuubi server will known " +
+        "unexpected loss of engine after up to this seconds.")
+      .version("1.6.0")
+      .timeConf
+      .checkValue(_ > 0, "Must be positive")
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
 }

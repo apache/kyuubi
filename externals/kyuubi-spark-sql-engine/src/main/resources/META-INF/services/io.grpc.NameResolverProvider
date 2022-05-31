@@ -1,0 +1,4 @@
+io.etcd.jetcd.resolver.DnsSrvResolverProvider
+io.etcd.jetcd.resolver.HttpResolverProvider
+io.etcd.jetcd.resolver.HttpsResolverProvider
+io.etcd.jetcd.resolver.IPResolverProvider
