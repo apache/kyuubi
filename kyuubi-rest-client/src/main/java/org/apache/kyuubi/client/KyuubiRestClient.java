@@ -38,6 +38,10 @@ public class KyuubiRestClient implements AutoCloseable {
 
   private RestClient httpClient;
 
+  private AuthSchema authSchema;
+  private String spnegoHost;
+  private String basicAuthHeader = "";
+
   /** Specifies the version of the Kyuubi API to communicate with. */
   public enum ApiVersion {
     V1;
@@ -68,9 +72,35 @@ public class KyuubiRestClient implements AutoCloseable {
 
     CloseableHttpClient httpclient = initHttpClient(builder);
 
-    String header = initAuthHeader(builder);
+    this.httpClient = new RestClient(baseUrl, httpclient);
 
-    this.httpClient = new RestClient(baseUrl, httpclient, header);
+    this.authSchema = builder.authSchema;
+    this.spnegoHost = builder.spnegoHost;
+    if (this.authSchema == AuthSchema.BASIC && StringUtils.isNotBlank(builder.username)) {
+      String authorization = String.format("%s:%s", builder.username, builder.password);
+      this.basicAuthHeader =
+          String.format("BASIC %s", Base64.getEncoder().encodeToString(authorization.getBytes()));
+    }
+  }
+
+  public String getAuthHeader() {
+    String header = "";
+    switch (authSchema) {
+      case BASIC:
+        header = this.basicAuthHeader;
+        break;
+      case SPNEGO:
+        try {
+          header = String.format("NEGOTIATE %s", AuthUtil.generateToken(spnegoHost));
+        } catch (Exception e) {
+          LOG.error("Error: ", e);
+          throw new RuntimeException("Failed to generate spnego auth header for " + spnegoHost);
+        }
+        break;
+      default:
+        throw new RuntimeException("Unsupported auth schema");
+    }
+    return header;
   }
 
   public RestClient getHttpClient() {
@@ -100,37 +130,6 @@ public class KyuubiRestClient implements AutoCloseable {
             .setSSLSocketFactory(sslSocketFactory)
             .build();
     return httpclient;
-  }
-
-  private String initAuthHeader(Builder builder) {
-    String header = "";
-    switch (builder.authSchema) {
-      case BASIC:
-        // no need to set auth header when username is empty
-        if (StringUtils.isNotBlank(builder.username)) {
-          String authorization = String.format("%s:%s", builder.username, builder.password);
-          header =
-              String.format(
-                  "BASIC %s", Base64.getEncoder().encodeToString(authorization.getBytes()));
-        }
-        break;
-      case SPNEGO:
-        try {
-          String server =
-              StringUtils.isBlank(builder.spnegoHost)
-                  ? new URI(builder.hostUrl).getHost()
-                  : builder.spnegoHost;
-          header = String.format("NEGOTIATE %s", AuthUtil.generateToken(server));
-        } catch (Exception e) {
-          LOG.error("Error: ", e);
-          throw new RuntimeException(
-              "Failed to generate spnego auth header for " + builder.hostUrl);
-        }
-        break;
-      default:
-        throw new RuntimeException("Unsupported auth schema");
-    }
-    return header;
   }
 
   public static Builder builder(String hostUrl) {
@@ -198,7 +197,17 @@ public class KyuubiRestClient implements AutoCloseable {
       if (StringUtils.isBlank(hostUrl)) {
         throw new IllegalArgumentException("hostUrl cannot be blank.");
       }
+
+      if (authSchema == AuthSchema.SPNEGO && StringUtils.isBlank(spnegoHost)) {
+        try {
+          this.spnegoHost = new URI(hostUrl).getHost();
+        } catch (Exception e) {
+          throw new IllegalArgumentException("spnegoHost is invalid.");
+        }
+      }
+
       this.password = StringUtils.isNotBlank(password) ? password : "";
+
       return new KyuubiRestClient(this);
     }
   }

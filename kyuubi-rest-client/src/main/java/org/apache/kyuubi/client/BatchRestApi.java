@@ -40,12 +40,12 @@ public class BatchRestApi {
 
   public Batch createBatch(BatchRequest request) throws KyuubiRestException {
     String requestBody = JsonUtil.toJson(request);
-    return this.getClient().post(API_BASE_PATH, requestBody, Batch.class);
+    return this.getClient().post(API_BASE_PATH, requestBody, Batch.class, client.getAuthHeader());
   }
 
   public Batch getBatchById(String batchId) throws KyuubiRestException {
     String path = String.format("%s/%s", API_BASE_PATH, batchId);
-    return this.getClient().get(path, null, Batch.class);
+    return this.getClient().get(path, null, Batch.class, client.getAuthHeader());
   }
 
   public GetBatchesResponse listBatches(String batchType, int from, int size)
@@ -54,7 +54,8 @@ public class BatchRestApi {
     params.put("batchType", batchType);
     params.put("from", from);
     params.put("size", size);
-    return this.getClient().get(API_BASE_PATH, params, GetBatchesResponse.class);
+    return this.getClient()
+        .get(API_BASE_PATH, params, GetBatchesResponse.class, client.getAuthHeader());
   }
 
   public OperationLog getBatchLocalLog(String batchId, int from, int size)
@@ -65,7 +66,7 @@ public class BatchRestApi {
     params.put("size", size);
 
     String path = String.format("%s/%s/localLog", API_BASE_PATH, batchId);
-    return this.getClient().get(path, params, OperationLog.class);
+    return this.getClient().get(path, params, OperationLog.class, client.getAuthHeader());
   }
 
   public void deleteBatch(String batchId, boolean killApp, String hs2ProxyUser)
@@ -75,7 +76,7 @@ public class BatchRestApi {
     params.put("hive.server2.proxy.user", hs2ProxyUser);
 
     String path = String.format("%s/%s", API_BASE_PATH, batchId);
-    this.getClient().delete(path, params);
+    this.getClient().delete(path, params, client.getAuthHeader());
   }
 
   private RestClient getClient() {

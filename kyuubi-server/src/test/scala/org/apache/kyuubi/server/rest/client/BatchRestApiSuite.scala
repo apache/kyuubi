@@ -111,9 +111,21 @@ class BatchRestApiSuite extends RestClientTestHelper {
         s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
       Seq.empty[String].asJava)
 
-    val batch: Batch = batchRestApi.createBatch(requestObj)
+    var batch: Batch = batchRestApi.createBatch(requestObj)
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "spark")
+
+    // get batch by id
+    batch = batchRestApi.getBatchById(batch.getId())
+    assert(batch.getKyuubiInstance === fe.connectionUrl)
+    assert(batch.getBatchType === "spark")
+
+    // get batch log
+    var log = batchRestApi.getBatchLocalLog(batch.getId(), 0, 1)
+    assert(log.getRowCount == 1)
+
+    // delete batch
+    batchRestApi.deleteBatch(batch.getId(), true, null)
 
     spnegoKyuubiRestClient.close()
   }
