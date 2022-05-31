@@ -46,7 +46,7 @@ class KyuubiSessionImpl(
     sessionConf: KyuubiConf)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  override protected val sessionType: SessionType = SessionType.SQL
+  override val sessionType: SessionType = SessionType.SQL
 
   private[kyuubi] val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(

@@ -30,7 +30,7 @@ abstract class KyuubiSession(
     sessionManager: KyuubiSessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  protected val sessionType: SessionType
+  val sessionType: SessionType
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 

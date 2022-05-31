@@ -864,7 +864,8 @@ object KyuubiConf {
 
   val SERVER_STATE_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.server.state.store.cleaner.enabled")
-      .doc("Whether to clean the state store periodically.")
+      .doc("Whether to clean the state store periodically. If it is enabled, Kyuubi will clean" +
+        " the state information that is in terminate state with max age limitation.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)

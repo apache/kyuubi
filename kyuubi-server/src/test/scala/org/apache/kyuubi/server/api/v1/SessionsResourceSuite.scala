@@ -125,6 +125,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == response.getStatus)
     val sessions = response.readEntity(classOf[KyuubiSessionEvent])
     assert(sessions.conf("testConfig").equals("testValue"))
+    assert(sessions.sessionType.equals("SQL"))
 
     // close an opened session
     response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()

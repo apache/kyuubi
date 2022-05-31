@@ -351,7 +351,7 @@ kyuubi.server.limit.connections.per.user.ipaddress|&lt;undefined&gt;|Maximum kyu
 kyuubi.server.name|&lt;undefined&gt;|The name of Kyuubi Server.|string|1.5.0
 kyuubi.server.redaction.regex|&lt;undefined&gt;|Regex to decide which Kyuubi contain sensitive information. When this regex matches a property key or value, the value is redacted from the various logs.||1.6.0
 kyuubi.server.state.store.class|org.apache.kyuubi.server.statestore.jdbc.JDBCStateStore|Class name for server state store.|string|1.6.0
-kyuubi.server.state.store.cleaner.enabled|true|Whether to clean the state store periodically.|boolean|1.6.0
+kyuubi.server.state.store.cleaner.enabled|true|Whether to clean the state store periodically. If it is enabled, Kyuubi will clean the state information that is in terminate state with max age limitation.|boolean|1.6.0
 kyuubi.server.state.store.cleaner.interval|PT30M|The interval to clean state store.|duration|1.6.0
 kyuubi.server.state.store.jdbc.database.schema.init|true|Whether to init the jdbc state store database schema.|boolean|1.6.0
 kyuubi.server.state.store.jdbc.database.type|DERBY|The database type for server jdbc state store.<ul> <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li> <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li> <li>CUSTOM: User-defined database type, need specify the jdbc driver in addition.</li> Note that: The jdbc datasource is powered by HiKariCP, for datasource properties, please specify them with prefix: kyuubi.server.state.store.jdbc.datasource. For example, kyuubi.server.state.store.jdbc.datasource.connectionTimeout=10000.|string|1.6.0
