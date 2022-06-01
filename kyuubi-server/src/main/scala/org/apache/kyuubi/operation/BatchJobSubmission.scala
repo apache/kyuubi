@@ -34,7 +34,7 @@ import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.OperationState.OperationState
+import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
@@ -109,13 +109,13 @@ class BatchJobSubmission(
   private def updateBatchMetadata(): Unit = {
     val endTime =
       if (isTerminalState(getStatus.state)) {
-        getStatus.lastModified
+        lastAccessTime
       } else {
         0L
       }
     session.sessionManager.updateBatchMetadata(
       batchId,
-      getStatus.state,
+      state,
       applicationStatus.getOrElse(Map.empty),
       endTime)
   }
@@ -123,14 +123,16 @@ class BatchJobSubmission(
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
   // we can not set to other state if it is canceled
-  override def setState(newState: OperationState): Unit = state.synchronized {
-    super.setState(newState)
+  private def setStateIfNotCanceled(newState: OperationState): Unit = state.synchronized {
+    if (state != CANCELED) {
+      setState(newState)
+    }
   }
 
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(_operationLog)
     setHasResultSet(true)
-    setState(OperationState.PENDING)
+    setStateIfNotCanceled(OperationState.PENDING)
   }
 
   override protected def afterRun(): Unit = {
@@ -139,20 +141,25 @@ class BatchJobSubmission(
 
   override protected def runInternal(): Unit = {
     val asyncOperation: Runnable = () => {
-      setState(OperationState.RUNNING)
+      setStateIfNotCanceled(OperationState.RUNNING)
       try {
         submitBatchJob()
-        setState(OperationState.FINISHED)
+        setStateIfNotCanceled(OperationState.FINISHED)
       } catch {
         onError()
       } finally {
         updateBatchMetadata()
       }
     }
+
     try {
       val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
-    } catch onError("submitting batch job submission operation in background, request rejected")
+    } catch {
+      onError("submitting batch job submission operation in background, request rejected")
+    } finally {
+      updateBatchMetadata()
+    }
   }
 
   private def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
@@ -239,11 +246,15 @@ class BatchJobSubmission(
         builder.close()
       } finally {
         if (killMessage._1 && !isTerminalState(state)) {
-          // the batch operation state should never be closed
+          // kill success and we can change state safely
+          // note that, the batch operation state should never be closed
           setState(OperationState.CANCELED)
           updateBatchMetadata()
-        } else {
-          warn(s"Failed to kill application for batch: ${batchId}")
+        } else if (killMessage._1) {
+          // we can not change state safely
+          killMessage = (false, s"batch $batchId is already terminal so can not kill.")
+        } else if (!isTerminalState(state)) {
+          // failed to kill, the kill message is enough
         }
       }
       MetricsSystem.tracing(_.decCount(
