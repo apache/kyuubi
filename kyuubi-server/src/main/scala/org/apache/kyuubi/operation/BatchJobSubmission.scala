@@ -39,6 +39,18 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
 
+/**
+ * The state of batch operation is special. In general, the lifecycle of state is:
+ *
+ *                        /  ERROR
+ * PENDING  ->  RUNNING  ->  FINISHED
+ *                        \  CANCELED (CLOSED)
+ *
+ * We can not change FINISHED/ERROR/CANCELED to CLOSED, and it's different with other operation
+ * which final status is always CLOSED, so we do not use CLOSED state in this class.
+ * To compatible with kill application we combine the semantics of `cancel` and `close`, so if
+ * user close the batch session that means the final status is CANCELED.
+ */
 class BatchJobSubmission(
     session: KyuubiBatchSessionImpl,
     val batchType: String,
