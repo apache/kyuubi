@@ -60,36 +60,31 @@ public class RestClient implements AutoCloseable {
     }
   }
 
-  public <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader)
-      throws KyuubiRestException {
+  public <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = get(path, params, authHeader);
     return JsonUtil.toObject(responseJson, type);
   }
 
-  public String get(String path, Map<String, Object> params, String authHeader)
-      throws KyuubiRestException {
+  public String get(String path, Map<String, Object> params, String authHeader) {
     return doRequest(buildURI(path, params), authHeader, RequestBuilder.get());
   }
 
-  public <T> T post(String path, String body, Class<T> type, String authHeader)
-      throws KyuubiRestException {
+  public <T> T post(String path, String body, Class<T> type, String authHeader) {
     String responseJson = post(path, body, authHeader);
     return JsonUtil.toObject(responseJson, type);
   }
 
-  public String post(String path, String body, String authHeader) throws KyuubiRestException {
+  public String post(String path, String body, String authHeader) {
     RequestBuilder postRequestBuilder =
         RequestBuilder.post().setEntity(new StringEntity(body, StandardCharsets.UTF_8));
     return doRequest(buildURI(path), authHeader, postRequestBuilder);
   }
 
-  public String delete(String path, Map<String, Object> params, String authHeader)
-      throws KyuubiRestException {
+  public String delete(String path, Map<String, Object> params, String authHeader) {
     return doRequest(buildURI(path, params), authHeader, RequestBuilder.delete());
   }
 
-  private String doRequest(URI uri, String authHeader, RequestBuilder requestBuilder)
-      throws KyuubiRestException {
+  private String doRequest(URI uri, String authHeader, RequestBuilder requestBuilder) {
     String response = "";
     CloseableHttpResponse httpResponse = null;
     try {
@@ -134,11 +129,11 @@ public class RestClient implements AutoCloseable {
     return response;
   }
 
-  private URI buildURI(String path) throws KyuubiRestException {
+  private URI buildURI(String path) {
     return buildURI(path, null);
   }
 
-  private URI buildURI(String path, Map<String, Object> params) throws KyuubiRestException {
+  private URI buildURI(String path, Map<String, Object> params) {
     URI uri = null;
     try {
       String url = StringUtils.isNotBlank(path) ? this.baseUrl + "/" + path : this.baseUrl;
