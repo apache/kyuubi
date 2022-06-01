@@ -39,6 +39,28 @@ In the IDE, you set the corresponding parameters(host&port) in debug configurati
 
 </div>
 
+## Debugging Engine
+
+We can configure the Kyuubi properties to enable debugging engine.
+
+### Flink Engine
+
+```bash
+kyuubi.engine.flink.java.options -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
+```
+
+### Trino Engine
+
+```bash
+kyuubi.engine.trino.java.options -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
+```
+
+### Hive Engine
+
+```bash
+kyuubi.engine.hive.java.options -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
+```
+
 ## Debugging Apps
 
 ### Spark Engine
