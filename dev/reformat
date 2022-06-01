@@ -16,16 +16,10 @@
 # limitations under the License.
 #
 
-set -o pipefail
-set -e
 set -x
 
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 
-MVN="$KYUUBI_HOME/build/mvn"
+PROFILES="-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,spark-3.0,tpcds"
 
-PROFILES=$("$MVN" help:all-profiles -pl . | grep "Profile Id" | awk '{print $3}' | tr '\n' ',' | awk '{print "-P"$0}')
-
-echo "Using profiles: $PROFILES"
-
-$MVN spotless:apply $PROFILES
+${KYUUBI_HOME}/build/mvn spotless:apply $PROFILES
