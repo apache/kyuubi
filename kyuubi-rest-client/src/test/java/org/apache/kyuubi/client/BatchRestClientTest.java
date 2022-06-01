@@ -226,11 +226,11 @@ public class BatchRestClientTest {
   public void deleteBatchTest() throws KyuubiRestException {
     // test spnego auth
     BatchTestServlet.setAuthSchema(NEGOTIATE_AUTH);
-    spnegoBatchRestApi.deleteBatch("71535", true, "b_test");
+    spnegoBatchRestApi.deleteBatch("71535", "b_test");
 
     // test basic auth
     BatchTestServlet.setAuthSchema(BASIC_AUTH);
     BatchTestServlet.allowAnonymous(false);
-    basicBatchRestApi.deleteBatch("71535", true, "b_test");
+    basicBatchRestApi.deleteBatch("71535", "b_test");
   }
 }

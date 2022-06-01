@@ -17,18 +17,22 @@
 
 package org.apache.kyuubi.operation
 
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.{ArrayList => JArrayList, Locale}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
+import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
+import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
@@ -55,6 +59,9 @@ class BatchJobSubmission(
   private[kyuubi] val batchId: String = session.handle.identifier.toString
 
   private var applicationStatus: Option[Map[String, String]] = None
+
+  private var killMessage: KillResponse = (false, "UNKNOWN")
+  def getKillMessage: KillResponse = killMessage
 
   private val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
@@ -86,6 +93,20 @@ class BatchJobSubmission(
   private val applicationCheckInterval =
     session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL)
 
+  private def updateBatchMetadata(): Unit = {
+    val endTime =
+      if (isTerminalState(getStatus.state)) {
+        getStatus.lastModified
+      } else {
+        0L
+      }
+    session.sessionManager.updateBatchMetadata(
+      batchId,
+      getStatus.state,
+      applicationStatus.getOrElse(Map.empty),
+      endTime)
+  }
+
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
   override protected def beforeRun(): Unit = {
@@ -96,11 +117,6 @@ class BatchJobSubmission(
 
   override protected def afterRun(): Unit = {
     OperationLog.removeCurrentOperationLog()
-    session.sessionManager.updateBatchMetadata(
-      batchId,
-      getStatus.state,
-      applicationStatus.getOrElse(Map.empty),
-      getStatus.lastModified)
   }
 
   override protected def runInternal(): Unit = {
@@ -109,7 +125,11 @@ class BatchJobSubmission(
       try {
         submitBatchJob()
         setState(OperationState.FINISHED)
-      } catch onError()
+      } catch {
+        onError()
+      } finally {
+        updateBatchMetadata()
+      }
     }
     try {
       val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
@@ -130,10 +150,7 @@ class BatchJobSubmission(
       applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
         if (!appStatusFirstUpdated && applicationStatus.isDefined) {
-          session.sessionManager.updateBatchMetadata(
-            batchId,
-            getStatus.state,
-            applicationStatus.get)
+          updateBatchMetadata()
           appStatusFirstUpdated = true
         }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
@@ -191,10 +208,27 @@ class BatchJobSubmission(
 
   override def close(): Unit = {
     if (!isClosedOrCanceled) {
-      if (builder != null) {
+      try {
+        // For launch engine operation, we use OperationLog to pass engine submit log but
+        // at that time we do not have remoteOpHandle
+        getOperationLog.foreach(_.close())
+      } catch {
+        case e: IOException => error(e.getMessage, e)
+      }
+      try {
+        killMessage = killBatchApplication()
         builder.close()
+      } finally {
+        // the batch operation state should never be closed
+        setState(OperationState.CANCELED)
+        updateBatchMetadata()
+        MetricsSystem.tracing(_.decCount(
+          MetricRegistry.name(OPERATION_OPEN, statement.toLowerCase(Locale.getDefault))))
       }
     }
-    super.close()
+  }
+
+  override def cancel(): Unit = {
+    throw new IllegalStateException("Use close instead.")
   }
 }

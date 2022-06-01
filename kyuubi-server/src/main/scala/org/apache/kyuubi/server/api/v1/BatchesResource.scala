@@ -150,12 +150,11 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
-    description = "close a batch session")
+    description = "close and cancel a batch session")
   @DELETE
   @Path("{batchId}")
   def closeBatchSession(
       @PathParam("batchId") batchId: String,
-      @QueryParam("killApp") killApp: Boolean,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
     var session: KyuubiBatchSessionImpl = null
     try {
@@ -183,14 +182,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         s"$userName is not allowed to close the session belong to ${session.user}")
     }
 
-    if (killApp) {
-      val killResponse = session.batchJobSubmissionOp.killBatchApplication()
-      sessionManager.closeSession(session.handle)
-      Response.ok().entity(killResponse).build()
-    } else {
-      sessionManager.closeSession(session.handle)
-      Response.ok().build()
-    }
+    sessionManager.closeSession(session.handle)
+    val (success, msg) = session.batchJobSubmissionOp.getKillMessage
+    Response.ok().entity(new CloseBatchResponse(success, msg)).build()
   }
 }
 

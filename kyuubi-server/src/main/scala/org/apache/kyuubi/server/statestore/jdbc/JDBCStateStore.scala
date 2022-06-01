@@ -31,8 +31,9 @@ import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.statestore.StateStore
-import org.apache.kyuubi.server.statestore.api.Metadata
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 import org.apache.kyuubi.server.statestore.jdbc.DatabaseType._
 import org.apache.kyuubi.server.statestore.jdbc.JDBCStateStoreConf._
 import org.apache.kyuubi.session.SessionType
@@ -67,6 +68,9 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   @VisibleForTesting
   private[kyuubi] val hikariDataSource = new HikariDataSource(hikariConfig)
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+
+  private val terminalStates =
+    OperationState.terminalStates.map(x => s"'${x.toString}'").mkString(", ")
 
   if (conf.get(SERVER_STATE_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
     initSchema()
@@ -103,7 +107,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     hikariDataSource.close()
   }
 
-  override def insertMetadata(metadata: Metadata): Unit = {
+  override def insertMetadata(metadata: SessionMetadata): Unit = {
     val query =
       s"""
          |INSERT INTO $METADATA_TABLE(
@@ -146,7 +150,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     }
   }
 
-  override def getMetadata(identifier: String, stateOnly: Boolean): Metadata = {
+  override def getMetadata(identifier: String, stateOnly: Boolean): SessionMetadata = {
     val query =
       if (stateOnly) {
         s"SELECT $METADATA_STATE_ONLY_COLUMNS FROM $METADATA_TABLE WHERE identifier = ?"
@@ -169,7 +173,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       kyuubiInstance: String,
       from: Int,
       size: Int,
-      stateOnly: Boolean): Seq[Metadata] = {
+      stateOnly: Boolean): Seq[SessionMetadata] = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
     if (stateOnly) {
@@ -210,7 +214,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     }
   }
 
-  override def updateMetadata(metadata: Metadata): Unit = {
+  override def updateMetadata(metadata: SessionMetadata): Unit = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
 
@@ -265,15 +269,15 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
 
   override def cleanupMetadataByAge(maxAge: Long): Unit = {
     val minEndTime = System.currentTimeMillis() - maxAge
-    val query = s"DELETE FROM $METADATA_TABLE WHERE end_time IS NOT NULL AND end_time < ?"
+    val query = s"DELETE FROM $METADATA_TABLE WHERE state IN ($terminalStates) AND end_time < ?"
     withConnection() { connection =>
       execute(connection, query, minEndTime)
     }
   }
 
-  private def buildMetadata(resultSet: ResultSet, stateOnly: Boolean): Seq[Metadata] = {
+  private def buildMetadata(resultSet: ResultSet, stateOnly: Boolean): Seq[SessionMetadata] = {
     try {
-      val metadataList = ListBuffer[Metadata]()
+      val metadataList = ListBuffer[SessionMetadata]()
       while (resultSet.next()) {
         val identifier = resultSet.getString("identifier")
         val sessionType = SessionType.withName(resultSet.getString("session_type"))
@@ -303,7 +307,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
           requestConf = string2Map(resultSet.getString("request_conf"))
           requestArgs = string2Seq(resultSet.getString("request_args"))
         }
-        val metadata = Metadata(
+        val metadata = SessionMetadata(
           identifier = identifier,
           sessionType = sessionType,
           realUser = realUser,
@@ -426,7 +430,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
 }
 
 object JDBCStateStore {
-  private val METADATA_TABLE = "metadata"
+  private val METADATA_TABLE = "session_metadata"
   private val METADATA_STATE_ONLY_COLUMNS = Seq(
     "identifier",
     "session_type",

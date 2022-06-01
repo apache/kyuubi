@@ -47,7 +47,7 @@ import org.apache.kyuubi.session.SessionType.SessionType
  * @param engineError the engine error diagnose.
  * @param endTime the end time.
  */
-case class Metadata(
+case class SessionMetadata(
     identifier: String,
     sessionType: SessionType = null,
     realUser: String = null,

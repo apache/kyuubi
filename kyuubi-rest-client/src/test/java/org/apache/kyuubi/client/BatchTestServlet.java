@@ -101,8 +101,7 @@ public class BatchTestServlet extends HttpServlet {
       throws ServletException, IOException {
     if (!validAuthHeader(req, resp)) return;
 
-    if (req.getPathInfo().matches("/api/v1/batches/\\d+")
-        && req.getQueryString().matches("[\\w.]+(=[\\w]*)(&[\\w.]+(=[\\w]*))+$")) {
+    if (req.getPathInfo().matches("/api/v1/batches/\\d+")) {
       resp.setStatus(HttpServletResponse.SC_OK);
     } else {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);

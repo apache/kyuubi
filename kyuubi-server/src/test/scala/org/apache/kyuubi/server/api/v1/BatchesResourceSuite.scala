@@ -126,7 +126,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val encodeAuthorization =
       new String(Base64.getEncoder.encode(batch.getId().getBytes()), "UTF-8")
     var deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId()}")
-      .queryParam("killApp", "true")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .delete()
@@ -134,14 +133,12 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     // invalid batchId
     deleteBatchResponse = webTarget.path(s"api/v1/batches/notValidUUID")
-      .queryParam("killApp", "true")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .delete()
     assert(404 == deleteBatchResponse.getStatus)
 
     // non-existed batch session
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${UUID.randomUUID().toString}")
-      .queryParam("killApp", "true")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .delete()
     assert(404 == deleteBatchResponse.getStatus)
@@ -153,13 +150,26 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .delete()
     assert(405 == deleteBatchResponse.getStatus)
 
-    // killApp is true
+    // check close batch session
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId()}")
-      .queryParam("killApp", "true")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .delete()
     assert(200 == deleteBatchResponse.getStatus)
-    assert(deleteBatchResponse.hasEntity)
+    val closeBatchResponse = deleteBatchResponse.readEntity(classOf[CloseBatchResponse])
+
+    // check state after close batch session
+    getBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId()}")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+    assert(200 == getBatchResponse.getStatus)
+    batch = getBatchResponse.readEntity(classOf[Batch])
+    assert(batch.getId == batch.getId())
+    if (closeBatchResponse.isSuccess) {
+      assert(batch.getState == "CANCELED")
+    } else {
+      assert(closeBatchResponse.getMsg.contains("No such process"))
+      assert(batch.getState != "CANCELED")
+    }
 
     // close the closed batch session
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId()}")

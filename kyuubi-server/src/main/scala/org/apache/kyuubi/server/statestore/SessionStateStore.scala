@@ -21,14 +21,15 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SERVER_STATE_STORE_MAX_AGE
 import org.apache.kyuubi.engine.ApplicationOperation._
-import org.apache.kyuubi.server.statestore.api.Metadata
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.SessionType
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
 
 class SessionStateStore extends AbstractService("SessionStateStore") {
   private var _stateStore: StateStore = _
@@ -38,7 +39,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
-    _stateStore = StateStoreProvider.createStateStore(conf)
+    _stateStore = SessionStateStore.createStateStore(conf)
     super.initialize(conf)
   }
 
@@ -53,7 +54,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     super.stop()
   }
 
-  def insertMetadata(metadata: Metadata): Unit = {
+  def insertMetadata(metadata: SessionMetadata): Unit = {
     _stateStore.insertMetadata(metadata)
   }
 
@@ -83,7 +84,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     val appUrl = batchAppStatus.get(APP_URL_KEY).orNull
     val appState = batchAppStatus.get(APP_STATE_KEY).orNull
     val appError = batchAppStatus.get(APP_ERROR_KEY)
-    val metadata = Metadata(
+    val metadata = SessionMetadata(
       identifier = batchId,
       state = state,
       engineId = appId,
@@ -99,7 +100,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     _stateStore.cleanupMetadataByIdentifier(batchId)
   }
 
-  private def buildBatch(batchMetadata: Metadata): Batch = {
+  private def buildBatch(batchMetadata: SessionMetadata): Batch = {
     val batchAppInfo = Map(
       APP_ID_KEY -> Option(batchMetadata.engineId),
       APP_NAME_KEY -> Option(batchMetadata.engineName),
@@ -137,5 +138,16 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
         interval,
         TimeUnit.MILLISECONDS)
     }
+  }
+}
+
+object SessionStateStore extends Logging {
+  def createStateStore(conf: KyuubiConf): StateStore = {
+    val className = conf.get(KyuubiConf.SERVER_STATE_STORE_CLASS)
+    if (className.isEmpty) {
+      throw new KyuubiException(
+        s"${KyuubiConf.SERVER_STATE_STORE_CLASS.key} cannot be empty.")
+    }
+    ClassUtils.createInstance(className, classOf[StateStore], conf)
   }
 }
