@@ -58,6 +58,10 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     _stateStore.insertMetadata(metadata)
   }
 
+  def getSessionMetadata(identifier: String): SessionMetadata = {
+    _stateStore.getMetadata(identifier, true)
+  }
+
   def getBatch(batchId: String): Batch = {
     Option(_stateStore.getMetadata(batchId, true)).map(buildBatch).orNull
   }
@@ -112,7 +116,9 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
 
     new Batch(
       batchMetadata.identifier,
+      batchMetadata.username,
       batchMetadata.engineType,
+      batchMetadata.requestName,
       batchAppInfo.asJava,
       batchMetadata.kyuubiInstance,
       batchMetadata.state)

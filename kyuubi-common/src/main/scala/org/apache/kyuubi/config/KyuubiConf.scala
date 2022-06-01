@@ -835,6 +835,22 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
+  val BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.internal.rest.client.socket.timeout")
+      .internal
+      .doc("The internal rest client socket timeout used for batch request redirection across" +
+        " Kyuubi instances.")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
+  val BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.internal.rest.client.connect.timeout")
+      .internal
+      .doc("The internal rest client connect timeout used for batch request redirection across" +
+        " Kyuubi instances.")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")

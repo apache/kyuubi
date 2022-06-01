@@ -68,7 +68,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
   def latestLogoutTime: Long = _latestLogoutTime
 
-  private val handleToSession = new ConcurrentHashMap[SessionHandle, Session]
+  private[kyuubi] val handleToSession = new ConcurrentHashMap[SessionHandle, Session]
 
   private val timeoutChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")

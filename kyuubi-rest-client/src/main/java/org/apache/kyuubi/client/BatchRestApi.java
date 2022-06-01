@@ -58,7 +58,6 @@ public class BatchRestApi {
 
   public OperationLog getBatchLocalLog(String batchId, int from, int size) {
     Map<String, Object> params = new HashMap<>();
-    params.put("batchId", batchId);
     params.put("from", from);
     params.put("size", size);
 

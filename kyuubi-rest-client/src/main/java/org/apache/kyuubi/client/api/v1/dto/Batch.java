@@ -23,7 +23,9 @@ import java.util.Objects;
 
 public class Batch {
   private String id;
+  private String user;
   private String batchType;
+  private String batchName;
   private Map<String, String> batchInfo;
   private String kyuubiInstance;
   private String state;
@@ -32,7 +34,9 @@ public class Batch {
 
   public Batch(
       String id,
+      String user,
       String batchType,
+      String batchName,
       Map<String, String> batchInfo,
       String kyuubiInstance,
       String state) {
@@ -51,12 +55,28 @@ public class Batch {
     this.id = id;
   }
 
+  public String getUser() {
+    return user;
+  }
+
+  public void setUser(String user) {
+    this.user = user;
+  }
+
   public String getBatchType() {
     return batchType;
   }
 
   public void setBatchType(String batchType) {
     this.batchType = batchType;
+  }
+
+  public String getBatchName() {
+    return batchName;
+  }
+
+  public void setBatchName(String batchName) {
+    this.batchName = batchName;
   }
 
   public Map<String, String> getBatchInfo() {

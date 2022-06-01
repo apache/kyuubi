@@ -53,7 +53,7 @@ public class RestClientTestUtil {
             + "/MySpace/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar");
     batchInfo.put("state", "RUNNING");
 
-    Batch batch = new Batch(id, "spark", batchInfo, "192.168.31.130:64573", "RUNNING");
+    Batch batch = new Batch(id, TEST_USERNAME, "spark", "batch_name", batchInfo, "192.168.31.130:64573", "RUNNING");
 
     return batch;
   }

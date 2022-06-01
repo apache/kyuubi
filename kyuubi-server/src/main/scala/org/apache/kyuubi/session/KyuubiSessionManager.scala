@@ -167,6 +167,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
   }
 
+  def getLocalBatchSession(sessionHandle: SessionHandle): Option[KyuubiBatchSessionImpl] = {
+    Option(handleToSession.get(sessionHandle)).map(_.asInstanceOf[KyuubiBatchSessionImpl])
+  }
+
   def insertMetadata(metadata: SessionMetadata): Unit = {
     sessionStateStore.insertMetadata(metadata)
   }
@@ -181,6 +185,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def getBatch(batchId: String): Batch = {
     sessionStateStore.getBatch(batchId)
+  }
+
+  def getSessionMetadata(identifier: String): SessionMetadata = {
+    sessionStateStore.getSessionMetadata(identifier)
   }
 
   def getBatchesByType(batchType: String, from: Int, size: Int): Seq[Batch] = {
