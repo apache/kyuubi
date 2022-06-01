@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.spark.connector.tpch
 
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.kyuubi.spark.connector.common.SparkUtils
 
 class TPCHCatalogSuite extends KyuubiFunSuite {
@@ -44,52 +46,101 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
   }
 
   test("supports namespaces") {
-    spark.sql("use tpch")
-    assert(spark.sql(s"SHOW DATABASES").collect().length == 12)
-    assert(spark.sql(s"SHOW NAMESPACES IN tpch.sf1").collect().length == 0)
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpch", classOf[TPCHCatalog].getName)
+      .set("spark.sql.cbo.enabled", "true")
+      .set("spark.sql.cbo.planStats.enabled", "true")
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      spark.sql("USE tpch")
+      assert(spark.sql(s"SHOW DATABASES").collect().length == 12)
+      assert(spark.sql(s"SHOW NAMESPACES IN tpch.sf1").collect().length == 0)
+    }
+  }
+
+  test("exclude databases") {
+    Seq(
+      "TINY,sf10" -> Seq("tiny", "sf10"),
+      "sf1 , " -> Seq("sf1"),
+      "none" -> Seq.empty[String]).foreach { case (confValue, expectedExcludeDatabases) =>
+      val sparkConf = new SparkConf().setMaster("local[*]")
+        .set("spark.ui.enabled", "false")
+        .set("spark.sql.catalogImplementation", "in-memory")
+        .set("spark.sql.catalog.tpch", classOf[TPCHCatalog].getName)
+        .set("spark.sql.catalog.tpch.excludeDatabases", confValue)
+      withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+        spark.sql("USE tpch")
+        assert(
+          spark.sql(s"SHOW DATABASES").collect.map(_.getString(0)).sorted ===
+            (TPCHSchemaUtils.DATABASES diff expectedExcludeDatabases).sorted)
+      }
+    }
   }
 
   test("tpch.tiny count") {
-    assert(spark.table("tpch.tiny.customer").count === 1500)
-    assert(spark.table("tpch.tiny.orders").count === 15000)
-    assert(spark.table("tpch.tiny.lineitem").count === 60175)
-    assert(spark.table("tpch.tiny.part").count === 2000)
-    assert(spark.table("tpch.tiny.partsupp").count === 8000)
-    assert(spark.table("tpch.tiny.supplier").count === 100)
-    assert(spark.table("tpch.tiny.nation").count === 25)
-    assert(spark.table("tpch.tiny.region").count === 5)
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpch", classOf[TPCHCatalog].getName)
+      .set("spark.sql.cbo.enabled", "true")
+      .set("spark.sql.cbo.planStats.enabled", "true")
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      assert(spark.table("tpch.tiny.customer").count === 1500)
+      assert(spark.table("tpch.tiny.orders").count === 15000)
+      assert(spark.table("tpch.tiny.lineitem").count === 60175)
+      assert(spark.table("tpch.tiny.part").count === 2000)
+      assert(spark.table("tpch.tiny.partsupp").count === 8000)
+      assert(spark.table("tpch.tiny.supplier").count === 100)
+      assert(spark.table("tpch.tiny.nation").count === 25)
+      assert(spark.table("tpch.tiny.region").count === 5)
+    }
   }
 
   test("tpch.sf1 stats") {
-    def assertStats(tableName: String, sizeInBytes: BigInt, rowCount: BigInt): Unit = {
-      val stats = spark.table(tableName).queryExecution.analyzed.stats
-      assert(stats.sizeInBytes == sizeInBytes)
-      // stats.rowCount only has value after SPARK-33954
-      if (SparkUtils.isSparkVersionAtLeast("3.2")) {
-        assert(stats.rowCount.contains(rowCount), tableName)
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpch", classOf[TPCHCatalog].getName)
+      .set("spark.sql.cbo.enabled", "true")
+      .set("spark.sql.cbo.planStats.enabled", "true")
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      def assertStats(tableName: String, sizeInBytes: BigInt, rowCount: BigInt): Unit = {
+        val stats = spark.table(tableName).queryExecution.analyzed.stats
+        assert(stats.sizeInBytes == sizeInBytes)
+        // stats.rowCount only has value after SPARK-33954
+        if (SparkUtils.isSparkVersionAtLeast("3.2")) {
+          assert(stats.rowCount.contains(rowCount), tableName)
+        }
       }
+      assertStats("tpch.sf1.customer", 26850000, 150000)
+      assertStats("tpch.sf1.orders", 156000000, 1500000)
+      assertStats("tpch.sf1.lineitem", 672136080, 6001215)
+      assertStats("tpch.sf1.part", 31000000, 200000)
+      assertStats("tpch.sf1.partsupp", 115200000, 800000)
+      assertStats("tpch.sf1.supplier", 1590000, 10000)
+      assertStats("tpch.sf1.nation", 3200, 25)
+      assertStats("tpch.sf1.region", 620, 5)
+
     }
-
-    assertStats("tpch.sf1.customer", 26850000, 150000)
-    assertStats("tpch.sf1.orders", 156000000, 1500000)
-    assertStats("tpch.sf1.lineitem", 672136080, 6001215)
-    assertStats("tpch.sf1.part", 31000000, 200000)
-    assertStats("tpch.sf1.partsupp", 115200000, 800000)
-    assertStats("tpch.sf1.supplier", 1590000, 10000)
-    assertStats("tpch.sf1.nation", 3200, 25)
-    assertStats("tpch.sf1.region", 620, 5)
-
   }
 
   test("nonexistent table") {
-    val exception = intercept[AnalysisException] {
-      spark.table("tpch.sf1.nonexistent_table")
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpch", classOf[TPCHCatalog].getName)
+      .set("spark.sql.cbo.enabled", "true")
+      .set("spark.sql.cbo.planStats.enabled", "true")
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      val exception = intercept[AnalysisException] {
+        spark.table("tpch.sf1.nonexistent_table")
+      }
+      assert(exception.message === "Table or view not found: tpch.sf1.nonexistent_table")
     }
-    assert(exception.message === "Table or view not found: tpch.sf1.nonexistent_table")
-  }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    spark.stop()
   }
 }
