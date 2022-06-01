@@ -81,7 +81,7 @@ public class BatchRestClientTest {
   }
 
   @Test(expected = KyuubiRestException.class)
-  public void testInvalidUrl() throws KyuubiRestException {
+  public void testInvalidUrl() {
     KyuubiRestClient basicClient =
         KyuubiRestClient.builder("https://localhost:8443")
             .authSchema(KyuubiRestClient.AuthSchema.BASIC)
@@ -94,7 +94,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void testNoPasswordBasicClient() throws KyuubiRestException {
+  public void testNoPasswordBasicClient() {
     BatchTestServlet.setAuthSchema(BASIC_AUTH);
     BatchTestServlet.allowAnonymous(true);
 
@@ -115,7 +115,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void testAnonymousBasicClient() throws KyuubiRestException {
+  public void testAnonymousBasicClient() {
     BatchTestServlet.setAuthSchema(BASIC_AUTH);
     BatchTestServlet.allowAnonymous(true);
 
@@ -135,7 +135,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void createBatchTest() throws KyuubiRestException {
+  public void createBatchTest() {
     // test spnego auth
     BatchTestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
@@ -158,7 +158,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void getBatchByIdTest() throws KyuubiRestException {
+  public void getBatchByIdTest() {
     // test spnego auth
     BatchTestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
@@ -181,7 +181,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void getBatchInfoListTest() throws KyuubiRestException {
+  public void getBatchInfoListTest() {
     // test spnego auth
     BatchTestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
@@ -204,7 +204,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void getOperationLogTest() throws KyuubiRestException {
+  public void getOperationLogTest() {
     // test spnego auth
     BatchTestServlet.setAuthSchema(NEGOTIATE_AUTH);
 
@@ -223,7 +223,7 @@ public class BatchRestClientTest {
   }
 
   @Test
-  public void deleteBatchTest() throws KyuubiRestException {
+  public void deleteBatchTest() {
     // test spnego auth
     BatchTestServlet.setAuthSchema(NEGOTIATE_AUTH);
     spnegoBatchRestApi.deleteBatch("71535", "b_test");

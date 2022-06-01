@@ -16,5 +16,10 @@
 # limitations under the License.
 #
 
+set -x
+
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
-${KYUUBI_HOME}/build/mvn -Ptpcds spotless:apply
+
+PROFILES="-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,spark-3.0,tpcds"
+
+${KYUUBI_HOME}/build/mvn spotless:apply $PROFILES

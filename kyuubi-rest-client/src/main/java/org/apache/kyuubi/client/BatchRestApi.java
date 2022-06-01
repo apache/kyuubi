@@ -23,7 +23,6 @@ import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
-import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.apache.kyuubi.client.util.JsonUtil;
 
 public class BatchRestApi {
@@ -38,18 +37,17 @@ public class BatchRestApi {
     this.client = client;
   }
 
-  public Batch createBatch(BatchRequest request) throws KyuubiRestException {
+  public Batch createBatch(BatchRequest request) {
     String requestBody = JsonUtil.toJson(request);
     return this.getClient().post(API_BASE_PATH, requestBody, Batch.class, client.getAuthHeader());
   }
 
-  public Batch getBatchById(String batchId) throws KyuubiRestException {
+  public Batch getBatchById(String batchId) {
     String path = String.format("%s/%s", API_BASE_PATH, batchId);
     return this.getClient().get(path, null, Batch.class, client.getAuthHeader());
   }
 
-  public GetBatchesResponse listBatches(String batchType, int from, int size)
-      throws KyuubiRestException {
+  public GetBatchesResponse listBatches(String batchType, int from, int size) {
     Map<String, Object> params = new HashMap<>();
     params.put("batchType", batchType);
     params.put("from", from);
@@ -58,8 +56,7 @@ public class BatchRestApi {
         .get(API_BASE_PATH, params, GetBatchesResponse.class, client.getAuthHeader());
   }
 
-  public OperationLog getBatchLocalLog(String batchId, int from, int size)
-      throws KyuubiRestException {
+  public OperationLog getBatchLocalLog(String batchId, int from, int size) {
     Map<String, Object> params = new HashMap<>();
     params.put("batchId", batchId);
     params.put("from", from);
@@ -69,7 +66,7 @@ public class BatchRestApi {
     return this.getClient().get(path, params, OperationLog.class, client.getAuthHeader());
   }
 
-  public void deleteBatch(String batchId, String hs2ProxyUser) throws KyuubiRestException {
+  public void deleteBatch(String batchId, String hs2ProxyUser) {
     Map<String, Object> params = new HashMap<>();
     params.put("hive.server2.proxy.user", hs2ProxyUser);
 
