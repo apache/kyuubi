@@ -46,7 +46,7 @@ abstract class TFrontendService(name: String)
   extends AbstractFrontendService(name) with TCLIService.Iface with Runnable with Logging {
   import TFrontendService._
   private val started = new AtomicBoolean(false)
-  private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
+  private lazy val _hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
   private lazy val serverThread = new NamedThreadFactory(getName, false).newThread(this)
   private lazy val serverHost = conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
 
@@ -56,6 +56,8 @@ abstract class TFrontendService(name: String)
   protected lazy val serverSocket = new ServerSocket(portNum, -1, serverAddr)
   protected lazy val authFactory: KyuubiAuthenticationFactory =
     new KyuubiAuthenticationFactory(conf, isServer())
+
+  protected def hadoopConf: Configuration = _hadoopConf
 
   /**
    * Start the service itself(FE) and its composited (Discovery service, DS) in the order of:

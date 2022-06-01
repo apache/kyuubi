@@ -32,7 +32,6 @@ import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, Kyuub
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -45,7 +44,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private val isStarted = new AtomicBoolean(false)
 
-  private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
+  private def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)

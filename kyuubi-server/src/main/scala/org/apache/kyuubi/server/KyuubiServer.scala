@@ -21,6 +21,7 @@ import java.net.InetAddress
 
 import scala.util.Properties
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
@@ -40,8 +41,10 @@ import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 object KyuubiServer extends Logging {
   private val zkServer = new EmbeddedZookeeper()
   private[kyuubi] var kyuubiServer: KyuubiServer = _
+  @volatile private[kyuubi] var hadoopConf: Configuration = _
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
       zkServer.initialize(conf)
       zkServer.start()
@@ -92,6 +95,15 @@ object KyuubiServer extends Logging {
     val conf = new KyuubiConf().loadFileDefaults()
     UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
     startServer(conf)
+  }
+
+  private[kyuubi] def getHadoopConf(): Configuration = {
+    hadoopConf
+  }
+
+  private[kyuubi] def reloadHadoopConf(): Unit = synchronized {
+    val _hadoopConf = KyuubiHadoopUtils.newHadoopConf(new KyuubiConf().loadFileDefaults())
+    hadoopConf = _hadoopConf
   }
 }
 
