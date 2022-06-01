@@ -34,6 +34,7 @@ import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
@@ -108,6 +109,11 @@ class BatchJobSubmission(
   }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
+
+  // we can not set to other state if it is canceled
+  override def setState(newState: OperationState): Unit = state.synchronized {
+    super.setState(newState)
+  }
 
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(_operationLog)
@@ -206,7 +212,7 @@ class BatchJobSubmission(
     }.getOrElse(ThriftUtils.EMPTY_ROW_SET)
   }
 
-  override def close(): Unit = {
+  override def close(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       try {
         // For launch engine operation, we use OperationLog to pass engine submit log but
@@ -215,16 +221,21 @@ class BatchJobSubmission(
       } catch {
         case e: IOException => error(e.getMessage, e)
       }
+
       try {
         killMessage = killBatchApplication()
         builder.close()
       } finally {
-        // the batch operation state should never be closed
-        setState(OperationState.CANCELED)
-        updateBatchMetadata()
-        MetricsSystem.tracing(_.decCount(
-          MetricRegistry.name(OPERATION_OPEN, statement.toLowerCase(Locale.getDefault))))
+        if (killMessage._1 && !isTerminalState(state)) {
+          // the batch operation state should never be closed
+          setState(OperationState.CANCELED)
+          updateBatchMetadata()
+        } else {
+          warn(s"Failed to kill application for batch: ${batchId}")
+        }
       }
+      MetricsSystem.tracing(_.decCount(
+        MetricRegistry.name(OPERATION_OPEN, statement.toLowerCase(Locale.getDefault))))
     }
   }
 
