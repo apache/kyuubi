@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 import java.util.Locale
 import javax.ws.rs._
-import javax.ws.rs.core.{MediaType, Response}
+import javax.ws.rs.core.MediaType
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal

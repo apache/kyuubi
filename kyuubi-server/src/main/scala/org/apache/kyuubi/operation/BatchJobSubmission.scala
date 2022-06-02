@@ -243,22 +243,19 @@ class BatchJobSubmission(
         case e: IOException => error(e.getMessage, e)
       }
 
-      try {
-        builder.close()
-      } catch {
-        case e: Exception => warn("failed to close engine process builder", e)
-      }
       MetricsSystem.tracing(_.decCount(
         MetricRegistry.name(OPERATION_OPEN, statement.toLowerCase(Locale.getDefault))))
 
       // fast fail
       if (isTerminalState(state)) {
         killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
+        builder.close()
         return
       }
 
       try {
         killMessage = killBatchApplication()
+        builder.close()
       } finally {
         if (killMessage._1 && !isTerminalState(state)) {
           // kill success and we can change state safely
