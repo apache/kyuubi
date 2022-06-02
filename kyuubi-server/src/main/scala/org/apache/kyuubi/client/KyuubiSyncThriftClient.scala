@@ -106,23 +106,14 @@ class KyuubiSyncThriftClient private (
   }
 
   private def withRetryingRequest[T](block: => T, request: String): T = withLockAcquired {
-    var attemptCount = 1
+    val (resp, shouldResetEngineBroken) = KyuubiSyncThriftClient.withRetryingRequestNoLock(
+      block,
+      request,
+      maxAttempts,
+      remoteEngineBroken,
+      isConnectionValid)
 
-    var resp: T = null.asInstanceOf[T]
-    while (attemptCount <= maxAttempts && resp == null) {
-      try {
-        resp = block
-        remoteEngineBroken = false
-      } catch {
-        case e: TException if attemptCount < maxAttempts && isConnectionValid() =>
-          warn(s"Failed to execute $request after $attemptCount/$maxAttempts times, retrying", e)
-          attemptCount += 1
-          Thread.sleep(100)
-        case e: Throwable =>
-          error(s"Failed to execute $request after $attemptCount/$maxAttempts times, aborting", e)
-          throw e
-      }
-    }
+    if (shouldResetEngineBroken) remoteEngineBroken = false
     resp
   }
 
@@ -386,7 +377,35 @@ class KyuubiSyncThriftClient private (
   }
 }
 
-private[kyuubi] object KyuubiSyncThriftClient {
+private[kyuubi] object KyuubiSyncThriftClient extends Logging {
+
+  private def withRetryingRequestNoLock[T](
+      block: => T,
+      request: String,
+      maxAttempts: Int,
+      remoteEngineBroken: Boolean,
+      isConnectionValid: () => Boolean): (T, Boolean) = {
+    var attemptCount = 1
+
+    var resp: T = null.asInstanceOf[T]
+    var shouldResetEngineBroken = false;
+    while (attemptCount <= maxAttempts && resp == null) {
+      try {
+        resp = block
+        shouldResetEngineBroken = true
+      } catch {
+        case e: TException if attemptCount < maxAttempts && isConnectionValid() =>
+          warn(s"Failed to execute $request after $attemptCount/$maxAttempts times, retrying", e)
+          attemptCount += 1
+          Thread.sleep(100)
+        case e: Throwable =>
+          error(s"Failed to execute $request after $attemptCount/$maxAttempts times, aborting", e)
+          throw e
+      }
+    }
+    (resp, shouldResetEngineBroken)
+  }
+
   private def createTProtocol(
       user: String,
       passwd: String,
@@ -414,10 +433,21 @@ private[kyuubi] object KyuubiSyncThriftClient {
     val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
     val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
 
-    val tProtocol = createTProtocol(user, passwd, host, port, requestTimeout, loginTimeout)
+    val (tProtocol, _) = withRetryingRequestNoLock(
+      createTProtocol(user, passwd, host, port, requestTimeout, loginTimeout),
+      "CreatingTProtocol",
+      requestMaxAttempts,
+      false,
+      () => true)
+
     val aliveProbeProtocol =
       if (aliveProbeEnabled) {
-        Option(createTProtocol(user, passwd, host, port, aliveProbeInterval, loginTimeout))
+        Option(withRetryingRequestNoLock(
+          createTProtocol(user, passwd, host, port, aliveProbeInterval, loginTimeout),
+          "CreatingTProtocol",
+          requestMaxAttempts,
+          false,
+          () => true)._1)
       } else {
         None
       }
