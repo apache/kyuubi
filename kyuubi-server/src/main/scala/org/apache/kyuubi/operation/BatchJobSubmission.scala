@@ -158,7 +158,9 @@ class BatchJobSubmission(
     } catch {
       onError("submitting batch job submission operation in background, request rejected")
     } finally {
-      updateBatchMetadata()
+      if (isTerminalState(state)) {
+        updateBatchMetadata()
+      }
     }
   }
 
