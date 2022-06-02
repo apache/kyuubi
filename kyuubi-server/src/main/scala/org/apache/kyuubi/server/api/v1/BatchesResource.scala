@@ -155,7 +155,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @Path("{batchId}")
   def closeBatchSession(
       @PathParam("batchId") batchId: String,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
     var session: KyuubiBatchSessionImpl = null
     try {
       val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
@@ -184,7 +184,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
     sessionManager.closeSession(session.handle)
     val (success, msg) = session.batchJobSubmissionOp.getKillMessage
-    Response.ok().entity(new CloseBatchResponse(success, msg)).build()
+    new CloseBatchResponse(success, msg)
   }
 }
 
