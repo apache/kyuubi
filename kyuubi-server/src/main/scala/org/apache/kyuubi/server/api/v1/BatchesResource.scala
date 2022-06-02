@@ -149,7 +149,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[CloseBatchResponse]))),
     description = "close and cancel a batch session")
   @DELETE
   @Path("{batchId}")
