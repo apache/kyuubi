@@ -159,12 +159,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
   }
 
-  def getBatchSessionImpl(batchId: String, protocol: TProtocolVersion): KyuubiBatchSessionImpl = {
-    getSession(getBatchSessionHandle(batchId, protocol)).asInstanceOf[KyuubiBatchSessionImpl]
-  }
-
   def getBatchSessionImpl(sessionHandle: SessionHandle): KyuubiBatchSessionImpl = {
-    getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    getSessionOption(sessionHandle).map(_.asInstanceOf[KyuubiBatchSessionImpl]).orNull
   }
 
   def insertMetadata(metadata: SessionMetadata): Unit = {
@@ -183,8 +179,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     sessionStateStore.getBatch(batchId)
   }
 
-  def getBatchesByType(batchType: String, from: Int, size: Int): Seq[Batch] = {
-    sessionStateStore.getBatchesByType(batchType, from, size)
+  def getBatches(
+      batchType: String,
+      batchUser: String,
+      batchState: String,
+      createTime: Long,
+      endTime: Long,
+      from: Int,
+      size: Int): Seq[Batch] = {
+    sessionStateStore.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
   }
 
   @VisibleForTesting

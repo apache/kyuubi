@@ -31,9 +31,9 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto._
-import org.apache.kyuubi.operation.FetchOrientation
+import org.apache.kyuubi.operation.{FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.server.api.v1.BatchesResource.{supportedBatchType, REST_BATCH_PROTOCOL, SUPPORTED_BATCH_TYPES}
+import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle}
@@ -44,18 +44,19 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
-  private def buildBatch(sessionHandle: SessionHandle): Batch = {
-    buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
-  }
-
   private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
     val batchOp = session.batchJobSubmissionOp
+    val batchOpStatus = batchOp.getStatus
     new Batch(
       batchOp.batchId,
+      session.user,
       batchOp.batchType,
+      batchOp.batchName,
       batchOp.currentApplicationState.getOrElse(Map.empty).asJava,
       fe.connectionUrl,
-      batchOp.getStatus.state.toString)
+      batchOpStatus.state.toString,
+      session.createTime,
+      batchOpStatus.completed)
   }
 
   @ApiResponse(
@@ -83,7 +84,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       ipAddress,
       request.getConf.asScala.toMap,
       request)
-    buildBatch(sessionHandle)
+    buildBatch(sessionManager.getBatchSessionImpl(sessionHandle))
   }
 
   @ApiResponse(
@@ -95,9 +96,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @GET
   @Path("{batchId}")
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
-    Option(sessionManager.getBatch(batchId)).getOrElse {
-      error(s"Invalid batchId: $batchId")
-      throw new NotFoundException(s"Invalid batchId: $batchId")
+    val sessionHandle = normalizedBatchSessionHandle(batchId)
+    Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
+      buildBatch(batchSession)
+    }.getOrElse {
+      Option(sessionManager.getBatch(batchId)).getOrElse {
+        error(s"Invalid batchId: $batchId")
+        throw new NotFoundException(s"Invalid batchId: $batchId")
+      }
     }
   }
 
@@ -106,14 +112,27 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[GetBatchesResponse]))),
-    description = "returns the active batch sessions")
+    description = "returns the batch sessions.")
   @GET
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def getBatchInfoList(
       @QueryParam("batchType") batchType: String,
+      @QueryParam("batchState") batchState: String,
+      @QueryParam("batchUser") batchUser: String,
+      @QueryParam("createTime") createTime: Long,
+      @QueryParam("endTime") endTime: Long,
       @QueryParam("from") from: Int,
       @QueryParam("size") size: Int): GetBatchesResponse = {
-    val batches = sessionManager.getBatchesByType(batchType, from, size)
+    require(
+      createTime >= 0 && endTime >= 0 && (endTime == 0 || createTime <= endTime),
+      "Invalid time range")
+    if (batchState != null) {
+      require(
+        validBatchState(batchState),
+        s"The valid batch state can be one of the following: ${VALID_BATCH_STATES.mkString(",")}")
+    }
+    val batches =
+      sessionManager.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 
@@ -129,10 +148,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @PathParam("batchId") batchId: String,
       @QueryParam("from") @DefaultValue("-1") from: Int,
       @QueryParam("size") size: Int): OperationLog = {
+    val sessionHandle = normalizedBatchSessionHandle(batchId)
     try {
-      val submissionOpt = sessionManager.getBatchSessionImpl(batchId, REST_BATCH_PROTOCOL)
-        .batchJobSubmissionOp
-      val rowSet = submissionOpt.getOperationLogRowSet(
+      val submissionOp = sessionManager.getBatchSessionImpl(sessionHandle).batchJobSubmissionOp
+      val rowSet = submissionOp.getOperationLogRowSet(
         FetchOrientation.FETCH_NEXT,
         from,
         size)
@@ -157,9 +176,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def closeBatchSession(
       @PathParam("batchId") batchId: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
+    val sessionHandle = normalizedBatchSessionHandle(batchId)
     var session: KyuubiBatchSessionImpl = null
     try {
-      val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
       session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
     } catch {
       case NonFatal(e) =>
@@ -187,13 +206,33 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val (success, msg) = session.batchJobSubmissionOp.getKillMessage
     new CloseBatchResponse(success, msg)
   }
+
+  private def normalizedBatchSessionHandle(batchId: String): SessionHandle = {
+    try {
+      sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid batchId: $batchId", e)
+        throw new NotFoundException(s"Invalid batchId: $batchId")
+    }
+  }
 }
 
 object BatchesResource {
   val REST_BATCH_PROTOCOL = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11
   val SUPPORTED_BATCH_TYPES = Seq("SPARK")
+  val VALID_BATCH_STATES = Seq(
+    OperationState.PENDING,
+    OperationState.RUNNING,
+    OperationState.FINISHED,
+    OperationState.ERROR,
+    OperationState.CANCELED).map(_.toString)
 
   def supportedBatchType(batchType: String): Boolean = {
     Option(batchType).exists(bt => SUPPORTED_BATCH_TYPES.contains(bt.toUpperCase(Locale.ROOT)))
+  }
+
+  def validBatchState(batchState: String): Boolean = {
+    Option(batchState).exists(bt => VALID_BATCH_STATES.contains(bt.toUpperCase(Locale.ROOT)))
   }
 }

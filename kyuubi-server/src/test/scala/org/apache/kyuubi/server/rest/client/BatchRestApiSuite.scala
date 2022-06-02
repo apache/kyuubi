@@ -129,6 +129,38 @@ class BatchRestApiSuite extends RestClientTestHelper {
     val closeResp = batchRestApi.deleteBatch(batch.getId(), null)
     assert(closeResp.isSuccess)
 
+    // list batches
+    var listBatchesResp = batchRestApi.listBatches("SPARK", null, null, null, null, 0, Int.MaxValue)
+    assert(listBatchesResp.getTotal > 0)
+
+    listBatchesResp =
+      batchRestApi.listBatches(
+        "SPARK",
+        null,
+        null,
+        Long.MaxValue - 1,
+        Long.MaxValue,
+        0,
+        Int.MaxValue)
+    assert(listBatchesResp.getTotal === 0)
+
+    listBatchesResp =
+      batchRestApi.listBatches("SPARK", null, null, Long.MaxValue, null, 0, Int.MaxValue)
+    assert(listBatchesResp.getTotal === 0)
+
+    listBatchesResp = batchRestApi.listBatches("SPARK", null, null, null, 1000, 0, Int.MaxValue)
+    assert(listBatchesResp.getTotal === 0)
+
+    // list batches with non-existing user
+    listBatchesResp =
+      batchRestApi.listBatches("SPARK", "non_existing_user", null, 0, 0, 0, Int.MaxValue)
+    assert(listBatchesResp.getTotal == 0)
+
+    // list batches with invalid batch state
+    intercept[KyuubiRestException] {
+      batchRestApi.listBatches("SPARK", null, "BAD_STATE", 0, 0, 0, Int.MaxValue)
+    }
+
     spnegoKyuubiRestClient.close()
   }
 }

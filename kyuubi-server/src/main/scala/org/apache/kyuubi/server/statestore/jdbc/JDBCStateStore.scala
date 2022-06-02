@@ -171,6 +171,8 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       userName: String,
       state: String,
       kyuubiInstance: String,
+      createTime: Long,
+      endTime: Long,
       from: Int,
       size: Int,
       stateOnly: Boolean): Seq[SessionMetadata] = {
@@ -195,17 +197,26 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       params += userName
     }
     Option(state).filter(_.nonEmpty).foreach { _ =>
-      whereConditions += " STATE = ? "
-      params += state
+      whereConditions += " state = ? "
+      params += state.toUpperCase(Locale.ROOT)
     }
     Option(kyuubiInstance).filter(_.nonEmpty).foreach { _ =>
-      whereConditions += " KYUUBI_INSTANCE = ? "
+      whereConditions += " kyuubi_instance = ? "
       params += kyuubiInstance
+    }
+    if (createTime > 0) {
+      whereConditions += " create_time >= ? "
+      params += createTime
+    }
+    if (endTime > 0) {
+      whereConditions += " end_time > 0 "
+      whereConditions += " end_time <= ? "
+      params += endTime
     }
     if (whereConditions.nonEmpty) {
       queryBuilder.append(whereConditions.mkString(" WHERE ", " AND ", " "))
     }
-    queryBuilder.append(" ORDER BY KEY_ID ")
+    queryBuilder.append(" ORDER BY key_id ")
     val query = databaseAdaptor.addLimitAndOffsetToQuery(queryBuilder.toString(), size, from)
     withConnection() { connection =>
       withResultSet(connection, query, params: _*) { rs =>

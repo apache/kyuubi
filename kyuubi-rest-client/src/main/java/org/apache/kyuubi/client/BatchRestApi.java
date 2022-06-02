@@ -48,9 +48,24 @@ public class BatchRestApi {
     return this.getClient().get(path, null, Batch.class, client.getAuthHeader());
   }
 
-  public GetBatchesResponse listBatches(String batchType, int from, int size) {
+  public GetBatchesResponse listBatches(
+      String batchType,
+      String batchUser,
+      String batchState,
+      Long createTime,
+      Long endTime,
+      int from,
+      int size) {
     Map<String, Object> params = new HashMap<>();
     params.put("batchType", batchType);
+    params.put("batchUser", batchUser);
+    params.put("batchState", batchState);
+    if (null != createTime && createTime >= 0) {
+      params.put("createTime", createTime);
+    }
+    if (null != endTime && endTime >= 0) {
+      params.put("endTime", endTime);
+    }
     params.put("from", from);
     params.put("size", size);
     return this.getClient()
