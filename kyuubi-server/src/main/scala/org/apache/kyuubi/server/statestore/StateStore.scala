@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.statestore
 
 import java.io.Closeable
 
-import org.apache.kyuubi.server.statestore.api.Metadata
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 import org.apache.kyuubi.session.SessionType.SessionType
 
 trait StateStore extends Closeable {
@@ -27,7 +27,7 @@ trait StateStore extends Closeable {
   /**
    * Insert a metadata into state store.
    */
-  def insertMetadata(metadata: Metadata): Unit
+  def insertMetadata(metadata: SessionMetadata): Unit
 
   /**
    * Get the persisted metadata by batch identifier.
@@ -35,7 +35,7 @@ trait StateStore extends Closeable {
    * @param stateOnly only return the state related column values.
    * @return selected metadata.
    */
-  def getMetadata(identifier: String, stateOnly: Boolean): Metadata
+  def getMetadata(identifier: String, stateOnly: Boolean): SessionMetadata
 
   /**
    * Get the metadata list with filter conditions, offset and size.
@@ -57,13 +57,13 @@ trait StateStore extends Closeable {
       kyuubiInstance: String,
       from: Int,
       size: Int,
-      stateOnly: Boolean): Seq[Metadata]
+      stateOnly: Boolean): Seq[SessionMetadata]
 
   /**
    * Update the metadata according to identifier.
    * Note that, it will only update the state and engine related metadata.
    */
-  def updateMetadata(metadata: Metadata): Unit
+  def updateMetadata(metadata: SessionMetadata): Unit
 
   /**
    * Cleanup meta data by identifier.

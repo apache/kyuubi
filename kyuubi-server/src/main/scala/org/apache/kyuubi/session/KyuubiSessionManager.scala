@@ -36,7 +36,7 @@ import org.apache.kyuubi.operation.KyuubiOperationManager
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.statestore.SessionStateStore
-import org.apache.kyuubi.server.statestore.api.Metadata
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   import KyuubiSessionManager._
@@ -167,7 +167,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
   }
 
-  def insertMetadata(metadata: Metadata): Unit = {
+  def insertMetadata(metadata: SessionMetadata): Unit = {
     sessionStateStore.insertMetadata(metadata)
   }
 

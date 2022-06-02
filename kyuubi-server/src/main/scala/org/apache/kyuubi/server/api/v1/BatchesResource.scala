@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 import java.util.Locale
 import javax.ws.rs._
-import javax.ws.rs.core.{MediaType, Response}
+import javax.ws.rs.core.MediaType
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
@@ -149,14 +149,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
-    description = "close a batch session")
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[CloseBatchResponse]))),
+    description = "close and cancel a batch session")
   @DELETE
   @Path("{batchId}")
   def closeBatchSession(
       @PathParam("batchId") batchId: String,
-      @QueryParam("killApp") killApp: Boolean,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
     var session: KyuubiBatchSessionImpl = null
     try {
       val sessionHandle = sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
@@ -183,14 +183,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         s"$userName is not allowed to close the session belong to ${session.user}")
     }
 
-    if (killApp) {
-      val killResponse = session.batchJobSubmissionOp.killBatchApplication()
-      sessionManager.closeSession(session.handle)
-      Response.ok().entity(killResponse).build()
-    } else {
-      sessionManager.closeSession(session.handle)
-      Response.ok().build()
-    }
+    sessionManager.closeSession(session.handle)
+    val (success, msg) = session.batchJobSubmissionOp.getKillMessage
+    new CloseBatchResponse(success, msg)
   }
 }
 

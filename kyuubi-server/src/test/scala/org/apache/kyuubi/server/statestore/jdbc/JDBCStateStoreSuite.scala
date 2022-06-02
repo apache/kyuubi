@@ -24,7 +24,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.statestore.api.Metadata
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 import org.apache.kyuubi.server.statestore.jdbc.JDBCStateStoreConf._
 import org.apache.kyuubi.session.SessionType
 
@@ -55,7 +55,7 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
   test("jdbc state store") {
     val batchId = UUID.randomUUID().toString
     val kyuubiInstance = "localhost:10099"
-    var batchMetadata = Metadata(
+    var batchMetadata = SessionMetadata(
       identifier = batchId,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",

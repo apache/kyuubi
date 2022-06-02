@@ -66,9 +66,8 @@ public class BatchRestApi {
     return this.getClient().get(path, params, OperationLog.class, client.getAuthHeader());
   }
 
-  public void deleteBatch(String batchId, boolean killApp, String hs2ProxyUser) {
+  public void deleteBatch(String batchId, String hs2ProxyUser) {
     Map<String, Object> params = new HashMap<>();
-    params.put("killApp", killApp);
     params.put("hive.server2.proxy.user", hs2ProxyUser);
 
     String path = String.format("%s/%s", API_BASE_PATH, batchId);

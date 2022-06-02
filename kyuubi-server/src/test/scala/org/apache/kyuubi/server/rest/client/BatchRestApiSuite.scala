@@ -66,7 +66,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
     assert(log.getRowCount == 1)
 
     // delete batch
-    batchRestApi.deleteBatch(batch.getId(), true, null)
+    batchRestApi.deleteBatch(batch.getId(), null)
 
     basicKyuubiRestClient.close()
   }
@@ -125,7 +125,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
     assert(log.getRowCount == 1)
 
     // delete batch
-    batchRestApi.deleteBatch(batch.getId(), true, null)
+    batchRestApi.deleteBatch(batch.getId(), null)
 
     spnegoKyuubiRestClient.close()
   }

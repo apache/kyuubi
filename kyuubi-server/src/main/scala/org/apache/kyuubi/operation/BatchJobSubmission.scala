@@ -17,23 +17,40 @@
 
 package org.apache.kyuubi.operation
 
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.{ArrayList => JArrayList, Locale}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
+import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
+import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
 
+/**
+ * The state of batch operation is special. In general, the lifecycle of state is:
+ *
+ *                        /  ERROR
+ * PENDING  ->  RUNNING  ->  FINISHED
+ *                        \  CANCELED (CLOSED)
+ *
+ * We can not change FINISHED/ERROR/CANCELED to CLOSED, and it's different with other operation
+ * which final status is always CLOSED, so we do not use CLOSED state in this class.
+ * To compatible with kill application we combine the semantics of `cancel` and `close`, so if
+ * user close the batch session that means the final status is CANCELED.
+ */
 class BatchJobSubmission(
     session: KyuubiBatchSessionImpl,
     val batchType: String,
@@ -55,6 +72,9 @@ class BatchJobSubmission(
   private[kyuubi] val batchId: String = session.handle.identifier.toString
 
   private var applicationStatus: Option[Map[String, String]] = None
+
+  private var killMessage: KillResponse = (false, "UNKNOWN")
+  def getKillMessage: KillResponse = killMessage
 
   private val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
@@ -86,35 +106,62 @@ class BatchJobSubmission(
   private val applicationCheckInterval =
     session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL)
 
+  private def updateBatchMetadata(): Unit = {
+    val endTime =
+      if (isTerminalState(state)) {
+        lastAccessTime
+      } else {
+        0L
+      }
+    session.sessionManager.updateBatchMetadata(
+      batchId,
+      state,
+      applicationStatus.getOrElse(Map.empty),
+      endTime)
+  }
+
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
+
+  // we can not set to other state if it is canceled
+  private def setStateIfNotCanceled(newState: OperationState): Unit = state.synchronized {
+    if (state != CANCELED) {
+      setState(newState)
+    }
+  }
 
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(_operationLog)
     setHasResultSet(true)
-    setState(OperationState.PENDING)
+    setStateIfNotCanceled(OperationState.PENDING)
   }
 
   override protected def afterRun(): Unit = {
     OperationLog.removeCurrentOperationLog()
-    session.sessionManager.updateBatchMetadata(
-      batchId,
-      getStatus.state,
-      applicationStatus.getOrElse(Map.empty),
-      getStatus.lastModified)
   }
 
   override protected def runInternal(): Unit = {
     val asyncOperation: Runnable = () => {
-      setState(OperationState.RUNNING)
+      setStateIfNotCanceled(OperationState.RUNNING)
       try {
         submitBatchJob()
-        setState(OperationState.FINISHED)
-      } catch onError()
+        setStateIfNotCanceled(OperationState.FINISHED)
+      } catch {
+        onError()
+      } finally {
+        updateBatchMetadata()
+      }
     }
+
     try {
       val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
-    } catch onError("submitting batch job submission operation in background, request rejected")
+    } catch {
+      onError("submitting batch job submission operation in background, request rejected")
+    } finally {
+      if (isTerminalState(state)) {
+        updateBatchMetadata()
+      }
+    }
   }
 
   private def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
@@ -130,10 +177,7 @@ class BatchJobSubmission(
       applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
         if (!appStatusFirstUpdated && applicationStatus.isDefined) {
-          session.sessionManager.updateBatchMetadata(
-            batchId,
-            getStatus.state,
-            applicationStatus.get)
+          updateBatchMetadata()
           appStatusFirstUpdated = true
         }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
@@ -189,12 +233,44 @@ class BatchJobSubmission(
     }.getOrElse(ThriftUtils.EMPTY_ROW_SET)
   }
 
-  override def close(): Unit = {
+  override def close(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
-      if (builder != null) {
+      try {
+        getOperationLog.foreach(_.close())
+      } catch {
+        case e: IOException => error(e.getMessage, e)
+      }
+
+      MetricsSystem.tracing(_.decCount(
+        MetricRegistry.name(OPERATION_OPEN, statement.toLowerCase(Locale.getDefault))))
+
+      // fast fail
+      if (isTerminalState(state)) {
+        killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
         builder.close()
+        return
+      }
+
+      try {
+        killMessage = killBatchApplication()
+        builder.close()
+      } finally {
+        if (killMessage._1 && !isTerminalState(state)) {
+          // kill success and we can change state safely
+          // note that, the batch operation state should never be closed
+          setState(OperationState.CANCELED)
+          updateBatchMetadata()
+        } else if (killMessage._1) {
+          // we can not change state safely
+          killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
+        } else if (!isTerminalState(state)) {
+          // failed to kill, the kill message is enough
+        }
       }
     }
-    super.close()
+  }
+
+  override def cancel(): Unit = {
+    throw new IllegalStateException("Use close instead.")
   }
 }
