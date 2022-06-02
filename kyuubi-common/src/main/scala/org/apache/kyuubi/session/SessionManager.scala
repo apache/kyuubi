@@ -304,7 +304,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
                   warn(s"Error closing idle session ${session.handle}", e)
               }
             } else {
-              session.closeExpiredOperations
+              session.closeExpiredOperations()
             }
           }
         }
