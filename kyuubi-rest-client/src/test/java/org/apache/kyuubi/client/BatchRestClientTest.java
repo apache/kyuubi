@@ -20,9 +20,9 @@ package org.apache.kyuubi.client;
 import static org.apache.kyuubi.client.RestClientTestUtil.*;
 import static org.junit.Assert.assertEquals;
 
-import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
+import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
