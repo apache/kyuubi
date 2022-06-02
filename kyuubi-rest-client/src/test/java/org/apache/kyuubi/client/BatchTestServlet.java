@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
+import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
 
@@ -103,6 +104,10 @@ public class BatchTestServlet extends HttpServlet {
 
     if (req.getPathInfo().matches("/api/v1/batches/\\d+")) {
       resp.setStatus(HttpServletResponse.SC_OK);
+
+      CloseBatchResponse closeResp = generateTestCloseBatchResp();
+      resp.getWriter().write(MAPPER.writeValueAsString(closeResp));
+      resp.getWriter().flush();
     } else {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
     }

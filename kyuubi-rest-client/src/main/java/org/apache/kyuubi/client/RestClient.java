@@ -80,6 +80,11 @@ public class RestClient implements AutoCloseable {
     return doRequest(buildURI(path), authHeader, postRequestBuilder);
   }
 
+  public <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader) {
+    String responseJson = delete(path, params, authHeader);
+    return JsonUtil.toObject(responseJson, type);
+  }
+
   public String delete(String path, Map<String, Object> params, String authHeader) {
     return doRequest(buildURI(path, params), authHeader, RequestBuilder.delete());
   }

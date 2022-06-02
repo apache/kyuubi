@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
+import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
 import org.apache.kyuubi.client.util.JsonUtil;
@@ -58,7 +59,6 @@ public class BatchRestApi {
 
   public OperationLog getBatchLocalLog(String batchId, int from, int size) {
     Map<String, Object> params = new HashMap<>();
-    params.put("batchId", batchId);
     params.put("from", from);
     params.put("size", size);
 
@@ -66,12 +66,12 @@ public class BatchRestApi {
     return this.getClient().get(path, params, OperationLog.class, client.getAuthHeader());
   }
 
-  public void deleteBatch(String batchId, String hs2ProxyUser) {
+  public CloseBatchResponse deleteBatch(String batchId, String hs2ProxyUser) {
     Map<String, Object> params = new HashMap<>();
     params.put("hive.server2.proxy.user", hs2ProxyUser);
 
     String path = String.format("%s/%s", API_BASE_PATH, batchId);
-    this.getClient().delete(path, params, client.getAuthHeader());
+    return this.getClient().delete(path, params, CloseBatchResponse.class, client.getAuthHeader());
   }
 
   private RestClient getClient() {

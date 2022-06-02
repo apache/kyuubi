@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
+import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
@@ -226,11 +227,13 @@ public class BatchRestClientTest {
   public void deleteBatchTest() {
     // test spnego auth
     BatchTestServlet.setAuthSchema(NEGOTIATE_AUTH);
-    spnegoBatchRestApi.deleteBatch("71535", "b_test");
+    CloseBatchResponse response = spnegoBatchRestApi.deleteBatch("71535", "b_test");
+    assertEquals(response.isSuccess(), true);
 
     // test basic auth
     BatchTestServlet.setAuthSchema(BASIC_AUTH);
     BatchTestServlet.allowAnonymous(false);
-    basicBatchRestApi.deleteBatch("71535", "b_test");
+    response = basicBatchRestApi.deleteBatch("71535", "b_test");
+    assertEquals(response.isSuccess(), true);
   }
 }

@@ -24,10 +24,10 @@ CREATE TABLE session_metadata(
     end_time bigint  -- the metadata end time
 );
 
-CREATE INDEX metadata_kyuubi_instance_index ON metadata(kyuubi_instance);
+CREATE INDEX metadata_kyuubi_instance_index ON session_metadata(kyuubi_instance);
 
-CREATE INDEX metadata_identifier_index ON metadata(identifier);
+CREATE INDEX metadata_identifier_index ON session_metadata(identifier);
 
-CREATE INDEX metadata_user_name_index ON metadata(user_name);
+CREATE INDEX metadata_user_name_index ON session_metadata(user_name);
 
-CREATE INDEX metadata_engine_type_index ON metadata(engine_type);
+CREATE INDEX metadata_engine_type_index ON session_metadata(engine_type);
