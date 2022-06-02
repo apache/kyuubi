@@ -35,7 +35,7 @@ import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_NAMESPACE, HA_ZK_ENGINE_REF_ID}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -167,7 +167,7 @@ private[kyuubi] class EngineRef(
     if (engineRef.nonEmpty) return engineRef.get
 
     conf.set(HA_NAMESPACE, engineSpace)
-    conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
+    conf.set(HA_ENGINE_REF_ID, engineRefId)
     val started = System.currentTimeMillis()
     conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
     builder = engineType match {

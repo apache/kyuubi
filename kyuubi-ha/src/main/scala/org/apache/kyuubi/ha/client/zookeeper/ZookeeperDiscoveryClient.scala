@@ -46,7 +46,7 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NODE_TIMEOUT
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_PUBLISH_CONFIGS
 import org.apache.kyuubi.ha.client.DiscoveryClient
@@ -344,7 +344,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         throw new KyuubiException(s"Failed to create namespace '$ns'", e)
     }
 
-    val session = conf.get(HA_ZK_ENGINE_REF_ID)
+    val session = conf.get(HA_ENGINE_REF_ID)
       .map(refId => s"refId=$refId;").getOrElse("")
     val pathPrefix = ZKPaths.makePath(
       namespace,

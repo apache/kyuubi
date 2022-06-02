@@ -119,10 +119,10 @@ object ZookeeperClientProvider extends Logging {
       }
     }
 
-    if (conf.get(HA_ZK_ENGINE_REF_ID).isEmpty
+    if (conf.get(HA_ENGINE_REF_ID).isEmpty
       && AuthTypes.withName(conf.get(HA_ZK_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth()
-    } else if (conf.get(HA_ZK_ENGINE_REF_ID).nonEmpty && AuthTypes
+    } else if (conf.get(HA_ENGINE_REF_ID).nonEmpty && AuthTypes
         .withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth()
     }

@@ -43,7 +43,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
 import org.apache.kyuubi.ha.HighAvailabilityConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ENGINE_REF_ID
 import org.apache.kyuubi.ha.client.DiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.ha.client.ServiceDiscovery
@@ -268,7 +268,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val ns = DiscoveryPaths.makePath(null, namespace)
     create(ns, "PERSISTENT")
 
-    val session = conf.get(HA_ZK_ENGINE_REF_ID)
+    val session = conf.get(HA_ENGINE_REF_ID)
       .map(refId => s"refId=$refId;").getOrElse("")
     val pathPrefix = DiscoveryPaths.makePath(
       namespace,

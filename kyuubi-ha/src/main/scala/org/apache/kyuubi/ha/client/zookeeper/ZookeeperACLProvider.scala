@@ -42,9 +42,9 @@ class ZookeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
       nodeAcls.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
     }
 
-    if (conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).isEmpty && enabledServerAcls()) {
+    if (conf.get(HighAvailabilityConf.HA_ENGINE_REF_ID).isEmpty && enabledServerAcls()) {
       addACL()
-    } else if (conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).nonEmpty && enabledEngineAcls()) {
+    } else if (conf.get(HighAvailabilityConf.HA_ENGINE_REF_ID).nonEmpty && enabledEngineAcls()) {
       addACL()
     } else {
       // ACLs for znodes on a non-kerberized cluster

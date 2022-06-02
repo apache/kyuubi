@@ -78,12 +78,12 @@ class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests with Kerberized
     val serverACL = new ZookeeperACLProvider(serverConf).getDefaultAcl
     assertACL(expectedEnableACL, serverACL)
 
-    val engineConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
+    val engineConf = serverConf.clone.set(HA_ENGINE_REF_ID, "ref")
     engineConf.set(HA_ZK_ENGINE_AUTH_TYPE, AuthTypes.NONE.toString)
     val engineACL = new ZookeeperACLProvider(engineConf).getDefaultAcl
     assertACL(expectedNoACL, engineACL)
 
-    val enableEngineACLConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
+    val enableEngineACLConf = serverConf.clone.set(HA_ENGINE_REF_ID, "ref")
     enableEngineACLConf.set(HA_ZK_ENGINE_AUTH_TYPE, AuthTypes.KERBEROS.toString)
     val enableEngineACL = new ZookeeperACLProvider(enableEngineACLConf).getDefaultAcl
     assertACL(expectedEnableACL, enableEngineACL)
