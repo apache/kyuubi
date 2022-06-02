@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
@@ -36,6 +37,10 @@ public class RestClientTestUtil {
 
   public static Batch generateTestBatch() {
     return generateTestBatch("71535");
+  }
+
+  public static CloseBatchResponse generateTestCloseBatchResp() {
+    return new CloseBatchResponse(true, "");
   }
 
   public static Batch generateTestBatch(String id) {
