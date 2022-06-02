@@ -18,7 +18,7 @@
 name: Kyuubi Flaky Test Report
 title: "Flaky Test: "
 description: Describe the flaky test you encountered with Apache Kyuubi
-labels: ["kind:bug,priority:major"]
+labels: ["kind:bug,kind:test,priority:major"]
 body:
   - type: markdown
     attributes:
