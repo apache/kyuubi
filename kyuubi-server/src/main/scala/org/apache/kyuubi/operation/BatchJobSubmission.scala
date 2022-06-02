@@ -108,7 +108,7 @@ class BatchJobSubmission(
 
   private def updateBatchMetadata(): Unit = {
     val endTime =
-      if (isTerminalState(getStatus.state)) {
+      if (isTerminalState(state)) {
         lastAccessTime
       } else {
         0L
@@ -236,8 +236,6 @@ class BatchJobSubmission(
   override def close(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       try {
-        // For launch engine operation, we use OperationLog to pass engine submit log but
-        // at that time we do not have remoteOpHandle
         getOperationLog.foreach(_.close())
       } catch {
         case e: IOException => error(e.getMessage, e)
