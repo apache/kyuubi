@@ -34,13 +34,13 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    if (session.sessionManager.getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)) {
+    if (session.sessionKyuubiConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)) {
       val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation
       }
     }
-    val incrementalCollect = session.sessionManager.getConf.get(OPERATION_INCREMENTAL_COLLECT)
+    val incrementalCollect = session.sessionKyuubiConf.get(OPERATION_INCREMENTAL_COLLECT)
     val operation =
       new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
     addOperation(operation)

@@ -37,7 +37,7 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    if (session.sessionManager.getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)) {
+    if (session.sessionKyuubiConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)) {
       val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation

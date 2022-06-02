@@ -34,7 +34,7 @@ import org.apache.hive.service.rpc.thrift.TOperationState
 import org.apache.hive.service.rpc.thrift.TStatusCode
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, OPERATION_INCREMENTAL_COLLECT}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.trino.TrinoQueryTests
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -744,6 +744,29 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       tFetchResultsReq.setMaxRows(1000)
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+    }
+  }
+
+  test("trino - set/get catalog with session conf") {
+    Seq(true, false).foreach { enable =>
+      withSessionConf()(
+        Map(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> enable.toString))(Map.empty) {
+        withJdbcStatement() { statement =>
+          val catalog = statement.getConnection.getCatalog
+          if (enable) {
+            assert(catalog == "memory")
+          } else {
+            assert(catalog == "")
+          }
+          statement.getConnection.setCatalog("system")
+          val changedCatalog = statement.getConnection.getCatalog
+          if (enable) {
+            assert(changedCatalog == "system")
+          } else {
+            assert(changedCatalog == "")
+          }
+        }
+      }
     }
   }
 }
