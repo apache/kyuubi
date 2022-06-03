@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.ctl
 
+import scala.reflect.runtime.{universe => ru}
+
 import scopt.OParser
 
 import org.apache.kyuubi.Logging
@@ -57,13 +59,18 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   private def getCommand(cliArgs: CliConfig): Command = {
-    cliArgs.action match {
-      case ControlAction.CREATE => new CreateCommand(cliArgs)
-      case ControlAction.GET => new GetCommand(cliArgs)
-      case ControlAction.DELETE => new DeleteCommand(cliArgs)
-      case ControlAction.LIST => new ListCommand(cliArgs)
-      case _ => null
-    }
+    val mirror: ru.Mirror = ru.runtimeMirror(getClass.getClassLoader)
+    val commandName = cliArgs.action.toString.toLowerCase.capitalize
+    val className = s"org.apache.kyuubi.ctl.cmd.${commandName}Command"
+    val classSymbol: ru.ClassSymbol = mirror.staticClass(className)
+
+    val consMethodSymbol = classSymbol.primaryConstructor.asMethod
+
+    val classMirror = mirror.reflectClass(classSymbol)
+    val consMethodMirror = classMirror.reflectConstructor(consMethodSymbol)
+
+    val result = consMethodMirror.apply(cliArgs).asInstanceOf[Command]
+    result
   }
 
   override def toString: String = {
