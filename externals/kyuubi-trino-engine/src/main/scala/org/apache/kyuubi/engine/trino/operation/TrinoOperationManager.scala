@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.trino.session.TrinoSessionImpl
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
@@ -34,13 +35,18 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    if (session.sessionKyuubiConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)) {
+    val normalizedConf = session.asInstanceOf[TrinoSessionImpl].normalizedConf
+    if (normalizedConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key).map(
+        _.toBoolean).getOrElse(
+        session.sessionManager.getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED))) {
       val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation
       }
     }
-    val incrementalCollect = session.sessionKyuubiConf.get(OPERATION_INCREMENTAL_COLLECT)
+    val incrementalCollect = normalizedConf.get(OPERATION_INCREMENTAL_COLLECT.key).map(
+      _.toBoolean).getOrElse(
+      session.sessionManager.getConf.get(OPERATION_INCREMENTAL_COLLECT))
     val operation =
       new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
     addOperation(operation)

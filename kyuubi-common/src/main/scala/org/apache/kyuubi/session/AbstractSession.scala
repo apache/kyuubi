@@ -22,7 +22,6 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
@@ -52,14 +51,6 @@ abstract class AbstractSession(
   }
 
   val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
-
-  lazy val sessionKyuubiConf: KyuubiConf = {
-    val conf = sessionManager.getConf.clone
-    normalizedConf.foreach {
-      case (key, value) => conf.set(key, value)
-    }
-    conf
-  }
 
   final private val opHandleSet = new java.util.HashSet[OperationHandle]
 

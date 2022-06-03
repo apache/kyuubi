@@ -26,7 +26,6 @@ import org.apache.hive.service.rpc.thrift.TTableSchema
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.trino.TrinoContext
 import org.apache.kyuubi.engine.trino.schema.RowSet
 import org.apache.kyuubi.engine.trino.schema.SchemaHelper
@@ -43,8 +42,6 @@ abstract class TrinoOperation(opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
 
   protected val trinoContext: TrinoContext = session.asInstanceOf[TrinoSessionImpl].trinoContext
-
-  protected val sessionConf: KyuubiConf = session.sessionKyuubiConf
 
   protected var trino: StatementClient = _
 
