@@ -21,7 +21,7 @@ import java.net.InetAddress
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SHARE_LEVEL_SUBDOMAIN, ENGINE_TYPE}
-import org.apache.kyuubi.ctl.{CliConfig, ServiceControlObject}
+import org.apache.kyuubi.ctl.{CliConfig, ControlObject}
 import org.apache.kyuubi.ctl.ControlCli.printMessage
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths, ServiceNodeInfo}
@@ -79,7 +79,7 @@ abstract class Command(var cliArgs: CliConfig) extends Logging {
   }
 
   protected def validateUser(): Unit = {
-    if (cliArgs.service == ServiceControlObject.ENGINE && cliArgs.engineOpts.user == null) {
+    if (cliArgs.service == ControlObject.ENGINE && cliArgs.engineOpts.user == null) {
       fail("Must specify user name for engine, please use -u or --user.")
     }
   }
@@ -120,9 +120,9 @@ abstract class Command(var cliArgs: CliConfig) extends Logging {
 
   private[ctl] def getZkNamespace(): String = {
     cliArgs.service match {
-      case ServiceControlObject.SERVER =>
+      case ControlObject.SERVER =>
         DiscoveryPaths.makePath(null, cliArgs.commonOpts.namespace)
-      case ServiceControlObject.ENGINE =>
+      case ControlObject.ENGINE =>
         val engineType = Some(cliArgs.engineOpts.engineType)
           .filter(_ != null).filter(_.nonEmpty)
           .getOrElse(conf.get(ENGINE_TYPE))

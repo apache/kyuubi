@@ -167,7 +167,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       "--namespace",
       namespace)
     val opArgs = new ControlCliArguments(args2)
-    assert(opArgs.cliArgs.action == ServiceControlAction.LIST)
+    assert(opArgs.cliArgs.action == ControlAction.LIST)
   }
 
   test("test get/delete action arguments") {

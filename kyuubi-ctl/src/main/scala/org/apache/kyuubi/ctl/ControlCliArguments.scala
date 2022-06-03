@@ -58,17 +58,17 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   private def getCommand(cliArgs: CliConfig): Command = {
     cliArgs.action match {
-      case ServiceControlAction.CREATE => new CreateCommand(cliArgs)
-      case ServiceControlAction.GET => new GetCommand(cliArgs)
-      case ServiceControlAction.DELETE => new DeleteCommand(cliArgs)
-      case ServiceControlAction.LIST => new ListCommand(cliArgs)
+      case ControlAction.CREATE => new CreateCommand(cliArgs)
+      case ControlAction.GET => new GetCommand(cliArgs)
+      case ControlAction.DELETE => new DeleteCommand(cliArgs)
+      case ControlAction.LIST => new ListCommand(cliArgs)
       case _ => null
     }
   }
 
   override def toString: String = {
     cliArgs.service match {
-      case ServiceControlObject.SERVER =>
+      case ControlObject.SERVER =>
         s"""Parsed arguments:
            |  action                  ${cliArgs.action}
            |  service                 ${cliArgs.service}
@@ -79,7 +79,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
            |  version                 ${cliArgs.commonOpts.version}
            |  verbose                 ${cliArgs.commonOpts.verbose}
         """.stripMargin
-      case ServiceControlObject.ENGINE =>
+      case ControlObject.ENGINE =>
         s"""Parsed arguments:
            |  action                  ${cliArgs.action}
            |  service                 ${cliArgs.service}

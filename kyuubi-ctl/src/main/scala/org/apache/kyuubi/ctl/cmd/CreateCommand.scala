@@ -18,7 +18,7 @@ package org.apache.kyuubi.ctl.cmd
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.ctl.{CliConfig, Render, ServiceControlObject}
+import org.apache.kyuubi.ctl.{CliConfig, ControlObject, Render}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
@@ -26,7 +26,7 @@ import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 class CreateCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   def validateArguments(): Unit = {
-    if (cliArgs.service != ServiceControlObject.SERVER) {
+    if (cliArgs.service != ControlObject.SERVER) {
       fail("Only support expose Kyuubi server instance to another domain")
     }
     validateZkArguments()

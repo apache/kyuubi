@@ -16,22 +16,22 @@
  */
 package org.apache.kyuubi.ctl
 
-import org.apache.kyuubi.ctl.ServiceControlAction.ControlAction
-import org.apache.kyuubi.ctl.ServiceControlObject.ControlObject
+import org.apache.kyuubi.ctl.ControlAction.ControlAction
+import org.apache.kyuubi.ctl.ControlObject.ControlObject
 
-private[ctl] object ServiceControlAction extends Enumeration {
+private[ctl] object ControlAction extends Enumeration {
   type ControlAction = Value
   val CREATE, GET, DELETE, LIST = Value
 }
 
-private[ctl] object ServiceControlObject extends Enumeration {
+private[ctl] object ControlObject extends Enumeration {
   type ControlObject = Value
-  val SERVER, ENGINE = Value
+  val SERVER, ENGINE, BATCH = Value
 }
 
 case class CliConfig(
     action: ControlAction = null,
-    service: ControlObject = ServiceControlObject.SERVER,
+    service: ControlObject = ControlObject.SERVER,
     commonOpts: CommonOpts = CommonOpts(),
     engineOpts: EngineOpts = EngineOpts())
 

@@ -70,7 +70,7 @@ object CommandLine {
     OParser.sequence(
       note(""),
       cmd("create")
-        .action((_, c) => c.copy(action = ServiceControlAction.CREATE))
+        .action((_, c) => c.copy(action = ControlAction.CREATE))
         .children(
           serverCmd(builder).text("\tExpose Kyuubi server instance to another domain.")))
   }
@@ -81,7 +81,7 @@ object CommandLine {
       note(""),
       cmd("get")
         .text("\tGet the service/engine node info, host and port needed.")
-        .action((_, c) => c.copy(action = ServiceControlAction.GET))
+        .action((_, c) => c.copy(action = ControlAction.GET))
         .children(
           serverCmd(builder).text("\tGet Kyuubi server info of domain"),
           engineCmd(builder).text("\tGet Kyuubi engine info belong to a user.")))
@@ -94,7 +94,7 @@ object CommandLine {
       note(""),
       cmd("delete")
         .text("\tDelete the specified service/engine node, host and port needed.")
-        .action((_, c) => c.copy(action = ServiceControlAction.DELETE))
+        .action((_, c) => c.copy(action = ControlAction.DELETE))
         .children(
           serverCmd(builder).text("\tDelete the specified service node for a domain"),
           engineCmd(builder).text("\tDelete the specified engine node for user.")))
@@ -107,7 +107,7 @@ object CommandLine {
       note(""),
       cmd("list")
         .text("\tList all the service/engine nodes for a particular domain.")
-        .action((_, c) => c.copy(action = ServiceControlAction.LIST))
+        .action((_, c) => c.copy(action = ControlAction.LIST))
         .children(
           serverCmd(builder).text("\tList all the service nodes for a particular domain"),
           engineCmd(builder).text("\tList all the engine nodes for a user")))
@@ -116,12 +116,12 @@ object CommandLine {
 
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("server").action((_, c) => c.copy(service = ServiceControlObject.SERVER))
+    cmd("server").action((_, c) => c.copy(service = ControlObject.SERVER))
   }
 
   private def engineCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("engine").action((_, c) => c.copy(service = ServiceControlObject.ENGINE))
+    cmd("engine").action((_, c) => c.copy(service = ControlObject.ENGINE))
       .children(
         opt[String]('u', "user")
           .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(user = v)))

@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.ctl.cmd
 
-import org.apache.kyuubi.ctl.{CliConfig, Render, ServiceControlObject}
+import org.apache.kyuubi.ctl.{CliConfig, ControlObject, Render}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 
 class ListCommand(cliConfig: CliConfig) extends Command(cliConfig) {
@@ -24,7 +24,7 @@ class ListCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   override def validateArguments(): Unit = {
     validateZkArguments()
     cliArgs.service match {
-      case ServiceControlObject.ENGINE => validateUser()
+      case ControlObject.ENGINE => validateUser()
       case _ =>
     }
     mergeArgsIntoKyuubiConf()
