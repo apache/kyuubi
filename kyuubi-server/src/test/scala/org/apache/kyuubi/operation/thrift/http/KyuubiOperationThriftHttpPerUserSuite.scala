@@ -15,11 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.kyuubi.operation.thrift.http
 
-import org.apache.kyuubi.server.KyuubiTHttpFrontendService
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
+import org.apache.kyuubi.operation.KyuubiOperationPerUserSuite
 
-class NoopHttpFrontendServer extends AbstractNoopServer("NoopHttpFrontendServer") {
+class KyuubiOperationThriftHttpPerUserSuite extends KyuubiOperationPerUserSuite {
+  override protected val frontendProtocols: Seq[KyuubiConf.FrontendProtocols.Value] =
+    FrontendProtocols.THRIFT_HTTP :: Nil
 
-  override val frontendServices = Seq(new KyuubiTHttpFrontendService(this))
+  override protected def getJdbcUrl: String =
+    s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/;transportMode=http;" +
+      s"httpPath=cliservice"
 }
