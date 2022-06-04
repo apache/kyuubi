@@ -20,8 +20,7 @@ package org.apache.kyuubi.server.http
 import java.io.IOException
 import java.security.PrivilegedExceptionAction
 import java.security.SecureRandom
-import java.util
-import java.util.Collections
+import javax.security.sasl.AuthenticationException
 import javax.servlet.ServletException
 import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletRequest
@@ -32,15 +31,10 @@ import scala.collection.mutable
 
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.binary.StringUtils
-import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.shims.HadoopShims.KerberosNameShim
 import org.apache.hadoop.hive.shims.ShimLoader
 import org.apache.hadoop.hive.shims.Utils
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hive.service.CookieSigner
-import org.apache.hive.service.auth.{HiveAuthFactory, HttpAuthenticationException, HttpAuthUtils}
-import org.apache.hive.service.cli.HiveSQLException
-import org.apache.hive.service.cli.session.SessionManager
 import org.apache.thrift.TProcessor
 import org.apache.thrift.protocol.TProtocolFactory
 import org.apache.thrift.server.TServlet
@@ -52,14 +46,14 @@ import org.ietf.jgss.Oid
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.server.http.authentication.KerberosAuthenticationHandler
+import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
 import org.apache.kyuubi.service.authentication.{AuthenticationProviderFactory, KyuubiAuthenticationFactory}
 
 class ThriftHttpServlet(
     processor: TProcessor,
     protocolFactory: TProtocolFactory,
     authFactory: KyuubiAuthenticationFactory,
-    serviceUGI: UserGroupInformation,
-    httpUGI: UserGroupInformation,
     conf: KyuubiConf)
   extends TServlet(processor, protocolFactory) with Logging {
   // Class members for cookie based authentication.
@@ -74,6 +68,7 @@ class ThriftHttpServlet(
   private var isHttpOnlyCookie = false
   private val HIVE_DELEGATION_TOKEN_HEADER = "X-Hive-Delegation-Token"
   private val X_FORWARDED_FOR = "X-Forwarded-For"
+  private val kerberosAuthHandler = new KerberosAuthenticationHandler()
 
   override def init(): Unit = {
     isCookieAuthEnabled = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_AUTH_ENABLED)
@@ -83,12 +78,14 @@ class ThriftHttpServlet(
       debug("Using the random number as the secret for cookie generation " + secret)
       signer = new CookieSigner(secret.getBytes)
       cookieMaxAge = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_MAX_AGE)
-      cookieDomain = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_DOMAIN)
-      cookiePath = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_PATH)
+      cookieDomain = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_DOMAIN).orNull
+      cookiePath = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_PATH).orNull
       // always send secure cookies for SSL mode
       isCookieSecure = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_USE_SSL)
       isHttpOnlyCookie = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_IS_HTTPONLY)
     }
+
+    kerberosAuthHandler.init(conf)
   }
 
   @throws[ServletException]
@@ -124,21 +121,15 @@ class ThriftHttpServlet(
       if (clientUserName == null) {
         // For a kerberos setup
         if (authFactory.isKerberosEnabled) {
-          debug("Kerberos Auth Enabled")
           val delegationToken = request.getHeader(HIVE_DELEGATION_TOKEN_HEADER)
           // Each http request must have an Authorization header
           if ((delegationToken != null) && delegationToken.nonEmpty) {
             clientUserName = doTokenAuth(request)
-            debug("Token Auth Succeeded")
           } else {
-            debug("Kerberos Normal Auth initiated")
-            clientUserName = doKerberosAuth(request)
-            debug("Kerberos Normal Auth Succeeded")
+            clientUserName = doKerberosAuth(request, response)
           }
         } else {
-          debug("Password Auth Initiated")
           clientUserName = doPasswdAuth(request, authFactory)
-          debug("Password Auth Succeeded")
         }
       }
 
@@ -160,9 +151,9 @@ class ThriftHttpServlet(
       val forwarded_for = request.getHeader(X_FORWARDED_FOR)
       if (forwarded_for != null) {
         debug(X_FORWARDED_FOR + ":" + forwarded_for)
-        val forwardedAddresses = util.Arrays.asList(forwarded_for.split(","): _*)
+        val forwardedAddresses = forwarded_for.split(",").toList
         SessionManager.setForwardedAddresses(forwardedAddresses)
-      } else SessionManager.setForwardedAddresses(Collections.emptyList[String])
+      } else SessionManager.setForwardedAddresses(List.empty[String])
 
       // Generate new cookie and add it to the response
       if (requireNewCookie && !authFactory.isNoSaslEnabled) {
@@ -174,7 +165,7 @@ class ThriftHttpServlet(
       }
       super.doPost(request, response)
     } catch {
-      case e: HttpAuthenticationException =>
+      case e: AuthenticationException =>
         error("Error: ", e)
         // Send a 401 to the client
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
@@ -322,9 +313,9 @@ class ThriftHttpServlet(
    *
    * @param request
    * @param authFactory
-   * @throws HttpAuthenticationException
+   * @throws AuthenticationException
    */
-  @throws[HttpAuthenticationException]
+  @throws[AuthenticationException]
   private def doPasswdAuth(
       request: HttpServletRequest,
       authFactory: KyuubiAuthenticationFactory): String = {
@@ -343,24 +334,26 @@ class ThriftHttpServlet(
       debug("Password Provider authenticated username successfully")
     } catch {
       case e: Exception =>
-        throw new HttpAuthenticationException(e)
+        throw new AuthenticationException(e.getMessage, e)
     }
     userName
   }
 
-  @throws[HttpAuthenticationException]
+  @throws[AuthenticationException]
   private def doTokenAuth(request: HttpServletRequest): String = {
-    debug("Token Auth Initiated")
-    val tokenStr = request.getHeader(HIVE_DELEGATION_TOKEN_HEADER)
-    debug("token is: " + tokenStr)
-    try {
-      // TODO: FIXME: TokenAuth
-      val hiveAuthFactory = new HiveAuthFactory(new HiveConf())
-      hiveAuthFactory.verifyDelegationToken(tokenStr)
-    } catch {
-      case e: HiveSQLException =>
-        throw new HttpAuthenticationException(e)
-    }
+//    debug("Token Auth Initiated")
+//    val tokenStr = request.getHeader(HIVE_DELEGATION_TOKEN_HEADER)
+//    debug("token is: " + tokenStr)
+//    try {
+//      // TODO: FIXME: TokenAuth
+//      val hiveAuthFactory = new HiveAuthFactory(new HiveConf())
+//      hiveAuthFactory.verifyDelegationToken(tokenStr)
+//    } catch {
+//      case e: HiveSQLException =>
+//        throw new AuthenticationException(e)
+//    }
+    // TODO: FIXME: support tokenAuth in Kerberos
+    throw new AuthenticationException("Token Auth is no supported")
   }
 
   /**
@@ -372,33 +365,18 @@ class ThriftHttpServlet(
    *
    * @param request
    * @return
-   * @throws HttpAuthenticationException
+   * @throws AuthenticationException
    */
-  @throws[HttpAuthenticationException]
-  private def doKerberosAuth(request: HttpServletRequest): String = {
-    // Try authenticating with the http/_HOST principal
-    if (httpUGI != null) {
-      try return httpUGI.doAs(new HttpKerberosServerAction(request, httpUGI))
-      catch {
-        case _: Exception =>
-          info("Failed to authenticate with http/_HOST kerberos principal, " +
-            "trying with hive/_HOST kerberos principal")
-      }
-    }
-    // Now try with hive/_HOST principal
-    try serviceUGI.doAs(new HttpKerberosServerAction(request, serviceUGI))
-    catch {
-      case e: Exception =>
-        error("Failed to authenticate with hive/_HOST kerberos principal")
-        throw new HttpAuthenticationException(e)
-    }
+  @throws[AuthenticationException]
+  private def doKerberosAuth(request: HttpServletRequest, response: HttpServletResponse): String = {
+    kerberosAuthHandler.authenticate(request, response)
   }
 
   class HttpKerberosServerAction(
       var request: HttpServletRequest,
       var serviceUGI: UserGroupInformation)
     extends PrivilegedExceptionAction[String] {
-    @throws[HttpAuthenticationException]
+    @throws[AuthenticationException]
     override def run: String = { // Get own Kerberos credentials for accepting connection
       val manager = GSSManager.getInstance
       var gssContext: GSSContext = null
@@ -429,13 +407,13 @@ class ThriftHttpServlet(
         gssContext.acceptSecContext(inToken, 0, inToken.length)
         // Authenticate or deny based on its context completion
         if (!gssContext.isEstablished) {
-          throw new HttpAuthenticationException("Kerberos authentication failed: " +
+          throw new AuthenticationException("Kerberos authentication failed: " +
             "unable to establish context with the service ticket " +
             "provided by the client.")
         } else getPrincipalWithoutRealmAndHost(gssContext.getSrcName.toString)
       } catch {
         case e: GSSException =>
-          throw new HttpAuthenticationException("Kerberos authentication failed: ", e)
+          throw new AuthenticationException("Kerberos authentication failed: ", e)
       } finally {
         if (gssContext != null) {
           try gssContext.dispose()
@@ -446,13 +424,13 @@ class ThriftHttpServlet(
       }
     }
 
-    @throws[HttpAuthenticationException]
+    @throws[AuthenticationException]
     private def getPrincipalWithoutRealm(fullPrincipal: String): String = {
       var fullKerberosName: KerberosNameShim = null
       try fullKerberosName = ShimLoader.getHadoopShims.getKerberosNameShim(fullPrincipal)
       catch {
         case e: IOException =>
-          throw new HttpAuthenticationException(e)
+          throw new AuthenticationException(e.getMessage, e)
       }
       val serviceName = fullKerberosName.getServiceName
       val hostName = fullKerberosName.getHostName
@@ -464,7 +442,7 @@ class ThriftHttpServlet(
       principalWithoutRealm
     }
 
-    @throws[HttpAuthenticationException]
+    @throws[AuthenticationException]
     private def getPrincipalWithoutRealmAndHost(fullPrincipal: String): String = {
       var fullKerberosName: KerberosNameShim = null
       try {
@@ -472,38 +450,38 @@ class ThriftHttpServlet(
         fullKerberosName.getShortName
       } catch {
         case e: IOException =>
-          throw new HttpAuthenticationException(e)
+          throw new AuthenticationException(e.getMessage, e)
       }
     }
   }
 
-  @throws[HttpAuthenticationException]
+  @throws[AuthenticationException]
   private def getUsername(
       request: HttpServletRequest,
       authFactory: KyuubiAuthenticationFactory): String = {
     val creds = getAuthHeaderTokens(request, authFactory)
     // Username must be present
     if (creds(0) == null || creds(0).isEmpty) {
-      throw new HttpAuthenticationException("Authorization header received " +
+      throw new AuthenticationException("Authorization header received " +
         "from the client does not contain username.")
     }
     creds(0)
   }
 
-  @throws[HttpAuthenticationException]
+  @throws[AuthenticationException]
   private def getPassword(
       request: HttpServletRequest,
       authFactory: KyuubiAuthenticationFactory): String = {
     val creds = getAuthHeaderTokens(request, authFactory)
     // Password must be present
     if (creds(1) == null || creds(1).isEmpty) {
-      throw new HttpAuthenticationException("Authorization header received " +
+      throw new AuthenticationException("Authorization header received " +
         "from the client does not contain username.")
     }
     creds(1)
   }
 
-  @throws[HttpAuthenticationException]
+  @throws[AuthenticationException]
   private def getAuthHeaderTokens(
       request: HttpServletRequest,
       authFactory: KyuubiAuthenticationFactory): Array[String] = {
@@ -518,16 +496,16 @@ class ThriftHttpServlet(
    * @param request
    * @param authFactory
    * @return
-   * @throws HttpAuthenticationException
+   * @throws AuthenticationException
    */
-  @throws[HttpAuthenticationException]
+  @throws[AuthenticationException]
   private def getAuthHeader(
       request: HttpServletRequest,
       authFactory: KyuubiAuthenticationFactory): String = {
     val authHeader = request.getHeader(HttpAuthUtils.AUTHORIZATION)
     // Each http request must have an Authorization header
     if (authHeader == null || authHeader.isEmpty) {
-      throw new HttpAuthenticationException("Authorization header received " +
+      throw new AuthenticationException("Authorization header received " +
         "from the client is empty.")
     }
 
@@ -538,7 +516,7 @@ class ThriftHttpServlet(
     authHeaderBase64String = authHeader.substring(beginIndex)
     // Authorization header must have a payload
     if (authHeaderBase64String == null || authHeaderBase64String.isEmpty) {
-      throw new HttpAuthenticationException("Authorization header received " +
+      throw new AuthenticationException("Authorization header received " +
         "from the client does not contain any data.")
     }
     authHeaderBase64String

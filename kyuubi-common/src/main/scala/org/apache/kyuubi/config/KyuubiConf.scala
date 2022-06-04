@@ -502,19 +502,19 @@ object KyuubiConf {
       .intConf
       .createWithDefault(86400)
 
-  val FRONTEND_THRIFT_HTTP_COOKIE_DOMAIN: ConfigEntry[String] =
+  val FRONTEND_THRIFT_HTTP_COOKIE_DOMAIN: OptionalConfigEntry[String] =
     buildConf("kyuubi.frontend.thrift.http.cookie.domain")
       .doc("Domain for the Kyuubi generated cookies")
       .version("1.6.0")
       .stringConf
-      .createWithDefault(null)
+      .createOptional
 
-  val FRONTEND_THRIFT_HTTP_COOKIE_PATH: ConfigEntry[String] =
+  val FRONTEND_THRIFT_HTTP_COOKIE_PATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.frontend.thrift.http.cookie.path")
       .doc("Path for the Kyuubi generated cookies")
       .version("1.6.0")
       .stringConf
-      .createWithDefault(null)
+      .createOptional
 
   val FRONTEND_THRIFT_HTTP_COOKIE_IS_HTTPONLY: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.thrift.http.cookie.is.httponly")
@@ -538,19 +538,19 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH: ConfigEntry[String] =
+  val FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH: OptionalConfigEntry[String] =
     buildConf("kyuubi.frontend.thrift.http.ssl.keystore.path")
       .doc("SSL certificate keystore location.")
       .version("1.6.0")
       .stringConf
-      .createWithDefault(null)
+      .createOptional
 
-  val FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD: ConfigEntry[String] =
+  val FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD: OptionalConfigEntry[String] =
     buildConf("kyuubi.frontend.thrift.http.ssl.keystore.password")
       .doc("SSL certificate keystore password.")
       .version("1.6.0")
       .stringConf
-      .createWithDefault(null)
+      .createOptional
 
   val FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST: ConfigEntry[String] =
     buildConf("kyuubi.frontend.thrift.http.ssl.protocol.blacklist")
