@@ -18,8 +18,6 @@ package org.apache.kyuubi.engine.jdbc.operation
 
 import java.util
 
-import scala.collection.JavaConverters._
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_INCREMENTAL_COLLECT
@@ -81,7 +79,7 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       tableTypes: util.List[String]): Operation = {
-    val query = dialect.getTablesQuery(catalogName, schemaName, tableName, tableTypes.asScala.toSet)
+    val query = dialect.getTablesQuery(catalogName, schemaName, tableName, tableTypes)
     val executeStatement =
       new ExecuteStatement(OperationType.GET_TABLES, session, query, false, 0L, true)
     addOperation(executeStatement)

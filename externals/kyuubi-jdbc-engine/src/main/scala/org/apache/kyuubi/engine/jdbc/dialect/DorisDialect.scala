@@ -16,7 +16,9 @@
  */
 package org.apache.kyuubi.engine.jdbc.dialect
 import java.sql.{Connection, ResultSet, Statement}
+import java.util
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
@@ -53,12 +55,12 @@ class DorisDialect extends JdbcDialect {
       catalog: String,
       schema: String,
       tableName: String,
-      tableTypes: Set[String]): String = {
+      tableTypes: util.List[String]): String = {
     val tTypes =
       if (tableTypes == null || tableTypes.isEmpty) {
         Set("BASE TABLE", "SYSTEM VIEW", "VIEW")
       } else {
-        tableTypes
+        tableTypes.asScala.toSet
       }
     val query = new StringBuilder(
       s"""
@@ -82,7 +84,7 @@ class DorisDialect extends JdbcDialect {
     }
 
     if (tTypes.nonEmpty) {
-      filters += s"(${tableTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
+      filters += s"(${tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
         .mkString(" OR ")})"
     }
 

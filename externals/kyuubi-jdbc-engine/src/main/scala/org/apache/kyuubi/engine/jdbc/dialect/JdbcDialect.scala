@@ -17,6 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.dialect
 
 import java.sql.{Connection, Statement}
+import java.util
 import java.util.ServiceLoader
 
 import scala.collection.JavaConverters._
@@ -43,7 +44,7 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
       catalog: String,
       schema: String,
       tableName: String,
-      tableTypes: Set[String]): String
+      tableTypes: util.List[String]): String
 
   def getTableTypesOperation(session: Session): Operation
 
