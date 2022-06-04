@@ -54,6 +54,7 @@ abstract class TFrontendService(name: String)
   protected lazy val serverAddr: InetAddress =
     serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
   protected lazy val serverSocket = new ServerSocket(portNum, -1, serverAddr)
+  protected lazy val actualPort: Int = serverSocket.getLocalPort
   protected lazy val authFactory: KyuubiAuthenticationFactory =
     new KyuubiAuthenticationFactory(conf, isServer())
 
@@ -117,11 +118,11 @@ abstract class TFrontendService(name: String)
       case None =>
         serverAddr.getHostAddress
     }
-    val actualPort = serverSocket.getLocalPort
+
     host + ":" + actualPort
   }
 
-  private def getProxyUser(
+  protected def getProxyUser(
       sessionConf: java.util.Map[String, String],
       ipAddress: String,
       realUser: String): String = {
@@ -134,7 +135,7 @@ abstract class TFrontendService(name: String)
     }
   }
 
-  private def getUserName(req: TOpenSessionReq): String = {
+  protected def getUserName(req: TOpenSessionReq): String = {
     val realUser: String =
       ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
     if (req.getConfiguration == null) {
@@ -142,6 +143,9 @@ abstract class TFrontendService(name: String)
     } else {
       getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
     }
+  }
+  protected def getIpAddress: String = {
+    authFactory.getIpAddress.orNull
   }
 
   private def getMinVersion(versions: TProtocolVersion*): TProtocolVersion = {
@@ -153,7 +157,7 @@ abstract class TFrontendService(name: String)
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
     val userName = getUserName(req)
-    val ipAddress = authFactory.getIpAddress.orNull
+    val ipAddress = getIpAddress
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
     val sessionHandle = be.openSession(

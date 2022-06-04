@@ -268,6 +268,19 @@ kyuubi.frontend.thrift.http.bind.host|&lt;undefined&gt;|Hostname or IP of the ma
 kyuubi.frontend.thrift.http.bind.port|10010|Port of the machine on which to run the thrift frontend service via http protocol.|int|1.6.0
 kyuubi.frontend.thrift.http.max.idle.time|PT30M|Maximum idle time for a connection on the server when in HTTP mode.|duration|1.6.0
 kyuubi.frontend.thrift.http.path|cliservice|Path component of URL endpoint when in HTTP mode.|string|1.6.0
+kyuubi.frontend.thrift.http.compression.enabled|true|Enable thrift http compression via Jetty compression support|boolean|1.6.0
+kyuubi.frontend.thrift.http.cookie.auth.enabled|true|When true, Kyuubi in HTTP transport mode, will use cookie based authentication mechanism|boolean|1.6.0
+kyuubi.frontend.thrift.http.cookie.max.age|86400|Maximum age in seconds for server side cookie used by Kyuubi in HTTP mode.|int|1.6.0
+kyuubi.frontend.thrift.http.cookie.domain|&lt;undefined&gt;|Domain for the Kyuubi generated cookies|string|1.6.0
+kyuubi.frontend.thrift.http.cookie.path|&lt;undefined&gt;|Path for the Kyuubi generated cookies|string|1.6.0
+kyuubi.frontend.thrift.http.cookie.is.httponly|true|HttpOnly attribute of the Kyuubi generated cookie.|boolean|1.6.0
+kyuubi.frontend.thrift.http.cookie.is.httponly|true|HttpOnly attribute of the Kyuubi generated cookie.|boolean|1.6.0
+kyuubi.frontend.thrift.http.xsrf.filter.enabled|false|If enabled, Kyuubi will block any requests made to it over http if an X-XSRF-HEADER header is not present.|string|1.6.0
+kyuubi.frontend.thrift.http.use.SSL|false|Set this to true for using SSL encryption in http mode.|boolean|1.6.0
+kyuubi.frontend.thrift.http.ssl.keystore.path|&lt;undefined&gt;|SSL certificate keystore location.|string|1.6.0
+kyuubi.frontend.thrift.http.ssl.keystore.password|&lt;undefined&gt;|SSL certificate keystore password.|string|1.6.0
+kyuubi.frontend.thrift.http.ssl.protocol.blacklist|SSLv2,SSLv3|SSL Versions to disable when using HTTP transport mode.|string|1.6.0
+kyuubi.frontend.thrift.http.allow.user.substitution|true|Allow alternate user to be specified as part of open connection request when using HTTP transport mode.|string|1.6.0
 kyuubi.frontend.thrift.http.request.header.size|6144|Request header size in bytes, when using HTTP transport mode. Jetty defaults used.|int|1.6.0
 kyuubi.frontend.thrift.http.response.header.size|6144|Response header size in bytes, when using HTTP transport mode. Jetty defaults used|int|1.6.0
 kyuubi.frontend.thrift.login.timeout|PT20S|Timeout for Thrift clients during login to the thrift frontend service.|duration|1.4.0
@@ -276,7 +289,6 @@ kyuubi.frontend.thrift.max.worker.threads|999|Maximum number of threads in the o
 kyuubi.frontend.thrift.min.worker.threads|9|Minimum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.4.0
 kyuubi.frontend.thrift.worker.keepalive.time|PT1M|Keep-alive time (in milliseconds) for an idle worker thread|duration|1.4.0
 kyuubi.frontend.worker.keepalive.time|PT1M|(deprecated) Keep-alive time (in milliseconds) for an idle worker thread|duration|1.0.0
-
 
 ### Ha
 

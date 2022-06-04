@@ -17,24 +17,37 @@
 
 package org.apache.kyuubi.server
 
+import java.io.IOException
+import java.net.ServerSocket
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
+import javax.servlet.{ServletContextEvent, ServletContextListener}
 
-import org.apache.hive.service.rpc.thrift.TCLIService
+import org.apache.hadoop.hive.common.metrics.common.{MetricsConstant, MetricsFactory}
+import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars
+import org.apache.hadoop.hive.shims.{ShimLoader, Utils}
+import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.shaded.org.jline.utils.OSUtils
+import org.apache.hive.service.auth.HiveAuthFactory
+import org.apache.hive.service.cli.session.SessionManager
+import org.apache.hive.service.cli.thrift.ThriftHttpCLIService
+import org.apache.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.server.TServlet
 import org.eclipse.jetty.http.HttpMethod
-import org.eclipse.jetty.io.{Connection, EndPoint}
 import org.eclipse.jetty.security.{ConstraintMapping, ConstraintSecurityHandler}
 import org.eclipse.jetty.server._
 import org.eclipse.jetty.server.handler.gzip.GzipHandler
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.eclipse.jetty.util.security.Constraint
+import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.ExecutorThreadPool
 
 import org.apache.kyuubi.KyuubiException
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.service.{Serverable, Service, TFrontendService}
+import org.apache.kyuubi.server.http.ThriftHttpServlet
+import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TFrontendService}
 import org.apache.kyuubi.util.NamedThreadFactory
 
 /**
@@ -49,13 +62,17 @@ final class KyuubiTHttpFrontendService(
   override protected lazy val serverHost: Option[String] =
     conf.get(FRONTEND_THRIFT_HTTP_BIND_HOST)
   override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_HTTP_BIND_PORT)
+  override protected lazy val actualPort: Int = portNum
+  override protected lazy val serverSocket: ServerSocket = null
 
   private var server: Option[Server] = None
+  private val APPLICATION_THRIFT = "application/x-thrift"
 
   /**
    * Configure Jetty to serve http requests. Example of a client connection URL:
    * http://localhost:10000/servlets/thrifths2/ A gateway may cause actual target
    * URL to differ, e.g. http://gateway:port/hive2/servlets/thrifths2/.
+   *
    * @param conf the configuration of the service
    */
   override def initialize(conf: KyuubiConf): Unit = synchronized {
@@ -75,44 +92,114 @@ final class KyuubiTHttpFrontendService(
         new SynchronousQueue[Runnable](),
         new NamedThreadFactory(getName + "HttpHandler-Pool", false))
       val threadPool = new ExecutorThreadPool(executor)
+
       // HTTP Server
       server = Some(new Server(threadPool))
+
       val httpConf = new HttpConfiguration
       // Configure header size
       val requestHeaderSize = conf.get(FRONTEND_THRIFT_HTTP_REQUEST_HEADER_SIZE)
       val responseHeaderSize = conf.get(FRONTEND_THRIFT_HTTP_RESPONSE_HEADER_SIZE)
       httpConf.setRequestHeaderSize(requestHeaderSize)
       httpConf.setResponseHeaderSize(responseHeaderSize)
-      val connectionFactory = new HttpConnectionFactory(httpConf) {
-        override def newConnection(connector: Connector, endPoint: EndPoint): Connection = {
-          super.newConnection(connector, endPoint)
+      val connectionFactory = new HttpConnectionFactory(httpConf)
+
+      val useSsl = conf.get(FRONTEND_THRIFT_HTTP_USE_SSL)
+      val schemeName = if (useSsl) "https" else "http"
+
+      // Change connector if SSL is used
+      val connector =
+        if (useSsl) {
+          val keyStorePath = conf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH)
+
+          if (keyStorePath == null) {
+            throw new IllegalArgumentException(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH.key +
+              " Not configured for SSL connection")
+          }
+
+          val keyStorePassword = conf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD)
+          if (keyStorePassword == null) {
+            throw new IllegalArgumentException(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD.key +
+              " Not configured for SSL connection")
+          }
+
+          val sslContextFactory = new SslContextFactory.Server
+          val excludedProtocols = conf.get(FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST).split(",")
+          info("HTTP Server SSL: adding excluded protocols: " +
+            String.join(",", excludedProtocols: _*))
+          sslContextFactory.addExcludeProtocols(excludedProtocols: _*)
+          info("HTTP Server SSL: SslContextFactory.getExcludeProtocols = " +
+            String.join(",", sslContextFactory.getExcludeProtocols: _*))
+          sslContextFactory.setKeyStorePath(keyStorePath)
+          sslContextFactory.setKeyStorePassword(keyStorePassword)
+          new ServerConnector(
+            server.get,
+            sslContextFactory,
+            connectionFactory)
+        } else {
+          new ServerConnector(server.get, connectionFactory)
         }
-      }
-      val connector = new ServerConnector(server.get, connectionFactory)
+
       connector.setPort(portNum)
       // Linux:yes, Windows:no
-      connector.setReuseAddress(true)
+      connector.setReuseAddress(!OSUtils.IS_WINDOWS)
       val maxIdleTime = conf.get(FRONTEND_THRIFT_HTTP_MAX_IDLE_TIME)
       connector.setIdleTimeout(maxIdleTime)
       connector.setAcceptQueueSize(maxThreads)
       server.foreach(_.addConnector(connector))
+
       val processor = new TCLIService.Processor[TCLIService.Iface](this)
       val protocolFactory = new TBinaryProtocol.Factory
-      val servlet = new TServlet(processor, protocolFactory)
+      val servlet = createServlet(processor, protocolFactory)
+
       // Context handler
       val context = new ServletContextHandler(ServletContextHandler.SESSIONS)
       context.setContextPath("/")
-      val gzipHandler = new GzipHandler
-      gzipHandler.setHandler(context)
-      gzipHandler.addIncludedMethods(HttpMethod.POST.asString())
-      gzipHandler.addIncludedMimeTypes("application/x-thrift")
-      server.foreach(_.setHandler(gzipHandler))
-      context.addServlet(
-        new ServletHolder(servlet),
-        getHttpPath(conf.get(FRONTEND_THRIFT_HTTP_PATH)))
+
+      context.addEventListener(new ServletContextListener() {
+        override def contextInitialized(servletContextEvent: ServletContextEvent): Unit = {
+          val metrics = MetricsFactory.getInstance
+          if (metrics != null) {
+            try {
+              metrics.incrementCounter(MetricsConstant.OPEN_CONNECTIONS)
+              metrics.incrementCounter(MetricsConstant.CUMULATIVE_CONNECTION_COUNT)
+            } catch {
+              case e: Exception =>
+                warn("Error reporting open connection operation to Metrics system", e)
+            }
+          }
+        }
+
+        override def contextDestroyed(servletContextEvent: ServletContextEvent): Unit = {
+          val metrics = MetricsFactory.getInstance
+          if (metrics != null) {
+            try metrics.decrementCounter(MetricsConstant.OPEN_CONNECTIONS)
+            catch {
+              case e: Exception =>
+                warn("Error reporting close connection operation to Metrics system", e)
+            }
+          }
+        }
+      })
+
+      val httpPath = getHttpPath(conf.get(FRONTEND_THRIFT_HTTP_PATH))
+
+      if (conf.get(FRONTEND_THRIFT_HTTP_COMPRESSION_ENABLED)) {
+        val gzipHandler = new GzipHandler
+        gzipHandler.setHandler(context)
+        gzipHandler.addIncludedMethods(HttpMethod.POST.asString())
+        gzipHandler.addIncludedMimeTypes(APPLICATION_THRIFT)
+        server.foreach(_.setHandler(gzipHandler))
+      } else {
+        server.foreach(_.setHandler(context))
+      }
+
+      context.addServlet(new ServletHolder(servlet), httpPath)
       constrainHttpMethods(context)
-      info(s"Initializing $getName on ${serverAddr.getHostName}:${serverSocket.getLocalPort} with" +
-        s" [$minThreads, $maxThreads] worker threads")
+
+      info("Started " + classOf[ThriftHttpCLIService].getSimpleName +
+        " in " + schemeName + " mode on port " + portNum +
+        " path=" + httpPath + " with " + minThreads + "..." + maxThreads + " worker threads")
     } catch {
       case e: Throwable =>
         error(e)
@@ -169,5 +256,157 @@ final class KyuubiTHttpFrontendService(
     cmo.setPathSpec("/*")
     securityHandler.setConstraintMappings(Array[ConstraintMapping](cmt, cmo))
     ctxHandler.setSecurityHandler(securityHandler)
+  }
+
+  override protected def getIpAddress: String = {
+    SessionManager.getIpAddress
+  }
+
+  override protected def getUserName(req: TOpenSessionReq): String = {
+    var userName: String = SessionManager.getUserName
+    if (userName == null) userName = req.getUsername
+    userName = getShortName(userName)
+    val effectiveClientUser: String = getProxyUser(req.getConfiguration, getIpAddress, userName)
+    debug("Client's username: " + effectiveClientUser)
+    effectiveClientUser
+  }
+
+  private def getShortName(userName: String): String = {
+    var ret: String = null
+
+    if (userName != null) {
+      if (authFactory.isKerberosEnabled) {
+        // KerberosName.getShorName can only be used for kerberos user, but not for the user
+        // logged in via other authentications such as LDAP
+        val fullKerberosName = ShimLoader.getHadoopShims.getKerberosNameShim(userName)
+        ret = fullKerberosName.getShortName
+      } else {
+        val indexOfDomainMatch = ServiceUtils.indexOfDomainMatch(userName)
+        ret = if (indexOfDomainMatch <= 0) userName else userName.substring(0, indexOfDomainMatch)
+      }
+    }
+
+    ret
+  }
+
+  private def setValueInConf[T](
+      conf: KyuubiConf,
+      confKey: ConfigEntry[T],
+      hiveConf: HiveConf,
+      hiveConfKey: ConfVars): Unit = {
+    val kyuubiConfValue = conf.get(confKey)
+    if (kyuubiConfValue != null) {
+      val kyuubiConfValueString = kyuubiConfValue.toString
+      if (kyuubiConfValueString.nonEmpty) {
+        hiveConf.set(hiveConfKey.varname, kyuubiConfValueString)
+      }
+
+    }
+  }
+  private def kyuubiConfToHiveConf(conf: KyuubiConf): HiveConf = {
+    val hiveConf = new HiveConf()
+
+    // constants
+    hiveConf.set(ConfVars.HIVE_SERVER2_TRANSPORT_MODE.varname, "http")
+    hiveConf.set(ConfVars.HIVE_SERVER2_ENABLE_DOAS.varname, "false")
+
+    // server
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_BIND_HOST,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST)
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_BIND_PORT,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_THRIFT_HTTP_PORT)
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_PATH,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_THRIFT_HTTP_PATH)
+
+    // Cookie
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_COOKIE_AUTH_ENABLED,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_THRIFT_HTTP_COOKIE_AUTH_ENABLED)
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_COOKIE_MAX_AGE,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_THRIFT_HTTP_COOKIE_MAX_AGE)
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_COOKIE_DOMAIN,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_THRIFT_HTTP_COOKIE_DOMAIN)
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_COOKIE_PATH,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_THRIFT_HTTP_COOKIE_PATH)
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_COOKIE_IS_HTTPONLY,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_THRIFT_HTTP_COOKIE_IS_HTTPONLY)
+
+    // ssl
+    setValueInConf(conf, FRONTEND_THRIFT_HTTP_USE_SSL, hiveConf, ConfVars.HIVE_SERVER2_USE_SSL)
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_SSL_KEYSTORE_PATH)
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD,
+      hiveConf,
+      ConfVars.HIVE_SERVER2_SSL_KEYSTORE_PASSWORD)
+    setValueInConf(
+      conf,
+      FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST,
+      hiveConf,
+      ConfVars.HIVE_SSL_PROTOCOL_BLACKLIST)
+
+    hiveConf
+  }
+
+  private def createServlet(
+      processor: TCLIService.Processor[TCLIService.Iface],
+      protocolFactory: TBinaryProtocol.Factory): TServlet = {
+    val hiveConf = kyuubiConfToHiveConf(conf)
+
+    // Set during the init phase of HiveServer2 if auth mode is kerberos
+    // UGI for the hive/_HOST (kerberos) principal
+    var serviceUGI: UserGroupInformation = null
+    var httpUGI: UserGroupInformation = null
+
+    if (UserGroupInformation.isSecurityEnabled) serviceUGI = Utils.getUGI
+
+    // UGI for the http/_HOST (SPNego) principal
+    // Also try creating a UGI object for the SPNego principal
+    val principal = conf.get(SERVER_SPNEGO_PRINCIPAL)
+    val keyTabFile = conf.get(SERVER_SPNEGO_KEYTAB)
+    if (principal.isEmpty || keyTabFile.isEmpty) {
+      info("SPNego httpUGI not created, spNegoPrincipal: " + principal +
+        ", keytabFile: " + keyTabFile)
+    } else {
+      try {
+        httpUGI = HiveAuthFactory.loginFromSpnegoKeytabAndReturnUGI(hiveConf)
+        info("SPNego httpUGI successfully created.")
+      } catch {
+        case e: IOException =>
+          warn("SPNego httpUGI creation failed: ", e)
+      }
+    }
+
+    val servlet =
+      new ThriftHttpServlet(processor, protocolFactory, authFactory, serviceUGI, httpUGI, conf)
+    servlet.init()
+    servlet
   }
 }
