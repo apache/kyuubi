@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl.cmd
+package org.apache.kyuubi.ctl.cmd.list
 
 import org.apache.kyuubi.ctl.{CliConfig, ControlObject, Render}
+import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 
 class ListCommand(cliConfig: CliConfig) extends Command(cliConfig) {

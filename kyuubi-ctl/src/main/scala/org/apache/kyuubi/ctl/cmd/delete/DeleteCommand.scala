@@ -14,11 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl.cmd
+package org.apache.kyuubi.ctl.cmd.delete
 
 import scala.collection.mutable.ListBuffer
 
 import org.apache.kyuubi.ctl.{CliConfig, Render}
+import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 

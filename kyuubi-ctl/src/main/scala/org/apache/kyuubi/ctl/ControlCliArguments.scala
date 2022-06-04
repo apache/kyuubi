@@ -59,9 +59,14 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   private def getCommand(cliArgs: CliConfig): Command = {
+    val operationName = cliArgs.action.toString.toLowerCase
+    val resourceName = cliArgs.service.toString.toLowerCase
+
+    val packageName = operationName
+    val commandName = s"${operationName.capitalize}${resourceName.capitalize}"
+    val className = s"org.apache.kyuubi.ctl.cmd.${packageName}.${commandName}Command"
+
     val mirror: ru.Mirror = ru.runtimeMirror(getClass.getClassLoader)
-    val commandName = cliArgs.action.toString.toLowerCase.capitalize
-    val className = s"org.apache.kyuubi.ctl.cmd.${commandName}Command"
     val classSymbol: ru.ClassSymbol = mirror.staticClass(className)
 
     val consMethodSymbol = classSymbol.primaryConstructor.asMethod

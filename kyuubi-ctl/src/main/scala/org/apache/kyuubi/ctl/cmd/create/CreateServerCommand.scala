@@ -14,16 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl.cmd
+package org.apache.kyuubi.ctl.cmd.create
 
 import scala.collection.mutable.ListBuffer
 
 import org.apache.kyuubi.ctl.{CliConfig, ControlObject, Render}
+import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 
-class CreateCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   def validateArguments(): Unit = {
     if (cliArgs.service != ControlObject.SERVER) {
