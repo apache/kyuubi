@@ -23,7 +23,7 @@ services:
       - "9030"
 
   doris-be:
-    image: zhaomin1423/doris-be:1.0.0
+    image: zhaomin1423/doris-be:1.0.0-0.1
     ports:
       - "8040"
     depends_on:
