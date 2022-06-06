@@ -91,5 +91,5 @@ trait Session {
       maxRows: Int,
       fetchLog: Boolean): TRowSet
 
-  def closeExpiredOperations: Unit
+  def closeExpiredOperations(): Unit
 }

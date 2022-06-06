@@ -22,6 +22,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_INCREMENTAL_COLLECT
 import org.apache.kyuubi.engine.jdbc.dialect.{JdbcDialect, JdbcDialects}
+import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
@@ -39,8 +40,10 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val conf = session.sessionManager.getConf
-    val incrementalCollect = conf.get(OPERATION_INCREMENTAL_COLLECT)
+    val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
+    val incrementalCollect = normalizedConf.get(OPERATION_INCREMENTAL_COLLECT.key).map(
+      _.toBoolean).getOrElse(
+      session.sessionManager.getConf.get(OPERATION_INCREMENTAL_COLLECT))
     val executeStatement =
       new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
     addOperation(executeStatement)

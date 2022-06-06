@@ -234,7 +234,7 @@ abstract class AbstractSession(
     }
   }
 
-  override def closeExpiredOperations: Unit = {
+  override def closeExpiredOperations(): Unit = {
     val operations = sessionManager.operationManager
       .removeExpiredOperations(opHandleSet.asScala.toSeq)
     operations.foreach { op =>
