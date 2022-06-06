@@ -98,7 +98,8 @@ class KyuubiBatchSessionImpl(
         requestConf = normalizedConf,
         requestArgs = batchRequest.getArgs.asScala,
         createTime = createTime,
-        engineType = batchRequest.getBatchType)
+        engineType = batchRequest.getBatchType,
+        clusterManager = batchJobSubmissionOp.builder.clusterManager())
 
       sessionManager.insertMetadata(metaData)
     }

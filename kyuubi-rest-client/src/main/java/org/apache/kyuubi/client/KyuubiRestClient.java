@@ -36,11 +36,31 @@ public class KyuubiRestClient implements AutoCloseable {
 
   private static final Logger LOG = LoggerFactory.getLogger(KyuubiRestClient.class);
 
+  /** The thread local auth header, used to support multi-tenancy for platform. */
+  private static ThreadLocal<String> threadLocalAuthHeader =
+      new ThreadLocal<String>() {
+        @Override
+        protected synchronized String initialValue() {
+          return null;
+        }
+      };
+
+  public static void setThreadLocalAuthHeader(String authHeader) {
+    threadLocalAuthHeader.set(authHeader);
+  }
+
+  public static void clearThreadLocalAuthHeader() {
+    threadLocalAuthHeader.remove();
+  }
+
   private RestClient httpClient;
 
   private AuthSchema authSchema;
   private String spnegoHost;
   private String basicAuthHeader = "";
+
+  /** Whether to get auth header from thread local variable. */
+  private boolean threadLocalAuthHeaderEnabled;
 
   /** Specifies the version of the Kyuubi API to communicate with. */
   public enum ApiVersion {
@@ -81,26 +101,31 @@ public class KyuubiRestClient implements AutoCloseable {
       this.basicAuthHeader =
           String.format("BASIC %s", Base64.getEncoder().encodeToString(authorization.getBytes()));
     }
+    this.threadLocalAuthHeaderEnabled = builder.threadLocalAuthHeaderEnabled;
   }
 
   public String getAuthHeader() {
-    String header = "";
-    switch (authSchema) {
-      case BASIC:
-        header = this.basicAuthHeader;
-        break;
-      case SPNEGO:
-        try {
-          header = String.format("NEGOTIATE %s", AuthUtil.generateToken(spnegoHost));
-        } catch (Exception e) {
-          LOG.error("Error: ", e);
-          throw new RuntimeException("Failed to generate spnego auth header for " + spnegoHost);
-        }
-        break;
-      default:
-        throw new RuntimeException("Unsupported auth schema");
+    if (threadLocalAuthHeaderEnabled) {
+      return threadLocalAuthHeader.get();
+    } else {
+      String header = "";
+      switch (authSchema) {
+        case BASIC:
+          header = this.basicAuthHeader;
+          break;
+        case SPNEGO:
+          try {
+            header = String.format("NEGOTIATE %s", AuthUtil.generateToken(spnegoHost));
+          } catch (Exception e) {
+            LOG.error("Error: ", e);
+            throw new RuntimeException("Failed to generate spnego auth header for " + spnegoHost);
+          }
+          break;
+        default:
+          throw new RuntimeException("Unsupported auth schema");
+      }
+      return header;
     }
-    return header;
   }
 
   public RestClient getHttpClient() {
@@ -154,6 +179,8 @@ public class KyuubiRestClient implements AutoCloseable {
 
     private int connectTimeout = 3000;
 
+    private boolean threadLocalAuthHeaderEnabled;
+
     public Builder(String hostUrl) {
       this.hostUrl = hostUrl;
     }
@@ -190,6 +217,11 @@ public class KyuubiRestClient implements AutoCloseable {
 
     public Builder connectionTimeout(int connectTimeout) {
       this.connectTimeout = connectTimeout;
+      return this;
+    }
+
+    public Builder enableThreadLocalAuthHeader(boolean enableThreadLocalAuthHeader) {
+      this.threadLocalAuthHeaderEnabled = enableThreadLocalAuthHeader;
       return this;
     }
 

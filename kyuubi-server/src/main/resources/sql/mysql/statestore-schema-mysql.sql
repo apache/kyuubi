@@ -16,6 +16,7 @@ CREATE TABLE session_metadata(
     request_args mediumtext COMMENT 'the request arguments',
     create_time BIGINT NOT NULL COMMENT 'the metadata create time',
     engine_type varchar(1024) NOT NULL COMMENT 'the engine type',
+    cluster_manager varchar(128) COMMENT 'the engine cluster manager',
     engine_id varchar(128) COMMENT 'the engine application id',
     engine_name varchar(1024) COMMENT 'the engine application name',
     engine_url varchar(1024) COMMENT 'the engine tracking url',

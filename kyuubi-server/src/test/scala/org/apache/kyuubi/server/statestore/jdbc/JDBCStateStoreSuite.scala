@@ -79,7 +79,8 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
       requestConf = Map("spark.master" -> "local"),
       requestArgs = Seq("100"),
       createTime = System.currentTimeMillis(),
-      engineType = "spark")
+      engineType = "spark",
+      clusterManager = Some("local"))
 
     var batchStateOnlyMetadata = batchMetadata.copy(
       resource = null,

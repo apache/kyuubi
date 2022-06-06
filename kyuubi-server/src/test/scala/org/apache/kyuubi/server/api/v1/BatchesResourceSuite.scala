@@ -31,16 +31,25 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.{SparkBatchProcessBuilder, SparkProcessBuilder}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
-import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
+import org.apache.kyuubi.service.authentication.{KyuubiAuthenticationFactory, UserDefinedEngineSecuritySecretProvider}
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionType}
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+  override protected lazy val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
+    .set(
+      KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
+      classOf[UserDefinedEngineSecuritySecretProvider].getName)
+    .set(KyuubiConf.BATCH_INTERNAL_REST_RETRY_WAIT, 1000L)
+    .set(KyuubiConf.BATCH_INTERNAL_REST_MAX_RETRIES, 1)
+
   private val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
 
   override def afterEach(): Unit = {
@@ -185,7 +194,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId()}")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .delete()
-    assert(404 == deleteBatchResponse.getStatus)
+    assert(200 == deleteBatchResponse.getStatus)
+    assert(!deleteBatchResponse.readEntity(classOf[CloseBatchResponse]).isSuccess)
   }
 
   test("get batch session list") {
@@ -457,5 +467,105 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       0,
       0,
       Int.MaxValue).size == 2)
+  }
+
+  test("get local log internal redirection") {
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val metadata = SessionMetadata(
+      identifier = UUID.randomUUID().toString,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      ipAddress = "localhost",
+      kyuubiInstance = fe.connectionUrl,
+      state = "PENDING",
+      resource = "resource",
+      className = "className",
+      requestName = "LOCAL_LOG_NOT_FOUND",
+      engineType = "SPARK")
+    sessionManager.insertMetadata(metadata)
+
+    // get local batch log in the same kyuubi instance
+    var logResponse = webTarget.path(s"api/v1/batches/${metadata.identifier}/localLog")
+      .queryParam("from", "0")
+      .queryParam("size", "1")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+    assert(logResponse.getStatus == 404)
+    assert(logResponse.readEntity(classOf[String]).contains("No local log found"))
+
+    // get local batch log that is not existing
+    logResponse = webTarget.path(s"api/v1/batches/${UUID.randomUUID.toString}/localLog")
+      .queryParam("from", "0")
+      .queryParam("size", "1")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+    assert(logResponse.getStatus == 404)
+    assert(logResponse.readEntity(classOf[String]).contains("Invalid batchId"))
+
+    val metadata2 = metadata.copy(
+      identifier = UUID.randomUUID().toString,
+      kyuubiInstance = "other_kyuubi_instance:10099")
+    sessionManager.insertMetadata(metadata2)
+
+    // get local batch log that need make redirection
+    logResponse = webTarget.path(s"api/v1/batches/${metadata2.identifier}/localLog")
+      .queryParam("from", "0")
+      .queryParam("size", "1")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .get()
+    assert(logResponse.getStatus == 500)
+    assert(logResponse.readEntity(classOf[String]).contains(
+      s"Api request failed for http://${metadata2.kyuubiInstance}"))
+  }
+
+  test("delete batch internal redirection") {
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val metadata = SessionMetadata(
+      identifier = UUID.randomUUID().toString,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      ipAddress = "localhost",
+      kyuubiInstance = fe.connectionUrl,
+      state = "PENDING",
+      resource = "resource",
+      className = "className",
+      requestName = "LOCAL_LOG_NOT_FOUND",
+      engineType = "SPARK")
+    sessionManager.insertMetadata(metadata)
+
+    val encodeAuthorization =
+      new String(Base64.getEncoder.encode("kyuubi".getBytes()), "UTF-8")
+
+    // delete the batch in the same kyuubi instance but not found in-memory
+    var deleteResp = webTarget.path(s"api/v1/batches/${metadata.identifier}")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .delete()
+    assert(deleteResp.getStatus == 200)
+    assert(!deleteResp.readEntity(classOf[CloseBatchResponse]).isSuccess)
+
+    // delete batch that is not existing
+    deleteResp = webTarget.path(s"api/v1/batches/${UUID.randomUUID.toString}")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .delete()
+    assert(deleteResp.getStatus == 404)
+    assert(deleteResp.readEntity(classOf[String]).contains("Invalid batchId:"))
+
+    val metadata2 = metadata.copy(
+      identifier = UUID.randomUUID().toString,
+      kyuubiInstance = "other_kyuubi_instance:10099")
+    sessionManager.insertMetadata(metadata2)
+
+    // delete batch that need make redirection
+    deleteResp = webTarget.path(s"api/v1/batches/${metadata2.identifier}")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
+      .delete()
+    assert(deleteResp.getStatus == 200)
+    assert(deleteResp.readEntity(classOf[CloseBatchResponse]).getMsg.contains(
+      s"Api request failed for http://${metadata2.kyuubiInstance}"))
   }
 }

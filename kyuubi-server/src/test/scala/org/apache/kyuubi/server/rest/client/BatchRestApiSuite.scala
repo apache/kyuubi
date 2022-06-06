@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server.rest.client
 
+import java.util.Base64
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.RestClientTestHelper
@@ -162,5 +164,25 @@ class BatchRestApiSuite extends RestClientTestHelper {
     }
 
     spnegoKyuubiRestClient.close()
+  }
+
+  test("thread local auth header to support multi-tenancy for platform") {
+    val kyuubiRestClient = KyuubiRestClient
+      .builder(baseUri.toString)
+      .enableThreadLocalAuthHeader(true)
+      .build()
+    val batchRestApi = new BatchRestApi(kyuubiRestClient)
+    val basicAuthHeader =
+      s"BASIC ${Base64.getEncoder.encodeToString(s"$ldapUser:$ldapUserPasswd".getBytes())}"
+
+    KyuubiRestClient.setThreadLocalAuthHeader(basicAuthHeader)
+    batchRestApi.listBatches(null, null, null, 0, 0, 0, 1)
+    KyuubiRestClient.clearThreadLocalAuthHeader()
+
+    val spnegoAuthHeader = s"NEGOTIATE ${generateToken(hostName)}"
+
+    KyuubiRestClient.setThreadLocalAuthHeader(spnegoAuthHeader)
+    batchRestApi.listBatches(null, null, null, 0, 0, 0, 1)
+    KyuubiRestClient.clearThreadLocalAuthHeader()
   }
 }
