@@ -100,7 +100,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       buildBatch(batchSession)
     }.getOrElse {
-      Option(sessionManager.getBatch(batchId)).getOrElse {
+      Option(sessionManager.getBatchFromStateStore(batchId)).getOrElse {
         error(s"Invalid batchId: $batchId")
         throw new NotFoundException(s"Invalid batchId: $batchId")
       }
@@ -132,7 +132,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         s"The valid batch state can be one of the following: ${VALID_BATCH_STATES.mkString(",")}")
     }
     val batches =
-      sessionManager.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
+      sessionManager.getBatchesFromStateStore(
+        batchType,
+        batchUser,
+        batchState,
+        createTime,
+        endTime,
+        from,
+        size)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 

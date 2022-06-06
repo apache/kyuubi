@@ -175,11 +175,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     sessionStateStore.updateBatchMetadata(batchId, state.toString, applicationStatus, endTime)
   }
 
-  def getBatch(batchId: String): Batch = {
+  def getBatchFromStateStore(batchId: String): Batch = {
     sessionStateStore.getBatch(batchId)
   }
 
-  def getBatches(
+  def getBatchesFromStateStore(
       batchType: String,
       batchUser: String,
       batchState: String,
