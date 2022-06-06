@@ -31,6 +31,7 @@ import org.apache.hive.service.rpc.thrift._
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder}
+import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -147,21 +148,22 @@ class BatchJobSubmission(
     val asyncOperation: Runnable = () => {
       setStateIfNotCanceled(OperationState.RUNNING)
       try {
-        // If the batch submission is in recovery mode, try to get submitted applicationId
-        // from metadata or resource manager application status. If got, monitor the submitted
-        // application. Otherwise, resubmit the batch job.
-        val submittedAppId = recoveryMetadata.map { metadata =>
-          info(s"The batch job submission is in recovery mode with metadata $metadata")
-          Option(metadata.engineId).filter(_.nonEmpty).orElse {
-            currentApplicationState.flatMap(_.get(ApplicationOperation.APP_ID_KEY))
+        // If it is in recovery mode, only re-submit batch job if previous state is PENDING and
+        // fail to fetch the status including appId from resource manager. Otherwise, monitor the
+        // submitted batch application.
+        recoveryMetadata.map { metadata =>
+          if (metadata.state == OperationState.PENDING.toString) {
+            currentApplicationState.flatMap(_.get(APP_ID_KEY)).map { appId =>
+              monitorSubmittedApp(appId)
+            }.getOrElse {
+              submitBatchJob()
+            }
+          } else {
+            monitorSubmittedApp(metadata.engineId)
           }
-        }.getOrElse(None)
-
-        submittedAppId match {
-          case Some(appId) => monitorSubmittedApp(appId)
-          case None => submitBatchJob()
+        }.getOrElse {
+          submitBatchJob()
         }
-
         setStateIfNotCanceled(OperationState.FINISHED)
       } catch {
         onError()
