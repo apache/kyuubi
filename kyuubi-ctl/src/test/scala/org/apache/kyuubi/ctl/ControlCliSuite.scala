@@ -49,7 +49,7 @@ trait TestPrematureExit {
   private[kyuubi] def testPrematureExit(
       input: Array[String],
       searchString: String,
-      mainObject: CommandLineUtils = ControlCli): Unit = {
+      mainObject: CommandLineUtils = ControlCli): String = {
     val printStream = new BufferPrintStream()
     mainObject.printStream = printStream
 
@@ -69,8 +69,9 @@ trait TestPrematureExit {
       }
       thread.start()
       thread.join()
+      var joined = ""
       if (exitedCleanly) {
-        val joined = printStream.lineBuffer.mkString("\n")
+        joined = printStream.lineBuffer.mkString("\n")
         assert(joined.contains(searchString))
       } else {
         assert(exception != null)
@@ -78,6 +79,7 @@ trait TestPrematureExit {
           throw exception
         }
       }
+      joined
     } finally {
       mainObject.exitFn = original
     }

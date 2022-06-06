@@ -18,6 +18,7 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
+import org.apache.kyuubi.ctl.ControlCliArgumentsTestUtil._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 
 class ControlCliArgumentsSuite extends KyuubiFunSuite {
@@ -26,26 +27,6 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
   val user = "kyuubi"
   val host = "localhost"
   val port = "10000"
-
-  /** Check whether the script exits and the given search string is printed. */
-  private def testPrematureExit(args: Array[String], searchString: String): Unit = {
-    val logAppender = new LogAppender("test premature exit")
-    withLogAppender(logAppender) {
-      val thread = new Thread {
-        override def run(): Unit =
-          try {
-            new ControlCliArguments(args)
-          } catch {
-            case e: Exception =>
-              error(e)
-          }
-      }
-      thread.start()
-      thread.join()
-      assert(logAppender.loggingEvents.exists(
-        _.getMessage.getFormattedMessage.contains(searchString)))
-    }
-  }
 
   /** Check whether the script exits and the given search string is printed. */
   private def testHelpExit(args: Array[String], searchString: String): Unit = {
@@ -131,8 +112,12 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("prints usage on empty input") {
-    testPrematureExit(Array.empty[String], "Must specify action command: [create|get|delete|list].")
-    testPrematureExit(Array("--verbose"), "Must specify action command: [create|get|delete|list].")
+    testPrematureExit(
+      Array.empty[String],
+      "Must specify action command: [create|get|delete|list|log|submit].")
+    testPrematureExit(
+      Array("--verbose"),
+      "Must specify action command: [create|get|delete|list|log|submit].")
   }
 
   test("prints error with unrecognized options") {
@@ -353,7 +338,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       " change it if the active service is running in another."
     val helpString =
       s"""kyuubi $KYUUBI_VERSION
-         |Usage: kyuubi-ctl [create|get|delete|list] [options]
+         |Usage: kyuubi-ctl [create|get|delete|list|log|submit] [options] <args>...
          |
          |  -zk, --zk-quorum <value>
          |                           $zkHelpString
@@ -362,14 +347,25 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
          |  -p, --port <value>       Listening port of a service.
          |  -v, --version <value>    $versionHelpString
          |  -b, --verbose            Print additional debug output.
+         |  --hostUrl <value>        Host url for rest api.
+         |  --authSchema <value>     Auth schema for rest api.
+         |  --username <value>       Username for basic authentication.
+         |  --password <value>       Password for rest api.
+         |  --spnegoHost <value>     Spnego host for rest api.
          |
-         |Command: create [server]
-         |
+         |Command: create [batch|server] [options]
+         |${"\t"}Create a resource.
+         |  -f, --filename <value>   Filename to use to create the resource
+         |Command: create batch
+         |${"\t"}Open batch session.
          |Command: create server
          |${"\t"}Expose Kyuubi server instance to another domain.
          |
-         |Command: get [server|engine] [options]
-         |${"\t"}Get the service/engine node info, host and port needed.
+         |Command: get [batch|server|engine] [options] [<batchId>]
+         |${"\t"}Display information about the specified resources.
+         |Command: get batch
+         |${"\t"}Get batch by id.
+         |  <batchId>                Batch id.
          |Command: get server
          |${"\t"}Get Kyuubi server info of domain
          |Command: get engine
@@ -382,8 +378,12 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
          |
-         |Command: delete [server|engine] [options]
-         |${"\t"}Delete the specified service/engine node, host and port needed.
+         |Command: delete [batch|server|engine] [options] [<batchId>]
+         |${"\t"}Delete resources.
+         |Command: delete batch
+         |${"\t"}Close batch session.
+         |  <batchId>                Batch id.
+         |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
          |Command: delete server
          |${"\t"}Delete the specified service node for a domain
          |Command: delete engine
@@ -396,8 +396,13 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
          |
-         |Command: list [server|engine] [options]
-         |${"\t"}List all the service/engine nodes for a particular domain.
+         |Command: list [batch|server|engine] [options]
+         |${"\t"}List information about resources.
+         |Command: list batch
+         |${"\t"}List batch session info.
+         |  --batchType <value>      Batch type.
+         |  --from <value>           Specify which record to start from retrieving info.
+         |  --size <value>           The max number of records returned in the query.
          |Command: list server
          |${"\t"}List all the service nodes for a particular domain
          |Command: list engine
@@ -409,6 +414,21 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
          |                           The engine subdomain this engine belong to.
          |  -esl, --engine-share-level <value>
          |                           The engine share level this engine belong to.
+         |
+         |Command: log [batch] [options] [<batchId>]
+         |${"\t"}Print the logs for specified resource.
+         |  --forward                If forward is specified, the ctl will block forever.
+         |Command: log batch
+         |${"\t"}Get batch session local log.
+         |  <batchId>                Batch id.
+         |  --from <value>           Specify which record to start from retrieving info.
+         |  --size <value>           The max number of records returned in the query.
+         |
+         |Command: submit [batch] [options]
+         |${"\t"}Combination of create and log command.
+         |  -f, --filename <value>   Filename to use to create the resource
+         |Command: submit batch
+         |${"\t"}open batch session and wait for completion.
          |
          |  -h, --help               Show help message and exit.""".stripMargin
 

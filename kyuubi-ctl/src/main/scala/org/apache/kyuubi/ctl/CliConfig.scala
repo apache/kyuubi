@@ -21,7 +21,7 @@ import org.apache.kyuubi.ctl.ControlObject.ControlObject
 
 private[ctl] object ControlAction extends Enumeration {
   type ControlAction = Value
-  val CREATE, GET, DELETE, LIST = Value
+  val CREATE, GET, DELETE, LIST, LOG, SUBMIT = Value
 }
 
 private[ctl] object ControlObject extends Enumeration {
@@ -33,6 +33,9 @@ case class CliConfig(
     action: ControlAction = null,
     service: ControlObject = ControlObject.SERVER,
     commonOpts: CommonOpts = CommonOpts(),
+    createOpts: CreateOpts = CreateOpts(),
+    logOpts: LogOpts = LogOpts(),
+    batchOpts: BatchOpts = BatchOpts(),
     engineOpts: EngineOpts = EngineOpts())
 
 case class CommonOpts(
@@ -41,7 +44,25 @@ case class CommonOpts(
     host: String = null,
     port: String = null,
     version: String = null,
-    verbose: Boolean = false)
+    verbose: Boolean = false,
+    hostUrl: String = null,
+    authSchema: String = null,
+    username: String = null,
+    password: String = null,
+    spnegoHost: String = null)
+
+case class CreateOpts(
+    filename: String = null)
+
+case class LogOpts(
+    forward: Boolean = false)
+
+case class BatchOpts(
+    batchId: String = null,
+    batchType: String = null,
+    from: Int = -1,
+    size: Int = 10,
+    hs2ProxyUser: String = null)
 
 case class EngineOpts(
     user: String = null,

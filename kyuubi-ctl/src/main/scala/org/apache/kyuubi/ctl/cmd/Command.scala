@@ -16,7 +16,14 @@
  */
 package org.apache.kyuubi.ctl.cmd
 
+import java.io.{BufferedReader, File, FileInputStream, InputStreamReader}
 import java.net.InetAddress
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
+import java.util.HashMap
+
+import org.apache.commons.lang3.StringUtils
+import org.yaml.snakeyaml.Yaml
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
@@ -153,6 +160,33 @@ abstract class Command(var cliArgs: CliConfig) extends Logging {
         }
       case _ => serviceNodes
     }
+  }
+
+  private[ctl] def readConfig(): HashMap[String, Object] = {
+    var filename = cliArgs.createOpts.filename
+    if (StringUtils.isBlank(filename)) {
+      fail(s"Config file is not specified.")
+    }
+
+    val currentPath = Paths.get("").toAbsolutePath
+    if (!filename.startsWith("/")) {
+      filename = currentPath + "/" + filename
+    }
+    if (!Files.exists(Paths.get(filename))) {
+      fail(s"Config file does not exist: ${filename}.")
+    }
+
+    var map: HashMap[String, Object] = null
+
+    try {
+      val yaml = new Yaml()
+      val input = new FileInputStream(new File(filename))
+      val br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))
+      map = yaml.load(br).asInstanceOf[HashMap[String, Object]]
+    } catch {
+      case e: Exception => fail(s"Failed to read yaml file[$filename]: $e")
+    }
+    map
   }
 
   override def info(msg: => Any): Unit = printMessage(msg)

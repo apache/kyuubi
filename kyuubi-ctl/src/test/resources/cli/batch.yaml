@@ -1,0 +1,18 @@
+apiVersion: v1
+hostUrl: https://localhost:8443
+batchType: Spark
+authSchema: basic
+user: test_user
+request:
+  name: test_batch
+  resource: /MySpace/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar
+  className: org.apache.kyuubi.engine.spark.SparkSQLEngine
+  args:
+    - x1
+    - x2
+  configs:
+    hive.server2.proxy.user: b_user
+    wait.completion: true
+    k1: v1
+options:
+  verbose: true
