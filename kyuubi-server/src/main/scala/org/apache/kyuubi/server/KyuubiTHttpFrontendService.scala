@@ -21,7 +21,6 @@ import java.net.ServerSocket
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 import javax.servlet.{ServletContextEvent, ServletContextListener}
 
-import org.apache.hadoop.hive.common.metrics.common.{MetricsConstant, MetricsFactory}
 import org.apache.hadoop.hive.shims.ShimLoader
 import org.apache.hadoop.shaded.org.jline.utils.OSUtils
 import org.apache.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
@@ -38,6 +37,8 @@ import org.eclipse.jetty.util.thread.ExecutorThreadPool
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_CONN_FAIL, THRIFT_CONN_OPEN, THRIFT_CONN_TOTAL}
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.ThriftHttpServlet
 import org.apache.kyuubi.server.http.util.SessionManager
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TFrontendService}
@@ -107,21 +108,23 @@ final class KyuubiTHttpFrontendService(
 
           if (keyStorePath.isEmpty) {
             throw new IllegalArgumentException(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH.key +
-              " Not configured for SSL connection")
+              " Not configured for SSL connection, please set the key with: " +
+              FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH.doc)
           }
 
           val keyStorePassword = conf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD)
           if (keyStorePassword.isEmpty) {
             throw new IllegalArgumentException(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD.key +
-              " Not configured for SSL connection")
+              " Not configured for SSL connection. please set the key with: " +
+              FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD.doc)
           }
 
           val sslContextFactory = new SslContextFactory.Server
           val excludedProtocols = conf.get(FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST).split(",")
-          info("HTTP Server SSL: adding excluded protocols: " +
+          info("Thrift HTTP Server SSL: adding excluded protocols: " +
             String.join(",", excludedProtocols: _*))
           sslContextFactory.addExcludeProtocols(excludedProtocols: _*)
-          info("HTTP Server SSL: SslContextFactory.getExcludeProtocols = " +
+          info("Thrift HTTP Server SSL: SslContextFactory.getExcludeProtocols = " +
             String.join(",", sslContextFactory.getExcludeProtocols: _*))
           sslContextFactory.setKeyStorePath(keyStorePath.get)
           sslContextFactory.setKeyStorePassword(keyStorePassword.get)
@@ -152,26 +155,15 @@ final class KyuubiTHttpFrontendService(
 
       context.addEventListener(new ServletContextListener() {
         override def contextInitialized(servletContextEvent: ServletContextEvent): Unit = {
-          val metrics = MetricsFactory.getInstance
-          if (metrics != null) {
-            try {
-              metrics.incrementCounter(MetricsConstant.OPEN_CONNECTIONS)
-              metrics.incrementCounter(MetricsConstant.CUMULATIVE_CONNECTION_COUNT)
-            } catch {
-              case e: Exception =>
-                warn("Error reporting open connection operation to Metrics system", e)
-            }
+          MetricsSystem.tracing { ms =>
+            ms.incCount(THRIFT_CONN_TOTAL)
+            ms.incCount(THRIFT_CONN_OPEN)
           }
         }
 
         override def contextDestroyed(servletContextEvent: ServletContextEvent): Unit = {
-          val metrics = MetricsFactory.getInstance
-          if (metrics != null) {
-            try metrics.decrementCounter(MetricsConstant.OPEN_CONNECTIONS)
-            catch {
-              case e: Exception =>
-                warn("Error reporting close connection operation to Metrics system", e)
-            }
+          MetricsSystem.tracing { ms =>
+            ms.decCount(THRIFT_CONN_OPEN)
           }
         }
       })
@@ -196,6 +188,7 @@ final class KyuubiTHttpFrontendService(
         " path=" + httpPath + " with " + minThreads + "..." + maxThreads + " worker threads")
     } catch {
       case e: Throwable =>
+        MetricsSystem.tracing(_.incCount(THRIFT_CONN_FAIL))
         error(e)
         throw new KyuubiException(
           s"Failed to initialize frontend service on $serverAddr:$portNum.",

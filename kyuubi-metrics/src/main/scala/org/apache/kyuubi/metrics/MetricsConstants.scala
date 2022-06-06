@@ -31,10 +31,15 @@ object MetricsConstants {
   final val EXEC_POOL_ACTIVE: String = KYUUBI + "exec.pool.threads.active"
 
   final private val CONN = KYUUBI + "connection."
+  final private val THRIFT_CONN = KYUUBI + "thrift.connection."
 
   final val CONN_OPEN: String = CONN + "opened"
   final val CONN_FAIL: String = CONN + "failed"
   final val CONN_TOTAL: String = CONN + "total"
+
+  final val THRIFT_CONN_OPEN: String = THRIFT_CONN + "opened"
+  final val THRIFT_CONN_FAIL: String = THRIFT_CONN + "failed"
+  final val THRIFT_CONN_TOTAL: String = THRIFT_CONN + "total"
 
   final private val ENGINE = KYUUBI + "engine."
   final val ENGINE_FAIL: String = ENGINE + "failed"

@@ -353,7 +353,7 @@ class ThriftHttpServlet(
 //        throw new AuthenticationException(e)
 //    }
     // TODO: FIXME: support tokenAuth in Kerberos
-    throw new AuthenticationException("Token Auth is no supported")
+    throw new AuthenticationException("Token Auth is not supported")
   }
 
   /**
