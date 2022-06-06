@@ -62,13 +62,22 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
     Option(_stateStore.getMetadata(batchId, true)).map(buildBatch).orNull
   }
 
-  def getBatchesByType(batchType: String, from: Int, size: Int): Seq[Batch] = {
+  def getBatches(
+      batchType: String,
+      batchUser: String,
+      batchState: String,
+      createTime: Long,
+      endTime: Long,
+      from: Int,
+      size: Int): Seq[Batch] = {
     _stateStore.getMetadataList(
       SessionType.BATCH,
       batchType,
+      batchUser,
+      batchState,
       null,
-      null,
-      null,
+      createTime,
+      endTime,
       from,
       size,
       true).map(buildBatch)
@@ -112,10 +121,14 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
 
     new Batch(
       batchMetadata.identifier,
+      batchMetadata.username,
       batchMetadata.engineType,
+      batchMetadata.requestName,
       batchAppInfo.asJava,
       batchMetadata.kyuubiInstance,
-      batchMetadata.state)
+      batchMetadata.state,
+      batchMetadata.createTime,
+      batchMetadata.endTime)
   }
 
   private def startStateStoreCleaner(): Unit = {

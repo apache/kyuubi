@@ -44,6 +44,8 @@ trait StateStore extends Closeable {
    * @param userName the user name.
    * @param state the state.
    * @param kyuubiInstance the kyuubi instance.
+   * @param createTime the metadata create time.
+   * @param endTime the end time.
    * @param from the batch offset.
    * @param size the batch size to get.
    * @param stateOnly only return the state related column values.
@@ -55,6 +57,8 @@ trait StateStore extends Closeable {
       userName: String,
       state: String,
       kyuubiInstance: String,
+      createTime: Long,
+      endTime: Long,
       from: Int,
       size: Int,
       stateOnly: Boolean): Seq[SessionMetadata]

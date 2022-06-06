@@ -35,6 +35,8 @@ public class RestClientTestUtil {
   public static final String TEST_USERNAME = "test_user";
   public static final String TEST_PASSWORD = "test_password";
 
+  public static final Long BATCH_CREATE_TIME = System.currentTimeMillis();
+
   public static Batch generateTestBatch() {
     return generateTestBatch("71535");
   }
@@ -58,7 +60,17 @@ public class RestClientTestUtil {
             + "/MySpace/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar");
     batchInfo.put("state", "RUNNING");
 
-    Batch batch = new Batch(id, "spark", batchInfo, "192.168.31.130:64573", "RUNNING");
+    Batch batch =
+        new Batch(
+            id,
+            TEST_USERNAME,
+            "spark",
+            "batch_name",
+            batchInfo,
+            "192.168.31.130:64573",
+            "RUNNING",
+            BATCH_CREATE_TIME,
+            0);
 
     return batch;
   }
