@@ -153,7 +153,8 @@ class BatchJobSubmission(
         // submitted batch application.
         recoveryMetadata.map { metadata =>
           if (metadata.state == OperationState.PENDING.toString) {
-            currentApplicationState.flatMap(_.get(APP_ID_KEY)).map { appId =>
+            applicationStatus = currentApplicationState
+            applicationStatus.flatMap(_.get(APP_ID_KEY)).map { appId =>
               monitorSubmittedApp(appId)
             }.getOrElse {
               submitBatchJob()
@@ -225,7 +226,9 @@ class BatchJobSubmission(
 
   private def monitorSubmittedApp(appId: String): Unit = {
     info(s"Monitoring submitted $batchType batch application: $appId")
-    applicationStatus = currentApplicationState
+    if (applicationStatus.isEmpty) {
+      applicationStatus = currentApplicationState
+    }
     if (applicationStatus.isEmpty) {
       info("The batch application not found, assume that it has finished.")
     } else if (applicationFailed(applicationStatus)) {
