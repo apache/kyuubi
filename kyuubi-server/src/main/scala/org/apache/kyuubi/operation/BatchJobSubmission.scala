@@ -197,7 +197,7 @@ class BatchJobSubmission(
   private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
     try {
-      info(s"Submitting $batchType batch job: $builder")
+      info(s"Submitting $batchType batch[$batchId] job: $builder")
       val process = builder.start
       applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
@@ -217,7 +217,11 @@ class BatchJobSubmission(
         if (process.exitValue() != 0) {
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
-        monitorBatchJob()
+
+        applicationStatus.map(_.get(APP_ID_KEY)).map {
+          case Some(appId) => monitorBatchJob(appId)
+          case _ =>
+        }
       }
     } finally {
       builder.close()
