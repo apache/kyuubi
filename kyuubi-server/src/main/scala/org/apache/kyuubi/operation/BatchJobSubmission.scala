@@ -234,19 +234,25 @@ class BatchJobSubmission(
       applicationStatus = currentApplicationState
     }
     if (applicationStatus.isEmpty) {
-      info("The batch application not found, assume that it has finished.")
+      info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
     } else if (applicationFailed(applicationStatus)) {
-      throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
+      throw new RuntimeException(s"$batchType batch[$batchId] job failed:" +
+        applicationStatus.get.mkString(","))
     } else {
       // TODO: add limit for max batch job submission lifetime
       while (applicationStatus.isDefined && !applicationTerminated(applicationStatus)) {
         Thread.sleep(applicationCheckInterval)
-        applicationStatus = currentApplicationState
-        info(s"Batch report for $batchId (${applicationStatus.map(_.mkString(",")).getOrElse("")})")
+        val newApplicationStatus = currentApplicationState
+        if (newApplicationStatus != applicationStatus) {
+          applicationStatus = newApplicationStatus
+          info(s"Batch report for $batchId" +
+            applicationStatus.map(_.mkString("(", ",", ")")).getOrElse("()"))
+        }
       }
 
       if (applicationFailed(applicationStatus)) {
-        throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
+        throw new RuntimeException(s"$batchType batch[$batchId] job failed:" +
+          applicationStatus.get.mkString(","))
       }
     }
   }
