@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.util.Locale
-
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -75,22 +73,5 @@ class SparkBatchProcessBuilder(
 
   override def clusterManager(): Option[String] = {
     batchConf.get(MASTER_KEY).orElse(defaultMaster)
-  }
-
-  private def deployMode(): Option[String] = {
-    batchConf.get(DEPLOY_MODE_KEY).orElse(defaultConf.get(DEPLOY_MODE_KEY))
-  }
-
-  def waitAppCompletion(): Boolean = {
-    (
-      clusterManager().map(_.toUpperCase(Locale.ROOT)),
-      deployMode().map(_.toUpperCase(Locale.ROOT))) match {
-      case (Some("YARN"), Some("CLUSTER")) =>
-        batchConf.get(YARN_SUBMIT_WAIT_APP_COMPLETION_KEY)
-          .orElse(defaultConf.get(YARN_SUBMIT_WAIT_APP_COMPLETION_KEY))
-          .map(_.toBoolean)
-          .getOrElse(true)
-      case _ => true
-    }
   }
 }

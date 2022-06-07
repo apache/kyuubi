@@ -217,6 +217,7 @@ class BatchJobSubmission(
         if (process.exitValue() != 0) {
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
+        monitorBatchJob()
       }
     } finally {
       builder.close()
@@ -233,24 +234,15 @@ class BatchJobSubmission(
     } else if (applicationFailed(applicationStatus)) {
       throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
     } else {
-      val waitSubmittedAppCompletion = builder match {
-        case sbp: SparkBatchProcessBuilder => sbp.waitAppCompletion()
-        case _ => false
+      // TODO: add limit for max batch job submission lifetime
+      while (applicationStatus.isDefined && !applicationTerminated(applicationStatus)) {
+        Thread.sleep(applicationCheckInterval)
+        applicationStatus = currentApplicationState
+        info(s"Batch report for $batchId (${applicationStatus.map(_.mkString(",")).getOrElse("")})")
       }
 
-      if (!waitSubmittedAppCompletion) {
-        info(s"The batch application has been submitted successfully:" +
-          applicationStatus.get.mkString(","))
-      } else {
-        // TODO: add limit for max batch job submission lifetime
-        while (applicationStatus.isDefined && !applicationTerminated(applicationStatus)) {
-          Thread.sleep(applicationCheckInterval)
-          applicationStatus = currentApplicationState
-        }
-
-        if (applicationFailed(applicationStatus)) {
-          throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
-        }
+      if (applicationFailed(applicationStatus)) {
+        throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
       }
     }
   }

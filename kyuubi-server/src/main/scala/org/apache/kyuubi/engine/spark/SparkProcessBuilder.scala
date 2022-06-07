@@ -141,24 +141,22 @@ class SparkProcessBuilder(
 
   override def shortName: String = "spark"
 
-  protected lazy val defaultConf: Map[String, String] = {
-    val confDir = env.getOrElse(SPARK_CONF_DIR, s"$sparkHome${File.separator}conf")
-    try {
-      val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
-      if (confFile.exists()) {
-        Utils.getPropertiesFromFile(Some(confFile))
-      } else {
-        Map.empty[String, String]
-      }
-    } catch {
-      case _: Exception =>
-        warn(s"Failed to load spark configurations from $confDir")
-        Map.empty[String, String]
-    }
-  }
-
   protected lazy val defaultMaster: Option[String] = {
-    defaultConf.get(MASTER_KEY)
+    val confDir = env.getOrElse(SPARK_CONF_DIR, s"$sparkHome${File.separator}conf")
+    val defaults =
+      try {
+        val confFile = new File(s"$confDir${File.separator}$SPARK_CONF_FILE_NAME")
+        if (confFile.exists()) {
+          Utils.getPropertiesFromFile(Some(confFile))
+        } else {
+          Map.empty[String, String]
+        }
+      } catch {
+        case _: Exception =>
+          warn(s"Failed to load spark configurations from $confDir")
+          Map.empty[String, String]
+      }
+    defaults.get(MASTER_KEY)
   }
 
   override def clusterManager(): Option[String] = {
