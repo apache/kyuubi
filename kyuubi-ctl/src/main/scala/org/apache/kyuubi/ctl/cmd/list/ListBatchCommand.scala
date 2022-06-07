@@ -32,6 +32,10 @@ class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
     val batchInfoList: GetBatchesResponse = batchRestApi.listBatches(
       cliArgs.batchOpts.batchType,
+      null,
+      null,
+      null,
+      null,
       if (cliArgs.batchOpts.from < 0) 0 else cliArgs.batchOpts.from,
       cliArgs.batchOpts.size)
     info(JsonUtil.toJson(batchInfoList))

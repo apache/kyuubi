@@ -17,6 +17,7 @@
 package org.apache.kyuubi.ctl.cmd.delete
 
 import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
+import org.apache.kyuubi.client.util.JsonUtil
 import org.apache.kyuubi.ctl.{CliConfig, ClientFactory}
 import org.apache.kyuubi.ctl.cmd.Command
 
@@ -33,7 +34,7 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     val result = batchRestApi.deleteBatch(
       cliArgs.batchOpts.batchId,
       cliArgs.batchOpts.hs2ProxyUser)
-    info(result)
+    info(JsonUtil.toJson(result))
   }
 
 }
