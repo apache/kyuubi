@@ -103,6 +103,7 @@ netty-transport/4.1.73.Final//netty-transport-4.1.73.Final.jar
 osgi-resource-locator/1.0.3//osgi-resource-locator-1.0.3.jar
 paranamer/2.8//paranamer-2.8.jar
 scala-library/2.12.15//scala-library-2.12.15.jar
+scala-reflect/2.12.15//scala-reflect-2.12.15.jar
 scopt_2.12/4.0.1//scopt_2.12-4.0.1.jar
 simpleclient/0.14.1//simpleclient-0.14.1.jar
 simpleclient_common/0.14.1//simpleclient_common-0.14.1.jar

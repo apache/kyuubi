@@ -35,9 +35,9 @@ object CommandLine {
       log(builder),
       submit(builder),
       checkConfig(f => {
-        if (f.action == null)
+        if (f.action == null) {
           failure("Must specify action command: [create|get|delete|list|log|submit].")
-        else success
+        } else success
       }),
       note(""),
       help('h', "help").text("Show help message and exit."))
