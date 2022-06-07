@@ -155,15 +155,15 @@ class BatchJobSubmission(
           if (metadata.state == OperationState.PENDING.toString) {
             applicationStatus = currentApplicationState
             applicationStatus.flatMap(_.get(APP_ID_KEY)).map { appId =>
-              monitorSubmittedApp(appId)
+              monitorBatchJob(appId)
             }.getOrElse {
-              submitBatchJob()
+              submitAndMonitorBatchJob()
             }
           } else {
-            monitorSubmittedApp(metadata.engineId)
+            monitorBatchJob(metadata.engineId)
           }
         }.getOrElse {
-          submitBatchJob()
+          submitAndMonitorBatchJob()
         }
         setStateIfNotCanceled(OperationState.FINISHED)
       } catch {
@@ -195,7 +195,7 @@ class BatchJobSubmission(
       s.contains("KILLED") || s.contains("FAILED") || s.contains("FINISHED"))
   }
 
-  private def submitBatchJob(): Unit = {
+  private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
     try {
       info(s"Submitting $batchType batch job: $builder")
@@ -224,7 +224,7 @@ class BatchJobSubmission(
     }
   }
 
-  private def monitorSubmittedApp(appId: String): Unit = {
+  private def monitorBatchJob(appId: String): Unit = {
     info(s"Monitoring submitted $batchType batch application: $appId")
     if (applicationStatus.isEmpty) {
       applicationStatus = currentApplicationState
