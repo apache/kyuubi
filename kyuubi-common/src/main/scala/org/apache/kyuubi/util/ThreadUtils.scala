@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.util
 
-import java.util.concurrent.{ExecutorService, LinkedBlockingQueue, ScheduledExecutorService, ScheduledThreadPoolExecutor, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{Executors, ExecutorService, LinkedBlockingQueue, ScheduledExecutorService, ScheduledThreadPoolExecutor, ThreadPoolExecutor, TimeUnit}
 
 import scala.concurrent.Awaitable
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -51,6 +51,11 @@ object ThreadUtils extends Logging {
       nameFactory)
     executor.allowCoreThreadTimeOut(true)
     executor
+  }
+
+  def newDaemonFixedThreadPool(nThreads: Int, prefix: String): ThreadPoolExecutor = {
+    val threadFactory = new NamedThreadFactory(prefix, daemon = true)
+    Executors.newFixedThreadPool(nThreads, threadFactory).asInstanceOf[ThreadPoolExecutor]
   }
 
   def awaitResult[T](awaitable: Awaitable[T], atMost: Duration): T = {

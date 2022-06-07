@@ -227,7 +227,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSessionImpl] = {
-    val recoveryPerBatch = conf.get(SERVER_STATE_STORE_RECOVERY_SESSIONS_PER_BATCH)
+    val recoveryPerBatch = conf.get(SERVER_STATE_STORE_SESSIONS_RECOVERY_PER_BATCH)
 
     val batchSessionsToRecover = ListBuffer[KyuubiBatchSessionImpl]()
     Seq(OperationState.PENDING, OperationState.RUNNING).foreach { stateToRecover =>

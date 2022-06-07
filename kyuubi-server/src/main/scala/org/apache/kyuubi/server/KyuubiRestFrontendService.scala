@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server
 
 import java.util.EnumSet
+import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.servlet.DispatcherType
 
@@ -27,7 +28,7 @@ import org.eclipse.jetty.servlet.FilterHolder
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT, SERVER_STATE_STORE_SESSIONS_RECOVERY_NUM_THREADS}
 import org.apache.kyuubi.server.KyuubiRestFrontendService.getConnectionUrl
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
@@ -35,6 +36,7 @@ import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -50,9 +52,6 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
   private def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
-
-  @VisibleForTesting
-  private[kyuubi] var batchSessionsRecoveryThread: Thread = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
@@ -81,15 +80,41 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   @VisibleForTesting
   private[kyuubi] def recoverBatchSessions(): Unit = {
-    val batchSessionsToRecover = sessionManager.getBatchSessionsToRecover(getConnectionUrl)
-    batchSessionsRecoveryThread = new Thread(
-      () => {
-        batchSessionsToRecover.foreach { batchSession =>
-          Utils.tryLogNonFatalError(sessionManager.openBatchSession(batchSession))
+    val recoveryNumThreads = conf.get(SERVER_STATE_STORE_SESSIONS_RECOVERY_NUM_THREADS)
+    val batchRecoveryExecutor =
+      ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
+    try {
+      val batchSessionsToRecover = sessionManager.getBatchSessionsToRecover(getConnectionUrl)
+      val pendingRecoveryTasksCount = new java.util.concurrent.atomic.AtomicInteger(0)
+      val tasks = batchSessionsToRecover.flatMap { batchSession =>
+        val batchId = batchSession.batchJobSubmissionOp.batchId
+        try {
+          val task: Future[Unit] = batchRecoveryExecutor.submit(() =>
+            Utils.tryLogNonFatalError(sessionManager.openBatchSession(batchSession)))
+          Some(task -> batchId)
+        } catch {
+          case e: Throwable =>
+            error(s"Error while submitting batch[$batchId] for recovery", e)
+            None
         }
-      },
-      "BatchSessionsRecoveryThread")
-    batchSessionsRecoveryThread.start()
+      }
+
+      pendingRecoveryTasksCount.addAndGet(tasks.size)
+
+      tasks.foreach { case (task, batchId) =>
+        try {
+          task.get()
+        } catch {
+          case e: Throwable =>
+            error(s"Error while recovering batch[$batchId]", e)
+        } finally {
+          val pendingTasks = pendingRecoveryTasksCount.decrementAndGet()
+          info(s"Batch[$batchId] recovery task terminated, current pending tasks $pendingTasks")
+        }
+      }
+    } finally {
+      ThreadUtils.shutdown(batchRecoveryExecutor)
+    }
   }
 
   override def start(): Unit = synchronized {
@@ -111,10 +136,6 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   override def stop(): Unit = synchronized {
     if (isStarted.getAndSet(false)) {
       server.stop()
-      if (batchSessionsRecoveryThread != null) {
-        batchSessionsRecoveryThread.interrupt()
-        batchSessionsRecoveryThread = null
-      }
     }
     super.stop()
   }

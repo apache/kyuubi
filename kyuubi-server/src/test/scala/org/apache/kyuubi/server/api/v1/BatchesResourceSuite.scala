@@ -430,7 +430,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val restFe = fe.asInstanceOf[KyuubiRestFrontendService]
     restFe.recoverBatchSessions()
-    restFe.batchSessionsRecoveryThread.join()
     assert(sessionManager.getOpenSessionCount == 2)
 
     val sessionHandle1 =
