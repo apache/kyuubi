@@ -20,10 +20,12 @@ package org.apache.kyuubi.operation.tpcds
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
+import org.scalatest.tags.Slow
+
 import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.mysql.MySQLJDBCTestHelper
-import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
+import org.apache.kyuubi.tags.DeltaTest
 
 // scalastyle:off line.size.limit
 /**
@@ -42,8 +44,8 @@ import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
  * }}}
  */
 // scalastyle:on line.size.limit
+@Slow
 @DeltaTest
-@ExtendedSQLTest
 class OutputSchemaTPCDSSuite extends WithKyuubiServer
   with MySQLJDBCTestHelper
   with TPCDSHelper
