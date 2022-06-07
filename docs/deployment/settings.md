@@ -341,6 +341,15 @@ kyuubi.operation.status.polling.timeout|PT5S|Timeout(ms) for long polling asynch
 kyuubi.operation.thrift.client.request.max.attempts|5|Max attempts for operation thrift request call at server-side on raw transport failures, e.g. TTransportException|int|1.6.0
 
 
+### Rest
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.rest.auth.schema|basic|The authentication schema. Valid values are: basic, spnego.|string|1.6.0
+kyuubi.rest.base.url|&lt;undefined&gt;|The REST API base URL,which contains the scheme (http:// or https://), host name, port number|string|1.6.0
+kyuubi.rest.spnego.host|&lt;undefined&gt;|When auth schema is spnego, need to config spnego host.|string|1.6.0
+
+
 ### Server
 
 Key | Default | Meaning | Type | Since

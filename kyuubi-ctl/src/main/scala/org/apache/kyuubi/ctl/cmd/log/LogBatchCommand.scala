@@ -32,7 +32,7 @@ class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   }
 
   override def run(): Unit = {
-    val kyuubiRestClient: KyuubiRestClient = ClientFactory.getKyuubiRestClient(cliArgs, null)
+    val kyuubiRestClient: KyuubiRestClient = ClientFactory.getKyuubiRestClient(cliArgs, null, conf)
     val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
     var log: OperationLog = batchRestApi.getBatchLocalLog(

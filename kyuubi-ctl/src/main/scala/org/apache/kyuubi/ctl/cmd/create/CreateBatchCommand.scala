@@ -35,7 +35,7 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   override def run(): Unit = {
 
-    val kyuubiRestClient: KyuubiRestClient = ClientFactory.getKyuubiRestClient(cliArgs, map)
+    val kyuubiRestClient: KyuubiRestClient = ClientFactory.getKyuubiRestClient(cliArgs, map, conf)
     val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
     val request = map.get("request").asInstanceOf[HashMap[String, Object]]

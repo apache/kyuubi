@@ -27,7 +27,7 @@ class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   override def validateArguments(): Unit = {}
 
   override def run(): Unit = {
-    val kyuubiRestClient: KyuubiRestClient = ClientFactory.getKyuubiRestClient(cliArgs, null)
+    val kyuubiRestClient: KyuubiRestClient = ClientFactory.getKyuubiRestClient(cliArgs, null, conf)
     val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
     val batchInfoList: GetBatchesResponse = batchRestApi.listBatches(
