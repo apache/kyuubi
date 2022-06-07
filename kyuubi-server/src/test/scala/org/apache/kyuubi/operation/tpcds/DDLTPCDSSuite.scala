@@ -17,13 +17,15 @@
 
 package org.apache.kyuubi.operation.tpcds
 
+import org.scalatest.tags.Slow
+
 import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
+import org.apache.kyuubi.tags.DeltaTest
 
+@Slow
 @DeltaTest
-@ExtendedSQLTest
 class DDLTPCDSSuite extends WithKyuubiServer
   with HiveJDBCTestHelper
   with TPCDSHelper
