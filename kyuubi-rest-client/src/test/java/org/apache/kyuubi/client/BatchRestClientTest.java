@@ -51,13 +51,13 @@ public class BatchRestClientTest {
     kerberizedTestHelper.login();
     spnegoClient =
         KyuubiRestClient.builder("https://localhost:8443")
-            .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
+            .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
             .build();
     spnegoBatchRestApi = new BatchRestApi(spnegoClient);
 
     basicClient =
         KyuubiRestClient.builder("https://localhost:8443")
-            .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+            .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
             .username(TEST_USERNAME)
             .password(TEST_PASSWORD)
             .build();
@@ -75,7 +75,7 @@ public class BatchRestClientTest {
   @Test(expected = IllegalArgumentException.class)
   public void testEmptyHostUrl() {
     KyuubiRestClient.builder("")
-        .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
         .username("test")
         .password("test")
         .build();
@@ -85,7 +85,7 @@ public class BatchRestClientTest {
   public void testInvalidUrl() {
     KyuubiRestClient basicClient =
         KyuubiRestClient.builder("https://localhost:8443")
-            .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+            .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
             .username("test")
             .password("test")
             .build();
@@ -101,7 +101,7 @@ public class BatchRestClientTest {
 
     KyuubiRestClient noPasswordBasicClient =
         KyuubiRestClient.builder("https://localhost:8443")
-            .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+            .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
             .username(TEST_USERNAME)
             .build();
     BatchRestApi noPasswordBasicBatchRestApi = new BatchRestApi(noPasswordBasicClient);
@@ -126,7 +126,7 @@ public class BatchRestClientTest {
 
     KyuubiRestClient anonymousBasicClient =
         KyuubiRestClient.builder("https://localhost:8443")
-            .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+            .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
             .build();
     BatchRestApi anonymousBasicBatchRestApi = new BatchRestApi(anonymousBasicClient);
 

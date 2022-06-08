@@ -33,7 +33,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
   test("basic batch rest client") {
     val basicKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
-        .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
         .username(ldapUser)
         .password(ldapUserPasswd)
         .socketTimeout(30000)
@@ -77,7 +77,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
   test("basic batch rest client with invalid user") {
     val basicKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
-        .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
         .username(customUser)
         .password(customPasswd)
         .socketTimeout(30000)
@@ -96,7 +96,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
   test("spnego batch rest client") {
     val spnegoKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
-        .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
         .spnegoHost("localhost")
         .build()
     val batchRestApi: BatchRestApi = new BatchRestApi(spnegoKyuubiRestClient)
@@ -166,23 +166,16 @@ class BatchRestApiSuite extends RestClientTestHelper {
     spnegoKyuubiRestClient.close()
   }
 
-  test("thread local auth header to support multi-tenancy for platform") {
+  test("CUSTOM auth header generator") {
     val kyuubiRestClient = KyuubiRestClient
       .builder(baseUri.toString)
-      .enableThreadLocalAuthHeader(true)
+      .authHeaderGenerator(() => {
+        s"BASIC ${Base64.getEncoder.encodeToString(s"$ldapUser:$ldapUserPasswd".getBytes())}"
+      })
       .build()
     val batchRestApi = new BatchRestApi(kyuubiRestClient)
-    val basicAuthHeader =
-      s"BASIC ${Base64.getEncoder.encodeToString(s"$ldapUser:$ldapUserPasswd".getBytes())}"
 
-    KyuubiRestClient.setThreadLocalAuthHeader(basicAuthHeader)
     batchRestApi.listBatches(null, null, null, 0, 0, 0, 1)
-    KyuubiRestClient.clearThreadLocalAuthHeader()
-
-    val spnegoAuthHeader = s"NEGOTIATE ${generateToken(hostName)}"
-
-    KyuubiRestClient.setThreadLocalAuthHeader(spnegoAuthHeader)
     batchRestApi.listBatches(null, null, null, 0, 0, 0, 1)
-    KyuubiRestClient.clearThreadLocalAuthHeader()
   }
 }

@@ -21,6 +21,7 @@ import java.util.Base64
 
 import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
 import org.apache.kyuubi.client.api.v1.dto.{CloseBatchResponse, OperationLog}
+import org.apache.kyuubi.client.auth.AuthHeaderGenerator
 import org.apache.kyuubi.server.http.authentication.AuthSchemes
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
@@ -40,13 +41,13 @@ class InternalRestClient(kyuubiInstance: String, socketTimeout: Int, connectTime
   private val internalBatchRestApi = new BatchRestApi(initKyuubiRestClient())
 
   def getBatchLocalLog(user: String, batchId: String, from: Int, size: Int): OperationLog = {
-    withInternalAuthHeader(user) { _ =>
+    withAuthUser(user) {
       internalBatchRestApi.getBatchLocalLog(batchId, from, size)
     }
   }
 
   def deleteBatch(user: String, batchId: String): CloseBatchResponse = {
-    withInternalAuthHeader(user) { _ =>
+    withAuthUser(user) {
       internalBatchRestApi.deleteBatch(batchId, null)
     }
   }
@@ -56,20 +57,34 @@ class InternalRestClient(kyuubiInstance: String, socketTimeout: Int, connectTime
       .apiVersion(KyuubiRestClient.ApiVersion.V1)
       .socketTimeout(socketTimeout)
       .connectionTimeout(connectTimeout)
-      .enableThreadLocalAuthHeader(true)
+      .authHeaderGenerator(InternalRestClient.internalAuthHeaderGenerator)
       .build()
   }
 
-  private def withInternalAuthHeader[T](user: String)(f: String => T): T = {
-    val encodedAuthorization = new String(
-      Base64.getEncoder.encode(s"$user:${InternalSecurityAccessor.get().issueToken()}".getBytes()),
-      "UTF-8")
-    val internalAuthHeader = s"${AuthSchemes.KYUUBI_INTERNAL.toString} $encodedAuthorization"
+  private def withAuthUser[T](user: String)(f: => T): T = {
     try {
-      KyuubiRestClient.setThreadLocalAuthHeader(internalAuthHeader)
-      f(internalAuthHeader)
+      InternalRestClient.AUTH_USER.set(user)
+      f
     } finally {
-      KyuubiRestClient.clearThreadLocalAuthHeader()
+      InternalRestClient.AUTH_USER.remove()
+    }
+  }
+}
+
+object InternalRestClient {
+  final val AUTH_USER = new ThreadLocal[String]() {
+    override def initialValue(): String = null
+  }
+
+  final val internalAuthHeaderGenerator = new AuthHeaderGenerator {
+    override def generateAuthHeader(): String = {
+      val authUser = AUTH_USER.get()
+      require(authUser != null, "The auth user shall be not null")
+      val encodedAuthorization = new String(
+        Base64.getEncoder.encode(
+          s"$authUser:${InternalSecurityAccessor.get().issueToken()}".getBytes()),
+        "UTF-8")
+      s"${AuthSchemes.KYUUBI_INTERNAL.toString} $encodedAuthorization"
     }
   }
 }

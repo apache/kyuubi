@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.client.util;
+package org.apache.kyuubi.client.auth;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,7 +42,7 @@ public final class AuthUtil {
    * @throws IOException
    * @throws InterruptedException
    */
-  public static String generateToken(String server) throws IOException, InterruptedException {
+  public static String generateSpnegoToken(String server) throws IOException, InterruptedException {
     UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
     LOG.debug("The user credential is {}", currentUser);
     String challenge =
