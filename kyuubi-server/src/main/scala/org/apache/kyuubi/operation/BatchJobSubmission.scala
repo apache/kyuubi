@@ -25,17 +25,20 @@ import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
+import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder}
+import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -58,7 +61,8 @@ class BatchJobSubmission(
     resource: String,
     className: String,
     batchConf: Map[String, String],
-    batchArgs: Seq[String])
+    batchArgs: Seq[String],
+    recoveryMetadata: Option[SessionMetadata])
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
 
   override def statement: String = "BATCH_JOB_SUBMISSION"
@@ -76,7 +80,8 @@ class BatchJobSubmission(
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
 
-  private val builder: ProcBuilder = {
+  @VisibleForTesting
+  private[kyuubi] val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
       case Some("SPARK") =>
         new SparkBatchProcessBuilder(
@@ -143,7 +148,22 @@ class BatchJobSubmission(
     val asyncOperation: Runnable = () => {
       setStateIfNotCanceled(OperationState.RUNNING)
       try {
-        submitBatchJob()
+        // If it is in recovery mode, only re-submit batch job if previous state is PENDING and
+        // fail to fetch the status including appId from resource manager. Otherwise, monitor the
+        // submitted batch application.
+        recoveryMetadata.map { metadata =>
+          if (metadata.state == OperationState.PENDING.toString) {
+            applicationStatus = currentApplicationState
+            applicationStatus.map(_.get(APP_ID_KEY)).map {
+              case Some(appId) => monitorBatchJob(appId)
+              case None => submitAndMonitorBatchJob()
+            }
+          } else {
+            monitorBatchJob(metadata.engineId)
+          }
+        }.getOrElse {
+          submitAndMonitorBatchJob()
+        }
         setStateIfNotCanceled(OperationState.FINISHED)
       } catch {
         onError()
@@ -169,10 +189,15 @@ class BatchJobSubmission(
       s.contains("KILLED") || s.contains("FAILED"))
   }
 
-  private def submitBatchJob(): Unit = {
+  private def applicationTerminated(applicationStatus: Option[Map[String, String]]): Boolean = {
+    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
+      s.contains("KILLED") || s.contains("FAILED") || s.contains("FINISHED"))
+  }
+
+  private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
     try {
-      info(s"Submitting $batchType batch job: $builder")
+      info(s"Submitting $batchType batch[$batchId] job: $builder")
       val process = builder.start
       applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
@@ -192,9 +217,43 @@ class BatchJobSubmission(
         if (process.exitValue() != 0) {
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
+
+        applicationStatus.map(_.get(APP_ID_KEY)).map {
+          case Some(appId) => monitorBatchJob(appId)
+          case _ =>
+        }
       }
     } finally {
       builder.close()
+    }
+  }
+
+  private def monitorBatchJob(appId: String): Unit = {
+    info(s"Monitoring submitted $batchType batch[$batchId] job: $appId")
+    if (applicationStatus.isEmpty) {
+      applicationStatus = currentApplicationState
+    }
+    if (applicationStatus.isEmpty) {
+      info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
+    } else if (applicationFailed(applicationStatus)) {
+      throw new RuntimeException(s"$batchType batch[$batchId] job failed:" +
+        applicationStatus.get.mkString(","))
+    } else {
+      // TODO: add limit for max batch job submission lifetime
+      while (applicationStatus.isDefined && !applicationTerminated(applicationStatus)) {
+        Thread.sleep(applicationCheckInterval)
+        val newApplicationStatus = currentApplicationState
+        if (newApplicationStatus != applicationStatus) {
+          applicationStatus = newApplicationStatus
+          info(s"Batch report for $batchId" +
+            applicationStatus.map(_.mkString("(", ",", ")")).getOrElse("()"))
+        }
+      }
+
+      if (applicationFailed(applicationStatus)) {
+        throw new RuntimeException(s"$batchType batch[$batchId] job failed:" +
+          applicationStatus.get.mkString(","))
+      }
     }
   }
 

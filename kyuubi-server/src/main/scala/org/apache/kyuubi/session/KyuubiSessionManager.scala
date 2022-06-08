@@ -19,6 +19,9 @@ package org.apache.kyuubi.session
 
 import java.util.UUID
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
+
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
@@ -32,9 +35,10 @@ import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.KyuubiOperationManager
+import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.server.api.v1.BatchesResource
 import org.apache.kyuubi.server.statestore.SessionStateStore
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
 
@@ -109,23 +113,30 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  def openBatchSession(
+  private def createBatchSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String],
-      batchRequest: BatchRequest): SessionHandle = {
+      batchRequest: BatchRequest,
+      recoveryMetadata: Option[SessionMetadata] = None): KyuubiBatchSessionImpl = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    val batchSession = new KyuubiBatchSessionImpl(
+    new KyuubiBatchSessionImpl(
       protocol,
-      user,
+      username,
       password,
       ipAddress,
       conf,
       this,
       this.getConf.getUserDefaults(user),
-      batchRequest)
+      batchRequest,
+      recoveryMetadata)
+  }
+
+  private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSessionImpl): SessionHandle = {
+    val user = batchSession.user
+    val ipAddress = batchSession.ipAddress
     try {
       val handle = batchSession.handle
       batchSession.open()
@@ -146,9 +157,20 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
         }
         throw KyuubiSQLException(
-          s"Error opening batch session for $username client ip $ipAddress, due to ${e.getMessage}",
+          s"Error opening batch session for $user client ip $ipAddress, due to ${e.getMessage}",
           e)
     }
+  }
+
+  def openBatchSession(
+      protocol: TProtocolVersion,
+      user: String,
+      password: String,
+      ipAddress: String,
+      conf: Map[String, String],
+      batchRequest: BatchRequest): SessionHandle = {
+    val batchSession = createBatchSession(protocol, user, password, ipAddress, conf, batchRequest)
+    openBatchSession(batchSession)
   }
 
   def newBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
@@ -201,8 +223,48 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
     }
-    // TODO: support to recover batch sessions with session state store
     super.start()
+  }
+
+  def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSessionImpl] = {
+    val recoveryPerBatch = conf.get(SERVER_STATE_STORE_SESSIONS_RECOVERY_PER_BATCH)
+
+    val batchSessionsToRecover = ListBuffer[KyuubiBatchSessionImpl]()
+    Seq(OperationState.PENDING, OperationState.RUNNING).foreach { stateToRecover =>
+      var offset = 0
+      var lastRecoveryNum = Int.MaxValue
+
+      while (lastRecoveryNum >= recoveryPerBatch) {
+        val metadataList = sessionStateStore.getBatchesRecoveryMetadata(
+          stateToRecover.toString,
+          kyuubiInstance,
+          offset,
+          recoveryPerBatch)
+        metadataList.foreach { metadata =>
+          val batchRequest = new BatchRequest(
+            metadata.engineType,
+            metadata.resource,
+            metadata.className,
+            metadata.requestName,
+            metadata.requestConf.asJava,
+            metadata.requestArgs.asJava)
+
+          val batchSession = createBatchSession(
+            BatchesResource.REST_BATCH_PROTOCOL,
+            metadata.username,
+            "anonymous",
+            metadata.ipAddress,
+            metadata.requestConf,
+            batchRequest,
+            Some(metadata))
+          batchSessionsToRecover += batchSession
+        }
+
+        lastRecoveryNum = metadataList.size
+        offset += lastRecoveryNum
+      }
+    }
+    batchSessionsToRecover
   }
 
   override protected def isServer: Boolean = true
