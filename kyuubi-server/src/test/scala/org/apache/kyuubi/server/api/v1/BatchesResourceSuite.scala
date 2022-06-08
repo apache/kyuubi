@@ -85,12 +85,12 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val proxyUserResponse = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
-    assert(500 == proxyUserResponse.getStatus)
+    assert(500 === proxyUserResponse.getStatus)
 
     var getBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId()}")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .get()
-    assert(200 == getBatchResponse.getStatus)
+    assert(200 === getBatchResponse.getStatus)
     batch = getBatchResponse.readEntity(classOf[Batch])
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "SPARK")
@@ -102,7 +102,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     getBatchResponse = webTarget.path(s"api/v1/batches/invalidBatchId")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .get()
-    assert(404 == getBatchResponse.getStatus)
+    assert(404 === getBatchResponse.getStatus)
 
     // get batch log
     var logResponse = webTarget.path(s"api/v1/batches/${batch.getId()}/localLog")

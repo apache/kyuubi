@@ -19,24 +19,21 @@ package org.apache.kyuubi.session
 
 import java.util.{Objects, UUID}
 
-import scala.util.control.NonFatal
-
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TSessionHandle}
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.cli.{Handle, HandleIdentifier}
+import org.apache.kyuubi.cli.Handle
 
 case class SessionHandle(
-    identifier: HandleIdentifier,
+    identifier: UUID,
     protocol: TProtocolVersion) extends Handle {
 
   def toTSessionHandle: TSessionHandle = {
     val tSessionHandle = new TSessionHandle
-    tSessionHandle.setSessionId(identifier.toTHandleIdentifier)
+    tSessionHandle.setSessionId(Handle.toTHandleIdentifier(identifier))
     tSessionHandle
   }
 
-  override def hashCode(): Int = Objects.hashCode(identifier) + 31
+  override def hashCode(): Int = identifier.hashCode() + 31
 
   override def equals(obj: Any): Boolean = obj match {
     case SessionHandle(id, _) => Objects.equals(this.identifier, id)
@@ -48,32 +45,19 @@ case class SessionHandle(
 
 object SessionHandle {
   def apply(tHandle: TSessionHandle, protocol: TProtocolVersion): SessionHandle = {
-    apply(HandleIdentifier(tHandle.getSessionId), protocol)
+    apply(Handle.fromTHandleIdentifier(tHandle.getSessionId), protocol)
   }
 
   def apply(tHandle: TSessionHandle): SessionHandle = {
     apply(tHandle, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
   }
 
-  def apply(protocol: TProtocolVersion): SessionHandle = {
-    apply(HandleIdentifier(), protocol)
+  def apply(handleStr: String): SessionHandle = {
+    val id = UUID.fromString(handleStr)
+    new SessionHandle(id, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
   }
 
-  def parseSessionHandle(sessionHandleStr: String): SessionHandle = {
-    try {
-      val sessionHandleParts = sessionHandleStr.split("\\|")
-      require(
-        sessionHandleParts.size == 3,
-        s"Expected 3 parameters but found ${sessionHandleParts.size}.")
-
-      val handleIdentifier = HandleIdentifier(
-        UUID.fromString(sessionHandleParts(0)),
-        UUID.fromString(sessionHandleParts(1)))
-      val protocolVersion = TProtocolVersion.findByValue(sessionHandleParts(2).toInt)
-      SessionHandle(handleIdentifier, protocolVersion)
-    } catch {
-      case NonFatal(e) =>
-        throw KyuubiSQLException(s"Invalid $sessionHandleStr", e)
-    }
+  def apply(protocol: TProtocolVersion): SessionHandle = {
+    new SessionHandle(UUID.randomUUID(), protocol)
   }
 }

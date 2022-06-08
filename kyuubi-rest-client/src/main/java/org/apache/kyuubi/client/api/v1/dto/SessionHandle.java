@@ -21,40 +21,20 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class SessionHandle {
-  private UUID publicId;
-  private UUID secretId;
-  private int protocolVersion;
+  private UUID identifier;
 
   public SessionHandle() {}
 
-  public SessionHandle(UUID publicId, UUID secretId, int protocolVersion) {
-    this.publicId = publicId;
-    this.secretId = secretId;
-    this.protocolVersion = protocolVersion;
+  public SessionHandle(UUID identifier) {
+    this.identifier = identifier;
   }
 
-  public UUID getPublicId() {
-    return publicId;
+  public UUID getIdentifier() {
+    return identifier;
   }
 
-  public void setPublicId(UUID publicId) {
-    this.publicId = publicId;
-  }
-
-  public UUID getSecretId() {
-    return secretId;
-  }
-
-  public void setSecretId(UUID secretId) {
-    this.secretId = secretId;
-  }
-
-  public int getProtocolVersion() {
-    return protocolVersion;
-  }
-
-  public void setProtocolVersion(int protocolVersion) {
-    this.protocolVersion = protocolVersion;
+  public void setIdentifier(UUID identifier) {
+    this.identifier = identifier;
   }
 
   @Override
@@ -62,12 +42,11 @@ public class SessionHandle {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SessionHandle that = (SessionHandle) o;
-    return Objects.equals(getPublicId(), that.getPublicId())
-        && Objects.equals(getSecretId(), that.getSecretId());
+    return Objects.equals(getIdentifier(), that.getIdentifier());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getPublicId(), getSecretId());
+    return Objects.hash(getIdentifier());
   }
 }

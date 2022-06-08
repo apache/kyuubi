@@ -27,7 +27,6 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -43,7 +42,6 @@ import org.apache.kyuubi.server.statestore.SessionStateStore
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
-  import KyuubiSessionManager._
 
   def this() = this(classOf[KyuubiSessionManager].getSimpleName)
 
@@ -173,14 +171,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     openBatchSession(batchSession)
   }
 
-  def newBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(UUID.randomUUID(), STATIC_BATCH_SECRET_UUID), protocol)
-  }
-
-  def getBatchSessionHandle(batchId: String, protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
-  }
-
   def getBatchSessionImpl(sessionHandle: SessionHandle): KyuubiBatchSessionImpl = {
     getSessionOption(sessionHandle).map(_.asInstanceOf[KyuubiBatchSessionImpl]).orNull
   }
@@ -277,13 +267,4 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
     }
   }
-}
-
-object KyuubiSessionManager {
-
-  /**
-   * The static session secret UUID used for batch session handle.
-   * To keep compatibility, please do not change it.
-   */
-  val STATIC_BATCH_SECRET_UUID: UUID = UUID.fromString("c2ee5b97-3ea0-41fc-ac16-9bd708ed8f38")
 }

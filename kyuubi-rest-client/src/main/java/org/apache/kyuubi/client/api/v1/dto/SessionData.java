@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class SessionData {
-  private SessionHandle sessionHandle;
+  private String identifier;
   private String user;
   private String ipAddr;
   private Map<String, String> conf;
@@ -33,14 +33,14 @@ public class SessionData {
   public SessionData() {}
 
   public SessionData(
-      SessionHandle sessionHandle,
+      String identifier,
       String user,
       String ipAddr,
       Map<String, String> conf,
       Long createTime,
       Long duration,
       Long idleTime) {
-    this.sessionHandle = sessionHandle;
+    this.identifier = identifier;
     this.user = user;
     this.ipAddr = ipAddr;
     this.conf = conf;
@@ -49,12 +49,12 @@ public class SessionData {
     this.idleTime = idleTime;
   }
 
-  public SessionHandle getSessionHandle() {
-    return sessionHandle;
+  public String getIdentifier() {
+    return identifier;
   }
 
-  public void setSessionHandle(SessionHandle sessionHandle) {
-    this.sessionHandle = sessionHandle;
+  public void setIdentifier(String identifier) {
+    this.identifier = identifier;
   }
 
   public String getUser() {
@@ -113,11 +113,11 @@ public class SessionData {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SessionData that = (SessionData) o;
-    return Objects.equals(getSessionHandle(), that.getSessionHandle());
+    return Objects.equals(getIdentifier(), that.getIdentifier());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getSessionHandle());
+    return Objects.hash(getIdentifier());
   }
 }

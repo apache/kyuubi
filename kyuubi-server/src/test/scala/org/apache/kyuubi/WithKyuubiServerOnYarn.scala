@@ -129,7 +129,6 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    assert(sessionHandle.identifier.secretId === KyuubiSessionManager.STATIC_BATCH_SECRET_UUID)
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 

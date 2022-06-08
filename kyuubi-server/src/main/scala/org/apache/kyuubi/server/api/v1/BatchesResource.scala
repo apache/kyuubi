@@ -59,6 +59,15 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       batchOpStatus.completed)
   }
 
+  private def formatSessionHandle(sessionHandleStr: String): SessionHandle = {
+    try {
+      SessionHandle(sessionHandleStr)
+    } catch {
+      case e: IllegalArgumentException =>
+        throw new NotFoundException(s"Invalid batchId: $sessionHandleStr", e)
+    }
+  }
+
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
@@ -96,7 +105,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @GET
   @Path("{batchId}")
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
-    val sessionHandle = normalizedBatchSessionHandle(batchId)
+    val sessionHandle = formatSessionHandle(batchId)
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       buildBatch(batchSession)
     }.getOrElse {
@@ -155,7 +164,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @PathParam("batchId") batchId: String,
       @QueryParam("from") @DefaultValue("-1") from: Int,
       @QueryParam("size") size: Int): OperationLog = {
-    val sessionHandle = normalizedBatchSessionHandle(batchId)
+    val sessionHandle = SessionHandle(batchId)
     try {
       val submissionOp = sessionManager.getBatchSessionImpl(sessionHandle).batchJobSubmissionOp
       val rowSet = submissionOp.getOperationLogRowSet(
@@ -183,7 +192,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def closeBatchSession(
       @PathParam("batchId") batchId: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
-    val sessionHandle = normalizedBatchSessionHandle(batchId)
+    val sessionHandle = formatSessionHandle(batchId)
     var session: KyuubiBatchSessionImpl = null
     try {
       session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
@@ -212,16 +221,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     sessionManager.closeSession(session.handle)
     val (success, msg) = session.batchJobSubmissionOp.getKillMessage
     new CloseBatchResponse(success, msg)
-  }
-
-  private def normalizedBatchSessionHandle(batchId: String): SessionHandle = {
-    try {
-      sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
-    } catch {
-      case NonFatal(e) =>
-        error(s"Invalid batchId: $batchId", e)
-        throw new NotFoundException(s"Invalid batchId: $batchId")
-    }
   }
 }
 
