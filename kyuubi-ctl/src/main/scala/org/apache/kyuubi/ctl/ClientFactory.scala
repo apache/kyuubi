@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.client.KyuubiRestClient
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.ctl.CtlConf._
 
 object ClientFactory {
 
@@ -35,8 +35,9 @@ object ClientFactory {
       map: HashMap[String, Object],
       conf: KyuubiConf): KyuubiRestClient = {
     val version = getApiVersion(map)
-    val hostUrl = getRestConfig("hostUrl", conf.get(REST_CLIENT_BASE_URL).get, cliArgs, map)
-    val authSchema = getRestConfig("authSchema", conf.get(REST_CLIENT_AUTH_SCHEMA), cliArgs, map)
+    val hostUrl = getRestConfig("hostUrl", conf.get(CTL_REST_CLIENT_BASE_URL).get, cliArgs, map)
+    val authSchema = getRestConfig("authSchema", conf.get(CTL_REST_CLIENT_AUTH_SCHEMA),
+      cliArgs, map)
 
     var kyuubiRestClient: KyuubiRestClient = null
     authSchema match {
@@ -51,7 +52,7 @@ object ClientFactory {
           .build()
       case "spnego" =>
         val spnegoHost =
-          getRestConfig("spnegoHost", conf.get(REST_CLIENT_SPNEGO_HOST).get, cliArgs, map)
+          getRestConfig("spnegoHost", conf.get(CTL_REST_CLIENT_SPNEGO_HOST).get, cliArgs, map)
         kyuubiRestClient = KyuubiRestClient.builder(hostUrl)
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
           .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)

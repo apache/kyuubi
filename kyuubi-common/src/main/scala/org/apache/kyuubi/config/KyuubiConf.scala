@@ -600,28 +600,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
-  val REST_CLIENT_BASE_URL: OptionalConfigEntry[String] =
-    buildConf("kyuubi.rest.base.url")
-      .doc("The REST API base URL," +
-        "which contains the scheme (http:// or https://), host name, port number")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
-
-  val REST_CLIENT_AUTH_SCHEMA: ConfigEntry[String] =
-    buildConf("kyuubi.rest.auth.schema")
-      .doc("The authentication schema. Valid values are: basic, spnego.")
-      .version("1.6.0")
-      .stringConf
-      .createWithDefault("basic")
-
-  val REST_CLIENT_SPNEGO_HOST: OptionalConfigEntry[String] =
-    buildConf("kyuubi.rest.spnego.host")
-      .doc("When auth schema is spnego, need to config spnego host.")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
-
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -75,8 +75,8 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
                          |  verbose: true""".stripMargin
     Files.write(Paths.get(batchErrorFile), batch_error.getBytes(StandardCharsets.UTF_8))
 
-    System.setProperty("kyuubi.rest.base.url", baseUri.toString)
-    System.setProperty("kyuubi.rest.spnego.host", "localhost")
+    System.setProperty("kyuubi.ctl.rest.base.url", baseUri.toString)
+    System.setProperty("kyuubi.ctl.rest.spnego.host", "localhost")
   }
 
   test("basic batch rest client") {
