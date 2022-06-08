@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.util.UUID
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
