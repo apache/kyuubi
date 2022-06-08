@@ -35,6 +35,8 @@ public class SpnegoAuthHeaderGenerator implements AuthHeaderGenerator {
 
   private String spnegoHost;
 
+  private SpnegoAuthHeaderGenerator() {}
+
   public SpnegoAuthHeaderGenerator(String spnegoHost) {
     this.spnegoHost = spnegoHost;
   }

@@ -23,6 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 public class BasicAuthHeaderGenerator implements AuthHeaderGenerator {
   private String authHeader;
 
+  private BasicAuthHeaderGenerator() {}
+
   public BasicAuthHeaderGenerator(String user, String password) {
     if (user == null) {
       this.authHeader = "";
