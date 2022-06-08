@@ -31,7 +31,7 @@ private[ctl] object ControlObject extends Enumeration {
 
 case class CliConfig(
     action: ControlAction = null,
-    service: ControlObject = ControlObject.SERVER,
+    resource: ControlObject = ControlObject.SERVER,
     commonOpts: CommonOpts = CommonOpts(),
     createOpts: CreateOpts = CreateOpts(),
     logOpts: LogOpts = LogOpts(),

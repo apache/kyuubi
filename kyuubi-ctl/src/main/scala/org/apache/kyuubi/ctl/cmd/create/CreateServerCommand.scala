@@ -27,7 +27,7 @@ import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   def validateArguments(): Unit = {
-    if (cliArgs.service != ControlObject.SERVER) {
+    if (cliArgs.resource != ControlObject.SERVER) {
       fail("Only support expose Kyuubi server instance to another domain")
     }
     validateZkArguments()

@@ -60,7 +60,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   private def getCommand(cliArgs: CliConfig): Command = {
     val operationName = cliArgs.action.toString.toLowerCase
-    val resourceName = cliArgs.service.toString.toLowerCase
+    val resourceName = cliArgs.resource.toString.toLowerCase
 
     val packageName = operationName
     val commandName = s"${operationName.capitalize}${resourceName.capitalize}"
@@ -79,11 +79,24 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   override def toString: String = {
-    cliArgs.service match {
+    cliArgs.resource match {
+      case ControlObject.BATCH =>
+        s"""Parsed arguments:
+           |  action                  ${cliArgs.action}
+           |  resource                ${cliArgs.resource}
+           |  batchId                 ${cliArgs.batchOpts.batchId}
+           |  batchType               ${cliArgs.batchOpts.batchType}
+           |  batchUser               ${cliArgs.batchOpts.batchUser}
+           |  batchState              ${cliArgs.batchOpts.batchState}
+           |  createTime              ${cliArgs.batchOpts.createTime}
+           |  endTime                 ${cliArgs.batchOpts.endTime}
+           |  from                    ${cliArgs.batchOpts.from}
+           |  size                    ${cliArgs.batchOpts.size}
+        """.stripMargin
       case ControlObject.SERVER =>
         s"""Parsed arguments:
            |  action                  ${cliArgs.action}
-           |  service                 ${cliArgs.service}
+           |  resource                ${cliArgs.resource}
            |  zkQuorum                ${cliArgs.commonOpts.zkQuorum}
            |  namespace               ${cliArgs.commonOpts.namespace}
            |  host                    ${cliArgs.commonOpts.host}
@@ -94,7 +107,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
       case ControlObject.ENGINE =>
         s"""Parsed arguments:
            |  action                  ${cliArgs.action}
-           |  service                 ${cliArgs.service}
+           |  resource                ${cliArgs.resource}
            |  zkQuorum                ${cliArgs.commonOpts.zkQuorum}
            |  namespace               ${cliArgs.commonOpts.namespace}
            |  user                    ${cliArgs.engineOpts.user}

@@ -86,7 +86,7 @@ abstract class Command(var cliArgs: CliConfig) extends Logging {
   }
 
   protected def validateUser(): Unit = {
-    if (cliArgs.service == ControlObject.ENGINE && cliArgs.engineOpts.user == null) {
+    if (cliArgs.resource == ControlObject.ENGINE && cliArgs.engineOpts.user == null) {
       fail("Must specify user name for engine, please use -u or --user.")
     }
   }
@@ -126,7 +126,7 @@ abstract class Command(var cliArgs: CliConfig) extends Logging {
   }
 
   private[ctl] def getZkNamespace(): String = {
-    cliArgs.service match {
+    cliArgs.resource match {
       case ControlObject.SERVER =>
         DiscoveryPaths.makePath(null, cliArgs.commonOpts.namespace)
       case ControlObject.ENGINE =>

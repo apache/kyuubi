@@ -37,7 +37,9 @@ object CommandLine {
       checkConfig(f => {
         if (f.action == null) {
           failure("Must specify action command: [create|get|delete|list|log|submit].")
-        } else success
+        } else {
+          success
+        }
       }),
       note(""),
       help('h', "help").text("Show help message and exit."))
@@ -159,7 +161,7 @@ object CommandLine {
     OParser.sequence(
       note(""),
       cmd("submit")
-        .text("\tCombination of create and log command.")
+        .text("\tCombination of create, get and log commands.")
         .action((_, c) => c.copy(action = ControlAction.SUBMIT))
         .children(
           opt[String]('f', "filename")
@@ -170,12 +172,12 @@ object CommandLine {
 
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("server").action((_, c) => c.copy(service = ControlObject.SERVER))
+    cmd("server").action((_, c) => c.copy(resource = ControlObject.SERVER))
   }
 
   private def engineCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("engine").action((_, c) => c.copy(service = ControlObject.ENGINE))
+    cmd("engine").action((_, c) => c.copy(resource = ControlObject.ENGINE))
       .children(
         opt[String]('u', "user")
           .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(user = v)))
@@ -193,12 +195,12 @@ object CommandLine {
 
   private def batchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("batch").action((_, c) => c.copy(service = ControlObject.BATCH))
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
   }
 
   private def getBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("batch").action((_, c) => c.copy(service = ControlObject.BATCH))
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
       .children(
         arg[String]("<batchId>")
           .optional()
@@ -208,7 +210,7 @@ object CommandLine {
 
   private def deleteBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("batch").action((_, c) => c.copy(service = ControlObject.BATCH))
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
       .children(
         arg[String]("<batchId>")
           .optional()
@@ -221,7 +223,7 @@ object CommandLine {
 
   private def listBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("batch").action((_, c) => c.copy(service = ControlObject.BATCH))
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
       .children(
         opt[String]("batchType")
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchType = v)))
@@ -254,7 +256,7 @@ object CommandLine {
 
   private def logBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("batch").action((_, c) => c.copy(service = ControlObject.BATCH))
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
       .children(
         arg[String]("<batchId>")
           .optional()

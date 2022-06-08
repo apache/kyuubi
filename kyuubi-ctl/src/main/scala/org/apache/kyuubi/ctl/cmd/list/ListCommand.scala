@@ -24,7 +24,7 @@ class ListCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   override def validateArguments(): Unit = {
     validateZkArguments()
-    cliArgs.service match {
+    cliArgs.resource match {
       case ControlObject.ENGINE => validateUser()
       case _ =>
     }
