@@ -63,8 +63,10 @@ trait InsertZorderHelper33 extends Rule[LogicalPlan] with ZorderBuilder {
       return plan
     }
     val cols = getZorderColumns(catalogTable.properties)
-    val attrs = plan.output.map(attr => (attr.name, attr)).toMap
-    if (cols.exists(!attrs.contains(_))) {
+    val resolver = session.sessionState.conf.resolver
+    val output = plan.output
+    val bound = cols.flatMap(col => output.find(attr => resolver(attr.name, col)))
+    if (bound.size < cols.size) {
       logWarning(s"target table does not contain all zorder cols: ${cols.mkString(",")}, " +
         s"please check your table properties ${KYUUBI_ZORDER_COLS}.")
       plan
@@ -79,7 +81,6 @@ trait InsertZorderHelper33 extends Rule[LogicalPlan] with ZorderBuilder {
         logWarning(s"Dynamic partition insertion with global sort may produce small files.")
       }
 
-      val bound = cols.map(attrs(_))
       val zorderExpr =
         if (bound.length == 1) {
           bound
@@ -127,6 +128,7 @@ trait InsertZorderHelper33 extends Rule[LogicalPlan] with ZorderBuilder {
 
   override def buildZorder(children: Seq[Expression]): ZorderBase = Zorder(children)
 
+  def session: SparkSession
   def applyInternal(plan: LogicalPlan): LogicalPlan
 
   final override def apply(plan: LogicalPlan): LogicalPlan = {

@@ -38,7 +38,7 @@ trait ZorderWithCodegenEnabledSuiteBase33 extends ZorderWithCodegenEnabledSuiteB
               |CREATE TABLE t (c1 int, c2 string) PARTITIONED BY (d string)
               | TBLPROPERTIES (
               |'kyuubi.zorder.enabled'= 'true',
-              |'kyuubi.zorder.cols'= 'c1,c2')
+              |'kyuubi.zorder.cols'= 'c1,C2')
               |""".stripMargin)
           val p = sql("INSERT INTO TABLE t PARTITION(d='a') SELECT * FROM VALUES(1,'a')")
             .queryExecution.analyzed
