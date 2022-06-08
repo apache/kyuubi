@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.util.UUID
+
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
@@ -46,8 +48,8 @@ class KyuubiBatchSessionImpl(
   override val sessionType: SessionType = SessionType.BATCH
 
   override val handle: SessionHandle = recoveryMetadata.map { metadata =>
-    sessionManager.getBatchSessionHandle(metadata.identifier, protocol)
-  }.getOrElse(sessionManager.newBatchSessionHandle(protocol))
+    SessionHandle(UUID.fromString(metadata.identifier), protocol)
+  }.getOrElse(SessionHandle(protocol))
 
   override def createTime: Long = recoveryMetadata.map(_.createTime).getOrElse(super.createTime)
 
