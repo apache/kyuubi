@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder}
+import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource33, InsertZorderBeforeWritingHive33, ResolveZorder}
 
 class KyuubiSparkSQLCommonExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
@@ -38,8 +38,8 @@ object KyuubiSparkSQLCommonExtension {
     // should be applied before
     // RepartitionBeforeWriting and RebalanceBeforeWriting
     // because we can only apply one of them (i.e. Global Sort or Repartition/Rebalance)
-    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
-    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
+    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource33)
+    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive33)
     extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
 
     extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)

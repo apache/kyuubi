@@ -97,6 +97,42 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(true)
 
+  val REBALANCE_BEFORE_ZORDER =
+    buildConf("spark.sql.optimizer.rebalanceBeforeZorder.enabled")
+      .doc("when true, we do a rebalance before zorder in case data skew. " +
+        "Note that, if the insertion is dynamic partition we will use the partition " +
+        "columns to rebalance.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val REBALANCE_ZORDER_COLUMNS_ENABLED =
+    buildConf("spark.sql.optimizer.rebalanceZorderColumns.enabled")
+      .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do rebalance before " +
+        s"Z-Order. If it's dynamic partition insert, the rebalance expression will include " +
+        s"both partition columns and Z-Order columns.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val TWO_PHASE_REBALANCE_BEFORE_ZORDER =
+    buildConf("spark.sql.optimizer.twoPhaseRebalanceBeforeZorder.enabled")
+      .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do two phase rebalance " +
+        s"before Z-Order for the dynamic partition write. The first phase rebalance using " +
+        s"dynamic partition column; The second phase rebalance using dynamic partition column + " +
+        s"Z-Order columns.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ZORDER_USING_ORIGINAL_ORDERING_ENABLED =
+    buildConf("spark.sql.optimizer.zorderUsingOriginalOrdering.enabled")
+      .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do sort by " +
+        s"the original ordering i.e. lexicographical order.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val WATCHDOG_MAX_PARTITIONS =
     buildConf("spark.sql.watchdog.maxPartitions")
       .doc("Set the max partition number when spark scans a data source. " +
