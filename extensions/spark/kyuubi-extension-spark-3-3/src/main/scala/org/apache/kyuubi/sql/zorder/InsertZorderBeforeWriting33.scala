@@ -36,8 +36,8 @@ trait InsertZorderHelper33 extends Rule[LogicalPlan] with ZorderBuilder {
 
   def isZorderEnabled(props: Map[String, String]): Boolean = {
     props.contains(KYUUBI_ZORDER_ENABLED) &&
-      "true".equalsIgnoreCase(props(KYUUBI_ZORDER_ENABLED)) &&
-      props.contains(KYUUBI_ZORDER_COLS)
+    "true".equalsIgnoreCase(props(KYUUBI_ZORDER_ENABLED)) &&
+    props.contains(KYUUBI_ZORDER_COLS)
   }
 
   def getZorderColumns(props: Map[String, String]): Seq[String] = {
@@ -80,40 +80,41 @@ trait InsertZorderHelper33 extends Rule[LogicalPlan] with ZorderBuilder {
       }
 
       val bound = cols.map(attrs(_))
-      val zorderExpr = if (bound.length == 1) {
-        bound
-      } else if (conf.getConf(KyuubiSQLConf.ZORDER_USING_ORIGINAL_ORDERING_ENABLED)) {
-        bound.asInstanceOf[Seq[Expression]]
-      } else {
-        buildZorder(bound) :: Nil
-      }
+      val zorderExpr =
+        if (bound.length == 1) {
+          bound
+        } else if (conf.getConf(KyuubiSQLConf.ZORDER_USING_ORIGINAL_ORDERING_ENABLED)) {
+          bound.asInstanceOf[Seq[Expression]]
+        } else {
+          buildZorder(bound) :: Nil
+        }
       val (global, orderExprs, child) =
         if (conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED)) {
           (true, zorderExpr, plan)
         } else if (conf.getConf(KyuubiSQLConf.REBALANCE_BEFORE_ZORDER)) {
-          val rebalanceExpr = if (dynamicPartitionColumns.isEmpty) {
-            // static partition insert
-            bound
-          } else if (conf.getConf(KyuubiSQLConf.REBALANCE_ZORDER_COLUMNS_ENABLED)) {
-            // improve data compression ratio
-            dynamicPartitionColumns.asInstanceOf[Seq[Expression]] ++ bound
-          } else {
-            dynamicPartitionColumns.asInstanceOf[Seq[Expression]]
-          }
+          val rebalanceExpr =
+            if (dynamicPartitionColumns.isEmpty) {
+              // static partition insert
+              bound
+            } else if (conf.getConf(KyuubiSQLConf.REBALANCE_ZORDER_COLUMNS_ENABLED)) {
+              // improve data compression ratio
+              dynamicPartitionColumns.asInstanceOf[Seq[Expression]] ++ bound
+            } else {
+              dynamicPartitionColumns.asInstanceOf[Seq[Expression]]
+            }
           // for dynamic partition insert, Spark always sort the partition columns,
           // so here we sort partition columns + zorder.
-          val rebalance = if (dynamicPartitionColumns.nonEmpty &&
-            conf.getConf(KyuubiSQLConf.TWO_PHASE_REBALANCE_BEFORE_ZORDER)) {
-            // improve compression ratio
-            RebalancePartitions(
-              rebalanceExpr,
-              RebalancePartitions(dynamicPartitionColumns, plan))
-          } else {
-            RebalancePartitions(rebalanceExpr, plan)
-          }
-          (false,
-            dynamicPartitionColumns.asInstanceOf[Seq[Expression]] ++ zorderExpr,
-            rebalance)
+          val rebalance =
+            if (dynamicPartitionColumns.nonEmpty &&
+              conf.getConf(KyuubiSQLConf.TWO_PHASE_REBALANCE_BEFORE_ZORDER)) {
+              // improve compression ratio
+              RebalancePartitions(
+                rebalanceExpr,
+                RebalancePartitions(dynamicPartitionColumns, plan))
+            } else {
+              RebalancePartitions(rebalanceExpr, plan)
+            }
+          (false, dynamicPartitionColumns.asInstanceOf[Seq[Expression]] ++ zorderExpr, rebalance)
         } else {
           (false, zorderExpr, plan)
         }
@@ -140,9 +141,10 @@ trait InsertZorderHelper33 extends Rule[LogicalPlan] with ZorderBuilder {
 case class InsertZorderBeforeWritingDatasource33(session: SparkSession)
   extends InsertZorderHelper33 {
   override def applyInternal(plan: LogicalPlan): LogicalPlan = plan match {
-    case insert: InsertIntoHadoopFsRelationCommand if insert.query.resolved &&
-      insert.bucketSpec.isEmpty && insert.catalogTable.isDefined &&
-      isZorderEnabled(insert.catalogTable.get.properties) =>
+    case insert: InsertIntoHadoopFsRelationCommand
+        if insert.query.resolved &&
+          insert.bucketSpec.isEmpty && insert.catalogTable.isDefined &&
+          isZorderEnabled(insert.catalogTable.get.properties) =>
       val dynamicPartition =
         insert.partitionColumns.filterNot(attr => insert.staticPartitions.contains(attr.name))
       val newQuery = insertZorder(insert.catalogTable.get, insert.query, dynamicPartition)
@@ -152,8 +154,9 @@ case class InsertZorderBeforeWritingDatasource33(session: SparkSession)
         insert.copy(query = newQuery)
       }
 
-    case ctas: CreateDataSourceTableAsSelectCommand if ctas.query.resolved &&
-      ctas.table.bucketSpec.isEmpty && isZorderEnabled(ctas.table.properties) =>
+    case ctas: CreateDataSourceTableAsSelectCommand
+        if ctas.query.resolved &&
+          ctas.table.bucketSpec.isEmpty && isZorderEnabled(ctas.table.properties) =>
       val dynamicPartition =
         ctas.query.output.filter(attr => ctas.table.partitionColumnNames.contains(attr.name))
       val newQuery = insertZorder(ctas.table, ctas.query, dynamicPartition)
@@ -170,8 +173,9 @@ case class InsertZorderBeforeWritingDatasource33(session: SparkSession)
 case class InsertZorderBeforeWritingHive33(session: SparkSession)
   extends InsertZorderHelper33 {
   override def applyInternal(plan: LogicalPlan): LogicalPlan = plan match {
-    case insert: InsertIntoHiveTable if insert.query.resolved &&
-      insert.table.bucketSpec.isEmpty && isZorderEnabled(insert.table.properties) =>
+    case insert: InsertIntoHiveTable
+        if insert.query.resolved &&
+          insert.table.bucketSpec.isEmpty && isZorderEnabled(insert.table.properties) =>
       val dynamicPartition = insert.partition.filter(_._2.isEmpty).keys
         .flatMap(name => insert.query.output.find(_.name == name)).toSeq
       val newQuery = insertZorder(insert.table, insert.query, dynamicPartition)
@@ -181,8 +185,9 @@ case class InsertZorderBeforeWritingHive33(session: SparkSession)
         insert.copy(query = newQuery)
       }
 
-    case ctas: CreateHiveTableAsSelectCommand if ctas.query.resolved &&
-      ctas.tableDesc.bucketSpec.isEmpty && isZorderEnabled(ctas.tableDesc.properties) =>
+    case ctas: CreateHiveTableAsSelectCommand
+        if ctas.query.resolved &&
+          ctas.tableDesc.bucketSpec.isEmpty && isZorderEnabled(ctas.tableDesc.properties) =>
       val dynamicPartition =
         ctas.query.output.filter(attr => ctas.tableDesc.partitionColumnNames.contains(attr.name))
       val newQuery = insertZorder(ctas.tableDesc, ctas.query, dynamicPartition)
@@ -192,8 +197,9 @@ case class InsertZorderBeforeWritingHive33(session: SparkSession)
         ctas.copy(query = newQuery)
       }
 
-    case octas: OptimizedCreateHiveTableAsSelectCommand if octas.query.resolved &&
-      octas.tableDesc.bucketSpec.isEmpty && isZorderEnabled(octas.tableDesc.properties) =>
+    case octas: OptimizedCreateHiveTableAsSelectCommand
+        if octas.query.resolved &&
+          octas.tableDesc.bucketSpec.isEmpty && isZorderEnabled(octas.tableDesc.properties) =>
       val dynamicPartition =
         octas.query.output.filter(attr => octas.tableDesc.partitionColumnNames.contains(attr.name))
       val newQuery = insertZorder(octas.tableDesc, octas.query, dynamicPartition)

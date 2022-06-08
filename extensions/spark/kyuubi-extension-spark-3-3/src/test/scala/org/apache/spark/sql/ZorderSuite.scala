@@ -43,26 +43,29 @@ trait ZorderWithCodegenEnabledSuiteBase33 extends ZorderWithCodegenEnabledSuiteB
           val p = sql("INSERT INTO TABLE t PARTITION(d='a') SELECT * FROM VALUES(1,'a')")
             .queryExecution.analyzed
           assert(p.collect {
-            case sort: Sort if !sort.global &&
-              ((sort.order.exists(_.child.isInstanceOf[Zorder]) && zorder) ||
-                (!sort.order.exists(_.child.isInstanceOf[Zorder]) && !zorder)) => sort
+            case sort: Sort
+                if !sort.global &&
+                  ((sort.order.exists(_.child.isInstanceOf[Zorder]) && zorder) ||
+                    (!sort.order.exists(_.child.isInstanceOf[Zorder]) && !zorder)) => sort
           }.size == 1)
           assert(p.collect {
             case rebalance: RebalancePartitions
-              if rebalance.references.map(_.name).exists(_.equals("c1")) => rebalance
+                if rebalance.references.map(_.name).exists(_.equals("c1")) => rebalance
           }.size == 1)
 
           val p2 = sql("INSERT INTO TABLE t PARTITION(d) SELECT * FROM VALUES(1,'a','b')")
             .queryExecution.analyzed
           assert(p2.collect {
-            case sort: Sort if (!sort.global && Seq("c1", "c2", "d").forall(x =>
-              sort.references.map(_.name).exists(_.equals(x)))) &&
-              ((sort.order.exists(_.child.isInstanceOf[Zorder]) && zorder) ||
-                (!sort.order.exists(_.child.isInstanceOf[Zorder]) && !zorder)) => sort
+            case sort: Sort
+                if (!sort.global && Seq("c1", "c2", "d").forall(x =>
+                  sort.references.map(_.name).exists(_.equals(x)))) &&
+                  ((sort.order.exists(_.child.isInstanceOf[Zorder]) && zorder) ||
+                    (!sort.order.exists(_.child.isInstanceOf[Zorder]) && !zorder)) => sort
           }.size == 1)
           assert(p2.collect {
-            case rebalance: RebalancePartitions if Seq("c1", "c2", "d").forall(x =>
-              rebalance.references.map(_.name).exists(_.equals(x))) => rebalance
+            case rebalance: RebalancePartitions
+                if Seq("c1", "c2", "d").forall(x =>
+                  rebalance.references.map(_.name).exists(_.equals(x))) => rebalance
           }.size == 1)
         }
       }
