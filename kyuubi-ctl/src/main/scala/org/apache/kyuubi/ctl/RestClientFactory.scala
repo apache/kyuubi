@@ -28,7 +28,7 @@ import org.apache.kyuubi.client.KyuubiRestClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ctl.CtlConf._
 
-object ClientFactory {
+object RestClientFactory {
 
   private[ctl] def getKyuubiRestClient(
       cliArgs: CliConfig,
@@ -36,8 +36,8 @@ object ClientFactory {
       conf: KyuubiConf): KyuubiRestClient = {
     val version = getApiVersion(map)
     val hostUrl = getRestConfig("hostUrl", conf.get(CTL_REST_CLIENT_BASE_URL).get, cliArgs, map)
-    val authSchema = getRestConfig("authSchema", conf.get(CTL_REST_CLIENT_AUTH_SCHEMA),
-      cliArgs, map)
+    val authSchema =
+      getRestConfig("authSchema", conf.get(CTL_REST_CLIENT_AUTH_SCHEMA), cliArgs, map)
 
     var kyuubiRestClient: KyuubiRestClient = null
     authSchema match {

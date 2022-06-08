@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
 import org.apache.kyuubi.client.api.v1.dto.{Batch, OperationLog}
-import org.apache.kyuubi.ctl.{CliConfig, ClientFactory}
+import org.apache.kyuubi.ctl.{CliConfig, RestClientFactory}
 import org.apache.kyuubi.ctl.cmd.Command
 
 class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
@@ -32,7 +32,8 @@ class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   }
 
   override def run(): Unit = {
-    val kyuubiRestClient: KyuubiRestClient = ClientFactory.getKyuubiRestClient(cliArgs, null, conf)
+    val kyuubiRestClient: KyuubiRestClient =
+      RestClientFactory.getKyuubiRestClient(cliArgs, null, conf)
     val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
     var log: OperationLog = batchRestApi.getBatchLocalLog(

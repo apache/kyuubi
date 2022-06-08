@@ -45,5 +45,4 @@ object CtlConf {
       .stringConf
       .createOptional
 
-
 }

@@ -21,7 +21,7 @@ import java.util.{ArrayList, HashMap}
 import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.client.util.JsonUtil
-import org.apache.kyuubi.ctl.{CliConfig, ClientFactory}
+import org.apache.kyuubi.ctl.{CliConfig, RestClientFactory}
 import org.apache.kyuubi.ctl.cmd.Command
 
 class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
@@ -35,7 +35,8 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   override def run(): Unit = {
 
-    val kyuubiRestClient: KyuubiRestClient = ClientFactory.getKyuubiRestClient(cliArgs, map, conf)
+    val kyuubiRestClient: KyuubiRestClient =
+      RestClientFactory.getKyuubiRestClient(cliArgs, map, conf)
     val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
     val request = map.get("request").asInstanceOf[HashMap[String, Object]]
