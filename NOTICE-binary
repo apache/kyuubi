@@ -87,9 +87,6 @@ Apache Commons IO
 Copyright 2002-2020 The Apache Software Foundation
 
 Apache Commons Lang
-Copyright 2001-2011 The Apache Software Foundation
-
-Apache Commons Lang
 Copyright 2001-2020 The Apache Software Foundation
 
 Apache Commons Logging
@@ -1076,8 +1073,6 @@ Copyright 1999-2022 The Apache Software Foundation
 
 Apache Log4j Core
 Copyright 1999-2012 Apache Software Foundation
-
-
 
 ResolverUtil.java
 Copyright 2005-2006 Tim Fennell
