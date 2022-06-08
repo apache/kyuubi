@@ -180,6 +180,9 @@ object SparkSQLEngine extends Logging {
 
   def createSpark(): SparkSession = {
     val session = SparkSession.builder.config(_sparkConf).getOrCreate
+    SparkContextHelper.obtainHiveDelegationTokenIfNeeded(
+      _sparkConf,
+      session.sparkContext.hadoopConfiguration)
     KyuubiSparkUtil.initializeSparkSession(
       session,
       kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))

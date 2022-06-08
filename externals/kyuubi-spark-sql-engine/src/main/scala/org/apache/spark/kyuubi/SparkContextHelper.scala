@@ -17,13 +17,15 @@
 
 package org.apache.spark.kyuubi
 
-import org.apache.hadoop.security.Credentials
-import org.apache.spark.SparkContext
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.scheduler.{SchedulerBackend, SparkListenerEvent}
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.UpdateDelegationTokens
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.scheduler.local.LocalSchedulerBackend
+import org.apache.spark.sql.hive.security.HiveDelegationTokenProvider
 import org.apache.spark.status.ElementTrackingStore
 import org.apache.spark.ui.SparkUI
 
@@ -83,4 +85,14 @@ object SparkContextHelper extends Logging {
     getLocalProperty(sc, KYUUBI_STATEMENT_ID_KEY)
   }
 
+  def obtainHiveDelegationTokenIfNeeded(sparkConf: SparkConf, hadoopConf: Configuration): Unit = {
+    if (sparkConf.get("spark.master", "") == "local") {
+      val tokenProvider = new HiveDelegationTokenProvider()
+      if (tokenProvider.delegationTokensRequired(sparkConf, hadoopConf)) {
+        val credentials = new Credentials()
+        tokenProvider.obtainDelegationTokens(hadoopConf, sparkConf, credentials)
+        UserGroupInformation.getCurrentUser.addCredentials(credentials)
+      }
+    }
+  }
 }

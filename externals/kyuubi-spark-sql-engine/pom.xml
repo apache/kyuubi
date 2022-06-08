@@ -59,6 +59,12 @@
 
         <dependency>
             <groupId>org.apache.spark</groupId>
+            <artifactId>spark-hive_${scala.binary.version}</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
             <artifactId>spark-repl_${scala.binary.version}</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -103,12 +109,6 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
 
