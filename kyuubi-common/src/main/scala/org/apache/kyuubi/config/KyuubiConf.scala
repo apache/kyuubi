@@ -841,7 +841,7 @@ object KyuubiConf {
       .doc("The internal rest client socket timeout used for batch request redirection across" +
         " Kyuubi instances.")
       .timeConf
-      .createWithDefault(Duration.ofSeconds(5).toMillis)
+      .createWithDefault(Duration.ofSeconds(20).toMillis)
 
   val BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.batch.internal.rest.client.connect.timeout")
@@ -849,7 +849,7 @@ object KyuubiConf {
       .doc("The internal rest client connect timeout used for batch request redirection across" +
         " Kyuubi instances.")
       .timeConf
-      .createWithDefault(Duration.ofSeconds(5).toMillis)
+      .createWithDefault(Duration.ofSeconds(20).toMillis)
 
   val BATCH_INTERNAL_REST_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("kyuubi.batch.internal.rest.max.retries")
