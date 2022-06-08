@@ -226,6 +226,18 @@ object CommandLine {
         opt[String]("batchType")
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchType = v)))
           .text("Batch type."),
+        opt[String]("batchUser")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchUser = v)))
+          .text("Batch user."),
+        opt[String]("batchState")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchState = v)))
+          .text("Batch state."),
+        opt[Long]("createTime")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(createTime = v)))
+          .text("Batch create state."),
+        opt[Long]("endTime")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(endTime = v)))
+          .text("Batch end state."),
         opt[Int]("from")
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(from = v)))
           .validate(x =>

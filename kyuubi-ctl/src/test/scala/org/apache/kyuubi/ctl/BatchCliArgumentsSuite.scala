@@ -95,12 +95,22 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "batch",
       "--batchType",
       "spark",
+      "--batchUser",
+      "tom",
+      "--batchState",
+      "RUNNING",
+      "--createTime",
+      "1654690122",
       "--from",
       "2",
       "--size",
       "5")
     val opArgs = new ControlCliArguments(args)
     assert(opArgs.cliArgs.batchOpts.batchType == "spark")
+    assert(opArgs.cliArgs.batchOpts.batchUser == "tom")
+    assert(opArgs.cliArgs.batchOpts.batchState == "RUNNING")
+    assert(opArgs.cliArgs.batchOpts.createTime == 1654690122)
+    assert(opArgs.cliArgs.batchOpts.endTime == 0)
     assert(opArgs.cliArgs.batchOpts.from == 2)
     assert(opArgs.cliArgs.batchOpts.size == 5)
   }

@@ -60,6 +60,10 @@ case class LogOpts(
 case class BatchOpts(
     batchId: String = null,
     batchType: String = null,
+    batchUser: String = null,
+    batchState: String = null,
+    createTime: Long = 0,
+    endTime: Long = 0,
     from: Int = -1,
     size: Int = 10,
     hs2ProxyUser: String = null)
