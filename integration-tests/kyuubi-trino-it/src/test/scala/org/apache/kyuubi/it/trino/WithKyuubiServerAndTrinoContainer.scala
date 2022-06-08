@@ -19,24 +19,23 @@ package org.apache.kyuubi.it.trino
 
 import com.dimafeng.testcontainers.TrinoContainer
 import com.dimafeng.testcontainers.scalatest.TestContainerForAll
-import org.testcontainers.utility.DockerImageName
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_URL
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_TYPE
+import org.apache.kyuubi.config.KyuubiConf._
 
-trait WithKyuubiServerAndTrinoContainer
-  extends WithKyuubiServer with TestContainerForAll {
+trait WithKyuubiServerAndTrinoContainer extends WithKyuubiServer with TestContainerForAll {
+
+  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   final val IMAGE_VERSION = 363
   final val DOCKER_IMAGE_NAME = s"trinodb/trino:${IMAGE_VERSION}"
 
-  override val containerDef = TrinoContainer.Def(DockerImageName.parse(DOCKER_IMAGE_NAME))
+  override val containerDef: TrinoContainer.Def = TrinoContainer.Def(DOCKER_IMAGE_NAME)
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
       .set(ENGINE_TYPE, "TRINO")
       .set(ENGINE_TRINO_CONNECTION_CATALOG, "memory")
   }

@@ -257,12 +257,13 @@ class EngineRefSuite extends KyuubiFunSuite {
     }
   }
 
-  test("different engine type should use its own lock") {
+  // KYUUBI #2827 remove all engines dependencies except to spark from server
+  ignore("different engine type should use its own lock") {
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
-    conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test1")
-    conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test1")
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, zkServer.getConnectString)
     val conf1 = conf.clone
     conf1.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     val conf2 = conf.clone
@@ -309,8 +310,8 @@ class EngineRefSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
-    conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test2")
-    conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test2")
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, zkServer.getConnectString)
 
     val beforeEngines = MetricsSystem.counterValue(ENGINE_TOTAL).getOrElse(0L)
     val start = System.currentTimeMillis()

@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
 import java.nio.file.Paths
-import java.util.LinkedHashSet
+import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -31,6 +31,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 import org.apache.kyuubi.operation.log.OperationLog
 
 /**
@@ -48,9 +49,7 @@ class FlinkProcessBuilder(
     this(proxyUser, conf, "")
   }
 
-  private val flinkHome: String = getEngineHome(shortName)
-
-  private val FLINK_HADOOP_CLASSPATH: String = "FLINK_HADOOP_CLASSPATH"
+  val flinkHome: String = getEngineHome(shortName)
 
   override protected def module: String = "kyuubi-flink-sql-engine"
 
@@ -69,7 +68,7 @@ class FlinkProcessBuilder(
     }
 
     buffer += "-cp"
-    val classpathEntries = new LinkedHashSet[String]
+    val classpathEntries = new util.LinkedHashSet[String]
     // flink engine runtime jar
     mainResource.foreach(classpathEntries.add)
     // flink sql client jar
@@ -92,14 +91,14 @@ class FlinkProcessBuilder(
     env.get("HADOOP_CONF_DIR").foreach(classpathEntries.add)
     env.get("YARN_CONF_DIR").foreach(classpathEntries.add)
     env.get("HBASE_CONF_DIR").foreach(classpathEntries.add)
-    val hadoopCp = env.get(FLINK_HADOOP_CLASSPATH)
+    val hadoopCp = env.get(FLINK_HADOOP_CLASSPATH_KEY)
     hadoopCp.foreach(classpathEntries.add)
     val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
     if (hadoopCp.isEmpty && extraCp.isEmpty) {
-      throw new KyuubiException(s"The conf of ${FLINK_HADOOP_CLASSPATH} and " +
+      throw new KyuubiException(s"The conf of ${FLINK_HADOOP_CLASSPATH_KEY} and " +
         s"${ENGINE_FLINK_EXTRA_CLASSPATH.key} is empty." +
-        s"Please set ${FLINK_HADOOP_CLASSPATH} or ${ENGINE_FLINK_EXTRA_CLASSPATH.key} for " +
+        s"Please set ${FLINK_HADOOP_CLASSPATH_KEY} or ${ENGINE_FLINK_EXTRA_CLASSPATH.key} for " +
         s"configuring location of hadoop client jars, etc")
     }
 
@@ -122,4 +121,5 @@ class FlinkProcessBuilder(
 object FlinkProcessBuilder {
   final val APP_KEY = "yarn.application.name"
   final val TAG_KEY = "yarn.tags"
+  final val FLINK_HADOOP_CLASSPATH_KEY = "FLINK_HADOOP_CLASSPATH"
 }

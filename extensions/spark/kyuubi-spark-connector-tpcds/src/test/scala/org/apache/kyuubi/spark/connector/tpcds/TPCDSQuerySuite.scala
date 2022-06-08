@@ -22,17 +22,18 @@ import scala.io.{Codec, Source}
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+import org.scalatest.tags.Slow
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.common.GoldenFileUtils._
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
-import org.apache.kyuubi.spark.connector.common.SparkUtils
 
 // scalastyle:off line.size.limit
 /**
  * To run this test suite:
  * {{{
  *   build/mvn clean install \
+ *     -pl extensions/spark/kyuubi-spark-connector-tpcds -am \
  *     -Dmaven.plugin.scalatest.exclude.tags="" \
  *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite
  * }}}
@@ -40,12 +41,14 @@ import org.apache.kyuubi.spark.connector.common.SparkUtils
  * To re-generate golden files for this suite:
  * {{{
  *   KYUUBI_UPDATE=1 build/mvn clean install \
+ *     -pl extensions/spark/kyuubi-spark-connector-tpcds -am \
  *     -Dmaven.plugin.scalatest.exclude.tags="" \
  *     -Dtest=none -DwildcardSuites=org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite
  * }}}
  */
 // scalastyle:on line.size.limit
 
+@Slow
 class TPCDSQuerySuite extends KyuubiFunSuite {
 
   val queries: Set[String] = (1 to 99).map(i => s"q$i").toSet -
@@ -53,8 +56,7 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
     ("q14a", "q14b", "q23a", "q23b", "q24a", "q24b", "q39a", "q39b")
 
   test("run query on tiny") {
-    assume(SparkUtils.isSparkVersionEqualTo("3.2"))
-    val viewSuffix = "view";
+    val viewSuffix = "view"
     val sparkConf = new SparkConf().setMaster("local[*]")
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")

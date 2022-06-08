@@ -32,9 +32,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
-  build:
-    name: Test
+  default:
+    name: Kyuubi and Spark Test
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -79,17 +78,12 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Build and test with maven w/o linters
-        run: >-
-          ./build/mvn clean install
-          -Dmaven.javadoc.skip=true
-          -Drat.skip=true
-          -Dscalastyle.skip=true
-          -Dspotless.check.skip
-          -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
-          -Pspark-${{ matrix.spark }}
-          ${{ matrix.spark-archive }}
-          ${{ matrix.exclude-tags }}
+      - name: Build and test Kyuubi and Spark with maven w/o linters
+        run: |
+          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
+          TEST_MODULES="dev/kyuubi-codecov"
+          ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
+          -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
           matrix.java == 8 &&
@@ -102,15 +96,166 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: unit-tests-log-${{ matrix.java }}-${{ matrix.spark }}-${{ matrix.comment }}
+          name: unit-tests-log-java-${{ matrix.java }}-spark-${{ matrix.spark }}-${{ matrix.comment }}
+          path: |
+            **/target/unit-tests.log
+            **/kyuubi-spark-sql-engine.log*
+
+  flink-it:
+    name: Flink Test
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - 8
+          - 11
+        flink:
+          - '1.14'
+          # - '1.15' FIXME
+        flink-archive: [ "" ]
+        comment: [ "normal" ]
+        # include: FIXME
+        #   - java: 8
+        #     flink: '1.15'
+        #     flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.0 -Dspark.archive.name=flink-1.15.0-bin-scala_2.12.tgz'
+        #     comment: 'verify-flink-1.15'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Tune Runner VM
+        uses: ./.github/actions/tune-runner-vm
+      - name: Setup JDK ${{ matrix.java }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+          check-latest: false
+      - name: Build and test Flink with maven w/o linters
+        run: |       
+          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
+          TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} -am  clean install -DskipTests
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log-java-${{ matrix.java }}-flink-${{ matrix.flink }}-${{ matrix.comment }}
           path: |
             **/target/unit-tests.log
             **/kyuubi-flink-sql-engine.log*
-            **/kyuubi-spark-sql-engine.log*
-            **/kyuubi-trino-sql-engine.log*
 
-  tpcds:
-    name: TPC-DS Tests
+  hive-it:
+    name: Hive Test
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - 8
+          - 11
+        comment: [ "normal" ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Tune Runner VM
+        uses: ./.github/actions/tune-runner-vm
+      - name: Setup JDK ${{ matrix.java }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+          check-latest: false
+      - name: Build and test Hive with maven w/o linters
+        run: |
+          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
+          TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log-java-${{ matrix.java }}-hive-${{ matrix.comment }}
+          path: |
+            **/target/unit-tests.log
+            **/kyuubi-hive-sql-engine.log*
+
+  jdbc-it:
+    name: JDBC Test
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - 8
+          - 11
+        comment: [ "normal" ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Tune Runner VM
+        uses: ./.github/actions/tune-runner-vm
+      - name: Setup JDK ${{ matrix.java }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+          check-latest: false
+      - name: Build and test JDBC with maven w/o linters
+        run: |
+          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
+          TEST_MODULES="externals/kyuubi-jdbc-engine" || echo 'TODO integration-tests/kyuubi-jdbc-it'
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log-java-${{ matrix.java }}-hive-${{ matrix.comment }}
+          path: |
+            **/target/unit-tests.log
+            **/kyuubi-jdbc-engine.log*
+
+  trino-it:
+    name: Trino Test
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - 8
+          - 11
+        comment: [ "normal" ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Tune Runner VM
+        uses: ./.github/actions/tune-runner-vm
+      - name: Setup JDK ${{ matrix.java }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+          check-latest: false
+      - name: Build and test Trino with maven w/o linters
+        run: |
+          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
+          TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log-java-${{ matrix.java }}-trino-${{ matrix.comment }}
+          path: |
+            **/target/unit-tests.log
+            **/kyuubi-trino-engine.log*
+
+  tpch-tpcds:
+    name: TPC-H and TPC-DS Tests
     runs-on: ubuntu-20.04
     env:
       SPARK_LOCAL_IP: localhost
@@ -126,11 +271,13 @@ jobs:
           cache: 'maven'
           check-latest: false
       - name: Run TPC-DS Tests
-        run: >-
-          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
-          -pl kyuubi-server -am
-          -Dmaven.plugin.scalatest.exclude.tags=''
-          -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds
+        run: |
+          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
+          TEST_MODULES="kyuubi-server,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch"
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test \
+          -Dmaven.plugin.scalatest.exclude.tags='' \
+          -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
 
   kyuubi-on-k8s-it:
     name: Kyuubi Server On Kubernetes Integration Test

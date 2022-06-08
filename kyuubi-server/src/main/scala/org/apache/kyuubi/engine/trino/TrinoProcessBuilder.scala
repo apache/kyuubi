@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.trino
 
 import java.io.File
 import java.nio.file.Paths
-import java.util.LinkedHashSet
+import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -28,7 +28,7 @@ import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, ENGINE_TRINO_CONNECTION_URL, ENGINE_TRINO_EXTRA_CLASSPATH, ENGINE_TRINO_JAVA_OPTIONS, ENGINE_TRINO_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -68,7 +68,7 @@ class TrinoProcessBuilder(
     }
 
     buffer += "-cp"
-    val classpathEntries = new LinkedHashSet[String]
+    val classpathEntries = new util.LinkedHashSet[String]
     // trino engine runtime jar
     mainResource.foreach(classpathEntries.add)
 

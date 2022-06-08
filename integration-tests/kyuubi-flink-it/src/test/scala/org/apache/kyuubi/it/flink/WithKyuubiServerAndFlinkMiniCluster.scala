@@ -17,12 +17,34 @@
 
 package org.apache.kyuubi.it.flink
 
+import java.nio.file.Paths
+
+import scala.tools.nsc.io.File
+
 import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{HADOOP_COMPILE_VERSION, SCALA_COMPILE_VERSION, Utils, WithKyuubiServer}
 
 trait WithKyuubiServerAndFlinkMiniCluster extends WithKyuubiServer {
+
+  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
+
+  val hadoopJarDir: String = Paths.get(kyuubiHome)
+    .resolve("externals")
+    .resolve("kyuubi-flink-sql-engine")
+    .resolve("target")
+    .resolve(s"scala-$SCALA_COMPILE_VERSION")
+    .resolve("jars")
+    .toAbsolutePath.toString
+
+  val hadoopClientApiJarName = s"hadoop-client-api-$HADOOP_COMPILE_VERSION.jar"
+  val hadoopClientRuntimeJarName = s"hadoop-client-runtime-$HADOOP_COMPILE_VERSION.jar"
+
+  val hadoopClasspath: String = Seq(
+    Paths.get(hadoopJarDir, hadoopClientApiJarName).toAbsolutePath.toString,
+    Paths.get(hadoopJarDir, hadoopClientRuntimeJarName).toAbsolutePath.toString).mkString(
+    File.pathSeparator)
 
   protected lazy val flinkConfig = new Configuration()
   protected var miniCluster: MiniCluster = _
