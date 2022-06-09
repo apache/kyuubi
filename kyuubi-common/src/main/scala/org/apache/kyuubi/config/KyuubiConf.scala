@@ -914,6 +914,14 @@ object KyuubiConf {
       .intConf
       .createWithDefault(10)
 
+  val SERVER_STATE_STORE_REQUESTS_RETRY_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.server.state.store.requests.retry.interval")
+      .internal
+      .doc(s"The interval to check and retry the state store requests.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")
       .doc("Size of the wait queue for the operation execution thread pool in SQL engine" +

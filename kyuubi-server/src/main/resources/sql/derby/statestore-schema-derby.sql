@@ -27,7 +27,7 @@ CREATE TABLE session_metadata(
 
 CREATE INDEX metadata_kyuubi_instance_index ON session_metadata(kyuubi_instance);
 
-CREATE INDEX metadata_identifier_index ON session_metadata(identifier);
+CREATE UNIQUE INDEX metadata_unique_identifier_index ON session_metadata(identifier);
 
 CREATE INDEX metadata_user_name_index ON session_metadata(user_name);
 

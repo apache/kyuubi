@@ -75,6 +75,15 @@ class KyuubiBatchSessionImpl(
       batchRequest.getArgs.asScala,
       recoveryMetadata)
 
+  private def waitStateStoreRetryCompletion(): Unit = {
+    val stateStoreRetryRef =
+      sessionManager.getSessionStateStoreRetryRef(batchJobSubmissionOp.batchId)
+    while (stateStoreRetryRef.hasRemainingRequests()) {
+      Thread.sleep(300)
+    }
+    sessionManager.deRegisterSessionStateStoreRetryRef(batchJobSubmissionOp.batchId)
+  }
+
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
 
@@ -118,6 +127,7 @@ class KyuubiBatchSessionImpl(
   }
 
   override def close(): Unit = {
+    waitStateStoreRetryCompletion()
     super.close()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)

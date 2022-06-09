@@ -24,7 +24,7 @@ CREATE TABLE session_metadata(
     engine_error mediumtext COMMENT 'the engine application diagnose',
     end_time bigint COMMENT 'the metadata end time',
     INDEX kyuubi_instance_index(kyuubi_instance),
-    INDEX identifier_index(identifier),
+    UNIQUE INDEX unique_identifier_index(identifier),
     INDEX user_name_index(user_name),
     INDEX engine_type_index(engine_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -32,6 +32,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.ApplicationOperation.{APP_ERROR_KEY, APP_ID_KEY, APP_NAME_KEY, APP_STATE_KEY, APP_URL_KEY}
 import org.apache.kyuubi.engine.spark.{SparkBatchProcessBuilder, SparkProcessBuilder}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
@@ -427,10 +428,15 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(applicationStatus.isDefined)
     }
 
-    sessionManager.updateBatchMetadata(
-      batchId2,
-      OperationState.RUNNING,
-      applicationStatus.get)
+    val metadataToUpdate = SessionMetadata(
+      identifier = batchId2,
+      state = OperationState.RUNNING.toString,
+      engineId = applicationStatus.get.get(APP_ID_KEY).orNull,
+      engineName = applicationStatus.get.get(APP_NAME_KEY).orNull,
+      engineUrl = applicationStatus.get.get(APP_URL_KEY).orNull,
+      engineState = applicationStatus.get.get(APP_STATE_KEY).orNull,
+      engineError = applicationStatus.get.get(APP_ERROR_KEY))
+    sessionManager.updateMetadata(metadataToUpdate)
 
     val restFe = fe.asInstanceOf[KyuubiRestFrontendService]
     restFe.recoverBatchSessions()

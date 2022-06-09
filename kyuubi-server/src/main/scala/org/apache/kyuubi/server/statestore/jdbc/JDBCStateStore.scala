@@ -360,7 +360,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       statement.execute()
     } catch {
       case e: SQLException =>
-        throw new KyuubiException(e.getMessage, e)
+        throw new KyuubiException(s"Error executing $sql:" + e.getMessage, e)
     } finally {
       if (statement != null) {
         Utils.tryLogNonFatalError(statement.close())
@@ -418,7 +418,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
         throw new KyuubiException(e.getMessage, e)
     } finally {
       if (connection != null) {
-        connection.close()
+        Utils.tryLogNonFatalError(connection.close())
       }
     }
   }

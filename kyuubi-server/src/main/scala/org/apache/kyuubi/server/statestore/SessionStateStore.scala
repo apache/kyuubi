@@ -105,25 +105,7 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
       false)
   }
 
-  def updateBatchMetadata(
-      batchId: String,
-      state: String,
-      batchAppStatus: Map[String, String],
-      endTime: Long): Unit = {
-    val appId = batchAppStatus.get(APP_ID_KEY).orNull
-    val appName = batchAppStatus.get(APP_NAME_KEY).orNull
-    val appUrl = batchAppStatus.get(APP_URL_KEY).orNull
-    val appState = batchAppStatus.get(APP_STATE_KEY).orNull
-    val appError = batchAppStatus.get(APP_ERROR_KEY)
-    val metadata = SessionMetadata(
-      identifier = batchId,
-      state = state,
-      engineId = appId,
-      engineName = appName,
-      engineUrl = appUrl,
-      engineState = appState,
-      engineError = appError,
-      endTime = endTime)
+  def updateMetadata(metadata: SessionMetadata): Unit = {
     _stateStore.updateMetadata(metadata)
   }
 

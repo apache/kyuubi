@@ -118,11 +118,18 @@ class BatchJobSubmission(
       } else {
         0L
       }
-    session.sessionManager.updateBatchMetadata(
-      batchId,
-      state,
-      applicationStatus.getOrElse(Map.empty),
-      endTime)
+
+    val engineAppStatus = applicationStatus.getOrElse(Map.empty)
+    val metadataToUpdate = SessionMetadata(
+      identifier = batchId,
+      state = state.toString,
+      engineId = engineAppStatus.get(APP_ID_KEY).orNull,
+      engineName = engineAppStatus.get(APP_NAME_KEY).orNull,
+      engineUrl = engineAppStatus.get(APP_URL_KEY).orNull,
+      engineState = engineAppStatus.get(APP_STATE_KEY).orNull,
+      engineError = engineAppStatus.get(APP_ERROR_KEY),
+      endTime = endTime)
+    session.sessionManager.updateMetadata(metadataToUpdate)
   }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
