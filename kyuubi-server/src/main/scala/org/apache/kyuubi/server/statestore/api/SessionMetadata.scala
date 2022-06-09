@@ -40,6 +40,7 @@ import org.apache.kyuubi.session.SessionType.SessionType
  * @param requestArgs the request arguments.
  * @param createTime the create time.
  * @param engineType the engine type.
+ * @param clusterManager the engine cluster manager.
  * @param engineId the engine id.
  * @param engineName the engine name.
  * @param engineUrl the engine tracking url.
@@ -62,6 +63,7 @@ case class SessionMetadata(
     requestArgs: Seq[String] = Seq.empty,
     createTime: Long = 0L,
     engineType: String = null,
+    clusterManager: Option[String] = None,
     engineId: String = null,
     engineName: String = null,
     engineUrl: String = null,

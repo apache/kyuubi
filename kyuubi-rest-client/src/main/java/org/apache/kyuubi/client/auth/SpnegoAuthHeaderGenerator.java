@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.client.util;
+package org.apache.kyuubi.client.auth;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,9 +30,25 @@ import org.ietf.jgss.GSSName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class AuthUtil {
+public class SpnegoAuthHeaderGenerator implements AuthHeaderGenerator {
+  private static final Logger LOG = LoggerFactory.getLogger(SpnegoAuthHeaderGenerator.class);
 
-  private static final Logger LOG = LoggerFactory.getLogger(AuthUtil.class);
+  private String spnegoHost;
+
+  private SpnegoAuthHeaderGenerator() {}
+
+  public SpnegoAuthHeaderGenerator(String spnegoHost) {
+    this.spnegoHost = spnegoHost;
+  }
+
+  @Override
+  public String generateAuthHeader() {
+    try {
+      return String.format("NEGOTIATE %s", generateToken(spnegoHost));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to generate spnego auth header for " + spnegoHost);
+    }
+  }
 
   /**
    * Generate SPNEGO challenge request token. Copied from Apache Hadoop

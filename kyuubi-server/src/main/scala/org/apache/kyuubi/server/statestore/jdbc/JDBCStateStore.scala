@@ -124,9 +124,10 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
          |request_conf,
          |request_args,
          |create_time,
-         |engine_type
+         |engine_type,
+         |cluster_manager
          |)
-         |VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         |VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          |""".stripMargin
 
     withConnection() { connection =>
@@ -146,7 +147,8 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
         valueAsString(metadata.requestConf),
         valueAsString(metadata.requestArgs),
         metadata.createTime,
-        Option(metadata.engineType).map(_.toUpperCase(Locale.ROOT)).orNull)
+        Option(metadata.engineType).map(_.toUpperCase(Locale.ROOT)).orNull,
+        metadata.clusterManager.orNull)
     }
   }
 
@@ -300,6 +302,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
         val requestName = resultSet.getString("request_name")
         val createTime = resultSet.getLong("create_time")
         val engineType = resultSet.getString("engine_type")
+        val clusterManager = Option(resultSet.getString("cluster_manager"))
         val engineId = resultSet.getString("engine_id")
         val engineName = resultSet.getString("engine_name")
         val engineUrl = resultSet.getString("engine_url")
@@ -333,6 +336,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
           requestArgs = requestArgs,
           createTime = createTime,
           engineType = engineType,
+          clusterManager = clusterManager,
           engineId = engineId,
           engineName = engineName,
           engineUrl = engineUrl,
@@ -453,6 +457,7 @@ object JDBCStateStore {
     "request_name",
     "create_time",
     "engine_type",
+    "cluster_manager",
     "engine_id",
     "engine_name",
     "engine_url",

@@ -212,6 +212,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     sessionStateStore.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
   }
 
+  def getBatchSessionMetadata(batchId: String): SessionMetadata = {
+    sessionStateStore.getBatchSessionMetadata(batchId)
+  }
+
   @VisibleForTesting
   def cleanupMetadata(identifier: String): Unit = {
     sessionStateStore.cleanupMetadataById(identifier)

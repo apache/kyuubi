@@ -18,7 +18,6 @@
 package org.apache.kyuubi.client;
 
 import java.net.URI;
-import java.util.Base64;
 import javax.net.ssl.SSLContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
@@ -28,7 +27,7 @@ import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContexts;
-import org.apache.kyuubi.client.util.AuthUtil;
+import org.apache.kyuubi.client.auth.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,9 +37,7 @@ public class KyuubiRestClient implements AutoCloseable {
 
   private RestClient httpClient;
 
-  private AuthSchema authSchema;
-  private String spnegoHost;
-  private String basicAuthHeader = "";
+  private AuthHeaderGenerator authHeaderGenerator;
 
   /** Specifies the version of the Kyuubi API to communicate with. */
   public enum ApiVersion {
@@ -51,9 +48,10 @@ public class KyuubiRestClient implements AutoCloseable {
     }
   }
 
-  public enum AuthSchema {
+  public enum AuthHeaderMethod {
     BASIC,
-    SPNEGO
+    SPNEGO,
+    CUSTOM
   }
 
   @Override
@@ -74,33 +72,26 @@ public class KyuubiRestClient implements AutoCloseable {
 
     this.httpClient = new RestClient(baseUrl, httpclient);
 
-    this.authSchema = builder.authSchema;
-    this.spnegoHost = builder.spnegoHost;
-    if (this.authSchema == AuthSchema.BASIC && StringUtils.isNotBlank(builder.username)) {
-      String authorization = String.format("%s:%s", builder.username, builder.password);
-      this.basicAuthHeader =
-          String.format("BASIC %s", Base64.getEncoder().encodeToString(authorization.getBytes()));
+    switch (builder.authHeaderMethod) {
+      case BASIC:
+        this.authHeaderGenerator = new BasicAuthHeaderGenerator(builder.username, builder.password);
+        break;
+
+      case SPNEGO:
+        this.authHeaderGenerator = new SpnegoAuthHeaderGenerator(builder.spnegoHost);
+        break;
+
+      default:
+        if (builder.authHeaderGenerator == null) {
+          this.authHeaderGenerator = new NoAuthHeaderGenerator();
+        } else {
+          this.authHeaderGenerator = builder.authHeaderGenerator;
+        }
     }
   }
 
   public String getAuthHeader() {
-    String header = "";
-    switch (authSchema) {
-      case BASIC:
-        header = this.basicAuthHeader;
-        break;
-      case SPNEGO:
-        try {
-          header = String.format("NEGOTIATE %s", AuthUtil.generateToken(spnegoHost));
-        } catch (Exception e) {
-          LOG.error("Error: ", e);
-          throw new RuntimeException("Failed to generate spnego auth header for " + spnegoHost);
-        }
-        break;
-      default:
-        throw new RuntimeException("Unsupported auth schema");
-    }
-    return header;
+    return authHeaderGenerator.generateAuthHeader();
   }
 
   public RestClient getHttpClient() {
@@ -144,7 +135,9 @@ public class KyuubiRestClient implements AutoCloseable {
 
     private ApiVersion version = ApiVersion.V1;
 
-    private AuthSchema authSchema = AuthSchema.BASIC;
+    private AuthHeaderMethod authHeaderMethod = AuthHeaderMethod.BASIC;
+
+    private AuthHeaderGenerator authHeaderGenerator;
 
     private String username;
 
@@ -168,8 +161,15 @@ public class KyuubiRestClient implements AutoCloseable {
       return this;
     }
 
-    public Builder authSchema(AuthSchema authSchema) {
-      this.authSchema = authSchema;
+    public Builder authHeaderMethod(AuthHeaderMethod authHeaderMethod) {
+      this.authHeaderMethod = authHeaderMethod;
+      return this;
+    }
+
+    /** Customize the AuthHeaderGenerator. */
+    public Builder authHeaderGenerator(AuthHeaderGenerator authHeaderGenerator) {
+      this.authHeaderGenerator = authHeaderGenerator;
+      this.authHeaderMethod = AuthHeaderMethod.CUSTOM;
       return this;
     }
 
@@ -198,16 +198,13 @@ public class KyuubiRestClient implements AutoCloseable {
         throw new IllegalArgumentException("hostUrl cannot be blank.");
       }
 
-      if (authSchema == AuthSchema.SPNEGO && StringUtils.isBlank(spnegoHost)) {
+      if (authHeaderMethod == AuthHeaderMethod.SPNEGO.SPNEGO && StringUtils.isBlank(spnegoHost)) {
         try {
           this.spnegoHost = new URI(hostUrl).getHost();
         } catch (Exception e) {
           throw new IllegalArgumentException("spnegoHost is invalid.");
         }
       }
-
-      this.password = StringUtils.isNotBlank(password) ? password : "";
-
       return new KyuubiRestClient(this);
     }
   }
