@@ -211,6 +211,13 @@
 
         <!-- Package to use when relocating shaded classes. -->
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
+
+        <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
+        <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
+        <distMgmtReleaseUrl>https://repository.apache.org/service/local/staging/deploy/maven2</distMgmtReleaseUrl>
+        <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
+        <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
+        <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
     </properties>
 
     <repositories>
@@ -263,6 +270,19 @@
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
+
+    <distributionManagement>
+        <repository>
+            <id>apache.releases.https</id>
+            <name>${distMgmtReleaseName}</name>
+            <url>${distMgmtReleaseUrl}</url>
+        </repository>
+        <snapshotRepository>
+            <id>apache.snapshots.https</id>
+            <name>${distMgmtSnapshotsName}</name>
+            <url>${distMgmtSnapshotsUrl}</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <dependencyManagement>
         <dependencies>
