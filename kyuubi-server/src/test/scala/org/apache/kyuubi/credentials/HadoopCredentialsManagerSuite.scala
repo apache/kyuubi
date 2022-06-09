@@ -33,6 +33,16 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
   private val appUser = "who"
   private val send = (_: String) => {}
 
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    ExceptionThrowingDelegationTokenProvider.IN_PROVIDER_TEST = true
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    ExceptionThrowingDelegationTokenProvider.IN_PROVIDER_TEST = false
+  }
+
   private def withStartedManager(kyuubiConf: KyuubiConf)(f: HadoopCredentialsManager => Unit)
       : Unit = {
     val manager = new HadoopCredentialsManager()
@@ -215,7 +225,9 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
 
 private class ExceptionThrowingDelegationTokenProvider extends HadoopDelegationTokenProvider {
   ExceptionThrowingDelegationTokenProvider.constructed = true
-  throw new IllegalArgumentException
+  if (ExceptionThrowingDelegationTokenProvider.IN_PROVIDER_TEST) {
+    throw new IllegalArgumentException
+  }
 
   override def serviceName: String = "throw"
 
@@ -229,6 +241,7 @@ private class ExceptionThrowingDelegationTokenProvider extends HadoopDelegationT
 
 private object ExceptionThrowingDelegationTokenProvider {
   var constructed = false
+  var IN_PROVIDER_TEST = false
 }
 
 private class UnRequiredDelegationTokenProvider extends HadoopDelegationTokenProvider {
