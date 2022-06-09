@@ -19,16 +19,16 @@ package org.apache.kyuubi.server.statestore
 
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
 
-trait RetryingSessionStateRequest {
+trait RetryingStateStoreRequest {
   def identifier: String
 }
 
 case class RetryingInsertSessionMetadata(metadata: SessionMetadata)
-  extends RetryingSessionStateRequest {
+  extends RetryingStateStoreRequest {
   override def identifier: String = metadata.identifier
 }
 
 case class RetryingUpdateSessionMetadata(metadata: SessionMetadata)
-  extends RetryingSessionStateRequest {
+  extends RetryingStateStoreRequest {
   override def identifier: String = metadata.identifier
 }

@@ -26,9 +26,9 @@ class StateStoreRequestsRetryRef(val identifier: String) {
   private[statestore] val retryingTaskCount = new AtomicInteger(0)
 
   private[statestore] val stateStoreRequestQueue =
-    new ConcurrentLinkedQueue[RetryingSessionStateRequest]()
+    new ConcurrentLinkedQueue[RetryingStateStoreRequest]()
 
-  def addRetryingSessionStateRequest(event: RetryingSessionStateRequest): Unit = {
+  def addRetryingSessionStateRequest(event: RetryingStateStoreRequest): Unit = {
     stateStoreRequestQueue.add(event)
   }
 
