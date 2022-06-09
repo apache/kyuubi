@@ -18,8 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.net.InetAddress
-import java.util.Base64
-import java.util.UUID
+import java.util.{Base64, UUID}
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
@@ -38,7 +37,7 @@ import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionType}
+import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 
 class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   private val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
@@ -209,7 +208,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(getBatchListResponse.getBatches.isEmpty && getBatchListResponse.getTotal == 0)
 
     sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
@@ -232,7 +230,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "",
       Map.empty)
     sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
@@ -243,7 +240,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         "",
         ""))
     sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
@@ -432,10 +428,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     restFe.recoverBatchSessions()
     assert(sessionManager.getOpenSessionCount == 2)
 
-    val sessionHandle1 =
-      sessionManager.getBatchSessionHandle(batchId1, BatchesResource.REST_BATCH_PROTOCOL)
-    val sessionHandle2 =
-      sessionManager.getBatchSessionHandle(batchId2, BatchesResource.REST_BATCH_PROTOCOL)
+    val sessionHandle1 = SessionHandle(batchId1)
+    val sessionHandle2 = SessionHandle(batchId2)
     val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSessionImpl]
     val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSessionImpl]
     assert(session1.createTime === batchMetadata.createTime)

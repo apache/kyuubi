@@ -110,7 +110,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   private def createBatchSession(
-      protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
@@ -119,7 +118,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       recoveryMetadata: Option[SessionMetadata] = None): KyuubiBatchSessionImpl = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     new KyuubiBatchSessionImpl(
-      protocol,
       username,
       password,
       ipAddress,
@@ -159,13 +157,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def openBatchSession(
-      protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String],
       batchRequest: BatchRequest): SessionHandle = {
-    val batchSession = createBatchSession(protocol, user, password, ipAddress, conf, batchRequest)
+    val batchSession = createBatchSession(user, password, ipAddress, conf, batchRequest)
     openBatchSession(batchSession)
   }
 
@@ -238,7 +235,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
             metadata.requestArgs.asJava)
 
           val batchSession = createBatchSession(
-            BatchesResource.REST_BATCH_PROTOCOL,
             metadata.username,
             "anonymous",
             metadata.ipAddress,
