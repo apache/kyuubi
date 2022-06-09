@@ -86,7 +86,7 @@ class TPCHQuerySuite extends KyuubiFunSuite {
   }
 
   test("run query on tiny") {
-    assume(SparkUtils.isSparkVersionEqualTo("3.1"))
+    assume(SparkUtils.isSparkVersionEqualTo("3.2"))
     val viewSuffix = "view";
     val sparkConf = new SparkConf().setMaster("local[*]")
       .set("spark.ui.enabled", "false")
@@ -119,11 +119,6 @@ class TPCHQuerySuite extends KyuubiFunSuite {
             Files.write(goldenFile, schemaDDL.getBytes)
           }
           val expectedSchema = fileToString(goldenFile)
-
-          // scalastyle:off
-          println(
-            s"name=$name,schema=$schemaDDL,expected=$expectedSchema,sumHashResult=$sumHashResult,goldenFile=${goldenFile.toFile.getAbsolutePath}")
-          // scalastyle:on
 
           assert(schemaDDL == expectedSchema)
           assert(sumHashResult == queryToSumHash(name))

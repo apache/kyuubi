@@ -1,1 +1,1 @@
-`c_count` BIGINT,`custdist` BIGINT
+`c_count` BIGINT NOT NULL,`custdist` BIGINT NOT NULL

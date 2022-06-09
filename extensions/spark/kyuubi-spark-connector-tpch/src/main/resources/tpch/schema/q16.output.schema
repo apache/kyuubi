@@ -1,1 +1,1 @@
-`p_brand` STRING,`p_type` STRING,`p_size` INT,`supplier_cnt` BIGINT
+`p_brand` STRING,`p_type` STRING,`p_size` INT,`supplier_cnt` BIGINT NOT NULL

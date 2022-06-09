@@ -1,1 +1,1 @@
-`cntrycode` STRING,`numcust` BIGINT,`totacctbal` DOUBLE
+`cntrycode` STRING,`numcust` BIGINT NOT NULL,`totacctbal` DOUBLE
