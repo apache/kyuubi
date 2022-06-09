@@ -49,6 +49,6 @@ if [ "${LAST_RELEASE_TAG}" = "-h" ]; then
 fi
 
 ## Add title for changelog doc.
-echo "## Changelog for Apache Kyuubi(Incubating) $RELEASE_VERSION  " > $CHANGELOG_PATH
+echo "## Changelog for Apache Kyuubi(Incubating) $RELEASE_VERSION" > $CHANGELOG_PATH
 ## Append well-formatted git log to changelog file.
-git log --pretty="- [%s]($KYUUBI_GITHUB_COMMIT_URL%h)  " $LAST_RELEASE_TAG..$CURRENT_RELEASE_TAG | grep -v "\[RELEASE\]" >> $CHANGELOG_PATH
+git log --pretty="[%s]($KYUUBI_GITHUB_COMMIT_URL%h)%n" $LAST_RELEASE_TAG..$CURRENT_RELEASE_TAG | grep -v "\[RELEASE\]" >> $CHANGELOG_PATH
