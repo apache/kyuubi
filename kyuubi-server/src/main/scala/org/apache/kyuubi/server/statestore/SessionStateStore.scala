@@ -59,7 +59,11 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
   }
 
   def getBatch(batchId: String): Batch = {
-    Option(_stateStore.getMetadata(batchId, true)).map(buildBatch).orNull
+    Option(getBatchSessionMetadata(batchId)).map(buildBatch).orNull
+  }
+
+  def getBatchSessionMetadata(batchId: String): SessionMetadata = {
+    Option(_stateStore.getMetadata(batchId, true)).filter(_.sessionType == SessionType.BATCH).orNull
   }
 
   def getBatches(

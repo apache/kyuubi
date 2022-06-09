@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server.rest.client
 
+import java.util.Base64
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.RestClientTestHelper
@@ -31,7 +33,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
   test("basic batch rest client") {
     val basicKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
-        .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
         .username(ldapUser)
         .password(ldapUserPasswd)
         .socketTimeout(30000)
@@ -75,7 +77,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
   test("basic batch rest client with invalid user") {
     val basicKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
-        .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
         .username(customUser)
         .password(customPasswd)
         .socketTimeout(30000)
@@ -94,7 +96,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
   test("spnego batch rest client") {
     val spnegoKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
-        .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
         .spnegoHost("localhost")
         .build()
     val batchRestApi: BatchRestApi = new BatchRestApi(spnegoKyuubiRestClient)
@@ -162,5 +164,18 @@ class BatchRestApiSuite extends RestClientTestHelper {
     }
 
     spnegoKyuubiRestClient.close()
+  }
+
+  test("CUSTOM auth header generator") {
+    val kyuubiRestClient = KyuubiRestClient
+      .builder(baseUri.toString)
+      .authHeaderGenerator(() => {
+        s"BASIC ${Base64.getEncoder.encodeToString(s"$ldapUser:$ldapUserPasswd".getBytes())}"
+      })
+      .build()
+    val batchRestApi = new BatchRestApi(kyuubiRestClient)
+
+    batchRestApi.listBatches(null, null, null, 0, 0, 0, 1)
+    batchRestApi.listBatches(null, null, null, 0, 0, 0, 1)
   }
 }
