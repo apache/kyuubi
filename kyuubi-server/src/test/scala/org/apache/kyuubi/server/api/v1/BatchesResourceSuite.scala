@@ -436,8 +436,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     restFe.recoverBatchSessions()
     assert(sessionManager.getOpenSessionCount == 2)
 
-    val sessionHandle1 = SessionHandle(batchId1)
-    val sessionHandle2 = SessionHandle(batchId2)
+    val sessionHandle1 = SessionHandle.fromString(batchId1)
+    val sessionHandle2 = SessionHandle.fromString(batchId2)
     val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSessionImpl]
     val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSessionImpl]
     assert(session1.createTime === batchMetadata.createTime)

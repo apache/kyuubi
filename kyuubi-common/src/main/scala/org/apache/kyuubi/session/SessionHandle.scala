@@ -19,6 +19,8 @@ package org.apache.kyuubi.session
 
 import java.util.{Objects, UUID}
 
+import scala.language.implicitConversions
+
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TSessionHandle}
 
 import org.apache.kyuubi.cli.Handle
@@ -52,12 +54,12 @@ object SessionHandle {
     apply(tHandle, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
   }
 
-  def apply(handleStr: String): SessionHandle = {
-    val id = UUID.fromString(handleStr)
-    new SessionHandle(id, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
-  }
-
   def apply(protocol: TProtocolVersion): SessionHandle = {
     new SessionHandle(UUID.randomUUID(), protocol)
+  }
+
+  implicit def fromString(uuid: String): SessionHandle = {
+    val id = UUID.fromString(uuid)
+    new SessionHandle(id, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
   }
 }

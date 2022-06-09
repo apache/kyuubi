@@ -35,7 +35,6 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.api.v1.BatchesResource
 import org.apache.kyuubi.server.statestore.SessionStateStore
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
 

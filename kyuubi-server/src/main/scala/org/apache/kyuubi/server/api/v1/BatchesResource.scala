@@ -79,7 +79,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def formatSessionHandle(sessionHandleStr: String): SessionHandle = {
     try {
-      SessionHandle(sessionHandleStr)
+      SessionHandle.fromString(sessionHandleStr)
     } catch {
       case e: IllegalArgumentException =>
         throw new NotFoundException(s"Invalid batchId: $sessionHandleStr", e)
