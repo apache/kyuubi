@@ -26,7 +26,9 @@ redundant_text_list = [
 """This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).""",
 """This product includes software developed at
-The Apache Software Foundation (https://www.apache.org/)."""
+The Apache Software Foundation (https://www.apache.org/).""",
+"""This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/)."""
 ]
 
 def append(notice_file, append_file):
