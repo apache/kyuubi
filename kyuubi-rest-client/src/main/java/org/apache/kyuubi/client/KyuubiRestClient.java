@@ -198,7 +198,7 @@ public class KyuubiRestClient implements AutoCloseable {
         throw new IllegalArgumentException("hostUrl cannot be blank.");
       }
 
-      if (authHeaderMethod == AuthHeaderMethod.SPNEGO.SPNEGO && StringUtils.isBlank(spnegoHost)) {
+      if (authHeaderMethod == AuthHeaderMethod.SPNEGO && StringUtils.isBlank(spnegoHost)) {
         try {
           this.spnegoHost = new URI(hostUrl).getHost();
         } catch (Exception e) {
