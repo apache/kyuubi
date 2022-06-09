@@ -47,8 +47,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     .set(
       KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
       classOf[UserDefinedEngineSecuritySecretProvider].getName)
-    .set(KyuubiConf.BATCH_INTERNAL_REST_RETRY_WAIT, 1000L)
-    .set(KyuubiConf.BATCH_INTERNAL_REST_MAX_RETRIES, 1)
 
   private val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
 

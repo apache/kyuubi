@@ -49,8 +49,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(KyuubiConf.BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT)
   private lazy val internalConnectTimeout =
     fe.getConf.get(KyuubiConf.BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT)
-  private lazy val internalMaxRetries = fe.getConf.get(KyuubiConf.BATCH_INTERNAL_REST_MAX_RETRIES)
-  private lazy val internalRetryWait = fe.getConf.get(KyuubiConf.BATCH_INTERNAL_REST_RETRY_WAIT)
 
   private def getInternalRestClient(kyuubiInstance: String): InternalRestClient = {
     internalRestClients.computeIfAbsent(
@@ -250,39 +248,20 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         } else {
           info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
-          var closeBatchResponse: CloseBatchResponse = new CloseBatchResponse(false, "")
-          var closeCompletion: Boolean = false
           try {
-            var retryCount = 0
-            while (!closeCompletion && retryCount < internalMaxRetries) {
-              try {
-                closeBatchResponse = internalRestClient.deleteBatch(userName, batchId)
-                closeCompletion = true
-              } catch {
-                case e: KyuubiRestException =>
-                  retryCount += 1
-                  error(
-                    s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}" +
-                      s" ($retryCount/$internalMaxRetries)",
-                    e)
-                  if (retryCount < internalMaxRetries) {
-                    Thread.sleep(internalRetryWait)
-                    val appMgrKillResp = sessionManager.applicationManager.killApplication(
-                      metadata.clusterManager,
-                      batchId)
-                    closeCompletion = appMgrKillResp._1
-                    closeBatchResponse =
-                      new CloseBatchResponse(appMgrKillResp._1, appMgrKillResp._2)
-                  } else {
-                    closeBatchResponse = new CloseBatchResponse(false, Utils.stringifyException(e))
-                  }
-              }
-            }
+            internalRestClient.deleteBatch(userName, batchId)
           } catch {
-            case e: Throwable =>
-              closeBatchResponse = new CloseBatchResponse(false, Utils.stringifyException(e))
+            case e: KyuubiRestException =>
+              error(s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}", e)
+              val appMgrKillResp = sessionManager.applicationManager.killApplication(
+                metadata.clusterManager,
+                batchId)
+              if (appMgrKillResp._1) {
+                new CloseBatchResponse(appMgrKillResp._1, appMgrKillResp._2)
+              } else {
+                new CloseBatchResponse(false, Utils.stringifyException(e))
+              }
           }
-          closeBatchResponse
         }
       }.getOrElse {
         error(s"Invalid batchId: $batchId")

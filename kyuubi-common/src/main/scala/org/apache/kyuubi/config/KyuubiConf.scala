@@ -851,21 +851,6 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(20).toMillis)
 
-  val BATCH_INTERNAL_REST_MAX_RETRIES: ConfigEntry[Int] =
-    buildConf("kyuubi.batch.internal.rest.max.retries")
-      .internal
-      .doc("The max retries number for internal batch rest request. Note that now we only retry" +
-        " the internal delete batch request.")
-      .intConf
-      .createWithDefault(3)
-
-  val BATCH_INTERNAL_REST_RETRY_WAIT: ConfigEntry[Long] =
-    buildConf("kyuubi.batch.internal.rest.retry.wait")
-      .internal
-      .doc("How long to wait between retries of internal batch rest request.")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(10).toMillis)
-
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
