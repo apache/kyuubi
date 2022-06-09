@@ -18,9 +18,10 @@ package org.apache.kyuubi.ctl.cmd.log
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
+import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, OperationLog}
-import org.apache.kyuubi.ctl.{CliConfig, RestClientFactory}
+import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 
 class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
@@ -32,35 +33,33 @@ class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   }
 
   override def run(): Unit = {
-    val kyuubiRestClient: KyuubiRestClient =
-      RestClientFactory.getKyuubiRestClient(cliArgs, null, conf)
-    val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
+    withKyuubiRestClient(cliArgs, null, conf) { kyuubiRestClient =>
+      val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
-    var log: OperationLog = batchRestApi.getBatchLocalLog(
-      cliArgs.batchOpts.batchId,
-      cliArgs.batchOpts.from,
-      cliArgs.batchOpts.size)
-    log.getLogRowSet.asScala.foreach(x => info(x))
+      var log: OperationLog = batchRestApi.getBatchLocalLog(
+        cliArgs.batchOpts.batchId,
+        cliArgs.batchOpts.from,
+        cliArgs.batchOpts.size)
+      log.getLogRowSet.asScala.foreach(x => info(x))
 
-    var done = false
-    val batchId = cliArgs.batchOpts.batchId
-    var batch: Batch = null
-    if (cliArgs.logOpts.forward) {
-      while (!done) {
-        log = batchRestApi.getBatchLocalLog(
-          batchId,
-          -1,
-          cliArgs.batchOpts.size)
-        log.getLogRowSet.asScala.foreach(x => info(x))
+      var done = false
+      val batchId = cliArgs.batchOpts.batchId
+      var batch: Batch = null
+      if (cliArgs.logOpts.forward) {
+        while (!done) {
+          log = batchRestApi.getBatchLocalLog(
+            batchId,
+            -1,
+            cliArgs.batchOpts.size)
+          log.getLogRowSet.asScala.foreach(x => info(x))
 
-        batch = batchRestApi.getBatchById(batchId)
-        if (log.getLogRowSet.size() == 0 && batch.getState() != "RUNNING") {
-          done = true
+          batch = batchRestApi.getBatchById(batchId)
+          if (log.getLogRowSet.size() == 0 && batch.getState() != "RUNNING") {
+            done = true
+          }
         }
       }
     }
-
-    kyuubiRestClient.close()
   }
 
 }

@@ -30,7 +30,20 @@ import org.apache.kyuubi.ctl.CtlConf._
 
 object RestClientFactory {
 
-  private[ctl] def getKyuubiRestClient(
+  private[ctl] def withKyuubiRestClient(
+      cliArgs: CliConfig,
+      map: HashMap[String, Object],
+      conf: KyuubiConf)(f: KyuubiRestClient => Unit): Unit = {
+    val kyuubiRestClient: KyuubiRestClient =
+      RestClientFactory.getKyuubiRestClient(cliArgs, map, conf)
+    try {
+      f(kyuubiRestClient)
+    } finally {
+      kyuubiRestClient.close()
+    }
+  }
+
+  private def getKyuubiRestClient(
       cliArgs: CliConfig,
       map: HashMap[String, Object],
       conf: KyuubiConf): KyuubiRestClient = {

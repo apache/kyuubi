@@ -58,7 +58,6 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
 
     val batch_error = s"""apiVersion: v1
                          |batchType: Spark
-                         |authSchema: basic
                          |username: ${ldapUser}
                          |request:
                          |  name: ${appName}

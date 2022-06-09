@@ -20,9 +20,10 @@ import java.util.{ArrayList, HashMap}
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
+import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest, OperationLog}
-import org.apache.kyuubi.ctl.{CliConfig, RestClientFactory}
+import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 
 class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
@@ -34,37 +35,35 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   }
 
   override def run(): Unit = {
-    val kyuubiRestClient: KyuubiRestClient =
-      RestClientFactory.getKyuubiRestClient(cliArgs, map, conf)
-    val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
+    withKyuubiRestClient(cliArgs, map, conf) { kyuubiRestClient =>
+      val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
-    val request = map.get("request").asInstanceOf[HashMap[String, Object]]
-    val batchRequest = new BatchRequest(
-      map.get("batchType").asInstanceOf[String],
-      request.get("resource").asInstanceOf[String],
-      request.get("className").asInstanceOf[String],
-      request.get("name").asInstanceOf[String],
-      request.get("config").asInstanceOf[HashMap[String, String]],
-      request.get("args").asInstanceOf[ArrayList[String]])
+      val request = map.get("request").asInstanceOf[HashMap[String, Object]]
+      val batchRequest = new BatchRequest(
+        map.get("batchType").asInstanceOf[String],
+        request.get("resource").asInstanceOf[String],
+        request.get("className").asInstanceOf[String],
+        request.get("name").asInstanceOf[String],
+        request.get("config").asInstanceOf[HashMap[String, String]],
+        request.get("args").asInstanceOf[ArrayList[String]])
 
-    var batch: Batch = batchRestApi.createBatch(batchRequest)
-    val batchId = batch.getId
-    var log: OperationLog = null
-    var done = false
-    while (!done) {
-      log = batchRestApi.getBatchLocalLog(
-        batchId,
-        -1,
-        20)
-      log.getLogRowSet.asScala.foreach(x => info(x))
+      var batch: Batch = batchRestApi.createBatch(batchRequest)
+      val batchId = batch.getId
+      var log: OperationLog = null
+      var done = false
+      while (!done) {
+        log = batchRestApi.getBatchLocalLog(
+          batchId,
+          -1,
+          20)
+        log.getLogRowSet.asScala.foreach(x => info(x))
 
-      batch = batchRestApi.getBatchById(batchId)
-      if (log.getLogRowSet.size() == 0 && batch.getState() != "RUNNING") {
-        done = true
+        batch = batchRestApi.getBatchById(batchId)
+        if (log.getLogRowSet.size() == 0 && batch.getState() != "RUNNING") {
+          done = true
+        }
       }
     }
-
-    kyuubiRestClient.close()
   }
 
 }

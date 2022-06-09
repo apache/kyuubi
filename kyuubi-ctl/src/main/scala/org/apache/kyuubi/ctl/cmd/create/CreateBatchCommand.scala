@@ -18,10 +18,11 @@ package org.apache.kyuubi.ctl.cmd.create
 
 import java.util.{ArrayList, HashMap}
 
-import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
+import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.client.util.JsonUtil
-import org.apache.kyuubi.ctl.{CliConfig, RestClientFactory}
+import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 
 class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
@@ -35,23 +36,21 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   override def run(): Unit = {
 
-    val kyuubiRestClient: KyuubiRestClient =
-      RestClientFactory.getKyuubiRestClient(cliArgs, map, conf)
-    val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
+    withKyuubiRestClient(cliArgs, map, conf) { kyuubiRestClient =>
+      val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
-    val request = map.get("request").asInstanceOf[HashMap[String, Object]]
-    val batchRequest = new BatchRequest(
-      map.get("batchType").asInstanceOf[String],
-      request.get("resource").asInstanceOf[String],
-      request.get("className").asInstanceOf[String],
-      request.get("name").asInstanceOf[String],
-      request.get("config").asInstanceOf[HashMap[String, String]],
-      request.get("args").asInstanceOf[ArrayList[String]])
+      val request = map.get("request").asInstanceOf[HashMap[String, Object]]
+      val batchRequest = new BatchRequest(
+        map.get("batchType").asInstanceOf[String],
+        request.get("resource").asInstanceOf[String],
+        request.get("className").asInstanceOf[String],
+        request.get("name").asInstanceOf[String],
+        request.get("config").asInstanceOf[HashMap[String, String]],
+        request.get("args").asInstanceOf[ArrayList[String]])
 
-    val batch: Batch = batchRestApi.createBatch(batchRequest)
-    info(JsonUtil.toJson(batch))
-
-    kyuubiRestClient.close()
+      val batch: Batch = batchRestApi.createBatch(batchRequest)
+      info(JsonUtil.toJson(batch))
+    }
   }
 
 }

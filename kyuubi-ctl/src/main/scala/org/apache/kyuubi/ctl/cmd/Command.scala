@@ -177,14 +177,18 @@ abstract class Command(var cliArgs: CliConfig) extends Logging {
     }
 
     var map: HashMap[String, Object] = null
-
+    var br: BufferedReader = null
     try {
       val yaml = new Yaml()
       val input = new FileInputStream(new File(filename))
-      val br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))
+      br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))
       map = yaml.load(br).asInstanceOf[HashMap[String, Object]]
     } catch {
       case e: Exception => fail(s"Failed to read yaml file[$filename]: $e")
+    } finally {
+      if (br != null) {
+        br.close()
+      }
     }
     map
   }
