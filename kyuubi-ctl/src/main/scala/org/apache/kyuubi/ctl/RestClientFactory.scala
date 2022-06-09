@@ -18,9 +18,6 @@ package org.apache.kyuubi.ctl
 
 import java.util.HashMap
 
-import scala.reflect.runtime.{universe => ru}
-import scala.reflect.runtime.universe._
-
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.KyuubiException
@@ -59,7 +56,7 @@ object RestClientFactory {
         val password = cliArgs.commonOpts.password
         kyuubiRestClient = KyuubiRestClient.builder(hostUrl)
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
-          .authSchema(KyuubiRestClient.AuthSchema.BASIC)
+          .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
           .username(username)
           .password(password)
           .build()
@@ -68,7 +65,7 @@ object RestClientFactory {
           getRestConfig("spnegoHost", conf.get(CTL_REST_CLIENT_SPNEGO_HOST).get, cliArgs, map)
         kyuubiRestClient = KyuubiRestClient.builder(hostUrl)
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
-          .authSchema(KyuubiRestClient.AuthSchema.SPNEGO)
+          .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
           .spnegoHost(spnegoHost)
           .build()
       case _ => throw new KyuubiException(s"Unsupported auth schema: $authSchema")
@@ -92,14 +89,15 @@ object RestClientFactory {
       defaultValue: String,
       cliArgs: CliConfig,
       map: HashMap[String, Object]): String = {
-    var configValue: String = null
     // get value from command line
     val commonOpts = cliArgs.commonOpts
-    val mirror = ru.runtimeMirror(getClass.getClassLoader)
-    val instanceMirror = mirror.reflect(commonOpts)
-    val field = typeOf[CommonOpts].decl(TermName(key)).asTerm.accessed.asTerm
-    val fieldMirror = instanceMirror.reflectField(field)
-    configValue = fieldMirror.get.asInstanceOf[String]
+    var configValue: String = key match {
+      case "hostUrl" => commonOpts.hostUrl
+      case "authSchema" => commonOpts.authSchema
+      case "username" => commonOpts.username
+      case "spnegoHost" => commonOpts.spnegoHost
+      case _ => null
+    }
 
     // get value from map
     if (StringUtils.isBlank(configValue) && map != null) {

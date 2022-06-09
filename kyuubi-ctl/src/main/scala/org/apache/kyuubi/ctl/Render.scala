@@ -16,6 +16,10 @@
  */
 package org.apache.kyuubi.ctl
 
+import scala.collection.JavaConverters._
+
+import org.apache.kyuubi.client.api.v1.dto.{Batch, GetBatchesResponse}
+import org.apache.kyuubi.ctl.DateTimeUtil._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
 object Render {
@@ -29,5 +33,38 @@ object Render {
       Seq(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
     }
     Tabulator.format(title, header, rows, verbose)
+  }
+
+  private[ctl] def renderBatchListInfo(batchListInfo: GetBatchesResponse): String = {
+    val title = s"Total number of batches: ${batchListInfo.getTotal}"
+    val header =
+      Seq("Id", "Name", "User", "Type", "Instance", "State", "App Info", "Create Time", "End Time")
+    val rows = batchListInfo.getBatches.asScala.sortBy(_.getCreateTime).map { batch =>
+      Seq(
+        batch.getId,
+        batch.getName,
+        batch.getUser,
+        batch.getBatchType,
+        batch.getKyuubiInstance,
+        batch.getState,
+        batch.getBatchInfo.toString,
+        millisToDateString(batch.getCreateTime, "yyyy-MM-dd HH:mm:ss"),
+        millisToDateString(batch.getEndTime, "yyyy-MM-dd HH:mm:ss"))
+    }
+    Tabulator.format(title, header, rows, true)
+  }
+
+  private[ctl] def renderBatchInfo(batch: Batch): String = {
+    s"""Batch Info:
+       |  Batch Id: ${batch.getId}
+       |  Type: ${batch.getBatchType}
+       |  Name: ${batch.getName}
+       |  User: ${batch.getUser}
+       |  State: ${batch.getState}
+       |  Kyuubi Instance: ${batch.getKyuubiInstance}
+       |  Create Time: ${millisToDateString(batch.getCreateTime, "yyyy-MM-dd HH:mm:ss")}
+       |  End Time: ${millisToDateString(batch.getEndTime, "yyyy-MM-dd HH:mm:ss")}
+       |  App Info: ${batch.getBatchInfo.toString}
+        """.stripMargin
   }
 }

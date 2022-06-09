@@ -18,6 +18,8 @@
 package org.apache.kyuubi.ctl
 
 import java.io.PrintStream
+import java.time.{Instant, LocalDateTime, ZoneId}
+import java.time.format.DateTimeFormatter
 
 import org.apache.commons.lang3.StringUtils
 
@@ -39,6 +41,22 @@ private[kyuubi] trait CommandLineLoggingUtils {
   // scalastyle:off println
   private[kyuubi] def printMessage(msg: Any): Unit = printStream.println(msg)
   // scalastyle:on println
+}
+
+private[kyuubi] object DateTimeUtil {
+
+  def dateStringToMillis(date: String, format: String): Long = {
+    if (date == null) return 0
+    val localDateTime = LocalDateTime.parse(date, DateTimeFormatter.ofPattern(format))
+    localDateTime.atZone(ZoneId.systemDefault).toInstant.toEpochMilli
+  }
+
+  def millisToDateString(millis: Long, format: String): String = {
+    val formatter = DateTimeFormatter.ofPattern(format)
+    val date: LocalDateTime =
+      Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDateTime()
+    formatter.format(date)
+  }
 }
 
 /** Refer the showString method of org.apache.spark.sql.Dataset */

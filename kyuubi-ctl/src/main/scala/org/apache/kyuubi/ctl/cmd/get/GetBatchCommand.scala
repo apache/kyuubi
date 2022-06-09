@@ -18,8 +18,7 @@ package org.apache.kyuubi.ctl.cmd.get
 
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.Batch
-import org.apache.kyuubi.client.util.JsonUtil
-import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.{CliConfig, Render}
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 
@@ -36,7 +35,7 @@ class GetBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
       val batch: Batch = batchRestApi.getBatchById(cliArgs.batchOpts.batchId)
-      info(JsonUtil.toJson(batch))
+      info(Render.renderBatchInfo(batch))
     }
   }
 

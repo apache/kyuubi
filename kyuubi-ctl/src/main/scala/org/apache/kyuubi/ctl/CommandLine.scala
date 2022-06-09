@@ -19,6 +19,7 @@ package org.apache.kyuubi.ctl
 import scopt.{OParser, OParserBuilder}
 
 import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.ctl.DateTimeUtil._
 
 object CommandLine {
 
@@ -234,12 +235,22 @@ object CommandLine {
         opt[String]("batchState")
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchState = v)))
           .text("Batch state."),
-        opt[Long]("createTime")
-          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(createTime = v)))
-          .text("Batch create state."),
-        opt[Long]("endTime")
-          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(endTime = v)))
-          .text("Batch end state."),
+        opt[String]("createTime")
+          .action((v, c) =>
+            c.copy(batchOpts = c.batchOpts.copy(createTime =
+              dateStringToMillis(v, "yyyyMMddHHmmss"))))
+          .validate(x =>
+            if (x.matches("\\d{14}")) success
+            else failure("Option --createTime must be in yyyyMMddHHmmss format."))
+          .text("Batch create time, should be in yyyyMMddHHmmss format."),
+        opt[String]("endTime")
+          .action((v, c) =>
+            c.copy(batchOpts = c.batchOpts.copy(endTime =
+              dateStringToMillis(v, "yyyyMMddHHmmss"))))
+          .validate(x =>
+            if (x.matches("\\d{14}")) success
+            else failure("Option --endTime must be in yyyyMMddHHmmss format."))
+          .text("Batch end time, should be in yyyyMMddHHmmss format."),
         opt[Int]("from")
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(from = v)))
           .validate(x =>

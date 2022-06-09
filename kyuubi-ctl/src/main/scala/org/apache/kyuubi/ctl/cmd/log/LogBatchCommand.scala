@@ -35,7 +35,6 @@ class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   override def run(): Unit = {
     withKyuubiRestClient(cliArgs, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
-
       var log: OperationLog = batchRestApi.getBatchLocalLog(
         cliArgs.batchOpts.batchId,
         cliArgs.batchOpts.from,
@@ -45,16 +44,21 @@ class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
       var done = false
       val batchId = cliArgs.batchOpts.batchId
       var batch: Batch = null
+      var from =
+        if (cliArgs.batchOpts.from < 0) log.getLogRowSet.size
+        else cliArgs.batchOpts.from + log.getLogRowSet.size
       if (cliArgs.logOpts.forward) {
         while (!done) {
           log = batchRestApi.getBatchLocalLog(
             batchId,
-            -1,
+            from,
             cliArgs.batchOpts.size)
+          from += log.getLogRowSet.size
           log.getLogRowSet.asScala.foreach(x => info(x))
 
           batch = batchRestApi.getBatchById(batchId)
-          if (log.getLogRowSet.size() == 0 && batch.getState() != "RUNNING") {
+          if (log.getLogRowSet.size() == 0 && batch.getState() != "PENDING"
+            && batch.getState() != "RUNNING") {
             done = true
           }
         }

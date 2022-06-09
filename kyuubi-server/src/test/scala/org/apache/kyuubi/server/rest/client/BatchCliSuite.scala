@@ -17,26 +17,32 @@
 
 package org.apache.kyuubi.server.rest.client
 
+import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{RestClientTestHelper, Utils}
-import org.apache.kyuubi.client.api.v1.dto.Batch
-import org.apache.kyuubi.client.util.JsonUtil
+import org.apache.kyuubi.client.api.v1.dto.BatchRequest
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_CHECK_INTERVAL, ENGINE_SPARK_MAX_LIFETIME}
 import org.apache.kyuubi.ctl.TestPrematureExit
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.session.KyuubiSessionManager
 
 class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
 
   val basePath: String = Utils.getCodeSourceLocation(getClass)
-  val batchBasicFile: String = s"${basePath}/batch_basic.yaml"
-  val batchErrorFile: String = s"${basePath}/batch_error.yaml"
+  val batchFile: String = s"${basePath}/batch.yaml"
   val appName: String = "test_batch"
 
   override def beforeAll(): Unit = {
     super.beforeAll()
+
+    System.setProperty("kyuubi.ctl.rest.base.url", baseUri.toString)
+    System.setProperty("kyuubi.ctl.rest.spnego.host", "localhost")
+
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val batch_basic = s"""apiVersion: v1
                          |batchType: Spark
@@ -50,32 +56,12 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
                          |   - x2
                          |  configs:
                          |    spark.master: local
-                         |    hive.server2.proxy.user: b_user
+                         |    spark.${ENGINE_SPARK_MAX_LIFETIME.key}: "5000"
+                         |    spark.${ENGINE_CHECK_INTERVAL.key}: "1000"
                          |    k1: v1
                          |options:
                          |  verbose: true""".stripMargin
-    Files.write(Paths.get(batchBasicFile), batch_basic.getBytes(StandardCharsets.UTF_8))
-
-    val batch_error = s"""apiVersion: v1
-                         |batchType: Spark
-                         |username: ${ldapUser}
-                         |request:
-                         |  name: ${appName}
-                         |  resource: /Fake/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar
-                         |  className: org.apache.kyuubi.engine.spark.SparkSQLEngine
-                         |  args:
-                         |   - x1
-                         |   - x2
-                         |  configs:
-                         |    spark.master: local
-                         |    hive.server2.proxy.user: b_user
-                         |    k1: v1
-                         |options:
-                         |  verbose: true""".stripMargin
-    Files.write(Paths.get(batchErrorFile), batch_error.getBytes(StandardCharsets.UTF_8))
-
-    System.setProperty("kyuubi.ctl.rest.base.url", baseUri.toString)
-    System.setProperty("kyuubi.ctl.rest.spnego.host", "localhost")
+    Files.write(Paths.get(batchFile), batch_basic.getBytes(StandardCharsets.UTF_8))
   }
 
   test("basic batch rest client") {
@@ -83,31 +69,32 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "create",
       "batch",
       "-f",
-      batchBasicFile,
+      batchFile,
       "--password",
       ldapUserPasswd)
-    var result = testPrematureExit(createArgs, "\"batchType\":\"SPARK\"")
-    var batch = JsonUtil.toObject(result, classOf[Batch])
-    assert(batch.getKyuubiInstance === fe.connectionUrl)
-    assert(batch.getBatchType === "SPARK")
+    var result = testPrematureExit(createArgs, "")
+    assert(result.contains("Type: SPARK"))
+    assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
+    val startIndex = result.indexOf("Id: ") + 4
+    val endIndex = result.indexOf("\n", startIndex)
+    val batchId = result.substring(startIndex, endIndex)
 
     val getArgs = Array(
       "get",
       "batch",
-      batch.getId,
+      batchId,
       "--username",
       ldapUser,
       "--password",
       ldapUserPasswd)
-    result = testPrematureExit(getArgs, "\"batchType\":\"SPARK\"")
-    batch = JsonUtil.toObject(result, classOf[Batch])
-    assert(batch.getKyuubiInstance === fe.connectionUrl)
-    assert(batch.getBatchType === "SPARK")
+    result = testPrematureExit(getArgs, "Type: SPARK")
+    assert(result.contains("Type: SPARK"))
+    assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
 
     val logArgs = Array(
       "log",
       "batch",
-      batch.getId,
+      batchId,
       "--size",
       "2",
       "--username",
@@ -121,7 +108,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
     val deleteArgs = Array(
       "delete",
       "batch",
-      batch.getId,
+      batchId,
       "--username",
       ldapUser,
       "--password",
@@ -136,29 +123,30 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "create",
       "batch",
       "-f",
-      batchBasicFile,
+      batchFile,
       "--authSchema",
       "spnego")
-    var result = testPrematureExit(createArgs, "\"batchType\":\"SPARK\"")
-    var batch = JsonUtil.toObject(result, classOf[Batch])
-    assert(batch.getKyuubiInstance === fe.connectionUrl)
-    assert(batch.getBatchType === "SPARK")
+    var result = testPrematureExit(createArgs, "")
+    assert(result.contains("Type: SPARK"))
+    assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
+    val startIndex = result.indexOf("Id: ") + 4
+    val endIndex = result.indexOf("\n", startIndex)
+    val batchId = result.substring(startIndex, endIndex)
 
     val getArgs = Array(
       "get",
       "batch",
-      batch.getId,
+      batchId,
       "--authSchema",
       "spnego")
-    result = testPrematureExit(getArgs, "\"batchType\":\"SPARK\"")
-    batch = JsonUtil.toObject(result, classOf[Batch])
-    assert(batch.getKyuubiInstance === fe.connectionUrl)
-    assert(batch.getBatchType === "SPARK")
+    result = testPrematureExit(getArgs, "Type: SPARK")
+    assert(result.contains("Type: SPARK"))
+    assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
 
     val logArgs = Array(
       "log",
       "batch",
-      batch.getId,
+      batchId,
       "--size",
       "2",
       "--authSchema",
@@ -170,7 +158,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
     val deleteArgs = Array(
       "delete",
       "batch",
-      batch.getId,
+      batchId,
       "--authSchema",
       "spnego")
     result = testPrematureExit(deleteArgs, "\"success\":true")
@@ -181,24 +169,28 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "create",
       "batch",
       "-f",
-      batchErrorFile,
+      batchFile,
       "--password",
       ldapUserPasswd)
-    val result = testPrematureExit(createArgs, "\"batchType\":\"SPARK\"")
-    val batch = JsonUtil.toObject(result, classOf[Batch])
+    val result = testPrematureExit(createArgs, "")
+    assert(result.contains("Type: SPARK"))
+    assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
+    val startIndex = result.indexOf("Id: ") + 4
+    val endIndex = result.indexOf("\n", startIndex)
+    val batchId = result.substring(startIndex, endIndex)
 
     val logArgs = Array(
       "log",
       "batch",
-      batch.getId,
+      batchId,
       "--size",
-      "5",
+      "100",
       "--username",
       ldapUser,
       "--password",
       ldapUserPasswd,
       "--forward")
-    testPrematureExit(logArgs, s"--conf spark.app.name=${appName}")
+    testPrematureExit(logArgs, s"Submitted application: ${appName}")
   }
 
   test("submit batch test") {
@@ -206,10 +198,88 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "submit",
       "batch",
       "-f",
-      batchErrorFile,
+      batchFile,
       "--password",
       ldapUserPasswd)
-    testPrematureExit(submitArgs, s"--conf spark.app.name=${appName}")
+    testPrematureExit(submitArgs, s"Submitted application: ${appName}")
+  }
+
+  test("list batch test") {
+    val sessionManager = server.frontendServices.head
+      .be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    sessionManager.allSessions().foreach(_.close())
+
+    sessionManager.openBatchSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "kyuubi",
+      "kyuubi",
+      InetAddress.getLocalHost.getCanonicalHostName,
+      Map.empty,
+      new BatchRequest(
+        "spark",
+        "",
+        "",
+        ""))
+    sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      "",
+      "",
+      "",
+      Map.empty)
+    sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      "",
+      "",
+      "",
+      Map.empty)
+    sessionManager.openBatchSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "kyuubi",
+      "kyuubi",
+      InetAddress.getLocalHost.getCanonicalHostName,
+      Map.empty,
+      new BatchRequest(
+        "spark",
+        "",
+        "",
+        ""))
+    sessionManager.openBatchSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "kyuubi",
+      "kyuubi",
+      InetAddress.getLocalHost.getCanonicalHostName,
+      Map.empty,
+      new BatchRequest(
+        "spark",
+        "",
+        "",
+        ""))
+
+    val listArgs = Array(
+      "list",
+      "batch",
+      "--username",
+      ldapUser,
+      "--password",
+      ldapUserPasswd,
+      "--batchType",
+      "spark",
+      "--batchUser",
+      "kyuubi",
+      "--createTime",
+      "20220101000000")
+    testPrematureExit(listArgs, "Total number of batches: 3")
+
+    val listArgs1 = Array(
+      "list",
+      "batch",
+      "--username",
+      ldapUser,
+      "--password",
+      ldapUserPasswd,
+      "--endTime",
+      "20220101000000")
+    testPrematureExit(listArgs1, "Total number of batches: 0")
   }
 
 }

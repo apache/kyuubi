@@ -44,22 +44,26 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
         request.get("resource").asInstanceOf[String],
         request.get("className").asInstanceOf[String],
         request.get("name").asInstanceOf[String],
-        request.get("config").asInstanceOf[HashMap[String, String]],
+        request.get("configs").asInstanceOf[HashMap[String, String]],
         request.get("args").asInstanceOf[ArrayList[String]])
 
       var batch: Batch = batchRestApi.createBatch(batchRequest)
       val batchId = batch.getId
       var log: OperationLog = null
       var done = false
+      var from = 0
+      val size = 20
       while (!done) {
         log = batchRestApi.getBatchLocalLog(
           batchId,
-          -1,
-          20)
+          from,
+          size)
+        from += log.getLogRowSet.size
         log.getLogRowSet.asScala.foreach(x => info(x))
 
         batch = batchRestApi.getBatchById(batchId)
-        if (log.getLogRowSet.size() == 0 && batch.getState() != "RUNNING") {
+        if (log.getLogRowSet.size() == 0 && batch.getState() != "PENDING"
+          && batch.getState() != "RUNNING") {
           done = true
         }
       }

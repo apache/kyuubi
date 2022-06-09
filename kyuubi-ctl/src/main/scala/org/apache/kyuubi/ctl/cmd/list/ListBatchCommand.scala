@@ -18,28 +18,38 @@ package org.apache.kyuubi.ctl.cmd.list
 
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse
-import org.apache.kyuubi.client.util.JsonUtil
-import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.{CliConfig, Render}
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 
 class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
-  override def validateArguments(): Unit = {}
+  override def validateArguments(): Unit = {
+    if (cliArgs.batchOpts.createTime < 0) {
+      fail(s"Invalid createTime, negative milliseconds are not supported.")
+    }
+    if (cliArgs.batchOpts.endTime < 0) {
+      fail(s"Invalid endTime, negative milliseconds are not supported.")
+    }
+    if (cliArgs.batchOpts.endTime != 0
+      && cliArgs.batchOpts.createTime > cliArgs.batchOpts.endTime) {
+      fail(s"Invalid createTime/endTime, createTime should be less or equal to endTime.")
+    }
+  }
 
   override def run(): Unit = {
     withKyuubiRestClient(cliArgs, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
-      val batchInfoList: GetBatchesResponse = batchRestApi.listBatches(
+      val batchListInfo: GetBatchesResponse = batchRestApi.listBatches(
         cliArgs.batchOpts.batchType,
-        null,
-        null,
-        null,
-        null,
+        cliArgs.batchOpts.batchUser,
+        cliArgs.batchOpts.batchState,
+        cliArgs.batchOpts.createTime,
+        cliArgs.batchOpts.endTime,
         if (cliArgs.batchOpts.from < 0) 0 else cliArgs.batchOpts.from,
         cliArgs.batchOpts.size)
-      info(JsonUtil.toJson(batchInfoList))
+      info(Render.renderBatchListInfo(batchListInfo))
     }
   }
 

@@ -18,6 +18,7 @@ package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.ctl.ControlCliArgumentsTestUtil._
+import org.apache.kyuubi.ctl.DateTimeUtil._
 
 class BatchCliArgumentsSuite extends KyuubiFunSuite {
 
@@ -100,7 +101,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "--batchState",
       "RUNNING",
       "--createTime",
-      "1654690122",
+      "20220607000000",
       "--from",
       "2",
       "--size",
@@ -109,7 +110,8 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
     assert(opArgs.cliArgs.batchOpts.batchType == "spark")
     assert(opArgs.cliArgs.batchOpts.batchUser == "tom")
     assert(opArgs.cliArgs.batchOpts.batchState == "RUNNING")
-    assert(opArgs.cliArgs.batchOpts.createTime == 1654690122)
+    assert(opArgs.cliArgs.batchOpts.createTime ==
+      dateStringToMillis("20220607000000", "yyyyMMddHHmmss"))
     assert(opArgs.cliArgs.batchOpts.endTime == 0)
     assert(opArgs.cliArgs.batchOpts.from == 2)
     assert(opArgs.cliArgs.batchOpts.size == 5)
@@ -125,7 +127,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
     assert(opArgs.cliArgs.batchOpts.size == 10)
   }
 
-  test("test bad list batch option") {
+  test("test bad list batch option - size") {
     val args = Array(
       "list",
       "batch",
@@ -134,6 +136,76 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "--size",
       "-4")
     testPrematureExit(args, "Option --size must be >=0")
+  }
+
+  test("test bad list batch option - create date format") {
+    val args = Array(
+      "list",
+      "batch",
+      "--batchType",
+      "spark",
+      "--size",
+      "4",
+      "--createTime",
+      "20220101")
+    testPrematureExit(args, "Option --createTime must be in yyyyMMddHHmmss format.")
+  }
+
+  test("test bad list batch option - end date format") {
+    val args = Array(
+      "list",
+      "batch",
+      "--batchType",
+      "spark",
+      "--size",
+      "4",
+      "--endTime",
+      "20220101")
+    testPrematureExit(args, "Option --endTime must be in yyyyMMddHHmmss format.")
+  }
+
+  test("test bad list batch option - negative create date") {
+    val args = Array(
+      "list",
+      "batch",
+      "--batchType",
+      "spark",
+      "--size",
+      "4",
+      "--createTime",
+      "19690101000000")
+    testPrematureExit(args, "Invalid createTime, negative milliseconds are not supported.")
+  }
+
+  test("test bad list batch option - negative end date") {
+    val args = Array(
+      "list",
+      "batch",
+      "--batchType",
+      "spark",
+      "--size",
+      "4",
+      "--endTime",
+      "19690101000000")
+    testPrematureExit(args, "Invalid endTime, negative milliseconds are not supported.")
+  }
+
+  test("test bad list batch option - createTime > endTime") {
+    val args = Array(
+      "list",
+      "batch",
+      "--batchType",
+      "spark",
+      "--size",
+      "4",
+      "--createTime",
+      "20220602000000",
+      "--endTime",
+      "20220601000000")
+    testPrematureExit(
+      args,
+      "Invalid createTime/endTime, " +
+        "createTime should be less or equal to endTime.")
   }
 
   test("test log batch") {

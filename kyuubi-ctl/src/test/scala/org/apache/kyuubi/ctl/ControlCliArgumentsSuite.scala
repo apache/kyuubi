@@ -401,6 +401,10 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
          |Command: list batch
          |${"\t"}List batch session info.
          |  --batchType <value>      Batch type.
+         |  --batchUser <value>      Batch user.
+         |  --batchState <value>     Batch state.
+         |  --createTime <value>     Batch create time, should be in yyyyMMddHHmmss format.
+         |  --endTime <value>        Batch end time, should be in yyyyMMddHHmmss format.
          |  --from <value>           Specify which record to start from retrieving info.
          |  --size <value>           The max number of records returned in the query.
          |Command: list server
@@ -425,7 +429,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
          |  --size <value>           The max number of records returned in the query.
          |
          |Command: submit [batch] [options]
-         |${"\t"}Combination of create and log command.
+         |${"\t"}Combination of create, get and log commands.
          |  -f, --filename <value>   Filename to use to create the resource
          |Command: submit batch
          |${"\t"}open batch session and wait for completion.
