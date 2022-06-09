@@ -28,7 +28,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
-import org.apache.kyuubi.tags.TpchTest
+import org.apache.kyuubi.spark.connector.common.SparkUtils
 
 // scalastyle:off line.size.limit
 /**
@@ -48,13 +48,12 @@ import org.apache.kyuubi.tags.TpchTest
  */
 // scalastyle:on line.size.limit
 
-@TpchTest
 class TPCHQuerySuite extends KyuubiFunSuite {
 
   private val regenerateGoldenFiles = sys.env.get("KYUUBI_UPDATE").contains("1")
 
   val baseResourcePath: Path =
-    Paths.get("extensions", "spark", "kyuubi-spark-connector-tpch", "src", "main", "resources")
+    Paths.get("src", "main", "resources")
 
   val queries: Set[String] = (1 to 22).map(i => s"q$i").toSet
 
@@ -87,6 +86,7 @@ class TPCHQuerySuite extends KyuubiFunSuite {
   }
 
   test("run query on tiny") {
+    assume(SparkUtils.isSparkVersionEqualTo("3.1"))
     val viewSuffix = "view";
     val sparkConf = new SparkConf().setMaster("local[*]")
       .set("spark.ui.enabled", "false")
@@ -122,7 +122,7 @@ class TPCHQuerySuite extends KyuubiFunSuite {
 
           // scalastyle:off
           println(
-            s"name=$name,schema=$schemaDDL,expected=$expectedSchema,sumHashResult=$sumHashResult")
+            s"name=$name,schema=$schemaDDL,expected=$expectedSchema,sumHashResult=$sumHashResult,goldenFile=${goldenFile.toFile.getAbsolutePath}")
           // scalastyle:on
 
           assert(schemaDDL == expectedSchema)
