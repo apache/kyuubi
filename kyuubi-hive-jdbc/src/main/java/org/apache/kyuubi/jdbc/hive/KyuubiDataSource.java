@@ -17,8 +17,12 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import static org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams.AUTH_PASSWD;
+import static org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams.AUTH_USER;
+
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Properties;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLDataSource;
 
 /** KyuubiDataSource. */
@@ -28,13 +32,20 @@ public class KyuubiDataSource implements SQLDataSource {
 
   @Override
   public Connection getConnection() throws SQLException {
-    return getConnection("", "");
+    return getConnection(null, null);
   }
 
   @Override
   public Connection getConnection(String username, String password) throws SQLException {
     try {
-      return new KyuubiConnection("", null);
+      Properties info = new Properties();
+      if (username != null) {
+        info.setProperty(AUTH_USER, username);
+      }
+      if (password != null) {
+        info.setProperty(AUTH_PASSWD, password);
+      }
+      return new KyuubiConnection("", info);
     } catch (Exception ex) {
       throw new SQLException("Error in getting HiveConnection", ex);
     }
