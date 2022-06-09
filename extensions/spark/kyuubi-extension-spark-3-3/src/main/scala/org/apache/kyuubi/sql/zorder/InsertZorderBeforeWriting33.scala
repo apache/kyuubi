@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import java.util.Locale
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Ascending, Attribute, Expression, NullsLast, SortOrder}
@@ -43,7 +41,7 @@ trait InsertZorderHelper33 extends Rule[LogicalPlan] with ZorderBuilder {
   def getZorderColumns(props: Map[String, String]): Seq[String] = {
     val cols = props.get(KYUUBI_ZORDER_COLS)
     assert(cols.isDefined)
-    cols.get.split(",").map(_.trim.toLowerCase(Locale.ROOT))
+    cols.get.split(",").map(_.trim)
   }
 
   def canInsertZorder(query: LogicalPlan): Boolean = query match {
