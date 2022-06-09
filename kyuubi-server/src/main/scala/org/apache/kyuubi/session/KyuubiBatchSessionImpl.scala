@@ -127,8 +127,8 @@ class KyuubiBatchSessionImpl(
   }
 
   override def close(): Unit = {
-    waitStateStoreRetryCompletion()
     super.close()
+    waitStateStoreRetryCompletion()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
     MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
