@@ -273,12 +273,12 @@
 
     <distributionManagement>
         <repository>
-            <id>apache.releases.https</id>
+            <id>${distMgmtReleaseId}</id>
             <name>${distMgmtReleaseName}</name>
             <url>${distMgmtReleaseUrl}</url>
         </repository>
         <snapshotRepository>
-            <id>apache.snapshots.https</id>
+            <id>${distMgmtSnapshotsId}</id>
             <name>${distMgmtSnapshotsName}</name>
             <url>${distMgmtSnapshotsUrl}</url>
         </snapshotRepository>
