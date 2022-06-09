@@ -21,6 +21,7 @@ import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
+import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
@@ -36,12 +37,12 @@ import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.session.KyuubiSession
-import org.apache.kyuubi.session.SessionHandle.fromString
-
+import org.apache.kyuubi.session.SessionHandle
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext with Logging {
+  implicit def toSessionHandle(str: String): SessionHandle = SessionHandle.fromUUID(str)
   private def sessionManager = fe.be.sessionManager
 
   @ApiResponse(

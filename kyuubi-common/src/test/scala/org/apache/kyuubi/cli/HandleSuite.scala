@@ -21,9 +21,9 @@ import java.util.UUID
 
 import org.apache.kyuubi.KyuubiFunSuite
 
-class HandleIdentifierSuite extends KyuubiFunSuite {
+class HandleSuite extends KyuubiFunSuite {
 
-  test("HandleIdentifier") {
+  test("round-trip for UUID and THandleIdentifier") {
     val id1 = UUID.randomUUID()
     val tid1 = Handle.toTHandleIdentifier(id1)
     val id2 = Handle.fromTHandleIdentifier(tid1)

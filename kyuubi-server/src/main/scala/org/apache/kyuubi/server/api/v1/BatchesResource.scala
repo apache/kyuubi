@@ -79,7 +79,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def formatSessionHandle(sessionHandleStr: String): SessionHandle = {
     try {
-      SessionHandle.fromString(sessionHandleStr)
+      SessionHandle.fromUUID(sessionHandleStr)
     } catch {
       case e: IllegalArgumentException =>
         throw new NotFoundException(s"Invalid batchId: $sessionHandleStr", e)
@@ -225,14 +225,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @PathParam("batchId") batchId: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
     val sessionHandle = formatSessionHandle(batchId)
-    var session: KyuubiBatchSessionImpl = null
-    try {
-      session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
-    } catch {
-      case NonFatal(e) =>
-        error(s"Invalid batchId: $batchId", e)
-        throw new NotFoundException(s"Invalid batchId: $batchId")
-    }
 
     val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
