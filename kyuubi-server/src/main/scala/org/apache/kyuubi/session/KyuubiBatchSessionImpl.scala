@@ -45,7 +45,11 @@ class KyuubiBatchSessionImpl(
     recoveryMetadata: Option[SessionMetadata] = None)
   extends KyuubiSession(
     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
-    user, password, ipAddress, conf, sessionManager) {
+    user,
+    password,
+    ipAddress,
+    conf,
+    sessionManager) {
   override val sessionType: SessionType = SessionType.BATCH
 
   override val handle: SessionHandle = recoveryMetadata.map { metadata =>
