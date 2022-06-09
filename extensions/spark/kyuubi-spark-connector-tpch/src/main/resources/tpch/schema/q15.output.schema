@@ -1,0 +1,1 @@
+`s_suppkey` BIGINT,`s_name` STRING,`s_address` STRING,`s_phone` STRING,`total_revenue` DOUBLE
