@@ -14,4 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 `i_category` STRING,`i_class` STRING,`i_brand` STRING,`i_product_name` STRING,`d_year` INT,`d_qoy` INT,`d_moy` INT,`s_store_id` STRING,`sumsales` DECIMAL(28,2),`rk` INT NOT NULL

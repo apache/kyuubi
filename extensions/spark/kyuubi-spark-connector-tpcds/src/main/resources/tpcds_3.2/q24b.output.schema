@@ -14,4 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 `c_last_name` STRING,`c_first_name` STRING,`s_store_name` STRING,`paid` DECIMAL(27,2)

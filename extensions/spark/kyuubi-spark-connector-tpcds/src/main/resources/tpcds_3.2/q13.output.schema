@@ -14,4 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 `avg(ss_quantity)` DOUBLE,`avg(ss_ext_sales_price)` DECIMAL(11,6),`avg(ss_ext_wholesale_cost)` DECIMAL(11,6),`sum(ss_ext_wholesale_cost)` DECIMAL(17,2)

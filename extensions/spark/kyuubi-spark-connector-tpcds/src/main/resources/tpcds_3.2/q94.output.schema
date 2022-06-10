@@ -14,4 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 `order count` BIGINT NOT NULL,`total shipping cost` DECIMAL(17,2),`total net profit` DECIMAL(17,2)

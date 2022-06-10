@@ -14,4 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 `Call_Center` STRING NOT NULL,`Call_Center_Name` STRING,`Manager` STRING,`Returns_Loss` DECIMAL(17,2)

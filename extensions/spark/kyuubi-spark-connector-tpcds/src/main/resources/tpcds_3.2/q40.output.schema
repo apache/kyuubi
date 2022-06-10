@@ -14,4 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 `w_state` STRING,`i_item_id` STRING NOT NULL,`sales_before` DECIMAL(23,2),`sales_after` DECIMAL(23,2)

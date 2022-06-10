@@ -14,4 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 `item_sk` BIGINT,`d_date` DATE,`web_sales` DECIMAL(27,2),`store_sales` DECIMAL(27,2),`web_cumulative` DECIMAL(27,2),`store_cumulative` DECIMAL(27,2)
