@@ -47,4 +47,4 @@ build/scala-*/**
 **/org/apache/kyuubi/ui/static/assets/**
 **/org/apache/kyuubi/ui/swagger/**
 **/org.apache.spark.status.AppHistoryServerPlugin
-**/statestore-schema*.sql
+**/metadata-store-schema*.sql
