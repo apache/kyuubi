@@ -34,7 +34,7 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.statestore.{RetryingInsertSessionMetadata, RetryingUpdateSessionMetadata, SessionStateStore, StateStoreRequestRetryManager, StateStoreRequestsRetryRef}
+import org.apache.kyuubi.server.statestore.{RetryingInsertSessionMetadata, RetryingUpdateSessionMetadata, SessionStateStore, StateStoreRequestsRetryRef}
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
@@ -47,7 +47,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
   private val sessionStateStore = new SessionStateStore()
-  private val stateStoreRequestsRetryManager = new StateStoreRequestRetryManager(sessionStateStore)
 
   private var limiter: Option[SessionLimiter] = None
 
@@ -55,7 +54,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(applicationManager)
     addService(credentialsManager)
     addService(sessionStateStore)
-    addService(stateStoreRequestsRetryManager)
     initSessionLimiter(conf)
     super.initialize(conf)
   }
@@ -176,9 +174,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     } catch {
       case e: Throwable =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
-        val ref =
-          stateStoreRequestsRetryManager.getOrCreateStateStoreRequestsRetryRef(
-            metadata.identifier)
+        val ref = getSessionStateStoreRetryRef(metadata.identifier)
         ref.addRetryingSessionStateRequest(RetryingInsertSessionMetadata(metadata))
     }
   }
@@ -189,19 +185,17 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     } catch {
       case e: Throwable =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)
-        val ref =
-          stateStoreRequestsRetryManager.getOrCreateStateStoreRequestsRetryRef(
-            metadata.identifier)
+        val ref = getSessionStateStoreRetryRef(metadata.identifier)
         ref.addRetryingSessionStateRequest(RetryingUpdateSessionMetadata(metadata))
     }
   }
 
   def getSessionStateStoreRetryRef(identifier: String): StateStoreRequestsRetryRef = {
-    stateStoreRequestsRetryManager.getOrCreateStateStoreRequestsRetryRef(identifier)
+    sessionStateStore.getOrCreateRequestsRetryRef(identifier)
   }
 
   def deRegisterSessionStateStoreRetryRef(identifier: String): Unit = {
-    stateStoreRequestsRetryManager.removeStateStoreRequestsRetryRef(identifier)
+    sessionStateStore.deRegisterRequestsRetryRef(identifier)
   }
 
   def getBatchFromStateStore(batchId: String): Batch = {

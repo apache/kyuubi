@@ -27,19 +27,21 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SERVER_STATE_STORE_MAX_AGE
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
-import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
 
-class SessionStateStore extends AbstractService("SessionStateStore") {
+class SessionStateStore extends CompositeService("SessionStateStore") {
   private var _stateStore: StateStore = _
 
   private val stateStoreCleaner =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("session-state-store-cleaner")
 
+  private val stateStoreRequestsRetryManager = new StateStoreRequestRetryManager(this)
+
   override def initialize(conf: KyuubiConf): Unit = {
-    this.conf = conf
     _stateStore = SessionStateStore.createStateStore(conf)
+    addService(stateStoreRequestsRetryManager)
     super.initialize(conf)
   }
 
@@ -155,6 +157,14 @@ class SessionStateStore extends AbstractService("SessionStateStore") {
         interval,
         TimeUnit.MILLISECONDS)
     }
+  }
+
+  def getOrCreateRequestsRetryRef(identifier: String): StateStoreRequestsRetryRef = {
+    stateStoreRequestsRetryManager.getOrCreateStateStoreRequestsRetryRef(identifier)
+  }
+
+  def deRegisterRequestsRetryRef(identifier: String): Unit = {
+    stateStoreRequestsRetryManager.removeStateStoreRequestsRetryRef(identifier)
   }
 }
 
