@@ -21,6 +21,7 @@ import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
@@ -163,8 +164,10 @@ class KyuubiSyncThriftClient private (
       case e: Exception =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      Option(engineAliveThreadPool).foreach(_.shutdown())
-      if (_aliveProbeSessionHandle != null && !remoteEngineBroken) {
+      Option(engineAliveThreadPool).foreach { pool =>
+        ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
+      }
+      if (_aliveProbeSessionHandle != null) {
         engineAliveProbeClient.foreach { client =>
           Utils.tryLogNonFatalError {
             val req = new TCloseSessionReq(_aliveProbeSessionHandle)
