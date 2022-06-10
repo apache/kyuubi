@@ -38,7 +38,6 @@ import { PipeModule } from 'share/pipes/pipe.module';
 
 import { AutoResizeDirective } from './common/editor/auto-resize.directive';
 import { BackpressureBadgeComponent } from './customize/backpressure-badge/backpressure-badge.component';
-import { FlameGraphComponent } from './customize/flame-graph/flame-graph.component';
 
 @NgModule({
   imports: [
@@ -62,7 +61,6 @@ import { FlameGraphComponent } from './customize/flame-graph/flame-graph.compone
     JobChartComponent,
     CheckpointBadgeComponent,
     BackpressureBadgeComponent,
-    FlameGraphComponent,
     AutoResizeDirective
   ],
   exports: [
@@ -75,7 +73,6 @@ import { FlameGraphComponent } from './customize/flame-graph/flame-graph.compone
     JobChartComponent,
     CheckpointBadgeComponent,
     BackpressureBadgeComponent,
-    FlameGraphComponent,
     AutoResizeDirective
   ]
 })
