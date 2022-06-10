@@ -21,15 +21,15 @@ import java.util.{Locale, Properties}
 
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
 
-object JDBCStateStoreConf {
-  final val STATE_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.server.state.store.jdbc.datasource"
+object JDBCMetadataStoreConf {
+  final val METADATA_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.server.metadata.store.jdbc.datasource"
 
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
   /** Get metadata store jdbc datasource properties. */
-  def getStateStoreJDBCDataSourceProperties(conf: KyuubiConf): Properties = {
+  def getMetadataStoreJDBCDataSourceProperties(conf: KyuubiConf): Properties = {
     val datasourceProperties = new Properties()
-    conf.getAllWithPrefix(STATE_STORE_JDBC_DATASOURCE_PREFIX, "").foreach { case (key, value) =>
+    conf.getAllWithPrefix(METADATA_STORE_JDBC_DATASOURCE_PREFIX, "").foreach { case (key, value) =>
       datasourceProperties.put(key, value)
     }
     datasourceProperties

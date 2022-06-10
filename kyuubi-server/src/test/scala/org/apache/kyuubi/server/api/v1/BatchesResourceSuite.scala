@@ -55,7 +55,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     sessionManager.allSessions().foreach { session =>
       sessionManager.closeSession(session.handle)
     }
-    sessionManager.getBatchesFromStateStore(null, null, null, 0, 0, 0, Int.MaxValue).foreach {
+    sessionManager.getBatchesFromMetadataStore(null, null, null, 0, 0, 0, Int.MaxValue).foreach {
       batch =>
         sessionManager.applicationManager.killApplication(None, batch.getId)
         sessionManager.cleanupMetadata(batch.getId)
@@ -407,8 +407,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     sessionManager.insertMetadata(batchMetadata)
     sessionManager.insertMetadata(batchMetadata2)
 
-    assert(sessionManager.getBatchFromStateStore(batchId1).getState.equals("PENDING"))
-    assert(sessionManager.getBatchFromStateStore(batchId2).getState.equals("PENDING"))
+    assert(sessionManager.getBatchFromMetadataStore(batchId1).getState.equals("PENDING"))
+    assert(sessionManager.getBatchFromMetadataStore(batchId2).getState.equals("PENDING"))
 
     val sparkBatchProcessBuilder = new SparkBatchProcessBuilder(
       "kyuubi",
@@ -457,7 +457,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(!session2.batchJobSubmissionOp.builder.processLaunched)
     }
 
-    assert(sessionManager.getBatchesFromStateStore(
+    assert(sessionManager.getBatchesFromMetadataStore(
       "SPARK",
       null,
       null,

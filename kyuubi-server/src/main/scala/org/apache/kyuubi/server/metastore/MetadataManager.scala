@@ -31,7 +31,7 @@ import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
 
-class MetadataManager extends CompositeService("SessionStateStore") {
+class MetadataManager extends CompositeService("MetadataManager") {
   private var _metadataStore: MetadataStore = _
 
   private val identifierRequestsRetryRefMap =
@@ -46,7 +46,7 @@ class MetadataManager extends CompositeService("SessionStateStore") {
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-store-cleaner")
 
   override def initialize(conf: KyuubiConf): Unit = {
-    _metadataStore = MetadataManager.createStateStore(conf)
+    _metadataStore = MetadataManager.createMetadataStore(conf)
     val retryExecutorNumThreads =
       conf.get(KyuubiConf.SERVER_METADATA_STORE_REQUESTS_RETRY_NUM_THREADS)
     requestsRetryExecutor = ThreadUtils.newDaemonFixedThreadPool(
@@ -75,7 +75,7 @@ class MetadataManager extends CompositeService("SessionStateStore") {
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
-        val ref = getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
+        val ref = getOrCreateMetadataStoreRequestsRetryRef(metadata.identifier)
         ref.addRetryingMetadataStoreRequest(InsertMetadata(metadata))
     }
   }
@@ -134,7 +134,7 @@ class MetadataManager extends CompositeService("SessionStateStore") {
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)
-        val ref = getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
+        val ref = getOrCreateMetadataStoreRequestsRetryRef(metadata.identifier)
         ref.addRetryingMetadataStoreRequest(UpdateMetadata(metadata))
     }
   }
@@ -187,17 +187,18 @@ class MetadataManager extends CompositeService("SessionStateStore") {
     }
   }
 
-  def getOrCreateStateStoreRequestsRetryRef(identifier: String): MetadataStoreRequestsRetryRef = {
+  def getOrCreateMetadataStoreRequestsRetryRef(identifier: String)
+      : MetadataStoreRequestsRetryRef = {
     identifierRequestsRetryRefMap.computeIfAbsent(
       identifier,
       identifier => {
         val ref = new MetadataStoreRequestsRetryRef(identifier)
-        debug(s"Created StateStoreRequestsRetryRef for session $identifier.")
+        debug(s"Created MetadataStoreRequestsRetryRef for session $identifier.")
         ref
       })
   }
 
-  def getStateStoreRequestsRetryRef(identifier: String): MetadataStoreRequestsRetryRef = {
+  def getMetadataStoreRequestsRetryRef(identifier: String): MetadataStoreRequestsRetryRef = {
     identifierRequestsRetryRefMap.get(identifier)
   }
 
@@ -233,7 +234,7 @@ class MetadataManager extends CompositeService("SessionStateStore") {
                 } catch {
                   case e: Throwable =>
                     error(
-                      s"Error retrying state store requests for" +
+                      s"Error retrying metadata store requests for" +
                         s" ${ref.identifier}/${ref.retryCount.get()}",
                       e)
                 } finally {
@@ -247,7 +248,7 @@ class MetadataManager extends CompositeService("SessionStateStore") {
               requestsRetryExecutor.submit(retryTask)
             } catch {
               case e: Throwable =>
-                error(s"Error submitting retrying state store requests for ${ref.identifier}", e)
+                error(s"Error submitting retrying metadata store requests for ${ref.identifier}", e)
                 ref.retryingTaskCount.decrementAndGet()
             }
           }
@@ -263,7 +264,7 @@ class MetadataManager extends CompositeService("SessionStateStore") {
 }
 
 object MetadataManager extends Logging {
-  def createStateStore(conf: KyuubiConf): MetadataStore = {
+  def createMetadataStore(conf: KyuubiConf): MetadataStore = {
     val className = conf.get(KyuubiConf.SERVER_METADATA_STORE_CLASS)
     if (className.isEmpty) {
       throw new KyuubiException(

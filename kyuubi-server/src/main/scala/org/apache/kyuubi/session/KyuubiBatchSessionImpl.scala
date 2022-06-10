@@ -75,13 +75,13 @@ class KyuubiBatchSessionImpl(
       batchRequest.getArgs.asScala,
       recoveryMetadata)
 
-  private def waitStateStoreRetryCompletion(): Unit = {
-    sessionManager.getSessionStateStoreRetryRef(batchJobSubmissionOp.batchId).foreach {
-      stateStoreRetryRef =>
-        while (stateStoreRetryRef.hasRemainingRequests()) {
+  private def waitMetadataStoreRetryCompletion(): Unit = {
+    sessionManager.getMetadataStoreRetryRef(batchJobSubmissionOp.batchId).foreach {
+      metadataStoreRetryRef =>
+        while (metadataStoreRetryRef.hasRemainingRequests()) {
           Thread.sleep(300)
         }
-        sessionManager.deRegisterSessionStateStoreRetryRef(batchJobSubmissionOp.batchId)
+        sessionManager.deRegisterMetadataStoreRetryRef(batchJobSubmissionOp.batchId)
     }
   }
 
@@ -129,7 +129,7 @@ class KyuubiBatchSessionImpl(
 
   override def close(): Unit = {
     super.close()
-    waitStateStoreRetryCompletion()
+    waitMetadataStoreRetryCompletion()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
     MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))

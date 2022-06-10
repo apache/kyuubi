@@ -27,24 +27,24 @@ import org.apache.kyuubi.server.metastore.api.Metadata
 import org.apache.kyuubi.session.SessionType
 
 class MetadataStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
-  val sessionStateStore = new MetadataManager()
+  val metadataManager = new MetadataManager()
   val conf = KyuubiConf().set(KyuubiConf.SERVER_METADATA_STORE_REQUESTS_RETRY_INTERVAL, 100L)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    sessionStateStore.initialize(conf)
-    sessionStateStore.start()
+    metadataManager.initialize(conf)
+    metadataManager.start()
   }
 
   override def afterAll(): Unit = {
-    sessionStateStore.getBatches(null, null, null, 0, 0, 0, Int.MaxValue).foreach { batch =>
-      sessionStateStore.cleanupMetadataById(batch.getId)
+    metadataManager.getBatches(null, null, null, 0, 0, 0, Int.MaxValue).foreach { batch =>
+      metadataManager.cleanupMetadataById(batch.getId)
     }
-    sessionStateStore.stop()
+    metadataManager.stop()
     super.afterAll()
   }
 
-  test("retry the state store requests") {
+  test("retry the metadata store requests") {
     val metadata = Metadata(
       identifier = UUID.randomUUID().toString,
       sessionType = SessionType.BATCH,
@@ -61,18 +61,18 @@ class MetadataStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
       createTime = System.currentTimeMillis(),
       engineType = "spark",
       clusterManager = Some("local"))
-    sessionStateStore.insertMetadata(metadata)
+    metadataManager.insertMetadata(metadata)
     intercept[KyuubiException] {
-      sessionStateStore.insertMetadata(metadata, retryOnError = false)
+      metadataManager.insertMetadata(metadata, retryOnError = false)
     }
-    sessionStateStore.insertMetadata(metadata, retryOnError = true)
-    val retryRef = sessionStateStore.getRequestsRetryRef(metadata.identifier)
+    metadataManager.insertMetadata(metadata, retryOnError = true)
+    val retryRef = metadataManager.getMetadataStoreRequestsRetryRef(metadata.identifier)
     val metadataToUpdate = metadata.copy(state = "RUNNING")
-    retryRef.addRetryingSessionStateRequest(UpdateMetadata(metadataToUpdate))
+    retryRef.addRetryingMetadataStoreRequest(UpdateMetadata(metadataToUpdate))
     eventually(timeout(3.seconds)) {
       assert(retryRef.hasRemainingRequests())
       assert(retryRef.retryCount.get() > 1)
-      assert(sessionStateStore.getBatch(metadata.identifier).getState === "PENDING")
+      assert(metadataManager.getBatch(metadata.identifier).getState === "PENDING")
     }
 
     val metadata2 = metadata.copy(identifier = UUID.randomUUID().toString)
@@ -83,14 +83,13 @@ class MetadataStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
       engineState = "app_state",
       state = "RUNNING")
 
-    val retryRef2 = sessionStateStore.requestsRetryManager
-      .getOrCreateStateStoreRequestsRetryRef(metadata2.identifier)
-    retryRef2.addRetryingSessionStateRequest(InsertMetadata(metadata2))
-    retryRef2.addRetryingSessionStateRequest(UpdateMetadata(metadata2ToUpdate))
+    val retryRef2 = metadataManager.getMetadataStoreRequestsRetryRef(metadata2.identifier)
+    retryRef2.addRetryingMetadataStoreRequest(InsertMetadata(metadata2))
+    retryRef2.addRetryingMetadataStoreRequest(UpdateMetadata(metadata2ToUpdate))
 
     eventually(timeout(3.seconds)) {
       assert(!retryRef2.hasRemainingRequests())
-      assert(sessionStateStore.getBatch(metadata2.identifier).getState === "RUNNING")
+      assert(metadataManager.getBatch(metadata2.identifier).getState === "RUNNING")
       assert(retryRef2.retryCount.get() === 1)
       assert(retryRef2.retryingTaskCount.get() === 0)
     }

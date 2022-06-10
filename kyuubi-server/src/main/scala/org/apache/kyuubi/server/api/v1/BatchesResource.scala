@@ -126,7 +126,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       buildBatch(batchSession)
     }.getOrElse {
-      Option(sessionManager.getBatchFromStateStore(batchId)).getOrElse {
+      Option(sessionManager.getBatchFromMetadataStore(batchId)).getOrElse {
         error(s"Invalid batchId: $batchId")
         throw new NotFoundException(s"Invalid batchId: $batchId")
       }
@@ -158,7 +158,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         s"The valid batch state can be one of the following: ${VALID_BATCH_STATES.mkString(",")}")
     }
     val batches =
-      sessionManager.getBatchesFromStateStore(
+      sessionManager.getBatchesFromMetadataStore(
         batchType,
         batchUser,
         batchState,
@@ -199,7 +199,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           throw new NotFoundException(errorMsg)
       }
     }.getOrElse {
-      Option(sessionManager.getBatchSessionMetadata(batchId)).map { metadata =>
+      Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
         if (fe.connectionUrl != metadata.kyuubiInstance) {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           internalRestClient.getBatchLocalLog(userName, batchId, from, size)
@@ -246,7 +246,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       val (success, msg) = batchSession.batchJobSubmissionOp.getKillMessage
       new CloseBatchResponse(success, msg)
     }.getOrElse {
-      Option(sessionManager.getBatchSessionMetadata(batchId)).map { metadata =>
+      Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
         if (userName != metadata.username) {
           throw new NotAllowedException(
             s"$userName is not allowed to close the session belong to ${metadata.username}")

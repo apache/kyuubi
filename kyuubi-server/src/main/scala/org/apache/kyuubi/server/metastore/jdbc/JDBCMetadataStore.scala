@@ -35,7 +35,7 @@ import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metastore.MetadataStore
 import org.apache.kyuubi.server.metastore.api.Metadata
 import org.apache.kyuubi.server.metastore.jdbc.DatabaseType._
-import org.apache.kyuubi.server.metastore.jdbc.JDBCStateStoreConf._
+import org.apache.kyuubi.server.metastore.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.session.SessionType.SessionType
 
@@ -57,7 +57,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     case CUSTOM => new GenericDatabaseDialect
   }
 
-  private val datasourceProperties = JDBCStateStoreConf.getStateStoreJDBCDataSourceProperties(conf)
+  private val datasourceProperties =
+    JDBCMetadataStoreConf.getMetadataStoreJDBCDataSourceProperties(conf)
   private val hikariConfig = new HikariConfig(datasourceProperties)
   hikariConfig.setDriverClassName(driverClass)
   hikariConfig.setJdbcUrl(conf.get(SERVER_METADATA_STORE_JDBC_URL))
@@ -80,9 +81,9 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     val classLoader = getClass.getClassLoader
     val initSchemaStream: Option[InputStream] = dbType match {
       case DERBY =>
-        Option(classLoader.getResourceAsStream("sql/derby/statestore-schema-derby.sql"))
+        Option(classLoader.getResourceAsStream("sql/derby/metadata-store-schema-derby.sql"))
       case MYSQL =>
-        Option(classLoader.getResourceAsStream("sql/mysql/statestore-schema-mysql.sql"))
+        Option(classLoader.getResourceAsStream("sql/mysql/metadata-store-schema-mysql.sql"))
       case CUSTOM => None
     }
     initSchemaStream.foreach { inputStream =>

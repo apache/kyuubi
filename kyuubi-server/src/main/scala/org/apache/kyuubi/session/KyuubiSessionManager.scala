@@ -176,19 +176,19 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.updateMetadata(metadata)
   }
 
-  def getSessionStateStoreRetryRef(identifier: String): Option[MetadataStoreRequestsRetryRef] = {
-    Option(metadataManager.getRequestsRetryRef(identifier))
+  def getMetadataStoreRetryRef(identifier: String): Option[MetadataStoreRequestsRetryRef] = {
+    Option(metadataManager.getMetadataStoreRequestsRetryRef(identifier))
   }
 
-  def deRegisterSessionStateStoreRetryRef(identifier: String): Unit = {
+  def deRegisterMetadataStoreRetryRef(identifier: String): Unit = {
     metadataManager.deRegisterRequestsRetryRef(identifier)
   }
 
-  def getBatchFromStateStore(batchId: String): Batch = {
+  def getBatchFromMetadataStore(batchId: String): Batch = {
     metadataManager.getBatch(batchId)
   }
 
-  def getBatchesFromStateStore(
+  def getBatchesFromMetadataStore(
       batchType: String,
       batchUser: String,
       batchState: String,
@@ -199,7 +199,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
   }
 
-  def getBatchSessionMetadata(batchId: String): Metadata = {
+  def getBatchMetadata(batchId: String): Metadata = {
     metadataManager.getBatchSessionMetadata(batchId)
   }
 
