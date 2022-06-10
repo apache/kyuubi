@@ -27,7 +27,7 @@ import scala.concurrent.duration.Duration
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
-import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.service.CompositeService
@@ -95,14 +95,13 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
     info(s"Opening session for $user@$ipAddress")
-    val engineSessionTag = conf.get(KyuubiReservedKeys.KYUUBI_ENGINE_SESSION_TAG_KEY)
     val session = createSession(protocol, user, password, ipAddress, conf)
     try {
       val handle = session.handle
       session.open()
       setSession(handle, session)
-      info(s"$user's session with $handle${engineSessionTag.map("/" + _).getOrElse("")} is" +
-        s" opened, current opening sessions $getOpenSessionCount")
+      info(s"$user's session with $handle is opened, current opening sessions" +
+        s" $getOpenSessionCount")
       handle
     } catch {
       case e: Exception =>

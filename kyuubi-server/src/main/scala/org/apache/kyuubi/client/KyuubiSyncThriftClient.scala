@@ -29,7 +29,7 @@ import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
-import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOGIN_TIMEOUT, ENGINE_REQUEST_TIMEOUT}
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -141,8 +141,6 @@ class KyuubiSyncThriftClient private (
 
     engineAliveProbeClient.foreach { aliveProbeClient =>
       Utils.tryLogNonFatalError {
-        req.setConfiguration((configs ++
-          Map(KyuubiReservedKeys.KYUUBI_ENGINE_SESSION_TAG_KEY -> "AlivenessProbe")).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle
