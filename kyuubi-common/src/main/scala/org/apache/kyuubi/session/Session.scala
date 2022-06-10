@@ -26,13 +26,13 @@ trait Session {
 
   def protocol: TProtocolVersion
   def handle: SessionHandle
+  def name: String
 
   def conf: Map[String, String]
 
   def user: String
   def password: String
   def ipAddress: String
-  def name: String
 
   def createTime: Long
   def lastAccessTime: Long
