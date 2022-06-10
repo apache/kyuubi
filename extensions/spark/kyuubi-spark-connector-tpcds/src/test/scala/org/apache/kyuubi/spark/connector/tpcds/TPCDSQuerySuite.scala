@@ -81,7 +81,7 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
     new String(Files.readAllBytes(file), StandardCharsets.UTF_8)
   }
 
-  test("run query on sf0") {
+  test("run query on tiny") {
     assume(SparkUtils.isSparkVersionEqualTo("3.2"))
     val viewSuffix = "view";
     val sparkConf = new SparkConf().setMaster("local[*]")
@@ -92,7 +92,7 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE tpcds.tiny")
       queries.map { queryName =>
-        val in = getClass.getClassLoader.getResourceAsStream(s"tpcds_3.2/sql/$queryName.sql")
+        val in = getClass.getClassLoader.getResourceAsStream(s"tpcds_3.2/$queryName.sql")
         val queryContent: String = Source.fromInputStream(in)(Codec.UTF8).mkString
         in.close()
         queryName -> queryContent
@@ -108,13 +108,11 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
           val goldenSchemaFile = Paths.get(
             baseResourcePath.toFile.getAbsolutePath,
             "tpcds_3.2",
-            "schema",
             s"${name.stripSuffix(".sql")}.output.schema")
 
           val goldenHashFile = Paths.get(
             baseResourcePath.toFile.getAbsolutePath,
             "tpcds_3.2",
-            "schema",
             s"${name.stripSuffix(".sql")}.output.hash")
           if (regenerateGoldenFiles) {
             Files.write(goldenSchemaFile, schemaDDL.getBytes)
