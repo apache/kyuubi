@@ -88,19 +88,19 @@ class StateStoreRequestRetryManager private (stateStore: SessionStateStore, name
                 try {
                   info(s"Retrying state store requests for" +
                     s" ${ref.identifier}/${ref.retryCount.incrementAndGet()}")
-                  var stateEvent = ref.stateStoreRequestQueue.peek()
-                  while (stateEvent != null) {
-                    stateEvent match {
-                      case insert: RetryingInsertSessionMetadata =>
+                  var request = ref.stateStoreRequestQueue.peek()
+                  while (request != null) {
+                    request match {
+                      case insert: InsertSessionMetadata =>
                         stateStore.insertMetadata(insert.metadata, retryOnError = false)
 
-                      case update: RetryingUpdateSessionMetadata =>
+                      case update: UpdateSessionMetadata =>
                         stateStore.updateMetadata(update.metadata, retryOnError = false)
 
                       case _ =>
                     }
-                    ref.stateStoreRequestQueue.remove(stateEvent)
-                    stateEvent = ref.stateStoreRequestQueue.peek()
+                    ref.stateStoreRequestQueue.remove(request)
+                    request = ref.stateStoreRequestQueue.peek()
                   }
                 } catch {
                   case e: Throwable =>

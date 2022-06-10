@@ -63,7 +63,7 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
       case e: Throwable if retryOnError =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
         val ref = requestsRetryManager.getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
-        ref.addRetryingSessionStateRequest(RetryingInsertSessionMetadata(metadata))
+        ref.addRetryingSessionStateRequest(InsertSessionMetadata(metadata))
     }
   }
 
@@ -121,7 +121,7 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
       case e: Throwable if retryOnError =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)
         val ref = requestsRetryManager.getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
-        ref.addRetryingSessionStateRequest(RetryingUpdateSessionMetadata(metadata))
+        ref.addRetryingSessionStateRequest(UpdateSessionMetadata(metadata))
     }
   }
 
