@@ -91,10 +91,10 @@ class StateStoreRequestRetryManager private (stateStore: SessionStateStore, name
                   var request = ref.stateStoreRequestQueue.peek()
                   while (request != null) {
                     request match {
-                      case insert: InsertSessionMetadata =>
+                      case insert: InsertMetadata =>
                         stateStore.insertMetadata(insert.metadata, retryOnError = false)
 
-                      case update: UpdateSessionMetadata =>
+                      case update: UpdateMetadata =>
                         stateStore.updateMetadata(update.metadata, retryOnError = false)
 
                       case _ =>

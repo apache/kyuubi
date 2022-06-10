@@ -23,6 +23,6 @@ trait MetadataRequest {
   def metadata: SessionMetadata
 }
 
-case class InsertSessionMetadata(metadata: SessionMetadata) extends MetadataRequest
+case class InsertMetadata(metadata: SessionMetadata) extends MetadataRequest
 
-case class UpdateSessionMetadata(metadata: SessionMetadata) extends MetadataRequest
+case class UpdateMetadata(metadata: SessionMetadata) extends MetadataRequest
