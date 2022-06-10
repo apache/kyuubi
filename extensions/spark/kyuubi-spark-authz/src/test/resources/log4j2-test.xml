@@ -19,26 +19,26 @@
 <!-- Extra logging related to initialization of Log4j. 
  Set to debug or trace if log4j initialization is failing. -->
 <Configuration status="warn">
-  <Appenders>
-   <Console name="STDOUT" target="SYSTEM_OUT">
-     <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c: %m%n"/>
-     <Filters>
-       <ThresholdFilter level="fatal"/>
-       <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
-     </Filters>
-   </Console>
-   <File name="File" fileName="target/unit-tests.log">
-     <PatternLayout pattern="%d{HH:mm:ss.SSS} %t %p %c{1}: %m%n"/>
-     <Filters>
-       <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
-     </Filters>
-   </File>
-  </Appenders>
-  <Loggers>
-    <!-- fixme: using debug will fail `RangerPolicyEngineImpl` init, need to know why -->
-    <Root level="info">
-      <AppenderRef ref="STDOUT"/>
-      <AppenderRef ref="File"/>
-    </Root>
-  </Loggers>
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c: %m%n"/>
+            <Filters>
+                <ThresholdFilter level="fatal"/>
+                <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
+            </Filters>
+        </Console>
+        <File name="File" fileName="target/unit-tests.log">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %t %p %c{1}: %m%n"/>
+            <Filters>
+                <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
+            </Filters>
+        </File>
+    </Appenders>
+    <Loggers>
+        <!-- fixme: using debug will fail `RangerPolicyEngineImpl` init, need to know why -->
+        <Root level="info">
+            <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="File"/>
+        </Root>
+    </Loggers>
 </Configuration>
