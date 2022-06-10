@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore.jdbc
+package org.apache.kyuubi.server.metadatastore.jdbc
 
 import java.util.{Locale, Properties}
 
@@ -26,7 +26,7 @@ object JDBCStateStoreConf {
 
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
-  /** Get state store jdbc datasource properties. */
+  /** Get metadata store jdbc datasource properties. */
   def getStateStoreJDBCDataSourceProperties(conf: KyuubiConf): Properties = {
     val datasourceProperties = new Properties()
     conf.getAllWithPrefix(STATE_STORE_JDBC_DATASOURCE_PREFIX, "").foreach { case (key, value) =>
@@ -35,9 +35,9 @@ object JDBCStateStoreConf {
     datasourceProperties
   }
 
-  val SERVER_STATE_STORE_JDBC_DATABASE_TYPE: ConfigEntry[String] =
+  val SERVER_METADATA_STORE_JDBC_DATABASE_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.database.type")
-      .doc("The database type for server jdbc state store.<ul>" +
+      .doc("The database type for server jdbc metadata store.<ul>" +
         " <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
         " <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li>" +
         " <li>CUSTOM: User-defined database type, need specify the jdbc driver in addition.</li>" +
@@ -49,39 +49,39 @@ object JDBCStateStoreConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .createWithDefault("DERBY")
 
-  val SERVER_STATE_STORE_JDBC_DATABASE_SCHEMA_INIT: ConfigEntry[Boolean] =
+  val SERVER_METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT: ConfigEntry[Boolean] =
     buildConf("kyuubi.server.state.store.jdbc.database.schema.init")
-      .doc("Whether to init the jdbc state store database schema.")
+      .doc("Whether to init the jdbc metadata store database schema.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
 
-  val SERVER_STATE_STORE_JDBC_DRIVER: OptionalConfigEntry[String] =
+  val SERVER_METADATA_STORE_JDBC_DRIVER: OptionalConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.driver")
-      .doc("JDBC driver class name for server jdbc state store.")
+      .doc("JDBC driver class name for server jdbc metadata store.")
       .version("1.6.0")
       .stringConf
       .createOptional
 
-  val SERVER_STATE_STORE_JDBC_URL: ConfigEntry[String] =
+  val SERVER_METADATA_STORE_JDBC_URL: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.url")
-      .doc("The jdbc url for server jdbc state store. By defaults, it is a DERBY in-memory" +
+      .doc("The jdbc url for server jdbc metadata store. By defaults, it is a DERBY in-memory" +
         " database url, and the state information is not shared across kyuubi instances. To" +
         " enable multiple kyuubi instances high available, please specify a production jdbc url.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("jdbc:derby:memory:kyuubi_state_store_db;create=true")
 
-  val SERVER_STATE_STORE_JDBC_USER: ConfigEntry[String] =
+  val SERVER_METADATA_STORE_JDBC_USER: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.user")
-      .doc("The username for server jdbc state store.")
+      .doc("The username for server jdbc metadata store.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("")
 
-  val SERVER_STATE_STORE_JDBC_PASSWORD: ConfigEntry[String] =
+  val SERVER_METADATA_STORE_JDBC_PASSWORD: ConfigEntry[String] =
     buildConf("kyuubi.server.state.store.jdbc.password")
-      .doc("The password for server jdbc state store.")
+      .doc("The password for server jdbc metadata store.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("")

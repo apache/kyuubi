@@ -31,7 +31,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
+import org.apache.kyuubi.server.metadatastore.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
 
 class KyuubiBatchSessionImpl(
@@ -42,7 +42,7 @@ class KyuubiBatchSessionImpl(
     override val sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
     batchRequest: BatchRequest,
-    recoveryMetadata: Option[SessionMetadata] = None)
+    recoveryMetadata: Option[Metadata] = None)
   extends KyuubiSession(
     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
     user,
@@ -99,7 +99,7 @@ class KyuubiBatchSessionImpl(
     }
 
     if (recoveryMetadata.isEmpty) {
-      val metaData = SessionMetadata(
+      val metaData = Metadata(
         identifier = handle.identifier.toString,
         sessionType = sessionType,
         // TODO: support real user

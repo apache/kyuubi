@@ -15,21 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore
+package org.apache.kyuubi.server.metadatastore.jdbc
 
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicInteger
+object DatabaseType extends Enumeration {
+  type DatabaseType = Value
 
-class StateStoreRequestsRetryRef(val identifier: String) {
-  private[statestore] val retryCount = new AtomicInteger(0)
-
-  private[statestore] val retryingTaskCount = new AtomicInteger(0)
-
-  private[statestore] val stateStoreRequestQueue = new ConcurrentLinkedQueue[MetadataRequest]()
-
-  def addRetryingSessionStateRequest(event: MetadataRequest): Unit = {
-    stateStoreRequestQueue.add(event)
-  }
-
-  def hasRemainingRequests(): Boolean = !stateStoreRequestQueue.isEmpty
+  val DERBY, MYSQL, CUSTOM = Value
 }

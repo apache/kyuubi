@@ -37,7 +37,7 @@ import org.apache.kyuubi.engine.spark.{SparkBatchProcessBuilder, SparkProcessBui
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
+import org.apache.kyuubi.server.metadatastore.api.Metadata
 import org.apache.kyuubi.service.authentication.{KyuubiAuthenticationFactory, UserDefinedEngineSecuritySecretProvider}
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 
@@ -382,7 +382,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val batchId1 = UUID.randomUUID().toString
     val batchId2 = UUID.randomUUID().toString
 
-    val batchMetadata = SessionMetadata(
+    val batchMetadata = Metadata(
       identifier = batchId1,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",
@@ -428,7 +428,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(applicationStatus.isDefined)
     }
 
-    val metadataToUpdate = SessionMetadata(
+    val metadataToUpdate = Metadata(
       identifier = batchId2,
       state = OperationState.RUNNING.toString,
       engineId = applicationStatus.get.get(APP_ID_KEY).orNull,
@@ -469,7 +469,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("get local log internal redirection") {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
-    val metadata = SessionMetadata(
+    val metadata = Metadata(
       identifier = UUID.randomUUID().toString,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",
@@ -519,7 +519,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("delete batch internal redirection") {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
-    val metadata = SessionMetadata(
+    val metadata = Metadata(
       identifier = UUID.randomUUID().toString,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",

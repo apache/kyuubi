@@ -38,7 +38,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
+import org.apache.kyuubi.server.metadatastore.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -62,7 +62,7 @@ class BatchJobSubmission(
     className: String,
     batchConf: Map[String, String],
     batchArgs: Seq[String],
-    recoveryMetadata: Option[SessionMetadata])
+    recoveryMetadata: Option[Metadata])
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
 
   override def statement: String = "BATCH_JOB_SUBMISSION"
@@ -120,7 +120,7 @@ class BatchJobSubmission(
       }
 
     val engineAppStatus = applicationStatus.getOrElse(Map.empty)
-    val metadataToUpdate = SessionMetadata(
+    val metadataToUpdate = Metadata(
       identifier = batchId,
       state = state.toString,
       engineId = engineAppStatus.get(APP_ID_KEY).orNull,

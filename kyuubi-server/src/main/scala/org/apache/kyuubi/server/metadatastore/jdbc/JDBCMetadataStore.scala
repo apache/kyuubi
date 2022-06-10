@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore.jdbc
+package org.apache.kyuubi.server.metadatastore.jdbc
 
 import java.io.{BufferedReader, InputStream, InputStreamReader}
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException}
@@ -32,18 +32,18 @@ import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.server.statestore.StateStore
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
-import org.apache.kyuubi.server.statestore.jdbc.DatabaseType._
-import org.apache.kyuubi.server.statestore.jdbc.JDBCStateStoreConf._
+import org.apache.kyuubi.server.metadatastore.MetadataStore
+import org.apache.kyuubi.server.metadatastore.api.Metadata
+import org.apache.kyuubi.server.metadatastore.jdbc.DatabaseType._
+import org.apache.kyuubi.server.metadatastore.jdbc.JDBCStateStoreConf._
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.session.SessionType.SessionType
 
-class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
-  import JDBCStateStore._
+class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
+  import JDBCMetadataStore._
 
-  private val dbType = DatabaseType.withName(conf.get(SERVER_STATE_STORE_JDBC_DATABASE_TYPE))
-  private val driverClassOpt = conf.get(SERVER_STATE_STORE_JDBC_DRIVER)
+  private val dbType = DatabaseType.withName(conf.get(SERVER_METADATA_STORE_JDBC_DATABASE_TYPE))
+  private val driverClassOpt = conf.get(SERVER_METADATA_STORE_JDBC_DRIVER)
   private val driverClass = dbType match {
     case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
     case MYSQL => driverClassOpt.getOrElse("com.mysql.jdbc.Driver")
@@ -60,9 +60,9 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   private val datasourceProperties = JDBCStateStoreConf.getStateStoreJDBCDataSourceProperties(conf)
   private val hikariConfig = new HikariConfig(datasourceProperties)
   hikariConfig.setDriverClassName(driverClass)
-  hikariConfig.setJdbcUrl(conf.get(SERVER_STATE_STORE_JDBC_URL))
-  hikariConfig.setUsername(conf.get(SERVER_STATE_STORE_JDBC_USER))
-  hikariConfig.setPassword(conf.get(SERVER_STATE_STORE_JDBC_PASSWORD))
+  hikariConfig.setJdbcUrl(conf.get(SERVER_METADATA_STORE_JDBC_URL))
+  hikariConfig.setUsername(conf.get(SERVER_METADATA_STORE_JDBC_USER))
+  hikariConfig.setPassword(conf.get(SERVER_METADATA_STORE_JDBC_PASSWORD))
   hikariConfig.setPoolName("kyuubi-state-store-pool")
 
   @VisibleForTesting
@@ -72,7 +72,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   private val terminalStates =
     OperationState.terminalStates.map(x => s"'${x.toString}'").mkString(", ")
 
-  if (conf.get(SERVER_STATE_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
+  if (conf.get(SERVER_METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
     initSchema()
   }
 
@@ -107,7 +107,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     hikariDataSource.close()
   }
 
-  override def insertMetadata(metadata: SessionMetadata): Unit = {
+  override def insertMetadata(metadata: Metadata): Unit = {
     val query =
       s"""
          |INSERT INTO $METADATA_TABLE(
@@ -152,7 +152,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     }
   }
 
-  override def getMetadata(identifier: String, stateOnly: Boolean): SessionMetadata = {
+  override def getMetadata(identifier: String, stateOnly: Boolean): Metadata = {
     val query =
       if (stateOnly) {
         s"SELECT $METADATA_STATE_ONLY_COLUMNS FROM $METADATA_TABLE WHERE identifier = ?"
@@ -177,7 +177,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
       endTime: Long,
       from: Int,
       size: Int,
-      stateOnly: Boolean): Seq[SessionMetadata] = {
+      stateOnly: Boolean): Seq[Metadata] = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
     if (stateOnly) {
@@ -227,7 +227,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     }
   }
 
-  override def updateMetadata(metadata: SessionMetadata): Unit = {
+  override def updateMetadata(metadata: Metadata): Unit = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
 
@@ -288,9 +288,9 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
     }
   }
 
-  private def buildMetadata(resultSet: ResultSet, stateOnly: Boolean): Seq[SessionMetadata] = {
+  private def buildMetadata(resultSet: ResultSet, stateOnly: Boolean): Seq[Metadata] = {
     try {
-      val metadataList = ListBuffer[SessionMetadata]()
+      val metadataList = ListBuffer[Metadata]()
       while (resultSet.next()) {
         val identifier = resultSet.getString("identifier")
         val sessionType = SessionType.withName(resultSet.getString("session_type"))
@@ -321,7 +321,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
           requestConf = string2Map(resultSet.getString("request_conf"))
           requestArgs = string2Seq(resultSet.getString("request_args"))
         }
-        val metadata = SessionMetadata(
+        val metadata = Metadata(
           identifier = identifier,
           sessionType = sessionType,
           realUser = realUser,
@@ -444,7 +444,7 @@ class JDBCStateStore(conf: KyuubiConf) extends StateStore with Logging {
   }
 }
 
-object JDBCStateStore {
+object JDBCMetadataStore {
   private val METADATA_TABLE = "session_metadata"
   private val METADATA_STATE_ONLY_COLUMNS = Seq(
     "identifier",

@@ -28,7 +28,7 @@ import org.eclipse.jetty.servlet.FilterHolder
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT, SERVER_STATE_STORE_SESSIONS_RECOVERY_NUM_THREADS}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT, SERVER_METADATA_STORE_SESSIONS_RECOVERY_NUM_THREADS}
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.JettyServer
@@ -79,7 +79,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   @VisibleForTesting
   private[kyuubi] def recoverBatchSessions(): Unit = {
-    val recoveryNumThreads = conf.get(SERVER_STATE_STORE_SESSIONS_RECOVERY_NUM_THREADS)
+    val recoveryNumThreads = conf.get(SERVER_METADATA_STORE_SESSIONS_RECOVERY_NUM_THREADS)
     val batchRecoveryExecutor =
       ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
     try {

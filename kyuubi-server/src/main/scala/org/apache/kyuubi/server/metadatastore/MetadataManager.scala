@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore
+package org.apache.kyuubi.server.metadatastore
 
 import java.util.concurrent.TimeUnit
 
@@ -26,42 +26,42 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.SERVER_STATE_STORE_MAX_AGE
+import org.apache.kyuubi.config.KyuubiConf.SERVER_METADATA_STORE_MAX_AGE
 import org.apache.kyuubi.engine.ApplicationOperation._
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
+import org.apache.kyuubi.server.metadatastore.api.Metadata
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
 
-class SessionStateStore extends CompositeService("SessionStateStore") {
-  private var _stateStore: StateStore = _
+class MetadataManager extends CompositeService("SessionStateStore") {
+  private var _metadataStore: MetadataStore = _
 
-  private val stateStoreCleaner =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor("session-state-store-cleaner")
+  private val metadataStoreCleaner =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-store-cleaner")
 
   @VisibleForTesting
-  private[statestore] val requestsRetryManager = new StateStoreRequestRetryManager(this)
+  private[metadatastore] val requestsRetryManager = new StateStoreRequestRetryManager(this)
 
   override def initialize(conf: KyuubiConf): Unit = {
-    _stateStore = SessionStateStore.createStateStore(conf)
+    _metadataStore = MetadataManager.createStateStore(conf)
     addService(requestsRetryManager)
     super.initialize(conf)
   }
 
   override def start(): Unit = {
     super.start()
-    startStateStoreCleaner()
+    startMetadataStoreCleaner()
   }
 
   override def stop(): Unit = {
-    ThreadUtils.shutdown(stateStoreCleaner)
-    _stateStore.close()
+    ThreadUtils.shutdown(metadataStoreCleaner)
+    _metadataStore.close()
     super.stop()
   }
 
-  def insertMetadata(metadata: SessionMetadata, retryOnError: Boolean = true): Unit = {
+  def insertMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
     try {
-      _stateStore.insertMetadata(metadata)
+      _metadataStore.insertMetadata(metadata)
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
@@ -74,8 +74,8 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
     Option(getBatchSessionMetadata(batchId)).map(buildBatch).orNull
   }
 
-  def getBatchSessionMetadata(batchId: String): SessionMetadata = {
-    Option(_stateStore.getMetadata(batchId, true)).filter(_.sessionType == SessionType.BATCH).orNull
+  def getBatchSessionMetadata(batchId: String): Metadata = {
+    Option(_metadataStore.getMetadata(batchId, true)).filter(_.sessionType == SessionType.BATCH).orNull
   }
 
   def getBatches(
@@ -86,7 +86,7 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
       endTime: Long,
       from: Int,
       size: Int): Seq[Batch] = {
-    _stateStore.getMetadataList(
+    _metadataStore.getMetadataList(
       SessionType.BATCH,
       batchType,
       batchUser,
@@ -103,8 +103,8 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
       state: String,
       kyuubiInstance: String,
       from: Int,
-      size: Int): Seq[SessionMetadata] = {
-    _stateStore.getMetadataList(
+      size: Int): Seq[Metadata] = {
+    _metadataStore.getMetadataList(
       SessionType.BATCH,
       null,
       null,
@@ -117,9 +117,9 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
       false)
   }
 
-  def updateMetadata(metadata: SessionMetadata, retryOnError: Boolean = true): Unit = {
+  def updateMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
     try {
-      _stateStore.updateMetadata(metadata)
+      _metadataStore.updateMetadata(metadata)
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)
@@ -129,10 +129,10 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
   }
 
   def cleanupMetadataById(batchId: String): Unit = {
-    _stateStore.cleanupMetadataByIdentifier(batchId)
+    _metadataStore.cleanupMetadataByIdentifier(batchId)
   }
 
-  private def buildBatch(batchMetadata: SessionMetadata): Batch = {
+  private def buildBatch(batchMetadata: Metadata): Batch = {
     val batchAppInfo = Map(
       APP_ID_KEY -> Option(batchMetadata.engineId),
       APP_NAME_KEY -> Option(batchMetadata.engineName),
@@ -154,21 +154,21 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
       batchMetadata.endTime)
   }
 
-  private def startStateStoreCleaner(): Unit = {
-    val cleanerEnabled = conf.get(KyuubiConf.SERVER_STATE_STORE_CLEANER_ENABLED)
-    val stateMaxAge = conf.get(SERVER_STATE_STORE_MAX_AGE)
+  private def startMetadataStoreCleaner(): Unit = {
+    val cleanerEnabled = conf.get(KyuubiConf.SERVER_METADATA_STORE_CLEANER_ENABLED)
+    val stateMaxAge = conf.get(SERVER_METADATA_STORE_MAX_AGE)
 
     if (cleanerEnabled) {
-      val interval = conf.get(KyuubiConf.SERVER_STATE_STORE_CLEANER_INTERVAL)
+      val interval = conf.get(KyuubiConf.SERVER_METADATA_STORE_CLEANER_INTERVAL)
       val cleanerTask: Runnable = () => {
         try {
-          _stateStore.cleanupMetadataByAge(stateMaxAge)
+          _metadataStore.cleanupMetadataByAge(stateMaxAge)
         } catch {
           case e: Throwable => error("Error cleaning up the metadata by age", e)
         }
       }
 
-      stateStoreCleaner.scheduleWithFixedDelay(
+      metadataStoreCleaner.scheduleWithFixedDelay(
         cleanerTask,
         interval,
         interval,
@@ -185,13 +185,13 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
   }
 }
 
-object SessionStateStore extends Logging {
-  def createStateStore(conf: KyuubiConf): StateStore = {
-    val className = conf.get(KyuubiConf.SERVER_STATE_STORE_CLASS)
+object MetadataManager extends Logging {
+  def createStateStore(conf: KyuubiConf): MetadataStore = {
+    val className = conf.get(KyuubiConf.SERVER_METADATA_STORE_CLASS)
     if (className.isEmpty) {
       throw new KyuubiException(
-        s"${KyuubiConf.SERVER_STATE_STORE_CLASS.key} cannot be empty.")
+        s"${KyuubiConf.SERVER_METADATA_STORE_CLASS.key} cannot be empty.")
     }
-    ClassUtils.createInstance(className, classOf[StateStore], conf)
+    ClassUtils.createInstance(className, classOf[MetadataStore], conf)
   }
 }

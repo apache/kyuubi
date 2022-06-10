@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore
+package org.apache.kyuubi.server.metadatastore
 
 import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
 
@@ -26,10 +26,10 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.ThreadUtils
 
-class StateStoreRequestRetryManager private (stateStore: SessionStateStore, name: String)
+class StateStoreRequestRetryManager private (stateStore: MetadataManager, name: String)
   extends AbstractService(name) with Logging {
 
-  def this(stateStore: SessionStateStore) =
+  def this(stateStore: MetadataManager) =
     this(stateStore, classOf[StateStoreRequestRetryManager].getSimpleName)
 
   private val identifierRequestsRetryRefMap =
@@ -41,7 +41,7 @@ class StateStoreRequestRetryManager private (stateStore: SessionStateStore, name
   private var retryExecutor: ThreadPoolExecutor = _
 
   override def initialize(conf: KyuubiConf): Unit = {
-    val retryExecutorNumThreads = conf.get(KyuubiConf.SERVER_STATE_STORE_REQUESTS_RETRY_NUM_THREADS)
+    val retryExecutorNumThreads = conf.get(KyuubiConf.SERVER_METADATA_STORE_REQUESTS_RETRY_NUM_THREADS)
     retryExecutor = ThreadUtils.newDaemonFixedThreadPool(
       retryExecutorNumThreads,
       "state-store-requests-retry-executor")
@@ -78,7 +78,7 @@ class StateStoreRequestRetryManager private (stateStore: SessionStateStore, name
   }
 
   private def startStateStoreRequestsRetryTrigger(): Unit = {
-    val interval = conf.get(KyuubiConf.SERVER_STATE_STORE_REQUESTS_RETRY_INTERVAL)
+    val interval = conf.get(KyuubiConf.SERVER_METADATA_STORE_REQUESTS_RETRY_INTERVAL)
     val triggerTask = new Runnable {
       override def run(): Unit = {
         identifierRequestsRetryRefMap.values().asScala.foreach { ref =>

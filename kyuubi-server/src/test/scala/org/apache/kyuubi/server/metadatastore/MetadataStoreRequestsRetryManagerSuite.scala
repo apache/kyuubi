@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore
+package org.apache.kyuubi.server.metadatastore
 
 import java.util.UUID
 
@@ -23,12 +23,12 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
+import org.apache.kyuubi.server.metadatastore.api.Metadata
 import org.apache.kyuubi.session.SessionType
 
-class StateStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
-  val sessionStateStore = new SessionStateStore()
-  val conf = KyuubiConf().set(KyuubiConf.SERVER_STATE_STORE_REQUESTS_RETRY_INTERVAL, 100L)
+class MetadataStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
+  val sessionStateStore = new MetadataManager()
+  val conf = KyuubiConf().set(KyuubiConf.SERVER_METADATA_STORE_REQUESTS_RETRY_INTERVAL, 100L)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -45,7 +45,7 @@ class StateStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
   }
 
   test("retry the state store requests") {
-    val metadata = SessionMetadata(
+    val metadata = Metadata(
       identifier = UUID.randomUUID().toString,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",

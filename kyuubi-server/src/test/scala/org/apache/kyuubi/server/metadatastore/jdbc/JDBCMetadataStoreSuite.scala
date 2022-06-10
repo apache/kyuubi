@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore.jdbc
+package org.apache.kyuubi.server.metadatastore.jdbc
 
 import java.util.UUID
 
@@ -24,18 +24,18 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
-import org.apache.kyuubi.server.statestore.jdbc.JDBCStateStoreConf._
+import org.apache.kyuubi.server.metadatastore.api.Metadata
+import org.apache.kyuubi.server.metadatastore.jdbc.JDBCStateStoreConf._
 import org.apache.kyuubi.session.SessionType
 
-class JDBCStateStoreSuite extends KyuubiFunSuite {
+class JDBCMetadataStoreSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
-    .set(SERVER_STATE_STORE_JDBC_DATABASE_TYPE, DatabaseType.DERBY.toString)
-    .set(SERVER_STATE_STORE_JDBC_DATABASE_SCHEMA_INIT, true)
+    .set(SERVER_METADATA_STORE_JDBC_DATABASE_TYPE, DatabaseType.DERBY.toString)
+    .set(SERVER_METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT, true)
     .set(s"$STATE_STORE_JDBC_DATASOURCE_PREFIX.connectionTimeout", "3000")
     .set(s"$STATE_STORE_JDBC_DATASOURCE_PREFIX.maximumPoolSize", "99")
     .set(s"$STATE_STORE_JDBC_DATASOURCE_PREFIX.idleTimeout", "60000")
-  private val jdbcStateStore = new JDBCStateStore(conf)
+  private val jdbcStateStore = new JDBCMetadataStore(conf)
 
   override def afterAll(): Unit = {
     super.afterAll()
@@ -62,10 +62,10 @@ class JDBCStateStoreSuite extends KyuubiFunSuite {
     assert(jdbcStateStore.hikariDataSource.getIdleTimeout == 60000)
   }
 
-  test("jdbc state store") {
+  test("jdbc metadata store") {
     val batchId = UUID.randomUUID().toString
     val kyuubiInstance = "localhost:10099"
-    var batchMetadata = SessionMetadata(
+    var batchMetadata = Metadata(
       identifier = batchId,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",
