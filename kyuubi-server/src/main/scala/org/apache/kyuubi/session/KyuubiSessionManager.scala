@@ -34,7 +34,7 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.statestore.{RetryingInsertSessionMetadata, RetryingUpdateSessionMetadata, SessionStateStore, StateStoreRequestsRetryRef}
+import org.apache.kyuubi.server.statestore.{SessionStateStore, StateStoreRequestsRetryRef}
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
@@ -169,29 +169,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def insertMetadata(metadata: SessionMetadata): Unit = {
-    try {
-      sessionStateStore.insertMetadata(metadata)
-    } catch {
-      case e: Throwable =>
-        error(s"Error inserting metadata for session ${metadata.identifier}", e)
-        val ref = getSessionStateStoreRetryRef(metadata.identifier)
-        ref.addRetryingSessionStateRequest(RetryingInsertSessionMetadata(metadata))
-    }
+    sessionStateStore.insertMetadata(metadata)
   }
 
   def updateMetadata(metadata: SessionMetadata): Unit = {
-    try {
-      sessionStateStore.updateMetadata(metadata)
-    } catch {
-      case e: Throwable =>
-        error(s"Error updating metadata for session ${metadata.identifier}", e)
-        val ref = getSessionStateStoreRetryRef(metadata.identifier)
-        ref.addRetryingSessionStateRequest(RetryingUpdateSessionMetadata(metadata))
-    }
+    sessionStateStore.updateMetadata(metadata)
   }
 
-  def getSessionStateStoreRetryRef(identifier: String): StateStoreRequestsRetryRef = {
-    sessionStateStore.getOrCreateRequestsRetryRef(identifier)
+  def getSessionStateStoreRetryRef(identifier: String): Option[StateStoreRequestsRetryRef] = {
+    sessionStateStore.getRequestsRetryRef(identifier)
   }
 
   def deRegisterSessionStateStoreRetryRef(identifier: String): Unit = {

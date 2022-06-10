@@ -69,6 +69,10 @@ class StateStoreRequestRetryManager private (stateStore: SessionStateStore, name
       })
   }
 
+  def getStateStoreRequestsRetryRef(identifier: String): StateStoreRequestsRetryRef = {
+    identifierRequestsRetryRefMap.get(identifier)
+  }
+
   def removeStateStoreRequestsRetryRef(identifier: String): Unit = {
     identifierRequestsRetryRefMap.remove(identifier)
   }
@@ -88,10 +92,10 @@ class StateStoreRequestRetryManager private (stateStore: SessionStateStore, name
                   while (stateEvent != null) {
                     stateEvent match {
                       case insert: RetryingInsertSessionMetadata =>
-                        stateStore.insertMetadata(insert.metadata)
+                        stateStore.insertMetadata(insert.metadata, retryOnError = false)
 
                       case update: RetryingUpdateSessionMetadata =>
-                        stateStore.updateMetadata(update.metadata)
+                        stateStore.updateMetadata(update.metadata, retryOnError = false)
 
                       case _ =>
                     }

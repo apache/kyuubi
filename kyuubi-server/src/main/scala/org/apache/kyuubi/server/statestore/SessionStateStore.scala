@@ -37,11 +37,11 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
   private val stateStoreCleaner =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("session-state-store-cleaner")
 
-  private val stateStoreRequestsRetryManager = new StateStoreRequestRetryManager(this)
+  private val requestsRetryManager = new StateStoreRequestRetryManager(this)
 
   override def initialize(conf: KyuubiConf): Unit = {
     _stateStore = SessionStateStore.createStateStore(conf)
-    addService(stateStoreRequestsRetryManager)
+    addService(requestsRetryManager)
     super.initialize(conf)
   }
 
@@ -56,8 +56,15 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
     super.stop()
   }
 
-  def insertMetadata(metadata: SessionMetadata): Unit = {
-    _stateStore.insertMetadata(metadata)
+  def insertMetadata(metadata: SessionMetadata, retryOnError: Boolean = true): Unit = {
+    try {
+      _stateStore.insertMetadata(metadata)
+    } catch {
+      case e: Throwable if retryOnError =>
+        error(s"Error inserting metadata for session ${metadata.identifier}", e)
+        val ref = requestsRetryManager.getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
+        ref.addRetryingSessionStateRequest(RetryingInsertSessionMetadata(metadata))
+    }
   }
 
   def getBatch(batchId: String): Batch = {
@@ -107,8 +114,15 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
       false)
   }
 
-  def updateMetadata(metadata: SessionMetadata): Unit = {
-    _stateStore.updateMetadata(metadata)
+  def updateMetadata(metadata: SessionMetadata, retryOnError: Boolean = true): Unit = {
+    try {
+      _stateStore.updateMetadata(metadata)
+    } catch {
+      case e: Throwable if retryOnError =>
+        error(s"Error updating metadata for session ${metadata.identifier}", e)
+        val ref = requestsRetryManager.getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
+        ref.addRetryingSessionStateRequest(RetryingUpdateSessionMetadata(metadata))
+    }
   }
 
   def cleanupMetadataById(batchId: String): Unit = {
@@ -159,12 +173,12 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
     }
   }
 
-  def getOrCreateRequestsRetryRef(identifier: String): StateStoreRequestsRetryRef = {
-    stateStoreRequestsRetryManager.getOrCreateStateStoreRequestsRetryRef(identifier)
+  def getRequestsRetryRef(identifier: String): Option[StateStoreRequestsRetryRef] = {
+    Option(requestsRetryManager.getStateStoreRequestsRetryRef(identifier))
   }
 
   def deRegisterRequestsRetryRef(identifier: String): Unit = {
-    stateStoreRequestsRetryManager.removeStateStoreRequestsRetryRef(identifier)
+    requestsRetryManager.removeStateStoreRequestsRetryRef(identifier)
   }
 }
 

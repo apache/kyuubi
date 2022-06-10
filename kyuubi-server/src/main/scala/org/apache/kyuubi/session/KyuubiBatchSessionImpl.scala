@@ -76,12 +76,13 @@ class KyuubiBatchSessionImpl(
       recoveryMetadata)
 
   private def waitStateStoreRetryCompletion(): Unit = {
-    val stateStoreRetryRef =
-      sessionManager.getSessionStateStoreRetryRef(batchJobSubmissionOp.batchId)
-    while (stateStoreRetryRef.hasRemainingRequests()) {
-      Thread.sleep(300)
+    sessionManager.getSessionStateStoreRetryRef(batchJobSubmissionOp.batchId).foreach {
+      stateStoreRetryRef =>
+        while (stateStoreRetryRef.hasRemainingRequests()) {
+          Thread.sleep(300)
+        }
+        sessionManager.deRegisterSessionStateStoreRetryRef(batchJobSubmissionOp.batchId)
     }
-    sessionManager.deRegisterSessionStateStoreRetryRef(batchJobSubmissionOp.batchId)
   }
 
   private val sessionEvent = KyuubiSessionEvent(this)
