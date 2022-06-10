@@ -161,7 +161,7 @@ class KyuubiSyncThriftClient private (
       case e: Exception =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      Option(engineAliveThreadPool).foreach(_.shutdown())
+      Option(engineAliveThreadPool).foreach(ThreadUtils.shutdown(_))
       if (_aliveProbeSessionHandle != null && !remoteEngineBroken) {
         engineAliveProbeClient.foreach { client =>
           Utils.tryLogNonFatalError {
