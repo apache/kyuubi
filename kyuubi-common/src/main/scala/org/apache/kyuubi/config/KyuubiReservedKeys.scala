@@ -21,6 +21,7 @@ object KyuubiReservedKeys {
   final val KYUUBI_SESSION_USER_KEY = "kyuubi.session.user"
   final val KYUUBI_STATEMENT_ID_KEY = "kyuubi.statement.id"
   final val KYUUBI_ENGINE_SUBMIT_TIME_KEY = "kyuubi.engine.submit.time"
+  final val KYUUBI_ENGINE_SESSION_TAG_KEY = "kyuubi.engine.session.tag"
   final val KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID =
     "kyuubi.session.engine.launch.handle.guid"
   final val KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET =

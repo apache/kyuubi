@@ -19,21 +19,23 @@ package org.apache.kyuubi.client
 
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
+
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
+
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.transport.TSocket
+
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOGIN_TIMEOUT, ENGINE_REQUEST_TIMEOUT}
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
-
-import scala.concurrent.duration.Duration
 
 class KyuubiSyncThriftClient private (
     protocol: TProtocol,
@@ -139,6 +141,8 @@ class KyuubiSyncThriftClient private (
 
     engineAliveProbeClient.foreach { aliveProbeClient =>
       Utils.tryLogNonFatalError {
+        req.setConfiguration((configs ++
+          Map(KyuubiReservedKeys.KYUUBI_ENGINE_SESSION_TAG_KEY -> "AlivenessProbe")).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle
