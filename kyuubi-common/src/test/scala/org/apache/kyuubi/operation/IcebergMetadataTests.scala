@@ -35,7 +35,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin {
 
   test("get schemas") {
     val dbs = Seq("db1", "db2", "db33", "db44")
-    val dbDflts = Seq("default", "global_temp")
+    val dbDflts = Seq("default")
 
     withDatabases(dbs: _*) { statement =>
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
@@ -50,7 +50,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin {
         matchAllPatterns foreach { pattern =>
           checkGetSchemas(
             metaData.getSchemas(cg, pattern),
-            dbs ++ Seq("global_temp"),
+            dbs,
             catalog)
         }
       }
@@ -86,7 +86,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin {
         matchAllPatterns foreach { pattern =>
           checkGetSchemas(
             metaData.getSchemas(cg, pattern),
-            dbs ++ Seq("global_temp", "a", "db1", "db1.db2"),
+            dbs ++ Seq("a", "db1", "db1.db2"),
             catalog)
         }
       }
