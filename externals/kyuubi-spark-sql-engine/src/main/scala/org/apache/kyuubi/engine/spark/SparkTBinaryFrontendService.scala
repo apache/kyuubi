@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import scala.collection.JavaConverters._
-
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
@@ -26,7 +24,7 @@ import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TR
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiReservedKeys
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService._
@@ -65,10 +63,8 @@ class SparkTBinaryFrontendService(
       respConfiguration.put("kyuubi.engine.id", sc.applicationId)
 
       if (req.getConfiguration != null) {
-        req.getConfiguration.asScala.get(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY).filter(
-          _.nonEmpty).foreach { credentials =>
-          renewDelegationToken(credentials)
-        }
+        val credentials = req.getConfiguration.remove(KYUUBI_ENGINE_CREDENTIALS_KEY)
+        Option(credentials).filter(_.nonEmpty).foreach(renewDelegationToken)
       }
 
       val sessionHandle = getSessionHandle(req, resp)
