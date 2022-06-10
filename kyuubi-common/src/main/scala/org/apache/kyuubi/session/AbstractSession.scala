@@ -53,7 +53,7 @@ abstract class AbstractSession(
 
   val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
 
-  override val name: String = normalizedConf.getOrElse(KyuubiConf.SESSION_NAME.key, "")
+  override lazy val name: String = normalizedConf.getOrElse(KyuubiConf.SESSION_NAME.key, "")
 
   final private val opHandleSet = new java.util.HashSet[OperationHandle]
 
