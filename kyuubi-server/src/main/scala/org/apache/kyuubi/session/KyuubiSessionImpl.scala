@@ -24,7 +24,7 @@ import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
@@ -96,7 +96,9 @@ class KyuubiSessionImpl(
     runOperation(launchEngineOp)
   }
 
-  private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
+  private[kyuubi] def openEngineSession(
+      engineCredentials: String,
+      extraEngineLog: Option[OperationLog] = None): Unit = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
       val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
       val passwd =
@@ -106,7 +108,9 @@ class KyuubiSessionImpl(
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }
       try {
-        _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
+        val engineSessionConf = sessionConf.clone
+        engineSessionConf.set(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
+        _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, engineSessionConf)
         _engineSessionHandle = _client.openSession(protocol, user, passwd, optimizedConf)
       } catch {
         case e: Throwable =>

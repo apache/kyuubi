@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
@@ -24,6 +25,7 @@ import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TR
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService._
@@ -43,21 +45,7 @@ class SparkTBinaryFrontendService(
     // Server to Spark SQL engine
     val resp = new TRenewDelegationTokenResp()
     try {
-      val newCreds = KyuubiHadoopUtils.decodeCredentials(req.getDelegationToken)
-      val (hiveTokens, otherTokens) =
-        KyuubiHadoopUtils.getTokenMap(newCreds).partition(_._2.getKind == HIVE_DELEGATION_TOKEN)
-
-      val updateCreds = new Credentials()
-      val oldCreds = UserGroupInformation.getCurrentUser.getCredentials
-      addHiveToken(hiveTokens, oldCreds, updateCreds)
-      addOtherTokens(otherTokens, oldCreds, updateCreds)
-      if (updateCreds.numberOfTokens() > 0) {
-        info("Update delegation tokens. " +
-          s"The number of tokens sent by the server is ${newCreds.numberOfTokens()}. " +
-          s"The actual number of updated tokens is ${updateCreds.numberOfTokens()}.")
-        SparkContextHelper.updateDelegationTokens(sc, updateCreds)
-      }
-
+      renewDelegationToken(req.getDelegationToken)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -75,6 +63,11 @@ class SparkTBinaryFrontendService(
       val respConfiguration = new java.util.HashMap[String, String]()
       respConfiguration.put("kyuubi.engine.id", sc.applicationId)
 
+      val credentials = req.getConfiguration.get(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
+      if (!StringUtils.isBlank(credentials)) {
+        renewDelegationToken(credentials)
+      }
+
       val sessionHandle = getSessionHandle(req, resp)
       resp.setSessionHandle(sessionHandle.toTSessionHandle)
       resp.setConfiguration(respConfiguration)
@@ -86,6 +79,23 @@ class SparkTBinaryFrontendService(
         resp.setStatus(KyuubiSQLException.toTStatus(e, verbose = true))
     }
     resp
+  }
+
+  private def renewDelegationToken(delegationToken: String): Unit = {
+    val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)
+    val (hiveTokens, otherTokens) =
+      KyuubiHadoopUtils.getTokenMap(newCreds).partition(_._2.getKind == HIVE_DELEGATION_TOKEN)
+
+    val updateCreds = new Credentials()
+    val oldCreds = UserGroupInformation.getCurrentUser.getCredentials
+    addHiveToken(hiveTokens, oldCreds, updateCreds)
+    addOtherTokens(otherTokens, oldCreds, updateCreds)
+    if (updateCreds.numberOfTokens() > 0) {
+      info("Update delegation tokens. " +
+        s"The number of tokens sent by the server is ${newCreds.numberOfTokens()}. " +
+        s"The actual number of updated tokens is ${updateCreds.numberOfTokens()}.")
+      SparkContextHelper.updateDelegationTokens(sc, updateCreds)
+    }
   }
 
   private def addHiveToken(

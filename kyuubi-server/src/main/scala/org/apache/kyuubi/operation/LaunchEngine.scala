@@ -48,8 +48,7 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
       try {
-        session.openEngineSession(getOperationLog)
-        renewEngineCredentials()
+        session.openEngineSession(renewEngineCredentials(), getOperationLog)
         setState(OperationState.FINISHED)
       } catch onError()
     }
@@ -61,17 +60,14 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
-  private def renewEngineCredentials(): Unit = {
+  private def renewEngineCredentials(): String = {
     val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
     try {
-      sessionManager.credentialsManager.sendCredentialsIfNeeded(
-        session.handle.identifier.toString,
-        session.user,
-        client.sendCredentials,
-        true)
+      sessionManager.credentialsManager.renewCredentials(session.user)
     } catch {
       case e: Exception =>
         error(s"Failed to renew engine credentials when launching engine", e)
+        ""
     }
   }
 }
