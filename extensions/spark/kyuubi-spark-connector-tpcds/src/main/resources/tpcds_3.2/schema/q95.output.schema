@@ -1,0 +1,1 @@
+`order count` BIGINT NOT NULL,`total shipping cost` DECIMAL(17,2),`total net profit` DECIMAL(17,2)

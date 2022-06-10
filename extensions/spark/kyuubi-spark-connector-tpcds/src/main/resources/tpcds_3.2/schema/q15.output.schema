@@ -1,0 +1,1 @@
+`ca_zip` STRING,`sum(cs_sales_price)` DECIMAL(17,2)

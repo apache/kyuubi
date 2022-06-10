@@ -1,0 +1,1 @@
+`i_manufact_id` INT,`sum_sales` DECIMAL(17,2),`avg_quarterly_sales` DECIMAL(21,6)

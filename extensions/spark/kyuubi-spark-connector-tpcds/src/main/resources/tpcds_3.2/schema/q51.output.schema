@@ -1,0 +1,1 @@
+`item_sk` BIGINT,`d_date` DATE,`web_sales` DECIMAL(27,2),`store_sales` DECIMAL(27,2),`web_cumulative` DECIMAL(27,2),`store_cumulative` DECIMAL(27,2)

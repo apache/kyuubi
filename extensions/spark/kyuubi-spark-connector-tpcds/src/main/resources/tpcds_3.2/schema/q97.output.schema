@@ -1,0 +1,1 @@
+`store_only` BIGINT,`catalog_only` BIGINT,`store_and_catalog` BIGINT

@@ -1,0 +1,1 @@
+`segment` INT,`num_customers` BIGINT NOT NULL,`segment_base` INT

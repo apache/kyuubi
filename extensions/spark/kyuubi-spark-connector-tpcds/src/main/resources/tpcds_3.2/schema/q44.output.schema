@@ -1,0 +1,1 @@
+`rnk` INT NOT NULL,`best_performing` STRING,`worst_performing` STRING

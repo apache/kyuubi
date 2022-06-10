@@ -1,0 +1,1 @@
+`i_manufact_id` INT,`total_sales` DECIMAL(27,2)

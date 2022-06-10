@@ -1,0 +1,1 @@
+`customer_id` STRING NOT NULL,`customername` STRING NOT NULL

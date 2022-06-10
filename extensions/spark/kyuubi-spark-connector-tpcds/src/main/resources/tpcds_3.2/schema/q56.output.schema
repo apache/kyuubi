@@ -1,0 +1,1 @@
+`i_item_id` STRING NOT NULL,`total_sales` DECIMAL(27,2)

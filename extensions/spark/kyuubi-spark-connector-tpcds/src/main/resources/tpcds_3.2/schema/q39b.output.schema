@@ -1,0 +1,1 @@
+`w_warehouse_sk` BIGINT NOT NULL,`i_item_sk` BIGINT NOT NULL,`d_moy` INT,`mean` DOUBLE,`cov` DOUBLE,`w_warehouse_sk` BIGINT NOT NULL,`i_item_sk` BIGINT NOT NULL,`d_moy` INT,`mean` DOUBLE,`cov` DOUBLE

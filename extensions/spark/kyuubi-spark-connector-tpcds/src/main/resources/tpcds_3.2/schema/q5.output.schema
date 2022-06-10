@@ -1,0 +1,1 @@
+`channel` STRING,`id` STRING,`sales` DECIMAL(27,2),`returns` DECIMAL(27,2),`profit` DECIMAL(28,2)

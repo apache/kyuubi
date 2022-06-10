@@ -1,0 +1,1 @@
+`i_product_name` STRING,`i_brand` STRING,`i_class` STRING,`i_category` STRING,`qoh` DOUBLE
