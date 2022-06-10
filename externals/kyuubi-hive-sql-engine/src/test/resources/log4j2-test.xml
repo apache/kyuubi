@@ -18,16 +18,16 @@
 
 <!-- Extra logging related to initialization of Log4j. 
  Set to debug or trace if log4j initialization is failing. -->
-<Configuration status="warn">
+<Configuration status="WARN">
     <Appenders>
-        <Console name="STDOUT" target="SYSTEM_OUT">
+        <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c: %m%n"/>
             <Filters>
-                <ThresholdFilter level="fatal"/>
+                <ThresholdFilter level="FATAL"/>
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </Console>
-        <File name="File" fileName="target/unit-tests.log">
+        <File name="file" fileName="target/unit-tests.log">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %t %p %c{1}: %m%n"/>
             <Filters>
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
@@ -35,9 +35,9 @@
         </File>
     </Appenders>
     <Loggers>
-        <Root level="info">
-            <AppenderRef ref="STDOUT"/>
-            <AppenderRef ref="File"/>
+        <Root level="INFO">
+            <AppenderRef ref="stdout"/>
+            <AppenderRef ref="file"/>
         </Root>
     </Loggers>
 </Configuration>
