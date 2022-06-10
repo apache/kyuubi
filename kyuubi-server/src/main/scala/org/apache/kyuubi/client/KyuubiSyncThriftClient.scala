@@ -19,14 +19,11 @@ package org.apache.kyuubi.client
 
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
-
 import scala.collection.JavaConverters._
-
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.transport.TSocket
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOGIN_TIMEOUT, ENGINE_REQUEST_TIMEOUT}
@@ -35,6 +32,8 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
+
+import scala.concurrent.duration.Duration
 
 class KyuubiSyncThriftClient private (
     protocol: TProtocol,
@@ -161,8 +160,10 @@ class KyuubiSyncThriftClient private (
       case e: Exception =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      Option(engineAliveThreadPool).foreach(ThreadUtils.shutdown(_))
-      if (_aliveProbeSessionHandle != null && !remoteEngineBroken) {
+      Option(engineAliveThreadPool).foreach { pool =>
+        ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
+      }
+      if (_aliveProbeSessionHandle != null) {
         engineAliveProbeClient.foreach { client =>
           Utils.tryLogNonFatalError {
             val req = new TCloseSessionReq(_aliveProbeSessionHandle)
