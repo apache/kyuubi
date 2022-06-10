@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.metastore.api.Metadata
 import org.apache.kyuubi.session.SessionType
 
-class MetadataStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
+class MetadataManagerSuite extends KyuubiFunSuite {
   val metadataManager = new MetadataManager()
   val conf = KyuubiConf().set(KyuubiConf.SERVER_METADATA_STORE_REQUESTS_RETRY_INTERVAL, 100L)
 
@@ -83,7 +83,7 @@ class MetadataStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
       engineState = "app_state",
       state = "RUNNING")
 
-    val retryRef2 = metadataManager.getMetadataStoreRequestsRetryRef(metadata2.identifier)
+    val retryRef2 = metadataManager.getOrCreateMetadataStoreRequestsRetryRef(metadata2.identifier)
     retryRef2.addRetryingMetadataStoreRequest(InsertMetadata(metadata2))
     retryRef2.addRetryingMetadataStoreRequest(UpdateMetadata(metadata2ToUpdate))
 

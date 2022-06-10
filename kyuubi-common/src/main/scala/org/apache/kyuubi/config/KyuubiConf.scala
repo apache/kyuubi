@@ -876,7 +876,7 @@ object KyuubiConf {
       .doc("Fully qualified class name for server metadata store.")
       .version("1.6.0")
       .stringConf
-      .createWithDefault("org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStore")
+      .createWithDefault("org.apache.kyuubi.server.metastore.jdbc.JDBCMetadataStore")
 
   val SERVER_METADATA_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.server.metadata.store.cleaner.enabled")
