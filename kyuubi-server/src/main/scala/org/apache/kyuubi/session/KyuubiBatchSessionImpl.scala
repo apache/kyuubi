@@ -31,7 +31,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.metadatastore.api.Metadata
+import org.apache.kyuubi.server.metastore.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
 
 class KyuubiBatchSessionImpl(

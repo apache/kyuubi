@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metadatastore.jdbc
+package org.apache.kyuubi.server.metastore.jdbc
 
 import java.io.{BufferedReader, InputStream, InputStreamReader}
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException}
@@ -32,10 +32,10 @@ import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.server.metadatastore.MetadataStore
-import org.apache.kyuubi.server.metadatastore.api.Metadata
-import org.apache.kyuubi.server.metadatastore.jdbc.DatabaseType._
-import org.apache.kyuubi.server.metadatastore.jdbc.JDBCStateStoreConf._
+import org.apache.kyuubi.server.metastore.MetadataStore
+import org.apache.kyuubi.server.metastore.api.Metadata
+import org.apache.kyuubi.server.metastore.jdbc.DatabaseType._
+import org.apache.kyuubi.server.metastore.jdbc.JDBCStateStoreConf._
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.session.SessionType.SessionType
 

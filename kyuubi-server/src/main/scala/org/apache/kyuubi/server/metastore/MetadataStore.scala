@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metadatastore
+package org.apache.kyuubi.server.metastore
 
 import java.io.Closeable
 
-import org.apache.kyuubi.server.metadatastore.api.Metadata
+import org.apache.kyuubi.server.metastore.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
 
 trait MetadataStore extends Closeable {

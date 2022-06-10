@@ -34,8 +34,8 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.metadatastore.{MetadataManager, StateStoreRequestsRetryRef}
-import org.apache.kyuubi.server.metadatastore.api.Metadata
+import org.apache.kyuubi.server.metastore.{MetadataManager, MetadataStoreRequestsRetryRef}
+import org.apache.kyuubi.server.metastore.api.Metadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
@@ -176,7 +176,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.updateMetadata(metadata)
   }
 
-  def getSessionStateStoreRetryRef(identifier: String): Option[StateStoreRequestsRetryRef] = {
+  def getSessionStateStoreRetryRef(identifier: String): Option[MetadataStoreRequestsRetryRef] = {
     Option(metadataManager.getRequestsRetryRef(identifier))
   }
 

@@ -15,10 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metadatastore.jdbc
+package org.apache.kyuubi.server.metastore.jdbc
 
-object DatabaseType extends Enumeration {
-  type DatabaseType = Value
-
-  val DERBY, MYSQL, CUSTOM = Value
+trait JdbcDatabaseDialect {
+  def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String
 }
+
+class DerbyDatabaseDialect extends JdbcDatabaseDialect {
+  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
+    s"$sql OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY"
+  }
+}
+
+class GenericDatabaseDialect extends JdbcDatabaseDialect {
+  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
+    s"$sql LIMIT $limit OFFSET $offset"
+  }
+}
+
+class MysqlDatabaseDialect extends GenericDatabaseDialect {}

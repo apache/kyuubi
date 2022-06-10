@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metadatastore.jdbc
+package org.apache.kyuubi.server.metastore.jdbc
 
 import java.util.{Locale, Properties}
 

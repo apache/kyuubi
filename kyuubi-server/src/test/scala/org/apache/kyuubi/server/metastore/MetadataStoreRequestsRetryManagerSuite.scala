@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metadatastore
+package org.apache.kyuubi.server.metastore
 
 import java.util.UUID
 
@@ -23,7 +23,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.metadatastore.api.Metadata
+import org.apache.kyuubi.server.metastore.api.Metadata
 import org.apache.kyuubi.session.SessionType
 
 class MetadataStoreRequestsRetryManagerSuite extends KyuubiFunSuite {

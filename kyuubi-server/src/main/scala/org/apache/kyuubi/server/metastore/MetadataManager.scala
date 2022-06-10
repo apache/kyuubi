@@ -15,20 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metadatastore
+package org.apache.kyuubi.server.metastore
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
-
-import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SERVER_METADATA_STORE_MAX_AGE
 import org.apache.kyuubi.engine.ApplicationOperation._
-import org.apache.kyuubi.server.metadatastore.api.Metadata
+import org.apache.kyuubi.server.metastore.api.Metadata
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
@@ -36,24 +34,36 @@ import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
 class MetadataManager extends CompositeService("SessionStateStore") {
   private var _metadataStore: MetadataStore = _
 
+  private val identifierRequestsRetryRefMap =
+    new ConcurrentHashMap[String, MetadataStoreRequestsRetryRef]()
+
+  private val requestsRetryTrigger =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-store-requests-retry-trigger")
+
+  private var requestsRetryExecutor: ThreadPoolExecutor = _
+
   private val metadataStoreCleaner =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-store-cleaner")
 
-  @VisibleForTesting
-  private[metadatastore] val requestsRetryManager = new StateStoreRequestRetryManager(this)
-
   override def initialize(conf: KyuubiConf): Unit = {
     _metadataStore = MetadataManager.createStateStore(conf)
-    addService(requestsRetryManager)
+    val retryExecutorNumThreads =
+      conf.get(KyuubiConf.SERVER_METADATA_STORE_REQUESTS_RETRY_NUM_THREADS)
+    requestsRetryExecutor = ThreadUtils.newDaemonFixedThreadPool(
+      retryExecutorNumThreads,
+      "metadata-store-requests-retry-executor")
     super.initialize(conf)
   }
 
   override def start(): Unit = {
     super.start()
+    startMetadataStoreRequestsRetryTrigger()
     startMetadataStoreCleaner()
   }
 
   override def stop(): Unit = {
+    ThreadUtils.shutdown(requestsRetryTrigger)
+    ThreadUtils.shutdown(requestsRetryExecutor)
     ThreadUtils.shutdown(metadataStoreCleaner)
     _metadataStore.close()
     super.stop()
@@ -65,8 +75,8 @@ class MetadataManager extends CompositeService("SessionStateStore") {
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
-        val ref = requestsRetryManager.getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
-        ref.addRetryingSessionStateRequest(InsertMetadata(metadata))
+        val ref = getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
+        ref.addRetryingMetadataStoreRequest(InsertMetadata(metadata))
     }
   }
 
@@ -75,7 +85,8 @@ class MetadataManager extends CompositeService("SessionStateStore") {
   }
 
   def getBatchSessionMetadata(batchId: String): Metadata = {
-    Option(_metadataStore.getMetadata(batchId, true)).filter(_.sessionType == SessionType.BATCH).orNull
+    Option(_metadataStore.getMetadata(batchId, true)).filter(
+      _.sessionType == SessionType.BATCH).orNull
   }
 
   def getBatches(
@@ -123,8 +134,8 @@ class MetadataManager extends CompositeService("SessionStateStore") {
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)
-        val ref = requestsRetryManager.getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
-        ref.addRetryingSessionStateRequest(UpdateMetadata(metadata))
+        val ref = getOrCreateStateStoreRequestsRetryRef(metadata.identifier)
+        ref.addRetryingMetadataStoreRequest(UpdateMetadata(metadata))
     }
   }
 
@@ -176,12 +187,78 @@ class MetadataManager extends CompositeService("SessionStateStore") {
     }
   }
 
-  def getRequestsRetryRef(identifier: String): StateStoreRequestsRetryRef = {
-    requestsRetryManager.getStateStoreRequestsRetryRef(identifier)
+  def getOrCreateStateStoreRequestsRetryRef(identifier: String): MetadataStoreRequestsRetryRef = {
+    identifierRequestsRetryRefMap.computeIfAbsent(
+      identifier,
+      identifier => {
+        val ref = new MetadataStoreRequestsRetryRef(identifier)
+        debug(s"Created StateStoreRequestsRetryRef for session $identifier.")
+        ref
+      })
+  }
+
+  def getStateStoreRequestsRetryRef(identifier: String): MetadataStoreRequestsRetryRef = {
+    identifierRequestsRetryRefMap.get(identifier)
   }
 
   def deRegisterRequestsRetryRef(identifier: String): Unit = {
-    requestsRetryManager.removeStateStoreRequestsRetryRef(identifier)
+    identifierRequestsRetryRefMap.remove(identifier)
+  }
+
+  private def startMetadataStoreRequestsRetryTrigger(): Unit = {
+    val interval = conf.get(KyuubiConf.SERVER_METADATA_STORE_REQUESTS_RETRY_INTERVAL)
+    val triggerTask = new Runnable {
+      override def run(): Unit = {
+        identifierRequestsRetryRefMap.values().asScala.foreach { ref =>
+          if (ref.hasRemainingRequests() && ref.retryingTaskCount.get() == 0) {
+            val retryTask = new Runnable {
+              override def run(): Unit = {
+                try {
+                  info(s"Retrying metadata store requests for" +
+                    s" ${ref.identifier}/${ref.retryCount.incrementAndGet()}")
+                  var request = ref.metadataStoreRequestQueue.peek()
+                  while (request != null) {
+                    request match {
+                      case insert: InsertMetadata =>
+                        insertMetadata(insert.metadata, retryOnError = false)
+
+                      case update: UpdateMetadata =>
+                        updateMetadata(update.metadata, retryOnError = false)
+
+                      case _ =>
+                    }
+                    ref.metadataStoreRequestQueue.remove(request)
+                    request = ref.metadataStoreRequestQueue.peek()
+                  }
+                } catch {
+                  case e: Throwable =>
+                    error(
+                      s"Error retrying state store requests for" +
+                        s" ${ref.identifier}/${ref.retryCount.get()}",
+                      e)
+                } finally {
+                  ref.retryingTaskCount.decrementAndGet()
+                }
+              }
+            }
+
+            try {
+              ref.retryingTaskCount.incrementAndGet()
+              requestsRetryExecutor.submit(retryTask)
+            } catch {
+              case e: Throwable =>
+                error(s"Error submitting retrying state store requests for ${ref.identifier}", e)
+                ref.retryingTaskCount.decrementAndGet()
+            }
+          }
+        }
+      }
+    }
+    requestsRetryTrigger.scheduleWithFixedDelay(
+      triggerTask,
+      interval,
+      interval,
+      TimeUnit.MILLISECONDS)
   }
 }
 

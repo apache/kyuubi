@@ -15,14 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metadatastore
+package org.apache.kyuubi.server.metastore.jdbc
 
-import org.apache.kyuubi.server.metadatastore.api.Metadata
+object DatabaseType extends Enumeration {
+  type DatabaseType = Value
 
-trait MetadataRequest {
-  def metadata: Metadata
+  val DERBY, MYSQL, CUSTOM = Value
 }
-
-case class InsertMetadata(metadata: Metadata) extends MetadataRequest
-
-case class UpdateMetadata(metadata: Metadata) extends MetadataRequest
