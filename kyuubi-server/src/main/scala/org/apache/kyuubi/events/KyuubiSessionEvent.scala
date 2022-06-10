@@ -65,7 +65,7 @@ object KyuubiSessionEvent {
       session.handle.toString,
       session.protocol.getValue,
       session.sessionType.toString,
-      session.name,
+      session.name.getOrElse(""),
       session.user,
       session.ipAddress,
       serverIP,
