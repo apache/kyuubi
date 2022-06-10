@@ -76,7 +76,7 @@ class StateStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
     }
 
     val metadata2 = metadata.copy(identifier = UUID.randomUUID().toString)
-    val updateMetadata2 = metadata2.copy(
+    val metadata2ToUpdate = metadata2.copy(
       engineId = "app_id",
       engineName = "app_name",
       engineUrl = "app_url",
@@ -86,7 +86,7 @@ class StateStoreRequestsRetryManagerSuite extends KyuubiFunSuite {
     val retryRef2 = sessionStateStore.requestsRetryManager
       .getOrCreateStateStoreRequestsRetryRef(metadata2.identifier)
     retryRef2.addRetryingSessionStateRequest(InsertMetadata(metadata2))
-    retryRef2.addRetryingSessionStateRequest(UpdateMetadata(updateMetadata2))
+    retryRef2.addRetryingSessionStateRequest(UpdateMetadata(metadata2ToUpdate))
 
     eventually(timeout(3.seconds)) {
       assert(!retryRef2.hasRemainingRequests())
