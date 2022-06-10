@@ -26,6 +26,7 @@ trait Session {
 
   def protocol: TProtocolVersion
   def handle: SessionHandle
+  def name: Option[String]
 
   def conf: Map[String, String]
 
