@@ -32,6 +32,8 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
 
   protected lazy val SPARK_ENGINE_MAJOR_MINOR_VERSION: (Int, Int) = sparkEngineMajorMinorVersion
 
+  protected lazy val httpMode = false;
+
   test("execute statement - select null") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")
@@ -332,6 +334,8 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select with variable substitution") {
+    assume(!httpMode)
+
     withThriftClient { client =>
       val req = new TOpenSessionReq()
       req.setUsername("chengpan")

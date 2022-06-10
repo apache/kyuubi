@@ -27,5 +27,7 @@ class KyuubiOperationThriftHttpPerUserSuite extends KyuubiOperationPerUserSuite 
 
   override protected def getJdbcUrl: String =
     s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/;transportMode=http;" +
-      s"httpPath=cliservice"
+      s"httpPath=cliservice;"
+
+  override protected lazy val httpMode = true;
 }
