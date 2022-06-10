@@ -60,10 +60,6 @@ class ExecuteStatement(
   @VisibleForTesting
   override def setExecutor(executor: Executor): Unit = super.setExecutor(executor)
 
-  def setSessionId(sessionId: String): Unit = {
-    this.sessionId = sessionId
-  }
-
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(operationLog)
     setState(OperationState.PENDING)

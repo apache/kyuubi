@@ -32,8 +32,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation}
-import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
+import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.ApiRequestContext
 
 @Tag(name = "Operation")
@@ -52,7 +51,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   def getOperationEvent(
       @PathParam("operationHandle") operationHandleStr: String): KyuubiOperationEvent = {
     try {
-      val opHandle = parseOperationHandle(operationHandleStr)
+      val opHandle = OperationHandle(operationHandleStr)
       val operation = fe.be.sessionManager.operationManager.getOperation(opHandle)
       KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
     } catch {
@@ -75,7 +74,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       request: OpActionRequest,
       @PathParam("operationHandle") operationHandleStr: String): Response = {
     try {
-      val operationHandle = parseOperationHandle(operationHandleStr)
+      val operationHandle = OperationHandle(operationHandleStr)
       request.getAction.toLowerCase() match {
         case "cancel" => fe.be.cancelOperation(operationHandle)
         case "close" => fe.be.closeOperation(operationHandle)
@@ -103,7 +102,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   def getResultSetMetadata(
       @PathParam("operationHandle") operationHandleStr: String): ResultSetMetaData = {
     try {
-      val operationHandle = parseOperationHandle(operationHandleStr)
+      val operationHandle = OperationHandle(operationHandleStr)
       new ResultSetMetaData(
         fe.be.getResultSetMetadata(operationHandle).getColumns.asScala.map(c => {
           val tPrimitiveTypeEntry = c.getTypeDesc.getTypes.get(0).getPrimitiveEntry
@@ -145,7 +144,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("maxrows") maxRows: Int): OperationLog = {
     try {
       val rowSet = fe.be.sessionManager.operationManager.getOperationLogRowSet(
-        parseOperationHandle(operationHandleStr),
+        OperationHandle(operationHandleStr),
         FetchOrientation.FETCH_NEXT,
         maxRows)
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
@@ -172,10 +171,11 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("maxrows") maxRows: Int,
       @QueryParam("fetchorientation") fetchOrientation: String): ResultRowSet = {
     try {
-      val rowSet = fe.be.sessionManager.operationManager.getOperationNextRowSet(
-        parseOperationHandle(operationHandleStr),
+      val rowSet = fe.be.fetchResults(
+        OperationHandle(operationHandleStr),
         FetchOrientation.withName(fetchOrientation),
-        maxRows)
+        maxRows,
+        fetchLog = false)
       val rows = rowSet.getRows.asScala.map(i => {
         new Row(i.getColVals.asScala.map(i => {
           new Field(

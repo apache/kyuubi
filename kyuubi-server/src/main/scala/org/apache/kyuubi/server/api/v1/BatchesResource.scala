@@ -28,7 +28,6 @@ import scala.util.control.NonFatal
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
@@ -78,6 +77,15 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       batchOpStatus.completed)
   }
 
+  private def formatSessionHandle(sessionHandleStr: String): SessionHandle = {
+    try {
+      SessionHandle.fromUUID(sessionHandleStr)
+    } catch {
+      case e: IllegalArgumentException =>
+        throw new NotFoundException(s"Invalid batchId: $sessionHandleStr", e)
+    }
+  }
+
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
@@ -97,7 +105,6 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val userName = fe.getUserName(request.getConf.asScala.toMap)
     val ipAddress = AuthenticationFilter.getUserIpAddress
     val sessionHandle = sessionManager.openBatchSession(
-      REST_BATCH_PROTOCOL,
       userName,
       "anonymous",
       ipAddress,
@@ -115,7 +122,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @GET
   @Path("{batchId}")
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
-    val sessionHandle = normalizedBatchSessionHandle(batchId)
+    val sessionHandle = formatSessionHandle(batchId)
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       buildBatch(batchSession)
     }.getOrElse {
@@ -175,7 +182,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("from") @DefaultValue("-1") from: Int,
       @QueryParam("size") size: Int): OperationLog = {
     val userName = fe.getUserName(Map.empty)
-    val sessionHandle = normalizedBatchSessionHandle(batchId)
+    val sessionHandle = formatSessionHandle(batchId)
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       try {
         val submissionOp = batchSession.batchJobSubmissionOp
@@ -217,7 +224,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def closeBatchSession(
       @PathParam("batchId") batchId: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
-    val sessionHandle = normalizedBatchSessionHandle(batchId)
+    val sessionHandle = formatSessionHandle(batchId)
+
     val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
 
@@ -269,20 +277,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       }
     }
   }
-
-  private def normalizedBatchSessionHandle(batchId: String): SessionHandle = {
-    try {
-      sessionManager.getBatchSessionHandle(batchId, REST_BATCH_PROTOCOL)
-    } catch {
-      case NonFatal(e) =>
-        error(s"Invalid batchId: $batchId", e)
-        throw new NotFoundException(s"Invalid batchId: $batchId")
-    }
-  }
 }
 
 object BatchesResource {
-  val REST_BATCH_PROTOCOL = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11
   val SUPPORTED_BATCH_TYPES = Seq("SPARK")
   val VALID_BATCH_STATES = Seq(
     OperationState.PENDING,

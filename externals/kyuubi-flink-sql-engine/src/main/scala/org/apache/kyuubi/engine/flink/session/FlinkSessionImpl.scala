@@ -38,8 +38,6 @@ class FlinkSessionImpl(
 
   def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
 
-  def sessionId: String = handle.identifier.toString
-
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
       sessionContext.set(key, value)

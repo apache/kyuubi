@@ -136,10 +136,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
     val sessionHandle = response.readEntity(classOf[SessionHandle])
 
     token = generateToken(hostName)
-    val serializedSessionHandle = s"${sessionHandle.getPublicId}|" +
-      s"${sessionHandle.getSecretId}|${sessionHandle.getProtocolVersion}"
-
-    response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
+    response = webTarget.path(s"api/v1/sessions/${sessionHandle.getIdentifier}")
       .request()
       .header(AUTHORIZATION_HEADER, s"NEGOTIATE $token")
       .delete()
@@ -148,7 +145,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
   test("test with internal authorization") {
     val internalSecurityAccessor = InternalSecurityAccessor.get()
-    var encodeAuthorization = new String(
+    val encodeAuthorization = new String(
       Base64.getEncoder.encode(
         s"$ldapUser:${internalSecurityAccessor.issueToken()}".getBytes()),
       "UTF-8")

@@ -62,8 +62,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     val op = new ExecuteStatement(session, "show tables", Map.empty, true, 3000)
     op.setState(OperationState.RUNNING)
     sessionManager.operationManager.addOperation(op)
-    val opHandleStr = s"${op.getHandle.identifier.publicId}|" +
-      s"${op.getHandle.identifier.secretId}|${op.getHandle.protocol.getValue}|" +
+    val opHandleStr = s"${op.getHandle.identifier}|" +
       s"${op.getHandle.typ.toString}"
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -132,9 +131,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       case OperationType.GET_CATALOGS => fe.be.getCatalogs(sessionHandle)
     }
 
-    s"${op.identifier.publicId}|" +
-      s"${op.identifier.secretId}|${op.protocol.getValue}|" +
-      s"${op.typ.toString}"
+    s"${op.identifier}|${op.typ.toString}"
   }
 
   private def checkOpState(opHandleStr: String, state: OperationState): Unit = {

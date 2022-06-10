@@ -20,8 +20,6 @@ package org.apache.kyuubi
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -122,14 +120,12 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       Seq.empty[String].asJava)
 
     val sessionHandle = sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
       "kyuubi",
       "passwd",
       "localhost",
       batchRequest.getConf.asScala.toMap,
       batchRequest)
 
-    assert(sessionHandle.identifier.secretId === KyuubiSessionManager.STATIC_BATCH_SECRET_UUID)
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
@@ -188,7 +184,6 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       Seq.empty[String].asJava)
 
     val sessionHandle = sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
       "kyuubi",
       "passwd",
       "localhost",

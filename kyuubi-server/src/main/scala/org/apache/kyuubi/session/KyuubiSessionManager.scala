@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.util.UUID
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
@@ -27,7 +25,6 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -38,12 +35,10 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.api.v1.BatchesResource
 import org.apache.kyuubi.server.statestore.SessionStateStore
 import org.apache.kyuubi.server.statestore.api.SessionMetadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
-  import KyuubiSessionManager._
 
   def this() = this(classOf[KyuubiSessionManager].getSimpleName)
 
@@ -114,7 +109,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   private def createBatchSession(
-      protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
@@ -123,7 +117,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       recoveryMetadata: Option[SessionMetadata] = None): KyuubiBatchSessionImpl = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     new KyuubiBatchSessionImpl(
-      protocol,
       username,
       password,
       ipAddress,
@@ -163,22 +156,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def openBatchSession(
-      protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String],
       batchRequest: BatchRequest): SessionHandle = {
-    val batchSession = createBatchSession(protocol, user, password, ipAddress, conf, batchRequest)
+    val batchSession = createBatchSession(user, password, ipAddress, conf, batchRequest)
     openBatchSession(batchSession)
-  }
-
-  def newBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(UUID.randomUUID(), STATIC_BATCH_SECRET_UUID), protocol)
-  }
-
-  def getBatchSessionHandle(batchId: String, protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
   }
 
   def getBatchSessionImpl(sessionHandle: SessionHandle): KyuubiBatchSessionImpl = {
@@ -254,7 +238,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
             metadata.requestArgs.asJava)
 
           val batchSession = createBatchSession(
-            BatchesResource.REST_BATCH_PROTOCOL,
             metadata.username,
             "anonymous",
             metadata.ipAddress,
@@ -281,13 +264,4 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
     }
   }
-}
-
-object KyuubiSessionManager {
-
-  /**
-   * The static session secret UUID used for batch session handle.
-   * To keep compatibility, please do not change it.
-   */
-  val STATIC_BATCH_SECRET_UUID: UUID = UUID.fromString("c2ee5b97-3ea0-41fc-ac16-9bd708ed8f38")
 }

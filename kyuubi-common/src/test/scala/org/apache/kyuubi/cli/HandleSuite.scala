@@ -17,28 +17,16 @@
 
 package org.apache.kyuubi.cli
 
-import java.util.Objects
+import java.util.UUID
 
 import org.apache.kyuubi.KyuubiFunSuite
 
-class HandleIdentifierSuite extends KyuubiFunSuite {
+class HandleSuite extends KyuubiFunSuite {
 
-  test("HandleIdentifier") {
-    val id1 = HandleIdentifier()
-    val tid1 = id1.toTHandleIdentifier
-    val id2 = HandleIdentifier(tid1)
+  test("round-trip for UUID and THandleIdentifier") {
+    val id1 = UUID.randomUUID()
+    val tid1 = Handle.toTHandleIdentifier(id1)
+    val id2 = Handle.fromTHandleIdentifier(tid1)
     assert(id1 === id2)
-
-    val id3 = HandleIdentifier(id1.publicId, id1.secretId)
-    assert(id3 === id1)
-    assert(id3.toString === id1.publicId.toString)
-    assert(id3.hashCode() ===
-      (Objects.hashCode(id1.publicId) + 31) * 31 + Objects.hashCode(id1.secretId))
-    val id4 = HandleIdentifier()
-    assert(id4 !== id1)
-    assert(id4 !== new Integer(1))
-
-    val id5 = HandleIdentifier(id1.publicId, id1.publicId)
-    assert(id1 !== id5, "no matched secret id")
   }
 }
