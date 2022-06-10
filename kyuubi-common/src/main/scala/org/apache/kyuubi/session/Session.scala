@@ -32,6 +32,7 @@ trait Session {
   def user: String
   def password: String
   def ipAddress: String
+  def name: String
 
   def createTime: Long
   def lastAccessTime: Long

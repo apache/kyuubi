@@ -100,7 +100,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       val handle = session.handle
       session.open()
       setSession(handle, session)
-      info(s"$user's session with $handle is opened, current opening sessions" +
+      info(s"$user's session with $handle/${session.name} is opened, current opening sessions" +
         s" $getOpenSessionCount")
       handle
     } catch {
@@ -121,7 +121,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
-    info(s"$sessionHandle is closed, current opening sessions $getOpenSessionCount")
+    info(s"$sessionHandle/${session.name} is closed, current opening sessions $getOpenSessionCount")
     try {
       session.close()
     } finally {

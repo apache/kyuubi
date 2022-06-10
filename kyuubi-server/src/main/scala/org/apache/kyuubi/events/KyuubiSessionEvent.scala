@@ -18,7 +18,6 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.KyuubiSession
 
@@ -62,12 +61,11 @@ object KyuubiSessionEvent {
   def apply(session: KyuubiSession): KyuubiSessionEvent = {
     assert(KyuubiServer.kyuubiServer != null)
     val serverIP = KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
-    val sessionName: String = session.normalizedConf.getOrElse(KyuubiConf.SESSION_NAME.key, "")
     KyuubiSessionEvent(
       session.handle.toString,
       session.protocol.getValue,
       session.sessionType.toString,
-      sessionName,
+      session.name,
       session.user,
       session.ipAddress,
       serverIP,

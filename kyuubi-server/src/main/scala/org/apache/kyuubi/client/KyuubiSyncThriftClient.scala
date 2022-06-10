@@ -139,7 +139,9 @@ class KyuubiSyncThriftClient private (
       .map(_.get("kyuubi.engine.id"))
 
     engineAliveProbeClient.foreach { aliveProbeClient =>
+      val sessionName = SessionHandle.apply(_remoteSessionHandle).identifier + "_aliveness_probe"
       Utils.tryLogNonFatalError {
+        req.setConfiguration((configs ++ Map(KyuubiConf.SESSION_NAME.key -> sessionName)).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle
