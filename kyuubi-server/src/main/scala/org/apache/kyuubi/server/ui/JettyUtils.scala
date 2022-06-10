@@ -22,9 +22,9 @@ import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import org.eclipse.jetty.servlet.{DefaultServlet, ServletContextHandler, ServletHolder}
 
-import org.apache.kyuubi.{KyuubiException, Logging}
+import org.apache.kyuubi.KyuubiException
 
-private[kyuubi] object JettyUtils extends Logging {
+private[kyuubi] object JettyUtils {
 
   /**
    * Create a handler for serving files from a static directory

@@ -25,6 +25,7 @@
 *.swp
 *~
 .DS_Store
+.eslintcache
 .cache
 .classpath
 .ensime
