@@ -52,6 +52,24 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
 
   private val regenerateGoldenFiles = sys.env.get("KYUUBI_UPDATE").contains("1")
 
+  private val licenseHeader =
+    """/*
+      | * Licensed to the Apache Software Foundation (ASF) under one or more
+      | * contributor license agreements.  See the NOTICE file distributed with
+      | * this work for additional information regarding copyright ownership.
+      | * The ASF licenses this file to You under the Apache License, Version 2.0
+      | * (the "License"); you may not use this file except in compliance with
+      | * the License.  You may obtain a copy of the License at
+      | *
+      | *    http://www.apache.org/licenses/LICENSE-2.0
+      | *
+      | * Unless required by applicable law or agreed to in writing, software
+      | * distributed under the License is distributed on an "AS IS" BASIS,
+      | * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      | * See the License for the specific language governing permissions and
+      | * limitations under the License.
+      | */""".stripMargin + "\n"
+
   val baseResourcePath: Path =
     Paths.get("src", "main", "resources")
 
@@ -82,14 +100,10 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
         try {
           val result = spark.sql(sql).collect()
           val schema = spark.sql(sql).schema
-          val schemaDDL = schema.toDDL + "\n"
+          val schemaDDL = licenseHeader + schema.toDDL + "\n"
           spark.createDataFrame(result.toList.asJava, schema).createTempView(s"$name$viewSuffix")
-          val sumHashResult =
-            spark.sql(s"select sum(hash(*)) from $name$viewSuffix").collect().head.get(0) + "\n"
-
-          // scalastyle:off println
-          println(s"name=$name,sumHashResult=$sumHashResult,schemaDDL=$schemaDDL")
-          // scalastyle:off println
+          val sumHashResult = licenseHeader + spark.sql(
+            s"select sum(hash(*)) from $name$viewSuffix").collect().head.get(0) + "\n"
 
           val goldenSchemaFile = Paths.get(
             baseResourcePath.toFile.getAbsolutePath,
@@ -102,15 +116,14 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
             "tpcds_3.2",
             "schema",
             s"${name.stripSuffix(".sql")}.output.hash")
-
           if (regenerateGoldenFiles) {
             Files.write(goldenSchemaFile, schemaDDL.getBytes)
             Files.write(goldenHashFile, sumHashResult.getBytes)
           }
-
           val expectedSchema = fileToString(goldenSchemaFile)
+          val expectedHash = fileToString(goldenHashFile)
           assert(schemaDDL == expectedSchema)
-
+          assert(sumHashResult == expectedHash)
         } catch {
           case cause: Throwable =>
             fail(name, cause)
