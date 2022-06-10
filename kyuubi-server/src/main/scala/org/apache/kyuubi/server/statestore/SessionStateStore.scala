@@ -21,6 +21,8 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
+import com.google.common.annotations.VisibleForTesting
+
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
@@ -37,7 +39,8 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
   private val stateStoreCleaner =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("session-state-store-cleaner")
 
-  private val requestsRetryManager = new StateStoreRequestRetryManager(this)
+  @VisibleForTesting
+  private[statestore] val requestsRetryManager = new StateStoreRequestRetryManager(this)
 
   override def initialize(conf: KyuubiConf): Unit = {
     _stateStore = SessionStateStore.createStateStore(conf)
@@ -173,8 +176,8 @@ class SessionStateStore extends CompositeService("SessionStateStore") {
     }
   }
 
-  def getRequestsRetryRef(identifier: String): Option[StateStoreRequestsRetryRef] = {
-    Option(requestsRetryManager.getStateStoreRequestsRetryRef(identifier))
+  def getRequestsRetryRef(identifier: String): StateStoreRequestsRetryRef = {
+    requestsRetryManager.getStateStoreRequestsRetryRef(identifier)
   }
 
   def deRegisterRequestsRetryRef(identifier: String): Unit = {

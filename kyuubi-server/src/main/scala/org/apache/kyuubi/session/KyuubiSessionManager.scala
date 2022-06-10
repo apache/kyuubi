@@ -177,7 +177,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def getSessionStateStoreRetryRef(identifier: String): Option[StateStoreRequestsRetryRef] = {
-    sessionStateStore.getRequestsRetryRef(identifier)
+    Option(sessionStateStore.getRequestsRetryRef(identifier))
   }
 
   def deRegisterSessionStateStoreRetryRef(identifier: String): Unit = {
