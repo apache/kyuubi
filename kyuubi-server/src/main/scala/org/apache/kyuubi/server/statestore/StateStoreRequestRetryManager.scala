@@ -38,10 +38,13 @@ class StateStoreRequestRetryManager private (stateStore: SessionStateStore, name
   private val retryTrigger =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("state-store-requests-retry-trigger")
 
-  private val retryExecutor: ThreadPoolExecutor =
-    ThreadUtils.newDaemonFixedThreadPool(100, "state-store-requests-retry-executor")
+  private var retryExecutor: ThreadPoolExecutor = _
 
   override def initialize(conf: KyuubiConf): Unit = {
+    val retryExecutorNumThreads = conf.get(KyuubiConf.SERVER_STATE_STORE_REQUESTS_RETRY_NUM_THREADS)
+    retryExecutor = ThreadUtils.newDaemonFixedThreadPool(
+      retryExecutorNumThreads,
+      "state-store-requests-retry-executor")
     super.initialize(conf)
   }
 

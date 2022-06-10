@@ -914,10 +914,19 @@ object KyuubiConf {
       .intConf
       .createWithDefault(10)
 
+  val SERVER_STATE_STORE_REQUESTS_RETRY_NUM_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.server.state.store.requests.retry.num.threads")
+      .doc("Number of threads in the state store request retry manager thread pool. The state" +
+        " store might be unavailable sometimes and the state store requests will fail, to" +
+        " tolerant for this case and unblock the main thread, we introduce a state store requests" +
+        " retry manager and it helps to retry the failed state store requests in async way.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(10)
+
   val SERVER_STATE_STORE_REQUESTS_RETRY_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.server.state.store.requests.retry.interval")
-      .internal
-      .doc(s"The interval to check and retry the state store requests.")
+      .doc("The interval to check and trigger the state store requests retry tasks.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)

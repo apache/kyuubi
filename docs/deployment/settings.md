@@ -369,6 +369,8 @@ kyuubi.server.state.store.jdbc.password||The password for server jdbc state stor
 kyuubi.server.state.store.jdbc.url|jdbc:derby:memory:kyuubi_state_store_db;create=true|The jdbc url for server jdbc state store. By defaults, it is a DERBY in-memory database url, and the state information is not shared across kyuubi instances. To enable multiple kyuubi instances high available, please specify a production jdbc url.|string|1.6.0
 kyuubi.server.state.store.jdbc.user||The username for server jdbc state store.|string|1.6.0
 kyuubi.server.state.store.max.age|PT72H|The maximum age of state info in state store.|duration|1.6.0
+kyuubi.server.state.store.requests.retry.interval|PT5S|The interval to check and trigger the state store requests retry tasks.|duration|1.6.0
+kyuubi.server.state.store.requests.retry.num.threads|10|Number of threads in the state store request retry manager thread pool. The state store might be unavailable sometimes and the state store requests will fail, to tolerant for this case and unblock the main thread, we introduce a state store requests retry manager and it helps to retry the failed state store requests in async way.|int|1.6.0
 kyuubi.server.state.store.sessions.recovery.num.threads|10|The number of threads for sessions recovery from state store.|int|1.6.0
 kyuubi.server.state.store.sessions.recovery.per.batch|100|The number of sessions to recover from state store per batch.|int|1.6.0
 
