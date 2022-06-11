@@ -26,15 +26,15 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   var result: String = null
 
-  def validateArguments(): Unit = {}
+  def validate(): Unit = {}
 
-  override def run(): Unit = {
-    withKyuubiRestClient(cliArgs, null, conf) { kyuubiRestClient =>
+  def run(): Unit = {
+    withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
       val result = batchRestApi.deleteBatch(
-        cliArgs.batchOpts.batchId,
-        cliArgs.batchOpts.hs2ProxyUser)
+        normalizedCliConfig.batchOpts.batchId,
+        normalizedCliConfig.batchOpts.hs2ProxyUser)
       info(JsonUtil.toJson(result))
     }
   }

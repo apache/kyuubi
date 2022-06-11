@@ -16,33 +16,22 @@
  */
 package org.apache.kyuubi.ctl.cmd.get
 
-import org.apache.kyuubi.ctl.{CliConfig, Render}
+import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.cmd.Command
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
+import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
 
 class GetCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
-  override def validateArguments(): Unit = {
-    validateZkArguments()
-    validateHostAndPort()
-    validateUser()
+  def validate(): Unit = {
+    Validator.validateZkArguments(normalizedCliConfig)
+    Validator.validateHostAndPort(normalizedCliConfig)
     mergeArgsIntoKyuubiConf()
   }
 
-  override def run(): Unit = list(filterHostPort = true)
-
-  private def list(filterHostPort: Boolean): Unit = {
-    withDiscoveryClient(conf) { discoveryClient =>
-      val znodeRoot = getZkNamespace()
-      val hostPortOpt =
-        if (filterHostPort) {
-          Some((cliArgs.commonOpts.host, cliArgs.commonOpts.port.toInt))
-        } else None
-      val nodes = getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
-
-      val title = "Zookeeper service nodes"
-      info(Render.renderServiceNodesInfo(title, nodes, verbose))
-    }
+  def run(): Unit = {
+    val nodes = CtlUtils.listZkServerNodes(conf, normalizedCliConfig, filterHostPort = true)
+    val title = "Zookeeper service nodes"
+    info(Render.renderServiceNodesInfo(title, nodes, verbose))
   }
 
 }

@@ -18,37 +18,39 @@ package org.apache.kyuubi.ctl.cmd.list
 
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse
-import org.apache.kyuubi.ctl.{CliConfig, Render}
+import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.util.Render
 
 class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
-  override def validateArguments(): Unit = {
-    if (cliArgs.batchOpts.createTime < 0) {
+  def validate(): Unit = {
+    if (normalizedCliConfig.batchOpts.createTime < 0) {
       fail(s"Invalid createTime, negative milliseconds are not supported.")
     }
-    if (cliArgs.batchOpts.endTime < 0) {
+    if (normalizedCliConfig.batchOpts.endTime < 0) {
       fail(s"Invalid endTime, negative milliseconds are not supported.")
     }
-    if (cliArgs.batchOpts.endTime != 0
-      && cliArgs.batchOpts.createTime > cliArgs.batchOpts.endTime) {
+    if (normalizedCliConfig.batchOpts.endTime != 0
+      && normalizedCliConfig.batchOpts.createTime > normalizedCliConfig.batchOpts.endTime) {
       fail(s"Invalid createTime/endTime, createTime should be less or equal to endTime.")
     }
   }
 
-  override def run(): Unit = {
-    withKyuubiRestClient(cliArgs, null, conf) { kyuubiRestClient =>
+  def run(): Unit = {
+    withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
-
+      val batchOpts = normalizedCliConfig.batchOpts
       val batchListInfo: GetBatchesResponse = batchRestApi.listBatches(
-        cliArgs.batchOpts.batchType,
-        cliArgs.batchOpts.batchUser,
-        cliArgs.batchOpts.batchState,
-        cliArgs.batchOpts.createTime,
-        cliArgs.batchOpts.endTime,
-        if (cliArgs.batchOpts.from < 0) 0 else cliArgs.batchOpts.from,
-        cliArgs.batchOpts.size)
+        batchOpts.batchType,
+        batchOpts.batchUser,
+        batchOpts.batchState,
+        batchOpts.createTime,
+        batchOpts.endTime,
+        if (batchOpts.from < 0) 0 else batchOpts.from,
+        batchOpts.size)
+
       info(Render.renderBatchListInfo(batchListInfo))
     }
   }

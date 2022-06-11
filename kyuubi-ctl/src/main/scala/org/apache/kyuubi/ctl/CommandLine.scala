@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl
 import scopt.{OParser, OParserBuilder}
 
 import org.apache.kyuubi.KYUUBI_VERSION
-import org.apache.kyuubi.ctl.DateTimeUtil._
+import org.apache.kyuubi.ctl.util.DateTimeUtils._
 
 object CommandLine {
 
@@ -74,16 +74,16 @@ object CommandLine {
         .text("Host url for rest api."),
       opt[String]("authSchema")
         .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(authSchema = v)))
-        .text("Auth schema for rest api."),
+        .text("Auth schema for rest api, valid values are basic, spnego."),
       opt[String]("username")
         .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(username = v)))
         .text("Username for basic authentication."),
       opt[String]("password")
         .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(password = v)))
-        .text("Password for rest api."),
+        .text("Password for basic authentication."),
       opt[String]("spnegoHost")
         .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(spnegoHost = v)))
-        .text("Spnego host for rest api."))
+        .text("Spnego host for spnego authentication."))
   }
 
   private def create(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -240,28 +240,40 @@ object CommandLine {
             c.copy(batchOpts = c.batchOpts.copy(createTime =
               dateStringToMillis(v, "yyyyMMddHHmmss"))))
           .validate(x =>
-            if (x.matches("\\d{14}")) success
-            else failure("Option --createTime must be in yyyyMMddHHmmss format."))
+            if (x.matches("\\d{14}")) {
+              success
+            } else {
+              failure("Option --createTime must be in yyyyMMddHHmmss format.")
+            })
           .text("Batch create time, should be in yyyyMMddHHmmss format."),
         opt[String]("endTime")
           .action((v, c) =>
             c.copy(batchOpts = c.batchOpts.copy(endTime =
               dateStringToMillis(v, "yyyyMMddHHmmss"))))
           .validate(x =>
-            if (x.matches("\\d{14}")) success
-            else failure("Option --endTime must be in yyyyMMddHHmmss format."))
+            if (x.matches("\\d{14}")) {
+              success
+            } else {
+              failure("Option --endTime must be in yyyyMMddHHmmss format.")
+            })
           .text("Batch end time, should be in yyyyMMddHHmmss format."),
         opt[Int]("from")
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(from = v)))
           .validate(x =>
-            if (x >= 0) success
-            else failure("Option --from must be >=0"))
+            if (x >= 0) {
+              success
+            } else {
+              failure("Option --from must be >=0")
+            })
           .text("Specify which record to start from retrieving info."),
         opt[Int]("size")
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(size = v)))
           .validate(x =>
-            if (x >= 0) success
-            else failure("Option --size must be >=0"))
+            if (x >= 0) {
+              success
+            } else {
+              failure("Option --size must be >=0")
+            })
           .text("The max number of records returned in the query."))
   }
 
@@ -279,8 +291,11 @@ object CommandLine {
         opt[Int]("size")
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(size = v)))
           .validate(x =>
-            if (x >= 0) success
-            else failure("Option --size must be >=0"))
+            if (x >= 0) {
+              success
+            } else {
+              failure("Option --size must be >=0")
+            })
           .text("The max number of records returned in the query."))
   }
 

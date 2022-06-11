@@ -183,6 +183,15 @@ kyuubi.credentials.renewal.retry.wait|PT1M|How long to wait before retrying to f
 kyuubi.credentials.update.wait.timeout|PT1M|How long to wait until credentials are ready.|duration|1.5.0
 
 
+### Ctl
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.ctl.rest.auth.schema|basic|The authentication schema. Valid values are: basic, spnego.|string|1.6.0
+kyuubi.ctl.rest.base.url|&lt;undefined&gt;|The REST API base URL, which contains the scheme (http:// or https://), host name, port number|string|1.6.0
+kyuubi.ctl.rest.spnego.host|&lt;undefined&gt;|When auth schema is spnego, need to config spnego host.|string|1.6.0
+
+
 ### Delegation
 
 Key | Default | Meaning | Type | Since
@@ -339,15 +348,6 @@ kyuubi.operation.spark.listener.enabled|true|When set to true, Spark engine regi
 kyuubi.operation.status.polling.max.attempts|5|(deprecated) - Using kyuubi.operation.thrift.client.request.max.attempts instead|int|1.4.0
 kyuubi.operation.status.polling.timeout|PT5S|Timeout(ms) for long polling asynchronous running sql query's status|duration|1.0.0
 kyuubi.operation.thrift.client.request.max.attempts|5|Max attempts for operation thrift request call at server-side on raw transport failures, e.g. TTransportException|int|1.6.0
-
-
-### Rest
-
-Key | Default | Meaning | Type | Since
---- | --- | --- | --- | ---
-kyuubi.rest.auth.schema|basic|The authentication schema. Valid values are: basic, spnego.|string|1.6.0
-kyuubi.rest.base.url|&lt;undefined&gt;|The REST API base URL,which contains the scheme (http:// or https://), host name, port number|string|1.6.0
-kyuubi.rest.spnego.host|&lt;undefined&gt;|When auth schema is spnego, need to config spnego host.|string|1.6.0
 
 
 ### Server

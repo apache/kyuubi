@@ -18,4 +18,14 @@ package org.apache.kyuubi.ctl.cmd.delete
 
 import org.apache.kyuubi.ctl.CliConfig
 
-class DeleteEngineCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig) {}
+class DeleteEngineCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig) {
+
+  override def validate(): Unit = {
+    super.validate()
+
+    // validate user
+    if (normalizedCliConfig.engineOpts.user == null) {
+      fail("Must specify user name for engine, please use -u or --user.")
+    }
+  }
+}

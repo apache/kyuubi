@@ -17,10 +17,9 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.ctl.ControlCliArgumentsTestUtil._
-import org.apache.kyuubi.ctl.DateTimeUtil._
+import org.apache.kyuubi.ctl.util.DateTimeUtils._
 
-class BatchCliArgumentsSuite extends KyuubiFunSuite {
+class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
 
   test("create/submit batch") {
     Seq("create", "submit").foreach { op =>
@@ -30,7 +29,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
         "-f",
         "src/test/resources/cli/batch.yaml")
       val opArgs = new ControlCliArguments(args)
-      assert(opArgs.cliArgs.createOpts.filename == "src/test/resources/cli/batch.yaml")
+      assert(opArgs.cliConfig.createOpts.filename == "src/test/resources/cli/batch.yaml")
     }
   }
 
@@ -48,9 +47,9 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
         "--authSchema",
         "spnego")
       val opArgs = new ControlCliArguments(args)
-      assert(opArgs.cliArgs.commonOpts.hostUrl == "https://localhost:8440")
-      assert(opArgs.cliArgs.commonOpts.authSchema == "spnego")
-      assert(opArgs.cliArgs.commonOpts.username == "test_user_1")
+      assert(opArgs.cliConfig.commonOpts.hostUrl == "https://localhost:8440")
+      assert(opArgs.cliConfig.commonOpts.authSchema == "spnego")
+      assert(opArgs.cliConfig.commonOpts.username == "test_user_1")
     }
   }
 
@@ -59,7 +58,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       val args = Array(
         op,
         "batch")
-      testPrematureExit(args, "Config file is not specified.")
+      testPrematureExitForControlCliArgs(args, "Config file is not specified.")
     }
   }
 
@@ -70,7 +69,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
         "batch",
         "-f",
         "fake.yaml")
-      testPrematureExit(args, "Config file does not exist")
+      testPrematureExitForControlCliArgs(args, "Config file does not exist")
     }
   }
 
@@ -78,7 +77,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
     val args = Array(
       "get",
       "batch")
-    testPrematureExit(args, "Must specify batchId for get batch command")
+    testPrematureExitForControlCliArgs(args, "Must specify batchId for get batch command")
   }
 
   test("get batch") {
@@ -87,7 +86,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "batch",
       "f7fd702c-e54e-11ec-8fea-0242ac120002")
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliArgs.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
+    assert(opArgs.cliConfig.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
   }
 
   test("test list batch option") {
@@ -107,14 +106,14 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "--size",
       "5")
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliArgs.batchOpts.batchType == "spark")
-    assert(opArgs.cliArgs.batchOpts.batchUser == "tom")
-    assert(opArgs.cliArgs.batchOpts.batchState == "RUNNING")
-    assert(opArgs.cliArgs.batchOpts.createTime ==
+    assert(opArgs.cliConfig.batchOpts.batchType == "spark")
+    assert(opArgs.cliConfig.batchOpts.batchUser == "tom")
+    assert(opArgs.cliConfig.batchOpts.batchState == "RUNNING")
+    assert(opArgs.cliConfig.batchOpts.createTime ==
       dateStringToMillis("20220607000000", "yyyyMMddHHmmss"))
-    assert(opArgs.cliArgs.batchOpts.endTime == 0)
-    assert(opArgs.cliArgs.batchOpts.from == 2)
-    assert(opArgs.cliArgs.batchOpts.size == 5)
+    assert(opArgs.cliConfig.batchOpts.endTime == 0)
+    assert(opArgs.cliConfig.batchOpts.from == 2)
+    assert(opArgs.cliConfig.batchOpts.size == 5)
   }
 
   test("test list batch default option") {
@@ -122,9 +121,9 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "list",
       "batch")
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliArgs.batchOpts.batchType == null)
-    assert(opArgs.cliArgs.batchOpts.from == -1)
-    assert(opArgs.cliArgs.batchOpts.size == 10)
+    assert(opArgs.cliConfig.batchOpts.batchType == null)
+    assert(opArgs.cliConfig.batchOpts.from == -1)
+    assert(opArgs.cliConfig.batchOpts.size == 100)
   }
 
   test("test bad list batch option - size") {
@@ -135,7 +134,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "spark",
       "--size",
       "-4")
-    testPrematureExit(args, "Option --size must be >=0")
+    testPrematureExitForControlCliArgs(args, "Option --size must be >=0")
   }
 
   test("test bad list batch option - create date format") {
@@ -148,7 +147,9 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "4",
       "--createTime",
       "20220101")
-    testPrematureExit(args, "Option --createTime must be in yyyyMMddHHmmss format.")
+    testPrematureExitForControlCliArgs(
+      args,
+      "Option --createTime must be in yyyyMMddHHmmss format.")
   }
 
   test("test bad list batch option - end date format") {
@@ -161,7 +162,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "4",
       "--endTime",
       "20220101")
-    testPrematureExit(args, "Option --endTime must be in yyyyMMddHHmmss format.")
+    testPrematureExitForControlCliArgs(args, "Option --endTime must be in yyyyMMddHHmmss format.")
   }
 
   test("test bad list batch option - negative create date") {
@@ -174,7 +175,9 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "4",
       "--createTime",
       "19690101000000")
-    testPrematureExit(args, "Invalid createTime, negative milliseconds are not supported.")
+    testPrematureExitForControlCliArgs(
+      args,
+      "Invalid createTime, negative milliseconds are not supported.")
   }
 
   test("test bad list batch option - negative end date") {
@@ -187,7 +190,9 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "4",
       "--endTime",
       "19690101000000")
-    testPrematureExit(args, "Invalid endTime, negative milliseconds are not supported.")
+    testPrematureExitForControlCliArgs(
+      args,
+      "Invalid endTime, negative milliseconds are not supported.")
   }
 
   test("test bad list batch option - createTime > endTime") {
@@ -202,7 +207,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "20220602000000",
       "--endTime",
       "20220601000000")
-    testPrematureExit(
+    testPrematureExitForControlCliArgs(
       args,
       "Invalid createTime/endTime, " +
         "createTime should be less or equal to endTime.")
@@ -218,9 +223,9 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "--size",
       "5")
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliArgs.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
-    assert(opArgs.cliArgs.batchOpts.from == 2)
-    assert(opArgs.cliArgs.batchOpts.size == 5)
+    assert(opArgs.cliConfig.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
+    assert(opArgs.cliConfig.batchOpts.from == 2)
+    assert(opArgs.cliConfig.batchOpts.size == 5)
   }
 
   test("test log batch without batchId") {
@@ -231,7 +236,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "2",
       "--size",
       "5")
-    testPrematureExit(args, "Must specify batchId for log batch command")
+    testPrematureExitForControlCliArgs(args, "Must specify batchId for log batch command")
   }
 
   test("test log batch default option") {
@@ -240,9 +245,9 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite {
       "batch",
       "f7fd702c-e54e-11ec-8fea-0242ac120002")
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliArgs.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
-    assert(opArgs.cliArgs.batchOpts.from == -1)
-    assert(opArgs.cliArgs.batchOpts.size == 10)
+    assert(opArgs.cliConfig.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
+    assert(opArgs.cliConfig.batchOpts.from == -1)
+    assert(opArgs.cliConfig.batchOpts.size == 100)
   }
 
 }

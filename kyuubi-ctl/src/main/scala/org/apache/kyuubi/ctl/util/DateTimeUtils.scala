@@ -15,29 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ctl
+package org.apache.kyuubi.ctl.util
 
-import org.apache.kyuubi.KyuubiFunSuite
+import java.time.{Instant, LocalDateTime, ZoneId}
+import java.time.format.DateTimeFormatter
 
-object ControlCliArgumentsTestUtil extends KyuubiFunSuite {
+private[ctl] object DateTimeUtils {
 
-  /** Check whether the script exits and the given search string is printed. */
-  def testPrematureExit(args: Array[String], searchString: String): Unit = {
-    val logAppender = new LogAppender("test premature exit")
-    withLogAppender(logAppender) {
-      val thread = new Thread {
-        override def run(): Unit =
-          try {
-            new ControlCliArguments(args)
-          } catch {
-            case e: Exception =>
-              error(e)
-          }
-      }
-      thread.start()
-      thread.join()
-      assert(logAppender.loggingEvents.exists(
-        _.getMessage.getFormattedMessage.contains(searchString)))
-    }
+  def dateStringToMillis(date: String, format: String): Long = {
+    if (date == null) return 0
+    val localDateTime = LocalDateTime.parse(date, DateTimeFormatter.ofPattern(format))
+    localDateTime.atZone(ZoneId.systemDefault).toInstant.toEpochMilli
+  }
+
+  def millisToDateString(millis: Long, format: String): String = {
+    val formatter = DateTimeFormatter.ofPattern(format)
+    val date: LocalDateTime =
+      Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDateTime()
+    formatter.format(date)
   }
 }

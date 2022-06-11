@@ -25,17 +25,18 @@ import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest, OperationLog}
 import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.util.{CtlUtils, Validator}
 
 class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
-  private var map: HashMap[String, Object] = null
-
-  override def validateArguments(): Unit = {
-    map = readConfig()
+  def validate(): Unit = {
+    Validator.validateFilename(normalizedCliConfig)
   }
 
-  override def run(): Unit = {
-    withKyuubiRestClient(cliArgs, map, conf) { kyuubiRestClient =>
+  def run(): Unit = {
+    val map = CtlUtils.loadYamlAsMap(normalizedCliConfig)
+
+    withKyuubiRestClient(normalizedCliConfig, map, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
       val request = map.get("request").asInstanceOf[HashMap[String, Object]]
@@ -52,7 +53,7 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
       var log: OperationLog = null
       var done = false
       var from = 0
-      val size = 20
+      val size = normalizedCliConfig.batchOpts.size
       while (!done) {
         log = batchRestApi.getBatchLocalLog(
           batchId,
@@ -60,6 +61,8 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
           size)
         from += log.getLogRowSet.size
         log.getLogRowSet.asScala.foreach(x => info(x))
+
+        Thread.sleep(DEFAULT_LOG_QUERY_INTERVAL)
 
         batch = batchRestApi.getBatchById(batchId)
         if (log.getLogRowSet.size() == 0 && batch.getState() != "PENDING"

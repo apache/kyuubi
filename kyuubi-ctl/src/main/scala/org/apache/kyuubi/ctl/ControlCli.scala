@@ -18,6 +18,7 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.ctl.util.CommandLineUtils
 
 /**
  * Main gateway of launching a Kyuubi Ctl action.
@@ -32,11 +33,11 @@ private[kyuubi] class ControlCli extends Logging {
     val ctlArgs = parseArguments(args)
 
     // when parse failed, exit
-    if (ctlArgs.cliArgs == null) {
+    if (ctlArgs.cliConfig == null) {
       sys.exit(1)
     }
 
-    val verbose = ctlArgs.cliArgs.commonOpts.verbose
+    val verbose = ctlArgs.cliConfig.commonOpts.verbose
     if (verbose) {
       super.info(ctlArgs.toString)
     }

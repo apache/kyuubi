@@ -17,88 +17,42 @@
 package org.apache.kyuubi.ctl.cmd
 
 import java.io.{BufferedReader, File, FileInputStream, InputStreamReader}
-import java.net.InetAddress
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
 import java.util.HashMap
 
-import org.apache.commons.lang3.StringUtils
 import org.yaml.snakeyaml.Yaml
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SHARE_LEVEL_SUBDOMAIN, ENGINE_TYPE}
-import org.apache.kyuubi.ctl.{CliConfig, ControlObject}
+import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.ControlCli.printMessage
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths, ServiceNodeInfo}
 
-abstract class Command(var cliArgs: CliConfig) extends Logging {
+abstract class Command(cliConfig: CliConfig) extends Logging {
+
+  protected val DEFAULT_LOG_QUERY_INTERVAL: Int = 1000
 
   val conf = KyuubiConf().loadFileDefaults()
 
-  val verbose = cliArgs.commonOpts.verbose
+  val verbose = cliConfig.commonOpts.verbose
 
-  def preProcess(): Unit = {
-    this.cliArgs = useDefaultPropertyValueIfMissing()
-    validateArguments()
-  }
+  val normalizedCliConfig: CliConfig = useDefaultPropertyValueIfMissing()
 
   /** Ensure that required fields exists. Call this only once all defaults are loaded. */
-  def validateArguments(): Unit
+  def validate(): Unit
 
   def run(): Unit
 
   def fail(msg: String): Unit = throw new KyuubiException(msg)
 
-  protected def validateZkArguments(): Unit = {
-    if (cliArgs.commonOpts.zkQuorum == null) {
-      fail("Zookeeper quorum is not specified and no default value to load")
-    }
-    if (cliArgs.commonOpts.namespace == null) {
-      fail("Zookeeper namespace is not specified and no default value to load")
-    }
-  }
-
-  protected def validateHostAndPort(): Unit = {
-    if (cliArgs.commonOpts.host == null) {
-      fail("Must specify host for service")
-    }
-    if (cliArgs.commonOpts.port == null) {
-      fail("Must specify port for service")
-    }
-
-    try {
-      InetAddress.getByName(cliArgs.commonOpts.host)
-    } catch {
-      case _: Exception =>
-        fail(s"Unknown host: ${cliArgs.commonOpts.host}")
-    }
-
-    try {
-      if (cliArgs.commonOpts.port.toInt <= 0) {
-        fail(s"Specified port should be a positive number")
-      }
-    } catch {
-      case _: NumberFormatException =>
-        fail(s"Specified port is not a valid integer number: ${cliArgs.commonOpts.port}")
-    }
-  }
-
-  protected def validateUser(): Unit = {
-    if (cliArgs.resource == ControlObject.ENGINE && cliArgs.engineOpts.user == null) {
-      fail("Must specify user name for engine, please use -u or --user.")
-    }
-  }
-
   protected def mergeArgsIntoKyuubiConf(): Unit = {
-    conf.set(HA_ADDRESSES.key, cliArgs.commonOpts.zkQuorum)
-    conf.set(HA_NAMESPACE.key, cliArgs.commonOpts.namespace)
+    conf.set(HA_ADDRESSES.key, normalizedCliConfig.commonOpts.zkQuorum)
+    conf.set(HA_NAMESPACE.key, normalizedCliConfig.commonOpts.namespace)
   }
 
   private def useDefaultPropertyValueIfMissing(): CliConfig = {
-    var arguments: CliConfig = cliArgs.copy()
-    if (cliArgs.commonOpts.zkQuorum == null) {
+    var arguments: CliConfig = cliConfig.copy()
+    if (cliConfig.commonOpts.zkQuorum == null) {
       conf.getOption(HA_ADDRESSES.key).foreach { v =>
         if (verbose) {
           super.info(s"Zookeeper quorum is not specified, use value from default conf:$v")
@@ -125,56 +79,8 @@ abstract class Command(var cliArgs: CliConfig) extends Logging {
     arguments
   }
 
-  private[ctl] def getZkNamespace(): String = {
-    cliArgs.resource match {
-      case ControlObject.SERVER =>
-        DiscoveryPaths.makePath(null, cliArgs.commonOpts.namespace)
-      case ControlObject.ENGINE =>
-        val engineType = Some(cliArgs.engineOpts.engineType)
-          .filter(_ != null).filter(_.nonEmpty)
-          .getOrElse(conf.get(ENGINE_TYPE))
-        val engineSubdomain = Some(cliArgs.engineOpts.engineSubdomain)
-          .filter(_ != null).filter(_.nonEmpty)
-          .getOrElse(conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse("default"))
-        val engineShareLevel = Some(cliArgs.engineOpts.engineShareLevel)
-          .filter(_ != null).filter(_.nonEmpty)
-          .getOrElse(conf.get(ENGINE_SHARE_LEVEL))
-        // The path of the engine defined in zookeeper comes from
-        // org.apache.kyuubi.engine.EngineRef#engineSpace
-        DiscoveryPaths.makePath(
-          s"${cliArgs.commonOpts.namespace}_${cliArgs.commonOpts.version}_" +
-            s"${engineShareLevel}_${engineType}",
-          cliArgs.engineOpts.user,
-          Array(engineSubdomain))
-    }
-  }
-
-  private[ctl] def getServiceNodes(
-      discoveryClient: DiscoveryClient,
-      znodeRoot: String,
-      hostPortOpt: Option[(String, Int)]): Seq[ServiceNodeInfo] = {
-    val serviceNodes = discoveryClient.getServiceNodesInfo(znodeRoot)
-    hostPortOpt match {
-      case Some((host, port)) => serviceNodes.filter { sn =>
-          sn.host == host && sn.port == port
-        }
-      case _ => serviceNodes
-    }
-  }
-
   private[ctl] def readConfig(): HashMap[String, Object] = {
-    var filename = cliArgs.createOpts.filename
-    if (StringUtils.isBlank(filename)) {
-      fail(s"Config file is not specified.")
-    }
-
-    val currentPath = Paths.get("").toAbsolutePath
-    if (!filename.startsWith("/")) {
-      filename = currentPath + "/" + filename
-    }
-    if (!Files.exists(Paths.get(filename))) {
-      fail(s"Config file does not exist: ${filename}.")
-    }
+    var filename = normalizedCliConfig.createOpts.filename
 
     var map: HashMap[String, Object] = null
     var br: BufferedReader = null

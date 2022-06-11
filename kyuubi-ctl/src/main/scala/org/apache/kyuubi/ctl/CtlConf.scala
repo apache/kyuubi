@@ -25,7 +25,7 @@ object CtlConf {
 
   val CTL_REST_CLIENT_BASE_URL: OptionalConfigEntry[String] =
     buildConf("kyuubi.ctl.rest.base.url")
-      .doc("The REST API base URL," +
+      .doc("The REST API base URL, " +
         "which contains the scheme (http:// or https://), host name, port number")
       .version("1.6.0")
       .stringConf

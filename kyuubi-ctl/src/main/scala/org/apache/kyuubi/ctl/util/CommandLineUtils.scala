@@ -14,18 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl.cmd.get
 
-import org.apache.kyuubi.ctl.CliConfig
+package org.apache.kyuubi.ctl.util
 
-class GetEngineCommand(cliConfig: CliConfig) extends GetCommand(cliConfig) {
+import java.io.PrintStream
 
-  override def validate(): Unit = {
-    super.validate()
+/**
+ * Contains basic command line parsing functionality and methods to parse some common Kyuubi Ctl
+ * options.
+ */
+private[kyuubi] trait CommandLineUtils extends CommandLineLoggingUtils {
 
-    // validate user
-    if (normalizedCliConfig.engineOpts.user == null) {
-      fail("Must specify user name for engine, please use -u or --user.")
-    }
-  }
+  def main(args: Array[String]): Unit
+}
+
+private[kyuubi] trait CommandLineLoggingUtils {
+  // Exposed for testing
+  private[kyuubi] var exitFn: Int => Unit = (exitCode: Int) => System.exit(exitCode)
+
+  private[kyuubi] var printStream: PrintStream = System.err
+
+  // scalastyle:off println
+  private[kyuubi] def printMessage(msg: Any): Unit = printStream.println(msg)
+  // scalastyle:on println
 }

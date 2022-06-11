@@ -51,11 +51,9 @@ case class CommonOpts(
     password: String = null,
     spnegoHost: String = null)
 
-case class CreateOpts(
-    filename: String = null)
+case class CreateOpts(filename: String = null)
 
-case class LogOpts(
-    forward: Boolean = false)
+case class LogOpts(forward: Boolean = false)
 
 case class BatchOpts(
     batchId: String = null,
@@ -65,7 +63,7 @@ case class BatchOpts(
     createTime: Long = 0,
     endTime: Long = 0,
     from: Int = -1,
-    size: Int = 10,
+    size: Int = 100,
     hs2ProxyUser: String = null)
 
 case class EngineOpts(

@@ -26,35 +26,37 @@ import org.apache.kyuubi.ctl.cmd.Command
 
 class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
-  override def validateArguments(): Unit = {
-    if (cliArgs.batchOpts.batchId == null) {
+  def validate(): Unit = {
+    if (normalizedCliConfig.batchOpts.batchId == null) {
       fail("Must specify batchId for log batch command.")
     }
   }
 
-  override def run(): Unit = {
-    withKyuubiRestClient(cliArgs, null, conf) { kyuubiRestClient =>
+  def run(): Unit = {
+    withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
+      val batchId = normalizedCliConfig.batchOpts.batchId
+      var from = normalizedCliConfig.batchOpts.from
+      val size = normalizedCliConfig.batchOpts.size
       var log: OperationLog = batchRestApi.getBatchLocalLog(
-        cliArgs.batchOpts.batchId,
-        cliArgs.batchOpts.from,
-        cliArgs.batchOpts.size)
+        batchId,
+        from,
+        size)
       log.getLogRowSet.asScala.foreach(x => info(x))
 
       var done = false
-      val batchId = cliArgs.batchOpts.batchId
       var batch: Batch = null
-      var from =
-        if (cliArgs.batchOpts.from < 0) log.getLogRowSet.size
-        else cliArgs.batchOpts.from + log.getLogRowSet.size
-      if (cliArgs.logOpts.forward) {
+      from = if (from < 0) log.getLogRowSet.size else from + log.getLogRowSet.size
+      if (normalizedCliConfig.logOpts.forward) {
         while (!done) {
           log = batchRestApi.getBatchLocalLog(
             batchId,
             from,
-            cliArgs.batchOpts.size)
+            size)
           from += log.getLogRowSet.size
           log.getLogRowSet.asScala.foreach(x => info(x))
+
+          Thread.sleep(DEFAULT_LOG_QUERY_INTERVAL)
 
           batch = batchRestApi.getBatchById(batchId)
           if (log.getLogRowSet.size() == 0 && batch.getState() != "PENDING"

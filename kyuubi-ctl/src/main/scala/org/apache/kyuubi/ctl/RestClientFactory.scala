@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.ctl
 
-import java.util.HashMap
+import java.util.{Map => JMap}
 
 import org.apache.commons.lang3.StringUtils
 
@@ -28,11 +28,11 @@ import org.apache.kyuubi.ctl.CtlConf._
 object RestClientFactory {
 
   private[ctl] def withKyuubiRestClient(
-      cliArgs: CliConfig,
-      map: HashMap[String, Object],
+      cliConfig: CliConfig,
+      map: JMap[String, Object],
       conf: KyuubiConf)(f: KyuubiRestClient => Unit): Unit = {
     val kyuubiRestClient: KyuubiRestClient =
-      RestClientFactory.getKyuubiRestClient(cliArgs, map, conf)
+      RestClientFactory.getKyuubiRestClient(cliConfig, map, conf)
     try {
       f(kyuubiRestClient)
     } finally {
@@ -41,19 +41,19 @@ object RestClientFactory {
   }
 
   private def getKyuubiRestClient(
-      cliArgs: CliConfig,
-      map: HashMap[String, Object],
+      cliConfig: CliConfig,
+      map: JMap[String, Object],
       conf: KyuubiConf): KyuubiRestClient = {
     val version = getApiVersion(map)
-    val hostUrl = getRestConfig("hostUrl", conf.get(CTL_REST_CLIENT_BASE_URL).get, cliArgs, map)
+    val hostUrl = getRestConfig("hostUrl", conf.get(CTL_REST_CLIENT_BASE_URL).get, cliConfig, map)
     val authSchema =
-      getRestConfig("authSchema", conf.get(CTL_REST_CLIENT_AUTH_SCHEMA), cliArgs, map)
+      getRestConfig("authSchema", conf.get(CTL_REST_CLIENT_AUTH_SCHEMA), cliConfig, map)
 
     var kyuubiRestClient: KyuubiRestClient = null
-    authSchema match {
+    authSchema.toLowerCase match {
       case "basic" =>
-        val username = getRestConfig("username", null, cliArgs, map)
-        val password = cliArgs.commonOpts.password
+        val username = getRestConfig("username", null, cliConfig, map)
+        val password = cliConfig.commonOpts.password
         kyuubiRestClient = KyuubiRestClient.builder(hostUrl)
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
@@ -62,7 +62,7 @@ object RestClientFactory {
           .build()
       case "spnego" =>
         val spnegoHost =
-          getRestConfig("spnegoHost", conf.get(CTL_REST_CLIENT_SPNEGO_HOST).get, cliArgs, map)
+          getRestConfig("spnegoHost", conf.get(CTL_REST_CLIENT_SPNEGO_HOST).get, cliConfig, map)
         kyuubiRestClient = KyuubiRestClient.builder(hostUrl)
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
@@ -73,7 +73,7 @@ object RestClientFactory {
     kyuubiRestClient
   }
 
-  private def getApiVersion(map: HashMap[String, Object]): String = {
+  private def getApiVersion(map: JMap[String, Object]): String = {
     var version: String = "V1"
     if (map != null) {
       val configuredVersion = map.get("apiVersion").asInstanceOf[String].toUpperCase
@@ -87,10 +87,10 @@ object RestClientFactory {
   private def getRestConfig(
       key: String,
       defaultValue: String,
-      cliArgs: CliConfig,
-      map: HashMap[String, Object]): String = {
+      cliConfig: CliConfig,
+      map: JMap[String, Object]): String = {
     // get value from command line
-    val commonOpts = cliArgs.commonOpts
+    val commonOpts = cliConfig.commonOpts
     var configValue: String = key match {
       case "hostUrl" => commonOpts.hostUrl
       case "authSchema" => commonOpts.authSchema

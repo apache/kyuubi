@@ -18,4 +18,14 @@ package org.apache.kyuubi.ctl.cmd.list
 
 import org.apache.kyuubi.ctl.CliConfig
 
-class ListEngineCommand(cliConfig: CliConfig) extends ListCommand(cliConfig) {}
+class ListEngineCommand(cliConfig: CliConfig) extends ListCommand(cliConfig) {
+
+  override def validate(): Unit = {
+    super.validate()
+
+    // validate user
+    if (normalizedCliConfig.engineOpts.user == null) {
+      fail("Must specify user name for engine, please use -u or --user.")
+    }
+  }
+}

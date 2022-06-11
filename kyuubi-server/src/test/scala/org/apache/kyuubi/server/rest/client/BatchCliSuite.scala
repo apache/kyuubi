@@ -64,6 +64,18 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
     Files.write(Paths.get(batchFile), batch_basic.getBytes(StandardCharsets.UTF_8))
   }
 
+  override def afterEach(): Unit = {
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    sessionManager.allSessions().foreach { session =>
+      sessionManager.closeSession(session.handle)
+    }
+    sessionManager.getBatchesFromStateStore(null, null, null, 0, 0, 0, Int.MaxValue).foreach {
+      batch =>
+        sessionManager.applicationManager.killApplication(None, batch.getId)
+        sessionManager.cleanupMetadata(batch.getId)
+    }
+  }
+
   test("basic batch rest client") {
     val createArgs = Array(
       "create",
@@ -72,7 +84,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       batchFile,
       "--password",
       ldapUserPasswd)
-    var result = testPrematureExit(createArgs, "")
+    var result = testPrematureExitForControlCli(createArgs, "")
     assert(result.contains("Type: SPARK"))
     assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
     val startIndex = result.indexOf("Id: ") + 4
@@ -87,7 +99,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       ldapUser,
       "--password",
       ldapUserPasswd)
-    result = testPrematureExit(getArgs, "Type: SPARK")
+    result = testPrematureExitForControlCli(getArgs, "Type: SPARK")
     assert(result.contains("Type: SPARK"))
     assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
 
@@ -101,7 +113,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       ldapUser,
       "--password",
       ldapUserPasswd)
-    result = testPrematureExit(logArgs, "")
+    result = testPrematureExitForControlCli(logArgs, "")
     val rows = result.split("\n")
     assert(rows.length === 2)
 
@@ -113,7 +125,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       ldapUser,
       "--password",
       ldapUserPasswd)
-    result = testPrematureExit(deleteArgs, "\"success\":true")
+    result = testPrematureExitForControlCli(deleteArgs, "\"success\":true")
   }
 
   test("spnego batch rest client") {
@@ -125,8 +137,8 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "-f",
       batchFile,
       "--authSchema",
-      "spnego")
-    var result = testPrematureExit(createArgs, "")
+      "SPNEGO")
+    var result = testPrematureExitForControlCli(createArgs, "")
     assert(result.contains("Type: SPARK"))
     assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
     val startIndex = result.indexOf("Id: ") + 4
@@ -139,7 +151,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       batchId,
       "--authSchema",
       "spnego")
-    result = testPrematureExit(getArgs, "Type: SPARK")
+    result = testPrematureExitForControlCli(getArgs, "Type: SPARK")
     assert(result.contains("Type: SPARK"))
     assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
 
@@ -151,7 +163,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "2",
       "--authSchema",
       "spnego")
-    result = testPrematureExit(logArgs, "")
+    result = testPrematureExitForControlCli(logArgs, "")
     val rows = result.split("\n")
     assert(rows.length === 2)
 
@@ -161,7 +173,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       batchId,
       "--authSchema",
       "spnego")
-    result = testPrematureExit(deleteArgs, "\"success\":true")
+    result = testPrematureExitForControlCli(deleteArgs, "\"success\":true")
   }
 
   test("log batch test") {
@@ -172,7 +184,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       batchFile,
       "--password",
       ldapUserPasswd)
-    val result = testPrematureExit(createArgs, "")
+    val result = testPrematureExitForControlCli(createArgs, "")
     assert(result.contains("Type: SPARK"))
     assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
     val startIndex = result.indexOf("Id: ") + 4
@@ -190,7 +202,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "--password",
       ldapUserPasswd,
       "--forward")
-    testPrematureExit(logArgs, s"Submitted application: ${appName}")
+    testPrematureExitForControlCli(logArgs, s"Submitted application: ${appName}")
   }
 
   test("submit batch test") {
@@ -201,7 +213,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       batchFile,
       "--password",
       ldapUserPasswd)
-    testPrematureExit(submitArgs, s"Submitted application: ${appName}")
+    testPrematureExitForControlCli(submitArgs, s"Submitted application: ${appName}")
   }
 
   test("list batch test") {
@@ -210,7 +222,6 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
     sessionManager.allSessions().foreach(_.close())
 
     sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
@@ -233,7 +244,6 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "",
       Map.empty)
     sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
@@ -244,7 +254,6 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
         "",
         ""))
     sessionManager.openBatchSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2,
       "kyuubi",
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
@@ -268,7 +277,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "kyuubi",
       "--createTime",
       "20220101000000")
-    testPrematureExit(listArgs, "Total number of batches: 3")
+    testPrematureExitForControlCli(listArgs, "Total number of batches: 3")
 
     val listArgs1 = Array(
       "list",
@@ -279,7 +288,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       ldapUserPasswd,
       "--endTime",
       "20220101000000")
-    testPrematureExit(listArgs1, "Total number of batches: 0")
+    testPrematureExitForControlCli(listArgs1, "Total number of batches: 0")
   }
 
 }

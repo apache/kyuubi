@@ -14,17 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl
+package org.apache.kyuubi.ctl.util
 
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.client.api.v1.dto.{Batch, GetBatchesResponse}
-import org.apache.kyuubi.ctl.DateTimeUtil._
+import org.apache.kyuubi.ctl.util.DateTimeUtils._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
-object Render {
+private[ctl] object Render {
 
-  private[ctl] def renderServiceNodesInfo(
+  def renderServiceNodesInfo(
       title: String,
       serviceNodeInfo: Seq[ServiceNodeInfo],
       verbose: Boolean): String = {
@@ -35,7 +35,7 @@ object Render {
     Tabulator.format(title, header, rows, verbose)
   }
 
-  private[ctl] def renderBatchListInfo(batchListInfo: GetBatchesResponse): String = {
+  def renderBatchListInfo(batchListInfo: GetBatchesResponse): String = {
     val title = s"Total number of batches: ${batchListInfo.getTotal}"
     val header =
       Seq("Id", "Name", "User", "Type", "Instance", "State", "App Info", "Create Time", "End Time")
@@ -54,7 +54,7 @@ object Render {
     Tabulator.format(title, header, rows, true)
   }
 
-  private[ctl] def renderBatchInfo(batch: Batch): String = {
+  def renderBatchInfo(batch: Batch): String = {
     s"""Batch Info:
        |  Batch Id: ${batch.getId}
        |  Type: ${batch.getBatchType}

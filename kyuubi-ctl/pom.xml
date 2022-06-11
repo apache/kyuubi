@@ -32,11 +32,6 @@
     <packaging>jar</packaging>
     <url>https://kyuubi.apache.org/</url>
 
-    <properties>
-        <!-- only used in kyuubi-ctl module -->
-        <snakeyaml.version>1.30</snakeyaml.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
@@ -80,11 +75,6 @@
         <dependency>
             <groupId>com.github.scopt</groupId>
             <artifactId>scopt_${scala.binary.version}</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-reflect</artifactId>
         </dependency>
 
         <dependency>

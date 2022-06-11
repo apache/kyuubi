@@ -18,10 +18,9 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
-import org.apache.kyuubi.ctl.ControlCliArgumentsTestUtil._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 
-class ControlCliArgumentsSuite extends KyuubiFunSuite {
+class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
   val zkQuorum = "localhost:2181"
   val namespace = "kyuubi"
   val user = "kyuubi"
@@ -72,14 +71,14 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
           "--version",
           KYUUBI_VERSION)
         val opArgs = new ControlCliArguments(args)
-        assert(opArgs.cliArgs.action.toString.equalsIgnoreCase(op))
-        assert(opArgs.cliArgs.resource.toString.equalsIgnoreCase(service))
-        assert(opArgs.cliArgs.commonOpts.zkQuorum == zkQuorum)
-        assert(opArgs.cliArgs.commonOpts.namespace == namespace)
-        assert(opArgs.cliArgs.engineOpts.user == user)
-        assert(opArgs.cliArgs.commonOpts.host == host)
-        assert(opArgs.cliArgs.commonOpts.port == port)
-        assert(opArgs.cliArgs.commonOpts.version == KYUUBI_VERSION)
+        assert(opArgs.cliConfig.action.toString.equalsIgnoreCase(op))
+        assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase(service))
+        assert(opArgs.cliConfig.commonOpts.zkQuorum == zkQuorum)
+        assert(opArgs.cliConfig.commonOpts.namespace == namespace)
+        assert(opArgs.cliConfig.engineOpts.user == user)
+        assert(opArgs.cliConfig.commonOpts.host == host)
+        assert(opArgs.cliConfig.commonOpts.port == port)
+        assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
       }
     }
 
@@ -101,35 +100,37 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
         "--version",
         KYUUBI_VERSION)
       val opArgs = new ControlCliArguments(args)
-      assert(opArgs.cliArgs.action.toString.equalsIgnoreCase(op))
-      assert(opArgs.cliArgs.resource.toString.equalsIgnoreCase(service))
-      assert(opArgs.cliArgs.commonOpts.zkQuorum == zkQuorum)
-      assert(opArgs.cliArgs.commonOpts.namespace == newNamespace)
-      assert(opArgs.cliArgs.commonOpts.host == host)
-      assert(opArgs.cliArgs.commonOpts.port == port)
-      assert(opArgs.cliArgs.commonOpts.version == KYUUBI_VERSION)
+      assert(opArgs.cliConfig.action.toString.equalsIgnoreCase(op))
+      assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase(service))
+      assert(opArgs.cliConfig.commonOpts.zkQuorum == zkQuorum)
+      assert(opArgs.cliConfig.commonOpts.namespace == newNamespace)
+      assert(opArgs.cliConfig.commonOpts.host == host)
+      assert(opArgs.cliConfig.commonOpts.port == port)
+      assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
     }
   }
 
   test("prints usage on empty input") {
-    testPrematureExit(
+    testPrematureExitForControlCliArgs(
       Array.empty[String],
       "Must specify action command: [create|get|delete|list|log|submit].")
-    testPrematureExit(
+    testPrematureExitForControlCliArgs(
       Array("--verbose"),
       "Must specify action command: [create|get|delete|list|log|submit].")
   }
 
   test("prints error with unrecognized options") {
-    testPrematureExit(Array("create", "--unknown"), "Unknown option --unknown")
-    testPrematureExit(Array("--unknown"), "Unknown option --unknown")
+    testPrematureExitForControlCliArgs(Array("create", "--unknown"), "Unknown option --unknown")
+    testPrematureExitForControlCliArgs(Array("--unknown"), "Unknown option --unknown")
   }
 
   test("test invalid arguments") {
     // for server, user option is not support
-    testPrematureExit(Array("create", "--user"), "Unknown option --user")
+    testPrematureExitForControlCliArgs(Array("create", "--user"), "Unknown option --user")
     // for engine, user option need a value
-    testPrematureExit(Array("get", "engine", "--user"), "Missing value after --user")
+    testPrematureExitForControlCliArgs(
+      Array("get", "engine", "--user"),
+      "Missing value after --user")
   }
 
   test("test extra unused arguments") {
@@ -137,13 +138,13 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       "list",
       "extraArg1",
       "extraArg2")
-    testPrematureExit(args, "Unknown argument 'extraArg1'")
+    testPrematureExitForControlCliArgs(args, "Unknown argument 'extraArg1'")
   }
 
   test("test list action arguments") {
     val args = Array(
       "list")
-    testPrematureExit(args, "Zookeeper quorum is not specified")
+    testPrematureExitForControlCliArgs(args, "Zookeeper quorum is not specified")
 
     val args2 = Array(
       "list",
@@ -152,14 +153,14 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       "--namespace",
       namespace)
     val opArgs = new ControlCliArguments(args2)
-    assert(opArgs.cliArgs.action == ControlAction.LIST)
+    assert(opArgs.cliConfig.action == ControlAction.LIST)
   }
 
   test("test get/delete action arguments") {
     Seq("get", "delete").foreach { op =>
       val args = Array(
         op)
-      testPrematureExit(args, "Zookeeper quorum is not specified")
+      testPrematureExitForControlCliArgs(args, "Zookeeper quorum is not specified")
 
       val args2 = Array(
         op,
@@ -167,7 +168,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
         zkQuorum,
         "--namespace",
         namespace)
-      testPrematureExit(args2, "Must specify host")
+      testPrematureExitForControlCliArgs(args2, "Must specify host")
 
       val args3 = Array(
         op,
@@ -177,7 +178,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
         namespace,
         "--host",
         host)
-      testPrematureExit(args3, "Must specify port")
+      testPrematureExitForControlCliArgs(args3, "Must specify port")
 
       val args4 = Array(
         op,
@@ -190,7 +191,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
         host,
         "--port",
         port)
-      testPrematureExit(args4, "Must specify user name for engine")
+      testPrematureExitForControlCliArgs(args4, "Must specify user name for engine")
 
       val args5 = Array(
         op,
@@ -204,7 +205,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
         "--port",
         port)
       val opArgs6 = new ControlCliArguments(args5)
-      assert(opArgs6.cliArgs.action.toString.equalsIgnoreCase(op))
+      assert(opArgs6.cliConfig.action.toString.equalsIgnoreCase(op))
     }
   }
 
@@ -220,7 +221,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       "unknown-host",
       "--port",
       port)
-    testPrematureExit(args, "Unknown host")
+    testPrematureExitForControlCliArgs(args, "Unknown host")
   }
 
   test("test with invalid port specification") {
@@ -235,7 +236,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       host,
       "--port",
       "invalid-format")
-    testPrematureExit(args, "Specified port is not a valid integer number")
+    testPrematureExitForControlCliArgs(args, "Specified port is not a valid integer number")
 
     val args2 = Array(
       "get",
@@ -248,7 +249,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       host,
       "--port",
       "0")
-    testPrematureExit(args2, "Specified port should be a positive number")
+    testPrematureExitForControlCliArgs(args2, "Specified port should be a positive number")
   }
 
   test("test create action arguments") {
@@ -257,7 +258,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       val op = "create"
       val args = Array(
         op)
-      testPrematureExit(args, "Zookeeper quorum is not specified")
+      testPrematureExitForControlCliArgs(args, "Zookeeper quorum is not specified")
 
       val args2 = Array(
         op,
@@ -267,7 +268,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
         "--namespace",
         newNamespace)
       val opArgs2 = new ControlCliArguments(args2)
-      assert(opArgs2.cliArgs.action.toString.equalsIgnoreCase(op))
+      assert(opArgs2.cliConfig.action.toString.equalsIgnoreCase(op))
 
       val args4 = Array(
         op,
@@ -277,7 +278,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
         "--namespace",
         newNamespace)
       // engine is not support, expect scopt print Unknown argument.
-      testPrematureExit(args4, "Unknown argument 'engine'")
+      testPrematureExitForControlCliArgs(args4, "Unknown argument 'engine'")
     }
   }
 
@@ -287,8 +288,8 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       "--zk-quorum",
       zkQuorum)
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliArgs.commonOpts.namespace == namespace)
-    assert(opArgs.cliArgs.commonOpts.version == KYUUBI_VERSION)
+    assert(opArgs.cliConfig.commonOpts.namespace == namespace)
+    assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
   }
 
   test("test use short options") {
@@ -310,14 +311,14 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
           "-v",
           KYUUBI_VERSION)
         val opArgs = new ControlCliArguments(args)
-        assert(opArgs.cliArgs.action.toString.equalsIgnoreCase(op))
-        assert(opArgs.cliArgs.resource.toString.equalsIgnoreCase(service))
-        assert(opArgs.cliArgs.commonOpts.zkQuorum == zkQuorum)
-        assert(opArgs.cliArgs.commonOpts.namespace == namespace)
-        assert(opArgs.cliArgs.engineOpts.user == user)
-        assert(opArgs.cliArgs.commonOpts.host == host)
-        assert(opArgs.cliArgs.commonOpts.port == port)
-        assert(opArgs.cliArgs.commonOpts.version == KYUUBI_VERSION)
+        assert(opArgs.cliConfig.action.toString.equalsIgnoreCase(op))
+        assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase(service))
+        assert(opArgs.cliConfig.commonOpts.zkQuorum == zkQuorum)
+        assert(opArgs.cliConfig.commonOpts.namespace == namespace)
+        assert(opArgs.cliConfig.engineOpts.user == user)
+        assert(opArgs.cliConfig.commonOpts.host == host)
+        assert(opArgs.cliConfig.commonOpts.port == port)
+        assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
       }
     }
 
@@ -328,7 +329,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
       zkQuorum,
       "-b")
     val opArgs3 = new ControlCliArguments(args2)
-    assert(opArgs3.cliArgs.commonOpts.verbose)
+    assert(opArgs3.cliConfig.commonOpts.verbose)
   }
 
   test("test --help") {
@@ -348,10 +349,10 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite {
          |  -v, --version <value>    $versionHelpString
          |  -b, --verbose            Print additional debug output.
          |  --hostUrl <value>        Host url for rest api.
-         |  --authSchema <value>     Auth schema for rest api.
+         |  --authSchema <value>     Auth schema for rest api, valid values are basic, spnego.
          |  --username <value>       Username for basic authentication.
-         |  --password <value>       Password for rest api.
-         |  --spnegoHost <value>     Spnego host for rest api.
+         |  --password <value>       Password for basic authentication.
+         |  --spnegoHost <value>     Spnego host for spnego authentication.
          |
          |Command: create [batch|server] [options]
          |${"\t"}Create a resource.

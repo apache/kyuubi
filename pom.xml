@@ -156,6 +156,7 @@
         <scalatestplus.version>3.2.9.0</scalatestplus.version>
         <scopt.version>4.0.1</scopt.version>
         <slf4j.version>1.7.35</slf4j.version>
+        <snakeyaml.version>1.30</snakeyaml.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `iceberg.name`, `maven.plugin.scalatest.exclude.tags`

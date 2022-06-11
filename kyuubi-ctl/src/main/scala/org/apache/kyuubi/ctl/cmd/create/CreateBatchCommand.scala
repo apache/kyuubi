@@ -20,22 +20,21 @@ import java.util.{ArrayList, HashMap}
 
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
-import org.apache.kyuubi.ctl.{CliConfig, Render}
+import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
 
 class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
-  private var map: HashMap[String, Object] = null
-
-  /** Ensure that required fields exists. Call this only once all defaults are loaded. */
-  override def validateArguments(): Unit = {
-    map = readConfig()
+  def validate(): Unit = {
+    Validator.validateFilename(normalizedCliConfig)
   }
 
-  override def run(): Unit = {
+  def run(): Unit = {
+    val map = CtlUtils.loadYamlAsMap(normalizedCliConfig)
 
-    withKyuubiRestClient(cliArgs, map, conf) { kyuubiRestClient =>
+    withKyuubiRestClient(normalizedCliConfig, map, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
       val request = map.get("request").asInstanceOf[HashMap[String, Object]]
