@@ -34,4 +34,14 @@ abstract class KyuubiSession(
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 
+  private[kyuubi] def handleSessionException(f: => Unit): Unit = {
+    try {
+      f
+    } catch {
+      case t: Throwable =>
+        getSessionEvent.foreach(_.exception = Some(t))
+        throw t
+    }
+  }
+
 }

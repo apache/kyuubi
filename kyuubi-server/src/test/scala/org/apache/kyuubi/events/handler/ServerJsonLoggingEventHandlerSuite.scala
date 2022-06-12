@@ -21,11 +21,13 @@ import java.net.InetAddress
 import java.nio.file.Paths
 import java.util.UUID
 
+import scala.collection.JavaConverters._
 import scala.util.matching.Regex
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TStatusCode}
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -226,6 +228,35 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
           case pattern(usr) => assert(usr == sys.env(USER))
         }
       }
+    }
+  }
+
+  test("open session exception") {
+    val name = UUID.randomUUID().toString
+    withSessionConf(Map("spark.driver.memory" -> "abc",
+      KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false",
+      KyuubiConf.SESSION_NAME.key -> name))()() {
+      withThriftClient { client =>
+        val req = new TOpenSessionReq()
+        req.setUsername(Utils.currentUser)
+        req.setPassword("anonymous")
+        req.setConfiguration(sessionConfigs.asJava)
+        val resp = client.OpenSession(req)
+        assert(resp.getSessionHandle === null)
+        assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      }
+    }
+
+    val serverSessionEventPath =
+      Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
+    withJdbcStatement() { statement =>
+      val res = statement.executeQuery(
+        s"SELECT * FROM `json`.`$serverSessionEventPath` " +
+          s"where sessionName = '$name' and exception is not null limit 1")
+      assert(res.next())
+      val exception = res.getObject("exception")
+      assert(exception.toString.contains("Invalid maximum heap size: -Xmxabc"))
     }
   }
 }
