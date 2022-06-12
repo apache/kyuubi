@@ -50,7 +50,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin {
         matchAllPatterns foreach { pattern =>
           checkGetSchemas(
             metaData.getSchemas(cg, pattern),
-            dbs ++ Seq("global_temp"),
+            dbs,
             catalog)
         }
       }
@@ -86,7 +86,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin {
         matchAllPatterns foreach { pattern =>
           checkGetSchemas(
             metaData.getSchemas(cg, pattern),
-            dbs ++ Seq("global_temp", "a", "db1", "db1.db2"),
+            dbs ++ Seq("a", "db1", "db1.db2"),
             catalog)
         }
       }
