@@ -29,17 +29,38 @@ object HighAvailabilityConf {
 
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
+  @deprecated(s"using ${HA_ADDRESSES.key} instead", "1.6.0")
   val HA_ZK_QUORUM: ConfigEntry[String] = buildConf("kyuubi.ha.zookeeper.quorum")
-    .doc("The connection string for the zookeeper ensemble")
+    .doc("(deprecated) The connection string for the zookeeper ensemble")
     .version("1.0.0")
     .stringConf
     .createWithDefault("")
 
+  @deprecated(s"using ${HA_NAMESPACE.key} instead", "1.6.0")
   val HA_ZK_NAMESPACE: ConfigEntry[String] = buildConf("kyuubi.ha.zookeeper.namespace")
-    .doc("The root directory for the service to deploy its instance uri")
+    .doc("(deprecated) The root directory for the service to deploy its instance uri")
     .version("1.0.0")
     .stringConf
     .createWithDefault("kyuubi")
+
+  val HA_ADDRESSES: ConfigEntry[String] = buildConf("kyuubi.ha.addresses")
+    .doc("The connection string for the discovery ensemble")
+    .version("1.6.0")
+    .fallbackConf(HA_ZK_QUORUM)
+
+  val HA_NAMESPACE: ConfigEntry[String] =
+    buildConf("kyuubi.ha.namespace")
+      .doc("The root directory for the service to deploy its instance uri")
+      .version("1.6.0")
+      .fallbackConf(HA_ZK_NAMESPACE)
+
+  val HA_CLIENT_CLASS: ConfigEntry[String] =
+    buildConf("kyuubi.ha.client.class")
+      .doc("Class name for service discovery client.")
+      .version("1.6.0")
+      .stringConf
+      .checkValue(_.nonEmpty, "must not be empty")
+      .createWithDefault("org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient")
 
   @deprecated(s"using ${HA_ZK_AUTH_TYPE.key} and ${HA_ZK_ENGINE_AUTH_TYPE.key} instead", "1.3.2")
   val HA_ZK_ACL_ENABLED: ConfigEntry[Boolean] =
@@ -153,8 +174,9 @@ object HighAvailabilityConf {
 
   val HA_ZK_ENGINE_SECURE_SECRET_NODE: OptionalConfigEntry[String] =
     buildConf("kyuubi.ha.zookeeper.engine.secure.secret.node")
-      .doc("The zk node contains the secret that used for internal secure between Kyuubi server " +
-        "and Kyuubi engine, please make sure that it is only visible for Kyuubi.")
+      .internal
+      .doc("The zk node contains the secret that used for internal secure, please make sure " +
+        "that it is only visible for Kyuubi.")
       .version("1.5.0")
       .stringConf
       .createOptional

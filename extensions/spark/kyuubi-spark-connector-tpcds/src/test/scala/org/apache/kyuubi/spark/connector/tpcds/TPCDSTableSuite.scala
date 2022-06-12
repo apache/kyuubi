@@ -17,15 +17,17 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
+import io.trino.tpcds.Table
+import io.trino.tpcds.generator.CallCenterGeneratorColumn
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.spark.connector.tpcds.LocalSparkSession.withSparkSession
+import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
 class TPCDSTableSuite extends KyuubiFunSuite {
 
-  test("useAnsiStringType (true,false)") {
+  test("useAnsiStringType (true, false)") {
     Seq(true, false).foreach(key => {
       val sparkConf = new SparkConf().setMaster("local[*]")
         .set("spark.ui.enabled", "false")
@@ -54,5 +56,68 @@ class TPCDSTableSuite extends KyuubiFunSuite {
         })
       }
     })
+  }
+
+  test("test nullable column") {
+    TPCDSSchemaUtils.BASE_TABLES.foreach { tpcdsTable =>
+      val tableName = tpcdsTable.getName
+      val sparkConf = new SparkConf().setMaster("local[*]")
+        .set("spark.ui.enabled", "false")
+        .set("spark.sql.catalogImplementation", "in-memory")
+        .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
+      withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+        val sparkTable = spark.table(s"tpcds.sf1.$tableName")
+        var notNullBitMap = 0
+        sparkTable.schema.fields.zipWithIndex.foreach { case (field, i) =>
+          val index = TPCDSSchemaUtils.reviseNullColumnIndex(tpcdsTable, i)
+          if (!field.nullable) {
+            notNullBitMap |= 1 << index
+          }
+        }
+        assert(tpcdsTable.getNotNullBitMap == notNullBitMap)
+      }
+    }
+  }
+
+  test("test reviseColumnIndex") {
+    // io.trino.tpcds.row.CallCenterRow.getValues
+    val getValuesColumns = Array(
+      "CC_CALL_CENTER_SK",
+      "CC_CALL_CENTER_ID",
+      "CC_REC_START_DATE_ID",
+      "CC_REC_END_DATE_ID",
+      "CC_CLOSED_DATE_ID",
+      "CC_OPEN_DATE_ID",
+      "CC_NAME",
+      "CC_CLASS",
+      "CC_EMPLOYEES",
+      "CC_SQ_FT",
+      "CC_HOURS",
+      "CC_MANAGER",
+      "CC_MARKET_ID",
+      "CC_MARKET_CLASS",
+      "CC_MARKET_DESC",
+      "CC_MARKET_MANAGER",
+      "CC_DIVISION",
+      "CC_DIVISION_NAME",
+      "CC_COMPANY",
+      "CC_COMPANY_NAME",
+      "CC_STREET_NUMBER",
+      "CC_STREET_NAME",
+      "CC_STREET_TYPE",
+      "CC_SUITE_NUMBER",
+      "CC_CITY",
+      "CC_ADDRESS",
+      "CC_STATE",
+      "CC_ZIP",
+      "CC_COUNTRY",
+      "CC_GMT_OFFSET",
+      "CC_TAX_PERCENTAGE")
+    Table.CALL_CENTER.getColumns.zipWithIndex.map {
+      case (_, i) =>
+        assert(TPCDSSchemaUtils.reviseNullColumnIndex(Table.CALL_CENTER, i) ==
+          CallCenterGeneratorColumn.valueOf(getValuesColumns(i)).getGlobalColumnNumber -
+          CallCenterGeneratorColumn.CC_CALL_CENTER_SK.getGlobalColumnNumber)
+    }
   }
 }

@@ -19,6 +19,6 @@ package org.apache.kyuubi.service.authentication
 
 class EngineSecureAuthenticationProviderImpl extends PasswdAuthenticationProvider {
   override def authenticate(user: String, password: String): Unit = {
-    EngineSecurityAccessor.get().authToken(password)
+    InternalSecurityAccessor.get().authToken(password)
   }
 }

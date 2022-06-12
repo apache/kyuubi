@@ -835,6 +835,22 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
+  val BATCH_INTERNAL_REST_CLIENT_SOCKET_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.internal.rest.client.socket.timeout")
+      .internal
+      .doc("The internal rest client socket timeout used for batch request redirection across" +
+        " Kyuubi instances.")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(20).toMillis)
+
+  val BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.internal.rest.client.connect.timeout")
+      .internal
+      .doc("The internal rest client connect timeout used for batch request redirection across" +
+        " Kyuubi instances.")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(20).toMillis)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
@@ -854,6 +870,49 @@ object KyuubiConf {
       .version("1.0.0")
       .intConf
       .createWithDefault(100)
+
+  val SERVER_STATE_STORE_CLASS: ConfigEntry[String] =
+    buildConf("kyuubi.server.state.store.class")
+      .doc("Fully qualified class name for server state store.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("org.apache.kyuubi.server.statestore.jdbc.JDBCStateStore")
+
+  val SERVER_STATE_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.server.state.store.cleaner.enabled")
+      .doc("Whether to clean the state store periodically. If it is enabled, Kyuubi will clean" +
+        " the state information that is in terminate state with max age limitation.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val SERVER_STATE_STORE_MAX_AGE: ConfigEntry[Long] =
+    buildConf("kyuubi.server.state.store.max.age")
+      .doc("The maximum age of state info in state store.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofDays(3).toMillis)
+
+  val SERVER_STATE_STORE_CLEANER_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.server.state.store.cleaner.interval")
+      .doc("The interval to clean state store.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(30).toMillis)
+
+  val SERVER_STATE_STORE_SESSIONS_RECOVERY_PER_BATCH: ConfigEntry[Int] =
+    buildConf("kyuubi.server.state.store.sessions.recovery.per.batch")
+      .doc("The number of sessions to recover from state store per batch.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(100)
+
+  val SERVER_STATE_STORE_SESSIONS_RECOVERY_NUM_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.server.state.store.sessions.recovery.num.threads")
+      .doc("The number of threads for sessions recovery from state store.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(10)
 
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")
@@ -1250,21 +1309,26 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.security.enabled")
-      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
+      .internal
+      .doc("Whether to enable the internal secure access. Before 1.6.0, it is used for the secure" +
+        " access between kyuubi server and kyuubi engine. Since 1.6.0, kyuubi supports internal" +
+        " secure across kyuubi server instances.")
       .version("1.5.0")
       .booleanConf
       .createWithDefault(false)
 
   val ENGINE_SECURITY_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
     buildConf("kyuubi.engine.security.token.max.lifetime")
-      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
+      .internal
+      .doc("The max lifetime of the token used for internal secure access.")
       .version("1.5.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(10).toMillis)
 
   val ENGINE_SECURITY_SECRET_PROVIDER: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.secret.provider")
-      .doc("The class used to manage the engine security secret. This class must be a " +
+      .internal
+      .doc("The class used to manage the internal security secret. This class must be a " +
         "subclass of EngineSecuritySecretProvider.")
       .version("1.5.0")
       .stringConf
@@ -1273,6 +1337,7 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
     buildConf("kyuubi.engine.security.crypto.keyLength")
+      .internal
       .doc("The length in bits of the encryption key to generate. " +
         "Valid values are 128, 192 and 256")
       .version("1.5.0")
@@ -1282,6 +1347,7 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_IV_LENGTH: ConfigEntry[Int] =
     buildConf("kyuubi.engine.security.crypto.ivLength")
+      .internal
       .doc("Initial vector length, in bytes.")
       .version("1.5.0")
       .intConf
@@ -1289,6 +1355,7 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.crypto.keyAlgorithm")
+      .internal
       .doc("The algorithm for generated secret keys.")
       .version("1.5.0")
       .stringConf
@@ -1296,7 +1363,8 @@ object KyuubiConf {
 
   val ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
     buildConf("kyuubi.engine.security.crypto.cipher")
-      .doc("The cipher transformation to use for encrypting engine access token.")
+      .internal
+      .doc("The cipher transformation to use for encrypting internal access token.")
       .version("1.5.0")
       .stringConf
       .createWithDefault("AES/CBC/PKCS5PADDING")
@@ -1337,7 +1405,12 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .toSequence()
-      .createWithDefault(Seq("ResetCommand", "SetCommand", "SetNamespaceCommand", "UseStatement"))
+      .createWithDefault(Seq(
+        "ResetCommand",
+        "SetCommand",
+        "SetNamespaceCommand",
+        "UseStatement",
+        "SetCatalogAndNamespace"))
 
   object OperationLanguages extends Enumeration {
     type OperationLanguage = Value
@@ -1499,4 +1572,70 @@ object KyuubiConf {
       .version("1.6.0")
       .regexConf
       .createOptional
+
+  val OPERATION_SPARK_LISTENER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.spark.listener.enabled")
+      .doc("When set to true, Spark engine registers a SQLOperationListener before executing " +
+        "the statement, logs a few summary statistics when each stage completes.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val ENGINE_JDBC_DRIVER_CLASS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.driver.class")
+      .doc("The driver class for jdbc engine connection")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_URL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.url")
+      .doc("The server url that engine will connect to")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.user")
+      .doc("The user is used for connecting to server")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.password")
+      .doc("The password is used for connecting to server")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_CONNECTION_PROPERTIES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.jdbc.connection.properties")
+      .doc("The additional properties are used for connecting to server")
+      .version("1.6.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
+  val ENGINE_JDBC_CONNECTION_PROVIDER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.connection.provider")
+      .doc("The connection provider is used for getting a connection from server")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_SHORT_NAME: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.type")
+      .doc("The short name of jdbc type")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.operation.convert.catalog.database.enabled")
+      .doc("When set to true, The engine converts the JDBC methods of set/get Catalog " +
+        "and set/get Schema to the implementation of different engines")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
 }

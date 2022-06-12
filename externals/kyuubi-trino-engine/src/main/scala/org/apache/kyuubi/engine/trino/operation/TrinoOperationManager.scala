@@ -22,7 +22,8 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.OPERATION_INCREMENTAL_COLLECT
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.trino.session.TrinoSessionImpl
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
@@ -34,10 +35,41 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val incrementalCollect = session.sessionManager.getConf.get(OPERATION_INCREMENTAL_COLLECT)
+    val normalizedConf = session.asInstanceOf[TrinoSessionImpl].normalizedConf
+    if (normalizedConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key).map(
+        _.toBoolean).getOrElse(
+        session.sessionManager.getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED))) {
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      if (catalogDatabaseOperation != null) {
+        return catalogDatabaseOperation
+      }
+    }
+    val incrementalCollect = normalizedConf.get(OPERATION_INCREMENTAL_COLLECT.key).map(
+      _.toBoolean).getOrElse(
+      session.sessionManager.getConf.get(OPERATION_INCREMENTAL_COLLECT))
     val operation =
       new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
     addOperation(operation)
+  }
+
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    val op = new SetCurrentCatalog(session, catalog)
+    addOperation(op)
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    val op = new GetCurrentCatalog(session)
+    addOperation(op)
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    val op = new SetCurrentDatabase(session, database)
+    addOperation(op)
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    val op = new GetCurrentDatabase(session)
+    addOperation(op)
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {

@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
@@ -51,6 +52,8 @@ abstract class AbstractSession(
   }
 
   val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
+
+  override lazy val name: Option[String] = normalizedConf.get(KyuubiConf.SESSION_NAME.key)
 
   final private val opHandleSet = new java.util.HashSet[OperationHandle]
 
@@ -106,6 +109,7 @@ abstract class AbstractSession(
       case TGetInfoType.CLI_SERVER_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
       case TGetInfoType.CLI_DBMS_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.kyuubi.KYUUBI_VERSION)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
           TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
           TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
@@ -233,7 +237,7 @@ abstract class AbstractSession(
     }
   }
 
-  override def closeExpiredOperations: Unit = {
+  override def closeExpiredOperations(): Unit = {
     val operations = sessionManager.operationManager
       .removeExpiredOperations(opHandleSet.asScala.toSeq)
     operations.foreach { op =>

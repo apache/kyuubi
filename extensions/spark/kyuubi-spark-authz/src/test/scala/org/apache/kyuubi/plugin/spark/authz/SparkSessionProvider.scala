@@ -19,28 +19,22 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import java.nio.file.Files
 
-import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait SparkSessionProvider {
   protected val catalogImpl: String
   protected def format: String = if (catalogImpl == "hive") "hive" else "parquet"
-  protected val isSparkV2: Boolean = SPARK_VERSION.split("\\.").head == "2"
-  protected val isSparkV31OrGreater: Boolean = {
-    val parts = SPARK_VERSION.split("\\.").map(_.toInt)
-    (parts.head > 3) || (parts.head == 3 && parts(1) >= 1)
-  }
-  protected val isSparkV32OrGreater: Boolean = {
-    val parts = SPARK_VERSION.split("\\.").map(_.toInt)
-    (parts.head > 3) || (parts.head == 3 && parts(1) >= 2)
-  }
+  protected val isSparkV2: Boolean = isSparkVersionAtMost("2.4")
+  protected val isSparkV31OrGreater: Boolean = isSparkVersionAtLeast("3.1")
+  protected val isSparkV32OrGreater: Boolean = isSparkVersionAtLeast("3.2")
+  protected val isSparkV33OrGreater: Boolean = isSparkVersionAtLeast("3.3")
 
   protected val extension: SparkSessionExtensions => Unit = _ => Unit
   protected lazy val spark: SparkSession = {
     val metastore = {
-      val path = Utils.createTempDir(namePrefix = "hms")
+      val path = Files.createTempDirectory("hms")
       Files.delete(path)
       path
     }
@@ -51,7 +45,7 @@ trait SparkSessionProvider {
       .config("spark.sql.catalogImplementation", catalogImpl)
       .config(
         "spark.sql.warehouse.dir",
-        Utils.createTempDir(namePrefix = "spark-warehouse").toString)
+        Files.createTempDirectory("spark-warehouse").toString)
       .withExtensions(extension)
       .getOrCreate()
   }

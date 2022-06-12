@@ -18,17 +18,16 @@
 package org.apache.kyuubi.server.http.authentication
 
 import java.io.IOException
+import javax.security.sasl.AuthenticationException
 import javax.servlet.{Filter, FilterChain, FilterConfig, ServletException, ServletRequest, ServletResponse}
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import scala.collection.mutable.HashMap
 
-import org.apache.hadoop.security.authentication.client.AuthenticationException
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
-import org.apache.kyuubi.service.authentication.AuthTypes
+import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
 class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
@@ -71,6 +70,10 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     basicAuthTypeOpt.foreach { basicAuthType =>
       val basicHandler = new BasicAuthenticationHandler(basicAuthType)
       addAuthHandler(basicHandler)
+    }
+    if (InternalSecurityAccessor.get() != null) {
+      val internalHandler = new KyuubiInternalAuthenticationHandler
+      addAuthHandler(internalHandler)
     }
     super.init(filterConfig)
   }

@@ -38,6 +38,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY_MODE)
   private lazy val operationIncrementalCollectDefault = getConf.get(OPERATION_INCREMENTAL_COLLECT)
   private lazy val operationLanguageDefault = getConf.get(OPERATION_LANGUAGE)
+  private lazy val operationConvertCatalogDatabaseDefault =
+    getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)
 
   private val sessionToRepl = new ConcurrentHashMap[SessionHandle, KyuubiSparkILoop]().asScala
 
@@ -53,6 +55,13 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val spark = session.asInstanceOf[SparkSessionImpl].spark
+    if (spark.conf.getOption(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key)
+        .map(_.toBoolean).getOrElse(operationConvertCatalogDatabaseDefault)) {
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      if (catalogDatabaseOperation != null) {
+        return catalogDatabaseOperation
+      }
+    }
     val lang = confOverlay.getOrElse(
       OPERATION_LANGUAGE.key,
       spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault))
@@ -73,6 +82,26 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
           new ExecuteScala(session, repl, statement)
       }
     addOperation(operation)
+  }
+
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    val op = new SetCurrentCatalog(session, catalog)
+    addOperation(op)
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    val op = new GetCurrentCatalog(session)
+    addOperation(op)
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    val op = new SetCurrentDatabase(session, database)
+    addOperation(op)
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    val op = new GetCurrentDatabase(session)
+    addOperation(op)
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {

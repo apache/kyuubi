@@ -21,14 +21,14 @@ import java.nio.file.Files
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
-import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_CATALOG
-import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_DATABASE
+import scala.collection.JavaConverters._
+
 import org.apache.flink.table.types.logical.LogicalTypeRoot
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq}
+import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.OperationModes.NONE
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
@@ -39,7 +39,7 @@ import org.apache.kyuubi.service.ServiceState._
 
 class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] =
-    Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> NONE.toString)
+    Map(OPERATION_PLAN_ONLY_MODE.key -> NONE.toString)
 
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
@@ -349,16 +349,18 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
       var resultSet = metaData.getSchemas(null, null)
+      val defaultCatalog = "default_catalog"
+      val defaultDatabase = "default_database"
       while (resultSet.next()) {
-        assert(resultSet.getString(TABLE_SCHEM) === DEFAULT_BUILTIN_DATABASE)
-        assert(resultSet.getString(TABLE_CATALOG) === DEFAULT_BUILTIN_CATALOG)
+        assert(resultSet.getString(TABLE_SCHEM) === defaultDatabase)
+        assert(resultSet.getString(TABLE_CATALOG) === defaultCatalog)
       }
       resultSet = metaData.getSchemas(
-        DEFAULT_BUILTIN_CATALOG.split("_").apply(0),
-        DEFAULT_BUILTIN_DATABASE.split("_").apply(0))
+        defaultCatalog.split("_").apply(0),
+        defaultDatabase.split("_").apply(0))
       while (resultSet.next()) {
-        assert(resultSet.getString(TABLE_SCHEM) === DEFAULT_BUILTIN_DATABASE)
-        assert(resultSet.getString(TABLE_CATALOG) === DEFAULT_BUILTIN_CATALOG)
+        assert(resultSet.getString(TABLE_SCHEM) === defaultDatabase)
+        assert(resultSet.getString(TABLE_CATALOG) === defaultCatalog)
       }
     }
   }
@@ -665,6 +667,22 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     })
   }
 
+  test("execute statement - set/get catalog") {
+    withSessionConf()(
+      Map(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> "true"))(
+      Map.empty) {
+      withJdbcStatement() { statement =>
+        statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
+        val catalog = statement.getConnection.getCatalog
+        assert(catalog == "default_catalog")
+        statement.getConnection.setCatalog("cat_a")
+        val changedCatalog = statement.getConnection.getCatalog
+        assert(changedCatalog == "cat_a")
+        assert(statement.execute("drop catalog cat_a"))
+      }
+    }
+  }
+
   test("execute statement - create/alter/drop database") {
     // TODO: validate table results after FLINK-25558 is resolved
     withJdbcStatement()({ statement =>
@@ -672,6 +690,22 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(statement.execute("alter database db_a set ('k1' = 'v1')"))
       assert(statement.execute("drop database db_a"))
     })
+  }
+
+  test("execute statement - set/get database") {
+    withSessionConf()(
+      Map(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key -> "true"))(
+      Map.empty) {
+      withJdbcStatement()({ statement =>
+        statement.executeQuery("create database db_a")
+        val schema = statement.getConnection.getSchema
+        assert(schema == "default_database")
+        statement.getConnection.setSchema("db_a")
+        val changedSchema = statement.getConnection.getSchema
+        assert(changedSchema == "db_a")
+        assert(statement.execute("drop database db_a"))
+      })
+    }
   }
 
   test("execute statement - create/alter/drop table") {
@@ -777,7 +811,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("ensure result max rows") {
-    withSessionConf()(Map(KyuubiConf.ENGINE_FLINK_MAX_ROWS.key -> "200"))(Map.empty) {
+    withSessionConf()(Map(ENGINE_FLINK_MAX_ROWS.key -> "200"))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.execute("create table tbl_src (a bigint) with ('connector' = 'datagen')")
         val resultSet = statement.executeQuery(s"select a from tbl_src")
@@ -820,5 +854,37 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       }
       assert(!exists)
     })
+  }
+
+  test("set session conf - default database") {
+    def assertDefaultDatabase(
+        client: TCLIService.Iface,
+        database: String,
+        expectSuccess: Boolean): Unit = {
+      val req = new TOpenSessionReq()
+      req.setUsername("kyuubi")
+      req.setPassword("anonymous")
+      val conf = Map("use:database" -> database)
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      if (expectSuccess) {
+        assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      } else {
+        assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+        assert(status.getErrorMessage.contains(
+          s"A database with name [$database] does not exist"))
+      }
+    }
+
+    withThriftClient { client =>
+      assertDefaultDatabase(client, "default", true)
+    }
+    withThriftClient { client =>
+      assertDefaultDatabase(client, "default2", false)
+    }
+    withThriftClient { client =>
+      assertDefaultDatabase(client, "default_database", true)
+    }
   }
 }

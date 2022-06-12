@@ -54,6 +54,19 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
     spark.sessionState.catalogManager.isCatalogRegistered(catalog)
   }
 
+  override def setCurrentCatalog(spark: SparkSession, catalog: String): Unit = {
+    // SPARK-36841(3.3.0) Ensure setCurrentCatalog method catalog must exist
+    if (spark.sessionState.catalogManager.isCatalogRegistered(catalog)) {
+      spark.sessionState.catalogManager.setCurrentCatalog(catalog)
+    } else {
+      throw new IllegalArgumentException(s"Cannot find catalog plugin class for catalog '$catalog'")
+    }
+  }
+
+  override def getCurrentCatalog(spark: SparkSession): Row = {
+    Row(spark.sessionState.catalogManager.currentCatalog.name())
+  }
+
   private def listAllNamespaces(
       catalog: SupportsNamespaces,
       namespaces: Array[Array[String]]): Array[Array[String]] = {
@@ -120,6 +133,14 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
     val catalog = getCatalog(spark, catalogName)
     val schemas = getSchemasWithPattern(catalog, schemaPattern)
     (schemas ++ viewMgr).map(Row(_, catalog.name()))
+  }
+
+  override def setCurrentDatabase(spark: SparkSession, databaseName: String): Unit = {
+    spark.sessionState.catalogManager.setCurrentNamespace(Array(databaseName))
+  }
+
+  override def getCurrentDatabase(spark: SparkSession): Row = {
+    Row(spark.sessionState.catalogManager.currentNamespace.map(quoteIfNeeded).mkString("."))
   }
 
   override def getCatalogTablesOrViews(

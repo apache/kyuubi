@@ -21,6 +21,7 @@ import javax.security.sasl.AuthenticationException
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
+import org.apache.kyuubi.util.ClassUtils
 
 /**
  * This class helps select a [[PasswdAuthenticationProvider]] for a given [[AuthMethods]]
@@ -44,28 +45,12 @@ object AuthenticationProviderFactory {
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
     case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
     case AuthMethods.CUSTOM =>
-      val classLoader = Thread.currentThread.getContextClassLoader
       val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
       if (className.isEmpty) {
         throw new AuthenticationException(
           "authentication.custom.class must be set when auth method was CUSTOM.")
       }
-      val cls = Class.forName(className.get, true, classLoader)
-      cls match {
-        case c if classOf[PasswdAuthenticationProvider].isAssignableFrom(cls) =>
-          val confConstructor = c.getConstructors.exists(p => {
-            val params = p.getParameterTypes
-            params.length == 1 && classOf[KyuubiConf].isAssignableFrom(params(0))
-          })
-          if (confConstructor) {
-            c.getConstructor(classOf[KyuubiConf]).newInstance(conf)
-              .asInstanceOf[PasswdAuthenticationProvider]
-          } else {
-            c.newInstance().asInstanceOf[PasswdAuthenticationProvider]
-          }
-        case _ => throw new AuthenticationException(
-            s"$className must extend of PasswdAuthenticationProvider.")
-      }
+      ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
 

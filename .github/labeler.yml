@@ -83,6 +83,9 @@
   - "kyuubi-hive-jdbc/**/*"
   - "kyuubi-hive-jdbc-shaded/**/*"
 
+"module:jdbc":
+  - "externals/kyuubi-jdbc-engine/**/*"
+
 "module:kubernetes":
   - ".dockerignore"
   - "bin/docker-image-tool.sh"
@@ -113,3 +116,6 @@
 
 "module:extensions":
   - "extension/**/*"
+
+"module:rest-client":
+  - "kyuubi-rest-client/**/*"

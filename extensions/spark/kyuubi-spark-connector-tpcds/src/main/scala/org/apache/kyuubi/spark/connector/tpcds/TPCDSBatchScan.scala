@@ -19,6 +19,7 @@ package org.apache.kyuubi.spark.connector.tpcds
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.OptionalLong
 
 import scala.collection.JavaConverters._
 
@@ -29,32 +30,33 @@ import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-case class TPCDSTableChuck(table: String, scale: Int, parallelism: Int, index: Int)
+case class TPCDSTableChuck(table: String, scale: Double, parallelism: Int, index: Int)
   extends InputPartition
 
-// TODO with SupportsReportStatistics
-//      https://tpc.org/TPC_Documents_Current_Versions/pdf/TPC-DS_v3.2.0.pdf
 class TPCDSBatchScan(
     @transient table: Table,
-    scale: Int,
-    schema: StructType) extends ScanBuilder with Scan with Batch with Serializable {
+    scale: Double,
+    schema: StructType) extends ScanBuilder
+  with SupportsReportStatistics with Batch with Serializable {
+
+  private val _sizeInBytes: Long = TPCDSStatisticsUtils.sizeInBytes(table, scale)
+  private val _numRows: Long = TPCDSStatisticsUtils.numRows(table, scale)
 
   private val rowCountPerTask: Int = 1000000
-
-  private val rowCount: Long = new Scaling(scale).getRowCount(table)
 
   private val parallelism: Int =
     if (table.isSmall) 1
     else math.max(
       SparkSession.active.sparkContext.defaultParallelism,
-      (rowCount / rowCountPerTask.toDouble).ceil.toInt)
+      (_numRows / rowCountPerTask.toDouble).ceil.toInt)
 
   override def build: Scan = this
 
   override def toBatch: Batch = this
 
   override def description: String =
-    s"Scan TPC-DS sf$scale.${table.getName}, count: $rowCount, parallelism: $parallelism"
+    s"Scan TPC-DS ${TPCDSSchemaUtils.dbName(scale)}.${table.getName}, " +
+      s"count: ${_numRows}, parallelism: $parallelism"
 
   override def readSchema: StructType = schema
 
@@ -65,11 +67,16 @@ class TPCDSBatchScan(
     val chuck = partition.asInstanceOf[TPCDSTableChuck]
     new TPCDSPartitionReader(chuck.table, chuck.scale, chuck.parallelism, chuck.index, schema)
   }
+
+  override def estimateStatistics: Statistics = new Statistics {
+    override def sizeInBytes: OptionalLong = OptionalLong.of(_sizeInBytes)
+    override def numRows: OptionalLong = OptionalLong.of(_numRows)
+  }
 }
 
 class TPCDSPartitionReader(
     table: String,
-    scale: Int,
+    scale: Double,
     parallelism: Int,
     index: Int,
     schema: StructType) extends PartitionReader[InternalRow] {

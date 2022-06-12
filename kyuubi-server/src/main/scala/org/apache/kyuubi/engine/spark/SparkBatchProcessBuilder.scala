@@ -21,30 +21,31 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.api.v1.BatchRequest
 
 class SparkBatchProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
     batchId: String,
-    batchRequest: BatchRequest,
+    batchName: String,
+    override val mainResource: Option[String],
+    override val mainClass: String,
+    batchConf: Map[String, String],
+    batchArgs: Seq[String],
     override val extraEngineLog: Option[OperationLog])
-  extends SparkProcessBuilder(proxyUser, conf, extraEngineLog) {
+  extends SparkProcessBuilder(proxyUser, conf, batchId, extraEngineLog) {
   import SparkProcessBuilder._
 
-  override def mainClass: String = batchRequest.className
-
-  override def mainResource: Option[String] = Option(batchRequest.resource)
-
-  override protected def commands: Array[String] = {
+  override protected val commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
-    buffer += CLASS
-    buffer += mainClass
+    Option(mainClass).foreach { cla =>
+      buffer += CLASS
+      buffer += cla
+    }
 
-    val batchJobTag = batchRequest.conf.get(TAG_KEY).map(_ + ",").getOrElse("") + batchId
+    val batchJobTag = batchConf.get(TAG_KEY).map(_ + ",").getOrElse("") + batchId
 
-    val allConf = batchRequest.conf ++ Map(TAG_KEY -> batchJobTag) ++ sparkAppNameConf()
+    val allConf = batchConf ++ Map(TAG_KEY -> batchJobTag) ++ sparkAppNameConf()
 
     allConf.foreach { case (k, v) =>
       buffer += CONF
@@ -54,15 +55,16 @@ class SparkBatchProcessBuilder(
     buffer += PROXY_USER
     buffer += proxyUser
 
-    mainResource.foreach { r => buffer += r }
+    assert(mainResource.isDefined)
+    buffer += mainResource.get
 
-    batchRequest.args.foreach { arg => buffer += arg }
+    batchArgs.foreach { arg => buffer += arg }
 
     buffer.toArray
   }
 
   private def sparkAppNameConf(): Map[String, String] = {
-    Option(batchRequest.name).filterNot(_.isEmpty).map { appName =>
+    Option(batchName).filterNot(_.isEmpty).map { appName =>
       Map(APP_KEY -> appName)
     }.getOrElse(Map())
   }
@@ -70,6 +72,6 @@ class SparkBatchProcessBuilder(
   override protected def module: String = "kyuubi-spark-batch-submit"
 
   override def clusterManager(): Option[String] = {
-    batchRequest.conf.get(MASTER_KEY).orElse(defaultMaster)
+    batchConf.get(MASTER_KEY).orElse(defaultMaster)
   }
 }

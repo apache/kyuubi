@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.KeyStore;
@@ -30,7 +31,7 @@ import java.security.SecureRandom;
 import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.Executor;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.KeyManagerFactory;
@@ -41,11 +42,14 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
-import org.apache.hive.service.auth.*;
+import org.apache.hive.service.auth.HiveAuthConstants;
+import org.apache.hive.service.auth.KerberosSaslHelper;
+import org.apache.hive.service.auth.PlainSaslHelper;
+import org.apache.hive.service.auth.SaslQOP;
+import org.apache.hive.service.cli.FetchType;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.cli.session.SessionUtils;
-import org.apache.hive.service.cli.thrift.*;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
@@ -65,6 +69,7 @@ import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.adapter.SQLConnection;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -75,7 +80,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** KyuubiConnection. */
-public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
+public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
   public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
@@ -85,7 +90,6 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private int port;
   private final Map<String, String> sessConfMap;
   private JdbcConnectionParams connParams;
-  private final boolean isEmbeddedMode;
   private TTransport transport;
   private boolean assumeSubject;
   // TODO should be replaced by CliServiceClient
@@ -93,7 +97,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private boolean isClosed = true;
   private SQLWarning warningChain = null;
   private TSessionHandle sessHandle = null;
-  private final List<TProtocolVersion> supportedProtocols = new LinkedList<TProtocolVersion>();
+  private final List<TProtocolVersion> supportedProtocols = new LinkedList<>();
   private int loginTimeout = 0;
   private TProtocolVersion protocol;
   private int fetchSize = KyuubiStatement.DEFAULT_FETCH_SIZE;
@@ -147,7 +151,6 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     host = Utils.getCanonicalHostName(connParams.getHost());
     port = connParams.getPort();
     sessConfMap = connParams.getSessionVars();
-    isEmbeddedMode = connParams.isEmbeddedMode();
 
     if (sessConfMap.containsKey(JdbcConnectionParams.FETCH_SIZE)) {
       fetchSize = Integer.parseInt(sessConfMap.get(JdbcConnectionParams.FETCH_SIZE));
@@ -172,70 +175,63 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     supportedProtocols.add(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8);
     supportedProtocols.add(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V9);
     supportedProtocols.add(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10);
+    supportedProtocols.add(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11);
 
-    if (isEmbeddedMode) {
-      EmbeddedThriftBinaryCLIService embeddedClient = new EmbeddedThriftBinaryCLIService();
-      embeddedClient.init(null, connParams.getHiveConfs());
-      TCLIService.Iface _client = embeddedClient;
-      // Wrap the client with a thread-safe proxy to serialize the RPC calls
-      client = newSynchronizedClient(_client);
-      connParams.getHiveConfs().clear();
-      // open client session
-      openSession();
-      showLaunchEngineLog();
-      waitLaunchEngineToComplete();
-      executeInitSql();
-    } else {
-      int maxRetries = 1;
-      try {
-        String strRetries = sessConfMap.get(JdbcConnectionParams.RETRIES);
-        if (StringUtils.isNotBlank(strRetries)) {
-          maxRetries = Integer.parseInt(strRetries);
-        }
-      } catch (NumberFormatException e) { // Ignore the exception
+    int maxRetries = 1;
+    try {
+      String strRetries = sessConfMap.get(JdbcConnectionParams.RETRIES);
+      if (StringUtils.isNotBlank(strRetries)) {
+        maxRetries = Integer.parseInt(strRetries);
       }
+    } catch (NumberFormatException e) { // Ignore the exception
+    }
 
-      for (int numRetries = 0; ; ) {
+    for (int numRetries = 0; ; ) {
+      try {
+        // open the client transport
+        openTransport();
+        // set up the client
+        TCLIService.Iface _client = new TCLIService.Client(new TBinaryProtocol(transport));
+        // Wrap the client with a thread-safe proxy to serialize the RPC calls
+        client = newSynchronizedClient(_client);
+        // open client session
+        openSession();
+        if (!isBeeLineMode) {
+          showLaunchEngineLog();
+          waitLaunchEngineToComplete();
+          executeInitSql();
+        }
+        break;
+      } catch (Exception e) {
+        LOG.warn("Failed to connect to " + connParams.getHost() + ":" + connParams.getPort());
+        String errMsg = null;
+        String warnMsg = "Could not open client transport with JDBC Uri: " + jdbcUriString + ": ";
         try {
-          // open the client transport
-          openTransport();
-          // set up the client
-          TCLIService.Iface _client = new TCLIService.Client(new TBinaryProtocol(transport));
-          // Wrap the client with a thread-safe proxy to serialize the RPC calls
-          client = newSynchronizedClient(_client);
-          // open client session
-          openSession();
-          if (!isBeeLineMode) {
-            showLaunchEngineLog();
-            waitLaunchEngineToComplete();
-            executeInitSql();
+          close();
+        } catch (Exception ex) {
+          // Swallow the exception
+          LOG.debug("Error while closing the connection", ex);
+        }
+        if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
+          errMsg = "Could not open client transport for any of the Server URI's in ZooKeeper: ";
+          // Try next available server in zookeeper, or retry all the servers again if retry is
+          // enabled
+          while (!Utils.updateConnParamsFromZooKeeper(connParams) && ++numRetries < maxRetries) {
+            connParams.getRejectedHostZnodePaths().clear();
           }
-          break;
-        } catch (Exception e) {
-          LOG.warn("Failed to connect to " + connParams.getHost() + ":" + connParams.getPort());
-          String errMsg = null;
-          String warnMsg = "Could not open client transport with JDBC Uri: " + jdbcUriString + ": ";
-          if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
-            errMsg = "Could not open client transport for any of the Server URI's in ZooKeeper: ";
-            // Try next available server in zookeeper, or retry all the servers again if retry is
-            // enabled
-            while (!Utils.updateConnParamsFromZooKeeper(connParams) && ++numRetries < maxRetries) {
-              connParams.getRejectedHostZnodePaths().clear();
-            }
-            // Update with new values
-            jdbcUriString = connParams.getJdbcUriString();
-            host = Utils.getCanonicalHostName(connParams.getHost());
-            port = connParams.getPort();
-          } else {
-            errMsg = warnMsg;
-            ++numRetries;
-          }
+          // Update with new values
+          jdbcUriString = connParams.getJdbcUriString();
+          host = Utils.getCanonicalHostName(connParams.getHost());
+          port = connParams.getPort();
+        } else {
+          errMsg = warnMsg;
+          ++numRetries;
+        }
 
-          if (numRetries >= maxRetries) {
-            throw new SQLException(errMsg + e.getMessage(), " 08S01", e);
-          } else {
-            LOG.warn(warnMsg + e.getMessage() + " Retrying " + numRetries + " of " + maxRetries);
-          }
+        if (numRetries >= maxRetries) {
+          throw new SQLException(errMsg + e.getMessage(), " 08S01", e);
+        } else {
+          LOG.warn(warnMsg + e.getMessage() + " Retrying " + numRetries + " of " + maxRetries);
         }
       }
     }
@@ -263,6 +259,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
    * @throws SQLException
    * @throws ClosedOrCancelledException if connection has been closed
    */
+  @Override
   public List<String> getExecLog() throws SQLException, ClosedOrCancelledException {
     if (isClosed()) {
       throw new ClosedOrCancelledException(
@@ -275,7 +272,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
     TFetchResultsReq fetchResultsReq =
         new TFetchResultsReq(launchEngineOpHandle, TFetchOrientation.FETCH_NEXT, fetchSize);
-    fetchResultsReq.setFetchType((short) 1);
+    fetchResultsReq.setFetchType(FetchType.LOG.toTFetchType());
 
     List<String> logs = new ArrayList<>();
     try {
@@ -326,13 +323,15 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (initFile != null) {
       try {
         List<String> sqlList = parseInitFile(initFile);
-        Statement st = createStatement();
-        for (String sql : sqlList) {
-          boolean hasResult = st.execute(sql);
-          if (hasResult) {
-            ResultSet rs = st.getResultSet();
-            while (rs.next()) {
-              System.out.println(rs.getString(1));
+        try (Statement st = createStatement()) {
+          for (String sql : sqlList) {
+            boolean hasResult = st.execute(sql);
+            if (hasResult) {
+              try (ResultSet rs = st.getResultSet()) {
+                while (rs.next()) {
+                  System.out.println(rs.getString(1));
+                }
+              }
             }
           }
         }
@@ -350,9 +349,9 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     List<String> initSqlList = null;
     try {
       FileInputStream input = new FileInputStream(file);
-      br = new BufferedReader(new InputStreamReader(input, "UTF-8"));
+      br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
       String line;
-      StringBuilder sb = new StringBuilder("");
+      StringBuilder sb = new StringBuilder();
       while ((line = br.readLine()) != null) {
         line = line.trim();
         if (line.length() != 0) {
@@ -378,7 +377,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   private static List<String> getInitSql(String sbLine) {
     char[] sqlArray = sbLine.toCharArray();
-    List<String> initSqlList = new ArrayList();
+    List<String> initSqlList = new ArrayList<>();
     int index = 0;
     int beginIndex = 0;
     for (; index < sqlArray.length; index++) {
@@ -443,8 +442,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     HttpClientBuilder httpClientBuilder;
     // Request interceptor for any request pre-processing logic
     HttpRequestInterceptor requestInterceptor;
-    Map<String, String> additionalHttpHeaders = new HashMap<String, String>();
-    Map<String, String> customCookies = new HashMap<String, String>();
+    Map<String, String> additionalHttpHeaders = new HashMap<>();
+    Map<String, String> customCookies = new HashMap<>();
 
     // Retrieve the additional HttpHeaders
     for (Map.Entry<String, String> entry : sessConfMap.entrySet()) {
@@ -658,7 +657,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
       if (!JdbcConnectionParams.AUTH_SIMPLE.equals(
           sessConfMap.get(JdbcConnectionParams.AUTH_TYPE))) {
         // If Kerberos
-        Map<String, String> saslProps = new HashMap<String, String>();
+        Map<String, String> saslProps = new HashMap<>();
         SaslQOP saslQOP = SaslQOP.AUTH;
         if (sessConfMap.containsKey(JdbcConnectionParams.AUTH_QOP)) {
           try {
@@ -776,7 +775,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private void openSession() throws SQLException {
     TOpenSessionReq openReq = new TOpenSessionReq();
 
-    Map<String, String> openConf = new HashMap<String, String>();
+    Map<String, String> openConf = new HashMap<>();
     // for remote JDBC client, try to set the conf var using 'set foo=bar'
     for (Entry<String, String> hiveConf : connParams.getHiveConfs().entrySet()) {
       openConf.put("set:hiveconf:" + hiveConf.getKey(), hiveConf.getValue());
@@ -916,12 +915,10 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  public void abort(Executor executor) throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
   public String getDelegationToken(String owner, String renewer) throws SQLException {
+    if (isClosed) {
+      throw new SQLException("Connection is closed");
+    }
     TGetDelegationTokenReq req = new TGetDelegationTokenReq(sessHandle, owner, renewer);
     try {
       TGetDelegationTokenResp tokenResp = client.GetDelegationToken(req);
@@ -933,6 +930,9 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   }
 
   public void cancelDelegationToken(String tokenStr) throws SQLException {
+    if (isClosed) {
+      throw new SQLException("Connection is closed");
+    }
     TCancelDelegationTokenReq cancelReq = new TCancelDelegationTokenReq(sessHandle, tokenStr);
     try {
       TCancelDelegationTokenResp cancelResp = client.CancelDelegationToken(cancelReq);
@@ -944,6 +944,9 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   }
 
   public void renewDelegationToken(String tokenStr) throws SQLException {
+    if (isClosed) {
+      throw new SQLException("Connection is closed");
+    }
     TRenewDelegationTokenReq cancelReq = new TRenewDelegationTokenReq(sessHandle, tokenStr);
     try {
       TRenewDelegationTokenResp renewResp = client.RenewDelegationToken(cancelReq);
@@ -954,36 +957,26 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#clearWarnings()
-   */
-
   @Override
   public void clearWarnings() throws SQLException {
     warningChain = null;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#close()
-   */
-
   @Override
   public void close() throws SQLException {
-    if (!isClosed) {
-      TCloseSessionReq closeReq = new TCloseSessionReq(sessHandle);
-      try {
+    try {
+      if (!isClosed) {
+        TCloseSessionReq closeReq = new TCloseSessionReq(sessHandle);
         client.CloseSession(closeReq);
-      } catch (TException e) {
-        throw new SQLException("Error while cleaning up the server resources", e);
-      } finally {
-        isClosed = true;
-        if (transport != null) {
-          transport.close();
-        }
+      }
+    } catch (TException e) {
+      throw new SQLException("Error while cleaning up the server resources", e);
+    } finally {
+      isClosed = true;
+      client = null;
+      if (transport != null && transport.isOpen()) {
+        transport.close();
+        transport = null;
       }
     }
   }
@@ -1000,79 +993,6 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     close();
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#commit()
-   */
-
-  @Override
-  public void commit() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createArrayOf(java.lang.String,
-   * java.lang.Object[])
-   */
-
-  @Override
-  public Array createArrayOf(String arg0, Object[] arg1) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createBlob()
-   */
-
-  @Override
-  public Blob createBlob() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createClob()
-   */
-
-  @Override
-  public Clob createClob() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createNClob()
-   */
-
-  @Override
-  public NClob createNClob() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createSQLXML()
-   */
-
-  @Override
-  public SQLXML createSQLXML() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
   /**
    * Creates a Statement object for sending SQL statements to the database.
    *
@@ -1087,11 +1007,9 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     return new KyuubiStatement(this, client, sessHandle, fetchSize);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createStatement(int, int)
-   */
+  private KyuubiStatement createKyuubiStatement() throws SQLException {
+    return ((KyuubiStatement) createStatement());
+  }
 
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency)
@@ -1106,97 +1024,44 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           "Statement with resultset type " + resultSetType + " is not supported",
           "HYC00"); // Optional feature not implemented
     }
+    if (isClosed) {
+      throw new SQLException("Connection is closed");
+    }
     return new KyuubiStatement(
         this, client, sessHandle, resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE, fetchSize);
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createStatement(int, int, int)
-   */
-
-  @Override
-  public Statement createStatement(
-      int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createStruct(java.lang.String, java.lang.Object[])
-   */
-
-  @Override
-  public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getAutoCommit()
-   */
 
   @Override
   public boolean getAutoCommit() throws SQLException {
     return true;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getCatalog()
-   */
-
   @Override
   public String getCatalog() throws SQLException {
-    return "";
+    if (isClosed) {
+      throw new SQLException("Connection is closed");
+    }
+    try (KyuubiStatement stmt = createKyuubiStatement();
+        ResultSet res = stmt.executeGetCurrentCatalog("_GET_CATALOG")) {
+      if (!res.next()) {
+        throw new SQLException("Failed to get catalog information");
+      }
+      return res.getString(1);
+    } catch (Exception e) {
+      return "";
+    }
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getClientInfo()
-   */
 
   @Override
   public Properties getClientInfo() throws SQLException {
     return clientInfo == null ? new Properties() : clientInfo;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getClientInfo(java.lang.String)
-   */
-
   @Override
   public String getClientInfo(String name) throws SQLException {
     if (clientInfo == null) return null;
     return clientInfo.getProperty(name);
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getHoldability()
-   */
-
-  @Override
-  public int getHoldability() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getMetaData()
-   */
 
   @Override
   public DatabaseMetaData getMetaData() throws SQLException {
@@ -1206,17 +1071,13 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     return new KyuubiDatabaseMetaData(this, client, sessHandle);
   }
 
-  public int getNetworkTimeout() throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public String getSchema() throws SQLException {
     if (isClosed) {
       throw new SQLException("Connection is closed");
     }
-    try (Statement stmt = createStatement();
-        ResultSet res = stmt.executeQuery("SELECT current_database()")) {
+    try (KyuubiStatement stmt = createKyuubiStatement();
+        ResultSet res = stmt.executeGetCurrentDatabase("SELECT current_database()")) {
       if (!res.next()) {
         throw new SQLException("Failed to get schema information");
       }
@@ -1224,72 +1085,33 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getTransactionIsolation()
-   */
-
   @Override
   public int getTransactionIsolation() throws SQLException {
     return Connection.TRANSACTION_NONE;
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getTypeMap()
-   */
-
-  @Override
-  public Map<String, Class<?>> getTypeMap() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getWarnings()
-   */
 
   @Override
   public SQLWarning getWarnings() throws SQLException {
     return warningChain;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#isClosed()
-   */
-
   @Override
   public boolean isClosed() throws SQLException {
     return isClosed;
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#isReadOnly()
-   */
 
   @Override
   public boolean isReadOnly() throws SQLException {
     return false;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#isValid(int)
-   */
-
   @Override
   public boolean isValid(int timeout) throws SQLException {
     if (timeout < 0) {
       throw new SQLException("timeout value was negative");
+    }
+    if (isClosed) {
+      return false;
     }
     boolean rc = false;
     try {
@@ -1302,171 +1124,30 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     return rc;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#nativeSQL(java.lang.String)
-   */
-
-  @Override
-  public String nativeSQL(String sql) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareCall(java.lang.String)
-   */
-
-  @Override
-  public CallableStatement prepareCall(String sql) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareCall(java.lang.String, int, int)
-   */
-
-  @Override
-  public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareCall(java.lang.String, int, int, int)
-   */
-
-  @Override
-  public CallableStatement prepareCall(
-      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String)
-   */
-
   @Override
   public PreparedStatement prepareStatement(String sql) throws SQLException {
+    if (isClosed) {
+      throw new SQLException("Connection is closed");
+    }
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String, int)
-   */
 
   @Override
   public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+    if (isClosed) {
+      throw new SQLException("Connection is closed");
+    }
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String, int[])
-   */
-
-  @Override
-  public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String,
-   * java.lang.String[])
-   */
-
-  @Override
-  public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String, int, int)
-   */
 
   @Override
   public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
       throws SQLException {
+    if (isClosed) {
+      throw new SQLException("Connection is closed");
+    }
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String, int, int, int)
-   */
-
-  @Override
-  public PreparedStatement prepareStatement(
-      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#releaseSavepoint(java.sql.Savepoint)
-   */
-
-  @Override
-  public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#rollback()
-   */
-
-  @Override
-  public void rollback() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#rollback(java.sql.Savepoint)
-   */
-
-  @Override
-  public void rollback(Savepoint savepoint) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setAutoCommit(boolean)
-   */
 
   @Override
   public void setAutoCommit(boolean autoCommit) throws SQLException {
@@ -1484,39 +1165,23 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setCatalog(java.lang.String)
-   */
-
   @Override
   public void setCatalog(String catalog) throws SQLException {
-    // Per JDBC spec, if the driver does not support catalogs,
-    // it will silently ignore this request.
     if (isClosed) {
       throw new SQLException("Connection is closed");
     }
-    return;
-  }
+    try (KyuubiStatement stmt = createKyuubiStatement()) {
+      stmt.executeSetCurrentCatalog("_SET_CATALOG", catalog);
+    } catch (SQLException e) {
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setClientInfo(java.util.Properties)
-   */
+    }
+  }
 
   @Override
   public void setClientInfo(Properties properties) throws SQLClientInfoException {
     clientInfo = properties;
     setClientInfo();
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setClientInfo(java.lang.String, java.lang.String)
-   */
 
   @Override
   public void setClientInfo(String name, String value) throws SQLClientInfoException {
@@ -1528,6 +1193,9 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   }
 
   private void setClientInfo() throws SQLClientInfoException {
+    if (isClosed) {
+      throw new SQLClientInfoException("Connection is closed", null);
+    }
     TSetClientInfoReq req = new TSetClientInfoReq(sessHandle);
     Map<String, String> map = new HashMap<>();
     if (clientInfo != null) {
@@ -1546,29 +1214,6 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setHoldability(int)
-   */
-
-  @Override
-  public void setHoldability(int holdability) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setReadOnly(boolean)
-   */
-
   @Override
   public void setReadOnly(boolean readOnly) throws SQLException {
     // Per JDBC spec, if the connection is closed a SQLException should be thrown.
@@ -1584,30 +1229,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setSavepoint()
-   */
-
   @Override
-  public Savepoint setSavepoint() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setSavepoint(java.lang.String)
-   */
-
-  @Override
-  public Savepoint setSavepoint(String name) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
   public void setSchema(String schema) throws SQLException {
     // JDK 1.7
     if (isClosed) {
@@ -1616,50 +1238,20 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (schema == null || schema.isEmpty()) {
       throw new SQLException("Schema name is null or empty");
     }
-    Statement stmt = createStatement();
-    stmt.execute("use " + schema);
-    stmt.close();
+    try (KyuubiStatement stmt = createKyuubiStatement()) {
+      stmt.executeSetCurrentDatabase("use " + schema, schema);
+    }
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setTransactionIsolation(int)
-   */
 
   @Override
   public void setTransactionIsolation(int level) throws SQLException {
     // TODO: throw an exception?
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setTypeMap(java.util.Map)
-   */
-
-  @Override
-  public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
-   */
-
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
     return iface.isInstance(this);
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Wrapper#unwrap(java.lang.Class)
-   */
 
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
@@ -1716,18 +1308,11 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (launchEngineOpHandle == null) return;
 
     TGetOperationStatusReq statusReq = new TGetOperationStatusReq(launchEngineOpHandle);
-    TGetOperationStatusResp statusResp = null;
 
     // Poll on the operation status, till the operation is complete
     while (!launchEngineOpCompleted) {
       try {
-        try {
-          statusResp = client.GetOperationStatus(statusReq);
-        } catch (Exception e) {
-          LOG.debug("Failed to get launch engine operation status, assume it has completed", e);
-          launchEngineOpCompleted = true;
-          break;
-        }
+        TGetOperationStatusResp statusResp = client.GetOperationStatus(statusReq);
         Utils.verifySuccessWithInfo(statusResp.getStatus());
         if (statusResp.isSetOperationState()) {
           switch (statusResp.getOperationState()) {
@@ -1759,7 +1344,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         engineLogInflight = false;
         closeOnLaunchEngineFailure();
         if (e instanceof SQLException) {
-          throw e;
+          throw (SQLException) e;
         } else {
           throw new SQLException(e.getMessage(), "08S01", e);
         }

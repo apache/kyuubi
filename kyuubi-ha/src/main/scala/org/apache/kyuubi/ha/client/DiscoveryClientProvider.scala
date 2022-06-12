@@ -19,9 +19,10 @@ package org.apache.kyuubi.ha.client
 
 import java.io.IOException
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient
+import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.util.ClassUtils
 
 object DiscoveryClientProvider extends Logging {
 
@@ -29,7 +30,7 @@ object DiscoveryClientProvider extends Logging {
    * Creates a zookeeper client before calling `f` and close it after calling `f`.
    */
   def withDiscoveryClient[T](conf: KyuubiConf)(f: DiscoveryClient => T): T = {
-    val discoveryClient = new ZookeeperDiscoveryClient(conf)
+    val discoveryClient = createDiscoveryClient(conf)
     try {
       discoveryClient.createClient()
       f(discoveryClient)
@@ -42,4 +43,12 @@ object DiscoveryClientProvider extends Logging {
     }
   }
 
+  def createDiscoveryClient(conf: KyuubiConf): DiscoveryClient = {
+    val className = conf.get(HighAvailabilityConf.HA_CLIENT_CLASS)
+    if (className.isEmpty) {
+      throw new KyuubiException(
+        s"${HighAvailabilityConf.HA_CLIENT_CLASS.key} cannot be empty.")
+    }
+    ClassUtils.createInstance(className, classOf[DiscoveryClient], conf)
+  }
 }

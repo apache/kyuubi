@@ -68,10 +68,12 @@
         <module>dev/kyuubi-codecov</module>
         <module>extensions/server/kyuubi-server-plugin</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
-        <module>extensions/spark/kyuubi-spark-connector-kudu</module>
+        <module>extensions/spark/kyuubi-spark-connector-common</module>
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
+        <module>extensions/spark/kyuubi-spark-connector-tpch</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
+        <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-hive-sql-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
@@ -85,6 +87,7 @@
         <module>kyuubi-hive-jdbc</module>
         <module>kyuubi-hive-jdbc-shaded</module>
         <module>kyuubi-metrics</module>
+        <module>kyuubi-rest-client</module>
         <module>kyuubi-server</module>
         <module>kyuubi-zookeeper</module>
     </modules>
@@ -110,6 +113,7 @@
         <delta.version>1.2.1</delta.version>
         <fb303.version>0.9.3</fb303.version>
         <flink.version>1.14.4</flink.version>
+        <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
@@ -118,23 +122,26 @@
         <guava.version>30.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.2</hadoop.version>
-        <hikaricp.version>2.6.1</hikaricp.version>
+        <hikaricp.version>4.0.3</hikaricp.version>
+        <derby.version>10.14.2.0</derby.version>
         <hive.engine.hive.version>3.1.3</hive.engine.hive.version>
         <hive.version>3.1.3</hive.version>
         <hive.service.rpc.version>3.1.3</hive.service.rpc.version>
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
         <hive.archive.download.skip>false</hive.archive.download.skip>
-        <hudi.version>0.10.0</hudi.version>
+        <httpclient.version>4.5.13</httpclient.version>
+        <hudi.version>0.11.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
         <iceberg.version>0.13.1</iceberg.version>
-        <jackson.version>2.13.1</jackson.version>
+        <jackson.version>2.13.3</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.1</jakarta.activation.version>
         <jersey.version>2.35</jersey.version>
         <jetty.version>9.4.41.v20210516</jetty.version>
         <jline.version>0.9.94</jline.version>
+        <junit.version>4.13.1</junit.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
@@ -162,11 +169,11 @@
         <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
+        <trino.tpch.version>1.1</trino.tpch.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.commons-cli.version>1.2</hive.client.commons-cli.version>
-        <hive.client.httpcomponents-client.version>4.5.13</hive.client.httpcomponents-client.version>
         <hive.client.httpcomponents-core.version>4.4.13</hive.client.httpcomponents-core.version>
         <hive.client.jline.version>2.12</hive.client.jline.version>
         <hive.client.storage-api.version>2.7.2</hive.client.storage-api.version>
@@ -188,7 +195,7 @@
         <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
-        <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+        <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.spotless.version>2.17.4</maven.plugin.spotless.version>
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
@@ -204,6 +211,13 @@
 
         <!-- Package to use when relocating shaded classes. -->
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
+
+        <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
+        <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
+        <distMgmtReleaseUrl>https://repository.apache.org/service/local/staging/deploy/maven2</distMgmtReleaseUrl>
+        <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
+        <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
+        <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
     </properties>
 
     <repositories>
@@ -257,6 +271,19 @@
         </pluginRepository>
     </pluginRepositories>
 
+    <distributionManagement>
+        <repository>
+            <id>${distMgmtReleaseId}</id>
+            <name>${distMgmtReleaseName}</name>
+            <url>${distMgmtReleaseUrl}</url>
+        </repository>
+        <snapshotRepository>
+            <id>${distMgmtSnapshotsId}</id>
+            <name>${distMgmtSnapshotsName}</name>
+            <url>${distMgmtSnapshotsUrl}</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -297,6 +324,10 @@
                     <exclusion>
                         <groupId>org.xerial.snappy</groupId>
                         <artifactId>snappy-java</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -525,6 +556,18 @@
                 <groupId>io.trino.tpcds</groupId>
                 <artifactId>tpcds</artifactId>
                 <version>${trino.tpcds.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino.tpch</groupId>
+                <artifactId>tpch</artifactId>
+                <version>${trino.tpch.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -965,27 +1008,6 @@
             </dependency>
 
             <!-- Hudi dependency  -->
-            <!--
-              We don't use hadoop-common directly, it's only for suppressing exception:
-                 Failed to execute goal org.apache.maven.plugins:maven-shade-plugin:3.2.4:shade (default) on project
-                 kyuubi-spark-sql-engine_2.12: Error creating shaded jar: Could not resolve following dependencies:
-                 [jdk.tools:jdk.tools:jar:1.6 (system)]
-
-              The issue only occurs on GitHub Action environment with Hudi 0.10.0 and JDK 11.
-              After few days digging, only found one place introduces jdk.tools,
-
-              - org.apache.hudi:hudi-common:jar:0.10.0:test
-                - org.apache.hbase:hbase-server:jar:1.2.3:test
-                  - org.apache.hadoop:hadoop-common:jar:2.5.1:test
-                    - org.apache.hadoop:hadoop-annotations:jar:2.5.1:test
-                      - jdk.tools:jdk.tools:jar:1.6:system
-            -->
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-common</artifactId>
-                <version>${hadoop.version}</version>
-            </dependency>
-
             <dependency>
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
@@ -996,6 +1018,26 @@
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-avro_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hudi</groupId>
+                <artifactId>hudi-common</artifactId>
+                <version>${hudi.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>hbase-server</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>hbase-client</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1036,6 +1078,10 @@
                         <artifactId>hbase-server</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>hbase-client</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.orc</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -1046,6 +1092,10 @@
                     <exclusion>
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1068,6 +1118,10 @@
                         <artifactId>hudi-spark2_2.11</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hudi</groupId>
+                        <artifactId>hudi-spark2-common</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.curator</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -1088,12 +1142,20 @@
 
             <dependency>
                 <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark3_${scala.binary.version}</artifactId>
+                <artifactId>hudi-spark3.1.x_${scala.binary.version}</artifactId>
                 <version>${hudi.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.hudi</groupId>
                         <artifactId>hudi-spark-common_2.11</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1258,13 +1320,13 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+                <artifactId>flink-streaming-java${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-clients_${scala.binary.version}</artifactId>
+                <artifactId>flink-clients${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
@@ -1282,7 +1344,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-api-java-bridge_${scala.binary.version}</artifactId>
+                <artifactId>flink-table-api-java-bridge${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
@@ -1294,7 +1356,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-runtime_${scala.binary.version}</artifactId>
+                <artifactId>flink-table-runtime${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
                 <scope>provided</scope>
             </dependency>
@@ -1307,19 +1369,13 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-yarn_${scala.binary.version}</artifactId>
+                <artifactId>flink-sql-client${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-sql-client_${scala.binary.version}</artifactId>
-                <version>${flink.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.flink</groupId>
-                <artifactId>flink-test-utils_${scala.binary.version}</artifactId>
+                <artifactId>flink-test-utils${flink.module.scala.suffix}</artifactId>
                 <version>${flink.version}</version>
                 <exclusions>
                     <exclusion>
@@ -1347,6 +1403,12 @@
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${hikaricp.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.derby</groupId>
+                <artifactId>derby</artifactId>
+                <version>${derby.version}</version>
             </dependency>
 
             <dependency>
@@ -1539,8 +1601,7 @@
                         </environmentVariables>
                         <systemProperties>
                             <log4j.ignoreTCL>true</log4j.ignoreTCL>
-                            <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
-                            <log4j2.configurationFile>file:src/test/resources/log4j2-test.properties</log4j2.configurationFile>
+                            <log4j2.configurationFile>file:src/test/resources/log4j2-test.xml</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
                             <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
@@ -1901,8 +1962,11 @@
                 <spark.version>3.0.3</spark.version>
                 <delta.version>0.8.0</delta.version>
                 <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-                <!-- Hudi 0.10.0 still support Spark 3.0, but need build by user with specific profile -->
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <!--
+                    https://hudi.apache.org/releases/release-0.11.0/#bundle-usage-updates
+                    Hudi 0.11.0 Spark bundle for 3.0.x is no longer officially supported.
+                -->
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -1912,11 +1976,12 @@
                 <spark.version>3.1.3</spark.version>
                 <delta.version>1.0.1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.1_${scala.binary.version}</iceberg.name>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-1</module>
+                <module>extensions/spark/kyuubi-spark-authz</module>
             </modules>
         </profile>
 
@@ -1926,11 +1991,43 @@
                 <spark.version>3.2.1</spark.version>
                 <delta.version>1.2.1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <!--
+                    See https://github.com/apache/incubator-kyuubi/pull/2576
+                    Hudi 0.11 requires hudi-spark3.2-bundle to execute UT
+                -->
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-common</module>
+                <module>extensions/spark/kyuubi-spark-authz</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-2</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>spark-3.3</id>
+            <repositories>
+                <repository>
+                    <id>Apache Staging Repository</id>
+                    <url>https://repository.apache.org/content/repositories/orgapachespark-1406</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <properties>
+                <spark.version>3.3.0</spark.version>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.3.0-rc5-bin/</spark.archive.mirror>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
+            <modules>
+                <module>extensions/spark/kyuubi-extension-spark-common</module>
+                <module>extensions/spark/kyuubi-extension-spark-3-3</module>
+                <module>extensions/spark/kyuubi-spark-connector-kudu</module>
             </modules>
         </profile>
 
@@ -1949,8 +2046,23 @@
                 </repository>
             </repositories>
             <properties>
-                <spark.version>3.3.0-SNAPSHOT</spark.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <spark.version>3.4.0-SNAPSHOT</spark.version>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>flink-1.14</id>
+            <properties>
+                <flink.version>1.14.4</flink.version>
+                <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
+            </properties>
+        </profile>
+        <profile>
+            <id>flink-1.15</id>
+            <properties>
+                <flink.version>1.15.0</flink.version>
+                <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
 

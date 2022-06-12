@@ -191,7 +191,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${hive.client.httpcomponents-client.version}</version>
+            <version>${httpclient.version}</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>

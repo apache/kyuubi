@@ -19,9 +19,12 @@ package org.apache.kyuubi.server
 
 import java.util.Base64
 
-import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.cli.Handle
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
@@ -30,6 +33,8 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
 final class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)
   extends TBinaryFrontendService("KyuubiTBinaryFrontend") {
+
+  override protected def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
   override lazy val discoveryService: Option[Service] = {
     if (ServiceDiscovery.supportServiceDiscovery(conf)) {
@@ -50,12 +55,12 @@ final class KyuubiTBinaryFrontendService(
       val launchEngineOp = be.sessionManager.getSession(sessionHandle)
         .asInstanceOf[KyuubiSessionImpl].launchEngineOp
 
-      val opHandleIdentifier = launchEngineOp.getHandle.identifier.toTHandleIdentifier
+      val opHandleIdentifier = Handle.toTHandleIdentifier(launchEngineOp.getHandle.identifier)
       respConfiguration.put(
-        "kyuubi.session.engine.launch.handle.guid",
+        KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID,
         Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getGuid))
       respConfiguration.put(
-        "kyuubi.session.engine.launch.handle.secret",
+        KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET,
         Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getSecret))
 
       resp.setSessionHandle(sessionHandle.toTSessionHandle)

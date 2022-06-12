@@ -74,9 +74,13 @@ case class EngineEvent(
       } else {
         settings.getOrElse("spark.executor.instances", 2)
       }
+    val tags = settings.getOrElse(
+      "spark.yarn.tags",
+      settings.getOrElse("spark.kubernetes.driver.label.kyuubi_unique_tag", ""))
     s"""
        |    Spark application name: $applicationName
        |          application ID:  $applicationId
+       |          application tags: $tags
        |          application web UI: $webUrl
        |          master: $master
        |          version: $sparkVersion

@@ -39,6 +39,26 @@ class NoopOperationManager extends OperationManager("noop") {
     addOperation(operation)
   }
 
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
+    addOperation(operation)
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
+    addOperation(operation)
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
+    addOperation(operation)
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
+    addOperation(operation)
+  }
+
   override def newGetTypeInfoOperation(session: Session): Operation = {
     val operation = new NoopOperation(OperationType.GET_TYPE_INFO, session)
     addOperation(operation)

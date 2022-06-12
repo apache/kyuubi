@@ -48,9 +48,7 @@ abstract class FlinkOperation(
 
   protected def setExecutor(executor: Executor): Unit = this.executor = executor
 
-  protected var sessionId: String = {
-    session.asInstanceOf[FlinkSessionImpl].sessionId
-  }
+  protected var sessionId: String = session.handle.identifier.toString
 
   protected var resultSet: ResultSet = _
 

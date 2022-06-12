@@ -20,7 +20,7 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
-import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
@@ -30,9 +30,9 @@ import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation}
-import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
+import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.ApiRequestContext
 
 @Tag(name = "Operation")
@@ -51,7 +51,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   def getOperationEvent(
       @PathParam("operationHandle") operationHandleStr: String): KyuubiOperationEvent = {
     try {
-      val opHandle = parseOperationHandle(operationHandleStr)
+      val opHandle = OperationHandle(operationHandleStr)
       val operation = fe.be.sessionManager.operationManager.getOperation(opHandle)
       KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
     } catch {
@@ -74,16 +74,17 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       request: OpActionRequest,
       @PathParam("operationHandle") operationHandleStr: String): Response = {
     try {
-      val operationHandle = parseOperationHandle(operationHandleStr)
-      request.action.toLowerCase() match {
+      val operationHandle = OperationHandle(operationHandleStr)
+      request.getAction.toLowerCase() match {
         case "cancel" => fe.be.cancelOperation(operationHandle)
         case "close" => fe.be.closeOperation(operationHandle)
-        case _ => throw KyuubiSQLException(s"Invalid action ${request.action}")
+        case _ => throw KyuubiSQLException(s"Invalid action ${request.getAction}")
       }
       Response.ok().build()
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error applying ${request.action} for operation handle $operationHandleStr"
+        val errorMsg =
+          s"Error applying ${request.getAction} for operation handle $operationHandleStr"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
@@ -101,8 +102,8 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   def getResultSetMetadata(
       @PathParam("operationHandle") operationHandleStr: String): ResultSetMetaData = {
     try {
-      val operationHandle = parseOperationHandle(operationHandleStr)
-      ResultSetMetaData(
+      val operationHandle = OperationHandle(operationHandleStr)
+      new ResultSetMetaData(
         fe.be.getResultSetMetadata(operationHandle).getColumns.asScala.map(c => {
           val tPrimitiveTypeEntry = c.getTypeDesc.getTypes.get(0).getPrimitiveEntry
           var precision = 0
@@ -113,14 +114,14 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
             precision = qualifiers.getOrDefault("precision", defaultValue).getI32Value
             scale = qualifiers.getOrDefault("scale", defaultValue).getI32Value
           }
-          ColumnDesc(
+          new ColumnDesc(
             c.getColumnName,
             tPrimitiveTypeEntry.getType.toString,
             c.getPosition,
             precision,
             scale,
             c.getComment)
-        }))
+        }).asJava)
     } catch {
       case NonFatal(e) =>
         val errorMsg = s"Error getting result set metadata for operation handle $operationHandleStr"
@@ -143,11 +144,11 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("maxrows") maxRows: Int): OperationLog = {
     try {
       val rowSet = fe.be.sessionManager.operationManager.getOperationLogRowSet(
-        parseOperationHandle(operationHandleStr),
+        OperationHandle(operationHandleStr),
         FetchOrientation.FETCH_NEXT,
         maxRows)
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
-      OperationLog(logRowSet, logRowSet.size)
+      new OperationLog(logRowSet.asJava, logRowSet.size)
     } catch {
       case NonFatal(e) =>
         val errorMsg = s"Error getting operation log for operation handle $operationHandleStr"
@@ -170,13 +171,14 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("maxrows") maxRows: Int,
       @QueryParam("fetchorientation") fetchOrientation: String): ResultRowSet = {
     try {
-      val rowSet = fe.be.sessionManager.operationManager.getOperationNextRowSet(
-        parseOperationHandle(operationHandleStr),
+      val rowSet = fe.be.fetchResults(
+        OperationHandle(operationHandleStr),
         FetchOrientation.withName(fetchOrientation),
-        maxRows)
+        maxRows,
+        fetchLog = false)
       val rows = rowSet.getRows.asScala.map(i => {
-        Row(i.getColVals.asScala.map(i => {
-          Field(
+        new Row(i.getColVals.asScala.map(i => {
+          new Field(
             i.getSetField.name(),
             i.getSetField match {
               case TColumnValue._Fields.STRING_VAL =>
@@ -194,9 +196,9 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
               case TColumnValue._Fields.I64_VAL =>
                 i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
             })
-        }))
+        }).asJava)
       })
-      ResultRowSet(rows, rows.size)
+      new ResultRowSet(rows.asJava, rows.size)
     } catch {
       case NonFatal(e) =>
         val errorMsg = s"Error getting result row set for operation handle $operationHandleStr"

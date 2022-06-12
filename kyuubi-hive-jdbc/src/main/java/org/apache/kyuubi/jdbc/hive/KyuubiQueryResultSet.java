@@ -23,7 +23,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -131,7 +130,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
     public Builder setSchema(List<String> colNames, List<String> colTypes) {
       // no column attributes provided - create list of null attributes.
-      List<JdbcColumnAttributes> colAttributes = new ArrayList<JdbcColumnAttributes>();
+      List<JdbcColumnAttributes> colAttributes = new ArrayList<>();
       for (int idx = 0; idx < colTypes.size(); ++idx) {
         colAttributes.add(null);
       }
@@ -140,11 +139,11 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
     public Builder setSchema(
         List<String> colNames, List<String> colTypes, List<JdbcColumnAttributes> colAttributes) {
-      this.colNames = new ArrayList<String>();
+      this.colNames = new ArrayList<>();
       this.colNames.addAll(colNames);
-      this.colTypes = new ArrayList<String>();
+      this.colTypes = new ArrayList<>();
       this.colTypes.addAll(colTypes);
-      this.colAttributes = new ArrayList<JdbcColumnAttributes>();
+      this.colAttributes = new ArrayList<>();
       this.colAttributes.addAll(colAttributes);
       this.retrieveSchema = false;
       return this;
@@ -185,10 +184,10 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     this.stmtHandle = builder.stmtHandle;
     this.sessHandle = builder.sessHandle;
     this.fetchSize = builder.fetchSize;
-    columnNames = new ArrayList<String>();
-    normalizedColumnNames = new ArrayList<String>();
-    columnTypes = new ArrayList<String>();
-    columnAttributes = new ArrayList<JdbcColumnAttributes>();
+    columnNames = new ArrayList<>();
+    normalizedColumnNames = new ArrayList<>();
+    columnTypes = new ArrayList<>();
+    columnAttributes = new ArrayList<>();
     if (builder.retrieveSchema) {
       retrieveSchema();
     } else {
@@ -335,6 +334,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
    * @see java.sql.ResultSet#next()
    * @throws SQLException if a database access error occurs.
    */
+  @Override
   public boolean next() throws SQLException {
     if (isClosed) {
       throw new SQLException("Resultset is closed");
@@ -423,16 +423,6 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
       throw new SQLException("Resultset is closed");
     }
     return fetchSize;
-  }
-
-  public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   /**

@@ -17,25 +17,28 @@
 
 package org.apache.kyuubi.session
 
-import java.util.UUID
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 import com.codahale.metrics.MetricRegistry
+import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.cli.HandleIdentifier
+import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.KyuubiOperationManager
+import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.api.v1.BatchRequest
+import org.apache.kyuubi.server.statestore.SessionStateStore
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
-  import KyuubiSessionManager._
 
   def this() = this(classOf[KyuubiSessionManager].getSimpleName)
 
@@ -44,12 +47,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
+  private lazy val sessionStateStore = new SessionStateStore()
 
   private var limiter: Option[SessionLimiter] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(applicationManager)
     addService(credentialsManager)
+    addService(sessionStateStore)
     initSessionLimiter(conf)
     super.initialize(conf)
   }
@@ -103,23 +108,28 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  def openBatchSession(
-      protocol: TProtocolVersion,
+  private def createBatchSession(
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String],
-      batchRequest: BatchRequest): SessionHandle = {
+      batchRequest: BatchRequest,
+      recoveryMetadata: Option[SessionMetadata] = None): KyuubiBatchSessionImpl = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    val batchSession = new KyuubiBatchSessionImpl(
-      protocol,
-      user,
+    new KyuubiBatchSessionImpl(
+      username,
       password,
       ipAddress,
       conf,
       this,
       this.getConf.getUserDefaults(user),
-      batchRequest)
+      batchRequest,
+      recoveryMetadata)
+  }
+
+  private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSessionImpl): SessionHandle = {
+    val user = batchSession.user
+    val ipAddress = batchSession.ipAddress
     try {
       val handle = batchSession.handle
       batchSession.open()
@@ -140,39 +150,59 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
         }
         throw KyuubiSQLException(
-          s"Error opening batch session for $username client ip $ipAddress, due to ${e.getMessage}",
+          s"Error opening batch session for $user client ip $ipAddress, due to ${e.getMessage}",
           e)
     }
   }
 
-  def newBatchSessionHandle(protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(UUID.randomUUID(), STATIC_BATCH_SECRET_UUID), protocol)
-  }
-
-  def getBatchSessionHandle(batchId: String, protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(UUID.fromString(batchId), STATIC_BATCH_SECRET_UUID), protocol)
-  }
-
-  def getBatchSessionImpl(batchId: String, protocol: TProtocolVersion): KyuubiBatchSessionImpl = {
-    getSession(getBatchSessionHandle(batchId, protocol)).asInstanceOf[KyuubiBatchSessionImpl]
+  def openBatchSession(
+      user: String,
+      password: String,
+      ipAddress: String,
+      conf: Map[String, String],
+      batchRequest: BatchRequest): SessionHandle = {
+    val batchSession = createBatchSession(user, password, ipAddress, conf, batchRequest)
+    openBatchSession(batchSession)
   }
 
   def getBatchSessionImpl(sessionHandle: SessionHandle): KyuubiBatchSessionImpl = {
-    getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    getSessionOption(sessionHandle).map(_.asInstanceOf[KyuubiBatchSessionImpl]).orNull
   }
 
-  def getBatchSessionList(batchType: String, from: Int, size: Int): Seq[Session] = {
-    val sessions =
-      if (batchType == null) {
-        allSessions().filter(_.isInstanceOf[KyuubiBatchSessionImpl])
-      } else {
-        allSessions().filter {
-          case batchSession: KyuubiBatchSessionImpl =>
-            batchSession.batchJobSubmissionOp.batchType.equalsIgnoreCase(batchType)
-          case _ => false
-        }
-      }
-    sessions.toSeq.sortBy(_.handle.identifier.toString).slice(from, from + size)
+  def insertMetadata(metadata: SessionMetadata): Unit = {
+    sessionStateStore.insertMetadata(metadata)
+  }
+
+  def updateBatchMetadata(
+      batchId: String,
+      state: OperationState,
+      applicationStatus: Map[String, String],
+      endTime: Long = 0L): Unit = {
+    sessionStateStore.updateBatchMetadata(batchId, state.toString, applicationStatus, endTime)
+  }
+
+  def getBatchFromStateStore(batchId: String): Batch = {
+    sessionStateStore.getBatch(batchId)
+  }
+
+  def getBatchesFromStateStore(
+      batchType: String,
+      batchUser: String,
+      batchState: String,
+      createTime: Long,
+      endTime: Long,
+      from: Int,
+      size: Int): Seq[Batch] = {
+    sessionStateStore.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
+  }
+
+  def getBatchSessionMetadata(batchId: String): SessionMetadata = {
+    sessionStateStore.getBatchSessionMetadata(batchId)
+  }
+
+  @VisibleForTesting
+  def cleanupMetadata(identifier: String): Unit = {
+    sessionStateStore.cleanupMetadataById(identifier)
   }
 
   override def start(): Unit = synchronized {
@@ -182,6 +212,46 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
     }
     super.start()
+  }
+
+  def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSessionImpl] = {
+    val recoveryPerBatch = conf.get(SERVER_STATE_STORE_SESSIONS_RECOVERY_PER_BATCH)
+
+    val batchSessionsToRecover = ListBuffer[KyuubiBatchSessionImpl]()
+    Seq(OperationState.PENDING, OperationState.RUNNING).foreach { stateToRecover =>
+      var offset = 0
+      var lastRecoveryNum = Int.MaxValue
+
+      while (lastRecoveryNum >= recoveryPerBatch) {
+        val metadataList = sessionStateStore.getBatchesRecoveryMetadata(
+          stateToRecover.toString,
+          kyuubiInstance,
+          offset,
+          recoveryPerBatch)
+        metadataList.foreach { metadata =>
+          val batchRequest = new BatchRequest(
+            metadata.engineType,
+            metadata.resource,
+            metadata.className,
+            metadata.requestName,
+            metadata.requestConf.asJava,
+            metadata.requestArgs.asJava)
+
+          val batchSession = createBatchSession(
+            metadata.username,
+            "anonymous",
+            metadata.ipAddress,
+            metadata.requestConf,
+            batchRequest,
+            Some(metadata))
+          batchSessionsToRecover += batchSession
+        }
+
+        lastRecoveryNum = metadataList.size
+        offset += lastRecoveryNum
+      }
+    }
+    batchSessionsToRecover
   }
 
   override protected def isServer: Boolean = true
@@ -194,13 +264,4 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
     }
   }
-}
-
-object KyuubiSessionManager {
-
-  /**
-   * The static session secret UUID used for batch session handle.
-   * To keep compatibility, please do not change it.
-   */
-  val STATIC_BATCH_SECRET_UUID: UUID = UUID.fromString("c2ee5b97-3ea0-41fc-ac16-9bd708ed8f38")
 }

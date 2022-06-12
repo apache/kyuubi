@@ -100,8 +100,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       val handle = session.handle
       session.open()
       setSession(handle, session)
-      info(s"$user's session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
+      info(s"$user's session with $handle${session.name.map("/" + _).getOrElse("")} is opened," +
+        s" current opening sessions $getOpenSessionCount")
       handle
     } catch {
       case e: Exception =>
@@ -121,7 +121,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
-    info(s"$sessionHandle is closed, current opening sessions $getOpenSessionCount")
+    info(s"$sessionHandle${session.name.map("/" + _).getOrElse("")} is closed," +
+      s" current opening sessions $getOpenSessionCount")
     try {
       session.close()
     } finally {
@@ -141,12 +142,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     })
   }
 
+  def getSessionOption(sessionHandle: SessionHandle): Option[Session] = {
+    Option(handleToSession.get(sessionHandle))
+  }
+
   def getSession(sessionHandle: SessionHandle): Session = {
-    val session = handleToSession.get(sessionHandle)
-    if (session == null) {
-      throw KyuubiSQLException(s"Invalid $sessionHandle")
-    }
-    session
+    getSessionOption(sessionHandle).getOrElse(throw KyuubiSQLException(s"Invalid $sessionHandle"))
   }
 
   final protected def setSession(sessionHandle: SessionHandle, session: Session): Unit = {
@@ -304,7 +305,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
                   warn(s"Error closing idle session ${session.handle}", e)
               }
             } else {
-              session.closeExpiredOperations
+              session.closeExpiredOperations()
             }
           }
         }

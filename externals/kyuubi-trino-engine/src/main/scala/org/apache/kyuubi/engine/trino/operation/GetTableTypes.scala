@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.trino.operation
 
 import org.apache.kyuubi.engine.trino.TrinoStatement
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
 import org.apache.kyuubi.session.Session
 
 class GetTableTypes(session: Session)
@@ -32,7 +32,7 @@ class GetTableTypes(session: Session)
         "SELECT TABLE_TYPE FROM system.jdbc.table_types")
       schema = trinoStatement.getColumns
       val resultSet = trinoStatement.execute()
-      iter = new IterableFetchIterator(resultSet)
+      iter = new ArrayFetchIterator(resultSet.toArray)
     } catch onError()
   }
 }

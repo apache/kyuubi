@@ -64,6 +64,9 @@ class ExecuteScala(
       if (legacyOutput.nonEmpty) {
         warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
       }
+      val jars = spark.sharedState.jarClassLoader.getURLs
+      repl.addUrlsToClassPath(jars: _*)
+
       repl.interpretWithRedirectOutError(statement) match {
         case Success =>
           iter = {

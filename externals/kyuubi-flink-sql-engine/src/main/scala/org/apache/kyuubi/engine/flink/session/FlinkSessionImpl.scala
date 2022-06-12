@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink.session
 
+import scala.util.control.NonFatal
+
 import org.apache.flink.table.client.gateway.{Executor, SqlExecutionException}
 import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
@@ -36,8 +38,6 @@ class FlinkSessionImpl(
 
   def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
 
-  def sessionId: String = handle.identifier.toString
-
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
       sessionContext.set(key, value)
@@ -48,6 +48,16 @@ class FlinkSessionImpl(
 
   override def open(): Unit = {
     normalizedConf.foreach {
+      case ("use:database", database) =>
+        val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
+        try {
+          tableEnv.useDatabase(database)
+        } catch {
+          case NonFatal(e) =>
+            if (database != "default") {
+              throw e
+            }
+        }
       case (key, value) => setModifiableConfig(key, value)
     }
     super.open()

@@ -48,8 +48,8 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
 
   def withSessionConf[T](
       sessionConfigs: Map[String, String] = Map.empty)(
-      jdbcConfigs: Map[String, String])(
-      jdbcVars: Map[String, String])(f: => T): T = {
+      jdbcConfigs: Map[String, String] = Map.empty)(
+      jdbcVars: Map[String, String] = Map.empty)(f: => T): T = {
     this._sessionConfigs = sessionConfigs
     this._jdbcConfigs = jdbcConfigs
     this._jdbcVars = jdbcVars
@@ -91,6 +91,12 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
   def withSessionHandle[T](f: (TCLIService.Iface, TSessionHandle) => T): T = {
     val hostAndPort = jdbcUrl.stripPrefix(URL_PREFIX).split("/;").head
     TClientTestUtils.withSessionHandle(hostAndPort, sessionConfigs)(f)
+  }
+
+  def withSessionAndLaunchEngineHandle[T](
+      f: (TCLIService.Iface, TSessionHandle, Option[TOperationHandle]) => T): T = {
+    val hostAndPort = jdbcUrl.stripPrefix(URL_PREFIX).split("/;").head
+    TClientTestUtils.withSessionAndLaunchEngineHandle(hostAndPort, sessionConfigs)(f)
   }
 
   def checkGetSchemas(rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {

@@ -26,6 +26,7 @@ trait Session {
 
   def protocol: TProtocolVersion
   def handle: SessionHandle
+  def name: Option[String]
 
   def conf: Map[String, String]
 
@@ -91,5 +92,5 @@ trait Session {
       maxRows: Int,
       fetchLog: Boolean): TRowSet
 
-  def closeExpiredOperations: Unit
+  def closeExpiredOperations(): Unit
 }

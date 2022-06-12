@@ -20,9 +20,7 @@ package org.apache.kyuubi.jdbc.hive;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.RowIdLifetime;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -35,10 +33,11 @@ import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.cli.TableSchema;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
+import org.apache.kyuubi.jdbc.hive.adapter.SQLDatabaseMetaData;
 import org.apache.thrift.TException;
 
 /** KyuubiDatabaseMetaData. */
-public class KyuubiDatabaseMetaData implements DatabaseMetaData {
+public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   private final KyuubiConnection connection;
   private final TCLIService.Iface client;
@@ -53,7 +52,6 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
   //  Cached values, to save on round trips to database.
   private String dbVersion = null;
 
-  /** */
   public KyuubiDatabaseMetaData(
       KyuubiConnection connection, TCLIService.Iface client, TSessionHandle sessHandle) {
     this.connection = connection;
@@ -61,54 +59,22 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     this.sessHandle = sessHandle;
   }
 
-  public boolean allProceduresAreCallable() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean allTablesAreSelectable() throws SQLException {
     return true;
   }
 
-  public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean deletesAreDetected(int type) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public ResultSet getAttributes(
-      String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public ResultSet getBestRowIdentifier(
-      String catalog, String schema, String table, int scope, boolean nullable)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public String getCatalogSeparator() throws SQLException {
     return CATALOG_SEPARATOR;
   }
 
+  @Override
   public String getCatalogTerm() throws SQLException {
-    return "instance";
+    return "catalog";
   }
 
+  @Override
   public ResultSet getCatalogs() throws SQLException {
     TGetCatalogsResp catalogResp;
 
@@ -153,6 +119,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
       return true;
     }
 
+    @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
       for (int i = 0; i < COLUMNS.length; ++i) {
         if (COLUMNS[i].equalsIgnoreCase(columnLabel)) return getObject(i, type);
@@ -161,6 +128,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
       // TODO: perhaps this could use a better implementation... for now even the Hive query result
       //       set doesn't support this, so assume the user knows what he's doing when calling us.
@@ -168,25 +136,9 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     }
   }
 
+  @Override
   public ResultSet getClientInfoProperties() throws SQLException {
     return new ClientInfoPropertiesResultSet();
-  }
-
-  public ResultSet getColumnPrivileges(
-      String catalog, String schema, String table, String columnNamePattern) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public ResultSet getPseudoColumns(
-      String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
-      throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean generatedKeyAlwaysReturned() throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   /**
@@ -228,6 +180,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     }
   }
 
+  @Override
   public ResultSet getColumns(
       String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
       throws SQLException {
@@ -257,7 +210,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
    * by ordinal position
    */
   private class GetColumnsComparator implements Comparator<JdbcColumn> {
-
+    @Override
     public int compare(JdbcColumn o1, JdbcColumn o2) {
       int compareName = o1.getTableName().compareTo(o2.getTableName());
       if (compareName == 0) {
@@ -273,10 +226,12 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     }
   }
 
+  @Override
   public Connection getConnection() throws SQLException {
     return this.connection;
   }
 
+  @Override
   public ResultSet getCrossReference(
       String primaryCatalog,
       String primarySchema,
@@ -308,19 +263,23 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         .build();
   }
 
+  @Override
   public int getDatabaseMajorVersion() throws SQLException {
     return Utils.getVersionPart(getDatabaseProductVersion(), 0);
   }
 
+  @Override
   public int getDatabaseMinorVersion() throws SQLException {
     return Utils.getVersionPart(getDatabaseProductVersion(), 1);
   }
 
+  @Override
   public String getDatabaseProductName() throws SQLException {
     TGetInfoResp resp = getServerInfo(GetInfoType.CLI_DBMS_NAME.toTGetInfoType());
     return resp.getInfoValue().getStringValue();
   }
 
+  @Override
   public String getDatabaseProductVersion() throws SQLException {
     if (dbVersion != null) { // lazy-caching of the version.
       return dbVersion;
@@ -331,41 +290,38 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     return dbVersion;
   }
 
+  @Override
   public int getDefaultTransactionIsolation() throws SQLException {
     return Connection.TRANSACTION_NONE;
   }
 
+  @Override
   public int getDriverMajorVersion() {
     return KyuubiHiveDriver.getMajorDriverVersion();
   }
 
+  @Override
   public int getDriverMinorVersion() {
     return KyuubiHiveDriver.getMinorDriverVersion();
   }
 
+  @Override
   public String getDriverName() throws SQLException {
     return KyuubiHiveDriver.fetchManifestAttribute(Attributes.Name.IMPLEMENTATION_TITLE);
   }
 
+  @Override
   public String getDriverVersion() throws SQLException {
     return KyuubiHiveDriver.fetchManifestAttribute(Attributes.Name.IMPLEMENTATION_VERSION);
   }
 
-  public ResultSet getExportedKeys(String catalog, String schema, String table)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public String getExtraNameCharacters() throws SQLException {
     // TODO: verify that this is correct
     return "";
   }
 
-  public ResultSet getFunctionColumns(String arg0, String arg1, String arg2, String arg3)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public ResultSet getFunctions(
       String catalogName, String schemaPattern, String functionNamePattern) throws SQLException {
     TGetFunctionsResp funcResp;
@@ -389,10 +345,12 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         .build();
   }
 
+  @Override
   public String getIdentifierQuoteString() throws SQLException {
     return " ";
   }
 
+  @Override
   public ResultSet getImportedKeys(String catalog, String schema, String table)
       throws SQLException {
     return new KyuubiQueryResultSet.Builder(connection)
@@ -432,6 +390,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         .build();
   }
 
+  @Override
   public ResultSet getIndexInfo(
       String catalog, String schema, String table, boolean unique, boolean approximate)
       throws SQLException {
@@ -459,99 +418,28 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         .build();
   }
 
+  @Override
   public int getJDBCMajorVersion() throws SQLException {
     return 3;
   }
 
+  @Override
   public int getJDBCMinorVersion() throws SQLException {
     return 0;
   }
 
-  public int getMaxBinaryLiteralLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxCatalogNameLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxCharLiteralLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
   /** Returns the value of maxColumnNameLength. */
+  @Override
   public int getMaxColumnNameLength() throws SQLException {
     return maxColumnNameLength;
   }
 
-  public int getMaxColumnsInGroupBy() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxColumnsInIndex() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxColumnsInOrderBy() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxColumnsInSelect() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxColumnsInTable() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxConnections() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxCursorNameLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxIndexLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxProcedureNameLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxRowSize() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxSchemaNameLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxStatementLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxStatements() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxTableNameLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxTablesInSelect() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public int getMaxUserNameLength() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public String getNumericFunctions() throws SQLException {
     return "";
   }
 
+  @Override
   public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
     TGetPrimaryKeysResp getPKResp;
     TGetPrimaryKeysReq getPKReq = new TGetPrimaryKeysReq(sessHandle);
@@ -572,6 +460,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         .build();
   }
 
+  @Override
   public ResultSet getProcedureColumns(
       String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
       throws SQLException {
@@ -626,10 +515,12 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         .build();
   }
 
+  @Override
   public String getProcedureTerm() throws SQLException {
     return new String("UDF");
   }
 
+  @Override
   public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
       throws SQLException {
     // Hive doesn't support primary keys
@@ -661,14 +552,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         .build();
   }
 
-  public int getResultSetHoldability() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public RowIdLifetime getRowIdLifetime() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public String getSQLKeywords() throws SQLException {
     // Note: the definitions of what ODBC and JDBC keywords exclude are different in different
     //       places. For now, just return the ODBC version here; that excludes Hive keywords
@@ -677,18 +561,22 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     return resp.getInfoValue().getStringValue();
   }
 
+  @Override
   public int getSQLStateType() throws SQLException {
     return DatabaseMetaData.sqlStateSQL99;
   }
 
+  @Override
   public String getSchemaTerm() throws SQLException {
     return "database";
   }
 
+  @Override
   public ResultSet getSchemas() throws SQLException {
     return getSchemas(null, null);
   }
 
+  @Override
   public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
     TGetSchemasResp schemaResp;
 
@@ -716,33 +604,22 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         .build();
   }
 
+  @Override
   public String getSearchStringEscape() throws SQLException {
     return String.valueOf(SEARCH_STRING_ESCAPE);
   }
 
+  @Override
   public String getStringFunctions() throws SQLException {
     return "";
   }
 
-  public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public String getSystemFunctions() throws SQLException {
     return "";
   }
 
-  public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public ResultSet getTableTypes() throws SQLException {
     TGetTableTypesResp tableTypeResp;
 
@@ -794,7 +671,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
    * table name
    */
   private class GetTablesComparator implements Comparator<JdbcTable> {
-
+    @Override
     public int compare(JdbcTable o1, JdbcTable o2) {
       int compareType = o1.getType().compareTo(o2.getType());
       if (compareType == 0) {
@@ -827,10 +704,12 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     }
   }
 
+  @Override
   public String getTimeDateFunctions() throws SQLException {
     return "";
   }
 
+  @Override
   public ResultSet getTypeInfo() throws SQLException {
     TGetTypeInfoResp getTypeInfoResp;
     TGetTypeInfoReq getTypeInfoReq = new TGetTypeInfoReq();
@@ -848,6 +727,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         .build();
   }
 
+  @Override
   public ResultSet getUDTs(
       String catalog, String schemaPattern, String typeNamePattern, int[] types)
       throws SQLException {
@@ -864,405 +744,161 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
         Arrays.asList("STRING", "STRING", "STRING", "STRING", "INT", "STRING", "INT"),
         null) {
 
+      @Override
       public boolean next() throws SQLException {
         return false;
-      }
-
-      public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-        // JDK 1.7
-        throw new SQLFeatureNotSupportedException("Method not supported");
-      }
-
-      public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-        // JDK 1.7
-        throw new SQLFeatureNotSupportedException("Method not supported");
       }
     };
   }
 
-  public String getURL() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public String getUserName() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public ResultSet getVersionColumns(String catalog, String schema, String table)
-      throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean insertsAreDetected(int type) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean isCatalogAtStart() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean isReadOnly() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean locatorsUpdateCopy() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean nullPlusNonNullIsNull() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean nullsAreSortedAtEnd() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean nullsAreSortedAtStart() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean nullsAreSortedHigh() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean nullsAreSortedLow() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean othersDeletesAreVisible(int type) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean othersInsertsAreVisible(int type) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean othersUpdatesAreVisible(int type) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean ownDeletesAreVisible(int type) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean ownInsertsAreVisible(int type) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean ownUpdatesAreVisible(int type) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean storesLowerCaseIdentifiers() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean storesMixedCaseIdentifiers() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean storesUpperCaseIdentifiers() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsANSI92EntryLevelSQL() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsANSI92FullSQL() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsANSI92IntermediateSQL() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsAlterTableWithAddColumn() throws SQLException {
     return true;
   }
 
+  @Override
   public boolean supportsAlterTableWithDropColumn() throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsBatchUpdates() throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsCatalogsInDataManipulation() throws SQLException {
-    return false;
+    return true;
   }
 
+  @Override
   public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-    return false;
+    return true;
   }
 
+  @Override
   public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-    return false;
+    return true;
   }
 
+  @Override
   public boolean supportsCatalogsInProcedureCalls() throws SQLException {
-    return false;
+    return true;
   }
 
+  @Override
   public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-    return false;
+    return true;
   }
 
+  @Override
   public boolean supportsColumnAliasing() throws SQLException {
     return true;
   }
 
-  public boolean supportsConvert() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsConvert(int fromType, int toType) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsCoreSQLGrammar() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsCorrelatedSubqueries() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsDifferentTableCorrelationNames() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsExpressionsInOrderBy() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsExtendedSQLGrammar() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsFullOuterJoins() throws SQLException {
     return true;
   }
 
-  public boolean supportsGetGeneratedKeys() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsGroupBy() throws SQLException {
     return true;
   }
 
-  public boolean supportsGroupByBeyondSelect() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsGroupByUnrelated() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsIntegrityEnhancementFacility() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsLikeEscapeClause() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsLimitedOuterJoins() throws SQLException {
     return true;
   }
 
-  public boolean supportsMinimumSQLGrammar() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsMixedCaseIdentifiers() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsMultipleOpenResults() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsMultipleResultSets() throws SQLException {
     return false;
   }
 
-  public boolean supportsMultipleTransactions() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsNamedParameters() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsNonNullableColumns() throws SQLException {
     return false;
   }
 
-  public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsOrderByUnrelated() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsOuterJoins() throws SQLException {
     return true;
   }
 
+  @Override
   public boolean supportsPositionedDelete() throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsPositionedUpdate() throws SQLException {
     return false;
   }
 
-  public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsResultSetHoldability(int holdability) throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsResultSetType(int type) throws SQLException {
     return true;
   }
 
+  @Override
   public boolean supportsSavepoints() throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsSchemasInDataManipulation() throws SQLException {
     return true;
   }
 
+  @Override
   public boolean supportsSchemasInIndexDefinitions() throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsSchemasInProcedureCalls() throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsSchemasInTableDefinitions() throws SQLException {
     return true;
   }
 
+  @Override
   public boolean supportsSelectForUpdate() throws SQLException {
     return false;
   }
 
-  public boolean supportsStatementPooling() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsStoredProcedures() throws SQLException {
     return false;
   }
 
-  public boolean supportsSubqueriesInComparisons() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsSubqueriesInExists() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsSubqueriesInIns() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsSubqueriesInQuantifieds() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsTableCorrelationNames() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
+  @Override
   public boolean supportsTransactions() throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsUnion() throws SQLException {
     return false;
   }
 
+  @Override
   public boolean supportsUnionAll() throws SQLException {
     return true;
-  }
-
-  public boolean updatesAreDetected(int type) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean usesLocalFilePerTable() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean usesLocalFiles() throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public <T> T unwrap(Class<T> iface) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   public static void main(String[] args) throws SQLException {

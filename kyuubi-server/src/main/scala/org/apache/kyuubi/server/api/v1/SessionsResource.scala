@@ -20,6 +20,8 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.collection.JavaConverters._
+import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
@@ -28,17 +30,19 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.client.api.v1.dto
+import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
-import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
-import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
+import org.apache.kyuubi.session.KyuubiSession
+import org.apache.kyuubi.session.SessionHandle
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext with Logging {
-
+  implicit def toSessionHandle(str: String): SessionHandle = SessionHandle.fromUUID(str)
   private def sessionManager = fe.be.sessionManager
 
   @ApiResponse(
@@ -50,11 +54,11 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @GET
   def sessions(): Seq[SessionData] = {
     sessionManager.allSessions().map { session =>
-      SessionData(
-        session.handle,
+      new SessionData(
+        session.handle.identifier.toString,
         session.user,
         session.ipAddress,
-        session.conf,
+        session.conf.asJava,
         session.createTime,
         session.lastAccessTime - session.createTime,
         session.getNoOperationTime)
@@ -71,7 +75,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}")
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiEvent = {
     try {
-      fe.be.sessionManager.getSession(parseSessionHandle(sessionHandleStr))
+      sessionManager.getSession(sessionHandleStr)
         .asInstanceOf[KyuubiSession].getSessionEvent.get
     } catch {
       case NonFatal(e) =>
@@ -94,8 +98,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       @PathParam("infoType") infoType: Int): InfoDetail = {
     try {
       val info = TGetInfoType.findByValue(infoType)
-      val infoValue = fe.be.getInfo(parseSessionHandle(sessionHandleStr), info)
-      InfoDetail(info.toString, infoValue.getStringValue)
+      val infoValue = fe.be.getInfo(sessionHandleStr, info)
+      new InfoDetail(info.toString, infoValue.getStringValue)
     } catch {
       case NonFatal(e) =>
         error(s"Unrecognized GetInfoType value: $infoType", e)
@@ -112,7 +116,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @GET
   @Path("count")
   def sessionCount(): SessionOpenCount = {
-    SessionOpenCount(sessionManager.getOpenSessionCount)
+    new SessionOpenCount(sessionManager.getOpenSessionCount)
   }
 
   @ApiResponse(
@@ -124,7 +128,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @GET
   @Path("execPool/statistic")
   def execPoolStatistic(): ExecPoolStatistic = {
-    ExecPoolStatistic(
+    new ExecPoolStatistic(
       sessionManager.getExecPoolSize,
       sessionManager.getActiveCount)
   }
@@ -132,20 +136,20 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[SessionHandle]))),
+      mediaType = MediaType.APPLICATION_JSON)),
     description = "Open(create) a session")
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
-  def openSession(request: SessionOpenRequest): SessionHandle = {
-    val userName = fe.getUserName(request.configs)
+  def openSession(request: SessionOpenRequest): dto.SessionHandle = {
+    val userName = fe.getUserName(request.getConfigs.asScala.toMap)
     val ipAddress = AuthenticationFilter.getUserIpAddress
-    fe.be.openSession(
-      TProtocolVersion.findByValue(request.protocolVersion),
+    val handle = fe.be.openSession(
+      TProtocolVersion.findByValue(request.getProtocolVersion),
       userName,
-      request.password,
+      request.getPassword,
       ipAddress,
-      Option(request.configs).getOrElse(Map.empty[String, String]))
+      request.getConfigs.asScala.toMap)
+    new dto.SessionHandle(handle.identifier)
   }
 
   @ApiResponse(
@@ -156,7 +160,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
-    fe.be.closeSession(parseSessionHandle(sessionHandleStr))
+    fe.be.closeSession(sessionHandleStr)
     Response.ok().build()
   }
 
@@ -173,11 +177,11 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       request: StatementRequest): OperationHandle = {
     try {
       fe.be.executeStatement(
-        parseSessionHandle(sessionHandleStr),
-        request.statement,
+        sessionHandleStr,
+        request.getStatement,
         Map.empty,
-        request.runAsync,
-        request.queryTimeout)
+        request.isRunAsync,
+        request.getQueryTimeout)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error executing statement"
@@ -196,7 +200,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/typeInfo")
   def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     try {
-      fe.be.getTypeInfo(parseSessionHandle(sessionHandleStr))
+      fe.be.getTypeInfo(sessionHandleStr)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting type information"
@@ -215,7 +219,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/catalogs")
   def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     try {
-      fe.be.getCatalogs(parseSessionHandle(sessionHandleStr))
+      fe.be.getCatalogs(sessionHandleStr)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting catalogs"
@@ -236,11 +240,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetSchemasRequest): OperationHandle = {
     try {
-      val sessionHandle = parseSessionHandle(sessionHandleStr)
       val operationHandle = fe.be.getSchemas(
-        sessionHandle,
-        request.catalogName,
-        request.schemaName)
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName)
       operationHandle
     } catch {
       case NonFatal(e) =>
@@ -263,11 +266,11 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       request: GetTablesRequest): OperationHandle = {
     try {
       fe.be.getTables(
-        parseSessionHandle(sessionHandleStr),
-        request.catalogName,
-        request.schemaName,
-        request.tableName,
-        request.tableTypes)
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getTableName,
+        request.getTableTypes)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting tables"
@@ -286,7 +289,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/tableTypes")
   def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     try {
-      fe.be.getTableTypes(parseSessionHandle(sessionHandleStr))
+      fe.be.getTableTypes(sessionHandleStr)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting table types"
@@ -308,11 +311,11 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       request: GetColumnsRequest): OperationHandle = {
     try {
       fe.be.getColumns(
-        parseSessionHandle(sessionHandleStr),
-        request.catalogName,
-        request.schemaName,
-        request.tableName,
-        request.columnName)
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getTableName,
+        request.getColumnName)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting columns"
@@ -334,10 +337,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       request: GetFunctionsRequest): OperationHandle = {
     try {
       fe.be.getFunctions(
-        parseSessionHandle(sessionHandleStr),
-        request.catalogName,
-        request.schemaName,
-        request.functionName)
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getFunctionName)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting functions"
@@ -359,10 +362,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       request: GetPrimaryKeysRequest): OperationHandle = {
     try {
       fe.be.getPrimaryKeys(
-        parseSessionHandle(sessionHandleStr),
-        request.catalogName,
-        request.schemaName,
-        request.tableName)
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getTableName)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting primary keys"
@@ -384,13 +387,13 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       request: GetCrossReferenceRequest): OperationHandle = {
     try {
       fe.be.getCrossReference(
-        parseSessionHandle(sessionHandleStr),
-        request.primaryCatalog,
-        request.primarySchema,
-        request.primaryTable,
-        request.foreignCatalog,
-        request.foreignSchema,
-        request.foreignTable)
+        sessionHandleStr,
+        request.getPrimaryCatalog,
+        request.getPrimarySchema,
+        request.getPrimaryTable,
+        request.getForeignCatalog,
+        request.getForeignSchema,
+        request.getForeignTable)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting cross reference"

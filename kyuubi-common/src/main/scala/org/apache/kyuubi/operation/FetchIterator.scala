@@ -109,3 +109,26 @@ class IterableFetchIterator[A](iterable: Iterable[A]) extends FetchIterator[A] {
     }
   }
 }
+
+object FetchIterator {
+
+  def fromIterator[A](iter: Iterator[A]): FetchIterator[A] = new FetchIterator[A] {
+
+    private var fetchStart: Long = 0
+
+    private var position: Long = 0
+
+    override def fetchNext(): Unit = fetchStart = position
+    override def hasNext: Boolean = iter.hasNext
+    override def next(): A = {
+      position += 1
+      iter.next()
+    }
+
+    override def fetchAbsolute(pos: Long): Unit = {}
+
+    override def getFetchStart: Long = fetchStart
+
+    override def getPosition: Long = position
+  }
+}

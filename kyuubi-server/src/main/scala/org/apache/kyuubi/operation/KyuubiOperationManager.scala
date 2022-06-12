@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.server.api.v1.BatchRequest
+import org.apache.kyuubi.server.statestore.api.SessionMetadata
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionImpl, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -65,10 +65,41 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
 
   def newBatchJobSubmissionOperation(
       session: KyuubiBatchSessionImpl,
-      batchRequest: BatchRequest): BatchJobSubmission = {
-    val operation = new BatchJobSubmission(session, batchRequest)
+      batchType: String,
+      batchName: String,
+      resource: String,
+      className: String,
+      batchConf: Map[String, String],
+      batchArgs: Seq[String],
+      recoveryMetadata: Option[SessionMetadata]): BatchJobSubmission = {
+    val operation = new BatchJobSubmission(
+      session,
+      batchType,
+      batchName,
+      resource,
+      className,
+      batchConf,
+      batchArgs,
+      recoveryMetadata)
     addOperation(operation)
     operation
+  }
+
+  // The server does not use these 4 operations
+  override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
+    null
+  }
+
+  override def newGetCurrentCatalogOperation(session: Session): Operation = {
+    null
+  }
+
+  override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
+    null
+  }
+
+  override def newGetCurrentDatabaseOperation(session: Session): Operation = {
+    null
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {

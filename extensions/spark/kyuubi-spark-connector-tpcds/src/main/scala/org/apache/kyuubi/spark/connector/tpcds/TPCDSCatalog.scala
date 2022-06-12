@@ -21,29 +21,39 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import io.trino.tpcds.Table
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
-import org.apache.spark.sql.connector.catalog.{Identifier, Table => SparkTable, TableCatalog, TableChange}
+import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table => SparkTable, TableCatalog, TableChange}
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-// TODO: implement SupportsNamespaces
-class TPCDSCatalog extends TableCatalog {
+class TPCDSCatalog extends TableCatalog with SupportsNamespaces with Logging {
 
-  val tables: Array[String] = Table.getBaseTables.asScala
-    .map(_.getName).filterNot(_ == "dbgen_version").toArray
+  var databases: Array[String] = _
 
-  val scales: Array[Int] = Array(0, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000)
-
-  val databases: Array[String] = scales.map("sf" + _)
+  val tables: Array[String] = TPCDSSchemaUtils.BASE_TABLES.map(_.getName)
 
   var options: CaseInsensitiveStringMap = _
 
-  override def name: String = "tpcds"
+  var _name: String = _
+
+  override def name: String = _name
 
   override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
+    this._name = name
     this.options = options
+    val uncheckedExcludeDatabases = options.getOrDefault("excludeDatabases", "")
+      .split(",").map(_.toLowerCase.trim).filter(_.nonEmpty)
+    val invalidExcludeDatabases = uncheckedExcludeDatabases diff TPCDSSchemaUtils.DATABASES
+    if (invalidExcludeDatabases.nonEmpty) {
+      logWarning(
+        s"""Ignore unknown databases ${invalidExcludeDatabases.mkString(", ")} in excluding
+           |list. All known databases are ${TPCDSSchemaUtils.BASE_TABLES.mkString(", ")}
+           |""".stripMargin)
+    }
+    val excludeDatabase = uncheckedExcludeDatabases diff invalidExcludeDatabases
+    this.databases = TPCDSSchemaUtils.DATABASES diff excludeDatabase
   }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = namespace match {
@@ -52,8 +62,9 @@ class TPCDSCatalog extends TableCatalog {
   }
 
   override def loadTable(ident: Identifier): SparkTable = (ident.namespace, ident.name) match {
-    case (Array(db), table) if databases contains db =>
-      new TPCDSTable(table.toLowerCase, scales(databases indexOf db), options)
+    case (Array(db), table) if (databases contains db) && tables.contains(table.toLowerCase) =>
+      val scale = TPCDSSchemaUtils.scale(db)
+      new TPCDSTable(table.toLowerCase, scale, options)
     case (_, _) => throw new NoSuchTableException(ident)
   }
 
@@ -71,5 +82,33 @@ class TPCDSCatalog extends TableCatalog {
     throw new UnsupportedOperationException
 
   override def renameTable(oldIdent: Identifier, newIdent: Identifier): Unit =
+    throw new UnsupportedOperationException
+
+  override def listNamespaces(): Array[Array[String]] = databases.map(Array(_))
+
+  override def listNamespaces(namespace: Array[String]): Array[Array[String]] = namespace match {
+    case Array() => listNamespaces()
+    case Array(db) if databases contains db => Array.empty
+    case _ => throw new NoSuchNamespaceException(namespace)
+  }
+
+  override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] =
+    namespace match {
+      case Array(_) => Map.empty[String, String].asJava
+      case _ => throw new NoSuchNamespaceException(namespace)
+    }
+
+  override def createNamespace(namespace: Array[String], metadata: util.Map[String, String]): Unit =
+    throw new UnsupportedOperationException
+
+  override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
+    throw new UnsupportedOperationException
+
+  // Removed in SPARK-37929
+  def dropNamespace(namespace: Array[String]): Boolean =
+    throw new UnsupportedOperationException
+
+  // Introduced in SPARK-37929
+  def dropNamespace(namespace: Array[String], cascade: Boolean): Boolean =
     throw new UnsupportedOperationException
 }

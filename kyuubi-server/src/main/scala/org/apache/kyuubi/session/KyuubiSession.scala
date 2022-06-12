@@ -19,6 +19,7 @@ package org.apache.kyuubi.session
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.session.SessionType.SessionType
 
 abstract class KyuubiSession(
     protocol: TProtocolVersion,
@@ -28,6 +29,8 @@ abstract class KyuubiSession(
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  val sessionType: SessionType
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 

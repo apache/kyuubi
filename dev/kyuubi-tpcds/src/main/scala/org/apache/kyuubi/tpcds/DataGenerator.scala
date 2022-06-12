@@ -307,7 +307,7 @@ object DataGenerator {
       $"c_birth_country"          .string,
       $"c_login"                  .string,
       $"c_email_address"          .string,
-      $"c_last_review_date"       .string)
+      $"c_last_review_date_sk"    .string)
 
     val customer_address: TableGenerator = TableGenerator(
       "customer_address",

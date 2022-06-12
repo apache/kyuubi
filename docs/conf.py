@@ -36,18 +36,20 @@ import subprocess
 
 sys.path.insert(0, os.path.abspath('.'))
 
-import sphinx_rtd_theme
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
 import sphinx_markdown_tables
 import recommonmark
 from recommonmark.transform import AutoStructify
 from recommonmark.parser import CommonMarkParser
-# source_parsers = {
-#     '.md': CommonMarkParser,
-# }
 
-source_suffix = ['.rst', '.md']
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.txt': 'restructuredtext',
+    '.md': 'markdown',
+}
+
+source_parsers = {
+    '.md': CommonMarkParser,
+}
 
 # -- Project information -----------------------------------------------------
 
@@ -105,13 +107,24 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
-# html_theme_options = {
-#     'logo_only': True
-# }
+html_theme = 'sphinx_book_theme'
+html_theme_options = {
+    "repository_url": "https://github.com/apache/incubator-kyuubi",
+    "use_repository_button": True,
+    "use_edit_page_button": True,
+    "use_download_button": True,
+    "use_fullscreen_button": True,
+    "repository_branch": "master",
+    "path_to_docs": "docs",
+    "logo_only": True,
+    "home_page_in_toc": True,
+    "show_toc_level": 2,
+    "announcement": "&#129418; Welcome to Kyuubi’s online documentation &#x2728;, v" + release,
+}
 
-html_logo = 'imgs/kyuubi_logo_gray.png'
-
+html_logo = 'imgs/kyuubi_logo.png'
+html_favicon = 'imgs/kyuubi_logo_red.png'
+html_title = 'Apache Kyuubi'
 
 pygments_style = 'sphinx'
 
@@ -119,7 +132,7 @@ pygments_style = 'sphinx'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-html_style = 'css/custom.css'
+html_css_files = ["css/custom.css"]
 htmlhelp_basename = 'Recommonmarkdoc'
 
 github_doc_root = 'https://github.com/apache/incubator-kyuubi/tree/master/docs/'

@@ -24,6 +24,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.JavaConverters._
 
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
@@ -97,7 +98,7 @@ trait ProcBuilder {
 
   protected def proxyUser: String
 
-  protected def commands: Array[String]
+  protected val commands: Array[String]
 
   def conf: KyuubiConf
 
@@ -152,6 +153,8 @@ trait ProcBuilder {
   @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
   private var logCaptureThread: Thread = _
   private var process: Process = _
+  @VisibleForTesting
+  @volatile private[kyuubi] var processLaunched: Boolean = _
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
@@ -191,6 +194,7 @@ trait ProcBuilder {
 
   final def start: Process = synchronized {
     process = processBuilder.start()
+    processLaunched = true
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
     val redirect: Runnable = { () =>

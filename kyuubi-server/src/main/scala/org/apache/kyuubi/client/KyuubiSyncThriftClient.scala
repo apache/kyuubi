@@ -21,6 +21,7 @@ import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
@@ -53,7 +54,7 @@ class KyuubiSyncThriftClient private (
   @volatile private var remoteEngineBroken: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
-  private var engineLastAlive: Long = _
+  @volatile private var engineLastAlive: Long = _
 
   private def startEngineAliveProbe(): Unit = {
     engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
@@ -85,7 +86,7 @@ class KyuubiSyncThriftClient private (
       }
     }
     engineLastAlive = System.currentTimeMillis()
-    engineAliveThreadPool.scheduleAtFixedRate(
+    engineAliveThreadPool.scheduleWithFixedDelay(
       task,
       engineAliveProbeInterval,
       engineAliveProbeInterval,
@@ -106,23 +107,14 @@ class KyuubiSyncThriftClient private (
   }
 
   private def withRetryingRequest[T](block: => T, request: String): T = withLockAcquired {
-    var attemptCount = 1
+    val (resp, shouldResetEngineBroken) = KyuubiSyncThriftClient.withRetryingRequestNoLock(
+      block,
+      request,
+      maxAttempts,
+      remoteEngineBroken,
+      isConnectionValid)
 
-    var resp: T = null.asInstanceOf[T]
-    while (attemptCount <= maxAttempts && resp == null) {
-      try {
-        resp = block
-        remoteEngineBroken = false
-      } catch {
-        case e: TException if attemptCount < maxAttempts && isConnectionValid() =>
-          warn(s"Failed to execute $request after $attemptCount/$maxAttempts times, retrying", e)
-          attemptCount += 1
-          Thread.sleep(100)
-        case e: Throwable =>
-          error(s"Failed to execute $request after $attemptCount/$maxAttempts times, aborting", e)
-          throw e
-      }
-    }
+    if (shouldResetEngineBroken) remoteEngineBroken = false
     resp
   }
 
@@ -148,7 +140,9 @@ class KyuubiSyncThriftClient private (
       .map(_.get("kyuubi.engine.id"))
 
     engineAliveProbeClient.foreach { aliveProbeClient =>
+      val sessionName = SessionHandle.apply(_remoteSessionHandle).identifier + "_aliveness_probe"
       Utils.tryLogNonFatalError {
+        req.setConfiguration((configs ++ Map(KyuubiConf.SESSION_NAME.key -> sessionName)).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle
@@ -170,8 +164,10 @@ class KyuubiSyncThriftClient private (
       case e: Exception =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      Option(engineAliveThreadPool).foreach(_.shutdown())
-      if (_aliveProbeSessionHandle != null && !remoteEngineBroken) {
+      Option(engineAliveThreadPool).foreach { pool =>
+        ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
+      }
+      if (_aliveProbeSessionHandle != null) {
         engineAliveProbeClient.foreach { client =>
           Utils.tryLogNonFatalError {
             val req = new TCloseSessionReq(_aliveProbeSessionHandle)
@@ -386,7 +382,35 @@ class KyuubiSyncThriftClient private (
   }
 }
 
-private[kyuubi] object KyuubiSyncThriftClient {
+private[kyuubi] object KyuubiSyncThriftClient extends Logging {
+
+  private def withRetryingRequestNoLock[T](
+      block: => T,
+      request: String,
+      maxAttempts: Int,
+      remoteEngineBroken: Boolean,
+      isConnectionValid: () => Boolean): (T, Boolean) = {
+    var attemptCount = 1
+
+    var resp: T = null.asInstanceOf[T]
+    var shouldResetEngineBroken = false;
+    while (attemptCount <= maxAttempts && resp == null) {
+      try {
+        resp = block
+        shouldResetEngineBroken = true
+      } catch {
+        case e: TException if attemptCount < maxAttempts && isConnectionValid() =>
+          warn(s"Failed to execute $request after $attemptCount/$maxAttempts times, retrying", e)
+          attemptCount += 1
+          Thread.sleep(100)
+        case e: Throwable =>
+          error(s"Failed to execute $request after $attemptCount/$maxAttempts times, aborting", e)
+          throw e
+      }
+    }
+    (resp, shouldResetEngineBroken)
+  }
+
   private def createTProtocol(
       user: String,
       passwd: String,
@@ -414,10 +438,21 @@ private[kyuubi] object KyuubiSyncThriftClient {
     val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
     val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
 
-    val tProtocol = createTProtocol(user, passwd, host, port, requestTimeout, loginTimeout)
+    val (tProtocol, _) = withRetryingRequestNoLock(
+      createTProtocol(user, passwd, host, port, requestTimeout, loginTimeout),
+      "CreatingTProtocol",
+      requestMaxAttempts,
+      false,
+      () => true)
+
     val aliveProbeProtocol =
       if (aliveProbeEnabled) {
-        Option(createTProtocol(user, passwd, host, port, aliveProbeInterval, loginTimeout))
+        Option(withRetryingRequestNoLock(
+          createTProtocol(user, passwd, host, port, aliveProbeInterval, loginTimeout),
+          "CreatingTProtocol",
+          requestMaxAttempts,
+          false,
+          () => true)._1)
       } else {
         None
       }

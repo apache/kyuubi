@@ -1,0 +1,1 @@
+`ps_partkey` BIGINT,`value` DOUBLE

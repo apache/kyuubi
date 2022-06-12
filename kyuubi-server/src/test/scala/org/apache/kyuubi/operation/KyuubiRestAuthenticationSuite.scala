@@ -22,54 +22,19 @@ import javax.servlet.http.HttpServletResponse
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
-import org.apache.hadoop.conf.Configuration
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.{KerberizedTestHelper, RestFrontendTestHelper}
+import org.apache.kyuubi.RestClientTestHelper
+import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.api.v1.{SessionOpenCount, SessionOpenRequest}
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
-import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
+import org.apache.kyuubi.server.http.authentication.AuthSchemes
+import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
-class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with KerberizedTestHelper
-  with WithLdapServer {
-
-  private val customUser: String = "user"
-  private val customPasswd: String = "password"
-  private val currentUser = UserGroupInformation.getCurrentUser
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-  }
-
-  override def afterAll(): Unit = {
-    System.clearProperty("java.security.krb5.conf")
-    UserGroupInformation.setLoginUser(currentUser)
-    UserGroupInformation.setConfiguration(new Configuration())
-    assert(!UserGroupInformation.isSecurityEnabled)
-    super.afterAll()
-  }
-
-  override protected lazy val conf: KyuubiConf = {
-    val config = new Configuration()
-    val authType = "hadoop.security.authentication"
-    config.set(authType, "KERBEROS")
-    System.setProperty("java.security.krb5.conf", krb5ConfPath)
-    UserGroupInformation.setConfiguration(config)
-    assert(UserGroupInformation.isSecurityEnabled)
-
-    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
-      .set(KyuubiConf.SERVER_KEYTAB.key, testKeytab)
-      .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
-      .set(KyuubiConf.SERVER_SPNEGO_KEYTAB, testKeytab)
-      .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testSpnegoPrincipal)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
-      .set(
-        KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
-        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
-  }
+class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
   test("test with LDAP authorization") {
     val encodeAuthorization = new String(
@@ -83,7 +48,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
 
     assert(HttpServletResponse.SC_OK == response.getStatus)
     val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
-    assert(openedSessionCount.openSessionCount == 0)
+    assert(openedSessionCount.getOpenSessionCount == 0)
   }
 
   test("test with CUSTOM authorization") {
@@ -96,7 +61,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .get()
 
-    assert(HttpServletResponse.SC_INTERNAL_SERVER_ERROR == response.getStatus)
+    assert(HttpServletResponse.SC_FORBIDDEN == response.getStatus)
   }
 
   test("test without authorization") {
@@ -128,7 +93,7 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
       .header(AUTHORIZATION_HEADER, s"NEGOTIATE $encodeAuthorization")
       .get()
 
-    assert(HttpServletResponse.SC_INTERNAL_SERVER_ERROR == response.getStatus)
+    assert(HttpServletResponse.SC_FORBIDDEN == response.getStatus)
   }
 
   test("test with not supported auth scheme") {
@@ -154,19 +119,54 @@ class KyuubiRestAuthenticationSuite extends RestFrontendTestHelper with Kerberiz
 
   test("test with ugi wrapped open session") {
     UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
-    val token = generateToken(hostName)
-    val sessionOpenRequest = SessionOpenRequest(
+    var token = generateToken(hostName)
+    val sessionOpenRequest = new SessionOpenRequest(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11.getValue,
       "kyuubi",
       "pass",
       "localhost",
-      Map.empty[String, String])
+      Map(KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION").asJava)
 
-    val response = webTarget.path("api/v1/sessions")
+    var response = webTarget.path("api/v1/sessions")
       .request()
       .header(AUTHORIZATION_HEADER, s"NEGOTIATE $token")
       .post(Entity.entity(sessionOpenRequest, MediaType.APPLICATION_JSON_TYPE))
 
     assert(HttpServletResponse.SC_OK == response.getStatus)
+    val sessionHandle = response.readEntity(classOf[SessionHandle])
+
+    token = generateToken(hostName)
+    response = webTarget.path(s"api/v1/sessions/${sessionHandle.getIdentifier}")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"NEGOTIATE $token")
+      .delete()
+    assert(HttpServletResponse.SC_OK == response.getStatus)
+  }
+
+  test("test with internal authorization") {
+    val internalSecurityAccessor = InternalSecurityAccessor.get()
+    val encodeAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$ldapUser:${internalSecurityAccessor.issueToken()}".getBytes()),
+      "UTF-8")
+    var response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"${AuthSchemes.KYUUBI_INTERNAL.toString} $encodeAuthorization")
+      .get()
+
+    assert(HttpServletResponse.SC_OK == response.getStatus)
+    val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
+    assert(openedSessionCount.getOpenSessionCount == 0)
+
+    val badAuthorization = new String(
+      Base64.getEncoder.encode(
+        s"$ldapUser:".getBytes()),
+      "UTF-8")
+    response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, s"${AuthSchemes.KYUUBI_INTERNAL.toString} $badAuthorization")
+      .get()
+
+    assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
   }
 }
