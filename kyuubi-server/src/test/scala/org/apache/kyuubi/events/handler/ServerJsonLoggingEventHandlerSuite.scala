@@ -233,7 +233,8 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
 
   test("open session exception") {
     val name = UUID.randomUUID().toString
-    withSessionConf(Map("spark.driver.memory" -> "abc",
+    withSessionConf(Map(
+      "spark.driver.memory" -> "abc",
       KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
       KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false",
       KyuubiConf.SESSION_NAME.key -> name))()() {
