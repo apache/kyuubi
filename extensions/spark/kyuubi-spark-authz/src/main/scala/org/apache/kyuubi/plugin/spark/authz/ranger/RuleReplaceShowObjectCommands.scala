@@ -48,14 +48,9 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
 case class FilteredShowTablesCommand(delegated: RunnableCommand)
   extends FilteredShowObjectCommand(delegated) {
 
-  override def run(spark: SparkSession): Seq[Row] = {
-    val rows = delegated.run(spark)
-    val ugi = AuthZUtils.getAuthzUgi(spark.sparkContext)
-    val isExtended: Boolean = AuthZUtils.getFieldVal(delegated, "isExtended").asInstanceOf[Boolean]
-    rows.filter(r => isAllowed(r, ugi, isExtended))
-  }
+  var isExtended: Boolean = AuthZUtils.getFieldVal(delegated, "isExtended").asInstanceOf[Boolean]
 
-  protected def isAllowed(r: Row, ugi: UserGroupInformation, isExtended: Boolean): Boolean = {
+  override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
     val table = r.getString(1)
     val isTemp = r.getBoolean(2)
