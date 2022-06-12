@@ -116,10 +116,13 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
       spark: SparkSession,
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
-    val viewMgr = getGlobalTempViewManager(spark, schemaPattern)
     val catalog = getCatalog(spark, catalogName)
-    val schemas = getSchemasWithPattern(catalog, schemaPattern)
-    (schemas ++ viewMgr).map(Row(_, catalog.name()))
+    var schemas = getSchemasWithPattern(catalog, schemaPattern)
+    if (catalogName == SparkCatalogShim.SESSION_CATALOG) {
+      val viewMgr = getGlobalTempViewManager(spark, schemaPattern)
+      schemas = schemas ++ viewMgr
+    }
+    schemas.map(Row(_, catalog.name))
   }
 
   override def getCatalogTablesOrViews(
