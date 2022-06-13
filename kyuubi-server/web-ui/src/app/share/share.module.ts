@@ -27,11 +27,8 @@ import { NzMessageModule } from 'ng-zorro-antd/message';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
-import { FileReadDirective } from 'share/common/file-read/file-read.directive';
 import { NavigationComponent } from 'share/common/navigation/navigation.component';
 import { ResizeComponent } from 'share/common/resize/resize.component';
-
-import { AutoResizeDirective } from './common/editor/auto-resize.directive';
 
 @NgModule({
   imports: [
@@ -46,16 +43,12 @@ import { AutoResizeDirective } from './common/editor/auto-resize.directive';
     NzIconModule
   ],
   declarations: [
-    FileReadDirective,
     NavigationComponent,
-    ResizeComponent,
-    AutoResizeDirective
+    ResizeComponent
   ],
   exports: [
-    FileReadDirective,
     NavigationComponent,
-    ResizeComponent,
-    AutoResizeDirective
+    ResizeComponent
   ]
 })
 export class ShareModule {}
