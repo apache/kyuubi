@@ -52,7 +52,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   override def isSupported(clusterManager: Option[String]): Boolean = {
     kubernetesClient != null && clusterManager.nonEmpty &&
-      clusterManager.get.toLowerCase.startsWith("k8s")
+    clusterManager.get.toLowerCase.startsWith("k8s")
   }
 
   override def killApplicationByTag(tag: String): KillResponse = {
