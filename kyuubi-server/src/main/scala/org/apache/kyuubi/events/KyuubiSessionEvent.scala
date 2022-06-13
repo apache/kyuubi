@@ -30,13 +30,14 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param clientIP client ip address
  * @param serverIP A unique Kyuubi server id, e.g. kyuubi server ip address and port,
  *                 it is useful if has multi-instance Kyuubi Server
- * @param remoteSessionId remote engine session id
- * @param startTime session create time
  * @param conf session config
+ * @param startTime session create time
+ * @param remoteSessionId remote engine session id
+ * @param engineId engine id. For engine on yarn, it is applicationId.
  * @param openedTime session opened time
  * @param endTime session end time
  * @param totalOperations how many queries and meta calls
- * @param engineId engine id. For engine on yarn, it is applicationId.
+ * @param exception the session exception, such as the exception that occur when opening session
  */
 case class KyuubiSessionEvent(
     sessionId: String,
