@@ -99,6 +99,26 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
     }
   }
 
+  test("tpch.sf0 count") {
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.tpch", classOf[TPCHCatalog].getName)
+      .set("spark.sql.cbo.enabled", "true")
+      .set("spark.sql.cbo.planStats.enabled", "true")
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      assert(spark.table("tpch.sf0.customer").count === 0)
+      assert(spark.table("tpch.sf0.orders").count === 0)
+      assert(spark.table("tpch.sf0.lineitem").count === 0)
+      assert(spark.table("tpch.sf0.part").count === 0)
+      assert(spark.table("tpch.sf0.partsupp").count === 0)
+      assert(spark.table("tpch.sf0.supplier").count === 0)
+      assert(spark.table("tpch.sf0.nation").count === 0)
+      assert(spark.table("tpch.sf0.region").count === 0)
+    }
+  }
+
   test("tpch.sf1 stats") {
     val sparkConf = new SparkConf()
       .setMaster("local[*]")

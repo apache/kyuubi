@@ -19,9 +19,11 @@ package org.apache.kyuubi.spark.connector.tpch
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util
 import java.util.OptionalLong
 
 import scala.collection.mutable.ArrayBuffer
+import scala.language.existentials
 
 import io.trino.tpch._
 import io.trino.tpch.GenerateUtils.formatDate
@@ -31,6 +33,8 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
+
+import org.apache.kyuubi.spark.connector.tpch.TPCHSchemaUtils.normalize
 
 case class TPCHTableChuck(table: String, scale: Double, parallelism: Int, index: Int)
   extends InputPartition
@@ -94,7 +98,16 @@ class TPCHPartitionReader(
 
   private lazy val dateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-  private val iterator = tpchTable.createGenerator(scale, index, parallelism).iterator
+  private val iterator = {
+    if (normalize(scale).equals("0")) {
+      new util.Iterator[TpchEntity] {
+
+        override def hasNext: Boolean = false
+
+        override def next(): TpchEntity = throw new NoSuchElementException("next on empty iterator")
+      }
+    } else tpchTable.createGenerator(scale, index, parallelism).iterator
+  }
 
   private var currentRow: InternalRow = _
 
