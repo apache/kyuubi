@@ -1,1 +1,0 @@
-`o_orderpriority` STRING,`order_count` BIGINT NOT NULL

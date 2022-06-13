@@ -1,1 +1,0 @@
-`l_orderkey` BIGINT,`revenue` DOUBLE,`o_orderdate` DATE,`o_shippriority` INT
