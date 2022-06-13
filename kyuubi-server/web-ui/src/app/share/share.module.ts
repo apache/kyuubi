@@ -32,7 +32,6 @@ import { NavigationComponent } from 'share/common/navigation/navigation.componen
 import { ResizeComponent } from 'share/common/resize/resize.component';
 import { JobBadgeComponent } from 'share/customize/job-badge/job-badge.component';
 import { JobChartComponent } from 'share/customize/job-chart/job-chart.component';
-import { RefreshDownloadComponent } from 'share/customize/refresh-download/refresh-download.component';
 import { PipeModule } from 'share/pipes/pipe.module';
 
 import { AutoResizeDirective } from './common/editor/auto-resize.directive';
@@ -54,7 +53,6 @@ import { AutoResizeDirective } from './common/editor/auto-resize.directive';
     JobBadgeComponent,
     FileReadDirective,
     NavigationComponent,
-    RefreshDownloadComponent,
     ResizeComponent,
     JobChartComponent,
     AutoResizeDirective
@@ -63,7 +61,6 @@ import { AutoResizeDirective } from './common/editor/auto-resize.directive';
     PipeModule,
     FileReadDirective,
     NavigationComponent,
-    RefreshDownloadComponent,
     JobBadgeComponent,
     ResizeComponent,
     JobChartComponent,
