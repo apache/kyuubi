@@ -42,8 +42,8 @@ import org.apache.kyuubi.session.SessionType.SessionType
 class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   import JDBCMetadataStore._
 
-  private val dbType = DatabaseType.withName(conf.get(SERVER_METADATA_STORE_JDBC_DATABASE_TYPE))
-  private val driverClassOpt = conf.get(SERVER_METADATA_STORE_JDBC_DRIVER)
+  private val dbType = DatabaseType.withName(conf.get(METADATA_STORE_JDBC_DATABASE_TYPE))
+  private val driverClassOpt = conf.get(METADATA_STORE_JDBC_DRIVER)
   private val driverClass = dbType match {
     case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
     case MYSQL => driverClassOpt.getOrElse("com.mysql.jdbc.Driver")
@@ -61,9 +61,9 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     JDBCMetadataStoreConf.getMetadataStoreJDBCDataSourceProperties(conf)
   private val hikariConfig = new HikariConfig(datasourceProperties)
   hikariConfig.setDriverClassName(driverClass)
-  hikariConfig.setJdbcUrl(conf.get(SERVER_METADATA_STORE_JDBC_URL))
-  hikariConfig.setUsername(conf.get(SERVER_METADATA_STORE_JDBC_USER))
-  hikariConfig.setPassword(conf.get(SERVER_METADATA_STORE_JDBC_PASSWORD))
+  hikariConfig.setJdbcUrl(conf.get(METADATA_STORE_JDBC_URL))
+  hikariConfig.setUsername(conf.get(METADATA_STORE_JDBC_USER))
+  hikariConfig.setPassword(conf.get(METADATA_STORE_JDBC_PASSWORD))
   hikariConfig.setPoolName("kyuubi-state-store-pool")
 
   @VisibleForTesting
@@ -73,7 +73,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   private val terminalStates =
     OperationState.terminalStates.map(x => s"'${x.toString}'").mkString(", ")
 
-  if (conf.get(SERVER_METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
+  if (conf.get(METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
     initSchema()
   }
 

@@ -871,51 +871,51 @@ object KyuubiConf {
       .intConf
       .createWithDefault(100)
 
-  val SERVER_METADATA_STORE_CLASS: ConfigEntry[String] =
-    buildConf("kyuubi.server.metadata.store.class")
+  val METADATA_STORE_CLASS: ConfigEntry[String] =
+    buildConf("kyuubi.metadata.store.class")
       .doc("Fully qualified class name for server metadata store.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("org.apache.kyuubi.server.metastore.jdbc.JDBCMetadataStore")
 
-  val SERVER_METADATA_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.server.metadata.store.cleaner.enabled")
+  val METADATA_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metadata.store.cleaner.enabled")
       .doc("Whether to clean the metadata store periodically. If it is enabled, Kyuubi will clean" +
         " the state information that is in terminate state with max age limitation.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
 
-  val SERVER_METADATA_STORE_MAX_AGE: ConfigEntry[Long] =
-    buildConf("kyuubi.server.metadata.store.max.age")
+  val METADATA_STORE_MAX_AGE: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.store.max.age")
       .doc("The maximum age of state info in metadata store.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofDays(3).toMillis)
 
-  val SERVER_METADATA_STORE_CLEANER_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.server.metadata.store.cleaner.interval")
+  val METADATA_STORE_CLEANER_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.store.cleaner.interval")
       .doc("The interval to clean metadata store.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
-  val SERVER_METADATA_STORE_SESSIONS_RECOVERY_PER_BATCH: ConfigEntry[Int] =
-    buildConf("kyuubi.server.metadata.store.sessions.recovery.per.batch")
+  val METADATA_STORE_SESSIONS_RECOVERY_PER_BATCH: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.store.sessions.recovery.per.batch")
       .doc("The number of sessions to recover from metadata store per batch.")
       .version("1.6.0")
       .intConf
       .createWithDefault(100)
 
-  val SERVER_METADATA_STORE_SESSIONS_RECOVERY_NUM_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.server.metadata.store.sessions.recovery.num.threads")
+  val METADATA_STORE_SESSIONS_RECOVERY_NUM_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.store.sessions.recovery.num.threads")
       .doc("The number of threads for sessions recovery from metadata store.")
       .version("1.6.0")
       .intConf
       .createWithDefault(10)
 
-  val SERVER_METADATA_STORE_REQUESTS_RETRY_NUM_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.server.metadata.store.requests.retry.num.threads")
+  val METADATA_STORE_REQUESTS_RETRY_NUM_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.store.requests.retry.num.threads")
       .doc("Number of threads in the metadata store request retry manager thread pool. The" +
         " metadata store might be unavailable sometimes and the requests will fail, to tolerant" +
         " for this case and unblock the main thread, we introduce a metadata store " +
@@ -924,8 +924,8 @@ object KyuubiConf {
       .intConf
       .createWithDefault(10)
 
-  val SERVER_METADATA_STORE_REQUESTS_RETRY_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.server.metadata.store.requests.retry.interval")
+  val METADATA_STORE_REQUESTS_RETRY_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.store.requests.retry.interval")
       .doc("The interval to check and trigger the metadata store requests retry tasks.")
       .version("1.6.0")
       .timeConf

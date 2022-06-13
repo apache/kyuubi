@@ -28,7 +28,7 @@ import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
   val metadataManager = new MetadataManager()
-  val conf = KyuubiConf().set(KyuubiConf.SERVER_METADATA_STORE_REQUESTS_RETRY_INTERVAL, 100L)
+  val conf = KyuubiConf().set(KyuubiConf.METADATA_STORE_REQUESTS_RETRY_INTERVAL, 100L)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
