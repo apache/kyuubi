@@ -31,15 +31,12 @@ import { FileReadDirective } from 'share/common/file-read/file-read.directive';
 import { NavigationComponent } from 'share/common/navigation/navigation.component';
 import { ResizeComponent } from 'share/common/resize/resize.component';
 import { JobBadgeComponent } from 'share/customize/job-badge/job-badge.component';
-import { JobChartComponent } from 'share/customize/job-chart/job-chart.component';
-import { PipeModule } from 'share/pipes/pipe.module';
 
 import { AutoResizeDirective } from './common/editor/auto-resize.directive';
 
 @NgModule({
   imports: [
     CommonModule,
-    PipeModule,
     NzCardModule,
     NzTableModule,
     NzButtonModule,
@@ -54,16 +51,13 @@ import { AutoResizeDirective } from './common/editor/auto-resize.directive';
     FileReadDirective,
     NavigationComponent,
     ResizeComponent,
-    JobChartComponent,
     AutoResizeDirective
   ],
   exports: [
-    PipeModule,
     FileReadDirective,
     NavigationComponent,
     JobBadgeComponent,
     ResizeComponent,
-    JobChartComponent,
     AutoResizeDirective
   ]
 })
