@@ -30,7 +30,6 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { FileReadDirective } from 'share/common/file-read/file-read.directive';
 import { NavigationComponent } from 'share/common/navigation/navigation.component';
 import { ResizeComponent } from 'share/common/resize/resize.component';
-import { JobBadgeComponent } from 'share/customize/job-badge/job-badge.component';
 
 import { AutoResizeDirective } from './common/editor/auto-resize.directive';
 
@@ -47,7 +46,6 @@ import { AutoResizeDirective } from './common/editor/auto-resize.directive';
     NzIconModule
   ],
   declarations: [
-    JobBadgeComponent,
     FileReadDirective,
     NavigationComponent,
     ResizeComponent,
@@ -56,7 +54,6 @@ import { AutoResizeDirective } from './common/editor/auto-resize.directive';
   exports: [
     FileReadDirective,
     NavigationComponent,
-    JobBadgeComponent,
     ResizeComponent,
     AutoResizeDirective
   ]
