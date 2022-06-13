@@ -931,6 +931,13 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
+  val METADATA_STORE_REQUESTS_RETRY_MAX_QUEUES: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.store.requests.retry.max.queues")
+      .doc("Maximum number of queues for metadata store requests retry, one queue per identifier.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(Int.MaxValue)
+
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")
       .doc("Size of the wait queue for the operation execution thread pool in SQL engine" +

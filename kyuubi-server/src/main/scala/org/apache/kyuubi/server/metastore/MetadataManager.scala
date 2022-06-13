@@ -42,6 +42,8 @@ class MetadataManager extends CompositeService("MetadataManager") {
 
   private var requestsRetryExecutor: ThreadPoolExecutor = _
 
+  private var maxMetadataStoreRequestsRetryQueues: Int = _
+
   private val metadataStoreCleaner =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-store-cleaner")
 
@@ -52,6 +54,8 @@ class MetadataManager extends CompositeService("MetadataManager") {
     requestsRetryExecutor = ThreadUtils.newDaemonFixedThreadPool(
       retryExecutorNumThreads,
       "metadata-store-requests-retry-executor")
+    maxMetadataStoreRequestsRetryQueues =
+      conf.get(KyuubiConf.METADATA_STORE_REQUESTS_RETRY_MAX_QUEUES)
     super.initialize(conf)
   }
 
@@ -186,6 +190,11 @@ class MetadataManager extends CompositeService("MetadataManager") {
   }
 
   def addMetadataStoreRetryRequest(request: MetadataRequest): Unit = {
+    if (identifierRequestsRetryRefMap.size() > maxMetadataStoreRequestsRetryQueues) {
+      throw new KyuubiException(
+        "The number of metadata store requests retry queues exceeds the limitation:" +
+          maxMetadataStoreRequestsRetryQueues)
+    }
     val identifier = request.metadata.identifier
     val ref = identifierRequestsRetryRefMap.computeIfAbsent(
       identifier,
