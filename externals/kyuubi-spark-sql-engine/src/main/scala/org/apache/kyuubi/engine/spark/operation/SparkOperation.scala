@@ -166,6 +166,7 @@ abstract class SparkOperation(opType: OperationType, session: Session)
           RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion, timeZone)
         resultRowSet.setStartRowOffset(iter.getPosition)
       } catch onError(cancel = true)
+
       resultRowSet
     }
 
