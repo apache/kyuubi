@@ -1794,4 +1794,12 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
+
+  val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.context")
+      .doc("The desired context from your K8S config file used to configure the K8S " +
+        "client for interacting with the cluster.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 }
