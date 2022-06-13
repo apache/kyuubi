@@ -149,20 +149,25 @@ abstract class SparkOperation(opType: OperationType, session: Session)
 
   override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(resultSchema)
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
-    validateDefaultFetchOrientation(order)
-    assertState(OperationState.FINISHED)
-    setHasResultSet(true)
-    order match {
-      case FETCH_NEXT => iter.fetchNext()
-      case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
-      case FETCH_FIRST => iter.fetchAbsolute(0);
+  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet =
+    withLocalProperties {
+      var resultRowSet: TRowSet = null
+      try {
+        validateDefaultFetchOrientation(order)
+        assertState(OperationState.FINISHED)
+        setHasResultSet(true)
+        order match {
+          case FETCH_NEXT => iter.fetchNext()
+          case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
+          case FETCH_FIRST => iter.fetchAbsolute(0);
+        }
+        val taken = iter.take(rowSetSize)
+        resultRowSet =
+          RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion, timeZone)
+        resultRowSet.setStartRowOffset(iter.getPosition)
+      } catch onError(cancel = true)
+      resultRowSet
     }
-    val taken = iter.take(rowSetSize)
-    val resultRowSet = RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion, timeZone)
-    resultRowSet.setStartRowOffset(iter.getPosition)
-    resultRowSet
-  }
 
   override def shouldRunAsync: Boolean = false
 }
