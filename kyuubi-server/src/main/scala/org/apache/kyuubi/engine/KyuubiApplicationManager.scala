@@ -96,7 +96,7 @@ object KyuubiApplicationManager {
   }
 
   private def setupSparkK8sTag(tag: String, conf: KyuubiConf): Unit = {
-    conf.set("spark.kubernetes.driver.label.kyuubi_unique_tag", tag)
+    conf.set("spark.kubernetes.driver.label.kyuubi-unique-tag", tag)
   }
 
   private def setupFlinkK8sTag(tag: String, conf: KyuubiConf): Unit = {

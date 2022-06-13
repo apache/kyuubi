@@ -19,7 +19,7 @@ package org.apache.kyuubi.kubernetes.test
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{MiniKube, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 
 trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
