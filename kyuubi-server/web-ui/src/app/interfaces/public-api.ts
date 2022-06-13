@@ -18,4 +18,3 @@
 
 export * from './configuration';
 export * from './overview';
-export * from './job-flamegraph';
