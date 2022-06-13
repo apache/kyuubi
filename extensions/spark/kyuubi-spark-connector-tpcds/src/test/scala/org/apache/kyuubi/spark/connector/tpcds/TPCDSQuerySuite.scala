@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
-
 import scala.collection.JavaConverters._
 import scala.io.{Codec, Source}
 
@@ -27,6 +24,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.spark.connector.common.GoldenFileUtils._
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.kyuubi.spark.connector.common.SparkUtils
 
@@ -50,36 +48,9 @@ import org.apache.kyuubi.spark.connector.common.SparkUtils
 
 class TPCDSQuerySuite extends KyuubiFunSuite {
 
-  private val regenerateGoldenFiles = sys.env.get("KYUUBI_UPDATE").contains("1")
-
-  private val licenseHeader =
-    """/*
-      | * Licensed to the Apache Software Foundation (ASF) under one or more
-      | * contributor license agreements.  See the NOTICE file distributed with
-      | * this work for additional information regarding copyright ownership.
-      | * The ASF licenses this file to You under the Apache License, Version 2.0
-      | * (the "License"); you may not use this file except in compliance with
-      | * the License.  You may obtain a copy of the License at
-      | *
-      | *    http://www.apache.org/licenses/LICENSE-2.0
-      | *
-      | * Unless required by applicable law or agreed to in writing, software
-      | * distributed under the License is distributed on an "AS IS" BASIS,
-      | * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-      | * See the License for the specific language governing permissions and
-      | * limitations under the License.
-      | */""".stripMargin + "\n\n"
-
-  val baseResourcePath: Path =
-    Paths.get("src", "main", "resources")
-
   val queries: Set[String] = (1 to 99).map(i => s"q$i").toSet -
     ("q14", "q23", "q24", "q39") +
     ("q14a", "q14b", "q23a", "q23b", "q24a", "q24b", "q39a", "q39b")
-
-  private def fileToString(file: Path): String = {
-    new String(Files.readAllBytes(file), StandardCharsets.UTF_8)
-  }
 
   test("run query on tiny") {
     assume(SparkUtils.isSparkVersionEqualTo("3.2"))
@@ -100,28 +71,13 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
         try {
           val result = spark.sql(sql).collect()
           val schema = spark.sql(sql).schema
-          val schemaDDL = licenseHeader + schema.toDDL + "\n"
+          val schemaDDL = LICENSE_HEADER + schema.toDDL + "\n"
           spark.createDataFrame(result.toList.asJava, schema).createTempView(s"$name$viewSuffix")
-          val sumHashResult = licenseHeader + spark.sql(
+          val sumHashResult = LICENSE_HEADER + spark.sql(
             s"select sum(hash(*)) from $name$viewSuffix").collect().head.get(0) + "\n"
-
-          val goldenSchemaFile = Paths.get(
-            baseResourcePath.toFile.getAbsolutePath,
-            "tpcds_3.2",
-            s"${name.stripSuffix(".sql")}.output.schema")
-
-          val goldenHashFile = Paths.get(
-            baseResourcePath.toFile.getAbsolutePath,
-            "tpcds_3.2",
-            s"${name.stripSuffix(".sql")}.output.hash")
-          if (regenerateGoldenFiles) {
-            Files.write(goldenSchemaFile, schemaDDL.getBytes)
-            Files.write(goldenHashFile, sumHashResult.getBytes)
-          }
-          val expectedSchema = fileToString(goldenSchemaFile)
-          val expectedHash = fileToString(goldenHashFile)
-          assert(schemaDDL == expectedSchema)
-          assert(sumHashResult == expectedHash)
+          val tuple = generateGoldenFiles("tpcds_3.2", name, schemaDDL, sumHashResult)
+          assert(schemaDDL == tuple._1)
+          assert(sumHashResult == tuple._2)
         } catch {
           case cause: Throwable =>
             fail(name, cause)

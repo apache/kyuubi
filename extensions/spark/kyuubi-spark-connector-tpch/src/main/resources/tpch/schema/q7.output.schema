@@ -1,1 +1,0 @@
-`supp_nation` STRING,`cust_nation` STRING,`l_year` INT,`revenue` DOUBLE

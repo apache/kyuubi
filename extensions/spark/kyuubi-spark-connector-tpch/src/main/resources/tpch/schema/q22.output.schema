@@ -1,1 +1,0 @@
-`cntrycode` STRING,`numcust` BIGINT NOT NULL,`totacctbal` DOUBLE

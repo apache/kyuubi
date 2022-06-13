@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.spark.connector.tpch
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
-
 import scala.collection.JavaConverters._
 import scala.io.{Codec, Source}
 
@@ -27,6 +24,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.spark.connector.common.GoldenFileUtils._
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.kyuubi.spark.connector.common.SparkUtils
 
@@ -50,40 +48,7 @@ import org.apache.kyuubi.spark.connector.common.SparkUtils
 
 class TPCHQuerySuite extends KyuubiFunSuite {
 
-  private val regenerateGoldenFiles = sys.env.get("KYUUBI_UPDATE").contains("1")
-
-  val baseResourcePath: Path =
-    Paths.get("src", "main", "resources")
-
   val queries: Set[String] = (1 to 22).map(i => s"q$i").toSet
-
-  val queryToSumHash: Map[String, Long] = Map(
-    "q1" -> -2130215201L,
-    "q2" -> 2296723790L,
-    "q3" -> -4118618460L,
-    "q4" -> 1856406098L,
-    "q5" -> 3717321142L,
-    "q6" -> 2062248569L,
-    "q7" -> -1955579146L,
-    "q8" -> 453239528L,
-    "q9" -> 10861514367L,
-    "q10" -> -4090660469L,
-    "q11" -> -21773379672L,
-    "q12" -> 2455990065L,
-    "q13" -> -1379884230L,
-    "q14" -> 47333415L,
-    "q15" -> -2021679095L,
-    "q16" -> 326972717L,
-    "q17" -> 42L,
-    "q18" -> 1596157524L,
-    "q19" -> -1061725826L,
-    "q20" -> -35851308L,
-    "q21" -> 1407638530L,
-    "q22" -> 2111900859L)
-
-  private def fileToString(file: Path): String = {
-    new String(Files.readAllBytes(file), StandardCharsets.UTF_8)
-  }
 
   test("run query on tiny") {
     assume(SparkUtils.isSparkVersionEqualTo("3.2"))
@@ -96,7 +61,7 @@ class TPCHQuerySuite extends KyuubiFunSuite {
       spark.sql("USE tpch.tiny")
       queries.map { queryName =>
         val in = getClass.getClassLoader.getResourceAsStream(
-          s"tpch/sql/$queryName.sql")
+          s"tpch/$queryName.sql")
         val queryContent: String = Source.fromInputStream(in)(Codec.UTF8).mkString
         in.close()
         queryName -> queryContent
@@ -104,25 +69,13 @@ class TPCHQuerySuite extends KyuubiFunSuite {
         try {
           val result = spark.sql(sql).collect()
           val schema = spark.sql(sql).schema
-          val schemaDDL = schema.toDDL + "\n"
+          val schemaDDL = LICENSE_HEADER + schema.toDDL + "\n"
           spark.createDataFrame(result.toList.asJava, schema).createTempView(s"$name$viewSuffix")
-          val sumHashResult =
-            spark.sql(s"select sum(hash(*)) from $name$viewSuffix").collect().head.get(0)
-
-          val goldenFile = Paths.get(
-            baseResourcePath.toFile.getAbsolutePath,
-            "tpch",
-            "schema",
-            s"${name.stripSuffix(".sql")}.output.schema")
-
-          if (regenerateGoldenFiles) {
-            Files.write(goldenFile, schemaDDL.getBytes)
-          }
-          val expectedSchema = fileToString(goldenFile)
-
-          assert(schemaDDL == expectedSchema)
-          assert(sumHashResult == queryToSumHash(name))
-
+          val sumHashResult = LICENSE_HEADER + spark.sql(
+            s"select sum(hash(*)) from $name$viewSuffix").collect().head.get(0) + "\n"
+          val tuple = generateGoldenFiles("tpch", name, schemaDDL, sumHashResult)
+          assert(schemaDDL == tuple._1)
+          assert(sumHashResult == tuple._2)
         } catch {
           case cause: Throwable =>
             fail(name, cause)
