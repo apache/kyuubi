@@ -331,6 +331,7 @@ kyuubi.metadata.store.jdbc.url|jdbc:derby:memory:kyuubi_state_store_db;create=tr
 kyuubi.metadata.store.jdbc.user||The username for server jdbc metadata store.|string|1.6.0
 kyuubi.metadata.store.max.age|PT72H|The maximum age of state info in metadata store.|duration|1.6.0
 kyuubi.metadata.store.requests.retry.interval|PT5S|The interval to check and trigger the metadata store requests retry tasks.|duration|1.6.0
+kyuubi.metadata.store.requests.retry.max.queues|2147483647|Maximum number of queues for metadata store requests retry, one queue per identifier.|int|1.6.0
 kyuubi.metadata.store.requests.retry.num.threads|10|Number of threads in the metadata store request retry manager thread pool. The metadata store might be unavailable sometimes and the requests will fail, to tolerant for this case and unblock the main thread, we introduce a metadata store  requests retry manager and it helps to retry the failed requests in async way.|int|1.6.0
 kyuubi.metadata.store.sessions.recovery.num.threads|10|The number of threads for sessions recovery from metadata store.|int|1.6.0
 kyuubi.metadata.store.sessions.recovery.per.batch|100|The number of sessions to recover from metadata store per batch.|int|1.6.0
