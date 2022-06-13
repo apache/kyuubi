@@ -27,7 +27,6 @@ import { NzMessageModule } from 'ng-zorro-antd/message';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
-import { ResizeComponent } from 'share/common/resize/resize.component';
 
 @NgModule({
   imports: [
@@ -42,10 +41,8 @@ import { ResizeComponent } from 'share/common/resize/resize.component';
     NzIconModule
   ],
   declarations: [
-    ResizeComponent
   ],
   exports: [
-    ResizeComponent
   ]
 })
 export class ShareModule {}
