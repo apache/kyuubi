@@ -211,7 +211,9 @@ class MetadataManager extends CompositeService("MetadataManager") {
     val triggerTask = new Runnable {
       override def run(): Unit = {
         identifierRequestsRetryRefMap.values().asScala.foreach { ref =>
-          if (ref.hasRemainingRequests() && ref.retryingTaskCount.get() == 0) {
+          if (!ref.hasRemainingRequests()) {
+            identifierRequestsRetryRefMap.remove(ref)
+          } else if (ref.retryingTaskCount.get() == 0)  {
             val retryTask = new Runnable {
               override def run(): Unit = {
                 try {
