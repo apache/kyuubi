@@ -37,7 +37,6 @@ import { RefreshDownloadComponent } from 'share/customize/refresh-download/refre
 import { PipeModule } from 'share/pipes/pipe.module';
 
 import { AutoResizeDirective } from './common/editor/auto-resize.directive';
-import { BackpressureBadgeComponent } from './customize/backpressure-badge/backpressure-badge.component';
 
 @NgModule({
   imports: [
@@ -60,7 +59,6 @@ import { BackpressureBadgeComponent } from './customize/backpressure-badge/backp
     ResizeComponent,
     JobChartComponent,
     CheckpointBadgeComponent,
-    BackpressureBadgeComponent,
     AutoResizeDirective
   ],
   exports: [
@@ -72,7 +70,6 @@ import { BackpressureBadgeComponent } from './customize/backpressure-badge/backp
     ResizeComponent,
     JobChartComponent,
     CheckpointBadgeComponent,
-    BackpressureBadgeComponent,
     AutoResizeDirective
   ]
 })
