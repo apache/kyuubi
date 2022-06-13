@@ -114,8 +114,8 @@ class TPCHCatalogSuite extends KyuubiFunSuite {
       assert(spark.table("tpch.sf0.part").count === 0)
       assert(spark.table("tpch.sf0.partsupp").count === 0)
       assert(spark.table("tpch.sf0.supplier").count === 0)
-      assert(spark.table("tpch.sf0.nation").count === 25)
-      assert(spark.table("tpch.sf0.region").count === 5)
+      assert(spark.table("tpch.sf0.nation").count === 0)
+      assert(spark.table("tpch.sf0.region").count === 0)
     }
   }
 
