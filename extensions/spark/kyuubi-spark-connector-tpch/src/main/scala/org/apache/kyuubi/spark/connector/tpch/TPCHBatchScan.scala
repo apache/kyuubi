@@ -34,6 +34,8 @@ import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.kyuubi.spark.connector.tpch.TPCHSchemaUtils.normalize
+
 case class TPCHTableChuck(table: String, scale: Double, parallelism: Int, index: Int)
   extends InputPartition
 
@@ -97,8 +99,7 @@ class TPCHPartitionReader(
   private lazy val dateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   private val iterator = {
-    if (scale.equals(0.0) && !tpchTable.getTableName.equals("nation")
-      && !tpchTable.getTableName.equals("region")) {
+    if (normalize(scale).equals("0")) {
       new util.Iterator[TpchEntity] {
 
         override def hasNext: Boolean = false
