@@ -75,8 +75,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
-        val ref = getOrCreateMetadataStoreRequestsRetryRef(metadata.identifier)
-        ref.addRetryingMetadataStoreRequest(InsertMetadata(metadata))
+        addMetadataStoreRetryRequest(InsertMetadata(metadata))
     }
   }
 
@@ -134,8 +133,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)
-        val ref = getOrCreateMetadataStoreRequestsRetryRef(metadata.identifier)
-        ref.addRetryingMetadataStoreRequest(UpdateMetadata(metadata))
+        addMetadataStoreRetryRequest(UpdateMetadata(metadata))
     }
   }
 
@@ -187,15 +185,17 @@ class MetadataManager extends CompositeService("MetadataManager") {
     }
   }
 
-  def getOrCreateMetadataStoreRequestsRetryRef(identifier: String)
-      : MetadataStoreRequestsRetryRef = {
-    identifierRequestsRetryRefMap.computeIfAbsent(
+  def addMetadataStoreRetryRequest(request: MetadataRequest): Unit = {
+    val identifier = request.metadata.identifier
+    val ref = identifierRequestsRetryRefMap.computeIfAbsent(
       identifier,
       identifier => {
         val ref = new MetadataStoreRequestsRetryRef(identifier)
         debug(s"Created MetadataStoreRequestsRetryRef for session $identifier.")
         ref
       })
+    ref.addRetryingMetadataStoreRequest(request)
+    identifierRequestsRetryRefMap.putIfAbsent(identifier, ref)
   }
 
   def getMetadataStoreRequestsRetryRef(identifier: String): MetadataStoreRequestsRetryRef = {
@@ -213,7 +213,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
         identifierRequestsRetryRefMap.values().asScala.foreach { ref =>
           if (!ref.hasRemainingRequests()) {
             identifierRequestsRetryRefMap.remove(ref)
-          } else if (ref.retryingTaskCount.get() == 0)  {
+          } else if (ref.retryingTaskCount.get() == 0) {
             val retryTask = new Runnable {
               override def run(): Unit = {
                 try {
