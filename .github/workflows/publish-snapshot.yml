@@ -36,8 +36,8 @@ jobs:
           - -Pflink-provided,spark-provided,hive-provided,spark-3.1
           - -Pflink-provided,spark-provided,hive-provided,spark-3.2,tpcds
         include:
-          branch: master
-          profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.3
+          - branch: master
+            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.3
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
