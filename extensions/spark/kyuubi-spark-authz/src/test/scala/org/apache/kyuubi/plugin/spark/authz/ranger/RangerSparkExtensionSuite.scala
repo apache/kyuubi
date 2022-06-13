@@ -339,6 +339,39 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
     }
   }
+
+  test("show table extended") {
+    val db = "default_bob"
+    val table = "table"
+    try {
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.${table}_use1 (key int) USING $format"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.${table}_use2 (key int) USING $format"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.${table}_select1 (key int) USING $format"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.${table}_select2 (key int) USING $format"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.${table}_select3 (key int) USING $format"))
+
+      doAs(
+        "admin",
+        assert(sql(s"show table extended from $db like '$table*'").collect().length === 5))
+      doAs(
+        "bob",
+        assert(sql(s"show tables from $db").collect().length === 5))
+      doAs(
+        "bob",
+        assert(sql(s"show table extended from $db like '$table*'").collect().length === 3))
+      doAs(
+        "i_am_invisible",
+        assert(sql(s"show table extended from $db like '$table*'").collect().length === 0))
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_use1"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_use2"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_select1"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_select2"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_select3"))
+      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+    }
+  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {

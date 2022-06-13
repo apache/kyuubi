@@ -48,13 +48,16 @@ class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
 case class FilteredShowTablesCommand(delegated: RunnableCommand)
   extends FilteredShowObjectCommand(delegated) {
 
-  protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
+  var isExtended: Boolean = AuthZUtils.getFieldVal(delegated, "isExtended").asInstanceOf[Boolean]
+
+  override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
     val table = r.getString(1)
     val isTemp = r.getBoolean(2)
     val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
     val resource = AccessResource(objectType, database, table, null)
-    val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, AccessType.USE)
+    val accessType = if (isExtended) AccessType.SELECT else AccessType.USE
+    val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, accessType)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
