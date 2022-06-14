@@ -23,12 +23,14 @@ set -e
 RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
 
 ######### Please modify the variables ##########
-# release version, e.g. 1.4.0-incubating
+# release version, e.g. v1.4.0-incubating
 release_version=${release_version:-""}
-# release candidate number, e.g. 2
+# release candidate number, e.g. rc2
 release_rc_no=${release_rc_no:-""}
-# previous release candidate number, e.g. 1, could be empty if it is the first vote
+# previous release candidate number, e.g. rc1, could be empty if it is the first vote
 prev_release_rc_no=${prev_release_rc_no:-""}
+# previous release version, e.g. v1.3.0-incubating, this is used to generate change log
+prev_release_version=${prev_release_version:-""}
 # staging repository number, check it under https://repository.apache.org/content/repositories
 repo_no=${repo_no:-""}
 ################################################
@@ -39,6 +41,10 @@ if [[ -z $release_version ]]; then
 fi
 if [[ -z $release_rc_no ]]; then
   echo "Please input release rc number"
+  exit 1
+fi
+if [[ -z $prev_release_version ]]; then
+  echo "Please input prev release version which is used to generate change log"
   exit 1
 fi
 if [[ -z $repo_no ]]; then
@@ -99,7 +105,7 @@ The staging repository for this release can be found at:
 https://repository.apache.org/content/repositories/orgapachekyuubi-${repo_no}/
 ${change_from_pre_commit}
 The release note is available in:
-https://github.com/apache/incubator-kyuubi/releases/tag/${release_rc_tag}
+https://github.com/apache/incubator-kyuubi/compare/${prev_release_version}...${release_rc_tag}
 
 Thanks,
 On behalf of Apache Kyuubi(Incubating) community
