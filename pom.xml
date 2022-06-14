@@ -130,6 +130,7 @@
         <hive.archive.name>apache-hive-${hive.engine.hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
         <hive.archive.download.skip>false</hive.archive.download.skip>
+        <hive.storage-api.version>2.7.0</hive.storage-api.version>
         <httpclient.version>4.5.13</httpclient.version>
         <hudi.version>0.11.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
