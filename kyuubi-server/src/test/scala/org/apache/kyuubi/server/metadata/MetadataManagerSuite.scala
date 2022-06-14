@@ -66,7 +66,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       metadataManager.insertMetadata(metadata, retryOnError = false)
     }
     metadataManager.insertMetadata(metadata, retryOnError = true)
-    val retryRef = metadataManager.getMetadataStoreRequestsRetryRef(metadata.identifier)
+    val retryRef = metadataManager.getMetadataRequestsRetryRef(metadata.identifier)
     val metadataToUpdate = metadata.copy(state = "RUNNING")
     retryRef.addRetryingMetadataRequest(UpdateMetadata(metadataToUpdate))
     eventually(timeout(3.seconds)) {
@@ -86,7 +86,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     metadataManager.addMetadataStoreRetryRequest(InsertMetadata(metadata2))
     metadataManager.addMetadataStoreRetryRequest(UpdateMetadata(metadata2ToUpdate))
 
-    val retryRef2 = metadataManager.getMetadataStoreRequestsRetryRef(metadata2.identifier)
+    val retryRef2 = metadataManager.getMetadataRequestsRetryRef(metadata2.identifier)
 
     eventually(timeout(3.seconds)) {
       assert(!retryRef2.hasRemainingRequests())

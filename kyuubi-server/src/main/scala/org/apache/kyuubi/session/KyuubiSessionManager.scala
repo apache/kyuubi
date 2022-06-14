@@ -175,11 +175,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.updateMetadata(metadata)
   }
 
-  def getMetadataStoreRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {
-    Option(metadataManager.getMetadataStoreRequestsRetryRef(identifier))
+  def getMetadataRequestsRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {
+    Option(metadataManager.getMetadataRequestsRetryRef(identifier))
   }
 
-  def deRegisterMetadataStoreRetryRef(identifier: String): Unit = {
+  def deRegisterMetadataRequestsRetryRef(identifier: String): Unit = {
     metadataManager.deRegisterRequestsRetryRef(identifier)
   }
 

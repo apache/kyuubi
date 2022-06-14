@@ -75,15 +75,15 @@ class KyuubiBatchSessionImpl(
       batchRequest.getArgs.asScala,
       recoveryMetadata)
 
-  private def waitMetadataStoreRetryCompletion(): Unit = {
+  private def waitMetadataRequestsRetryCompletion(): Unit = {
     val batchId = batchJobSubmissionOp.batchId
-    sessionManager.getMetadataStoreRetryRef(batchId).foreach {
-      metadataStoreRetryRef =>
-        while (metadataStoreRetryRef.hasRemainingRequests()) {
+    sessionManager.getMetadataRequestsRetryRef(batchId).foreach {
+      metadataRequestsRetryRef =>
+        while (metadataRequestsRetryRef.hasRemainingRequests()) {
           info(s"There are still remaining metadata store requests for batch[$batchId]")
           Thread.sleep(300)
         }
-        sessionManager.deRegisterMetadataStoreRetryRef(batchId)
+        sessionManager.deRegisterMetadataRequestsRetryRef(batchId)
     }
   }
 
@@ -131,7 +131,7 @@ class KyuubiBatchSessionImpl(
 
   override def close(): Unit = {
     super.close()
-    waitMetadataStoreRetryCompletion()
+    waitMetadataRequestsRetryCompletion()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
     MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))

@@ -207,7 +207,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
     identifierRequestsRetryRefMap.putIfAbsent(identifier, ref)
   }
 
-  def getMetadataStoreRequestsRetryRef(identifier: String): MetadataRequestsRetryRef = {
+  def getMetadataRequestsRetryRef(identifier: String): MetadataRequestsRetryRef = {
     identifierRequestsRetryRefMap.get(identifier)
   }
 
