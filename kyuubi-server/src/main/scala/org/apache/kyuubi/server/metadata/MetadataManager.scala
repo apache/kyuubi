@@ -42,10 +42,10 @@ class MetadataManager extends CompositeService("MetadataManager") {
 
   private var requestsRetryExecutor: ThreadPoolExecutor = _
 
-  private var maxMetadataStoreRequestsRetryQueues: Int = _
+  private var maxMetadataRequestsRetryRefs: Int = _
 
-  private val metadataStoreCleaner =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-store-cleaner")
+  private val metadataCleaner =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-cleaner")
 
   override def initialize(conf: KyuubiConf): Unit = {
     _metadataStore = MetadataManager.createMetadataStore(conf)
@@ -54,21 +54,21 @@ class MetadataManager extends CompositeService("MetadataManager") {
     requestsRetryExecutor = ThreadUtils.newDaemonFixedThreadPool(
       retryExecutorNumThreads,
       "metadata-store-requests-retry-executor")
-    maxMetadataStoreRequestsRetryQueues =
-      conf.get(KyuubiConf.METADATA_REQUEST_RETRY_MAX_QUEUES)
+    maxMetadataRequestsRetryRefs =
+      conf.get(KyuubiConf.METADATA_REQUEST_RETRY_MAX_INSTANCES)
     super.initialize(conf)
   }
 
   override def start(): Unit = {
     super.start()
-    startMetadataStoreRequestsRetryTrigger()
-    startMetadataStoreCleaner()
+    startMetadataRequestsRetryTrigger()
+    startMetadataCleaner()
   }
 
   override def stop(): Unit = {
     ThreadUtils.shutdown(requestsRetryTrigger)
     ThreadUtils.shutdown(requestsRetryExecutor)
-    ThreadUtils.shutdown(metadataStoreCleaner)
+    ThreadUtils.shutdown(metadataCleaner)
     _metadataStore.close()
     super.stop()
   }
@@ -79,7 +79,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
-        addMetadataStoreRetryRequest(InsertMetadata(metadata))
+        addMetadataRetryRequest(InsertMetadata(metadata))
     }
   }
 
@@ -137,7 +137,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)
-        addMetadataStoreRetryRequest(UpdateMetadata(metadata))
+        addMetadataRetryRequest(UpdateMetadata(metadata))
     }
   }
 
@@ -167,7 +167,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
       batchMetadata.endTime)
   }
 
-  private def startMetadataStoreCleaner(): Unit = {
+  private def startMetadataCleaner(): Unit = {
     val cleanerEnabled = conf.get(KyuubiConf.METADATA_CLEANER_ENABLED)
     val stateMaxAge = conf.get(METADATA_MAX_AGE)
 
@@ -181,7 +181,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
         }
       }
 
-      metadataStoreCleaner.scheduleWithFixedDelay(
+      metadataCleaner.scheduleWithFixedDelay(
         cleanerTask,
         interval,
         interval,
@@ -189,18 +189,18 @@ class MetadataManager extends CompositeService("MetadataManager") {
     }
   }
 
-  def addMetadataStoreRetryRequest(request: MetadataRequest): Unit = {
-    if (identifierRequestsRetryRefMap.size() > maxMetadataStoreRequestsRetryQueues) {
+  def addMetadataRetryRequest(request: MetadataRequest): Unit = {
+    if (identifierRequestsRetryRefMap.size() > maxMetadataRequestsRetryRefs) {
       throw new KyuubiException(
         "The number of metadata store requests retry queues exceeds the limitation:" +
-          maxMetadataStoreRequestsRetryQueues)
+          maxMetadataRequestsRetryRefs)
     }
     val identifier = request.metadata.identifier
     val ref = identifierRequestsRetryRefMap.computeIfAbsent(
       identifier,
       identifier => {
         val ref = new MetadataRequestsRetryRef
-        debug(s"Created MetadataStoreRequestsRetryRef for session $identifier.")
+        debug(s"Created MetadataRequestsRetryRef for session $identifier.")
         ref
       })
     ref.addRetryingMetadataRequest(request)
@@ -215,7 +215,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
     identifierRequestsRetryRefMap.remove(identifier)
   }
 
-  private def startMetadataStoreRequestsRetryTrigger(): Unit = {
+  private def startMetadataRequestsRetryTrigger(): Unit = {
     val interval = conf.get(KyuubiConf.METADATA_REQUEST_RETRY_INTERVAL)
     val triggerTask = new Runnable {
       override def run(): Unit = {

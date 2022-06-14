@@ -83,8 +83,8 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       engineState = "app_state",
       state = "RUNNING")
 
-    metadataManager.addMetadataStoreRetryRequest(InsertMetadata(metadata2))
-    metadataManager.addMetadataStoreRetryRequest(UpdateMetadata(metadata2ToUpdate))
+    metadataManager.addMetadataRetryRequest(InsertMetadata(metadata2))
+    metadataManager.addMetadataRetryRequest(UpdateMetadata(metadata2ToUpdate))
 
     val retryRef2 = metadataManager.getMetadataRequestsRetryRef(metadata2.identifier)
 

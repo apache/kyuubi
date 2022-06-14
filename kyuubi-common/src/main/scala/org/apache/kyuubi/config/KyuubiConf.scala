@@ -924,9 +924,9 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
-  val METADATA_REQUEST_RETRY_MAX_QUEUES: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.request.retry.max.queues")
-      .doc("Maximum number of queues for metadata request retry, one queue per identifier.")
+  val METADATA_REQUEST_RETRY_MAX_INSTANCES: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.request.retry.max.instances")
+      .doc("Maximum number of refs for metadata request retry instances.")
       .version("1.6.0")
       .intConf
       .createWithDefault(Int.MaxValue)
