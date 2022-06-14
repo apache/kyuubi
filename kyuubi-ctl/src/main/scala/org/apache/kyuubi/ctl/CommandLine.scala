@@ -19,6 +19,7 @@ package org.apache.kyuubi.ctl
 import scopt.{OParser, OParserBuilder}
 
 import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.ctl.util.DateTimeUtils._
 
 object CommandLine {
 
@@ -32,9 +33,14 @@ object CommandLine {
       get(builder),
       delete(builder),
       list(builder),
+      log(builder),
+      submit(builder),
       checkConfig(f => {
-        if (f.action == null) failure("Must specify action command: [create|get|delete|list].")
-        else success
+        if (f.action == null) {
+          failure("Must specify action command: [create|get|delete|list|log|submit].")
+        } else {
+          success
+        }
       }),
       note(""),
       help('h', "help").text("Show help message and exit."))
@@ -62,7 +68,22 @@ object CommandLine {
           " change it if the active service is running in another."),
       opt[Unit]('b', "verbose")
         .action((_, c) => c.copy(commonOpts = c.commonOpts.copy(verbose = true)))
-        .text("Print additional debug output."))
+        .text("Print additional debug output."),
+      opt[String]("hostUrl")
+        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(hostUrl = v)))
+        .text("Host url for rest api."),
+      opt[String]("authSchema")
+        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(authSchema = v)))
+        .text("Auth schema for rest api, valid values are basic, spnego."),
+      opt[String]("username")
+        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(username = v)))
+        .text("Username for basic authentication."),
+      opt[String]("password")
+        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(password = v)))
+        .text("Password for basic authentication."),
+      opt[String]("spnegoHost")
+        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(spnegoHost = v)))
+        .text("Spnego host for spnego authentication."))
   }
 
   private def create(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -70,8 +91,13 @@ object CommandLine {
     OParser.sequence(
       note(""),
       cmd("create")
-        .action((_, c) => c.copy(action = ServiceControlAction.CREATE))
+        .text("\tCreate a resource.")
+        .action((_, c) => c.copy(action = ControlAction.CREATE))
         .children(
+          opt[String]('f', "filename")
+            .action((v, c) => c.copy(createOpts = c.createOpts.copy(filename = v)))
+            .text("Filename to use to create the resource"),
+          batchCmd(builder).text("\tOpen batch session."),
           serverCmd(builder).text("\tExpose Kyuubi server instance to another domain.")))
   }
 
@@ -80,9 +106,10 @@ object CommandLine {
     OParser.sequence(
       note(""),
       cmd("get")
-        .text("\tGet the service/engine node info, host and port needed.")
-        .action((_, c) => c.copy(action = ServiceControlAction.GET))
+        .text("\tDisplay information about the specified resources.")
+        .action((_, c) => c.copy(action = ControlAction.GET))
         .children(
+          getBatchCmd(builder).text("\tGet batch by id."),
           serverCmd(builder).text("\tGet Kyuubi server info of domain"),
           engineCmd(builder).text("\tGet Kyuubi engine info belong to a user.")))
 
@@ -93,9 +120,10 @@ object CommandLine {
     OParser.sequence(
       note(""),
       cmd("delete")
-        .text("\tDelete the specified service/engine node, host and port needed.")
-        .action((_, c) => c.copy(action = ServiceControlAction.DELETE))
+        .text("\tDelete resources.")
+        .action((_, c) => c.copy(action = ControlAction.DELETE))
         .children(
+          deleteBatchCmd(builder).text("\tClose batch session."),
           serverCmd(builder).text("\tDelete the specified service node for a domain"),
           engineCmd(builder).text("\tDelete the specified engine node for user.")))
 
@@ -106,22 +134,51 @@ object CommandLine {
     OParser.sequence(
       note(""),
       cmd("list")
-        .text("\tList all the service/engine nodes for a particular domain.")
-        .action((_, c) => c.copy(action = ServiceControlAction.LIST))
+        .text("\tList information about resources.")
+        .action((_, c) => c.copy(action = ControlAction.LIST))
         .children(
+          listBatchCmd(builder).text("\tList batch session info."),
           serverCmd(builder).text("\tList all the service nodes for a particular domain"),
           engineCmd(builder).text("\tList all the engine nodes for a user")))
 
   }
 
+  private def log(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    OParser.sequence(
+      note(""),
+      cmd("log")
+        .text("\tPrint the logs for specified resource.")
+        .action((_, c) => c.copy(action = ControlAction.LOG))
+        .children(
+          opt[Unit]("forward")
+            .action((_, c) => c.copy(logOpts = c.logOpts.copy(forward = true)))
+            .text("If forward is specified, the ctl will block forever."),
+          logBatchCmd(builder).text("\tGet batch session local log.")))
+  }
+
+  private def submit(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    OParser.sequence(
+      note(""),
+      cmd("submit")
+        .text("\tCombination of create, get and log commands.")
+        .action((_, c) => c.copy(action = ControlAction.SUBMIT))
+        .children(
+          opt[String]('f', "filename")
+            .action((v, c) => c.copy(createOpts = c.createOpts.copy(filename = v)))
+            .text("Filename to use to create the resource"),
+          batchCmd(builder).text("\topen batch session and wait for completion.")))
+  }
+
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("server").action((_, c) => c.copy(service = ServiceControlObject.SERVER))
+    cmd("server").action((_, c) => c.copy(resource = ControlObject.SERVER))
   }
 
   private def engineCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
-    cmd("engine").action((_, c) => c.copy(service = ServiceControlObject.ENGINE))
+    cmd("engine").action((_, c) => c.copy(resource = ControlObject.ENGINE))
       .children(
         opt[String]('u', "user")
           .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(user = v)))
@@ -135,6 +192,111 @@ object CommandLine {
         opt[String]("engine-share-level").abbr("esl")
           .action((v, c) => c.copy(engineOpts = c.engineOpts.copy(engineShareLevel = v)))
           .text("The engine share level this engine belong to."))
+  }
+
+  private def batchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
+  }
+
+  private def getBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
+      .children(
+        arg[String]("<batchId>")
+          .optional()
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchId = v)))
+          .text("Batch id."))
+  }
+
+  private def deleteBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
+      .children(
+        arg[String]("<batchId>")
+          .optional()
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchId = v)))
+          .text("Batch id."),
+        opt[String]("hs2ProxyUser")
+          .action((v, c) => c.copy(createOpts = c.createOpts.copy(filename = v)))
+          .text("The value of hive.server2.proxy.user config."))
+  }
+
+  private def listBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
+      .children(
+        opt[String]("batchType")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchType = v)))
+          .text("Batch type."),
+        opt[String]("batchUser")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchUser = v)))
+          .text("Batch user."),
+        opt[String]("batchState")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchState = v)))
+          .text("Batch state."),
+        opt[String]("createTime")
+          .action((v, c) =>
+            c.copy(batchOpts = c.batchOpts.copy(createTime =
+              dateStringToMillis(v, "yyyyMMddHHmmss"))))
+          .validate(x =>
+            if (x.matches("\\d{14}")) {
+              success
+            } else {
+              failure("Option --createTime must be in yyyyMMddHHmmss format.")
+            })
+          .text("Batch create time, should be in yyyyMMddHHmmss format."),
+        opt[String]("endTime")
+          .action((v, c) =>
+            c.copy(batchOpts = c.batchOpts.copy(endTime =
+              dateStringToMillis(v, "yyyyMMddHHmmss"))))
+          .validate(x =>
+            if (x.matches("\\d{14}")) {
+              success
+            } else {
+              failure("Option --endTime must be in yyyyMMddHHmmss format.")
+            })
+          .text("Batch end time, should be in yyyyMMddHHmmss format."),
+        opt[Int]("from")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(from = v)))
+          .validate(x =>
+            if (x >= 0) {
+              success
+            } else {
+              failure("Option --from must be >=0")
+            })
+          .text("Specify which record to start from retrieving info."),
+        opt[Int]("size")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(size = v)))
+          .validate(x =>
+            if (x >= 0) {
+              success
+            } else {
+              failure("Option --size must be >=0")
+            })
+          .text("The max number of records returned in the query."))
+  }
+
+  private def logBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
+      .children(
+        arg[String]("<batchId>")
+          .optional()
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchId = v)))
+          .text("Batch id."),
+        opt[Int]("from")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(from = v)))
+          .text("Specify which record to start from retrieving info."),
+        opt[Int]("size")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(size = v)))
+          .validate(x =>
+            if (x >= 0) {
+              success
+            } else {
+              failure("Option --size must be >=0")
+            })
+          .text("The max number of records returned in the query."))
   }
 
 }

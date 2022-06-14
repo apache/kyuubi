@@ -16,23 +16,26 @@
  */
 package org.apache.kyuubi.ctl
 
-import org.apache.kyuubi.ctl.ServiceControlAction.ControlAction
-import org.apache.kyuubi.ctl.ServiceControlObject.ControlObject
+import org.apache.kyuubi.ctl.ControlAction.ControlAction
+import org.apache.kyuubi.ctl.ControlObject.ControlObject
 
-private[ctl] object ServiceControlAction extends Enumeration {
+private[ctl] object ControlAction extends Enumeration {
   type ControlAction = Value
-  val CREATE, GET, DELETE, LIST = Value
+  val CREATE, GET, DELETE, LIST, LOG, SUBMIT = Value
 }
 
-private[ctl] object ServiceControlObject extends Enumeration {
+private[ctl] object ControlObject extends Enumeration {
   type ControlObject = Value
-  val SERVER, ENGINE = Value
+  val SERVER, ENGINE, BATCH = Value
 }
 
 case class CliConfig(
     action: ControlAction = null,
-    service: ControlObject = ServiceControlObject.SERVER,
+    resource: ControlObject = ControlObject.SERVER,
     commonOpts: CommonOpts = CommonOpts(),
+    createOpts: CreateOpts = CreateOpts(),
+    logOpts: LogOpts = LogOpts(),
+    batchOpts: BatchOpts = BatchOpts(),
     engineOpts: EngineOpts = EngineOpts())
 
 case class CommonOpts(
@@ -41,7 +44,27 @@ case class CommonOpts(
     host: String = null,
     port: String = null,
     version: String = null,
-    verbose: Boolean = false)
+    verbose: Boolean = false,
+    hostUrl: String = null,
+    authSchema: String = null,
+    username: String = null,
+    password: String = null,
+    spnegoHost: String = null)
+
+case class CreateOpts(filename: String = null)
+
+case class LogOpts(forward: Boolean = false)
+
+case class BatchOpts(
+    batchId: String = null,
+    batchType: String = null,
+    batchUser: String = null,
+    batchState: String = null,
+    createTime: Long = 0,
+    endTime: Long = 0,
+    from: Int = -1,
+    size: Int = 100,
+    hs2ProxyUser: String = null)
 
 case class EngineOpts(
     user: String = null,

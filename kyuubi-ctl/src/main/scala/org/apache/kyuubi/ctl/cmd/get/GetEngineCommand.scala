@@ -14,20 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl
+package org.apache.kyuubi.ctl.cmd.get
 
-import org.apache.kyuubi.ha.client.ServiceNodeInfo
+import org.apache.kyuubi.ctl.CliConfig
 
-object Render {
+class GetEngineCommand(cliConfig: CliConfig) extends GetCommand(cliConfig) {
 
-  private[ctl] def renderServiceNodesInfo(
-      title: String,
-      serviceNodeInfo: Seq[ServiceNodeInfo],
-      verbose: Boolean): String = {
-    val header = Seq("Namespace", "Host", "Port", "Version")
-    val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
-      Seq(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
+  override def validate(): Unit = {
+    super.validate()
+
+    // validate user
+    if (normalizedCliConfig.engineOpts.user == null) {
+      fail("Must specify user name for engine, please use -u or --user.")
     }
-    Tabulator.format(title, header, rows, verbose)
   }
 }

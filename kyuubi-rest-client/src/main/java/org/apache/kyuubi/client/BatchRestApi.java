@@ -60,10 +60,10 @@ public class BatchRestApi {
     params.put("batchType", batchType);
     params.put("batchUser", batchUser);
     params.put("batchState", batchState);
-    if (null != createTime && createTime >= 0) {
+    if (null != createTime && createTime > 0) {
       params.put("createTime", createTime);
     }
-    if (null != endTime && endTime >= 0) {
+    if (null != endTime && endTime > 0) {
       params.put("endTime", endTime);
     }
     params.put("from", from);

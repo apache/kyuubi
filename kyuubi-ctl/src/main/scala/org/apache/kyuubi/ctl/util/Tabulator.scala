@@ -15,31 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ctl
-
-import java.io.PrintStream
+package org.apache.kyuubi.ctl.util
 
 import org.apache.commons.lang3.StringUtils
-
-/**
- * Contains basic command line parsing functionality and methods to parse some common Kyuubi Ctl
- * options.
- */
-private[kyuubi] trait CommandLineUtils extends CommandLineLoggingUtils {
-
-  def main(args: Array[String]): Unit
-}
-
-private[kyuubi] trait CommandLineLoggingUtils {
-  // Exposed for testing
-  private[kyuubi] var exitFn: Int => Unit = (exitCode: Int) => System.exit(exitCode)
-
-  private[kyuubi] var printStream: PrintStream = System.err
-
-  // scalastyle:off println
-  private[kyuubi] def printMessage(msg: Any): Unit = printStream.println(msg)
-  // scalastyle:on println
-}
 
 /** Refer the showString method of org.apache.spark.sql.Dataset */
 private[kyuubi] object Tabulator {

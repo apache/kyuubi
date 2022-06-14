@@ -16,8 +16,8 @@
 # limitations under the License.
 #
 
-## Kyuubi Service Control Client Entrance
-CLASS="org.apache.kyuubi.ctl.ServiceControlCli"
+## Kyuubi Control Client Entrance
+CLASS="org.apache.kyuubi.ctl.ControlCli"
 
 export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
 

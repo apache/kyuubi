@@ -14,35 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl.cmd
+package org.apache.kyuubi.ctl.cmd.delete
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.ctl.{CliConfig, Render}
+import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
 class DeleteCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
-  def validateArguments(): Unit = {
-    validateZkArguments()
-    validateHostAndPort()
-    validateUser()
+  def validate(): Unit = {
+    Validator.validateZkArguments(normalizedCliConfig)
+    Validator.validateHostAndPort(normalizedCliConfig)
     mergeArgsIntoKyuubiConf()
-  }
-
-  override def run(): Unit = {
-    delete()
   }
 
   /**
    * Delete zookeeper service node with specified host port.
    */
-  private def delete(): Unit = {
+  def run(): Unit = {
     withDiscoveryClient(conf) { discoveryClient =>
-      val znodeRoot = getZkNamespace()
-      val hostPortOpt = Some((cliArgs.commonOpts.host, cliArgs.commonOpts.port.toInt))
-      val nodesToDelete = getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
+      val znodeRoot = CtlUtils.getZkNamespace(conf, normalizedCliConfig)
+      val hostPortOpt =
+        Some((normalizedCliConfig.commonOpts.host, normalizedCliConfig.commonOpts.port.toInt))
+      val nodesToDelete = CtlUtils.getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
 
       val deletedNodes = ListBuffer[ServiceNodeInfo]()
       nodesToDelete.foreach { node =>
@@ -61,4 +59,5 @@ class DeleteCommand(cliConfig: CliConfig) extends Command(cliConfig) {
       info(Render.renderServiceNodesInfo(title, deletedNodes, verbose))
     }
   }
+
 }

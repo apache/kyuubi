@@ -17,72 +17,14 @@
 
 package org.apache.kyuubi.ctl
 
-import java.io.{OutputStream, PrintStream}
 import java.util.concurrent.atomic.AtomicInteger
-
-import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ctl.util.{CtlUtils, Render}
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.{DiscoveryClientProvider, ServiceNodeInfo}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
-
-trait TestPrematureExit {
-  suite: KyuubiFunSuite =>
-
-  private val noOpOutputStream = new OutputStream {
-    def write(b: Int) = {}
-  }
-
-  /** Simple PrintStream that reads data into a buffer */
-  private class BufferPrintStream extends PrintStream(noOpOutputStream) {
-    var lineBuffer = ArrayBuffer[String]()
-    // scalastyle:off println
-    override def println(line: Any): Unit = {
-      lineBuffer += line.toString
-    }
-    // scalastyle:on println
-  }
-
-  /** Returns true if the script exits and the given search string is printed. */
-  private[kyuubi] def testPrematureExit(
-      input: Array[String],
-      searchString: String,
-      mainObject: CommandLineUtils = ControlCli): Unit = {
-    val printStream = new BufferPrintStream()
-    mainObject.printStream = printStream
-
-    @volatile var exitedCleanly = false
-    val original = mainObject.exitFn
-    mainObject.exitFn = (_) => exitedCleanly = true
-    try {
-      @volatile var exception: Exception = null
-      val thread = new Thread {
-        override def run() =
-          try {
-            mainObject.main(input)
-          } catch {
-            // Capture the exception to check whether the exception contains searchString or not
-            case e: Exception => exception = e
-          }
-      }
-      thread.start()
-      thread.join()
-      if (exitedCleanly) {
-        val joined = printStream.lineBuffer.mkString("\n")
-        assert(joined.contains(searchString))
-      } else {
-        assert(exception != null)
-        if (!exception.getMessage.contains(searchString)) {
-          throw exception
-        }
-      }
-    } finally {
-      mainObject.exitFn = original
-    }
-  }
-}
 
 class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   import DiscoveryClientProvider._
@@ -149,7 +91,9 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       host,
       "--port",
       port)
-    testPrematureExit(args, "Only support expose Kyuubi server instance to another domain")
+    testPrematureExitForControlCli(
+      args,
+      "Only support expose Kyuubi server instance to another domain")
   }
 
   test("test not specified namespace") {
@@ -168,7 +112,9 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       host,
       "--port",
       port)
-    testPrematureExit(args2, "Only support expose Kyuubi server instance to another domain")
+    testPrematureExitForControlCli(
+      args2,
+      "Only support expose Kyuubi server instance to another domain")
   }
 
   test("test expose to another namespace") {
@@ -190,7 +136,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       host,
       "--port",
       port)
-    testPrematureExit(args, "")
+    testPrematureExitForControlCli(args, "")
   }
 
   test("test render zookeeper service node info") {
@@ -240,7 +186,9 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
         ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
 
-      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedCreatedNodes, false))
+      testPrematureExitForControlCli(
+        args,
+        getRenderedNodesInfoWithoutTitle(expectedCreatedNodes, false))
       val znodeRoot = s"/$newNamespace"
       val children = framework.getChildren(znodeRoot).sorted
       assert(children.size == 2)
@@ -264,7 +212,9 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--namespace",
       namespace)
     val scArgs1 = new ControlCliArguments(arg1)
-    assert(scArgs1.command.getZkNamespace() == s"/$namespace")
+    assert(CtlUtils.getZkNamespace(
+      scArgs1.command.conf,
+      scArgs1.command.normalizedCliConfig) == s"/$namespace")
 
     val arg2 = Array(
       "list",
@@ -276,7 +226,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--user",
       user)
     val scArgs2 = new ControlCliArguments(arg2)
-    assert(scArgs2.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs2.command.conf, scArgs2.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
   }
 
@@ -305,7 +255,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
 
-      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
+      testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
     }
   }
 
@@ -337,7 +287,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       val expectedNodes = Seq(
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None))
 
-      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
+      testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
     }
   }
 
@@ -371,7 +321,9 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       val expectedDeletedNodes = Seq(
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None))
 
-      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedDeletedNodes, false))
+      testPrematureExitForControlCli(
+        args,
+        getRenderedNodesInfoWithoutTitle(expectedDeletedNodes, false))
     }
   }
 
@@ -401,7 +353,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
 
-      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, true))
+      testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes, true))
     }
   }
 
@@ -416,7 +368,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--user",
       user)
     val scArgs1 = new ControlCliArguments(arg1)
-    assert(scArgs1.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs1.command.conf, scArgs1.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
     val arg2 = Array(
@@ -431,7 +383,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-type",
       "FLINK_SQL")
     val scArgs2 = new ControlCliArguments(arg2)
-    assert(scArgs2.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs2.command.conf, scArgs2.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_FLINK_SQL/$user/default")
 
     val arg3 = Array(
@@ -446,7 +398,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-type",
       "TRINO")
     val scArgs3 = new ControlCliArguments(arg3)
-    assert(scArgs3.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs3.command.conf, scArgs3.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_TRINO/$user/default")
 
     val arg4 = Array(
@@ -463,7 +415,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-subdomain",
       "sub_1")
     val scArgs4 = new ControlCliArguments(arg4)
-    assert(scArgs4.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs4.command.conf, scArgs4.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/sub_1")
 
     val arg5 = Array(
@@ -482,7 +434,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-subdomain",
       "sub_1")
     val scArgs5 = new ControlCliArguments(arg5)
-    assert(scArgs5.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs5.command.conf, scArgs5.command.normalizedCliConfig) ==
       s"/${namespace}_1.5.0_USER_SPARK_SQL/$user/sub_1")
   }
 
@@ -497,7 +449,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--user",
       user)
     val scArgs1 = new ControlCliArguments(arg1)
-    assert(scArgs1.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs1.command.conf, scArgs1.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
     val arg2 = Array(
@@ -512,7 +464,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-share-level",
       "CONNECTION")
     val scArgs2 = new ControlCliArguments(arg2)
-    assert(scArgs2.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs2.command.conf, scArgs2.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL/$user/default")
 
     val arg3 = Array(
@@ -527,7 +479,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-share-level",
       "USER")
     val scArgs3 = new ControlCliArguments(arg3)
-    assert(scArgs3.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs3.command.conf, scArgs3.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
 
     val arg4 = Array(
@@ -542,7 +494,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-share-level",
       "GROUP")
     val scArgs4 = new ControlCliArguments(arg4)
-    assert(scArgs4.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs4.command.conf, scArgs4.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_GROUP_SPARK_SQL/$user/default")
 
     val arg5 = Array(
@@ -557,7 +509,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--engine-share-level",
       "SERVER")
     val scArgs5 = new ControlCliArguments(arg5)
-    assert(scArgs5.command.getZkNamespace() ==
+    assert(CtlUtils.getZkNamespace(scArgs5.command.conf, scArgs5.command.normalizedCliConfig) ==
       s"/${namespace}_${KYUUBI_VERSION}_SERVER_SPARK_SQL/$user/default")
   }
 }

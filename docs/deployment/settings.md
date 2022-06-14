@@ -183,6 +183,15 @@ kyuubi.credentials.renewal.retry.wait|PT1M|How long to wait before retrying to f
 kyuubi.credentials.update.wait.timeout|PT1M|How long to wait until credentials are ready.|duration|1.5.0
 
 
+### Ctl
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.ctl.rest.auth.schema|basic|The authentication schema. Valid values are: basic, spnego.|string|1.6.0
+kyuubi.ctl.rest.base.url|&lt;undefined&gt;|The REST API base URL, which contains the scheme (http:// or https://), host name, port number|string|1.6.0
+kyuubi.ctl.rest.spnego.host|&lt;undefined&gt;|When auth schema is spnego, need to config spnego host.|string|1.6.0
+
+
 ### Delegation
 
 Key | Default | Meaning | Type | Since
