@@ -36,19 +36,18 @@ case class TPCDSTableChuck(table: String, scale: Double, parallelism: Int, index
 class TPCDSBatchScan(
     @transient table: Table,
     scale: Double,
-    schema: StructType) extends ScanBuilder
+    schema: StructType,
+    scanConf: TPCDSBatchScanConf) extends ScanBuilder
   with SupportsReportStatistics with Batch with Serializable {
 
   private val _sizeInBytes: Long = TPCDSStatisticsUtils.sizeInBytes(table, scale)
   private val _numRows: Long = TPCDSStatisticsUtils.numRows(table, scale)
 
-  private val rowCountPerTask: Int = 1000000
-
   private val parallelism: Int =
     if (table.isSmall) 1
     else math.max(
       SparkSession.active.sparkContext.defaultParallelism,
-      (_numRows / rowCountPerTask.toDouble).ceil.toInt)
+      (_sizeInBytes / scanConf.taskPartitionBytes).ceil.toInt)
 
   override def build: Scan = this
 

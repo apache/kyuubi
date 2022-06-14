@@ -25,6 +25,7 @@ import scala.collection.JavaConverters._
 import io.trino.tpcds.Table
 import io.trino.tpcds.column._
 import io.trino.tpcds.column.ColumnType.Base._
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.{SupportsRead, Table => SparkTable, TableCapability}
 import org.apache.spark.sql.connector.expressions.{Expressions, Transform}
 import org.apache.spark.sql.connector.read.ScanBuilder
@@ -46,6 +47,8 @@ class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
   val useTableSchema_2_6: Boolean = options.getBoolean("useTableSchema_2_6", true)
 
   val tpcdsTable: Table = Table.getTable(tbl)
+
+  lazy val spark: SparkSession = SparkSession.active
 
   override def name: String = s"${TPCDSSchemaUtils.dbName(scale)}.$tbl"
 
@@ -77,8 +80,10 @@ class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
   override def capabilities(): util.Set[TableCapability] =
     Set(TableCapability.BATCH_READ).asJava
 
-  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder =
-    new TPCDSBatchScan(tpcdsTable, scale, schema)
+  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
+    val scanConf = TPCDSBatchScanConf(spark, this, options.asScala.toMap)
+    new TPCDSBatchScan(tpcdsTable, scale, schema, scanConf)
+  }
 
   def toSparkDataType(tpcdsType: ColumnType): DataType = {
     (tpcdsType.getBase, tpcdsType.getPrecision.asScala, tpcdsType.getScale.asScala) match {
