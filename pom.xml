@@ -132,7 +132,7 @@
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.engine.hive.version}</hive.archive.mirror>
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.13</httpclient.version>
-        <hudi.version>0.11.0</hudi.version>
+        <hudi.version>0.11.1</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
         <iceberg.version>0.13.2</iceberg.version>
         <jackson.version>2.13.3</jackson.version>
