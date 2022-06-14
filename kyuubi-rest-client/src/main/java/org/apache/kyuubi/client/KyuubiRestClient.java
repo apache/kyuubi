@@ -134,7 +134,7 @@ public class KyuubiRestClient implements AutoCloseable {
     private int attemptWaitTime = 3000;
 
     public Builder(String hostUrl) {
-      if (hostUrl == null) {
+      if (StringUtils.isBlank(hostUrl)) {
         throw new IllegalArgumentException("hostUrl cannot be blank.");
       }
       this.hostUrls = new LinkedList<>();
