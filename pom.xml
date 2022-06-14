@@ -133,7 +133,7 @@
         <httpclient.version>4.5.13</httpclient.version>
         <hudi.version>0.11.0</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
-        <iceberg.version>0.13.1</iceberg.version>
+        <iceberg.version>0.13.2</iceberg.version>
         <jackson.version>2.13.3</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
