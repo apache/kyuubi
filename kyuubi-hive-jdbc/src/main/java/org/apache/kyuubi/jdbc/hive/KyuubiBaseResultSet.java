@@ -22,18 +22,11 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.List;
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
 import org.apache.hadoop.hive.common.type.TimestampTZUtil;
-import org.apache.hadoop.hive.serde2.thrift.Type;
 import org.apache.hive.service.cli.TableSchema;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSet;
 
@@ -294,7 +287,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     if (columnIndex > row.length) {
       throw new SQLException("Invalid columnIndex: " + columnIndex);
     }
-    Type columnType = getSchema().getColumnDescriptorAt(columnIndex - 1).getType();
+    String columnType = columnTypes.get(columnIndex - 1);
 
     try {
       Object evaluated = evaluate(columnType, row[columnIndex - 1]);
@@ -306,31 +299,31 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     }
   }
 
-  private Object evaluate(Type type, Object value) {
+  private Object evaluate(String columnType, Object value) {
     if (value == null) {
       return null;
     }
-    switch (type) {
-      case BINARY_TYPE:
+    switch (columnType.toLowerCase()) {
+      case "binary":
         if (value instanceof String) {
           return ((String) value).getBytes();
         }
         return value;
-      case TIMESTAMP_TYPE:
+      case "timestamp":
         return Timestamp.valueOf((String) value);
-      case TIMESTAMPLOCALTZ_TYPE:
+      case "timestamp with local time zone":
         return TimestampTZUtil.parse((String) value);
-      case DECIMAL_TYPE:
+      case "decimal":
         return new BigDecimal((String) value);
-      case DATE_TYPE:
+      case "date":
         return Date.valueOf((String) value);
-      case INTERVAL_YEAR_MONTH_TYPE:
+      case "interval_year_month":
         return HiveIntervalYearMonth.valueOf((String) value);
-      case INTERVAL_DAY_TIME_TYPE:
+      case "interval_day_time":
         return HiveIntervalDayTime.valueOf((String) value);
-      case ARRAY_TYPE:
-      case MAP_TYPE:
-      case STRUCT_TYPE:
+      case "array":
+      case "map":
+      case "struct":
         // todo: returns json string. should recreate object from it?
         return value;
       default:

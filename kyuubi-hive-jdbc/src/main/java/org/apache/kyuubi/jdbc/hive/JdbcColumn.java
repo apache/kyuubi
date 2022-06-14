@@ -17,16 +17,15 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import static java.sql.Types.*;
+
 import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.sql.Types;
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
 import org.apache.hadoop.hive.common.type.TimestampTZ;
-import org.apache.hadoop.hive.serde.serdeConstants;
-import org.apache.hadoop.hive.serde2.thrift.Type;
 
 /** Column metadata. */
 public class JdbcColumn {
@@ -68,299 +67,288 @@ public class JdbcColumn {
     return type;
   }
 
-  static String columnClassName(Type hiveType, JdbcColumnAttributes columnAttributes)
+  static String columnClassName(String typeStr, JdbcColumnAttributes columnAttributes)
       throws SQLException {
-    int columnType = hiveTypeToSqlType(hiveType);
+    int columnType = typeStringToSqlType(typeStr);
     switch (columnType) {
-      case Types.NULL:
+      case NULL:
         return "null";
-      case Types.BOOLEAN:
+      case BOOLEAN:
         return Boolean.class.getName();
-      case Types.CHAR:
-      case Types.VARCHAR:
+      case CHAR:
+      case VARCHAR:
         return String.class.getName();
-      case Types.TINYINT:
+      case TINYINT:
         return Byte.class.getName();
-      case Types.SMALLINT:
+      case SMALLINT:
         return Short.class.getName();
-      case Types.INTEGER:
+      case INTEGER:
         return Integer.class.getName();
-      case Types.BIGINT:
+      case BIGINT:
         return Long.class.getName();
-      case Types.DATE:
+      case DATE:
         return Date.class.getName();
-      case Types.FLOAT:
+      case FLOAT:
         return Float.class.getName();
-      case Types.DOUBLE:
+      case DOUBLE:
         return Double.class.getName();
-      case Types.TIMESTAMP:
+      case TIMESTAMP:
         return Timestamp.class.getName();
-      case Types.TIMESTAMP_WITH_TIMEZONE:
+      case TIMESTAMP_WITH_TIMEZONE:
         return TimestampTZ.class.getName();
-      case Types.DECIMAL:
+      case DECIMAL:
         return BigInteger.class.getName();
-      case Types.BINARY:
+      case BINARY:
         return byte[].class.getName();
-      case Types.OTHER:
-      case Types.JAVA_OBJECT:
+      case OTHER:
+      case JAVA_OBJECT:
         {
-          switch (hiveType) {
-            case INTERVAL_YEAR_MONTH_TYPE:
+          switch (typeStr) {
+            case "INTERVAL_YEAR_MONTH":
               return HiveIntervalYearMonth.class.getName();
-            case INTERVAL_DAY_TIME_TYPE:
+            case "INTERVAL_DAY_TIME":
               return HiveIntervalDayTime.class.getName();
             default:
               return String.class.getName();
           }
         }
-      case Types.ARRAY:
-      case Types.STRUCT:
+      case ARRAY:
+      case STRUCT:
         return String.class.getName();
       default:
         throw new SQLException("Invalid column type: " + columnType);
     }
   }
 
-  static Type typeStringToHiveType(String type) throws SQLException {
+  public static int typeStringToSqlType(String type) throws SQLException {
     if ("string".equalsIgnoreCase(type)) {
-      return Type.STRING_TYPE;
+      return VARCHAR;
     } else if ("varchar".equalsIgnoreCase(type)) {
-      return Type.VARCHAR_TYPE;
+      return VARCHAR;
     } else if ("char".equalsIgnoreCase(type)) {
-      return Type.CHAR_TYPE;
+      return CHAR;
     } else if ("float".equalsIgnoreCase(type)) {
-      return Type.FLOAT_TYPE;
+      return FLOAT;
     } else if ("double".equalsIgnoreCase(type)) {
-      return Type.DOUBLE_TYPE;
+      return DOUBLE;
     } else if ("boolean".equalsIgnoreCase(type)) {
-      return Type.BOOLEAN_TYPE;
+      return BOOLEAN;
     } else if ("tinyint".equalsIgnoreCase(type)) {
-      return Type.TINYINT_TYPE;
+      return TINYINT;
     } else if ("smallint".equalsIgnoreCase(type)) {
-      return Type.SMALLINT_TYPE;
+      return SMALLINT;
     } else if ("int".equalsIgnoreCase(type)) {
-      return Type.INT_TYPE;
+      return INTEGER;
     } else if ("bigint".equalsIgnoreCase(type)) {
-      return Type.BIGINT_TYPE;
+      return BIGINT;
     } else if ("date".equalsIgnoreCase(type)) {
-      return Type.DATE_TYPE;
+      return DATE;
     } else if ("timestamp".equalsIgnoreCase(type)) {
-      return Type.TIMESTAMP_TYPE;
-    } else if (serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME.equalsIgnoreCase(type)) {
-      return Type.TIMESTAMPLOCALTZ_TYPE;
+      return TIMESTAMP;
+    } else if ("timestamp with local time zone".equalsIgnoreCase(type)) {
+      return OTHER;
     } else if ("interval_year_month".equalsIgnoreCase(type)) {
-      return Type.INTERVAL_YEAR_MONTH_TYPE;
+      return OTHER;
     } else if ("interval_day_time".equalsIgnoreCase(type)) {
-      return Type.INTERVAL_DAY_TIME_TYPE;
+      return OTHER;
     } else if ("decimal".equalsIgnoreCase(type)) {
-      return Type.DECIMAL_TYPE;
+      return DECIMAL;
     } else if ("binary".equalsIgnoreCase(type)) {
-      return Type.BINARY_TYPE;
+      return BINARY;
     } else if ("map".equalsIgnoreCase(type)) {
-      return Type.MAP_TYPE;
+      return JAVA_OBJECT;
     } else if ("array".equalsIgnoreCase(type)) {
-      return Type.ARRAY_TYPE;
+      return ARRAY;
     } else if ("struct".equalsIgnoreCase(type)) {
-      return Type.STRUCT_TYPE;
+      return STRUCT;
     } else if ("uniontype".equalsIgnoreCase(type)) {
-      return Type.UNION_TYPE;
+      return OTHER;
     } else if ("void".equalsIgnoreCase(type) || "null".equalsIgnoreCase(type)) {
-      return Type.NULL_TYPE;
+      return NULL;
     }
     throw new SQLException("Unrecognized column type: " + type);
-  }
-
-  public static int hiveTypeToSqlType(Type hiveType) throws SQLException {
-    return hiveType.toJavaSQLType();
-  }
-
-  public static int hiveTypeToSqlType(String type) throws SQLException {
-    return hiveTypeToSqlType(typeStringToHiveType(type));
   }
 
   static String getColumnTypeName(String type) throws SQLException {
-    // we need to convert the Hive type to the SQL type name
     // TODO: this would be better handled in an enum
     if ("string".equalsIgnoreCase(type)) {
-      return serdeConstants.STRING_TYPE_NAME;
+      return "string";
     } else if ("varchar".equalsIgnoreCase(type)) {
-      return serdeConstants.VARCHAR_TYPE_NAME;
+      return "varchar";
     } else if ("char".equalsIgnoreCase(type)) {
-      return serdeConstants.CHAR_TYPE_NAME;
+      return "char";
     } else if ("float".equalsIgnoreCase(type)) {
-      return serdeConstants.FLOAT_TYPE_NAME;
+      return "float";
     } else if ("double".equalsIgnoreCase(type)) {
-      return serdeConstants.DOUBLE_TYPE_NAME;
+      return "double";
     } else if ("boolean".equalsIgnoreCase(type)) {
-      return serdeConstants.BOOLEAN_TYPE_NAME;
+      return "boolean";
     } else if ("tinyint".equalsIgnoreCase(type)) {
-      return serdeConstants.TINYINT_TYPE_NAME;
+      return "tinyint";
     } else if ("smallint".equalsIgnoreCase(type)) {
-      return serdeConstants.SMALLINT_TYPE_NAME;
+      return "smallint";
     } else if ("int".equalsIgnoreCase(type)) {
-      return serdeConstants.INT_TYPE_NAME;
+      return "int";
     } else if ("bigint".equalsIgnoreCase(type)) {
-      return serdeConstants.BIGINT_TYPE_NAME;
+      return "bigint";
     } else if ("timestamp".equalsIgnoreCase(type)) {
-      return serdeConstants.TIMESTAMP_TYPE_NAME;
-    } else if (serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME.equalsIgnoreCase(type)) {
-      return serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME;
+      return "timestamp";
+    } else if ("timestamp with local time zone".equalsIgnoreCase(type)) {
+      return "timestamp with local time zone";
     } else if ("date".equalsIgnoreCase(type)) {
-      return serdeConstants.DATE_TYPE_NAME;
+      return "date";
     } else if ("interval_year_month".equalsIgnoreCase(type)) {
-      return serdeConstants.INTERVAL_YEAR_MONTH_TYPE_NAME;
+      return "interval_year_month";
     } else if ("interval_day_time".equalsIgnoreCase(type)) {
-      return serdeConstants.INTERVAL_DAY_TIME_TYPE_NAME;
+      return "interval_day_time";
     } else if ("decimal".equalsIgnoreCase(type)) {
-      return serdeConstants.DECIMAL_TYPE_NAME;
+      return "decimal";
     } else if ("binary".equalsIgnoreCase(type)) {
-      return serdeConstants.BINARY_TYPE_NAME;
+      return "binary";
     } else if ("void".equalsIgnoreCase(type) || "null".equalsIgnoreCase(type)) {
-      return serdeConstants.VOID_TYPE_NAME;
+      return "void";
     } else if (type.equalsIgnoreCase("map")) {
-      return serdeConstants.MAP_TYPE_NAME;
+      return "map";
     } else if (type.equalsIgnoreCase("array")) {
-      return serdeConstants.LIST_TYPE_NAME;
+      return "array";
     } else if (type.equalsIgnoreCase("struct")) {
-      return serdeConstants.STRUCT_TYPE_NAME;
+      return "struct";
     }
 
     throw new SQLException("Unrecognized column type: " + type);
   }
 
-  static int columnDisplaySize(Type hiveType, JdbcColumnAttributes columnAttributes)
+  static int columnDisplaySize(String typeStr, JdbcColumnAttributes columnAttributes)
       throws SQLException {
-    // according to hiveTypeToSqlType possible options are:
-    int columnType = hiveTypeToSqlType(hiveType);
+    int columnType = typeStringToSqlType(typeStr);
     switch (columnType) {
-      case Types.NULL:
+      case NULL:
         return 4; // "NULL"
-      case Types.BOOLEAN:
-        return columnPrecision(hiveType, columnAttributes);
-      case Types.CHAR:
-      case Types.VARCHAR:
-        return columnPrecision(hiveType, columnAttributes);
-      case Types.BINARY:
+      case BOOLEAN:
+        return columnPrecision(typeStr, columnAttributes);
+      case CHAR:
+      case VARCHAR:
+        return columnPrecision(typeStr, columnAttributes);
+      case BINARY:
         return Integer.MAX_VALUE; // hive has no max limit for binary
-      case Types.TINYINT:
-      case Types.SMALLINT:
-      case Types.INTEGER:
-      case Types.BIGINT:
-        return columnPrecision(hiveType, columnAttributes) + 1; // allow +/-
-      case Types.DATE:
+      case TINYINT:
+      case SMALLINT:
+      case INTEGER:
+      case BIGINT:
+        return columnPrecision(typeStr, columnAttributes) + 1; // allow +/-
+      case DATE:
         return 10;
-      case Types.TIMESTAMP:
-      case Types.TIMESTAMP_WITH_TIMEZONE:
-        return columnPrecision(hiveType, columnAttributes);
+      case TIMESTAMP:
+      case TIMESTAMP_WITH_TIMEZONE:
+        return columnPrecision(typeStr, columnAttributes);
 
         // see
         // http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Float.MAX_EXPONENT
-      case Types.FLOAT:
+      case FLOAT:
         return 24; // e.g. -(17#).e-###
         // see
         // http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Double.MAX_EXPONENT
-      case Types.DOUBLE:
+      case DOUBLE:
         return 25; // e.g. -(17#).e-####
-      case Types.DECIMAL:
-        return columnPrecision(hiveType, columnAttributes) + 2; // '-' sign and '.'
-      case Types.OTHER:
-      case Types.JAVA_OBJECT:
-        return columnPrecision(hiveType, columnAttributes);
-      case Types.ARRAY:
-      case Types.STRUCT:
+      case DECIMAL:
+        return columnPrecision(typeStr, columnAttributes) + 2; // '-' sign and '.'
+      case OTHER:
+      case JAVA_OBJECT:
+        return columnPrecision(typeStr, columnAttributes);
+      case ARRAY:
+      case STRUCT:
         return Integer.MAX_VALUE;
       default:
         throw new SQLException("Invalid column type: " + columnType);
     }
   }
 
-  static int columnPrecision(Type hiveType, JdbcColumnAttributes columnAttributes)
+  static int columnPrecision(String typeStr, JdbcColumnAttributes columnAttributes)
       throws SQLException {
-    int columnType = hiveTypeToSqlType(hiveType);
+    int columnType = typeStringToSqlType(typeStr);
     // according to hiveTypeToSqlType possible options are:
     switch (columnType) {
-      case Types.NULL:
+      case NULL:
         return 0;
-      case Types.BOOLEAN:
+      case BOOLEAN:
         return 1;
-      case Types.CHAR:
-      case Types.VARCHAR:
+      case CHAR:
+      case VARCHAR:
         if (columnAttributes != null) {
           return columnAttributes.precision;
         }
         return Integer.MAX_VALUE; // hive has no max limit for strings
-      case Types.BINARY:
+      case BINARY:
         return Integer.MAX_VALUE; // hive has no max limit for binary
-      case Types.TINYINT:
+      case TINYINT:
         return 3;
-      case Types.SMALLINT:
+      case SMALLINT:
         return 5;
-      case Types.INTEGER:
+      case INTEGER:
         return 10;
-      case Types.BIGINT:
+      case BIGINT:
         return 19;
-      case Types.FLOAT:
+      case FLOAT:
         return 7;
-      case Types.DOUBLE:
+      case DOUBLE:
         return 15;
-      case Types.DATE:
+      case DATE:
         return 10;
-      case Types.TIMESTAMP:
+      case TIMESTAMP:
         return 29;
-      case Types.TIMESTAMP_WITH_TIMEZONE:
+      case TIMESTAMP_WITH_TIMEZONE:
         return 31;
-      case Types.DECIMAL:
+      case DECIMAL:
         return columnAttributes.precision;
-      case Types.OTHER:
-      case Types.JAVA_OBJECT:
+      case OTHER:
+      case JAVA_OBJECT:
         {
-          switch (hiveType) {
-            case INTERVAL_YEAR_MONTH_TYPE:
+          switch (typeStr) {
+            case "INTERVAL_YEAR_MONTH":
               // -yyyyyyy-mm  : should be more than enough
               return 11;
-            case INTERVAL_DAY_TIME_TYPE:
+            case "INTERVAL_DAY_TIME":
               // -ddddddddd hh:mm:ss.nnnnnnnnn
               return 29;
             default:
               return Integer.MAX_VALUE;
           }
         }
-      case Types.ARRAY:
-      case Types.STRUCT:
+      case ARRAY:
+      case STRUCT:
         return Integer.MAX_VALUE;
       default:
         throw new SQLException("Invalid column type: " + columnType);
     }
   }
 
-  static int columnScale(Type hiveType, JdbcColumnAttributes columnAttributes) throws SQLException {
-    int columnType = hiveTypeToSqlType(hiveType);
-    // according to hiveTypeToSqlType possible options are:
+  static int columnScale(int columnType, JdbcColumnAttributes columnAttributes)
+      throws SQLException {
     switch (columnType) {
-      case Types.NULL:
-      case Types.BOOLEAN:
-      case Types.CHAR:
-      case Types.VARCHAR:
-      case Types.TINYINT:
-      case Types.SMALLINT:
-      case Types.INTEGER:
-      case Types.BIGINT:
-      case Types.DATE:
-      case Types.BINARY:
+      case NULL:
+      case BOOLEAN:
+      case CHAR:
+      case VARCHAR:
+      case TINYINT:
+      case SMALLINT:
+      case INTEGER:
+      case BIGINT:
+      case DATE:
+      case BINARY:
         return 0;
-      case Types.FLOAT:
+      case FLOAT:
         return 7;
-      case Types.DOUBLE:
+      case DOUBLE:
         return 15;
-      case Types.TIMESTAMP:
-      case Types.TIMESTAMP_WITH_TIMEZONE:
+      case TIMESTAMP:
+      case TIMESTAMP_WITH_TIMEZONE:
         return 9;
-      case Types.DECIMAL:
+      case DECIMAL:
         return columnAttributes.scale;
-      case Types.OTHER:
-      case Types.JAVA_OBJECT:
-      case Types.ARRAY:
-      case Types.STRUCT:
+      case OTHER:
+      case JAVA_OBJECT:
+      case ARRAY:
+      case STRUCT:
         return 0;
       default:
         throw new SQLException("Invalid column type: " + columnType);

@@ -20,7 +20,6 @@ package org.apache.kyuubi.jdbc.hive;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
-import org.apache.hadoop.hive.serde2.thrift.Type;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSetMetaData;
 
 /** KyuubiResultSetMetaData. */
@@ -38,14 +37,14 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
     this.columnAttributes = columnAttributes;
   }
 
-  private Type getHiveType(int column) throws SQLException {
-    return JdbcColumn.typeStringToHiveType(columnTypes.get(toZeroIndex(column)));
+  private int getSqlType(int column) throws SQLException {
+    return JdbcColumn.typeStringToSqlType(columnTypes.get(toZeroIndex(column)));
   }
 
   @Override
   public String getColumnClassName(int column) throws SQLException {
     return JdbcColumn.columnClassName(
-        getHiveType(column), columnAttributes.get(toZeroIndex(column)));
+        columnTypes.get(toZeroIndex(column)), columnAttributes.get(toZeroIndex(column)));
   }
 
   @Override
@@ -56,7 +55,7 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
   @Override
   public int getColumnDisplaySize(int column) throws SQLException {
     return JdbcColumn.columnDisplaySize(
-        getHiveType(column), columnAttributes.get(toZeroIndex(column)));
+        columnTypes.get(toZeroIndex(column)), columnAttributes.get(toZeroIndex(column)));
   }
 
   @Override
@@ -75,7 +74,7 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
     String type = columnTypes.get(toZeroIndex(column));
 
     // we need to convert the thrift type to the SQL type
-    return JdbcColumn.hiveTypeToSqlType(type);
+    return JdbcColumn.typeStringToSqlType(type);
   }
 
   @Override
@@ -86,12 +85,12 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
   @Override
   public int getPrecision(int column) throws SQLException {
     return JdbcColumn.columnPrecision(
-        getHiveType(column), columnAttributes.get(toZeroIndex(column)));
+        columnTypes.get(toZeroIndex(column)), columnAttributes.get(toZeroIndex(column)));
   }
 
   @Override
   public int getScale(int column) throws SQLException {
-    return JdbcColumn.columnScale(getHiveType(column), columnAttributes.get(toZeroIndex(column)));
+    return JdbcColumn.columnScale(getSqlType(column), columnAttributes.get(toZeroIndex(column)));
   }
 
   @Override
