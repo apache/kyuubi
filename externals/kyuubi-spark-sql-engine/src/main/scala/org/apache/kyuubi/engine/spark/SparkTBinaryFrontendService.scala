@@ -21,9 +21,10 @@ import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
+import org.apache.spark.SparkContext
 import org.apache.spark.kyuubi.SparkContextHelper
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
@@ -44,7 +45,7 @@ class SparkTBinaryFrontendService(
     // Server to Spark SQL engine
     val resp = new TRenewDelegationTokenResp()
     try {
-      renewDelegationToken(req.getDelegationToken)
+      renewDelegationToken(sc, req.getDelegationToken)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -64,7 +65,7 @@ class SparkTBinaryFrontendService(
 
       if (req.getConfiguration != null) {
         val credentials = req.getConfiguration.remove(KYUUBI_ENGINE_CREDENTIALS_KEY)
-        Option(credentials).filter(_.nonEmpty).foreach(renewDelegationToken)
+        Option(credentials).filter(_.nonEmpty).foreach(renewDelegationToken(sc, _))
       }
 
       val sessionHandle = getSessionHandle(req, resp)
@@ -80,14 +81,27 @@ class SparkTBinaryFrontendService(
     resp
   }
 
-  private def renewDelegationToken(delegationToken: String): Unit = {
+  override lazy val discoveryService: Option[Service] = {
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new EngineServiceDiscovery(this))
+    } else {
+      None
+    }
+  }
+}
+
+object SparkTBinaryFrontendService extends Logging {
+
+  val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
+
+  private[spark] def renewDelegationToken(sc: SparkContext, delegationToken: String): Unit = {
     val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)
     val (hiveTokens, otherTokens) =
       KyuubiHadoopUtils.getTokenMap(newCreds).partition(_._2.getKind == HIVE_DELEGATION_TOKEN)
 
     val updateCreds = new Credentials()
     val oldCreds = UserGroupInformation.getCurrentUser.getCredentials
-    addHiveToken(hiveTokens, oldCreds, updateCreds)
+    addHiveToken(sc, hiveTokens, oldCreds, updateCreds)
     addOtherTokens(otherTokens, oldCreds, updateCreds)
     if (updateCreds.numberOfTokens() > 0) {
       info("Update delegation tokens. " +
@@ -98,6 +112,7 @@ class SparkTBinaryFrontendService(
   }
 
   private def addHiveToken(
+      sc: SparkContext,
       newTokens: Map[Text, Token[_ <: TokenIdentifier]],
       oldCreds: Credentials,
       updateCreds: Credentials): Unit = {
@@ -162,17 +177,4 @@ class SparkTBinaryFrontendService(
       }
     }
   }
-
-  override lazy val discoveryService: Option[Service] = {
-    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
-      Some(new EngineServiceDiscovery(this))
-    } else {
-      None
-    }
-  }
-}
-
-object SparkTBinaryFrontendService {
-
-  val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
 }
