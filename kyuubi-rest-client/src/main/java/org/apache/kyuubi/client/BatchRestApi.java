@@ -89,7 +89,7 @@ public class BatchRestApi {
     return this.getClient().delete(path, params, CloseBatchResponse.class, client.getAuthHeader());
   }
 
-  private RestClient getClient() {
+  private IRestClient getClient() {
     return this.client.getHttpClient();
   }
 }

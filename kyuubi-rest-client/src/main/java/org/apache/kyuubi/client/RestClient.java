@@ -18,6 +18,7 @@
 package org.apache.kyuubi.client;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -32,15 +33,17 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
+import org.apache.kyuubi.client.exception.KyuubiRetryableException;
 import org.apache.kyuubi.client.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RestClient implements AutoCloseable {
+public class RestClient implements IRestClient {
 
   private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
 
@@ -60,31 +63,37 @@ public class RestClient implements AutoCloseable {
     }
   }
 
+  @Override
   public <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = get(path, params, authHeader);
     return JsonUtil.toObject(responseJson, type);
   }
 
+  @Override
   public String get(String path, Map<String, Object> params, String authHeader) {
     return doRequest(buildURI(path, params), authHeader, RequestBuilder.get());
   }
 
+  @Override
   public <T> T post(String path, String body, Class<T> type, String authHeader) {
     String responseJson = post(path, body, authHeader);
     return JsonUtil.toObject(responseJson, type);
   }
 
+  @Override
   public String post(String path, String body, String authHeader) {
     RequestBuilder postRequestBuilder =
         RequestBuilder.post().setEntity(new StringEntity(body, StandardCharsets.UTF_8));
     return doRequest(buildURI(path), authHeader, postRequestBuilder);
   }
 
+  @Override
   public <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = delete(path, params, authHeader);
     return JsonUtil.toObject(responseJson, type);
   }
 
+  @Override
   public String delete(String path, Map<String, Object> params, String authHeader) {
     return doRequest(buildURI(path, params), authHeader, RequestBuilder.delete());
   }
@@ -118,6 +127,9 @@ public class RestClient implements AutoCloseable {
 
       response = httpclient.execute(httpRequest, responseHandler);
       LOG.info("Response: {}", response);
+    } catch (ConnectException | ConnectTimeoutException e) {
+      // net exception can be retried by connecting to other Kyuubi server
+      throw new KyuubiRetryableException("Api request failed for " + uri.toString(), e);
     } catch (Exception e) {
       LOG.error("Error: ", e);
       throw new KyuubiRestException("Api request failed for " + uri.toString(), e);
