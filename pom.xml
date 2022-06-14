@@ -237,18 +237,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-
-        <repository>
-            <id>staging</id>
-            <name>Iceberg 0.13.2 Staging</name>
-            <url>https://repository.apache.org/content/repositories/orgapacheiceberg-1088/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
     </repositories>
 
     <pluginRepositories>
