@@ -38,7 +38,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
     new ConcurrentHashMap[String, MetadataRequestsRetryRef]()
 
   private val requestsRetryTrigger =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-store-requests-retry-trigger")
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-requests-retry-trigger")
 
   private var requestsRetryExecutor: ThreadPoolExecutor = _
 
@@ -53,9 +53,8 @@ class MetadataManager extends CompositeService("MetadataManager") {
       conf.get(KyuubiConf.METADATA_REQUEST_RETRY_NUM_THREADS)
     requestsRetryExecutor = ThreadUtils.newDaemonFixedThreadPool(
       retryExecutorNumThreads,
-      "metadata-store-requests-retry-executor")
-    maxMetadataRequestsRetryRefs =
-      conf.get(KyuubiConf.METADATA_REQUEST_RETRY_MAX_INSTANCES)
+      "metadata-requests-retry-executor")
+    maxMetadataRequestsRetryRefs = conf.get(KyuubiConf.METADATA_REQUEST_RETRY_MAX_INSTANCES)
     super.initialize(conf)
   }
 
@@ -192,7 +191,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
   def addMetadataRetryRequest(request: MetadataRequest): Unit = {
     if (identifierRequestsRetryRefMap.size() > maxMetadataRequestsRetryRefs) {
       throw new KyuubiException(
-        "The number of metadata store requests retry queues exceeds the limitation:" +
+        "The number of metadata requests retry instances exceeds the limitation:" +
           maxMetadataRequestsRetryRefs)
     }
     val identifier = request.metadata.identifier
@@ -226,8 +225,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
             val retryTask = new Runnable {
               override def run(): Unit = {
                 try {
-                  info(s"Retrying metadata store requests for" +
-                    s" $id/${ref.retryCount.incrementAndGet()}")
+                  info(s"Retrying metadata requests for $id/${ref.retryCount.incrementAndGet()}")
                   var request = ref.metadataRequests.peek()
                   while (request != null) {
                     request match {
@@ -244,10 +242,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
                   }
                 } catch {
                   case e: Throwable =>
-                    error(
-                      s"Error retrying metadata store requests for" +
-                        s" $id/${ref.retryCount.get()}",
-                      e)
+                    error(s"Error retrying metadata requests for $id/${ref.retryCount.get()}", e)
                 } finally {
                   ref.retryingTaskCount.decrementAndGet()
                 }
@@ -259,7 +254,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
               requestsRetryExecutor.submit(retryTask)
             } catch {
               case e: Throwable =>
-                error(s"Error submitting retrying metadata store requests for $id", e)
+                error(s"Error submitting metadata retry requests for $id", e)
                 ref.retryingTaskCount.decrementAndGet()
             }
           }
