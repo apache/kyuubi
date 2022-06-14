@@ -68,11 +68,7 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  private val engineCredentials = renewEngineCredentials()
-  sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
-
-  val engine: EngineRef =
-    new EngineRef(sessionConf, user, handle.identifier.toString, sessionManager.applicationManager)
+  var engine: EngineRef = _
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
@@ -102,6 +98,19 @@ class KyuubiSessionImpl(
 
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
+      val engineCredentials = renewEngineCredentials()
+      var openEngineSessionConf = optimizedConf
+      if (engineCredentials.nonEmpty) {
+        sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
+        openEngineSessionConf =
+          optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
+      }
+
+      engine = new EngineRef(
+        sessionConf,
+        user,
+        handle.identifier.toString,
+        sessionManager.applicationManager)
       val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
       val passwd =
         if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
@@ -111,11 +120,7 @@ class KyuubiSessionImpl(
         }
       try {
         _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
-        _engineSessionHandle = _client.openSession(
-          protocol,
-          user,
-          passwd,
-          optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials))
+        _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
       } catch {
         case e: Throwable =>
           error(
