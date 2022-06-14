@@ -28,7 +28,7 @@ import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
   val metadataManager = new MetadataManager()
-  val conf = KyuubiConf().set(KyuubiConf.METADATA_REQUESTS_RETRY_INTERVAL, 100L)
+  val conf = KyuubiConf().set(KyuubiConf.METADATA_REQUEST_RETRY_INTERVAL, 100L)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -68,7 +68,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     metadataManager.insertMetadata(metadata, retryOnError = true)
     val retryRef = metadataManager.getMetadataStoreRequestsRetryRef(metadata.identifier)
     val metadataToUpdate = metadata.copy(state = "RUNNING")
-    retryRef.addRetryingMetadataStoreRequest(UpdateMetadata(metadataToUpdate))
+    retryRef.addRetryingMetadataRequest(UpdateMetadata(metadataToUpdate))
     eventually(timeout(3.seconds)) {
       assert(retryRef.hasRemainingRequests())
       assert(retryRef.retryCount.get() > 1)

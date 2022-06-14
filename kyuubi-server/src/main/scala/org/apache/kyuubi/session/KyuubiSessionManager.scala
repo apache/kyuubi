@@ -18,7 +18,6 @@
 package org.apache.kyuubi.session
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
@@ -34,7 +33,7 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataStoreRequestsRetryRef}
+import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.Metadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
@@ -176,7 +175,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.updateMetadata(metadata)
   }
 
-  def getMetadataStoreRetryRef(identifier: String): Option[MetadataStoreRequestsRetryRef] = {
+  def getMetadataStoreRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {
     Option(metadataManager.getMetadataStoreRequestsRetryRef(identifier))
   }
 
@@ -218,43 +217,29 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSessionImpl] = {
-    val recoveryPerBatch = conf.get(METADATA_SESSIONS_RECOVERY_PER_BATCH)
+    Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
+      metadataManager.getBatchesRecoveryMetadata(
+        stateToRecover.toString,
+        kyuubiInstance,
+        0,
+        Int.MaxValue).map { metadata =>
+        val batchRequest = new BatchRequest(
+          metadata.engineType,
+          metadata.resource,
+          metadata.className,
+          metadata.requestName,
+          metadata.requestConf.asJava,
+          metadata.requestArgs.asJava)
 
-    val batchSessionsToRecover = ListBuffer[KyuubiBatchSessionImpl]()
-    Seq(OperationState.PENDING, OperationState.RUNNING).foreach { stateToRecover =>
-      var offset = 0
-      var lastRecoveryNum = Int.MaxValue
-
-      while (lastRecoveryNum >= recoveryPerBatch) {
-        val metadataList = metadataManager.getBatchesRecoveryMetadata(
-          stateToRecover.toString,
-          kyuubiInstance,
-          offset,
-          recoveryPerBatch)
-        metadataList.foreach { metadata =>
-          val batchRequest = new BatchRequest(
-            metadata.engineType,
-            metadata.resource,
-            metadata.className,
-            metadata.requestName,
-            metadata.requestConf.asJava,
-            metadata.requestArgs.asJava)
-
-          val batchSession = createBatchSession(
-            metadata.username,
-            "anonymous",
-            metadata.ipAddress,
-            metadata.requestConf,
-            batchRequest,
-            Some(metadata))
-          batchSessionsToRecover += batchSession
-        }
-
-        lastRecoveryNum = metadataList.size
-        offset += lastRecoveryNum
+        createBatchSession(
+          metadata.username,
+          "anonymous",
+          metadata.ipAddress,
+          metadata.requestConf,
+          batchRequest,
+          Some(metadata))
       }
     }
-    batchSessionsToRecover
   }
 
   override protected def isServer: Boolean = true

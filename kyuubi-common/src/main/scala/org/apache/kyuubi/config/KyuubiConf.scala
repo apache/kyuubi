@@ -900,40 +900,33 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
-  val METADATA_SESSIONS_RECOVERY_PER_BATCH: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.sessions.recovery.per.batch")
-      .doc("The number of sessions to recover from metadata store per batch.")
-      .version("1.6.0")
-      .intConf
-      .createWithDefault(100)
-
-  val METADATA_SESSIONS_RECOVERY_NUM_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.sessions.recovery.num.threads")
-      .doc("The number of threads for sessions recovery from metadata store.")
+  val METADATA_RECOVERY_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.recovery.threads")
+      .doc("The number of threads for recovery from metadata store.")
       .version("1.6.0")
       .intConf
       .createWithDefault(10)
 
-  val METADATA_REQUESTS_RETRY_NUM_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.requests.retry.num.threads")
-      .doc("Number of threads in the metadata store request retry manager thread pool. The" +
-        " metadata store might be unavailable sometimes and the requests will fail, to tolerant" +
-        " for this case and unblock the main thread, we introduce a metadata store " +
-        " requests retry manager and it helps to retry the failed requests in async way.")
+  val METADATA_REQUEST_RETRY_NUM_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.request.retry.num.threads")
+      .doc("Number of threads in the metadata request retry manager thread pool. The metadata" +
+        " store might be unavailable sometimes and the requests will fail, to tolerant for this" +
+        " case and unblock the main thread, we introduce a metadata request retry manager and it" +
+        " helps to retry the failed requests in async way.")
       .version("1.6.0")
       .intConf
       .createWithDefault(10)
 
-  val METADATA_REQUESTS_RETRY_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.metadata.requests.retry.interval")
-      .doc("The interval to check and trigger the metadata store requests retry tasks.")
+  val METADATA_REQUEST_RETRY_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.request.retry.interval")
+      .doc("The interval to check and trigger the metadata request retry tasks.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
-  val METADATA_REQUESTS_RETRY_MAX_QUEUES: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.requests.retry.max.queues")
-      .doc("Maximum number of queues for metadata store requests retry, one queue per identifier.")
+  val METADATA_REQUEST_RETRY_MAX_QUEUES: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.request.retry.max.queues")
+      .doc("Maximum number of queues for metadata request retry, one queue per identifier.")
       .version("1.6.0")
       .intConf
       .createWithDefault(Int.MaxValue)

@@ -20,16 +20,16 @@ package org.apache.kyuubi.server.metadata
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 
-class MetadataStoreRequestsRetryRef(val identifier: String) {
+class MetadataRequestsRetryRef {
   private[metadata] val retryCount = new AtomicInteger(0)
 
   private[metadata] val retryingTaskCount = new AtomicInteger(0)
 
-  private[metadata] val metadataStoreRequestQueue = new ConcurrentLinkedQueue[MetadataRequest]()
+  private[metadata] val metadataRequests = new ConcurrentLinkedQueue[MetadataRequest]()
 
-  def addRetryingMetadataStoreRequest(event: MetadataRequest): Unit = {
-    metadataStoreRequestQueue.add(event)
+  def addRetryingMetadataRequest(event: MetadataRequest): Unit = {
+    metadataRequests.add(event)
   }
 
-  def hasRemainingRequests(): Boolean = !metadataStoreRequestQueue.isEmpty
+  def hasRemainingRequests(): Boolean = !metadataRequests.isEmpty
 }
