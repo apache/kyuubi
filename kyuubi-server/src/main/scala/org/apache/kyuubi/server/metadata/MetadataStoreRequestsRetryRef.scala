@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metastore.jdbc
+package org.apache.kyuubi.server.metadata
 
-trait JdbcDatabaseDialect {
-  def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String
-}
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 
-class DerbyDatabaseDialect extends JdbcDatabaseDialect {
-  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
-    s"$sql OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY"
+class MetadataStoreRequestsRetryRef(val identifier: String) {
+  private[metadata] val retryCount = new AtomicInteger(0)
+
+  private[metadata] val retryingTaskCount = new AtomicInteger(0)
+
+  private[metadata] val metadataStoreRequestQueue = new ConcurrentLinkedQueue[MetadataRequest]()
+
+  def addRetryingMetadataStoreRequest(event: MetadataRequest): Unit = {
+    metadataStoreRequestQueue.add(event)
   }
-}
 
-class GenericDatabaseDialect extends JdbcDatabaseDialect {
-  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
-    s"$sql LIMIT $limit OFFSET $offset"
-  }
+  def hasRemainingRequests(): Boolean = !metadataStoreRequestQueue.isEmpty
 }
-
-class MysqlDatabaseDialect extends GenericDatabaseDialect {}

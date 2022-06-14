@@ -876,46 +876,46 @@ object KyuubiConf {
       .doc("Fully qualified class name for server metadata store.")
       .version("1.6.0")
       .stringConf
-      .createWithDefault("org.apache.kyuubi.server.metastore.jdbc.JDBCMetadataStore")
+      .createWithDefault("org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStore")
 
-  val METADATA_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.metadata.store.cleaner.enabled")
-      .doc("Whether to clean the metadata store periodically. If it is enabled, Kyuubi will clean" +
-        " the state information that is in terminate state with max age limitation.")
+  val METADATA_CLEANER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metadata.cleaner.enabled")
+      .doc("Whether to clean the metadata periodically. If it is enabled, Kyuubi will clean the" +
+        " metadata that is in terminate state with max age limitation.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
 
-  val METADATA_STORE_MAX_AGE: ConfigEntry[Long] =
-    buildConf("kyuubi.metadata.store.max.age")
-      .doc("The maximum age of state info in metadata store.")
+  val METADATA_MAX_AGE: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.max.age")
+      .doc("The maximum age of metadata.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofDays(3).toMillis)
 
-  val METADATA_STORE_CLEANER_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.metadata.store.cleaner.interval")
-      .doc("The interval to clean metadata store.")
+  val METADATA_CLEANER_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.cleaner.interval")
+      .doc("The interval to clean metadata.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
-  val METADATA_STORE_SESSIONS_RECOVERY_PER_BATCH: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.store.sessions.recovery.per.batch")
+  val METADATA_SESSIONS_RECOVERY_PER_BATCH: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.sessions.recovery.per.batch")
       .doc("The number of sessions to recover from metadata store per batch.")
       .version("1.6.0")
       .intConf
       .createWithDefault(100)
 
-  val METADATA_STORE_SESSIONS_RECOVERY_NUM_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.store.sessions.recovery.num.threads")
+  val METADATA_SESSIONS_RECOVERY_NUM_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.sessions.recovery.num.threads")
       .doc("The number of threads for sessions recovery from metadata store.")
       .version("1.6.0")
       .intConf
       .createWithDefault(10)
 
-  val METADATA_STORE_REQUESTS_RETRY_NUM_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.store.requests.retry.num.threads")
+  val METADATA_REQUESTS_RETRY_NUM_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.requests.retry.num.threads")
       .doc("Number of threads in the metadata store request retry manager thread pool. The" +
         " metadata store might be unavailable sometimes and the requests will fail, to tolerant" +
         " for this case and unblock the main thread, we introduce a metadata store " +
@@ -924,15 +924,15 @@ object KyuubiConf {
       .intConf
       .createWithDefault(10)
 
-  val METADATA_STORE_REQUESTS_RETRY_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.metadata.store.requests.retry.interval")
+  val METADATA_REQUESTS_RETRY_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.requests.retry.interval")
       .doc("The interval to check and trigger the metadata store requests retry tasks.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
-  val METADATA_STORE_REQUESTS_RETRY_MAX_QUEUES: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.store.requests.retry.max.queues")
+  val METADATA_REQUESTS_RETRY_MAX_QUEUES: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.requests.retry.max.queues")
       .doc("Maximum number of queues for metadata store requests retry, one queue per identifier.")
       .version("1.6.0")
       .intConf

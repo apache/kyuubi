@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metastore.jdbc
+package org.apache.kyuubi.server.metadata.jdbc
 
 object DatabaseType extends Enumeration {
   type DatabaseType = Value

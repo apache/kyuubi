@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metastore
+package org.apache.kyuubi.server.metadata
 
 import java.util.UUID
 
@@ -23,12 +23,12 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.metastore.api.Metadata
+import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
   val metadataManager = new MetadataManager()
-  val conf = KyuubiConf().set(KyuubiConf.METADATA_STORE_REQUESTS_RETRY_INTERVAL, 100L)
+  val conf = KyuubiConf().set(KyuubiConf.METADATA_REQUESTS_RETRY_INTERVAL, 100L)
 
   override def beforeAll(): Unit = {
     super.beforeAll()

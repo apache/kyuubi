@@ -15,14 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metastore
+package org.apache.kyuubi.server.metadata.jdbc
 
-import org.apache.kyuubi.server.metastore.api.Metadata
-
-trait MetadataRequest {
-  def metadata: Metadata
+trait JdbcDatabaseDialect {
+  def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String
 }
 
-case class InsertMetadata(metadata: Metadata) extends MetadataRequest
+class DerbyDatabaseDialect extends JdbcDatabaseDialect {
+  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
+    s"$sql OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY"
+  }
+}
 
-case class UpdateMetadata(metadata: Metadata) extends MetadataRequest
+class GenericDatabaseDialect extends JdbcDatabaseDialect {
+  override def addLimitAndOffsetToQuery(sql: String, limit: Int, offset: Int): String = {
+    s"$sql LIMIT $limit OFFSET $offset"
+  }
+}
+
+class MysqlDatabaseDialect extends GenericDatabaseDialect {}

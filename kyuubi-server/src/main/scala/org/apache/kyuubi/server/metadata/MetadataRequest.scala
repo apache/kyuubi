@@ -15,21 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metastore
+package org.apache.kyuubi.server.metadata
 
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicInteger
+import org.apache.kyuubi.server.metadata.api.Metadata
 
-class MetadataStoreRequestsRetryRef(val identifier: String) {
-  private[metastore] val retryCount = new AtomicInteger(0)
-
-  private[metastore] val retryingTaskCount = new AtomicInteger(0)
-
-  private[metastore] val metadataStoreRequestQueue = new ConcurrentLinkedQueue[MetadataRequest]()
-
-  def addRetryingMetadataStoreRequest(event: MetadataRequest): Unit = {
-    metadataStoreRequestQueue.add(event)
-  }
-
-  def hasRemainingRequests(): Boolean = !metadataStoreRequestQueue.isEmpty
+trait MetadataRequest {
+  def metadata: Metadata
 }
+
+case class InsertMetadata(metadata: Metadata) extends MetadataRequest
+
+case class UpdateMetadata(metadata: Metadata) extends MetadataRequest

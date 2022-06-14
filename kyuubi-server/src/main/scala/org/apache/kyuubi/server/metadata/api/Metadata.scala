@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metastore.api
+package org.apache.kyuubi.server.metadata.api
 
 import org.apache.kyuubi.session.SessionType.SessionType
 

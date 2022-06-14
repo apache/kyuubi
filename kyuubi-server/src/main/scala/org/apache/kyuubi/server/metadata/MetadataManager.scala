@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metastore
+package org.apache.kyuubi.server.metadata
 
 import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
 
@@ -24,9 +24,9 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.METADATA_STORE_MAX_AGE
+import org.apache.kyuubi.config.KyuubiConf.METADATA_MAX_AGE
 import org.apache.kyuubi.engine.ApplicationOperation._
-import org.apache.kyuubi.server.metastore.api.Metadata
+import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
@@ -50,12 +50,12 @@ class MetadataManager extends CompositeService("MetadataManager") {
   override def initialize(conf: KyuubiConf): Unit = {
     _metadataStore = MetadataManager.createMetadataStore(conf)
     val retryExecutorNumThreads =
-      conf.get(KyuubiConf.METADATA_STORE_REQUESTS_RETRY_NUM_THREADS)
+      conf.get(KyuubiConf.METADATA_REQUESTS_RETRY_NUM_THREADS)
     requestsRetryExecutor = ThreadUtils.newDaemonFixedThreadPool(
       retryExecutorNumThreads,
       "metadata-store-requests-retry-executor")
     maxMetadataStoreRequestsRetryQueues =
-      conf.get(KyuubiConf.METADATA_STORE_REQUESTS_RETRY_MAX_QUEUES)
+      conf.get(KyuubiConf.METADATA_REQUESTS_RETRY_MAX_QUEUES)
     super.initialize(conf)
   }
 
@@ -168,11 +168,11 @@ class MetadataManager extends CompositeService("MetadataManager") {
   }
 
   private def startMetadataStoreCleaner(): Unit = {
-    val cleanerEnabled = conf.get(KyuubiConf.METADATA_STORE_CLEANER_ENABLED)
-    val stateMaxAge = conf.get(METADATA_STORE_MAX_AGE)
+    val cleanerEnabled = conf.get(KyuubiConf.METADATA_CLEANER_ENABLED)
+    val stateMaxAge = conf.get(METADATA_MAX_AGE)
 
     if (cleanerEnabled) {
-      val interval = conf.get(KyuubiConf.METADATA_STORE_CLEANER_INTERVAL)
+      val interval = conf.get(KyuubiConf.METADATA_CLEANER_INTERVAL)
       val cleanerTask: Runnable = () => {
         try {
           _metadataStore.cleanupMetadataByAge(stateMaxAge)
@@ -216,7 +216,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
   }
 
   private def startMetadataStoreRequestsRetryTrigger(): Unit = {
-    val interval = conf.get(KyuubiConf.METADATA_STORE_REQUESTS_RETRY_INTERVAL)
+    val interval = conf.get(KyuubiConf.METADATA_REQUESTS_RETRY_INTERVAL)
     val triggerTask = new Runnable {
       override def run(): Unit = {
         identifierRequestsRetryRefMap.values().asScala.foreach { ref =>

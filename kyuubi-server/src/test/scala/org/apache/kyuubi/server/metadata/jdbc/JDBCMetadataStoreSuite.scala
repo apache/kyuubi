@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.metastore.jdbc
+package org.apache.kyuubi.server.metadata.jdbc
 
 import java.util.UUID
 
@@ -24,8 +24,8 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.metastore.api.Metadata
-import org.apache.kyuubi.server.metastore.jdbc.JDBCMetadataStoreConf._
+import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
 
 class JDBCMetadataStoreSuite extends KyuubiFunSuite {

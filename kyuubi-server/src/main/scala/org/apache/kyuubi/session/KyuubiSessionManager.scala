@@ -34,8 +34,8 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.metastore.{MetadataManager, MetadataStoreRequestsRetryRef}
-import org.apache.kyuubi.server.metastore.api.Metadata
+import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataStoreRequestsRetryRef}
+import org.apache.kyuubi.server.metadata.api.Metadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
@@ -218,7 +218,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSessionImpl] = {
-    val recoveryPerBatch = conf.get(METADATA_STORE_SESSIONS_RECOVERY_PER_BATCH)
+    val recoveryPerBatch = conf.get(METADATA_SESSIONS_RECOVERY_PER_BATCH)
 
     val batchSessionsToRecover = ListBuffer[KyuubiBatchSessionImpl]()
     Seq(OperationState.PENDING, OperationState.RUNNING).foreach { stateToRecover =>
