@@ -18,12 +18,14 @@
 package org.apache.kyuubi.spark.connector.common
 
 // scalastyle:off anyfunsuite
-import java.util.Locale
+import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
 class SparkConfParserSuite extends AnyFunSuite with BeforeAndAfterAll {
+// scalastyle:on anyfunsuite
 
   test("parse options config") {
     assert(confParser.stringConf().option("optKey1").defaultValue("test").parse() === "optValue1")
@@ -47,20 +49,17 @@ class SparkConfParserSuite extends AnyFunSuite with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val options = Map(
+    val options = new CaseInsensitiveStringMap(Map(
       "key1" -> "111",
       "optKey1" -> "optValue1",
       "booleanKey" -> "false",
       "intKey" -> "10",
       "longKey" -> String.valueOf(Long.MaxValue),
-      "doubleKey" -> "1.1").map {
-      case (k, v) => (k.toLowerCase(Locale.ROOT), v)
-    }
+      "doubleKey" -> "1.1").asJava)
     val properties = Map(
       "key1" -> "333",
       "propertyKey1" -> "propertyValue1")
-    confParser = SparkConfParser(options, null, properties)
+    confParser = SparkConfParser(options, null, properties.asJava)
   }
 
 }
-// scalastyle:on anyfunsuite

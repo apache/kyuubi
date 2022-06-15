@@ -81,7 +81,7 @@ class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
     Set(TableCapability.BATCH_READ).asJava
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
-    val scanConf = TPCDSBatchScanConf(spark, this, options.asScala.toMap)
+    val scanConf = TPCDSBatchScanConf(spark, this, options)
     new TPCDSBatchScan(tpcdsTable, scale, schema, scanConf)
   }
 

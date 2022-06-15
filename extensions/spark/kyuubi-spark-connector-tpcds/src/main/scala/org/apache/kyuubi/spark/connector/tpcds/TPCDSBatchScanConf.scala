@@ -17,20 +17,22 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.Table
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.common.SparkConfParser
 import org.apache.kyuubi.spark.connector.tpcds.TPCDSBatchScanConf._
 
-case class TPCDSBatchScanConf(spark: SparkSession, table: Table, options: Map[String, String]) {
+case class TPCDSBatchScanConf(
+    spark: SparkSession,
+    table: Table,
+    options: CaseInsensitiveStringMap) {
 
   private val confParser: SparkConfParser =
-    SparkConfParser(options, spark.conf, table.properties().asScala.toMap)
+    SparkConfParser(options, spark.conf, table.properties())
 
-  lazy val taskPartitionBytes: Long = confParser.longConf()
+  lazy val maxPartitionBytes: Long = confParser.longConf()
     .option(MAX_PARTITION_BYTES_CONF)
     .sessionConf(s"$TPCDS_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF")
     .tableProperty(MAX_PARTITION_BYTES_CONF)

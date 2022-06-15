@@ -43,11 +43,13 @@ class TPCDSBatchScan(
   private val _sizeInBytes: Long = TPCDSStatisticsUtils.sizeInBytes(table, scale)
   private val _numRows: Long = TPCDSStatisticsUtils.numRows(table, scale)
 
+  // Tables with fewer than 1000000 are not parallelized,
+  // the limit made in `io.trino.tpcds.Parallel#splitWork`.
   private val parallelism: Int =
     if (table.isSmall) 1
     else math.max(
       SparkSession.active.sparkContext.defaultParallelism,
-      (_sizeInBytes / scanConf.taskPartitionBytes).ceil.toInt)
+      (_sizeInBytes / scanConf.maxPartitionBytes).ceil.toInt)
 
   override def build: Scan = this
 

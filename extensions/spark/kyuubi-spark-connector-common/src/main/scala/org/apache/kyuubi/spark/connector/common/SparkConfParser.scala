@@ -17,14 +17,23 @@
 
 package org.apache.kyuubi.spark.connector.common
 
+import java.util
 import java.util.Locale
 
 import org.apache.spark.sql.RuntimeConfig
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+/**
+ * Parse the value of configuration in runtime options, session configurations and table properties,
+ * the priority of parsing configuration: options > sessionConfigs > properties.
+ * @param options runtime options
+ * @param sessionConfigs spark session configurations
+ * @param properties table properties
+ */
 case class SparkConfParser(
-    options: Map[String, String],
+    options: util.Map[String, String],
     sessionConfigs: RuntimeConfig,
-    properties: Map[String, String]) {
+    properties: util.Map[String, String]) {
 
   def booleanConf(): BooleanConfParser = new BooleanConfParser()
   def intConf(): IntConfParser = new IntConfParser()
@@ -79,16 +88,27 @@ case class SparkConfParser(
     }
 
     private def parse(conversion: String => T): Option[T] = {
-      // use lower case comparison as DataSourceOptions.asMap() in Spark 2 returns a lower case map
       var valueOpt: Option[String] = None
       if (options != null) {
-        valueOpt = optionName.flatMap(name => options.get(name.toLowerCase(Locale.ROOT)))
+        valueOpt = optionName.flatMap(name => {
+          options match {
+            case caseInsensitiveMap: CaseInsensitiveStringMap =>
+              Option(caseInsensitiveMap.get(name.toLowerCase(Locale.ROOT)))
+            case map => Option(map.get(name))
+          }
+        })
       }
       if (valueOpt.isEmpty && sessionConfigs != null) {
         valueOpt = sessionConfName.flatMap(name => sessionConfigs.getOption(name))
       }
       if (valueOpt.isEmpty && properties != null) {
-        valueOpt = tablePropertyName.flatMap(name => properties.get(name))
+        valueOpt = tablePropertyName.flatMap(name => {
+          properties match {
+            case caseInsensitiveMap: CaseInsensitiveStringMap =>
+              Option(caseInsensitiveMap.get(name.toLowerCase(Locale.ROOT)))
+            case map => Option(map.get(name))
+          }
+        })
       }
       valueOpt = valueOpt.filter(_ != null)
       if (valueOpt.isDefined) {
