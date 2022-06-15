@@ -33,6 +33,8 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
       val result = batchRestApi.deleteBatch(batchId, normalizedCliConfig.batchOpts.hs2ProxyUser)
 
+      info(JsonUtil.toJson(result))
+
       if (!result.isSuccess) {
         val batch = batchRestApi.getBatchById(batchId)
         if (!BatchUtil.isTerminalState(batch.getState)) {
@@ -41,7 +43,6 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
           warn(s"Batch $batchId is already in terminal state.")
         }
       }
-      info(JsonUtil.toJson(result))
     }
   }
 
