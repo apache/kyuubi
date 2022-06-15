@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.metadata
 
 import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 
@@ -34,8 +35,11 @@ import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
 class MetadataManager extends CompositeService("MetadataManager") {
   private var _metadataStore: MetadataStore = _
 
-  private val identifierRequestsRetryRefMap =
+  private val identifierRequestsRetryRefs =
     new ConcurrentHashMap[String, MetadataRequestsRetryRef]()
+
+  private val identifierRequestsRetryingCounts =
+    new ConcurrentHashMap[String, AtomicInteger]()
 
   private val requestsRetryTrigger =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-requests-retry-trigger")
@@ -189,13 +193,13 @@ class MetadataManager extends CompositeService("MetadataManager") {
   }
 
   def addMetadataRetryRequest(request: MetadataRequest): Unit = {
-    if (identifierRequestsRetryRefMap.size() > maxMetadataRequestsRetryRefs) {
+    if (identifierRequestsRetryRefs.size() > maxMetadataRequestsRetryRefs) {
       throw new KyuubiException(
         "The number of metadata requests retry instances exceeds the limitation:" +
           maxMetadataRequestsRetryRefs)
     }
     val identifier = request.metadata.identifier
-    val ref = identifierRequestsRetryRefMap.computeIfAbsent(
+    val ref = identifierRequestsRetryRefs.computeIfAbsent(
       identifier,
       identifier => {
         val ref = new MetadataRequestsRetryRef
@@ -203,29 +207,37 @@ class MetadataManager extends CompositeService("MetadataManager") {
         ref
       })
     ref.addRetryingMetadataRequest(request)
-    identifierRequestsRetryRefMap.putIfAbsent(identifier, ref)
+    identifierRequestsRetryRefs.putIfAbsent(identifier, ref)
   }
 
   def getMetadataRequestsRetryRef(identifier: String): MetadataRequestsRetryRef = {
-    identifierRequestsRetryRefMap.get(identifier)
+    identifierRequestsRetryRefs.get(identifier)
   }
 
   def deRegisterRequestsRetryRef(identifier: String): Unit = {
-    identifierRequestsRetryRefMap.remove(identifier)
+    identifierRequestsRetryRefs.remove(identifier)
+    identifierRequestsRetryingCounts.remove(identifier)
   }
 
   private def startMetadataRequestsRetryTrigger(): Unit = {
     val interval = conf.get(KyuubiConf.METADATA_REQUEST_RETRY_INTERVAL)
     val triggerTask = new Runnable {
       override def run(): Unit = {
-        identifierRequestsRetryRefMap.forEach { (id, ref) =>
+        identifierRequestsRetryRefs.forEach { (id, ref) =>
+          val retryingCount = identifierRequestsRetryingCounts.computeIfAbsent(
+            id,
+            _ => {
+              new AtomicInteger(0)
+            })
+
           if (!ref.hasRemainingRequests()) {
-            identifierRequestsRetryRefMap.remove(ref)
-          } else if (ref.retryingTaskCount.get() == 0) {
+            identifierRequestsRetryRefs.remove(id)
+            identifierRequestsRetryingCounts.remove(id)
+          } else if (retryingCount.get() == 0) {
             val retryTask = new Runnable {
               override def run(): Unit = {
                 try {
-                  info(s"Retrying metadata requests for $id/${ref.retryCount.incrementAndGet()}")
+                  info(s"Retrying metadata requests for $id")
                   var request = ref.metadataRequests.peek()
                   while (request != null) {
                     request match {
@@ -242,20 +254,20 @@ class MetadataManager extends CompositeService("MetadataManager") {
                   }
                 } catch {
                   case e: Throwable =>
-                    error(s"Error retrying metadata requests for $id/${ref.retryCount.get()}", e)
+                    error(s"Error retrying metadata requests for $id", e)
                 } finally {
-                  ref.retryingTaskCount.decrementAndGet()
+                  retryingCount.decrementAndGet()
                 }
               }
             }
 
             try {
-              ref.retryingTaskCount.incrementAndGet()
+              retryingCount.incrementAndGet()
               requestsRetryExecutor.submit(retryTask)
             } catch {
               case e: Throwable =>
                 error(s"Error submitting metadata retry requests for $id", e)
-                ref.retryingTaskCount.decrementAndGet()
+                retryingCount.decrementAndGet()
             }
           }
         }
