@@ -28,7 +28,8 @@ public final class JsonUtil {
     try {
       return MAPPER.writeValueAsString(object);
     } catch (Exception e) {
-      throw new KyuubiRestException("Failed to convert object to json", e);
+      throw new KyuubiRestException(
+          String.format("Failed to convert object(%s) to json", object), e);
     }
   }
 
@@ -36,7 +37,8 @@ public final class JsonUtil {
     try {
       return MAPPER.readValue(json, clazz);
     } catch (Exception e) {
-      throw new KyuubiRestException("Failed to convert json string to object", e);
+      throw new KyuubiRestException(
+          String.format("Failed to convert json string(%s) to %s", json, clazz.getName()), e);
     }
   }
 }

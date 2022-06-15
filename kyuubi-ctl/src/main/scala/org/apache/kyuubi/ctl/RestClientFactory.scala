@@ -45,7 +45,8 @@ object RestClientFactory {
       map: JMap[String, Object],
       conf: KyuubiConf): KyuubiRestClient = {
     val version = getApiVersion(map)
-    val hostUrl = getRestConfig("hostUrl", conf.get(CTL_REST_CLIENT_BASE_URL).get, cliConfig, map)
+    val hostUrl =
+      getRestConfig("hostUrl", conf.get(CTL_REST_CLIENT_BASE_URL).orNull, cliConfig, map)
     val authSchema =
       getRestConfig("authSchema", conf.get(CTL_REST_CLIENT_AUTH_SCHEMA), cliConfig, map)
 
@@ -62,7 +63,7 @@ object RestClientFactory {
           .build()
       case "spnego" =>
         val spnegoHost =
-          getRestConfig("spnegoHost", conf.get(CTL_REST_CLIENT_SPNEGO_HOST).get, cliConfig, map)
+          getRestConfig("spnegoHost", conf.get(CTL_REST_CLIENT_SPNEGO_HOST).orNull, cliConfig, map)
         kyuubiRestClient = KyuubiRestClient.builder(hostUrl)
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
