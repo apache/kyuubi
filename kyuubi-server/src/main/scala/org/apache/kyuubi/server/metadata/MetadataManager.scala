@@ -54,11 +54,11 @@ class MetadataManager extends CompositeService("MetadataManager") {
   override def initialize(conf: KyuubiConf): Unit = {
     _metadataStore = MetadataManager.createMetadataStore(conf)
     val retryExecutorNumThreads =
-      conf.get(KyuubiConf.METADATA_REQUEST_RETRY_NUM_THREADS)
+      conf.get(KyuubiConf.METADATA_REQUEST_RETRY_THREADS)
     requestsRetryExecutor = ThreadUtils.newDaemonFixedThreadPool(
       retryExecutorNumThreads,
       "metadata-requests-retry-executor")
-    maxMetadataRequestsRetryRefs = conf.get(KyuubiConf.METADATA_REQUEST_RETRY_MAX_INSTANCES)
+    maxMetadataRequestsRetryRefs = conf.get(KyuubiConf.METADATA_REQUEST_RETRY_QUEUE_SIZE)
     super.initialize(conf)
   }
 

@@ -888,31 +888,30 @@ object KyuubiConf {
 
   val METADATA_MAX_AGE: ConfigEntry[Long] =
     buildConf("kyuubi.metadata.max.age")
-      .doc("The maximum age of metadata.")
+      .doc("The maximum age of metadata, the metadata that exceeds the age will be cleaned.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofDays(3).toMillis)
 
   val METADATA_CLEANER_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.metadata.cleaner.interval")
-      .doc("The interval to clean metadata.")
+      .doc("The interval to check and clean expired metadata.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
   val METADATA_RECOVERY_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.metadata.recovery.threads")
-      .doc("The number of threads for recovery from metadata store.")
+      .doc("The number of threads for recovery from metadata store when Kyuubi server restarting.")
       .version("1.6.0")
       .intConf
       .createWithDefault(10)
 
-  val METADATA_REQUEST_RETRY_NUM_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.request.retry.num.threads")
+  val METADATA_REQUEST_RETRY_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.request.retry.threads")
       .doc("Number of threads in the metadata request retry manager thread pool. The metadata" +
         " store might be unavailable sometimes and the requests will fail, to tolerant for this" +
-        " case and unblock the main thread, we introduce a metadata request retry manager and it" +
-        " helps to retry the failed requests in async way.")
+        " case and unblock the main thread, we support to retry the failed requests in async way.")
       .version("1.6.0")
       .intConf
       .createWithDefault(10)
@@ -924,12 +923,13 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
-  val METADATA_REQUEST_RETRY_MAX_INSTANCES: ConfigEntry[Int] =
-    buildConf("kyuubi.metadata.request.retry.max.instances")
-      .doc("Maximum number of metadata request retry instances.")
+  val METADATA_REQUEST_RETRY_QUEUE_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.request.retry.queue.size")
+      .doc("The maximum queue size for buffering metadata requests in memory when the external" +
+        " metadata storage is down. Requests will be dropped if the queue exceeds.")
       .version("1.6.0")
       .intConf
-      .createWithDefault(Int.MaxValue)
+      .createWithDefault(65536)
 
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")
