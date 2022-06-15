@@ -26,7 +26,7 @@ public final class JsonUtil {
 
   public static String toJson(Object object) {
     try {
-      return MAPPER.writeValueAsString(object);
+      return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(object);
     } catch (Exception e) {
       throw new KyuubiRestException(
           String.format("Failed to convert object(%s) to json", object), e);

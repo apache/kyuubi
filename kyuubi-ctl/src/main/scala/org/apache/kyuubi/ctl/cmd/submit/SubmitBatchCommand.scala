@@ -22,7 +22,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest, OperationLog}
-import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.client.util.JsonUtil
+import org.apache.kyuubi.ctl.{CliConfig, ControlCliException}
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.{BatchUtil, CtlUtils, Validator}
@@ -69,7 +70,11 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
           done = true
         }
       }
+
+      if (BatchUtil.isTerminalState(batch.getState) && !BatchUtil.isFinishedState(batch.getState)) {
+        error(s"Batch $batchId failed: ${JsonUtil.toJson(batch)}")
+        throw ControlCliException(1)
+      }
     }
   }
-
 }
