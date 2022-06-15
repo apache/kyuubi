@@ -68,7 +68,10 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  var engine: EngineRef = _
+  private lazy val engineCredentials = renewEngineCredentials()
+
+  lazy val engine: EngineRef =
+    new EngineRef(sessionConf, user, handle.identifier.toString, sessionManager.applicationManager)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
@@ -98,19 +101,12 @@ class KyuubiSessionImpl(
 
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
-      val engineCredentials = renewEngineCredentials()
       var openEngineSessionConf = optimizedConf
       if (engineCredentials.nonEmpty) {
         sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
         openEngineSessionConf =
           optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
       }
-
-      engine = new EngineRef(
-        sessionConf,
-        user,
-        handle.identifier.toString,
-        sessionManager.applicationManager)
       val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
       val passwd =
         if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
