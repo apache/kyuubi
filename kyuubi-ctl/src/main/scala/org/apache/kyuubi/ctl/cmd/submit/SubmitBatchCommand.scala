@@ -74,6 +74,8 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
       if (BatchUtil.isTerminalState(batch.getState) && !BatchUtil.isFinishedState(batch.getState)) {
         error(s"Batch $batchId failed: ${JsonUtil.toJson(batch)}")
         throw ControlCliException(1)
+      } else {
+        info(s"Batch report for $batchId: ${JsonUtil.toJson(batch)}")
       }
     }
   }
