@@ -16,7 +16,7 @@
   ~ limitations under the License.
   -->
 
-<!-- Extra logging related to initialization of Log4j. 
+<!-- Extra logging related to initialization of Log4j.
  Set to debug or trace if log4j initialization is failing. -->
 <Configuration status="WARN">
     <Appenders>
