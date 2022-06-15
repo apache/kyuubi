@@ -224,51 +224,51 @@ class MetadataManager extends CompositeService("MetadataManager") {
     val triggerTask = new Runnable {
       override def run(): Unit = {
         identifierRequestsRetryRefs.forEach { (id, ref) =>
-          val retryingCount = identifierRequestsRetryingCounts.computeIfAbsent(
-            id,
-            _ => {
-              new AtomicInteger(0)
-            })
-
           if (!ref.hasRemainingRequests()) {
             identifierRequestsRetryRefs.remove(id)
             identifierRequestsRetryingCounts.remove(id)
-          } else if (retryingCount.get() == 0) {
-            val retryTask = new Runnable {
-              override def run(): Unit = {
-                try {
-                  info(s"Retrying metadata requests for $id")
-                  var request = ref.metadataRequests.peek()
-                  while (request != null) {
-                    request match {
-                      case insert: InsertMetadata =>
-                        insertMetadata(insert.metadata, retryOnError = false)
+          } else {
+            val retryingCount =
+              identifierRequestsRetryingCounts.computeIfAbsent(id, _ => new AtomicInteger(0))
 
-                      case update: UpdateMetadata =>
-                        updateMetadata(update.metadata, retryOnError = false)
+            if (retryingCount.get() == 0) {
+              val retryTask = new Runnable {
+                override def run(): Unit = {
+                  try {
+                    info(s"Retrying metadata requests for $id")
+                    var request = ref.metadataRequests.peek()
+                    while (request != null) {
+                      request match {
+                        case insert: InsertMetadata =>
+                          insertMetadata(insert.metadata, retryOnError = false)
 
-                      case _ =>
+                        case update: UpdateMetadata =>
+                          updateMetadata(update.metadata, retryOnError = false)
+
+                        case _ =>
+                      }
+                      ref.metadataRequests.remove(request)
+                      request = ref.metadataRequests.peek()
                     }
-                    ref.metadataRequests.remove(request)
-                    request = ref.metadataRequests.peek()
+                  } catch {
+                    case e: Throwable =>
+                      error(s"Error retrying metadata requests for $id", e)
+                  } finally {
+                    retryingCount.decrementAndGet()
                   }
-                } catch {
-                  case e: Throwable =>
-                    error(s"Error retrying metadata requests for $id", e)
-                } finally {
-                  retryingCount.decrementAndGet()
                 }
+              }
+
+              try {
+                retryingCount.incrementAndGet()
+                requestsRetryExecutor.submit(retryTask)
+              } catch {
+                case e: Throwable =>
+                  error(s"Error submitting metadata retry requests for $id", e)
+                  retryingCount.decrementAndGet()
               }
             }
 
-            try {
-              retryingCount.incrementAndGet()
-              requestsRetryExecutor.submit(retryTask)
-            } catch {
-              case e: Throwable =>
-                error(s"Error submitting metadata retry requests for $id", e)
-                retryingCount.decrementAndGet()
-            }
           }
         }
       }

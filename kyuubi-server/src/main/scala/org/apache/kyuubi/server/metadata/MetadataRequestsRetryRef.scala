@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class MetadataRequestsRetryRef {
   private[metadata] val metadataRequests = new ConcurrentLinkedQueue[MetadataRequest]()
 
-  def addRetryingMetadataRequest(event: MetadataRequest): Unit = {
+  private[metadata] def addRetryingMetadataRequest(event: MetadataRequest): Unit = {
     metadataRequests.add(event)
   }
 
