@@ -26,6 +26,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
 import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
@@ -67,7 +68,9 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  val engine: EngineRef =
+  private lazy val engineCredentials = renewEngineCredentials()
+
+  lazy val engine: EngineRef =
     new EngineRef(sessionConf, user, handle.identifier.toString, sessionManager.applicationManager)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
@@ -98,6 +101,12 @@ class KyuubiSessionImpl(
 
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
+      var openEngineSessionConf = optimizedConf
+      if (engineCredentials.nonEmpty) {
+        sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
+        openEngineSessionConf =
+          optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
+      }
       val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
       val passwd =
         if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
@@ -107,7 +116,7 @@ class KyuubiSessionImpl(
         }
       try {
         _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
-        _engineSessionHandle = _client.openSession(protocol, user, passwd, optimizedConf)
+        _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
       } catch {
         case e: Throwable =>
           error(
@@ -154,6 +163,16 @@ class KyuubiSessionImpl(
 
         engineLaunched = true
       }
+    }
+  }
+
+  private def renewEngineCredentials(): String = {
+    try {
+      sessionManager.credentialsManager.renewCredentials(user)
+    } catch {
+      case e: Exception =>
+        error(s"Failed to renew engine credentials for $handle", e)
+        ""
     }
   }
 

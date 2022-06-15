@@ -18,7 +18,7 @@
 package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager}
+import org.apache.kyuubi.session.KyuubiSessionImpl
 
 class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean)
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
@@ -49,7 +49,6 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
       setState(OperationState.RUNNING)
       try {
         session.openEngineSession(getOperationLog)
-        renewEngineCredentials()
         setState(OperationState.FINISHED)
       } catch onError()
     }
@@ -59,19 +58,5 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     } catch onError("submitting open engine operation in background, request rejected")
 
     if (!shouldRunAsync) getBackgroundHandle.get()
-  }
-
-  private def renewEngineCredentials(): Unit = {
-    val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
-    try {
-      sessionManager.credentialsManager.sendCredentialsIfNeeded(
-        session.handle.identifier.toString,
-        session.user,
-        client.sendCredentials,
-        true)
-    } catch {
-      case e: Exception =>
-        error(s"Failed to renew engine credentials when launching engine", e)
-    }
   }
 }

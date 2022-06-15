@@ -31,7 +31,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.Utils._
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
@@ -179,7 +179,16 @@ object SparkSQLEngine extends Logging {
   }
 
   def createSpark(): SparkSession = {
+    val engineCredentials = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
+    kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
+    _sparkConf.remove(s"spark.${KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY}")
+
     val session = SparkSession.builder.config(_sparkConf).getOrCreate
+
+    engineCredentials.filter(_.nonEmpty).foreach { credentials =>
+      SparkTBinaryFrontendService.renewDelegationToken(session.sparkContext, credentials)
+    }
+
     KyuubiSparkUtil.initializeSparkSession(
       session,
       kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
