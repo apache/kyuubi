@@ -17,3 +17,4 @@
 
 org.apache.kyuubi.engine.YarnApplicationOperation
 org.apache.kyuubi.engine.JpsApplicationOperation
+org.apache.kyuubi.engine.KubernetesApplicationOperation
