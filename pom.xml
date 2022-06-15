@@ -2008,22 +2008,9 @@
 
         <profile>
             <id>spark-3.3</id>
-            <repositories>
-                <repository>
-                    <id>Apache Staging Repository</id>
-                    <url>https://repository.apache.org/content/repositories/orgapachespark-1407</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
             <properties>
                 <spark.version>3.3.0</spark.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
-                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.3.0-rc6-bin/</spark.archive.mirror>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
