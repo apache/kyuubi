@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.client;
 
-public class RestConf {
+public class RestClientConf {
   private int maxAttempts;
   private int attemptWaitTime;
   private int socketTimeout;

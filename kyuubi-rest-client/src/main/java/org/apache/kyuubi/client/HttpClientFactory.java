@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 public class HttpClientFactory {
   private static final Logger LOG = LoggerFactory.getLogger(HttpClientFactory.class);
 
-  public static CloseableHttpClient createHttpClient(RestConf conf) {
+  public static CloseableHttpClient createHttpClient(RestClientConf conf) {
     RequestConfig requestConfig =
         RequestConfig.custom()
             .setSocketTimeout(conf.getSocketTimeout())

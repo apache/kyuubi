@@ -36,19 +36,19 @@ public class RetryableRestClient implements InvocationHandler {
 
   private Logger LOG = LoggerFactory.getLogger(RetryableRestClient.class);
 
-  private List<String> uris;
+  private final RestClientConf conf;
+  private final List<String> uris;
   private int currentUriIndex;
-  private final RestConf conf;
   private IRestClient restClient;
 
-  private RetryableRestClient(List<String> uris, RestConf conf) {
+  private RetryableRestClient(List<String> uris, RestClientConf conf) {
     this.conf = conf;
     this.uris = uris;
     this.currentUriIndex = new Random(System.currentTimeMillis()).nextInt(uris.size());
     newRestClient();
   }
 
-  public static IRestClient getRestClient(List<String> uris, RestConf conf) {
+  public static IRestClient getRestClient(List<String> uris, RestClientConf conf) {
     RetryableRestClient client = new RetryableRestClient(uris, conf);
     return (IRestClient)
         Proxy.newProxyInstance(
@@ -70,7 +70,7 @@ public class RetryableRestClient implements InvocationHandler {
     CloseableHttpClient httpclient = HttpClientFactory.createHttpClient(conf);
     assert currentUriIndex < uris.size();
     this.restClient = new RestClient(uris.get(currentUriIndex), httpclient);
-    LOG.info("current connect server uri {}", uris.get(currentUriIndex));
+    LOG.info("Current connect server uri {}", uris.get(currentUriIndex));
   }
 
   @Override

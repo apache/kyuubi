@@ -63,7 +63,7 @@ public class KyuubiRestClient implements AutoCloseable {
       baseUrls.add(baseUrl);
     }
 
-    RestConf conf = new RestConf();
+    RestClientConf conf = new RestClientConf();
     conf.setConnectTimeout(builder.connectTimeout);
     conf.setSocketTimeout(builder.socketTimeout);
     conf.setMaxAttempts(builder.maxAttempts);
@@ -202,10 +202,15 @@ public class KyuubiRestClient implements AutoCloseable {
 
     public KyuubiRestClient build() {
       if (authHeaderMethod == AuthHeaderMethod.SPNEGO && StringUtils.isBlank(spnegoHost)) {
-        try {
-          this.spnegoHost = new URI(hostUrls.get(0)).getHost();
-        } catch (Exception e) {
+        if (hostUrls.size() > 1) {
           throw new IllegalArgumentException("spnegoHost is invalid.");
+        } else {
+          // follow the behavior of curl, use host url by default
+          try {
+            this.spnegoHost = new URI(hostUrls.get(0)).getHost();
+          } catch (Exception e) {
+            throw new IllegalArgumentException("spnegoHost is invalid.", e);
+          }
         }
       }
       return new KyuubiRestClient(this);
