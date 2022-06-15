@@ -446,7 +446,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 }
 
 object JDBCMetadataStore {
-  private val METADATA_TABLE = "session_metadata"
+  private val METADATA_TABLE = "metadata"
   private val METADATA_STATE_ONLY_COLUMNS = Seq(
     "identifier",
     "session_type",
