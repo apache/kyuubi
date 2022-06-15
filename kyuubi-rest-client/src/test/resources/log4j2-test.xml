@@ -26,7 +26,7 @@
                 <ThresholdFilter level="FATAL"/>
             </Filters>
         </Console>
-        <File name="file" fileName="target/rest-client-tests.log">
+        <File name="file" fileName="target/unit-tests.log">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %t %p %c{1}: %m%n"/>
         </File>
     </Appenders>
