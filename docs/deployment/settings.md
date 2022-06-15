@@ -189,8 +189,8 @@ Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
 kyuubi.ctl.rest.auth.schema|basic|The authentication schema. Valid values are: basic, spnego.|string|1.6.0
 kyuubi.ctl.rest.base.url|&lt;undefined&gt;|The REST API base URL, which contains the scheme (http:// or https://), host name, port number|string|1.6.0
-kyuubi.ctl.rest.batch.delete.max.retries|3|The max retries number for batch delete request.|int|1.6.0
-kyuubi.ctl.rest.batch.delete.retry.wait|PT10S|How long to wait between retries of batch delete request.|duration|1.6.0
+kyuubi.ctl.rest.request.attempt.wait|PT3S|How long to wait between attempts of ctl rest request.|duration|1.6.0
+kyuubi.ctl.rest.request.max.attempts|3|The max attempts number for ctl rest request.|int|1.6.0
 kyuubi.ctl.rest.spnego.host|&lt;undefined&gt;|When auth schema is spnego, need to config spnego host.|string|1.6.0
 
 

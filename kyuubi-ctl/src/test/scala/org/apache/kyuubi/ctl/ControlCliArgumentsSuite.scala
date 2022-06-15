@@ -452,7 +452,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
     assert(opArgs.cliConfig.action.toString.equalsIgnoreCase("DELETE"))
     assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase("BATCH"))
     assert(opArgs.cliConfig.batchOpts.batchId === "123")
-    assert(opArgs.cliConfig.conf ==
+    assert(opArgs.cliConfig.conf ===
       Map(CtlConf.CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS.key -> "10"))
 
     val args2 = Seq(
