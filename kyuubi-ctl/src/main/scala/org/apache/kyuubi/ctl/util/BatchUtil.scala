@@ -20,16 +20,23 @@ package org.apache.kyuubi.ctl.util
 import java.util.Locale
 
 object BatchUtil {
-  private val PENDING = "PENDING"
-  private val RUNNING = "RUNNING"
-  private val terminalBatchStates = Seq("FINISHED", "ERROR", "CANCELED")
+  private val PENDING_STATE = "PENDING"
+  private val RUNNING_STATE = "RUNNING"
+  private val FINISHED_STATE = "FINISHED"
+  private val ERROR_STATE = "ERROR"
+  private val CANCELED_STATE = "CANCELED"
+  private val terminalBatchStates = Seq(FINISHED_STATE, ERROR_STATE, CANCELED_STATE)
 
   def isPendingState(state: String): Boolean = {
-    PENDING.equalsIgnoreCase(state)
+    PENDING_STATE.equalsIgnoreCase(state)
   }
 
   def isRunningState(state: String): Boolean = {
-    RUNNING.equalsIgnoreCase(state)
+    RUNNING_STATE.equalsIgnoreCase(state)
+  }
+
+  def isFinishedState(state: String): Boolean = {
+    FINISHED_STATE.equalsIgnoreCase(state)
   }
 
   def isTerminalState(state: String): Boolean = {
