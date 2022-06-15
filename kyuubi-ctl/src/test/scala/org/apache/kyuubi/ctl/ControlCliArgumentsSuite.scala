@@ -353,7 +353,6 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  --username <value>       Username for basic authentication.
          |  --password <value>       Password for basic authentication.
          |  --spnegoHost <value>     Spnego host for spnego authentication.
-         |  --conf <value>           Kyuubi config property pair, formatted key=value.
          |
          |Command: create [batch|server] [options]
          |${"\t"}Create a resource.
@@ -439,28 +438,5 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  -h, --help               Show help message and exit.""".stripMargin
 
     testHelpExit(Array("--help"), helpString)
-  }
-
-  test("test kyuubi conf property") {
-    val args = Seq(
-      "delete",
-      "batch",
-      "123",
-      "--conf",
-      s"${CtlConf.CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS.key}=10")
-    val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliConfig.action.toString.equalsIgnoreCase("DELETE"))
-    assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase("BATCH"))
-    assert(opArgs.cliConfig.batchOpts.batchId === "123")
-    assert(opArgs.cliConfig.conf ===
-      Map(CtlConf.CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS.key -> "10"))
-
-    val args2 = Seq(
-      "delete",
-      "batch",
-      "123",
-      "--conf",
-      s"${CtlConf.CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS.key}")
-    testPrematureExitForControlCliArgs(args2.toArray, "Kyuubi config without '='")
   }
 }

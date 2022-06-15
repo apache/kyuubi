@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.ctl
 
-import java.time.Duration
-
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
 
 object CtlConf {
@@ -47,17 +45,4 @@ object CtlConf {
       .stringConf
       .createOptional
 
-  val CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS =
-    buildConf("kyuubi.ctl.rest.request.max.attempts")
-      .doc("The max attempts number for ctl rest request.")
-      .version("1.6.0")
-      .intConf
-      .createWithDefault(3)
-
-  val CTL_REST_CLIENT_REQUEST_ATTEMPT_WAIT =
-    buildConf("kyuubi.ctl.rest.request.attempt.wait")
-      .doc("How long to wait between attempts of ctl rest request.")
-      .version("1.6.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(3).toMillis)
 }

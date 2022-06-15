@@ -36,8 +36,7 @@ case class CliConfig(
     createOpts: CreateOpts = CreateOpts(),
     logOpts: LogOpts = LogOpts(),
     batchOpts: BatchOpts = BatchOpts(),
-    engineOpts: EngineOpts = EngineOpts(),
-    conf: Map[String, String] = Map.empty)
+    engineOpts: EngineOpts = EngineOpts())
 
 case class CommonOpts(
     zkQuorum: String = null,

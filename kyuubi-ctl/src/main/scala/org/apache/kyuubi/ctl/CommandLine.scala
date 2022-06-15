@@ -18,7 +18,7 @@ package org.apache.kyuubi.ctl
 
 import scopt.{OParser, OParserBuilder}
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException}
+import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.ctl.util.DateTimeUtils._
 
 object CommandLine {
@@ -83,15 +83,7 @@ object CommandLine {
         .text("Password for basic authentication."),
       opt[String]("spnegoHost")
         .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(spnegoHost = v)))
-        .text("Spnego host for spnego authentication."),
-      opt[String]("conf")
-        .action((v, c) => {
-          v.split("=", 2).toSeq match {
-            case Seq(k, v) => c.copy(conf = c.conf ++ Map(k -> v))
-            case _ => throw new KyuubiException(s"Kyuubi config without '=': $v")
-          }
-        })
-        .text("Kyuubi config property pair, formatted key=value."))
+        .text("Spnego host for spnego authentication."))
   }
 
   private def create(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
