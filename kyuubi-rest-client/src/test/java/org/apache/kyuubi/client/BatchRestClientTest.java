@@ -55,8 +55,10 @@ public class BatchRestClientTest {
             .build();
     spnegoBatchRestApi = new BatchRestApi(spnegoClient);
 
+    // https://localhost:8442 is a fake server url and it is used to test retryable rest client
+    // the retryable rest client will shuffle the input host urls
     basicClient =
-        KyuubiRestClient.builder("https://localhost:8443")
+        KyuubiRestClient.builder("https://localhost:8443", "https://localhost:8442")
             .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
             .username(TEST_USERNAME)
             .password(TEST_PASSWORD)

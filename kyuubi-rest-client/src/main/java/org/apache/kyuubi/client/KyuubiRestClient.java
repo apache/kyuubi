@@ -18,24 +18,15 @@
 package org.apache.kyuubi.client;
 
 import java.net.URI;
-import javax.net.ssl.SSLContext;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.ssl.SSLContexts;
 import org.apache.kyuubi.client.auth.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class KyuubiRestClient implements AutoCloseable {
 
-  private static final Logger LOG = LoggerFactory.getLogger(KyuubiRestClient.class);
-
-  private RestClient httpClient;
+  private IRestClient httpClient;
 
   private AuthHeaderGenerator authHeaderGenerator;
 
@@ -64,13 +55,21 @@ public class KyuubiRestClient implements AutoCloseable {
   private KyuubiRestClient() {}
 
   private KyuubiRestClient(Builder builder) {
-    // Remove the trailing "/" from the hostUrl if present
-    String hostUrl = builder.hostUrl.replaceAll("/$", "");
-    String baseUrl = String.format("%s/%s", hostUrl, builder.version.getApiNamespace());
+    List<String> baseUrls = new LinkedList<>();
+    for (String hostUrl : builder.hostUrls) {
+      // Remove the trailing "/" from the hostUrl if present
+      String baseUrl =
+          String.format("%s/%s", hostUrl.replaceAll("/$", ""), builder.version.getApiNamespace());
+      baseUrls.add(baseUrl);
+    }
 
-    CloseableHttpClient httpclient = initHttpClient(builder);
+    RestClientConf conf = new RestClientConf();
+    conf.setConnectTimeout(builder.connectTimeout);
+    conf.setSocketTimeout(builder.socketTimeout);
+    conf.setMaxAttempts(builder.maxAttempts);
+    conf.setAttemptWaitTime(builder.attemptWaitTime);
 
-    this.httpClient = new RestClient(baseUrl, httpclient);
+    this.httpClient = RetryableRestClient.getRestClient(baseUrls, conf);
 
     switch (builder.authHeaderMethod) {
       case BASIC:
@@ -94,42 +93,25 @@ public class KyuubiRestClient implements AutoCloseable {
     return authHeaderGenerator.generateAuthHeader();
   }
 
-  public RestClient getHttpClient() {
+  public IRestClient getHttpClient() {
     return httpClient;
-  }
-
-  private CloseableHttpClient initHttpClient(Builder builder) {
-    RequestConfig requestConfig =
-        RequestConfig.custom()
-            .setSocketTimeout(builder.socketTimeout)
-            .setConnectTimeout(builder.connectTimeout)
-            .build();
-    SSLConnectionSocketFactory sslSocketFactory;
-    try {
-      TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
-      SSLContext sslContext =
-          SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
-      sslSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
-    } catch (Exception e) {
-      LOG.error("Error: ", e);
-      throw new RuntimeException(e);
-    }
-
-    CloseableHttpClient httpclient =
-        HttpClientBuilder.create()
-            .setDefaultRequestConfig(requestConfig)
-            .setSSLSocketFactory(sslSocketFactory)
-            .build();
-    return httpclient;
   }
 
   public static Builder builder(String hostUrl) {
     return new Builder(hostUrl);
   }
 
+  public static Builder builder(String... hostUrls) {
+    return new Builder(Arrays.asList(hostUrls));
+  }
+
+  public static Builder builder(List<String> hostUrls) {
+    return new Builder(hostUrls);
+  }
+
   public static class Builder {
 
-    private String hostUrl;
+    private List<String> hostUrls;
 
     private String spnegoHost;
 
@@ -147,8 +129,23 @@ public class KyuubiRestClient implements AutoCloseable {
 
     private int connectTimeout = 3000;
 
+    private int maxAttempts = 3;
+
+    private int attemptWaitTime = 3000;
+
     public Builder(String hostUrl) {
-      this.hostUrl = hostUrl;
+      if (StringUtils.isBlank(hostUrl)) {
+        throw new IllegalArgumentException("hostUrl cannot be blank.");
+      }
+      this.hostUrls = new LinkedList<>();
+      this.hostUrls.add(hostUrl);
+    }
+
+    public Builder(List<String> hostUrls) {
+      if (hostUrls.isEmpty()) {
+        throw new IllegalArgumentException("hostUrls cannot be blank.");
+      }
+      this.hostUrls = hostUrls;
     }
 
     public Builder spnegoHost(String host) {
@@ -193,16 +190,27 @@ public class KyuubiRestClient implements AutoCloseable {
       return this;
     }
 
-    public KyuubiRestClient build() {
-      if (StringUtils.isBlank(hostUrl)) {
-        throw new IllegalArgumentException("hostUrl cannot be blank.");
-      }
+    public Builder maxAttempts(int maxAttempts) {
+      this.maxAttempts = maxAttempts;
+      return this;
+    }
 
+    public Builder attemptWaitTime(int attemptWaitTime) {
+      this.attemptWaitTime = attemptWaitTime;
+      return this;
+    }
+
+    public KyuubiRestClient build() {
       if (authHeaderMethod == AuthHeaderMethod.SPNEGO && StringUtils.isBlank(spnegoHost)) {
-        try {
-          this.spnegoHost = new URI(hostUrl).getHost();
-        } catch (Exception e) {
+        if (hostUrls.size() > 1) {
           throw new IllegalArgumentException("spnegoHost is invalid.");
+        } else {
+          // follow the behavior of curl, use host url by default
+          try {
+            this.spnegoHost = new URI(hostUrls.get(0)).getHost();
+          } catch (Exception e) {
+            throw new IllegalArgumentException("spnegoHost is invalid.", e);
+          }
         }
       }
       return new KyuubiRestClient(this);
