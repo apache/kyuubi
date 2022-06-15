@@ -19,27 +19,25 @@ package org.apache.kyuubi.sql
 
 import java.time.LocalDate
 import java.util.Locale
-
 import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
-
 import org.antlr.v4.runtime.ParserRuleContext
+import org.antlr.v4.runtime.misc.Interval
 import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
 import org.apache.commons.codec.binary.Hex
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, stringWithoutUnescape, withOrigin}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, localDateToDays, stringToTimestamp}
 import org.apache.spark.sql.catalyst.util.IntervalUtils
 import org.apache.spark.sql.hive.HiveAnalysis.conf
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
-
 import org.apache.kyuubi.sql.KyuubiSparkSQLParser._
 import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, OptimizeZorderStatementBase, Zorder, ZorderBase}
 
@@ -62,21 +60,11 @@ abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[An
   }
 
   override def visitOptimizeZorder(
-      ctx: OptimizeZorderContext): LogicalPlan = withOrigin(ctx) {
+      ctx: OptimizeZorderContext): UnparsedPredicateOptimize = withOrigin(ctx) {
     val tableIdent = multiPart(ctx.multipartIdentifier())
     val table = UnresolvedRelation(tableIdent)
 
-    val whereClause =
-      if (ctx.whereClause() == null) {
-        None
-      } else {
-        Option(expression(ctx.whereClause().booleanExpression()))
-      }
-
-    val tableWithFilter = whereClause match {
-      case Some(expr) => Filter(expr, table)
-      case None => table
-    }
+    val predicate = Option(ctx.whereClause().partitionPredicate).map(extractRawText(_))
 
     val zorderCols = ctx.zorderClause().order.asScala
       .map(visitMultipartIdentifier)
@@ -89,13 +77,7 @@ abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[An
       } else {
         buildZorder(zorderCols)
       }
-    val query =
-      Sort(
-        SortOrder(orderExpr, Ascending, NullsLast, Seq.empty) :: Nil,
-        conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED),
-        Project(Seq(UnresolvedStar(None)), tableWithFilter))
-
-    buildOptimizeZorderStatement(tableIdent, query)
+    UnparsedPredicateOptimize(tableIdent, table, predicate, orderExpr)
   }
 
   override def visitPassThrough(ctx: PassThroughContext): LogicalPlan = null
@@ -120,48 +102,6 @@ abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[An
       case KyuubiSparkSQLParser.GTE =>
         GreaterThanOrEqual(left, right)
     }
-  }
-
-  override def visitLogicalBinary(ctx: LogicalBinaryContext): Expression = withOrigin(ctx) {
-    val expressionType = ctx.operator.getType
-    val expressionCombiner = expressionType match {
-      case KyuubiSparkSQLParser.AND => And.apply _
-      case KyuubiSparkSQLParser.OR => Or.apply _
-    }
-
-    // Collect all similar left hand contexts.
-    val contexts = ArrayBuffer(ctx.right)
-    var current = ctx.left
-    def collectContexts: Boolean = current match {
-      case lbc: LogicalBinaryContext if lbc.operator.getType == expressionType =>
-        contexts += lbc.right
-        current = lbc.left
-        true
-      case _ =>
-        contexts += current
-        false
-    }
-    while (collectContexts) {
-      // No body - all updates take place in the collectContexts.
-    }
-
-    // Reverse the contexts to have them in the same sequence as in the SQL statement & turn them
-    // into expressions.
-    val expressions = contexts.reverseMap(expression)
-
-    // Create a balanced tree.
-    def reduceToExpressionTree(low: Int, high: Int): Expression = high - low match {
-      case 0 =>
-        expressions(low)
-      case 1 =>
-        expressionCombiner(expressions(low), expressions(high))
-      case x =>
-        val mid = low + x / 2
-        expressionCombiner(
-          reduceToExpressionTree(low, mid),
-          reduceToExpressionTree(mid + 1, high))
-    }
-    reduceToExpressionTree(0, expressions.size - 1)
   }
 
   override def visitMultipartIdentifier(ctx: MultipartIdentifierContext): Seq[String] =
@@ -435,6 +375,14 @@ abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[An
       case NonFatal(_) => None
     }
   }
+
+  private def extractRawText(exprContext: ParserRuleContext): String = {
+    // Extract the raw expression which will be parsed later
+    exprContext.getStart.getInputStream.getText(new Interval(
+      exprContext.getStart.getStartIndex,
+      exprContext.getStop.getStopIndex))
+  }
+
 }
 
 class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLAstBuilderBase {
@@ -447,4 +395,21 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLAstBuilderBase {
       query: LogicalPlan): OptimizeZorderStatementBase = {
     OptimizeZorderStatement(tableIdentifier, query)
   }
+}
+
+trait UnparsedExpressionLogicalPlan extends LogicalPlan {
+  override def output: Seq[Attribute] = throw new UnsupportedOperationException()
+
+  override def children: Seq[LogicalPlan] = throw new UnsupportedOperationException()
+
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[LogicalPlan]): LogicalPlan =
+    throw new UnsupportedOperationException()
+}
+
+case class UnparsedPredicateOptimize(
+    tableIdent: Seq[String],
+    table: LogicalPlan,
+    tablePredicate: Option[String],
+    orderExpr: Expression) extends UnparsedExpressionLogicalPlan {
 }

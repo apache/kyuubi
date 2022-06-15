@@ -55,21 +55,21 @@ statement
     ;
 
 whereClause
-    : WHERE booleanExpression
+    : WHERE partitionPredicate = predicateToken
     ;
 
 zorderClause
     : ZORDER BY order+=multipartIdentifier (',' order+=multipartIdentifier)*
     ;
 
-booleanExpression
-    : query                                                              #logicalQuery
-    | left=booleanExpression operator=AND right=booleanExpression        #logicalBinary
-    | left=booleanExpression operator=OR right=booleanExpression         #logicalBinary
-    ;
-
 query
     : '('? multipartIdentifier comparisonOperator constant ')'?
+    ;
+
+// We don't have an expression rule in our grammar here, so we just grab the tokens and defer
+// parsing them to later.
+predicateToken
+    :  .+?
     ;
 
 comparisonOperator

@@ -17,14 +17,16 @@
 
 package org.apache.kyuubi.sql
 
+// scalastyle:off
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
 import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
-import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.{Ascending, Expression, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.parser.{ParseErrorListener, ParseException, ParserInterface, PostProcessor}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.types.{DataType, StructType}
 
@@ -32,8 +34,28 @@ abstract class KyuubiSparkSQLParserBase extends ParserInterface {
   def delegate: ParserInterface
   def astBuilder: KyuubiSparkSQLAstBuilderBase
 
+  def buildOptimize(tableIdent: Seq[String], table: LogicalPlan, predicate: Option[Expression], orderExpr: Expression): LogicalPlan = {
+    val tableWithFilter = predicate match {
+      case Some(expr) => Filter(expr, table)
+      case None => table
+    }
+    val query =
+      Sort(
+        SortOrder(orderExpr, Ascending, NullsLast, Seq.empty) :: Nil,
+//        conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED),
+        true,
+        Project(Seq(UnresolvedStar(None)), tableWithFilter))
+    astBuilder.buildOptimizeZorderStatement(tableIdent, query)
+  }
+
   override def parsePlan(sqlText: String): LogicalPlan = parse(sqlText) { parser =>
     astBuilder.visit(parser.singleStatement()) match {
+      case optimize: UnparsedPredicateOptimize =>
+        buildOptimize(optimize.tableIdent,
+          optimize.table,
+          optimize.tablePredicate.map(delegate.parseExpression),
+          optimize.orderExpr
+        )
       case plan: LogicalPlan => plan
       case _ => delegate.parsePlan(sqlText)
     }
