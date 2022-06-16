@@ -135,6 +135,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_BIND_PORT,
     FRONTEND_THRIFT_BINARY_BIND_HOST,
     FRONTEND_THRIFT_BINARY_BIND_PORT,
+    FRONTEND_THRIFT_HTTP_BIND_HOST,
+    FRONTEND_THRIFT_HTTP_BIND_PORT,
     FRONTEND_REST_BIND_HOST,
     FRONTEND_REST_BIND_PORT,
     FRONTEND_MYSQL_BIND_HOST,
@@ -300,7 +302,7 @@ object KyuubiConf {
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
-    val THRIFT_BINARY, REST, MYSQL = Value
+    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL = Value
   }
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
@@ -308,6 +310,7 @@ object KyuubiConf {
       .doc("A comma separated list for all frontend protocols " +
         "<ul>" +
         " <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li>" +
+        " <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li>" +
         " <li>REST - Kyuubi defined REST API(experimental).</li> " +
         " <li>MYSQL - MySQL compatible text protocol(experimental).</li> " +
         "</ul>")
@@ -348,6 +351,21 @@ object KyuubiConf {
       .doc("Port of the machine on which to run the thrift frontend service via binary protocol.")
       .version("1.4.0")
       .fallbackConf(FRONTEND_BIND_PORT)
+
+  val FRONTEND_THRIFT_HTTP_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.frontend.thrift.http.bind.host")
+      .doc("Hostname or IP of the machine on which to run the thrift frontend service " +
+        "via http protocol.")
+      .version("1.6.0")
+      .fallbackConf(FRONTEND_BIND_HOST)
+
+  val FRONTEND_THRIFT_HTTP_BIND_PORT: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.thrift.http.bind.port")
+      .doc("Port of the machine on which to run the thrift frontend service via http protocol.")
+      .version("1.6.0")
+      .intConf
+      .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+      .createWithDefault(10010)
 
   val FRONTEND_MIN_WORKER_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.min.worker.threads")
@@ -433,6 +451,121 @@ object KyuubiConf {
       .doc("Time to back off during login to the thrift frontend service.")
       .version("1.4.0")
       .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
+
+  val FRONTEND_THRIFT_HTTP_REQUEST_HEADER_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.thrift.http.request.header.size")
+      .doc("Request header size in bytes, when using HTTP transport mode. Jetty defaults used.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(6 * 1024)
+
+  val FRONTEND_THRIFT_HTTP_RESPONSE_HEADER_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.thrift.http.response.header.size")
+      .doc("Response header size in bytes, when using HTTP transport mode. Jetty defaults used.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(6 * 1024)
+
+  val FRONTEND_THRIFT_HTTP_MAX_IDLE_TIME: ConfigEntry[Long] =
+    buildConf("kyuubi.frontend.thrift.http.max.idle.time")
+      .doc("Maximum idle time for a connection on the server when in HTTP mode.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(1800).toMillis)
+
+  val FRONTEND_THRIFT_HTTP_PATH: ConfigEntry[String] =
+    buildConf("kyuubi.frontend.thrift.http.path")
+      .doc("Path component of URL endpoint when in HTTP mode.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("cliservice")
+
+  val FRONTEND_THRIFT_HTTP_COMPRESSION_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.http.compression.enabled")
+      .doc("Enable thrift http compression via Jetty compression support")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val FRONTEND_THRIFT_HTTP_COOKIE_AUTH_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.http.cookie.auth.enabled")
+      .doc("When true, Kyuubi in HTTP transport mode, " +
+        "will use cookie based authentication mechanism")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val FRONTEND_THRIFT_HTTP_COOKIE_MAX_AGE: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.thrift.http.cookie.max.age")
+      .doc("Maximum age in seconds for server side cookie used by Kyuubi in HTTP mode.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(86400)
+
+  val FRONTEND_THRIFT_HTTP_COOKIE_DOMAIN: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.thrift.http.cookie.domain")
+      .doc("Domain for the Kyuubi generated cookies")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_THRIFT_HTTP_COOKIE_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.thrift.http.cookie.path")
+      .doc("Path for the Kyuubi generated cookies")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_THRIFT_HTTP_COOKIE_IS_HTTPONLY: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.http.cookie.is.httponly")
+      .doc("HttpOnly attribute of the Kyuubi generated cookie.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val FRONTEND_THRIFT_HTTP_XSRF_FILTER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.http.xsrf.filter.enabled")
+      .doc("If enabled, Kyuubi will block any requests made to it over http " +
+        "if an X-XSRF-HEADER header is not present")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FRONTEND_THRIFT_HTTP_USE_SSL: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.http.use.SSL")
+      .doc("Set this to true for using SSL encryption in http mode.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.thrift.http.ssl.keystore.path")
+      .doc("SSL certificate keystore location.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.thrift.http.ssl.keystore.password")
+      .doc("SSL certificate keystore password.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST: ConfigEntry[String] =
+    buildConf("kyuubi.frontend.thrift.http.ssl.protocol.blacklist")
+      .doc("SSL Versions to disable when using HTTP transport mode.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("SSLv2,SSLv3")
+
+  val FRONTEND_THRIFT_HTTP_ALLOW_USER_SUBSTITUTION: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.http.allow.user.substitution")
+      .doc("Allow alternate user to be specified as part of open connection" +
+        " request when using HTTP transport mode.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
 
   val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("kyuubi.authentication")
     .doc("A comma separated list of client authentication types.<ul>" +

@@ -58,6 +58,9 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     conf.set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "kentyao.org")
     assert(conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST).get === "kentyao.org")
 
+    conf.set(FRONTEND_THRIFT_HTTP_BIND_HOST.key, "kentyao.org")
+    assert(conf.get(FRONTEND_THRIFT_HTTP_BIND_HOST).get === "kentyao.org")
+
     conf.setIfMissing(OPERATION_IDLE_TIMEOUT, 60L)
     assert(conf.get(OPERATION_IDLE_TIMEOUT) === 5)
 
@@ -72,6 +75,7 @@ class KyuubiConfSuite extends KyuubiFunSuite {
 
     val map = conf.getAllWithPrefix("kyuubi", "")
     assert(map(FRONTEND_THRIFT_BINARY_BIND_HOST.key.substring(7)) === "kentyao.org")
+    assert(map(FRONTEND_THRIFT_HTTP_BIND_HOST.key.substring(7)) === "kentyao.org")
     val map1 = conf.getAllWithPrefix("kyuubi", "operation")
     assert(map1(OPERATION_IDLE_TIMEOUT.key.substring(7)) === "PT0.005S")
     assert(map1.size === 1)
