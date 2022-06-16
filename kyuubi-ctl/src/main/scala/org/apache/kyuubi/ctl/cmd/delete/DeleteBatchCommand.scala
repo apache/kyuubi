@@ -41,7 +41,7 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
           error(s"Failed to delete batch $batchId, its current state is ${batch.getState}")
           throw ControlCliException(1)
         } else {
-          warn(s"Batch $batchId is already in terminal state.")
+          warn(s"Batch $batchId is already in terminal state ${batch.getState}.")
         }
       }
     }
