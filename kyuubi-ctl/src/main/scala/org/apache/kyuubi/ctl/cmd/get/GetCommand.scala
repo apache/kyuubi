@@ -33,7 +33,7 @@ class GetCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     CtlUtils.listZkServerNodes(conf, normalizedCliConfig, filterHostPort = true)
   }
 
-  override def render(nodes: Any): Unit = {
+  def render(nodes: Any): Unit = {
     val title = "Zookeeper service nodes"
     info(Render.renderServiceNodesInfo(title, nodes.asInstanceOf[Seq[ServiceNodeInfo]], verbose))
   }

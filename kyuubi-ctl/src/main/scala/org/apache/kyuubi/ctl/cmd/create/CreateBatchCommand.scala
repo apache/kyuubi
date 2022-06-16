@@ -31,7 +31,7 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     Validator.validateFilename(normalizedCliConfig)
   }
 
-  override def doRun(): Batch = {
+  def doRun(): Batch = {
     val map = CtlUtils.loadYamlAsMap(normalizedCliConfig)
 
     withKyuubiRestClient(normalizedCliConfig, map, conf) { kyuubiRestClient =>
@@ -50,7 +50,7 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  override def render(batch: Any): Unit = {
+  def render(batch: Any): Unit = {
     info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
   }
 }

@@ -35,7 +35,7 @@ class DeleteCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   /**
    * Delete zookeeper service node with specified host port.
    */
-  override def doRun(): Seq[ServiceNodeInfo] = {
+  def doRun(): Seq[ServiceNodeInfo] = {
     withDiscoveryClient(conf) { discoveryClient =>
       val znodeRoot = CtlUtils.getZkNamespace(conf, normalizedCliConfig)
       val hostPortOpt =
@@ -58,7 +58,7 @@ class DeleteCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  override def render(nodes: Any): Unit = {
+  def render(nodes: Any): Unit = {
     val title = "Deleted zookeeper service nodes"
     info(Render.renderServiceNodesInfo(title, nodes.asInstanceOf[Seq[ServiceNodeInfo]], verbose))
   }

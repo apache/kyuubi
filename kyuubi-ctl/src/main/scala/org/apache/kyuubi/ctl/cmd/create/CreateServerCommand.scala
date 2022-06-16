@@ -89,7 +89,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  override def render(nodes: Any): Unit = {
+  def render(nodes: Any): Unit = {
     val title = "Created zookeeper service nodes"
     info(Render.renderServiceNodesInfo(title, nodes.asInstanceOf[Seq[ServiceNodeInfo]], verbose))
   }

@@ -31,14 +31,14 @@ class GetBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  override def doRun(): Any = {
+  def doRun(): Batch = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       batchRestApi.getBatchById(normalizedCliConfig.batchOpts.batchId)
     }
   }
 
-  override def render(batch: Any): Unit = {
+  def render(batch: Any): Unit = {
     info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
   }
 }

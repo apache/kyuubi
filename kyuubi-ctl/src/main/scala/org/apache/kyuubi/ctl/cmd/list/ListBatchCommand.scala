@@ -53,7 +53,7 @@ class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  override def render(batchListInfo: Any): Unit = {
+  def render(batchListInfo: Any): Unit = {
     info(Render.renderBatchListInfo(batchListInfo.asInstanceOf[GetBatchesResponse]))
   }
 }

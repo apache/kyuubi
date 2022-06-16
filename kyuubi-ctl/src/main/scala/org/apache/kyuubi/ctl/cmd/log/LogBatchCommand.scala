@@ -80,7 +80,7 @@ class LogBatchCommand(cliConfig: CliConfig, restConfigMap: JMap[String, Object] 
     }
   }
 
-  override def render(batch: Any): Unit = {
+  def render(batch: Any): Unit = {
     info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
   }
 }

@@ -27,7 +27,7 @@ import org.apache.kyuubi.ctl.util.BatchUtil
 class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   def validate(): Unit = {}
 
-  override def doRun(): Batch = {
+  def doRun(): Batch = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchId = normalizedCliConfig.batchOpts.batchId
@@ -50,5 +50,5 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  override def render(batch: Any): Unit = {}
+  def render(batch: Any): Unit = {}
 }
