@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -29,6 +30,7 @@ import org.apache.spark.sql.types.StructField
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 object PrivilegesBuilder {
@@ -145,10 +147,41 @@ object PrivilegesBuilder {
   private def buildCommand(
       plan: LogicalPlan,
       inputObjs: ArrayBuffer[PrivilegeObject],
-      outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
+      outputObjs: ArrayBuffer[PrivilegeObject],
+      spark: SparkSession = null): Unit = {
 
     def getPlanField[T](field: String): T = {
-      getFieldVal[T](plan, field)
+      val fieldVal = getFieldVal[T](plan, field)
+      fieldVal match {
+        case tableIdent: TableIdentifier =>
+          getDatabaseForTableIndent(tableIdent.asInstanceOf[TableIdentifier]).asInstanceOf[T]
+        case _ => fieldVal
+      }
+    }
+
+    def getDatabaseForTableIndent(tableIdent: TableIdentifier): TableIdentifier = {
+
+      def getDatabaseFromSparkSession: Option[String] = {
+        if (AuthZUtils.isSparkVersionAtMost("2.4")) {
+          return Some(spark.catalog.currentDatabase)
+        } else if (AuthZUtils.isSparkVersionAtLeast("3.0")) {
+          val catalogManager = AuthZUtils.invoke(spark.sessionState, "catalogManager")
+          val currentNamespace =
+            AuthZUtils.invoke(catalogManager.asInstanceOf[AnyRef], "currentNamespace")
+          val namespaces: Array[String] = currentNamespace.asInstanceOf[Array[String]]
+          if (namespaces != null && namespaces.length == 1) {
+            return Some(namespaces.head)
+          }
+        }
+        None
+      }
+
+      // only when TableIdentifier's database field is empty, try get the db from spark session
+      if (spark != null && tableIdent != null && tableIdent.database.isEmpty) {
+        tableIdent.copy(database = getDatabaseFromSparkSession)
+      } else {
+        tableIdent
+      }
     }
 
     def getTableName: TableIdentifier = {
@@ -538,12 +571,14 @@ object PrivilegesBuilder {
    *
    * @param plan A Spark LogicalPlan
    */
-  def build(plan: LogicalPlan): (Seq[PrivilegeObject], Seq[PrivilegeObject]) = {
+  def build(
+      plan: LogicalPlan,
+      spark: SparkSession = null): (Seq[PrivilegeObject], Seq[PrivilegeObject]) = {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     plan match {
       // RunnableCommand
-      case cmd: Command => buildCommand(cmd, inputObjs, outputObjs)
+      case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
       case _ => buildQuery(plan, inputObjs)
     }

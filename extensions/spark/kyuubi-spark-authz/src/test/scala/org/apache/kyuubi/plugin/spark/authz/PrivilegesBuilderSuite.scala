@@ -642,6 +642,37 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     }
   }
 
+  // [Kyuubi #2890]
+  test("CreateTableLikeCommand Without Database") {
+    withTable("CreateTableLikeCommandWithoutDatabase") { t =>
+      sql(s"USE ${reusedDb}")
+      val plan = sql(s"CREATE TABLE $t LIKE ${reusedTableShort}").queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+
+      assert(operationType === CREATETABLE)
+      val tuple = PrivilegesBuilder.build(plan, spark)
+      assert(tuple._1.size === 1)
+      val po0 = tuple._1.head
+      assert(po0.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.dbname equalsIgnoreCase reusedDb)
+      assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
+      assert(po0.columns.isEmpty)
+      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+      assert(accessType0 === AccessType.SELECT)
+
+      assert(tuple._2.size === 1)
+      val po = tuple._2.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname equalsIgnoreCase reusedDb)
+      assert(po.objectName === "CreateTableLikeCommandWithoutDatabase")
+      assert(po.columns.isEmpty)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.CREATE)
+    }
+  }
+
   test("CreateTempViewUsing") {
     val plan = sql("CREATE TEMPORARY VIEW CreateTempViewUsing (a int, b string) USING parquet")
       .queryExecution.analyzed
