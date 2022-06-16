@@ -24,7 +24,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.kyuubi.sql.{KyuubiSQLConf, SparkKyuubiSparkSQLParser}
 import org.apache.kyuubi.sql.zorder.Zorder
 
-trait ZorderWithCodegenEnabledSuiteBase33 extends ZorderWithCodegenEnabledSuiteBase {
+trait ZorderSuiteSpark33 extends ZorderWithCodegenEnabledSuiteBase {
 
   test("Add rebalance before zorder") {
     Seq("true" -> false, "false" -> true).foreach { case (useOriginalOrdering, zorder) =>
@@ -111,9 +111,14 @@ trait ParserSuite { self: ZorderSuiteBase =>
   override def createParser: ParserInterface = {
     new SparkKyuubiSparkSQLParser(spark.sessionState.sqlParser)
   }
-
 }
 
-class ZorderWithCodegenEnabledSuite extends ZorderWithCodegenEnabledSuiteBase33 with ParserSuite {}
+class ZorderWithCodegenEnabledSuite
+  extends ZorderWithCodegenEnabledSuiteBase
+    with ZorderSuiteSpark33
+    with ParserSuite {}
 
-class ZorderWithCodegenDisabledSuite extends ZorderWithCodegenEnabledSuiteBase33 with ParserSuite {}
+class ZorderWithCodegenDisabledSuite
+  extends ZorderWithCodegenDisabledSuiteBase
+    with ZorderSuiteSpark33
+    with ParserSuite {}
