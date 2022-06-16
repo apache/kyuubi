@@ -24,7 +24,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.kyuubi.sql.{KyuubiSQLConf, SparkKyuubiSparkSQLParser}
 import org.apache.kyuubi.sql.zorder.Zorder
 
-trait ZorderSuiteSpark33 extends ZorderWithCodegenEnabledSuiteBase {
+trait ZorderSuiteSpark33 extends ZorderSuiteBase {
 
   test("Add rebalance before zorder") {
     Seq("true" -> false, "false" -> true).foreach { case (useOriginalOrdering, zorder) =>
