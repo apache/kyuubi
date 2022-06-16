@@ -19,7 +19,6 @@ package org.apache.kyuubi.it.flink.operation
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.flink.FlinkProcessBuilder.FLINK_HADOOP_CLASSPATH_KEY
 import org.apache.kyuubi.it.flink.WithKyuubiServerAndFlinkMiniCluster
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
