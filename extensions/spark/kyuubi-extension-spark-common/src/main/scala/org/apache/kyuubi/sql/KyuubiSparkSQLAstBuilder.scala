@@ -70,7 +70,9 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
       ctx: OptimizeZorderContext): UnparsedPredicateOptimize = withOrigin(ctx) {
     val tableIdent = multiPart(ctx.multipartIdentifier())
 
-    val predicate = Option(ctx.whereClause().partitionPredicate).map(extractRawText(_))
+    val predicate = Option(ctx.whereClause())
+      .map(_.partitionPredicate)
+      .map(extractRawText(_))
 
     val zorderCols = ctx.zorderClause().order.asScala
       .map(visitMultipartIdentifier)
