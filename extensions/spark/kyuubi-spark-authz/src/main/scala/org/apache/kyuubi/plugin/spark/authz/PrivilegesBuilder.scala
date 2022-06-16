@@ -150,10 +150,10 @@ object PrivilegesBuilder {
       outputObjs: ArrayBuffer[PrivilegeObject],
       spark: SparkSession = null): Unit = {
 
-    def getPlanField[T](field: String): T = {
+    def getPlanField[T](field: String, isTempView: Boolean = false): T = {
       val fieldVal = getFieldVal[T](plan, field)
       fieldVal match {
-        case tableIdent: TableIdentifier =>
+        case tableIdent: TableIdentifier if (!isTempView) =>
           getDatabaseForTableIndent(tableIdent.asInstanceOf[TableIdentifier]).asInstanceOf[T]
         case _ => fieldVal
       }
@@ -267,7 +267,7 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(table)
 
       case "AlterViewAsCommand" =>
-        val view = getPlanField[TableIdentifier]("name")
+        val view = getPlanField[TableIdentifier]("name", true)
         outputObjs += tablePrivileges(view)
         buildQuery(getQuery, inputObjs)
 
@@ -315,7 +315,7 @@ object PrivilegesBuilder {
         getPlanField[Option[LogicalPlan]]("plan").foreach(buildQuery(_, inputObjs))
 
       case "CacheTableAsSelect" =>
-        val view = getPlanField[String]("tempViewName")
+        val view = getPlanField[String]("tempViewName", true)
         outputObjs += tablePrivileges(TableIdentifier(view))
 
         val query = getPlanField[LogicalPlan]("plan")
@@ -327,7 +327,7 @@ object PrivilegesBuilder {
         outputObjs += databasePrivileges(quote(databases))
 
       case "CreateViewCommand" =>
-        val view = getPlanField[TableIdentifier]("name")
+        val view = getPlanField[TableIdentifier]("name", true)
         outputObjs += tablePrivileges(view)
         val query =
           if (isSparkVersionAtMost("3.1")) {
@@ -387,7 +387,7 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(target)
 
       case "CreateTempViewUsing" =>
-        outputObjs += tablePrivileges(getTableIdent)
+        outputObjs += tablePrivileges(getPlanField[TableIdentifier]("tableIdent", true))
 
       case "DescribeColumnCommand" =>
         val table = getPlanField[TableIdentifier]("table")
