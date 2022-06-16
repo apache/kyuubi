@@ -36,15 +36,22 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
 
       info(JsonUtil.toJson(result))
 
-      batchRestApi.getBatchById(batchId)
+      if (result.isSuccess) {
+        null
+      } else {
+        batchRestApi.getBatchById(batchId)
+      }
     }
   }
 
   override def run(): Unit = {
-    val batch = doRunAndReturnBatchReport()
-    if (!BatchUtil.isTerminalState(batch.getState)) {
-      error(s"Failed to delete batch ${batch.getId}, its current state is ${batch.getState}")
-      throw ControlCliException(1)
+    Option(doRunAndReturnBatchReport()).foreach { batch =>
+      if (!BatchUtil.isTerminalState(batch.getState)) {
+        error(s"Failed to delete batch ${batch.getId}, its current state is ${batch.getState}")
+        throw ControlCliException(1)
+      } else {
+        warn(s"Batch ${batch.getId} is already in terminal state ${batch.getState}.")
+      }
     }
   }
 }
