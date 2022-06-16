@@ -26,32 +26,32 @@ public class KyuubiStatementTest {
 
   @Test
   public void testSetFetchSize1() throws SQLException {
-    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
-    stmt.setFetchSize(123);
-    assertEquals(123, stmt.getFetchSize());
+    try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
+      stmt.setFetchSize(123);
+      assertEquals(123, stmt.getFetchSize());
+    }
   }
 
   @Test
   public void testSetFetchSize2() throws SQLException {
-    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
-    int initial = stmt.getFetchSize();
-    stmt.setFetchSize(0);
-    assertEquals(initial, stmt.getFetchSize());
+    try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
+      int initial = stmt.getFetchSize();
+      stmt.setFetchSize(0);
+      assertEquals(initial, stmt.getFetchSize());
+    }
   }
 
   @Test(expected = SQLException.class)
   public void testSetFetchSize3() throws SQLException {
-    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
-    stmt.setFetchSize(-1);
+    try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
+      stmt.setFetchSize(-1);
+    }
   }
 
-  @Test
+  @Test(expected = SQLException.class)
   public void testaddBatch() throws SQLException {
-    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
-    try {
+    try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
       stmt.addBatch(null);
-    } catch (SQLException e) {
-      assertEquals("java.sql.SQLFeatureNotSupportedException: Method not supported", e.toString());
     }
   }
 }

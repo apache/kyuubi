@@ -23,16 +23,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.sql.SQLException;
+import org.apache.hive.service.rpc.thrift.*;
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface;
-import org.apache.hive.service.rpc.thrift.TExecuteStatementReq;
-import org.apache.hive.service.rpc.thrift.TExecuteStatementResp;
-import org.apache.hive.service.rpc.thrift.TGetOperationStatusReq;
-import org.apache.hive.service.rpc.thrift.TGetOperationStatusResp;
-import org.apache.hive.service.rpc.thrift.TOperationHandle;
-import org.apache.hive.service.rpc.thrift.TOperationState;
-import org.apache.hive.service.rpc.thrift.TSessionHandle;
-import org.apache.hive.service.rpc.thrift.TStatus;
-import org.apache.hive.service.rpc.thrift.TStatusCode;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -65,7 +57,6 @@ public class TestKyuubiPreparedStatement {
     when(client.ExecuteStatement(any(TExecuteStatementReq.class))).thenReturn(tExecStatementResp);
   }
 
-  @SuppressWarnings("resource")
   @Test
   public void testNonParameterized() throws Exception {
     String sql = "select 1";
@@ -78,7 +69,6 @@ public class TestKyuubiPreparedStatement {
     assertEquals("select 1", argument.getValue().getStatement());
   }
 
-  @SuppressWarnings("resource")
   @Test
   public void unusedArgument() throws Exception {
     String sql = "select 1";
@@ -87,7 +77,6 @@ public class TestKyuubiPreparedStatement {
     ps.execute();
   }
 
-  @SuppressWarnings("resource")
   @Test(expected = SQLException.class)
   public void unsetArgument() throws Exception {
     String sql = "select 1 from x where a=?";
@@ -95,7 +84,6 @@ public class TestKyuubiPreparedStatement {
     ps.execute();
   }
 
-  @SuppressWarnings("resource")
   @Test
   public void oneArgument() throws Exception {
     String sql = "select 1 from x where a=?";
@@ -109,7 +97,6 @@ public class TestKyuubiPreparedStatement {
     assertEquals("select 1 from x where a='asd'", argument.getValue().getStatement());
   }
 
-  @SuppressWarnings("resource")
   @Test
   public void escapingOfStringArgument() throws Exception {
     String sql = "select 1 from x where a=?";
@@ -123,7 +110,6 @@ public class TestKyuubiPreparedStatement {
     assertEquals("select 1 from x where a='a\\'\"d'", argument.getValue().getStatement());
   }
 
-  @SuppressWarnings("resource")
   @Test
   public void pastingIntoQuery() throws Exception {
     String sql = "select 1 from x where a='e' || ?";
@@ -138,7 +124,6 @@ public class TestKyuubiPreparedStatement {
   }
 
   // HIVE-13625
-  @SuppressWarnings("resource")
   @Test
   public void pastingIntoEscapedQuery() throws Exception {
     String sql = "select 1 from x where a='\\044e' || ?";

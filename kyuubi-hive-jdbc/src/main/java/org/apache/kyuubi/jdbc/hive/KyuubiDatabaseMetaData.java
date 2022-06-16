@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.jar.Attributes;
-import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hive.service.cli.GetInfoType;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.rpc.thrift.*;
@@ -708,13 +707,13 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
   public static String toJdbcTableType(String hivetabletype) {
     if (hivetabletype == null) {
       return null;
-    } else if (hivetabletype.equals(TableType.MANAGED_TABLE.toString())) {
+    } else if (hivetabletype.equals("MANAGED_TABLE")) {
       return "TABLE";
-    } else if (hivetabletype.equals(TableType.VIRTUAL_VIEW.toString())) {
+    } else if (hivetabletype.equals("VIRTUAL_VIEW")) {
       return "VIEW";
-    } else if (hivetabletype.equals(TableType.EXTERNAL_TABLE.toString())) {
+    } else if (hivetabletype.equals("EXTERNAL_TABLE")) {
       return "EXTERNAL TABLE";
-    } else if (hivetabletype.equals(TableType.MATERIALIZED_VIEW.toString())) {
+    } else if (hivetabletype.equals("MATERIALIZED_VIEW")) {
       return "MATERIALIZED VIEW";
     } else {
       return hivetabletype;
