@@ -22,19 +22,13 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.List;
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
 import org.apache.hadoop.hive.common.type.TimestampTZUtil;
-import org.apache.hadoop.hive.serde2.thrift.Type;
-import org.apache.hive.service.cli.TableSchema;
+import org.apache.hive.service.rpc.thrift.TTableSchema;
+import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSet;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
@@ -46,10 +40,10 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
   protected Object[] row;
   protected List<String> columnNames;
   protected List<String> normalizedColumnNames;
-  protected List<String> columnTypes;
+  protected List<TTypeId> columnTypes;
   protected List<JdbcColumnAttributes> columnAttributes;
 
-  private TableSchema schema;
+  private TTableSchema schema;
 
   @Override
   public int findColumn(String columnName) throws SQLException {
@@ -294,7 +288,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     if (columnIndex > row.length) {
       throw new SQLException("Invalid columnIndex: " + columnIndex);
     }
-    Type columnType = getSchema().getColumnDescriptorAt(columnIndex - 1).getType();
+    TTypeId columnType = columnTypes.get(columnIndex - 1);
 
     try {
       Object evaluated = evaluate(columnType, row[columnIndex - 1]);
@@ -306,11 +300,11 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     }
   }
 
-  private Object evaluate(Type type, Object value) {
+  private Object evaluate(TTypeId columnType, Object value) {
     if (value == null) {
       return null;
     }
-    switch (type) {
+    switch (columnType) {
       case BINARY_TYPE:
         if (value instanceof String) {
           return ((String) value).getBytes();
@@ -451,11 +445,11 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     return wasNull;
   }
 
-  protected void setSchema(TableSchema schema) {
+  protected void setSchema(TTableSchema schema) {
     this.schema = schema;
   }
 
-  protected TableSchema getSchema() {
+  protected TTableSchema getSchema() {
     return schema;
   }
 }

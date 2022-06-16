@@ -20,32 +20,32 @@ package org.apache.kyuubi.jdbc.hive;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
-import org.apache.hadoop.hive.serde2.thrift.Type;
+import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSetMetaData;
 
 /** KyuubiResultSetMetaData. */
 public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
   private final List<String> columnNames;
-  private final List<String> columnTypes;
+  private final List<TTypeId> columnTypes;
   private final List<JdbcColumnAttributes> columnAttributes;
 
   public KyuubiResultSetMetaData(
       List<String> columnNames,
-      List<String> columnTypes,
+      List<TTypeId> columnTypes,
       List<JdbcColumnAttributes> columnAttributes) {
     this.columnNames = columnNames;
     this.columnTypes = columnTypes;
     this.columnAttributes = columnAttributes;
   }
 
-  private Type getHiveType(int column) throws SQLException {
-    return JdbcColumn.typeStringToHiveType(columnTypes.get(toZeroIndex(column)));
+  private int getSqlType(int column) throws SQLException {
+    return JdbcColumn.convertTTypeIdToSqlType(columnTypes.get(toZeroIndex(column)));
   }
 
   @Override
   public String getColumnClassName(int column) throws SQLException {
     return JdbcColumn.columnClassName(
-        getHiveType(column), columnAttributes.get(toZeroIndex(column)));
+        columnTypes.get(toZeroIndex(column)), columnAttributes.get(toZeroIndex(column)));
   }
 
   @Override
@@ -56,7 +56,7 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
   @Override
   public int getColumnDisplaySize(int column) throws SQLException {
     return JdbcColumn.columnDisplaySize(
-        getHiveType(column), columnAttributes.get(toZeroIndex(column)));
+        columnTypes.get(toZeroIndex(column)), columnAttributes.get(toZeroIndex(column)));
   }
 
   @Override
@@ -72,10 +72,10 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
   @Override
   public int getColumnType(int column) throws SQLException {
     // we need to convert the thrift type to the SQL type
-    String type = columnTypes.get(toZeroIndex(column));
+    TTypeId type = columnTypes.get(toZeroIndex(column));
 
     // we need to convert the thrift type to the SQL type
-    return JdbcColumn.hiveTypeToSqlType(type);
+    return JdbcColumn.convertTTypeIdToSqlType(type);
   }
 
   @Override
@@ -86,12 +86,12 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
   @Override
   public int getPrecision(int column) throws SQLException {
     return JdbcColumn.columnPrecision(
-        getHiveType(column), columnAttributes.get(toZeroIndex(column)));
+        columnTypes.get(toZeroIndex(column)), columnAttributes.get(toZeroIndex(column)));
   }
 
   @Override
   public int getScale(int column) throws SQLException {
-    return JdbcColumn.columnScale(getHiveType(column), columnAttributes.get(toZeroIndex(column)));
+    return JdbcColumn.columnScale(getSqlType(column), columnAttributes.get(toZeroIndex(column)));
   }
 
   @Override
@@ -102,10 +102,8 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
 
   @Override
   public boolean isCaseSensitive(int column) throws SQLException {
-    // we need to convert the Hive type to the SQL type name
-    // TODO: this would be better handled in an enum
-    String type = columnTypes.get(toZeroIndex(column));
-    return "string".equalsIgnoreCase(type);
+    TTypeId type = columnTypes.get(toZeroIndex(column));
+    return type == TTypeId.STRING_TYPE;
   }
 
   @Override
