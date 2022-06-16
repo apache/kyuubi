@@ -17,11 +17,12 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.{RebalancePartitions, Sort}
 import org.apache.spark.sql.internal.SQLConf
+
 import org.apache.kyuubi.sql.{KyuubiSQLConf, SparkKyuubiSparkSQLParser}
 import org.apache.kyuubi.sql.zorder.Zorder
-import org.apache.spark.sql.catalyst.parser.ParserInterface
 
 trait ZorderWithCodegenEnabledSuiteBase33 extends ZorderWithCodegenEnabledSuiteBase {
 
