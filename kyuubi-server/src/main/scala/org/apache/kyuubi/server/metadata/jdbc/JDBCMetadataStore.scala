@@ -64,7 +64,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   hikariConfig.setJdbcUrl(conf.get(METADATA_STORE_JDBC_URL))
   hikariConfig.setUsername(conf.get(METADATA_STORE_JDBC_USER))
   hikariConfig.setPassword(conf.get(METADATA_STORE_JDBC_PASSWORD))
-  hikariConfig.setPoolName("kyuubi-state-store-pool")
+  hikariConfig.setPoolName("jdbc-metadata-store-pool")
 
   @VisibleForTesting
   private[kyuubi] val hikariDataSource = new HikariDataSource(hikariConfig)
