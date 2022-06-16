@@ -14,26 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl.cmd.get
 
-import org.apache.kyuubi.client.BatchRestApi
+package org.apache.kyuubi.ctl.cmd
+
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.ctl.CliConfig
-import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
-import org.apache.kyuubi.ctl.cmd.BatchCommand
+import org.apache.kyuubi.ctl.util.Render
 
-class GetBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
+abstract class BatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
-  def validate(): Unit = {
-    if (normalizedCliConfig.batchOpts.batchId == null) {
-      fail("Must specify batchId for get batch command.")
-    }
+  override def run(): Unit = {
+    info(Render.renderBatchInfo(doRunAndReturnBatchReport()))
   }
 
-  override def doRunAndReturnBatchReport(): Batch = {
-    withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
-      val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
-      batchRestApi.getBatchById(normalizedCliConfig.batchOpts.batchId)
-    }
-  }
+  def doRunAndReturnBatchReport(): Batch
 }
