@@ -18,10 +18,8 @@
 package org.apache.kyuubi.spark.connector.common
 
 import java.util
-import java.util.Locale
 
 import org.apache.spark.sql.RuntimeConfig
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 /**
  * Parse the value of configuration in runtime options, session configurations and table properties,
@@ -90,25 +88,13 @@ case class SparkConfParser(
     private def parse(conversion: String => T): Option[T] = {
       var valueOpt: Option[String] = None
       if (options != null) {
-        valueOpt = optionName.flatMap(name => {
-          options match {
-            case caseInsensitiveMap: CaseInsensitiveStringMap =>
-              Option(caseInsensitiveMap.get(name.toLowerCase(Locale.ROOT)))
-            case map => Option(map.get(name))
-          }
-        })
+        valueOpt = optionName.flatMap(name => Option(options.get(name)))
       }
       if (valueOpt.isEmpty && sessionConfigs != null) {
         valueOpt = sessionConfName.flatMap(name => sessionConfigs.getOption(name))
       }
       if (valueOpt.isEmpty && properties != null) {
-        valueOpt = tablePropertyName.flatMap(name => {
-          properties match {
-            case caseInsensitiveMap: CaseInsensitiveStringMap =>
-              Option(caseInsensitiveMap.get(name.toLowerCase(Locale.ROOT)))
-            case map => Option(map.get(name))
-          }
-        })
+        valueOpt = tablePropertyName.flatMap(name => Option(properties.get(name)))
       }
       valueOpt = valueOpt.filter(_ != null)
       if (valueOpt.isDefined) {
@@ -122,7 +108,7 @@ case class SparkConfParser(
 
     def parse(): T = {
       assert(defaultValue.isDefined, "Default value cannot be empty.")
-      parseOptional.get
+      parseOptional().get
     }
 
     def parseOptional(): Option[T] = parse(conversion)
