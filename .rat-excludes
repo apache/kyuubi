@@ -56,9 +56,7 @@ build/scala-*/**
 **/web-ui/tsconfig.json
 **/web-ui/tslint.json
 **/web-ui/src/browserslist
-**/web-ui/src/tsconfig.app.json
-**/web-ui/src/tsconfig.spec.json
-**/web-ui/src/tslint.json
+**/web-ui/src/*.json
 **/web-ui/src/assets/**
 **/web-ui/web/**
 **/web-ui/node_modules/**

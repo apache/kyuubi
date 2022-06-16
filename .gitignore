@@ -81,4 +81,4 @@ conf/kyuubi-env.sh
 kyuubi-server/web-ui/web/
 kyuubi-server/web-ui/node/
 kyuubi-server/web-ui/node_modules/
-/kyuubi-server/web-ui/.angular/
+kyuubi-server/web-ui/.angular/

@@ -17,7 +17,7 @@
 
 # Apache Kyuubi(incubating) Web UI
 
-The web ui listens at `http://localhost:10009`.
+The web ui listens at `http://localhost:10099`.
 
 The web ui is work in progress. Kyuubi server starts an HTTP server (by default at port 10009)
 that serves the new web pages and additional background requests.
@@ -40,7 +40,7 @@ Depending on your version of Linux, Windows or MacOS, you may need to manually i
 
 Install *node.js* by following [these instructions](https://nodejs.org/en/download/).
 
-Verify that the installed version is at least *10.9.0*, via `node --version`.
+Verify that the installed version is at least *16.x.x*, via `node --version`.
 
 #### MacOS
 
@@ -49,7 +49,7 @@ First install *brew* by following [these instructions](http://brew.sh/).
 Install *node.js* via:
 
 ```
-brew install node
+brew install node@16
 ```
 
 ### Building
