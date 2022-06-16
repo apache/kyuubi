@@ -22,7 +22,7 @@ import org.apache.kyuubi.ctl.{BatchOpts, CliConfig, ControlCliException, LogOpts
 import org.apache.kyuubi.ctl.cmd.BatchCommand
 import org.apache.kyuubi.ctl.cmd.create.CreateBatchCommand
 import org.apache.kyuubi.ctl.cmd.log.LogBatchCommand
-import org.apache.kyuubi.ctl.util.{BatchUtil, CtlUtils, Render, Validator}
+import org.apache.kyuubi.ctl.util.{BatchUtil, CtlUtils, Validator}
 
 class SubmitBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
 
@@ -41,16 +41,13 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
         batchOpts = BatchOpts(batchId = batchId),
         logOpts = LogOpts(forward = true)),
       map)
-    logBatchCommand.doRunAndReturnBatchReport()
-  }
+    val batch = logBatchCommand.doRunAndReturnBatchReport()
 
-  override def run(): Unit = {
-    val batch = doRunAndReturnBatchReport()
     if (BatchUtil.isTerminalState(batch.getState) && !BatchUtil.isFinishedState(batch.getState)) {
       error(s"Batch ${batch.getId} failed: ${JsonUtil.toJson(batch)}")
       throw ControlCliException(1)
-    } else {
-      info(Render.renderBatchInfo(batch))
     }
+
+    batch
   }
 }

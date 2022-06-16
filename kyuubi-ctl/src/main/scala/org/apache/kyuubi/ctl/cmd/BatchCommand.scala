@@ -25,7 +25,7 @@ abstract class BatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   def doRunAndReturnBatchReport(): Batch
 
-  override def run(): Unit = {
+  final override def run(): Unit = {
     Option(doRunAndReturnBatchReport()).foreach { batch =>
       info(Render.renderBatchInfo(batch))
     }
