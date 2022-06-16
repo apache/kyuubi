@@ -18,18 +18,19 @@
 package org.apache.spark.sql
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, Project, Sort}
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, EqualTo, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, OneRowRelation, Project, Sort}
 import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.types._
-
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
-import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, Zorder, ZorderBytesUtils}
+import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, OptimizeZorderStatement, Zorder, ZorderBytesUtils}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
+import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
 
 trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
   override def sparkConf(): SparkConf = {
@@ -652,6 +653,80 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
           ZorderBytesUtils.interleaveBitsDefault(inputs.map(ZorderBytesUtils.toByteArray).toArray)))
       }
   }
+
+  test("OPTIMIZE command is parsed as expected") {
+    val parser = createParser
+    val globalSort = spark.conf.get(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED)
+
+    assert(parser.parsePlan("OPTIMIZE p zorder by c1") ===
+      OptimizeZorderStatement(
+        Seq("p"),
+        Sort(
+          SortOrder(UnresolvedAttribute("c1"), Ascending, NullsLast, Seq.empty) :: Nil,
+          globalSort,
+          Project(Seq(UnresolvedStar(None)), UnresolvedRelation(TableIdentifier("p")))
+        )
+      ))
+
+    assert(parser.parsePlan("OPTIMIZE p zorder by c1, c2") ===
+      OptimizeZorderStatement(
+        Seq("p"),
+        Sort(
+          SortOrder(
+            Zorder(Seq(UnresolvedAttribute("c1"), UnresolvedAttribute("c2"))),
+            Ascending,
+            NullsLast,
+            Seq.empty) :: Nil,
+          globalSort,
+          Project(Seq(UnresolvedStar(None)), UnresolvedRelation(TableIdentifier("p")))
+        )
+      ))
+
+    assert(parser.parsePlan("OPTIMIZE p where id = 1 zorder by c1") ===
+      OptimizeZorderStatement(
+        Seq("p"),
+        Sort(
+          SortOrder(UnresolvedAttribute("c1"), Ascending, NullsLast, Seq.empty) :: Nil,
+          globalSort,
+          Project(
+            Seq(UnresolvedStar(None)),
+            Filter(
+              EqualTo(UnresolvedAttribute("id"), Literal(1)),
+              UnresolvedRelation(TableIdentifier("p"))))
+        )
+      )
+    )
+
+    assert(parser.parsePlan("OPTIMIZE p where id = 1 zorder by c1, c2") ===
+      OptimizeZorderStatement(
+        Seq("p"),
+        Sort(
+          SortOrder(
+            Zorder(Seq(UnresolvedAttribute("c1"), UnresolvedAttribute("c2"))),
+            Ascending,
+            NullsLast,
+            Seq.empty) :: Nil,
+          globalSort,
+          Project(
+            Seq(UnresolvedStar(None)),
+            Filter(
+              EqualTo(UnresolvedAttribute("id"), Literal(1)),
+              UnresolvedRelation(TableIdentifier("p"))))
+        )
+      )
+    )
+
+    // TODO: add following case support
+    intercept[ParseException] {
+      parser.parsePlan("OPTIMIZE p zorder by (c1)")
+    }
+
+    intercept[ParseException] {
+      parser.parsePlan("OPTIMIZE p zorder by (c1, c2)")
+    }
+  }
+
+  def createParser: ParserInterface
 }
 
 trait ZorderWithCodegenEnabledSuiteBase extends ZorderSuiteBase {
