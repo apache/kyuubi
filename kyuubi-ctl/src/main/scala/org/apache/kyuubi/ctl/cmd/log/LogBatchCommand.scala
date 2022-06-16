@@ -23,6 +23,7 @@ import org.apache.kyuubi.client.api.v1.dto.{Batch, OperationLog}
 import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.util.BatchUtil
 
 class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
@@ -59,8 +60,7 @@ class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
           Thread.sleep(DEFAULT_LOG_QUERY_INTERVAL)
 
           batch = batchRestApi.getBatchById(batchId)
-          if (log.getLogRowSet.size() == 0 && batch.getState() != "PENDING"
-            && batch.getState() != "RUNNING") {
+          if (log.getLogRowSet.size() == 0 && BatchUtil.isTerminalState(batch.getState)) {
             done = true
           }
         }

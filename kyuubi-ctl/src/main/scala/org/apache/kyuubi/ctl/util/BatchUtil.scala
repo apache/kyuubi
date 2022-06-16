@@ -15,30 +15,31 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.client.util;
+package org.apache.kyuubi.ctl.util
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.kyuubi.client.exception.KyuubiRestException;
+import java.util.Locale
 
-public final class JsonUtil {
+object BatchUtil {
+  private val PENDING_STATE = "PENDING"
+  private val RUNNING_STATE = "RUNNING"
+  private val FINISHED_STATE = "FINISHED"
+  private val ERROR_STATE = "ERROR"
+  private val CANCELED_STATE = "CANCELED"
+  private val terminalBatchStates = Seq(FINISHED_STATE, ERROR_STATE, CANCELED_STATE)
 
-  private static ObjectMapper MAPPER = new ObjectMapper();
-
-  public static String toJson(Object object) {
-    try {
-      return MAPPER.writeValueAsString(object);
-    } catch (Exception e) {
-      throw new KyuubiRestException(
-          String.format("Failed to convert object(%s) to json", object), e);
-    }
+  def isPendingState(state: String): Boolean = {
+    PENDING_STATE.equalsIgnoreCase(state)
   }
 
-  public static <T> T toObject(String json, Class<T> clazz) {
-    try {
-      return MAPPER.readValue(json, clazz);
-    } catch (Exception e) {
-      throw new KyuubiRestException(
-          String.format("Failed to convert json string(%s) to %s", json, clazz.getName()), e);
-    }
+  def isRunningState(state: String): Boolean = {
+    RUNNING_STATE.equalsIgnoreCase(state)
+  }
+
+  def isFinishedState(state: String): Boolean = {
+    FINISHED_STATE.equalsIgnoreCase(state)
+  }
+
+  def isTerminalState(state: String): Boolean = {
+    state != null && terminalBatchStates.contains(state.toUpperCase(Locale.ROOT))
   }
 }

@@ -111,7 +111,7 @@ public class RestClient implements IRestClient {
               .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
               .build();
 
-      LOG.info("Executing {} request: {}", httpRequest.getMethod(), uri);
+      LOG.debug("Executing {} request: {}", httpRequest.getMethod(), uri);
 
       ResponseHandler<String> responseHandler =
           resp -> {
@@ -126,7 +126,7 @@ public class RestClient implements IRestClient {
           };
 
       response = httpclient.execute(httpRequest, responseHandler);
-      LOG.info("Response: {}", response);
+      LOG.debug("Response: {}", response);
     } catch (ConnectException | ConnectTimeoutException e) {
       // net exception can be retried by connecting to other Kyuubi server
       throw new KyuubiRetryableException("Api request failed for " + uri.toString(), e);
