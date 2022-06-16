@@ -94,9 +94,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   private static final class ClientInfoPropertiesResultSet extends KyuubiMetaDataResultSet<Object> {
     private static final String[] COLUMNS = {"NAME", "MAX_LEN", "DEFAULT_VALUE", "DESCRIPTION"};
-    private static final TTypeId[] COLUMN_TYPES = {
-      STRING_TYPE, TTypeId.INT_TYPE, STRING_TYPE, STRING_TYPE
-    };
+    private static final TTypeId[] COLUMN_TYPES = {STRING_TYPE, INT_TYPE, STRING_TYPE, STRING_TYPE};
 
     private static final Object[][] DATA = {
       {"ApplicationName", 1000, null, null},
@@ -112,7 +110,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
         TColumnDesc tColumnDesc = new TColumnDesc();
         tColumnDesc.setColumnName(COLUMNS[i]);
         TTypeDesc tTypeDesc = new TTypeDesc();
-        tTypeDesc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(STRING_TYPE)));
+        tTypeDesc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(COLUMN_TYPES[i])));
         tColumnDesc.setTypeDesc(tTypeDesc);
         tColumnDesc.setPosition(i);
         fieldSchemas.add(tColumnDesc);
@@ -761,13 +759,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
             "REMARKS",
             "BASE_TYPE"),
         Arrays.asList(
-            STRING_TYPE,
-            STRING_TYPE,
-            STRING_TYPE,
-            STRING_TYPE,
-            TTypeId.INT_TYPE,
-            STRING_TYPE,
-            TTypeId.INT_TYPE),
+            STRING_TYPE, STRING_TYPE, STRING_TYPE, STRING_TYPE, INT_TYPE, STRING_TYPE, INT_TYPE),
         null) {
 
       @Override

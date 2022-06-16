@@ -68,9 +68,9 @@ public class JdbcColumn {
     return type;
   }
 
-  static String columnClassName(TTypeId typeStr, JdbcColumnAttributes columnAttributes)
+  static String columnClassName(TTypeId tType, JdbcColumnAttributes columnAttributes)
       throws SQLException {
-    int columnType = convertTTypeIdToSqlType(typeStr);
+    int columnType = convertTTypeIdToSqlType(tType);
     switch (columnType) {
       case NULL:
         return "null";
@@ -104,7 +104,7 @@ public class JdbcColumn {
       case OTHER:
       case JAVA_OBJECT:
         {
-          switch (typeStr) {
+          switch (tType) {
             case INTERVAL_YEAR_MONTH_TYPE:
               return HiveIntervalYearMonth.class.getName();
             case INTERVAL_DAY_TIME_TYPE:
@@ -217,29 +217,29 @@ public class JdbcColumn {
     }
   }
 
-  static int columnDisplaySize(TTypeId typeStr, JdbcColumnAttributes columnAttributes)
+  static int columnDisplaySize(TTypeId tType, JdbcColumnAttributes columnAttributes)
       throws SQLException {
-    int columnType = convertTTypeIdToSqlType(typeStr);
+    int columnType = convertTTypeIdToSqlType(tType);
     switch (columnType) {
       case NULL:
         return 4; // "NULL"
       case BOOLEAN:
-        return columnPrecision(typeStr, columnAttributes);
+        return columnPrecision(tType, columnAttributes);
       case CHAR:
       case VARCHAR:
-        return columnPrecision(typeStr, columnAttributes);
+        return columnPrecision(tType, columnAttributes);
       case BINARY:
         return Integer.MAX_VALUE; // hive has no max limit for binary
       case TINYINT:
       case SMALLINT:
       case INTEGER:
       case BIGINT:
-        return columnPrecision(typeStr, columnAttributes) + 1; // allow +/-
+        return columnPrecision(tType, columnAttributes) + 1; // allow +/-
       case DATE:
         return 10;
       case TIMESTAMP:
       case TIMESTAMP_WITH_TIMEZONE:
-        return columnPrecision(typeStr, columnAttributes);
+        return columnPrecision(tType, columnAttributes);
 
         // see
         // http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Float.MAX_EXPONENT
@@ -250,10 +250,10 @@ public class JdbcColumn {
       case DOUBLE:
         return 25; // e.g. -(17#).e-####
       case DECIMAL:
-        return columnPrecision(typeStr, columnAttributes) + 2; // '-' sign and '.'
+        return columnPrecision(tType, columnAttributes) + 2; // '-' sign and '.'
       case OTHER:
       case JAVA_OBJECT:
-        return columnPrecision(typeStr, columnAttributes);
+        return columnPrecision(tType, columnAttributes);
       case ARRAY:
       case STRUCT:
         return Integer.MAX_VALUE;
@@ -262,9 +262,9 @@ public class JdbcColumn {
     }
   }
 
-  static int columnPrecision(TTypeId typeStr, JdbcColumnAttributes columnAttributes)
+  static int columnPrecision(TTypeId tType, JdbcColumnAttributes columnAttributes)
       throws SQLException {
-    int columnType = convertTTypeIdToSqlType(typeStr);
+    int columnType = convertTTypeIdToSqlType(tType);
     // according to hiveTypeToSqlType possible options are:
     switch (columnType) {
       case NULL:
@@ -302,7 +302,7 @@ public class JdbcColumn {
       case OTHER:
       case JAVA_OBJECT:
         {
-          switch (typeStr) {
+          switch (tType) {
             case INTERVAL_YEAR_MONTH_TYPE:
               // -yyyyyyy-mm  : should be more than enough
               return 11;

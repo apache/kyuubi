@@ -102,10 +102,8 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
 
   @Override
   public boolean isCaseSensitive(int column) throws SQLException {
-    // we need to convert the Hive type to the SQL type name
-    // TODO: this would be better handled in an enum
     TTypeId type = columnTypes.get(toZeroIndex(column));
-    return true;
+    return type == TTypeId.STRING_TYPE;
   }
 
   @Override
