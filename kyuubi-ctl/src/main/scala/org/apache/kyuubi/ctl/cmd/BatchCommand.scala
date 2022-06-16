@@ -23,9 +23,11 @@ import org.apache.kyuubi.ctl.util.Render
 
 abstract class BatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
-  override def run(): Unit = {
-    info(Render.renderBatchInfo(doRunAndReturnBatchReport()))
-  }
-
   def doRunAndReturnBatchReport(): Batch
+
+  override def run(): Unit = {
+    Option(doRunAndReturnBatchReport()).foreach { batch =>
+      info(Render.renderBatchInfo(batch))
+    }
+  }
 }

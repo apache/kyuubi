@@ -41,43 +41,41 @@ class LogBatchCommand(cliConfig: CliConfig, restConfigMap: JMap[String, Object] 
     withKyuubiRestClient(normalizedCliConfig, restConfigMap, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchId = normalizedCliConfig.batchOpts.batchId
-      var from = normalizedCliConfig.batchOpts.from
+      var from = math.max(normalizedCliConfig.batchOpts.from, 0)
       val size = normalizedCliConfig.batchOpts.size
-      var log: OperationLog = batchRestApi.getBatchLocalLog(
-        batchId,
-        from,
-        size)
-      log.getLogRowSet.asScala.foreach(x => info(x))
 
+      var log: OperationLog = null
       var done = false
       var batch: Batch = null
-      from = if (from < 0) log.getLogRowSet.size else from + log.getLogRowSet.size
-      if (normalizedCliConfig.logOpts.forward) {
-        while (!done) {
-          try {
-            log = batchRestApi.getBatchLocalLog(
-              batchId,
-              from,
-              size)
-            from += log.getLogRowSet.size
-            log.getLogRowSet.asScala.foreach(x => info(x))
-          } catch {
-            case e: KyuubiRestException =>
-              error(s"Error fetching batch logs: ${e.getMessage}")
-          }
 
-          if (log == null || log.getLogRowSet.size() == 0) {
-            batch = batchRestApi.getBatchById(batchId)
-            if (BatchUtil.isTerminalState(batch.getState)) {
-              done = true
-            }
+      while (!done) {
+        try {
+          log = batchRestApi.getBatchLocalLog(
+            batchId,
+            from,
+            size)
+          from += log.getLogRowSet.size
+          log.getLogRowSet.asScala.foreach(x => info(x))
+          if (!normalizedCliConfig.logOpts.forward) {
+            done = true
           }
+        } catch {
+          case e: KyuubiRestException =>
+            error(s"Error fetching batch logs: ${e.getMessage}")
+        }
 
-          if (!done) {
-            Thread.sleep(DEFAULT_LOG_QUERY_INTERVAL)
+        if (log == null || log.getLogRowSet.size() == 0) {
+          batch = batchRestApi.getBatchById(batchId)
+          if (BatchUtil.isTerminalState(batch.getState)) {
+            done = true
           }
         }
+
+        if (!done) {
+          Thread.sleep(DEFAULT_LOG_QUERY_INTERVAL)
+        }
       }
+
       batch
     }
   }
