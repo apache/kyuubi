@@ -29,7 +29,7 @@ import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.{BatchUtil, Render}
 
 class LogBatchCommand(cliConfig: CliConfig, restConfigMap: JMap[String, Object] = null)
-  extends Command(cliConfig) {
+  extends Command[Batch](cliConfig) {
 
   def validate(): Unit = {
     if (normalizedCliConfig.batchOpts.batchId == null) {
@@ -80,7 +80,7 @@ class LogBatchCommand(cliConfig: CliConfig, restConfigMap: JMap[String, Object] 
     }
   }
 
-  def render(batch: Any): Unit = {
-    info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
+  def render(batch: Batch): Unit = {
+    info(Render.renderBatchInfo(batch))
   }
 }

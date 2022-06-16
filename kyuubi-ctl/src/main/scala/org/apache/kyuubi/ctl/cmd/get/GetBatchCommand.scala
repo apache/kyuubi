@@ -23,7 +23,7 @@ import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.Render
 
-class GetBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class GetBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {
 
   def validate(): Unit = {
     if (normalizedCliConfig.batchOpts.batchId == null) {
@@ -38,7 +38,7 @@ class GetBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  def render(batch: Any): Unit = {
+  def render(batch: Batch): Unit = {
     info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
   }
 }

@@ -24,7 +24,7 @@ import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
-class DeleteCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class DeleteCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](cliConfig) {
 
   def validate(): Unit = {
     Validator.validateZkArguments(normalizedCliConfig)
@@ -58,8 +58,8 @@ class DeleteCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  def render(nodes: Any): Unit = {
+  def render(nodes: Seq[ServiceNodeInfo]): Unit = {
     val title = "Deleted zookeeper service nodes"
-    info(Render.renderServiceNodesInfo(title, nodes.asInstanceOf[Seq[ServiceNodeInfo]], verbose))
+    info(Render.renderServiceNodesInfo(title, nodes, verbose))
   }
 }

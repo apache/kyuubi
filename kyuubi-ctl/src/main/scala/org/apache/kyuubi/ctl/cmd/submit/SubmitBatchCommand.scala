@@ -24,7 +24,7 @@ import org.apache.kyuubi.ctl.cmd.create.CreateBatchCommand
 import org.apache.kyuubi.ctl.cmd.log.LogBatchCommand
 import org.apache.kyuubi.ctl.util.{BatchUtil, CtlUtils, Render, Validator}
 
-class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class SubmitBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {
 
   def validate(): Unit = {
     Validator.validateFilename(normalizedCliConfig)
@@ -51,7 +51,7 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     batch
   }
 
-  def render(batch: Any): Unit = {
-    info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
+  def render(batch: Batch): Unit = {
+    info(Render.renderBatchInfo(batch))
   }
 }

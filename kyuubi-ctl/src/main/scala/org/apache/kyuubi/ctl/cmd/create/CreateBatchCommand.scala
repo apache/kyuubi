@@ -25,7 +25,7 @@ import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
 
-class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class CreateBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {
 
   def validate(): Unit = {
     Validator.validateFilename(normalizedCliConfig)
@@ -50,7 +50,7 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  def render(batch: Any): Unit = {
-    info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
+  def render(batch: Batch): Unit = {
+    info(Render.renderBatchInfo(batch))
   }
 }

@@ -24,7 +24,7 @@ import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.BatchUtil
 
-class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class DeleteBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {
   def validate(): Unit = {}
 
   def doRun(): Batch = {
@@ -50,5 +50,5 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  def render(batch: Any): Unit = {}
+  def render(batch: Batch): Unit = {}
 }

@@ -28,7 +28,7 @@ import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.ControlCli.printMessage
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 
-abstract class Command(cliConfig: CliConfig) extends Logging {
+abstract class Command[T](cliConfig: CliConfig) extends Logging {
 
   protected val DEFAULT_LOG_QUERY_INTERVAL: Int = 1000
 
@@ -46,10 +46,10 @@ abstract class Command(cliConfig: CliConfig) extends Logging {
   def validate(): Unit
 
   /** Run the command and return the internal result. */
-  def doRun(): Any
+  def doRun(): T
 
   /** Render the internal result. */
-  def render(obj: Any): Unit
+  def render(obj: T): Unit
 
   final def run(): Unit = {
     Option(doRun()).foreach(render)
