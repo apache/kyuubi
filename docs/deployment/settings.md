@@ -325,7 +325,7 @@ kyuubi.metadata.cleaner.interval|PT30M|The interval to check and clean expired m
 kyuubi.metadata.max.age|PT72H|The maximum age of metadata, the metadata that exceeds the age will be cleaned.|duration|1.6.0
 kyuubi.metadata.recovery.threads|10|The number of threads for recovery from metadata store when Kyuubi server restarting.|int|1.6.0
 kyuubi.metadata.request.retry.interval|PT5S|The interval to check and trigger the metadata request retry tasks.|duration|1.6.0
-kyuubi.metadata.request.retry.queue.size|65536|The maximum queue size for buffering metadata requests in memory is when the external metadata storage is down. Requests will be dropped if the queue exceeds.|int|1.6.0
+kyuubi.metadata.request.retry.queue.size|65536|The maximum queue size for buffering metadata requests in memory when the external metadata storage is down. Requests will be dropped if the queue exceeds.|int|1.6.0
 kyuubi.metadata.request.retry.threads|10|Number of threads in the metadata request retry manager thread pool. The metadata store might be unavailable sometimes and the requests will fail, to tolerant for this case and unblock the main thread, we support to retry the failed requests in async way.|int|1.6.0
 kyuubi.metadata.store.class|org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStore|Fully qualified class name for server metadata store.|string|1.6.0
 kyuubi.metadata.store.jdbc.database.schema.init|true|Whether to init the jdbc metadata store database schema.|boolean|1.6.0
