@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 import java.util
 
 import scala.collection.JavaConverters._
@@ -42,7 +42,7 @@ class FlinkProcessBuilder(
     override val conf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
-  extends ProcBuilder {
+  extends ProcBuilder with Logging {
 
   @VisibleForTesting
   def this(proxyUser: String, conf: KyuubiConf) {
@@ -96,12 +96,21 @@ class FlinkProcessBuilder(
     val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
     if (hadoopCp.isEmpty && extraCp.isEmpty) {
-      throw new KyuubiException(s"The conf of ${FLINK_HADOOP_CLASSPATH_KEY} and " +
-        s"${ENGINE_FLINK_EXTRA_CLASSPATH.key} is empty." +
-        s"Please set ${FLINK_HADOOP_CLASSPATH_KEY} or ${ENGINE_FLINK_EXTRA_CLASSPATH.key} for " +
-        s"configuring location of hadoop client jars, etc")
+      warn(s"The conf of ${FLINK_HADOOP_CLASSPATH_KEY} and ${ENGINE_FLINK_EXTRA_CLASSPATH.key}" +
+        s" is empty.")
+      debug("Detected development environment")
+      mainResource.foreach { path =>
+        val devHadoopJars = Paths.get(path).getParent
+          .resolve(s"scala-$SCALA_COMPILE_VERSION")
+          .resolve("jars")
+        if (!Files.exists(devHadoopJars)) {
+          throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
+            s"Please set ${FLINK_HADOOP_CLASSPATH_KEY} or ${ENGINE_FLINK_EXTRA_CLASSPATH.key} " +
+            s"for configuring location of hadoop client jars, etc")
+        }
+        classpathEntries.add(s"$devHadoopJars${File.separator}*")
+      }
     }
-
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
     buffer += mainClass
 

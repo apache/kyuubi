@@ -29,7 +29,6 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
 
   override val conf: KyuubiConf = KyuubiConf()
     .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
-    .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$FLINK_HADOOP_CLASSPATH_KEY", hadoopClasspath)
     .set(ENGINE_TYPE, "FLINK_SQL")
     .set("flink.parallelism.default", "6")
 
