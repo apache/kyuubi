@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.sql
 
-// scalastyle:off
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}

@@ -21,19 +21,21 @@ import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.{ParseErrorListener, ParseException, ParserInterface, PostProcessor}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.types.{DataType, StructType}
 
-abstract class KyuubiSparkSQLParserBase extends ParserInterface {
+abstract class KyuubiSparkSQLParserBase extends ParserInterface with SQLConfHelper {
   def delegate: ParserInterface
-  def astBuilder: KyuubiSparkSQLAstBuilderBase
+  def astBuilder: KyuubiSparkSQLAstBuilder
 
   override def parsePlan(sqlText: String): LogicalPlan = parse(sqlText) { parser =>
     astBuilder.visit(parser.singleStatement()) match {
+      case optimize: UnparsedPredicateOptimize =>
+        astBuilder.buildOptimizeStatement(optimize, delegate.parseExpression)
       case plan: LogicalPlan => plan
       case _ => delegate.parsePlan(sqlText)
     }
@@ -105,7 +107,7 @@ abstract class KyuubiSparkSQLParserBase extends ParserInterface {
 class SparkKyuubiSparkSQLParser(
     override val delegate: ParserInterface)
   extends KyuubiSparkSQLParserBase {
-  def astBuilder: KyuubiSparkSQLAstBuilderBase = new KyuubiSparkSQLAstBuilder
+  def astBuilder: KyuubiSparkSQLAstBuilder = new KyuubiSparkSQLAstBuilder
 }
 
 /* Copied from Apache Spark's to avoid dependency on Spark Internals */
