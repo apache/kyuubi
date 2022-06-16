@@ -706,6 +706,20 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
               EqualTo(UnresolvedAttribute("id"), Literal(1)),
               UnresolvedRelation(TableIdentifier("p")))))))
 
+    assert(parser.parsePlan("OPTIMIZE p where id = current_date() zorder by c1") ===
+      OptimizeZorderStatement(
+        Seq("p"),
+        Sort(
+          SortOrder(UnresolvedAttribute("c1"), Ascending, NullsLast, Seq.empty) :: Nil,
+          globalSort,
+          Project(
+            Seq(UnresolvedStar(None)),
+            Filter(
+              EqualTo(
+                UnresolvedAttribute("id"),
+                UnresolvedFunction("current_date", Seq.empty, false)),
+              UnresolvedRelation(TableIdentifier("p")))))))
+
     // TODO: add following case support
     intercept[ParseException] {
       parser.parsePlan("OPTIMIZE p zorder by (c1)")
