@@ -23,6 +23,7 @@ import javax.security.sasl.AuthenticationException
 import javax.servlet.{ServletContextEvent, ServletContextListener}
 
 import org.apache.commons.lang3.SystemUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.eclipse.jetty.http.HttpMethod
@@ -61,6 +62,8 @@ final class KyuubiTHttpFrontendService(
 
   private var server: Option[Server] = None
   private val APPLICATION_THRIFT = "application/x-thrift"
+
+  override protected def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
   /**
    * Configure Jetty to serve http requests. Example of a client connection URL:
