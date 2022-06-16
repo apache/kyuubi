@@ -19,29 +19,29 @@ package org.apache.kyuubi.ctl.cmd.submit
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.client.util.JsonUtil
 import org.apache.kyuubi.ctl.{BatchOpts, CliConfig, ControlCliException, LogOpts}
-import org.apache.kyuubi.ctl.cmd.BatchCommand
+import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.cmd.create.CreateBatchCommand
 import org.apache.kyuubi.ctl.cmd.log.LogBatchCommand
-import org.apache.kyuubi.ctl.util.{BatchUtil, CtlUtils, Validator}
+import org.apache.kyuubi.ctl.util.{BatchUtil, CtlUtils, Render, Validator}
 
-class SubmitBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
+class SubmitBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   def validate(): Unit = {
     Validator.validateFilename(normalizedCliConfig)
   }
 
-  override def doRunAndReturnBatchReport(): Batch = {
+  def doRun(): Batch = {
     val map = CtlUtils.loadYamlAsMap(normalizedCliConfig)
 
     val createBatchCommand = new CreateBatchCommand(normalizedCliConfig)
-    val batchId = createBatchCommand.doRunAndReturnBatchReport().getId
+    val batchId = createBatchCommand.doRun().getId
 
     val logBatchCommand = new LogBatchCommand(
       normalizedCliConfig.copy(
         batchOpts = BatchOpts(batchId = batchId),
         logOpts = LogOpts(forward = true)),
       map)
-    val batch = logBatchCommand.doRunAndReturnBatchReport()
+    val batch = logBatchCommand.doRun()
 
     if (BatchUtil.isTerminalState(batch.getState) && !BatchUtil.isFinishedState(batch.getState)) {
       error(s"Batch ${batch.getId} failed: ${JsonUtil.toJson(batch)}")
@@ -49,5 +49,9 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
     }
 
     batch
+  }
+
+  override def render(batch: Any): Unit = {
+    info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
   }
 }

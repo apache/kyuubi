@@ -21,13 +21,13 @@ import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.client.util.JsonUtil
 import org.apache.kyuubi.ctl.{CliConfig, ControlCliException}
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
-import org.apache.kyuubi.ctl.cmd.BatchCommand
+import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.BatchUtil
 
-class DeleteBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
+class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   def validate(): Unit = {}
 
-  override def doRunAndReturnBatchReport(): Batch = {
+  override def doRun(): Batch = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchId = normalizedCliConfig.batchOpts.batchId
@@ -49,4 +49,6 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
       null
     }
   }
+
+  override def render(batch: Any): Unit = {}
 }

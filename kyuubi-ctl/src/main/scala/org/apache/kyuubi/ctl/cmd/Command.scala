@@ -45,7 +45,15 @@ abstract class Command(cliConfig: CliConfig) extends Logging {
   /** Ensure that required fields exists. Call this only once all defaults are loaded. */
   def validate(): Unit
 
-  def run(): Unit
+  /** Run the command and return the internal result. */
+  def doRun(): Any
+
+  /** Render the internal result. */
+  def render(obj: Any): Unit
+
+  final def run(): Unit = {
+    Option(doRun()).foreach(render)
+  }
 
   def fail(msg: String): Unit = throw new KyuubiException(msg)
 

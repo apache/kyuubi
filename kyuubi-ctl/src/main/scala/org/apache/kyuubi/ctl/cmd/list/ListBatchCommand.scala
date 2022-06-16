@@ -38,11 +38,11 @@ class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  def run(): Unit = {
+  def doRun(): GetBatchesResponse = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchOpts = normalizedCliConfig.batchOpts
-      val batchListInfo: GetBatchesResponse = batchRestApi.listBatches(
+      batchRestApi.listBatches(
         batchOpts.batchType,
         batchOpts.batchUser,
         batchOpts.batchState,
@@ -50,9 +50,10 @@ class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
         batchOpts.endTime,
         if (batchOpts.from < 0) 0 else batchOpts.from,
         batchOpts.size)
-
-      info(Render.renderBatchListInfo(batchListInfo))
     }
   }
 
+  override def render(batchListInfo: Any): Unit = {
+    info(Render.renderBatchListInfo(batchListInfo.asInstanceOf[GetBatchesResponse]))
+  }
 }

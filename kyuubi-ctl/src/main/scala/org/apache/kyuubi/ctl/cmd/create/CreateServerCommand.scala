@@ -49,7 +49,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
   /**
    * Expose Kyuubi server instance to another domain.
    */
-  def run(): Unit = {
+  def doRun(): Seq[ServiceNodeInfo] = {
     val kyuubiConf = conf
 
     kyuubiConf.setIfMissing(HA_ADDRESSES, normalizedCliConfig.commonOpts.zkQuorum)
@@ -85,10 +85,13 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command(cliConfig) {
           withDiscoveryClient(kyuubiConf)(doCreate)
         }
       }
-
-      val title = "Created zookeeper service nodes"
-      info(Render.renderServiceNodesInfo(title, exposedServiceNodes, verbose))
+      exposedServiceNodes
     }
+  }
+
+  override def render(nodes: Any): Unit = {
+    val title = "Created zookeeper service nodes"
+    info(Render.renderServiceNodesInfo(title, nodes.asInstanceOf[Seq[ServiceNodeInfo]], verbose))
   }
 
 }

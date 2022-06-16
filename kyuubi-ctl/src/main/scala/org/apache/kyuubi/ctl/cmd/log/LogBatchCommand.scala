@@ -25,11 +25,11 @@ import org.apache.kyuubi.client.api.v1.dto.{Batch, OperationLog}
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
-import org.apache.kyuubi.ctl.cmd.BatchCommand
-import org.apache.kyuubi.ctl.util.BatchUtil
+import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.util.{BatchUtil, Render}
 
 class LogBatchCommand(cliConfig: CliConfig, restConfigMap: JMap[String, Object] = null)
-  extends BatchCommand(cliConfig) {
+  extends Command(cliConfig) {
 
   def validate(): Unit = {
     if (normalizedCliConfig.batchOpts.batchId == null) {
@@ -37,7 +37,7 @@ class LogBatchCommand(cliConfig: CliConfig, restConfigMap: JMap[String, Object] 
     }
   }
 
-  override def doRunAndReturnBatchReport(): Batch = {
+  def doRun(): Batch = {
     withKyuubiRestClient(normalizedCliConfig, restConfigMap, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchId = normalizedCliConfig.batchOpts.batchId
@@ -78,5 +78,9 @@ class LogBatchCommand(cliConfig: CliConfig, restConfigMap: JMap[String, Object] 
 
       batch
     }
+  }
+
+  override def render(batch: Any): Unit = {
+    info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
   }
 }

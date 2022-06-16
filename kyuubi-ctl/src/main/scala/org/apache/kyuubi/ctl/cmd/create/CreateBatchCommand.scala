@@ -22,16 +22,16 @@ import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
-import org.apache.kyuubi.ctl.cmd.BatchCommand
-import org.apache.kyuubi.ctl.util.{CtlUtils, Validator}
+import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
 
-class CreateBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
+class CreateBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   def validate(): Unit = {
     Validator.validateFilename(normalizedCliConfig)
   }
 
-  override def doRunAndReturnBatchReport(): Batch = {
+  override def doRun(): Batch = {
     val map = CtlUtils.loadYamlAsMap(normalizedCliConfig)
 
     withKyuubiRestClient(normalizedCliConfig, map, conf) { kyuubiRestClient =>
@@ -48,5 +48,9 @@ class CreateBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
 
       batchRestApi.createBatch(batchRequest)
     }
+  }
+
+  override def render(batch: Any): Unit = {
+    info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
   }
 }

@@ -20,9 +20,10 @@ import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
-import org.apache.kyuubi.ctl.cmd.BatchCommand
+import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.util.Render
 
-class GetBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
+class GetBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
 
   def validate(): Unit = {
     if (normalizedCliConfig.batchOpts.batchId == null) {
@@ -30,10 +31,14 @@ class GetBatchCommand(cliConfig: CliConfig) extends BatchCommand(cliConfig) {
     }
   }
 
-  override def doRunAndReturnBatchReport(): Batch = {
+  override def doRun(): Any = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       batchRestApi.getBatchById(normalizedCliConfig.batchOpts.batchId)
     }
+  }
+
+  override def render(batch: Any): Unit = {
+    info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
   }
 }
