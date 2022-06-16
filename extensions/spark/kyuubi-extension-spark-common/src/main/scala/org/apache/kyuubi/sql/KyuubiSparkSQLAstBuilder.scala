@@ -19,19 +19,20 @@ package org.apache.kyuubi.sql
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.mutable.ListBuffer
+
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.misc.Interval
 import org.antlr.v4.runtime.tree.ParseTree
+import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.parser.ParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
+
 import org.apache.kyuubi.sql.KyuubiSparkSQLParser._
 import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, Zorder}
-import org.apache.spark.sql.catalyst.SQLConfHelper
 
 class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQLConfHelper {
-
 
   def buildOptimizeStatement(
       unparsedPredicateOptimize: UnparsedPredicateOptimize,
