@@ -31,6 +31,9 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
+
 jobs:
   default:
     name: Kyuubi and Spark Test
@@ -80,7 +83,6 @@ jobs:
           check-latest: false
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
-          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
@@ -133,7 +135,6 @@ jobs:
           check-latest: false
       - name: Build and test Flink with maven w/o linters
         run: |       
-          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} -am  clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
@@ -169,7 +170,6 @@ jobs:
           check-latest: false
       - name: Build and test Hive with maven w/o linters
         run: |
-          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
@@ -205,7 +205,6 @@ jobs:
           check-latest: false
       - name: Build and test JDBC with maven w/o linters
         run: |
-          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
           TEST_MODULES="externals/kyuubi-jdbc-engine" || echo 'TODO integration-tests/kyuubi-jdbc-it'
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
@@ -241,7 +240,6 @@ jobs:
           check-latest: false
       - name: Build and test Trino with maven w/o linters
         run: |
-          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
           TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
@@ -272,7 +270,6 @@ jobs:
           check-latest: false
       - name: Run TPC-DS Tests
         run: |
-          MVN_OPT="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
           TEST_MODULES="kyuubi-server,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test \
@@ -314,7 +311,7 @@ jobs:
         run: kubectl get pods
       - name: integration tests
         run: >-
-          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -V
+          ./build/mvn ${MVN_OPT} clean install
           -pl integration-tests/kyuubi-kubernetes-it -am
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.deployment
@@ -348,11 +345,7 @@ jobs:
           kubectl get serviceaccount
       - name: integration tests
         run: >-
-          ./build/mvn clean install
-          -Dmaven.javadoc.skip=true
-          -Drat.skip=true
-          -Dscalastyle.skip=true
-          -Dspotless.check.skip
+          ./build/mvn ${MVN_OPT} clean install
           -Dspark.version=3.2.1
           -Pflink-provided,hive-provided
           -Pkubernetes-it
