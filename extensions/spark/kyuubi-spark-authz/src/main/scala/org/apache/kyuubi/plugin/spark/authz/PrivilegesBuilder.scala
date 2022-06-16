@@ -30,7 +30,6 @@ import org.apache.spark.sql.types.StructField
 
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 object PrivilegesBuilder {
@@ -162,12 +161,11 @@ object PrivilegesBuilder {
     def getDatabaseForTableIndent(tableIdent: TableIdentifier): TableIdentifier = {
 
       def getDatabaseFromSparkSession: Option[String] = {
-        if (AuthZUtils.isSparkVersionAtMost("2.4")) {
+        if (isSparkVersionAtMost("2.4")) {
           return Some(spark.catalog.currentDatabase)
-        } else if (AuthZUtils.isSparkVersionAtLeast("3.0")) {
-          val catalogManager = AuthZUtils.invoke(spark.sessionState, "catalogManager")
-          val currentNamespace =
-            AuthZUtils.invoke(catalogManager.asInstanceOf[AnyRef], "currentNamespace")
+        } else if (isSparkVersionAtLeast("3.0")) {
+          val catalogManager = invoke(spark.sessionState, "catalogManager")
+          val currentNamespace = invoke(catalogManager.asInstanceOf[AnyRef], "currentNamespace")
           val namespaces: Array[String] = currentNamespace.asInstanceOf[Array[String]]
           if (namespaces != null && namespaces.length == 1) {
             return Some(namespaces.head)
