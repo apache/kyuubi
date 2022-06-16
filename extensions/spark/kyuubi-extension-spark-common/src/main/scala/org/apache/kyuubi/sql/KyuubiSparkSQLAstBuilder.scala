@@ -19,23 +19,40 @@ package org.apache.kyuubi.sql
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.mutable.ListBuffer
-
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.misc.Interval
 import org.antlr.v4.runtime.tree.ParseTree
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.parser.ParserUtils.withOrigin
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
 import org.apache.kyuubi.sql.KyuubiSparkSQLParser._
-import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, OptimizeZorderStatementBase, Zorder, ZorderBase}
+import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, Zorder}
+import org.apache.spark.sql.catalyst.SQLConfHelper
 
-abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[AnyRef] {
-  def buildZorder(child: Seq[Expression]): ZorderBase
-  def buildOptimizeZorderStatement(
-      tableIdentifier: Seq[String],
-      query: LogicalPlan): OptimizeZorderStatementBase
+class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQLConfHelper {
+
+
+  def buildOptimizeStatement(
+      unparsedPredicateOptimize: UnparsedPredicateOptimize,
+      parseExpression: String => Expression): LogicalPlan = {
+
+    val UnparsedPredicateOptimize(tableIdent, tablePredicate, orderExpr) =
+      unparsedPredicateOptimize
+
+    val predicate = tablePredicate.map(parseExpression)
+    val table = UnresolvedRelation(tableIdent)
+    val tableWithFilter = predicate match {
+      case Some(expr) => Filter(expr, table)
+      case None => table
+    }
+    val query =
+      Sort(
+        SortOrder(orderExpr, Ascending, NullsLast, Seq.empty) :: Nil,
+        conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED),
+        Project(Seq(UnresolvedStar(None)), tableWithFilter))
+    OptimizeZorderStatement(tableIdent, query)
+  }
 
   /**
    * Create an expression from the given context. This method just passes the context on to the
@@ -52,7 +69,6 @@ abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[An
   override def visitOptimizeZorder(
       ctx: OptimizeZorderContext): UnparsedPredicateOptimize = withOrigin(ctx) {
     val tableIdent = multiPart(ctx.multipartIdentifier())
-    val table = UnresolvedRelation(tableIdent)
 
     val predicate = Option(ctx.whereClause().partitionPredicate).map(extractRawText(_))
 
@@ -65,9 +81,9 @@ abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[An
       if (zorderCols.length == 1) {
         zorderCols.head
       } else {
-        buildZorder(zorderCols)
+        Zorder(zorderCols)
       }
-    UnparsedPredicateOptimize(tableIdent, table, predicate, orderExpr)
+    UnparsedPredicateOptimize(tableIdent, predicate, orderExpr)
   }
 
   override def visitPassThrough(ctx: PassThroughContext): LogicalPlan = null
@@ -96,21 +112,11 @@ abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[An
       exprContext.getStart.getStartIndex,
       exprContext.getStop.getStopIndex))
   }
-
 }
 
-class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLAstBuilderBase {
-  override def buildZorder(child: Seq[Expression]): ZorderBase = {
-    Zorder(child)
-  }
-
-  override def buildOptimizeZorderStatement(
-      tableIdentifier: Seq[String],
-      query: LogicalPlan): OptimizeZorderStatementBase = {
-    OptimizeZorderStatement(tableIdentifier, query)
-  }
-}
-
+/**
+ * a logical plan contains an unparsed expression that will be parsed by spark.
+ */
 trait UnparsedExpressionLogicalPlan extends LogicalPlan {
   override def output: Seq[Attribute] = throw new UnsupportedOperationException()
 
@@ -123,6 +129,5 @@ trait UnparsedExpressionLogicalPlan extends LogicalPlan {
 
 case class UnparsedPredicateOptimize(
     tableIdent: Seq[String],
-    table: LogicalPlan,
     tablePredicate: Option[String],
     orderExpr: Expression) extends UnparsedExpressionLogicalPlan {}
