@@ -27,7 +27,8 @@ import java.util.List;
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
 import org.apache.hadoop.hive.common.type.TimestampTZUtil;
-import org.apache.hive.service.cli.TableSchema;
+import org.apache.hive.service.rpc.thrift.TTableSchema;
+import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSet;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
@@ -39,10 +40,10 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
   protected Object[] row;
   protected List<String> columnNames;
   protected List<String> normalizedColumnNames;
-  protected List<String> columnTypes;
+  protected List<TTypeId> columnTypes;
   protected List<JdbcColumnAttributes> columnAttributes;
 
-  private TableSchema schema;
+  private TTableSchema schema;
 
   @Override
   public int findColumn(String columnName) throws SQLException {
@@ -287,7 +288,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     if (columnIndex > row.length) {
       throw new SQLException("Invalid columnIndex: " + columnIndex);
     }
-    String columnType = columnTypes.get(columnIndex - 1);
+    TTypeId columnType = columnTypes.get(columnIndex - 1);
 
     try {
       Object evaluated = evaluate(columnType, row[columnIndex - 1]);
@@ -299,31 +300,31 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     }
   }
 
-  private Object evaluate(String columnType, Object value) {
+  private Object evaluate(TTypeId columnType, Object value) {
     if (value == null) {
       return null;
     }
-    switch (columnType.toLowerCase()) {
-      case "binary":
+    switch (columnType) {
+      case BINARY_TYPE:
         if (value instanceof String) {
           return ((String) value).getBytes();
         }
         return value;
-      case "timestamp":
+      case TIMESTAMP_TYPE:
         return Timestamp.valueOf((String) value);
-      case "timestamp with local time zone":
+      case TIMESTAMPLOCALTZ_TYPE:
         return TimestampTZUtil.parse((String) value);
-      case "decimal":
+      case DECIMAL_TYPE:
         return new BigDecimal((String) value);
-      case "date":
+      case DATE_TYPE:
         return Date.valueOf((String) value);
-      case "interval_year_month":
+      case INTERVAL_YEAR_MONTH_TYPE:
         return HiveIntervalYearMonth.valueOf((String) value);
-      case "interval_day_time":
+      case INTERVAL_DAY_TIME_TYPE:
         return HiveIntervalDayTime.valueOf((String) value);
-      case "array":
-      case "map":
-      case "struct":
+      case ARRAY_TYPE:
+      case MAP_TYPE:
+      case STRUCT_TYPE:
         // todo: returns json string. should recreate object from it?
         return value;
       default:
@@ -444,11 +445,11 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     return wasNull;
   }
 
-  protected void setSchema(TableSchema schema) {
+  protected void setSchema(TTableSchema schema) {
     this.schema = schema;
   }
 
-  protected TableSchema getSchema() {
+  protected TTableSchema getSchema() {
     return schema;
   }
 }

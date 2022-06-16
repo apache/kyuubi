@@ -21,12 +21,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.hive.service.rpc.thrift.TTypeId;
 
 public abstract class KyuubiMetaDataResultSet<M> extends KyuubiBaseResultSet {
   protected List<M> data = Collections.emptyList();
 
   public KyuubiMetaDataResultSet(
-      final List<String> columnNames, final List<String> columnTypes, final List<M> data)
+      final List<String> columnNames, final List<TTypeId> columnTypes, final List<M> data)
       throws SQLException {
     if (data != null) {
       this.data = new ArrayList<>(data);

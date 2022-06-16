@@ -26,6 +26,7 @@ import java.sql.Timestamp;
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
 import org.apache.hadoop.hive.common.type.TimestampTZ;
+import org.apache.hive.service.rpc.thrift.TTypeId;
 
 /** Column metadata. */
 public class JdbcColumn {
@@ -67,9 +68,9 @@ public class JdbcColumn {
     return type;
   }
 
-  static String columnClassName(String typeStr, JdbcColumnAttributes columnAttributes)
+  static String columnClassName(TTypeId typeStr, JdbcColumnAttributes columnAttributes)
       throws SQLException {
-    int columnType = typeStringToSqlType(typeStr);
+    int columnType = convertTTypeIdToSqlType(typeStr);
     switch (columnType) {
       case NULL:
         return "null";
@@ -104,9 +105,9 @@ public class JdbcColumn {
       case JAVA_OBJECT:
         {
           switch (typeStr) {
-            case "INTERVAL_YEAR_MONTH":
+            case INTERVAL_YEAR_MONTH_TYPE:
               return HiveIntervalYearMonth.class.getName();
-            case "INTERVAL_DAY_TIME":
+            case INTERVAL_DAY_TIME_TYPE:
               return HiveIntervalDayTime.class.getName();
             default:
               return String.class.getName();
@@ -120,107 +121,105 @@ public class JdbcColumn {
     }
   }
 
-  public static int typeStringToSqlType(String type) throws SQLException {
-    if ("string".equalsIgnoreCase(type)) {
-      return VARCHAR;
-    } else if ("varchar".equalsIgnoreCase(type)) {
-      return VARCHAR;
-    } else if ("char".equalsIgnoreCase(type)) {
-      return CHAR;
-    } else if ("float".equalsIgnoreCase(type)) {
-      return FLOAT;
-    } else if ("double".equalsIgnoreCase(type)) {
-      return DOUBLE;
-    } else if ("boolean".equalsIgnoreCase(type)) {
-      return BOOLEAN;
-    } else if ("tinyint".equalsIgnoreCase(type)) {
-      return TINYINT;
-    } else if ("smallint".equalsIgnoreCase(type)) {
-      return SMALLINT;
-    } else if ("int".equalsIgnoreCase(type)) {
-      return INTEGER;
-    } else if ("bigint".equalsIgnoreCase(type)) {
-      return BIGINT;
-    } else if ("date".equalsIgnoreCase(type)) {
-      return DATE;
-    } else if ("timestamp".equalsIgnoreCase(type)) {
-      return TIMESTAMP;
-    } else if ("timestamp with local time zone".equalsIgnoreCase(type)) {
-      return OTHER;
-    } else if ("interval_year_month".equalsIgnoreCase(type)) {
-      return OTHER;
-    } else if ("interval_day_time".equalsIgnoreCase(type)) {
-      return OTHER;
-    } else if ("decimal".equalsIgnoreCase(type)) {
-      return DECIMAL;
-    } else if ("binary".equalsIgnoreCase(type)) {
-      return BINARY;
-    } else if ("map".equalsIgnoreCase(type)) {
-      return JAVA_OBJECT;
-    } else if ("array".equalsIgnoreCase(type)) {
-      return ARRAY;
-    } else if ("struct".equalsIgnoreCase(type)) {
-      return STRUCT;
-    } else if ("uniontype".equalsIgnoreCase(type)) {
-      return OTHER;
-    } else if ("void".equalsIgnoreCase(type) || "null".equalsIgnoreCase(type)) {
-      return NULL;
+  public static int convertTTypeIdToSqlType(TTypeId type) throws SQLException {
+    switch (type) {
+      case STRING_TYPE:
+      case VARCHAR_TYPE:
+        return VARCHAR;
+      case CHAR_TYPE:
+        return CHAR;
+      case FLOAT_TYPE:
+        return FLOAT;
+      case DOUBLE_TYPE:
+        return DOUBLE;
+      case BOOLEAN_TYPE:
+        return BOOLEAN;
+      case TINYINT_TYPE:
+        return TINYINT;
+      case SMALLINT_TYPE:
+        return SMALLINT;
+      case INT_TYPE:
+        return INTEGER;
+      case BIGINT_TYPE:
+        return BIGINT;
+      case DATE_TYPE:
+        return DATE;
+      case TIMESTAMP_TYPE:
+        return TIMESTAMP;
+      case TIMESTAMPLOCALTZ_TYPE:
+      case INTERVAL_YEAR_MONTH_TYPE:
+      case INTERVAL_DAY_TIME_TYPE:
+      case UNION_TYPE:
+        return OTHER;
+      case DECIMAL_TYPE:
+        return DECIMAL;
+      case BINARY_TYPE:
+        return BINARY;
+      case MAP_TYPE:
+        return JAVA_OBJECT;
+      case ARRAY_TYPE:
+        return ARRAY;
+      case STRUCT_TYPE:
+        return STRUCT;
+      case NULL_TYPE:
+        return NULL;
+      default:
+        throw new SQLException("Invalid column type: " + type);
     }
-    throw new SQLException("Unrecognized column type: " + type);
   }
 
-  static String getColumnTypeName(String type) throws SQLException {
-    // TODO: this would be better handled in an enum
-    if ("string".equalsIgnoreCase(type)) {
-      return "string";
-    } else if ("varchar".equalsIgnoreCase(type)) {
-      return "varchar";
-    } else if ("char".equalsIgnoreCase(type)) {
-      return "char";
-    } else if ("float".equalsIgnoreCase(type)) {
-      return "float";
-    } else if ("double".equalsIgnoreCase(type)) {
-      return "double";
-    } else if ("boolean".equalsIgnoreCase(type)) {
-      return "boolean";
-    } else if ("tinyint".equalsIgnoreCase(type)) {
-      return "tinyint";
-    } else if ("smallint".equalsIgnoreCase(type)) {
-      return "smallint";
-    } else if ("int".equalsIgnoreCase(type)) {
-      return "int";
-    } else if ("bigint".equalsIgnoreCase(type)) {
-      return "bigint";
-    } else if ("timestamp".equalsIgnoreCase(type)) {
-      return "timestamp";
-    } else if ("timestamp with local time zone".equalsIgnoreCase(type)) {
-      return "timestamp with local time zone";
-    } else if ("date".equalsIgnoreCase(type)) {
-      return "date";
-    } else if ("interval_year_month".equalsIgnoreCase(type)) {
-      return "interval_year_month";
-    } else if ("interval_day_time".equalsIgnoreCase(type)) {
-      return "interval_day_time";
-    } else if ("decimal".equalsIgnoreCase(type)) {
-      return "decimal";
-    } else if ("binary".equalsIgnoreCase(type)) {
-      return "binary";
-    } else if ("void".equalsIgnoreCase(type) || "null".equalsIgnoreCase(type)) {
-      return "void";
-    } else if (type.equalsIgnoreCase("map")) {
-      return "map";
-    } else if (type.equalsIgnoreCase("array")) {
-      return "array";
-    } else if (type.equalsIgnoreCase("struct")) {
-      return "struct";
+  static String getColumnTypeName(TTypeId type) throws SQLException {
+    switch (type) {
+      case STRING_TYPE:
+        return "string";
+      case VARCHAR_TYPE:
+        return "varchar";
+      case CHAR_TYPE:
+        return "char";
+      case FLOAT_TYPE:
+        return "float";
+      case DOUBLE_TYPE:
+        return "double";
+      case BOOLEAN_TYPE:
+        return "boolean";
+      case TINYINT_TYPE:
+        return "tinyint";
+      case SMALLINT_TYPE:
+        return "smallint";
+      case INT_TYPE:
+        return "int";
+      case BIGINT_TYPE:
+        return "bigint";
+      case DATE_TYPE:
+        return "date";
+      case TIMESTAMP_TYPE:
+        return "timestamp";
+      case TIMESTAMPLOCALTZ_TYPE:
+        return "timestamp with local time zone";
+      case INTERVAL_YEAR_MONTH_TYPE:
+        return "interval_year_month";
+      case INTERVAL_DAY_TIME_TYPE:
+        return "interval_day_time";
+      case DECIMAL_TYPE:
+        return "decimal";
+      case BINARY_TYPE:
+        return "binary";
+      case MAP_TYPE:
+        return "map";
+      case ARRAY_TYPE:
+        return "array";
+      case STRUCT_TYPE:
+        return "struct";
+      case NULL_TYPE:
+        return "void";
+      default:
+        throw new SQLException("Invalid column type: " + type);
     }
-
-    throw new SQLException("Unrecognized column type: " + type);
   }
 
-  static int columnDisplaySize(String typeStr, JdbcColumnAttributes columnAttributes)
+  static int columnDisplaySize(TTypeId typeStr, JdbcColumnAttributes columnAttributes)
       throws SQLException {
-    int columnType = typeStringToSqlType(typeStr);
+    int columnType = convertTTypeIdToSqlType(typeStr);
     switch (columnType) {
       case NULL:
         return 4; // "NULL"
@@ -263,9 +262,9 @@ public class JdbcColumn {
     }
   }
 
-  static int columnPrecision(String typeStr, JdbcColumnAttributes columnAttributes)
+  static int columnPrecision(TTypeId typeStr, JdbcColumnAttributes columnAttributes)
       throws SQLException {
-    int columnType = typeStringToSqlType(typeStr);
+    int columnType = convertTTypeIdToSqlType(typeStr);
     // according to hiveTypeToSqlType possible options are:
     switch (columnType) {
       case NULL:
@@ -304,10 +303,10 @@ public class JdbcColumn {
       case JAVA_OBJECT:
         {
           switch (typeStr) {
-            case "INTERVAL_YEAR_MONTH":
+            case INTERVAL_YEAR_MONTH_TYPE:
               // -yyyyyyy-mm  : should be more than enough
               return 11;
-            case "INTERVAL_DAY_TIME":
+            case INTERVAL_DAY_TIME_TYPE:
               // -ddddddddd hh:mm:ss.nnnnnnnnn
               return 29;
             default:

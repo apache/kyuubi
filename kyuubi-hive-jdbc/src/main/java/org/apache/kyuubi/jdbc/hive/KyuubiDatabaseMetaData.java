@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import static org.apache.hive.service.rpc.thrift.TTypeId.*;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -27,10 +29,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.jar.Attributes;
 import org.apache.hadoop.hive.metastore.TableType;
-import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hive.service.cli.GetInfoType;
 import org.apache.hive.service.cli.HiveSQLException;
-import org.apache.hive.service.cli.TableSchema;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLDatabaseMetaData;
@@ -94,7 +94,9 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   private static final class ClientInfoPropertiesResultSet extends KyuubiMetaDataResultSet<Object> {
     private static final String[] COLUMNS = {"NAME", "MAX_LEN", "DEFAULT_VALUE", "DESCRIPTION"};
-    private static final String[] COLUMN_TYPES = {"STRING", "INT", "STRING", "STRING"};
+    private static final TTypeId[] COLUMN_TYPES = {
+      STRING_TYPE, TTypeId.INT_TYPE, STRING_TYPE, STRING_TYPE
+    };
 
     private static final Object[][] DATA = {
       {"ApplicationName", 1000, null, null},
@@ -105,11 +107,17 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
     public ClientInfoPropertiesResultSet() throws SQLException {
       super(Arrays.asList(COLUMNS), Arrays.asList(COLUMN_TYPES), null);
-      List<FieldSchema> fieldSchemas = new ArrayList<>(COLUMNS.length);
+      List<TColumnDesc> fieldSchemas = new ArrayList<>(COLUMNS.length);
       for (int i = 0; i < COLUMNS.length; ++i) {
-        fieldSchemas.add(new FieldSchema(COLUMNS[i], COLUMN_TYPES[i], null));
+        TColumnDesc tColumnDesc = new TColumnDesc();
+        tColumnDesc.setColumnName(COLUMNS[i]);
+        TTypeDesc tTypeDesc = new TTypeDesc();
+        tTypeDesc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(STRING_TYPE)));
+        tColumnDesc.setTypeDesc(tTypeDesc);
+        tColumnDesc.setPosition(i);
+        fieldSchemas.add(tColumnDesc);
       }
-      setSchema(new TableSchema(fieldSchemas));
+      setSchema(new TTableSchema(fieldSchemas));
     }
 
     @Override
@@ -373,20 +381,20 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
                 "PK_NAME",
                 "DEFERRABILITY"),
             Arrays.asList(
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "SMALLINT",
-                "SMALLINT",
-                "SMALLINT",
-                "STRING",
-                "STRING",
-                "STRING"))
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE))
         .build();
   }
 
@@ -413,8 +421,19 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
                 "PAGES",
                 "FILTER_CONDITION"),
             Arrays.asList(
-                "STRING", "STRING", "STRING", "BOOLEAN", "STRING", "STRING", "SHORT", "SHORT",
-                "STRING", "STRING", "INT", "INT", "STRING"))
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                BOOLEAN_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                STRING_TYPE))
         .build();
   }
 
@@ -492,26 +511,26 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
                 "IS_NULLABLE",
                 "SPECIFIC_NAME"),
             Arrays.asList(
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "SMALLINT",
-                "INT",
-                "STRING",
-                "INT",
-                "INT",
-                "SMALLINT",
-                "SMALLINT",
-                "SMALLINT",
-                "STRING",
-                "STRING",
-                "INT",
-                "INT",
-                "INT",
-                "INT",
-                "STRING",
-                "STRING"))
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                SMALLINT_TYPE,
+                INT_TYPE,
+                STRING_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                SMALLINT_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                INT_TYPE,
+                STRING_TYPE,
+                STRING_TYPE))
         .build();
   }
 
@@ -540,15 +559,15 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
                 "PROCEDURE_TYPE",
                 "SPECIFIC_NAME"),
             Arrays.asList(
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "STRING",
-                "SMALLINT",
-                "STRING"))
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE,
+                STRING_TYPE))
         .build();
   }
 
@@ -741,7 +760,14 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
             "DATA_TYPE",
             "REMARKS",
             "BASE_TYPE"),
-        Arrays.asList("STRING", "STRING", "STRING", "STRING", "INT", "STRING", "INT"),
+        Arrays.asList(
+            STRING_TYPE,
+            STRING_TYPE,
+            STRING_TYPE,
+            STRING_TYPE,
+            TTypeId.INT_TYPE,
+            STRING_TYPE,
+            TTypeId.INT_TYPE),
         null) {
 
       @Override
