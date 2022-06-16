@@ -62,44 +62,14 @@ zorderClause
     : ZORDER BY order+=multipartIdentifier (',' order+=multipartIdentifier)*
     ;
 
-query
-    : '('? multipartIdentifier comparisonOperator constant ')'?
-    ;
-
 // We don't have an expression rule in our grammar here, so we just grab the tokens and defer
 // parsing them to later.
 predicateToken
     :  .+?
     ;
 
-comparisonOperator
-    : EQ | NEQ | NEQJ | LT | LTE | GT | GTE | NSEQ
-    ;
-
-constant
-    : NULL                     #nullLiteral
-    | identifier STRING        #typeConstructor
-    | number                   #numericLiteral
-    | booleanValue             #booleanLiteral
-    | STRING+                  #stringLiteral
-    ;
-
 multipartIdentifier
     : parts+=identifier ('.' parts+=identifier)*
-    ;
-
-booleanValue
-    : TRUE | FALSE
-    ;
-
-number
-    : MINUS? DECIMAL_VALUE             #decimalLiteral
-    | MINUS? INTEGER_VALUE             #integerLiteral
-    | MINUS? BIGINT_LITERAL            #bigIntLiteral
-    | MINUS? SMALLINT_LITERAL          #smallIntLiteral
-    | MINUS? TINYINT_LITERAL           #tinyIntLiteral
-    | MINUS? DOUBLE_LITERAL            #doubleLiteral
-    | MINUS? BIGDECIMAL_LITERAL        #bigDecimalLiteral
     ;
 
 identifier
@@ -136,7 +106,6 @@ BY: 'BY';
 FALSE: 'FALSE';
 DATE: 'DATE';
 INTERVAL: 'INTERVAL';
-NULL: 'NULL';
 OPTIMIZE: 'OPTIMIZE';
 OR: 'OR';
 TABLE: 'TABLE';
@@ -145,21 +114,7 @@ TRUE: 'TRUE';
 WHERE: 'WHERE';
 ZORDER: 'ZORDER';
 
-EQ  : '=' | '==';
-NSEQ: '<=>';
-NEQ : '<>';
-NEQJ: '!=';
-LT  : '<';
-LTE : '<=' | '!>';
-GT  : '>';
-GTE : '>=' | '!<';
-
 MINUS: '-';
-
-STRING
-    : '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
-    | '"' ( ~('"'|'\\') | ('\\' .) )* '"'
-    ;
 
 BIGINT_LITERAL
     : DIGIT+ 'L'

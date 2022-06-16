@@ -22,8 +22,8 @@ import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
+import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 import org.apache.spark.sql.catalyst.expressions.{Ascending, Expression, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.parser.{ParseErrorListener, ParseException, ParserInterface, PostProcessor}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
@@ -34,7 +34,11 @@ abstract class KyuubiSparkSQLParserBase extends ParserInterface {
   def delegate: ParserInterface
   def astBuilder: KyuubiSparkSQLAstBuilderBase
 
-  def buildOptimize(tableIdent: Seq[String], table: LogicalPlan, predicate: Option[Expression], orderExpr: Expression): LogicalPlan = {
+  def buildOptimize(
+      tableIdent: Seq[String],
+      table: LogicalPlan,
+      predicate: Option[Expression],
+      orderExpr: Expression): LogicalPlan = {
     val tableWithFilter = predicate match {
       case Some(expr) => Filter(expr, table)
       case None => table
@@ -51,11 +55,11 @@ abstract class KyuubiSparkSQLParserBase extends ParserInterface {
   override def parsePlan(sqlText: String): LogicalPlan = parse(sqlText) { parser =>
     astBuilder.visit(parser.singleStatement()) match {
       case optimize: UnparsedPredicateOptimize =>
-        buildOptimize(optimize.tableIdent,
+        buildOptimize(
+          optimize.tableIdent,
           optimize.table,
           optimize.tablePredicate.map(delegate.parseExpression),
-          optimize.orderExpr
-        )
+          optimize.orderExpr)
       case plan: LogicalPlan => plan
       case _ => delegate.parsePlan(sqlText)
     }
