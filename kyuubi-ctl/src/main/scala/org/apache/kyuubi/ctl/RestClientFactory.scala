@@ -49,6 +49,9 @@ object RestClientFactory {
     val authSchema =
       getRestConfig("authSchema", conf.get(CTL_REST_CLIENT_AUTH_SCHEMA), cliConfig, map)
 
+    val maxAttempts = conf.get(CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS)
+    val attemptWaitTime = conf.get(CTL_REST_CLIENT_REQUEST_ATTEMPT_WAIT).toInt
+
     var kyuubiRestClient: KyuubiRestClient = null
     authSchema.toLowerCase match {
       case "basic" =>
@@ -59,6 +62,8 @@ object RestClientFactory {
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
           .username(username)
           .password(password)
+          .maxAttempts(maxAttempts)
+          .attemptWaitTime(attemptWaitTime)
           .build()
       case "spnego" =>
         val spnegoHost =
@@ -67,6 +72,8 @@ object RestClientFactory {
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
           .spnegoHost(spnegoHost)
+          .maxAttempts(maxAttempts)
+          .attemptWaitTime(attemptWaitTime)
           .build()
       case _ => throw new KyuubiException(s"Unsupported auth schema: $authSchema")
     }

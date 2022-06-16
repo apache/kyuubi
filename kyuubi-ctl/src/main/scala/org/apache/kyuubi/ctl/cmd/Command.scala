@@ -34,6 +34,10 @@ abstract class Command(cliConfig: CliConfig) extends Logging {
 
   val conf = KyuubiConf().loadFileDefaults()
 
+  cliConfig.conf.foreach { case (key, value) =>
+    conf.set(key, value)
+  }
+
   val verbose = cliConfig.commonOpts.verbose
 
   val normalizedCliConfig: CliConfig = useDefaultPropertyValueIfMissing()
