@@ -32,11 +32,12 @@ import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.ApplicationOperation.{APP_ERROR_KEY, APP_ID_KEY, APP_NAME_KEY, APP_STATE_KEY, APP_URL_KEY}
 import org.apache.kyuubi.engine.spark.{SparkBatchProcessBuilder, SparkProcessBuilder}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
+import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.authentication.{KyuubiAuthenticationFactory, UserDefinedEngineSecuritySecretProvider}
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 
@@ -54,7 +55,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     sessionManager.allSessions().foreach { session =>
       sessionManager.closeSession(session.handle)
     }
-    sessionManager.getBatchesFromStateStore(null, null, null, 0, 0, 0, Int.MaxValue).foreach {
+    sessionManager.getBatchesFromMetadataStore(null, null, null, 0, 0, 0, Int.MaxValue).foreach {
       batch =>
         sessionManager.applicationManager.killApplication(None, batch.getId)
         sessionManager.cleanupMetadata(batch.getId)
@@ -381,7 +382,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val batchId1 = UUID.randomUUID().toString
     val batchId2 = UUID.randomUUID().toString
 
-    val batchMetadata = SessionMetadata(
+    val batchMetadata = Metadata(
       identifier = batchId1,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",
@@ -406,8 +407,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     sessionManager.insertMetadata(batchMetadata)
     sessionManager.insertMetadata(batchMetadata2)
 
-    assert(sessionManager.getBatchFromStateStore(batchId1).getState.equals("PENDING"))
-    assert(sessionManager.getBatchFromStateStore(batchId2).getState.equals("PENDING"))
+    assert(sessionManager.getBatchFromMetadataStore(batchId1).getState.equals("PENDING"))
+    assert(sessionManager.getBatchFromMetadataStore(batchId2).getState.equals("PENDING"))
 
     val sparkBatchProcessBuilder = new SparkBatchProcessBuilder(
       "kyuubi",
@@ -427,10 +428,15 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(applicationStatus.isDefined)
     }
 
-    sessionManager.updateBatchMetadata(
-      batchId2,
-      OperationState.RUNNING,
-      applicationStatus.get)
+    val metadataToUpdate = Metadata(
+      identifier = batchId2,
+      state = OperationState.RUNNING.toString,
+      engineId = applicationStatus.get.get(APP_ID_KEY).orNull,
+      engineName = applicationStatus.get.get(APP_NAME_KEY).orNull,
+      engineUrl = applicationStatus.get.get(APP_URL_KEY).orNull,
+      engineState = applicationStatus.get.get(APP_STATE_KEY).orNull,
+      engineError = applicationStatus.get.get(APP_ERROR_KEY))
+    sessionManager.updateMetadata(metadataToUpdate)
 
     val restFe = fe.asInstanceOf[KyuubiRestFrontendService]
     restFe.recoverBatchSessions()
@@ -451,7 +457,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(!session2.batchJobSubmissionOp.builder.processLaunched)
     }
 
-    assert(sessionManager.getBatchesFromStateStore(
+    assert(sessionManager.getBatchesFromMetadataStore(
       "SPARK",
       null,
       null,
@@ -463,7 +469,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("get local log internal redirection") {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
-    val metadata = SessionMetadata(
+    val metadata = Metadata(
       identifier = UUID.randomUUID().toString,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",
@@ -513,7 +519,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("delete batch internal redirection") {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
-    val metadata = SessionMetadata(
+    val metadata = Metadata(
       identifier = UUID.randomUUID().toString,
       sessionType = SessionType.BATCH,
       realUser = "kyuubi",

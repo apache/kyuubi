@@ -1004,48 +1004,65 @@ object KyuubiConf {
       .intConf
       .createWithDefault(100)
 
-  val SERVER_STATE_STORE_CLASS: ConfigEntry[String] =
-    buildConf("kyuubi.server.state.store.class")
-      .doc("Fully qualified class name for server state store.")
+  val METADATA_STORE_CLASS: ConfigEntry[String] =
+    buildConf("kyuubi.metadata.store.class")
+      .doc("Fully qualified class name for server metadata store.")
       .version("1.6.0")
       .stringConf
-      .createWithDefault("org.apache.kyuubi.server.statestore.jdbc.JDBCStateStore")
+      .createWithDefault("org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStore")
 
-  val SERVER_STATE_STORE_CLEANER_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.server.state.store.cleaner.enabled")
-      .doc("Whether to clean the state store periodically. If it is enabled, Kyuubi will clean" +
-        " the state information that is in terminate state with max age limitation.")
+  val METADATA_CLEANER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metadata.cleaner.enabled")
+      .doc("Whether to clean the metadata periodically. If it is enabled, Kyuubi will clean the" +
+        " metadata that is in terminate state with max age limitation.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
 
-  val SERVER_STATE_STORE_MAX_AGE: ConfigEntry[Long] =
-    buildConf("kyuubi.server.state.store.max.age")
-      .doc("The maximum age of state info in state store.")
+  val METADATA_MAX_AGE: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.max.age")
+      .doc("The maximum age of metadata, the metadata that exceeds the age will be cleaned.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofDays(3).toMillis)
 
-  val SERVER_STATE_STORE_CLEANER_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.server.state.store.cleaner.interval")
-      .doc("The interval to clean state store.")
+  val METADATA_CLEANER_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.cleaner.interval")
+      .doc("The interval to check and clean expired metadata.")
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
-  val SERVER_STATE_STORE_SESSIONS_RECOVERY_PER_BATCH: ConfigEntry[Int] =
-    buildConf("kyuubi.server.state.store.sessions.recovery.per.batch")
-      .doc("The number of sessions to recover from state store per batch.")
-      .version("1.6.0")
-      .intConf
-      .createWithDefault(100)
-
-  val SERVER_STATE_STORE_SESSIONS_RECOVERY_NUM_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.server.state.store.sessions.recovery.num.threads")
-      .doc("The number of threads for sessions recovery from state store.")
+  val METADATA_RECOVERY_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.recovery.threads")
+      .doc("The number of threads for recovery from metadata store when Kyuubi server restarting.")
       .version("1.6.0")
       .intConf
       .createWithDefault(10)
+
+  val METADATA_REQUEST_RETRY_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.request.retry.threads")
+      .doc("Number of threads in the metadata request retry manager thread pool. The metadata" +
+        " store might be unavailable sometimes and the requests will fail, to tolerant for this" +
+        " case and unblock the main thread, we support to retry the failed requests in async way.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(10)
+
+  val METADATA_REQUEST_RETRY_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.request.retry.interval")
+      .doc("The interval to check and trigger the metadata request retry tasks.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
+  val METADATA_REQUEST_RETRY_QUEUE_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.request.retry.queue.size")
+      .doc("The maximum queue size for buffering metadata requests in memory when the external" +
+        " metadata storage is down. Requests will be dropped if the queue exceeds.")
+      .version("1.6.0")
+      .intConf
+      .createWithDefault(65536)
 
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")

@@ -38,7 +38,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
+import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -62,7 +62,7 @@ class BatchJobSubmission(
     className: String,
     batchConf: Map[String, String],
     batchArgs: Seq[String],
-    recoveryMetadata: Option[SessionMetadata])
+    recoveryMetadata: Option[Metadata])
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
 
   override def statement: String = "BATCH_JOB_SUBMISSION"
@@ -118,11 +118,18 @@ class BatchJobSubmission(
       } else {
         0L
       }
-    session.sessionManager.updateBatchMetadata(
-      batchId,
-      state,
-      applicationStatus.getOrElse(Map.empty),
-      endTime)
+
+    val engineAppStatus = applicationStatus.getOrElse(Map.empty)
+    val metadataToUpdate = Metadata(
+      identifier = batchId,
+      state = state.toString,
+      engineId = engineAppStatus.get(APP_ID_KEY).orNull,
+      engineName = engineAppStatus.get(APP_NAME_KEY).orNull,
+      engineUrl = engineAppStatus.get(APP_URL_KEY).orNull,
+      engineState = engineAppStatus.get(APP_STATE_KEY).orNull,
+      engineError = engineAppStatus.get(APP_ERROR_KEY),
+      endTime = endTime)
+    session.sessionManager.updateMetadata(metadataToUpdate)
   }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)

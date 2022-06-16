@@ -18,7 +18,6 @@
 package org.apache.kyuubi.session
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
@@ -33,10 +32,9 @@ import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
-import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.statestore.SessionStateStore
-import org.apache.kyuubi.server.statestore.api.SessionMetadata
+import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
+import org.apache.kyuubi.server.metadata.api.Metadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
@@ -47,14 +45,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
-  private lazy val sessionStateStore = new SessionStateStore()
+  private val metadataManager = new MetadataManager()
 
   private var limiter: Option[SessionLimiter] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(applicationManager)
     addService(credentialsManager)
-    addService(sessionStateStore)
+    addService(metadataManager)
     initSessionLimiter(conf)
     super.initialize(conf)
   }
@@ -114,7 +112,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String],
       batchRequest: BatchRequest,
-      recoveryMetadata: Option[SessionMetadata] = None): KyuubiBatchSessionImpl = {
+      recoveryMetadata: Option[Metadata] = None): KyuubiBatchSessionImpl = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     new KyuubiBatchSessionImpl(
       username,
@@ -169,23 +167,27 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     getSessionOption(sessionHandle).map(_.asInstanceOf[KyuubiBatchSessionImpl]).orNull
   }
 
-  def insertMetadata(metadata: SessionMetadata): Unit = {
-    sessionStateStore.insertMetadata(metadata)
+  def insertMetadata(metadata: Metadata): Unit = {
+    metadataManager.insertMetadata(metadata)
   }
 
-  def updateBatchMetadata(
-      batchId: String,
-      state: OperationState,
-      applicationStatus: Map[String, String],
-      endTime: Long = 0L): Unit = {
-    sessionStateStore.updateBatchMetadata(batchId, state.toString, applicationStatus, endTime)
+  def updateMetadata(metadata: Metadata): Unit = {
+    metadataManager.updateMetadata(metadata)
   }
 
-  def getBatchFromStateStore(batchId: String): Batch = {
-    sessionStateStore.getBatch(batchId)
+  def getMetadataRequestsRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {
+    Option(metadataManager.getMetadataRequestsRetryRef(identifier))
   }
 
-  def getBatchesFromStateStore(
+  def deRegisterMetadataRequestsRetryRef(identifier: String): Unit = {
+    metadataManager.deRegisterRequestsRetryRef(identifier)
+  }
+
+  def getBatchFromMetadataStore(batchId: String): Batch = {
+    metadataManager.getBatch(batchId)
+  }
+
+  def getBatchesFromMetadataStore(
       batchType: String,
       batchUser: String,
       batchState: String,
@@ -193,16 +195,16 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       endTime: Long,
       from: Int,
       size: Int): Seq[Batch] = {
-    sessionStateStore.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
+    metadataManager.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
   }
 
-  def getBatchSessionMetadata(batchId: String): SessionMetadata = {
-    sessionStateStore.getBatchSessionMetadata(batchId)
+  def getBatchMetadata(batchId: String): Metadata = {
+    metadataManager.getBatchSessionMetadata(batchId)
   }
 
   @VisibleForTesting
   def cleanupMetadata(identifier: String): Unit = {
-    sessionStateStore.cleanupMetadataById(identifier)
+    metadataManager.cleanupMetadataById(identifier)
   }
 
   override def start(): Unit = synchronized {
@@ -215,43 +217,29 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSessionImpl] = {
-    val recoveryPerBatch = conf.get(SERVER_STATE_STORE_SESSIONS_RECOVERY_PER_BATCH)
+    Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
+      metadataManager.getBatchesRecoveryMetadata(
+        stateToRecover.toString,
+        kyuubiInstance,
+        0,
+        Int.MaxValue).map { metadata =>
+        val batchRequest = new BatchRequest(
+          metadata.engineType,
+          metadata.resource,
+          metadata.className,
+          metadata.requestName,
+          metadata.requestConf.asJava,
+          metadata.requestArgs.asJava)
 
-    val batchSessionsToRecover = ListBuffer[KyuubiBatchSessionImpl]()
-    Seq(OperationState.PENDING, OperationState.RUNNING).foreach { stateToRecover =>
-      var offset = 0
-      var lastRecoveryNum = Int.MaxValue
-
-      while (lastRecoveryNum >= recoveryPerBatch) {
-        val metadataList = sessionStateStore.getBatchesRecoveryMetadata(
-          stateToRecover.toString,
-          kyuubiInstance,
-          offset,
-          recoveryPerBatch)
-        metadataList.foreach { metadata =>
-          val batchRequest = new BatchRequest(
-            metadata.engineType,
-            metadata.resource,
-            metadata.className,
-            metadata.requestName,
-            metadata.requestConf.asJava,
-            metadata.requestArgs.asJava)
-
-          val batchSession = createBatchSession(
-            metadata.username,
-            "anonymous",
-            metadata.ipAddress,
-            metadata.requestConf,
-            batchRequest,
-            Some(metadata))
-          batchSessionsToRecover += batchSession
-        }
-
-        lastRecoveryNum = metadataList.size
-        offset += lastRecoveryNum
+        createBatchSession(
+          metadata.username,
+          "anonymous",
+          metadata.ipAddress,
+          metadata.requestConf,
+          batchRequest,
+          Some(metadata))
       }
     }
-    batchSessionsToRecover
   }
 
   override protected def isServer: Boolean = true

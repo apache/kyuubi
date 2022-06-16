@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.statestore.api
+package org.apache.kyuubi.server.metadata.api
 
 import org.apache.kyuubi.session.SessionType.SessionType
 
@@ -48,7 +48,7 @@ import org.apache.kyuubi.session.SessionType.SessionType
  * @param engineError the engine error diagnose.
  * @param endTime the end time.
  */
-case class SessionMetadata(
+case class Metadata(
     identifier: String,
     sessionType: SessionType = null,
     realUser: String = null,

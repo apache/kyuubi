@@ -1,6 +1,6 @@
 -- the metadata table ddl
 
-CREATE TABLE session_metadata(
+CREATE TABLE metadata(
     key_id bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'the auto increment key id',
     identifier varchar(36) NOT NULL COMMENT 'the identifier id, which is an UUID',
     session_type varchar(128) NOT NULL COMMENT 'the session type, SQL or BATCH',
@@ -24,7 +24,7 @@ CREATE TABLE session_metadata(
     engine_error mediumtext COMMENT 'the engine application diagnose',
     end_time bigint COMMENT 'the metadata end time',
     INDEX kyuubi_instance_index(kyuubi_instance),
-    INDEX identifier_index(identifier),
+    UNIQUE INDEX unique_identifier_index(identifier),
     INDEX user_name_index(user_name),
     INDEX engine_type_index(engine_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

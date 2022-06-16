@@ -336,6 +336,26 @@ kyuubi.kinit.max.attempts|10|How many times will `kinit` process retry|int|1.0.0
 kyuubi.kinit.principal|&lt;undefined&gt;|Name of the Kerberos principal.|string|1.0.0
 
 
+### Metadata
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.metadata.cleaner.enabled|true|Whether to clean the metadata periodically. If it is enabled, Kyuubi will clean the metadata that is in terminate state with max age limitation.|boolean|1.6.0
+kyuubi.metadata.cleaner.interval|PT30M|The interval to check and clean expired metadata.|duration|1.6.0
+kyuubi.metadata.max.age|PT72H|The maximum age of metadata, the metadata that exceeds the age will be cleaned.|duration|1.6.0
+kyuubi.metadata.recovery.threads|10|The number of threads for recovery from metadata store when Kyuubi server restarting.|int|1.6.0
+kyuubi.metadata.request.retry.interval|PT5S|The interval to check and trigger the metadata request retry tasks.|duration|1.6.0
+kyuubi.metadata.request.retry.queue.size|65536|The maximum queue size for buffering metadata requests in memory when the external metadata storage is down. Requests will be dropped if the queue exceeds.|int|1.6.0
+kyuubi.metadata.request.retry.threads|10|Number of threads in the metadata request retry manager thread pool. The metadata store might be unavailable sometimes and the requests will fail, to tolerant for this case and unblock the main thread, we support to retry the failed requests in async way.|int|1.6.0
+kyuubi.metadata.store.class|org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStore|Fully qualified class name for server metadata store.|string|1.6.0
+kyuubi.metadata.store.jdbc.database.schema.init|true|Whether to init the jdbc metadata store database schema.|boolean|1.6.0
+kyuubi.metadata.store.jdbc.database.type|DERBY|The database type for server jdbc metadata store.<ul> <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li> <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li> <li>CUSTOM: User-defined database type, need specify the jdbc driver in addition.</li> Note that: The jdbc datasource is powered by HiKariCP, for datasource properties, please specify them with prefix: kyuubi.server.metadata.store.jdbc.datasource. For example, kyuubi.server.metadata.store.jdbc.datasource.connectionTimeout=10000.|string|1.6.0
+kyuubi.metadata.store.jdbc.driver|&lt;undefined&gt;|JDBC driver class name for server jdbc metadata store.|string|1.6.0
+kyuubi.metadata.store.jdbc.password||The password for server jdbc metadata store.|string|1.6.0
+kyuubi.metadata.store.jdbc.url|jdbc:derby:memory:kyuubi_state_store_db;create=true|The jdbc url for server jdbc metadata store. By defaults, it is a DERBY in-memory database url, and the state information is not shared across kyuubi instances. To enable multiple kyuubi instances high available, please specify a production jdbc url.|string|1.6.0
+kyuubi.metadata.store.jdbc.user||The username for server jdbc metadata store.|string|1.6.0
+
+
 ### Metrics
 
 Key | Default | Meaning | Type | Since
@@ -379,18 +399,6 @@ kyuubi.server.limit.connections.per.user|&lt;undefined&gt;|Maximum kyuubi server
 kyuubi.server.limit.connections.per.user.ipaddress|&lt;undefined&gt;|Maximum kyuubi server connections per user:ipaddress combination. Any user-ipaddress exceeding this limit will not be allowed to connect.|int|1.6.0
 kyuubi.server.name|&lt;undefined&gt;|The name of Kyuubi Server.|string|1.5.0
 kyuubi.server.redaction.regex|&lt;undefined&gt;|Regex to decide which Kyuubi contain sensitive information. When this regex matches a property key or value, the value is redacted from the various logs.||1.6.0
-kyuubi.server.state.store.class|org.apache.kyuubi.server.statestore.jdbc.JDBCStateStore|Fully qualified class name for server state store.|string|1.6.0
-kyuubi.server.state.store.cleaner.enabled|true|Whether to clean the state store periodically. If it is enabled, Kyuubi will clean the state information that is in terminate state with max age limitation.|boolean|1.6.0
-kyuubi.server.state.store.cleaner.interval|PT30M|The interval to clean state store.|duration|1.6.0
-kyuubi.server.state.store.jdbc.database.schema.init|true|Whether to init the jdbc state store database schema.|boolean|1.6.0
-kyuubi.server.state.store.jdbc.database.type|DERBY|The database type for server jdbc state store.<ul> <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li> <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li> <li>CUSTOM: User-defined database type, need specify the jdbc driver in addition.</li> Note that: The jdbc datasource is powered by HiKariCP, for datasource properties, please specify them with prefix: kyuubi.server.state.store.jdbc.datasource. For example, kyuubi.server.state.store.jdbc.datasource.connectionTimeout=10000.|string|1.6.0
-kyuubi.server.state.store.jdbc.driver|&lt;undefined&gt;|JDBC driver class name for server jdbc state store.|string|1.6.0
-kyuubi.server.state.store.jdbc.password||The password for server jdbc state store.|string|1.6.0
-kyuubi.server.state.store.jdbc.url|jdbc:derby:memory:kyuubi_state_store_db;create=true|The jdbc url for server jdbc state store. By defaults, it is a DERBY in-memory database url, and the state information is not shared across kyuubi instances. To enable multiple kyuubi instances high available, please specify a production jdbc url.|string|1.6.0
-kyuubi.server.state.store.jdbc.user||The username for server jdbc state store.|string|1.6.0
-kyuubi.server.state.store.max.age|PT72H|The maximum age of state info in state store.|duration|1.6.0
-kyuubi.server.state.store.sessions.recovery.num.threads|10|The number of threads for sessions recovery from state store.|int|1.6.0
-kyuubi.server.state.store.sessions.recovery.per.batch|100|The number of sessions to recover from state store per batch.|int|1.6.0
 
 
 ### Session
