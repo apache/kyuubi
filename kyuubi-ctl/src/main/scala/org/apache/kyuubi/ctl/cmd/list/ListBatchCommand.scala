@@ -23,7 +23,7 @@ import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.Render
 
-class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class ListBatchCommand(cliConfig: CliConfig) extends Command[GetBatchesResponse](cliConfig) {
 
   def validate(): Unit = {
     if (normalizedCliConfig.batchOpts.createTime < 0) {
@@ -38,11 +38,11 @@ class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  def run(): Unit = {
+  def doRun(): GetBatchesResponse = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchOpts = normalizedCliConfig.batchOpts
-      val batchListInfo: GetBatchesResponse = batchRestApi.listBatches(
+      batchRestApi.listBatches(
         batchOpts.batchType,
         batchOpts.batchUser,
         batchOpts.batchState,
@@ -50,9 +50,10 @@ class ListBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
         batchOpts.endTime,
         if (batchOpts.from < 0) 0 else batchOpts.from,
         batchOpts.size)
-
-      info(Render.renderBatchListInfo(batchListInfo))
     }
   }
 
+  def render(batchListInfo: GetBatchesResponse): Unit = {
+    info(Render.renderBatchListInfo(batchListInfo))
+  }
 }

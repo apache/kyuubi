@@ -16,16 +16,20 @@
  */
 package org.apache.kyuubi.ctl.cmd.log
 
+import java.util.{Map => JMap}
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, OperationLog}
+import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
-import org.apache.kyuubi.ctl.util.BatchUtil
+import org.apache.kyuubi.ctl.util.{BatchUtil, Render}
 
-class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class LogBatchCommand(cliConfig: CliConfig, restConfigMap: JMap[String, Object] = null)
+  extends Command[Batch](cliConfig) {
 
   def validate(): Unit = {
     if (normalizedCliConfig.batchOpts.batchId == null) {
@@ -33,39 +37,50 @@ class LogBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
     }
   }
 
-  def run(): Unit = {
-    withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
+  def doRun(): Batch = {
+    withKyuubiRestClient(normalizedCliConfig, restConfigMap, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchId = normalizedCliConfig.batchOpts.batchId
-      var from = normalizedCliConfig.batchOpts.from
+      var from = math.max(normalizedCliConfig.batchOpts.from, 0)
       val size = normalizedCliConfig.batchOpts.size
-      var log: OperationLog = batchRestApi.getBatchLocalLog(
-        batchId,
-        from,
-        size)
-      log.getLogRowSet.asScala.foreach(x => info(x))
 
+      var log: OperationLog = null
       var done = false
       var batch: Batch = null
-      from = if (from < 0) log.getLogRowSet.size else from + log.getLogRowSet.size
-      if (normalizedCliConfig.logOpts.forward) {
-        while (!done) {
+
+      while (!done) {
+        try {
           log = batchRestApi.getBatchLocalLog(
             batchId,
             from,
             size)
           from += log.getLogRowSet.size
           log.getLogRowSet.asScala.foreach(x => info(x))
+          if (!normalizedCliConfig.logOpts.forward) {
+            done = true
+          }
+        } catch {
+          case e: KyuubiRestException =>
+            error(s"Error fetching batch logs: ${e.getMessage}")
+        }
 
-          Thread.sleep(DEFAULT_LOG_QUERY_INTERVAL)
-
+        if (log == null || log.getLogRowSet.size() == 0) {
           batch = batchRestApi.getBatchById(batchId)
-          if (log.getLogRowSet.size() == 0 && BatchUtil.isTerminalState(batch.getState)) {
+          if (BatchUtil.isTerminalState(batch.getState)) {
             done = true
           }
         }
+
+        if (!done) {
+          Thread.sleep(DEFAULT_LOG_QUERY_INTERVAL)
+        }
       }
+
+      batch
     }
   }
 
+  def render(batch: Batch): Unit = {
+    info(Render.renderBatchInfo(batch))
+  }
 }

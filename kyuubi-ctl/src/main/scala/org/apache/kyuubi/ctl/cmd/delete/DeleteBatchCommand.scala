@@ -17,16 +17,17 @@
 package org.apache.kyuubi.ctl.cmd.delete
 
 import org.apache.kyuubi.client.BatchRestApi
+import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.client.util.JsonUtil
 import org.apache.kyuubi.ctl.{CliConfig, ControlCliException}
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.BatchUtil
 
-class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
+class DeleteBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {
   def validate(): Unit = {}
 
-  def run(): Unit = {
+  def doRun(): Batch = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchId = normalizedCliConfig.batchOpts.batchId
@@ -38,13 +39,16 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends Command(cliConfig) {
       if (!result.isSuccess) {
         val batch = batchRestApi.getBatchById(batchId)
         if (!BatchUtil.isTerminalState(batch.getState)) {
-          error(s"Failed to delete batch $batchId, its current state is ${batch.getState}")
+          error(s"Failed to delete batch ${batch.getId}, its current state is ${batch.getState}")
           throw ControlCliException(1)
         } else {
-          warn(s"Batch $batchId is already in terminal state ${batch.getState}.")
+          warn(s"Batch ${batch.getId} is already in terminal state ${batch.getState}.")
         }
       }
+
+      null
     }
   }
 
+  def render(batch: Batch): Unit = {}
 }

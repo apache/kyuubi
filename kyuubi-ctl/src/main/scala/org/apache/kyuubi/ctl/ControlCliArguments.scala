@@ -33,7 +33,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   var cliConfig: CliConfig = null
 
-  var command: Command = null
+  var command: Command[_] = null
 
   // Set parameters from command line arguments
   parse(args)
@@ -62,7 +62,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
     }
   }
 
-  private def getCommand(cliConfig: CliConfig): Command = {
+  private def getCommand(cliConfig: CliConfig): Command[_] = {
     cliConfig.action match {
       case ControlAction.CREATE => cliConfig.resource match {
           case ControlObject.BATCH => new CreateBatchCommand(cliConfig)
