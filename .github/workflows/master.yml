@@ -155,7 +155,6 @@ jobs:
       matrix:
         java:
           - 8
-          - 11
         comment: [ "normal" ]
     steps:
       - uses: actions/checkout@v2
