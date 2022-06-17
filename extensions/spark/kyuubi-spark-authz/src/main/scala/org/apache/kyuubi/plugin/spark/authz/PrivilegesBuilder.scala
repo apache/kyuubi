@@ -381,7 +381,7 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(target)
 
       case "CreateTempViewUsing" =>
-        outputObjs += tablePrivileges(getPlanField[TableIdentifier]("tableIdent"))
+        outputObjs += tablePrivileges(getTableIdent)
 
       case "DescribeColumnCommand" =>
         val table = getPlanField[TableIdentifier]("table")
