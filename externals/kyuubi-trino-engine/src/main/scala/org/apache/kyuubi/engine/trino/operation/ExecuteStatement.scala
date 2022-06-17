@@ -54,7 +54,8 @@ class ExecuteStatement(
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
-    val trinoStatement = TrinoStatement(trinoContext, session.sessionManager.getConf, statement)
+    val trinoStatement =
+      TrinoStatement(trinoContext, session.sessionManager.getConf, statement, getOperationLog)
     trino = trinoStatement.getTrinoClient
     if (shouldRunAsync) {
       val asyncOperation = new Runnable {
