@@ -102,7 +102,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private def findDriverPodByTag(tag: String): FilterWatchListDeletable[Pod, PodList] = {
     val operation = kubernetesClient.pods()
       .withLabel(LABEL_KYUUBI_UNIQUE_KEY, tag)
-      .withLabel(LABEL_SPARK_ROLE, LABEL_SPARK_ROLE_DRIVER)
     val size = operation.list().getItems.size()
     if (size == 1) {
       operation
@@ -123,9 +122,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 }
 
 object KubernetesApplicationOperation {
-  val LABEL_SPARK_ROLE = "spark-role"
   val LABEL_SPARK_APP_SELECTOR = "spark-app-selector"
-  val LABEL_SPARK_ROLE_DRIVER = "driver"
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
 
   val APP_DRIVER_NAME = "driverName"
