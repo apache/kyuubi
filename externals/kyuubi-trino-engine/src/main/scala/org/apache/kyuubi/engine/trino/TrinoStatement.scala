@@ -32,7 +32,9 @@ import io.trino.client.StatementClientFactory
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.trino.TrinoConf._
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_SHOW_PROGRESS
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_SHOW_PROGRESS_DEBUG
+import org.apache.kyuubi.engine.trino.TrinoConf.DATA_PROCESSING_POOL_SIZE
 import org.apache.kyuubi.operation.log.OperationLog
 
 /**

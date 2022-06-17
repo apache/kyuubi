@@ -676,6 +676,20 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_TRINO_SHOW_PROGRESS: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.engine.trino.showProgress")
+      .doc("When true, show the progress bar and final info in the trino engine log.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val ENGINE_TRINO_SHOW_PROGRESS_DEBUG: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.engine.trino.showProgress.debug")
+      .doc("When true, show the progress debug info in the trino engine log.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_HIVE_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.engine.hive.main.resource")
       .doc("The package used to create Hive engine remote job. If it is undefined," +

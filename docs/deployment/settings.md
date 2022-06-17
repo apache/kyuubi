@@ -408,6 +408,8 @@ kyuubi.session.engine.startup.waitCompletion|true|Whether to wait for completion
 kyuubi.session.engine.trino.connection.catalog|&lt;undefined&gt;|The default catalog that trino engine will connect to|string|1.5.0
 kyuubi.session.engine.trino.connection.url|&lt;undefined&gt;|The server url that trino engine will connect to|string|1.5.0
 kyuubi.session.engine.trino.main.resource|&lt;undefined&gt;|The package used to create Trino engine remote job. If it is undefined, Kyuubi will use the default|string|1.5.0
+kyuubi.session.engine.trino.showProgress|true|When true, show the progress bar and final info in the trino engine log.|boolean|1.6.0
+kyuubi.session.engine.trino.showProgress.debug|false|When true, show the progress debug info in the trino engine log.|boolean|1.6.0
 kyuubi.session.idle.timeout|PT6H|session idle timeout, it will be closed when it's not accessed for this duration|duration|1.2.0
 kyuubi.session.name|&lt;undefined&gt;|A human readable name of session and we use empty string by default. This name will be recorded in event. Note that, we only apply this value from session conf.|string|1.4.0
 kyuubi.session.timeout|PT6H|(deprecated)session timeout, it will be closed when it's not accessed for this duration|duration|1.0.0

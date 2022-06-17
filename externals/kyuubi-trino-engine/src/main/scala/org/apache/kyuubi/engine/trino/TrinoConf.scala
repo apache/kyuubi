@@ -39,18 +39,4 @@ object TrinoConf {
       .version("1.5.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(2).toMillis)
-
-  val ENGINE_TRINO_SHOW_PROGRESS: ConfigEntry[Boolean] =
-    buildConf("kyuubi.session.engine.trino.showProgress")
-      .doc("When true, show the progress bar and final info in the trino engine log.")
-      .version("1.6.0")
-      .booleanConf
-      .createWithDefault(true)
-
-  val ENGINE_TRINO_SHOW_PROGRESS_DEBUG: ConfigEntry[Boolean] =
-    buildConf("kyuubi.session.engine.trino.showProgress.debug")
-      .doc("When true, show the progress debug info in the trino engine log.")
-      .version("1.6.0")
-      .booleanConf
-      .createWithDefault(false)
 }
