@@ -67,6 +67,31 @@ object PrivilegesBuilder {
     expr.collect { case p: NamedExpression if p.children.isEmpty => p }
   }
 
+  private def setCurrentDBIfNecessary(
+      tableIdent: TableIdentifier,
+      spark: SparkSession): TableIdentifier = {
+
+    def getDbFromSparkSession: Option[String] = {
+      if (isSparkVersionAtMost("2.4")) {
+        return Some(spark.catalog.currentDatabase)
+      } else if (isSparkVersionAtLeast("3.0")) {
+        val catalogManager = invoke(spark.sessionState, "catalogManager")
+        val currentNamespace = invoke(catalogManager.asInstanceOf[AnyRef], "currentNamespace")
+        val namespaces: Array[String] = currentNamespace.asInstanceOf[Array[String]]
+        if (namespaces != null && namespaces.length == 1) {
+          return Some(namespaces.head)
+        }
+      }
+      None
+    }
+
+    if (spark != null && tableIdent != null && tableIdent.database.isEmpty) {
+      tableIdent.copy(database = getDbFromSparkSession)
+    } else {
+      tableIdent
+    }
+  }
+
   /**
    * Build PrivilegeObjects from Spark LogicalPlan
    *
@@ -147,39 +172,10 @@ object PrivilegesBuilder {
       plan: LogicalPlan,
       inputObjs: ArrayBuffer[PrivilegeObject],
       outputObjs: ArrayBuffer[PrivilegeObject],
-      spark: SparkSession = null): Unit = {
+      spark: SparkSession): Unit = {
 
-    def getPlanField[T](field: String, isTempView: Boolean = false): T = {
-      val fieldVal = getFieldVal[T](plan, field)
-      fieldVal match {
-        case tableIdent: TableIdentifier if (!isTempView) =>
-          getDatabaseForTableIndent(tableIdent.asInstanceOf[TableIdentifier]).asInstanceOf[T]
-        case _ => fieldVal
-      }
-    }
-
-    def getDatabaseForTableIndent(tableIdent: TableIdentifier): TableIdentifier = {
-
-      def getDatabaseFromSparkSession: Option[String] = {
-        if (isSparkVersionAtMost("2.4")) {
-          return Some(spark.catalog.currentDatabase)
-        } else if (isSparkVersionAtLeast("3.0")) {
-          val catalogManager = invoke(spark.sessionState, "catalogManager")
-          val currentNamespace = invoke(catalogManager.asInstanceOf[AnyRef], "currentNamespace")
-          val namespaces: Array[String] = currentNamespace.asInstanceOf[Array[String]]
-          if (namespaces != null && namespaces.length == 1) {
-            return Some(namespaces.head)
-          }
-        }
-        None
-      }
-
-      // only when TableIdentifier's database field is empty, try get the db from spark session
-      if (spark != null && tableIdent != null && tableIdent.database.isEmpty) {
-        tableIdent.copy(database = getDatabaseFromSparkSession)
-      } else {
-        tableIdent
-      }
+    def getPlanField[T](field: String): T = {
+      getFieldVal[T](plan, field)
     }
 
     def getTableName: TableIdentifier = {
@@ -265,7 +261,7 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(table)
 
       case "AlterViewAsCommand" =>
-        val view = getPlanField[TableIdentifier]("name", true)
+        val view = getPlanField[TableIdentifier]("name")
         outputObjs += tablePrivileges(view)
         buildQuery(getQuery, inputObjs)
 
@@ -313,7 +309,7 @@ object PrivilegesBuilder {
         getPlanField[Option[LogicalPlan]]("plan").foreach(buildQuery(_, inputObjs))
 
       case "CacheTableAsSelect" =>
-        val view = getPlanField[String]("tempViewName", true)
+        val view = getPlanField[String]("tempViewName")
         outputObjs += tablePrivileges(TableIdentifier(view))
 
         val query = getPlanField[LogicalPlan]("plan")
@@ -325,7 +321,7 @@ object PrivilegesBuilder {
         outputObjs += databasePrivileges(quote(databases))
 
       case "CreateViewCommand" =>
-        val view = getPlanField[TableIdentifier]("name", true)
+        val view = getPlanField[TableIdentifier]("name")
         outputObjs += tablePrivileges(view)
         val query =
           if (isSparkVersionAtMost("3.1")) {
@@ -379,13 +375,13 @@ object PrivilegesBuilder {
         buildQuery(getQuery, inputObjs)
 
       case "CreateTableLikeCommand" =>
-        val target = getPlanField[TableIdentifier]("targetTable")
-        val source = getPlanField[TableIdentifier]("sourceTable")
+        val target = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("targetTable"), spark)
+        val source = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("sourceTable"), spark)
         inputObjs += tablePrivileges(source)
         outputObjs += tablePrivileges(target)
 
       case "CreateTempViewUsing" =>
-        outputObjs += tablePrivileges(getPlanField[TableIdentifier]("tableIdent", true))
+        outputObjs += tablePrivileges(getPlanField[TableIdentifier]("tableIdent"))
 
       case "DescribeColumnCommand" =>
         val table = getPlanField[TableIdentifier]("table")
@@ -393,7 +389,7 @@ object PrivilegesBuilder {
         inputObjs += tablePrivileges(table, cols)
 
       case "DescribeTableCommand" =>
-        val table = getPlanField[TableIdentifier]("table")
+        val table = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("table"), spark)
         inputObjs += tablePrivileges(table)
 
       case "DescribeDatabaseCommand" | "SetDatabaseCommand" =>
