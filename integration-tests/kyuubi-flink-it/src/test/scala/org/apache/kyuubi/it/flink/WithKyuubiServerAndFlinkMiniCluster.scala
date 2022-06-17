@@ -20,9 +20,11 @@ package org.apache.kyuubi.it.flink
 import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{Utils, WithKyuubiServer}
 
 trait WithKyuubiServerAndFlinkMiniCluster extends WithKyuubiServer {
+
+  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   protected lazy val flinkConfig = new Configuration()
   protected var miniCluster: MiniCluster = _

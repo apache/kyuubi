@@ -102,7 +102,7 @@ trait ProcBuilder {
 
   def conf: KyuubiConf
 
-  protected def env: Map[String, String] = conf.getEnvs
+  def env: Map[String, String] = conf.getEnvs
 
   protected val extraEngineLog: Option[OperationLog]
 
@@ -297,28 +297,29 @@ trait ProcBuilder {
    * @return SPARK_HOME, HIVE_HOME, etc.
    */
   protected def getEngineHome(shortName: String): String = {
+    val homeDirFilter: FilenameFilter = (dir: File, name: String) =>
+      dir.isDirectory && name.contains(s"$shortName-") && !name.contains("-engine")
+
     val homeKey = s"${shortName.toUpperCase}_HOME"
-    val homeVal = env.get(homeKey).orElse {
-      val cwd = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve("kyuubi-download")
-          .resolve("target")
-          .toFile
-          .listFiles(new FilenameFilter {
-            override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.contains(s"$shortName-")
-            }
-          }))
-        .flatMap(_.headOption)
-        .map(_.getAbsolutePath)
-    }
-    if (homeVal.isEmpty) {
-      throw validateEnv(homeKey)
-    } else {
-      homeVal.get
+    // 1. get from env, e.g. SPARK_HOME, FLINK_HOME
+    env.get(homeKey)
+      .orElse {
+        // 2. get from $KYUUBI_HOME/externals/kyuubi-download/target
+        env.get(KYUUBI_HOME).flatMap { p =>
+          val candidates = Paths.get(p, "externals", "kyuubi-download", "target")
+            .toFile.listFiles(homeDirFilter)
+          if (candidates == null) None else candidates.map(_.toPath).headOption
+        }.filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+      }.orElse {
+        // 3. get from kyuubi-server/../externals/kyuubi-download/target
+        Utils.getCodeSourceLocation(getClass).split("kyuubi-server").flatMap { cwd =>
+          val candidates = Paths.get(cwd, "externals", "kyuubi-download", "target")
+            .toFile.listFiles(homeDirFilter)
+          if (candidates == null) None else candidates.map(_.toPath).headOption
+        }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+      } match {
+      case Some(homeVal) => homeVal
+      case None => throw validateEnv(homeKey)
     }
   }
 
