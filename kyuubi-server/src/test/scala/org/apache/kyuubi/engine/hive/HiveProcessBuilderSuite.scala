@@ -38,9 +38,7 @@ class HiveProcessBuilderSuite extends KyuubiFunSuite {
 
   test("default engine memory") {
     val conf = KyuubiConf()
-    val builder = new HiveProcessBuilder("kyuubi", conf) {
-      override def env: Map[String, String] = super.env + (HIVE_HADOOP_CLASSPATH_KEY -> "/hadoop")
-    }
+    val builder = new HiveProcessBuilder("kyuubi", conf)
     val commands = builder.toString.split('\n')
     assert(commands.contains("-Xmx1g"))
   }
