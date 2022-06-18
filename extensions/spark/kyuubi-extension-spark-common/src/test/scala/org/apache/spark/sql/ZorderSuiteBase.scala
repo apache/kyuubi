@@ -731,6 +731,22 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
     }
   }
 
+  test("OPTIMIZE partition predicates constraint") {
+    withTable("p") {
+      sql("CREATE TABLE p (c1 INT, c2 INT) PARTITIONED BY (event_date DATE)")
+      val e1 = intercept[KyuubiSQLExtensionException] {
+        sql("OPTIMIZE p WHERE event_date = current_date as c ZORDER BY c1, c2")
+      }
+      assert(e1.getMessage.contains("unsupported partition predicates"))
+
+      val e2 = intercept[KyuubiSQLExtensionException] {
+        sql("OPTIMIZE p WHERE c1 = 1 ZORDER BY c1, c2")
+      }
+      assert(e2.getMessage == "Only partition column filters are allowed")
+      sql("OPTIMIZE p WHERE event_date = current_date - 1 ZORDER BY c1, c2")
+    }
+  }
+
   def createParser: ParserInterface
 }
 

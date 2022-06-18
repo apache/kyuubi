@@ -20,7 +20,7 @@ package org.apache.kyuubi.sql.zorder
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.AttributeSet
+import org.apache.spark.sql.catalyst.expressions.{AttributeSet, PredicateHelper}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -29,7 +29,7 @@ import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 /**
  * Resolve `OptimizeZorderStatement` to `OptimizeZorderCommand`
  */
-abstract class ResolveZorderBase extends Rule[LogicalPlan] {
+abstract class ResolveZorderBase extends Rule[LogicalPlan] with PredicateHelper {
   def session: SparkSession
   def buildOptimizeZorderCommand(
       catalogTable: CatalogTable,
@@ -39,6 +39,10 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] {
     case Filter(condition, SubqueryAlias(_, tableRelation: HiveTableRelation)) =>
       if (tableRelation.partitionCols.isEmpty) {
         throw new KyuubiSQLExtensionException("Filters are only supported for partitioned table")
+      }
+
+      if (!isLikelySelective(condition)) {
+        throw new KyuubiSQLExtensionException(s"unsupported partition predicates: ${condition.sql}")
       }
 
       val partitionKeyIds = AttributeSet(tableRelation.partitionCols)
@@ -57,7 +61,7 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] {
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-    case statement: OptimizeZorderStatementBase if statement.query.resolved =>
+    case statement: OptimizeZorderStatement if statement.query.resolved =>
       checkQueryAllowed(statement.query)
       val tableIdentifier = getTableIdentifier(statement.tableIdentifier)
       val catalogTable = session.sessionState.catalog.getTableMetadata(tableIdentifier)
