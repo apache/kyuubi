@@ -18,7 +18,7 @@
 package org.apache.kyuubi.server
 
 import java.util.EnumSet
-import java.util.concurrent.Future
+import java.util.concurrent.{Future, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.servlet.DispatcherType
 
@@ -34,7 +34,7 @@ import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, Kyuub
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.util.ThreadUtils
 
 /**
@@ -51,6 +51,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
 
   private def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
+
+  private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
@@ -75,6 +77,27 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     server.addRedirectHandler("/", "/static")
     server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")
     server.addRedirectHandler("/docs", "/swagger")
+  }
+
+  private def startBatchChecker(): Unit = {
+    val interval = conf.get(KyuubiConf.BATCH_CHECK_INTERVAL)
+    val task = new Runnable {
+      override def run(): Unit = {
+        try {
+          sessionManager.getRemoteClosedBatchSessions(connectionUrl).foreach { batch =>
+            Utils.tryLogNonFatalError {
+              val sessionHandle = SessionHandle.fromUUID(batch.identifier)
+              Option(sessionManager.getBatchSessionImpl(sessionHandle)).foreach(_.close())
+            }
+          }
+        } catch {
+          case e: Throwable =>
+            error("Error checking batch session", e)
+        }
+      }
+    }
+
+    batchChecker.scheduleWithFixedDelay(task, interval, interval, TimeUnit.MILLISECONDS)
   }
 
   @VisibleForTesting
@@ -123,6 +146,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
         recoverBatchSessions()
         isStarted.set(true)
         info(s"$getName has started at ${server.getServerUri}")
+        startBatchChecker()
         startInternal()
       } catch {
         case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)
@@ -133,6 +157,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   override def stop(): Unit = synchronized {
+    ThreadUtils.shutdown(batchChecker)
     if (isStarted.getAndSet(false)) {
       server.stop()
     }

@@ -303,6 +303,11 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
               val appMgrKillResp = sessionManager.applicationManager.killApplication(
                 metadata.clusterManager,
                 batchId)
+              info(
+                s"Marking batch[$batchId/${metadata.kyuubiInstance}] closed by ${fe.connectionUrl}")
+              sessionManager.updateMetadata(Metadata(
+                identifier = batchId,
+                remoteClosed = true))
               if (appMgrKillResp._1) {
                 new CloseBatchResponse(appMgrKillResp._1, appMgrKillResp._2)
               } else {

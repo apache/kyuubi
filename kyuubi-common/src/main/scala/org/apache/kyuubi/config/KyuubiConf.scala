@@ -984,6 +984,18 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(20).toMillis)
 
+  val BATCH_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.check.interval")
+      .internal
+      .doc("The interval to check the batch session state. For batch session, it is not" +
+        " stateless, and some operations, such as close batch session, must be processed in the" +
+        " local kyuubi instance. But sometimes, the kyuubi instance might be unreachable, we" +
+        " need mark the batch session be CLOSED state in remote kyuubi instance. And the kyuubi" +
+        " instance should check whether there are local batch session are marked as CLOSED" +
+        " by remote kyuubi instance and close them periodically.")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
