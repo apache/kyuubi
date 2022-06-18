@@ -83,13 +83,16 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       metadata: Metadata,
       batchAppStatus: Option[Map[String, String]]): Batch = {
     batchAppStatus.map { appStatus =>
-      var currentBatchState = metadata.state
-
-      if (BatchJobSubmission.applicationFailed(batchAppStatus)) {
-        currentBatchState = OperationState.ERROR.toString
-      } else if (BatchJobSubmission.applicationTerminated(batchAppStatus)) {
-        currentBatchState = OperationState.FINISHED.toString
-      }
+      val currentBatchState =
+        if (BatchJobSubmission.applicationFailed(batchAppStatus)) {
+          OperationState.ERROR.toString
+        } else if (BatchJobSubmission.applicationTerminated(batchAppStatus)) {
+          OperationState.FINISHED.toString
+        } else if (batchAppStatus.isDefined) {
+          OperationState.RUNNING.toString
+        } else {
+          metadata.state
+        }
 
       new Batch(
         metadata.identifier,
