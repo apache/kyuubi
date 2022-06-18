@@ -37,6 +37,7 @@ import org.apache.kyuubi.operation.{FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
+import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle}
 
@@ -126,7 +127,29 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       buildBatch(batchSession)
     }.getOrElse {
-      Option(sessionManager.getBatchFromMetadataStore(batchId)).getOrElse {
+      Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
+        if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
+          MetadataManager.buildBatch(metadata)
+        } else {
+          val applicationStatus = sessionManager.applicationManager.getApplicationInfo(
+            metadata.clusterManager,
+            batchId)
+          if (applicationStatus.isDefined) {
+            new Batch(
+              batchId,
+              metadata.username,
+              metadata.engineType,
+              metadata.requestName,
+              applicationStatus.get.asJava,
+              metadata.kyuubiInstance,
+              metadata.state,
+              metadata.createTime,
+              metadata.endTime)
+          } else {
+            MetadataManager.buildBatch(metadata)
+          }
+        }
+      }.getOrElse {
         error(s"Invalid batchId: $batchId")
         throw new NotFoundException(s"Invalid batchId: $batchId")
       }
