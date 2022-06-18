@@ -238,6 +238,7 @@ class BatchJobSubmission(
       throw new RuntimeException(s"$batchType batch[$batchId] job failed:" +
         applicationStatus.get.mkString(","))
     } else {
+      updateBatchMetadata()
       // TODO: add limit for max batch job submission lifetime
       while (applicationStatus.isDefined && !applicationTerminated(applicationStatus)) {
         Thread.sleep(applicationCheckInterval)
