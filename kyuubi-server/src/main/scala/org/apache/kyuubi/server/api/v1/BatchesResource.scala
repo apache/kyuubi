@@ -83,12 +83,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       metadata: Metadata,
       batchAppStatus: Option[Map[String, String]]): Batch = {
     batchAppStatus.map { appStatus =>
-      var realBatchState = metadata.state
+      var currentBatchState = metadata.state
 
       if (BatchJobSubmission.applicationFailed(batchAppStatus)) {
-        realBatchState = OperationState.ERROR.toString
+        currentBatchState = OperationState.ERROR.toString
       } else if (BatchJobSubmission.applicationTerminated(batchAppStatus)) {
-        realBatchState = OperationState.FINISHED.toString
+        currentBatchState = OperationState.FINISHED.toString
       }
 
       new Batch(
@@ -98,7 +98,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         metadata.requestName,
         appStatus.asJava,
         metadata.kyuubiInstance,
-        realBatchState,
+        currentBatchState,
         metadata.createTime,
         metadata.endTime)
     }.getOrElse(MetadataManager.buildBatch(metadata))
