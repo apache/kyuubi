@@ -72,7 +72,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       session.user,
       batchOp.batchType,
       batchOp.batchName,
-      batchOp.currentApplicationState.getOrElse(Map.empty).asJava,
+      batchOp.applicationStatus.getOrElse(Map.empty).asJava,
       fe.connectionUrl,
       batchOpStatus.state.toString,
       session.createTime,
