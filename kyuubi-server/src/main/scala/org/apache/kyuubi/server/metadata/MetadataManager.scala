@@ -33,6 +33,8 @@ import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
 
 class MetadataManager extends CompositeService("MetadataManager") {
+  import MetadataManager._
+
   private var _metadataStore: MetadataStore = _
 
   private val identifierRequestsRetryRefs =
@@ -146,28 +148,6 @@ class MetadataManager extends CompositeService("MetadataManager") {
 
   def cleanupMetadataById(batchId: String): Unit = {
     _metadataStore.cleanupMetadataByIdentifier(batchId)
-  }
-
-  private def buildBatch(batchMetadata: Metadata): Batch = {
-    val batchAppInfo = Map(
-      APP_ID_KEY -> Option(batchMetadata.engineId),
-      APP_NAME_KEY -> Option(batchMetadata.engineName),
-      APP_STATE_KEY -> Option(batchMetadata.engineState),
-      APP_URL_KEY -> Option(batchMetadata.engineUrl),
-      APP_ERROR_KEY -> batchMetadata.engineError)
-      .filter(_._2.isDefined)
-      .map(info => (info._1, info._2.get))
-
-    new Batch(
-      batchMetadata.identifier,
-      batchMetadata.username,
-      batchMetadata.engineType,
-      batchMetadata.requestName,
-      batchAppInfo.asJava,
-      batchMetadata.kyuubiInstance,
-      batchMetadata.state,
-      batchMetadata.createTime,
-      batchMetadata.endTime)
   }
 
   private def startMetadataCleaner(): Unit = {
@@ -289,5 +269,27 @@ object MetadataManager extends Logging {
         s"${KyuubiConf.METADATA_STORE_CLASS.key} cannot be empty.")
     }
     ClassUtils.createInstance(className, classOf[MetadataStore], conf)
+  }
+
+  def buildBatch(batchMetadata: Metadata): Batch = {
+    val batchAppInfo = Map(
+      APP_ID_KEY -> Option(batchMetadata.engineId),
+      APP_NAME_KEY -> Option(batchMetadata.engineName),
+      APP_STATE_KEY -> Option(batchMetadata.engineState),
+      APP_URL_KEY -> Option(batchMetadata.engineUrl),
+      APP_ERROR_KEY -> batchMetadata.engineError)
+      .filter(_._2.isDefined)
+      .map(info => (info._1, info._2.get))
+
+    new Batch(
+      batchMetadata.identifier,
+      batchMetadata.username,
+      batchMetadata.engineType,
+      batchMetadata.requestName,
+      batchAppInfo.asJava,
+      batchMetadata.kyuubiInstance,
+      batchMetadata.state,
+      batchMetadata.createTime,
+      batchMetadata.endTime)
   }
 }

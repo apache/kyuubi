@@ -64,6 +64,7 @@ class BatchJobSubmission(
     batchArgs: Seq[String],
     recoveryMetadata: Option[Metadata])
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
+  import BatchJobSubmission._
 
   override def statement: String = "BATCH_JOB_SUBMISSION"
 
@@ -191,16 +192,6 @@ class BatchJobSubmission(
     }
   }
 
-  private def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
-    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
-      s.contains("KILLED") || s.contains("FAILED"))
-  }
-
-  private def applicationTerminated(applicationStatus: Option[Map[String, String]]): Boolean = {
-    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
-      s.contains("KILLED") || s.contains("FAILED") || s.contains("FINISHED"))
-  }
-
   private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
     try {
@@ -246,6 +237,7 @@ class BatchJobSubmission(
       throw new RuntimeException(s"$batchType batch[$batchId] job failed:" +
         applicationStatus.get.mkString(","))
     } else {
+      updateBatchMetadata()
       // TODO: add limit for max batch job submission lifetime
       while (applicationStatus.isDefined && !applicationTerminated(applicationStatus)) {
         Thread.sleep(applicationCheckInterval)
@@ -338,5 +330,17 @@ class BatchJobSubmission(
 
   override def cancel(): Unit = {
     throw new IllegalStateException("Use close instead.")
+  }
+}
+
+object BatchJobSubmission {
+  def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
+    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
+      s.contains("KILLED") || s.contains("FAILED"))
+  }
+
+  def applicationTerminated(applicationStatus: Option[Map[String, String]]): Boolean = {
+    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
+      s.contains("KILLED") || s.contains("FAILED") || s.contains("FINISHED"))
   }
 }
