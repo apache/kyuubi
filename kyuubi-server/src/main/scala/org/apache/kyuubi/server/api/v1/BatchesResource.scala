@@ -33,11 +33,12 @@ import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.{FetchOrientation, OperationState}
+import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.server.metadata.MetadataManager
+import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle}
 
@@ -76,6 +77,31 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       batchOpStatus.state.toString,
       session.createTime,
       batchOpStatus.completed)
+  }
+
+  private def buildBatch(
+      metadata: Metadata,
+      batchAppStatus: Option[Map[String, String]]): Batch = {
+    batchAppStatus.map { appStatus =>
+      var realBatchState = metadata.state
+
+      if (BatchJobSubmission.applicationFailed(batchAppStatus)) {
+        realBatchState = OperationState.ERROR.toString
+      } else if (BatchJobSubmission.applicationTerminated(batchAppStatus)) {
+        realBatchState = OperationState.FINISHED.toString
+      }
+
+      new Batch(
+        metadata.identifier,
+        metadata.username,
+        metadata.engineType,
+        metadata.requestName,
+        appStatus.asJava,
+        metadata.kyuubiInstance,
+        realBatchState,
+        metadata.createTime,
+        metadata.endTime)
+    }.getOrElse(MetadataManager.buildBatch(metadata))
   }
 
   private def formatSessionHandle(sessionHandleStr: String): SessionHandle = {
@@ -131,23 +157,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
           MetadataManager.buildBatch(metadata)
         } else {
-          val applicationStatus = sessionManager.applicationManager.getApplicationInfo(
+          val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
             metadata.clusterManager,
             batchId)
-          if (applicationStatus.isDefined) {
-            new Batch(
-              batchId,
-              metadata.username,
-              metadata.engineType,
-              metadata.requestName,
-              applicationStatus.get.asJava,
-              metadata.kyuubiInstance,
-              metadata.state,
-              metadata.createTime,
-              metadata.endTime)
-          } else {
-            MetadataManager.buildBatch(metadata)
-          }
+          buildBatch(metadata, batchAppStatus)
         }
       }.getOrElse {
         error(s"Invalid batchId: $batchId")
