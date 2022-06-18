@@ -18,6 +18,8 @@ package org.apache.kyuubi.ctl.cmd.create
 
 import java.util.{ArrayList, HashMap}
 
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.ctl.CliConfig
@@ -38,12 +40,14 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
 
       val request = map.get("request").asInstanceOf[HashMap[String, Object]]
+      val config = request.get("configs").asInstanceOf[HashMap[Object, Object]].asScala
+        .map { case (k, v) => (k.toString, v.toString) }.asJava
       val batchRequest = new BatchRequest(
         map.get("batchType").asInstanceOf[String],
         request.get("resource").asInstanceOf[String],
         request.get("className").asInstanceOf[String],
         request.get("name").asInstanceOf[String],
-        request.get("configs").asInstanceOf[HashMap[String, String]],
+        config,
         request.get("args").asInstanceOf[ArrayList[String]])
 
       batchRestApi.createBatch(batchRequest)

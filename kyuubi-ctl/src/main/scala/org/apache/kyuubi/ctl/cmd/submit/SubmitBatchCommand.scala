@@ -34,14 +34,17 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
     val map = CtlUtils.loadYamlAsMap(normalizedCliConfig)
 
     val createBatchCommand = new CreateBatchCommand(normalizedCliConfig)
-    val batchId = createBatchCommand.doRun().getId
+    var batch = createBatchCommand.doRun()
 
     val logBatchCommand = new LogBatchCommand(
       normalizedCliConfig.copy(
-        batchOpts = BatchOpts(batchId = batchId),
+        batchOpts = BatchOpts(
+          batchId = batch.getId,
+          waitCompletion = normalizedCliConfig.batchOpts.waitCompletion),
         logOpts = LogOpts(forward = true)),
+      batch,
       map)
-    val batch = logBatchCommand.doRun()
+    batch = logBatchCommand.doRun()
 
     if (BatchUtil.isTerminalState(batch.getState) && !BatchUtil.isFinishedState(batch.getState)) {
       error(s"Batch ${batch.getId} failed: ${JsonUtil.toJson(batch)}")

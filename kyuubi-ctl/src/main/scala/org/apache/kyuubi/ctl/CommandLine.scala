@@ -105,7 +105,7 @@ object CommandLine {
           opt[String]('f', "filename")
             .action((v, c) => c.copy(createOpts = c.createOpts.copy(filename = v)))
             .text("Filename to use to create the resource"),
-          batchCmd(builder).text("\tOpen batch session."),
+          createBatchCmd(builder).text("\tOpen batch session."),
           serverCmd(builder).text("\tExpose Kyuubi server instance to another domain.")))
   }
 
@@ -176,7 +176,7 @@ object CommandLine {
           opt[String]('f', "filename")
             .action((v, c) => c.copy(createOpts = c.createOpts.copy(filename = v)))
             .text("Filename to use to create the resource"),
-          batchCmd(builder).text("\topen batch session and wait for completion.")))
+          submitBatchCmd(builder).text("\topen batch session and wait for completion.")))
   }
 
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -202,7 +202,7 @@ object CommandLine {
           .text("The engine share level this engine belong to."))
   }
 
-  private def batchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+  private def createBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
     cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
   }
@@ -305,6 +305,17 @@ object CommandLine {
               failure("Option --size must be >=0")
             })
           .text("The max number of records returned in the query."))
+  }
+
+  private def submitBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("batch").action((_, c) => c.copy(resource = ControlObject.BATCH))
+      .children(
+        opt[Boolean]("waitCompletion")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(waitCompletion = v)))
+          .text("Boolean property. If true(default), the client process will stay alive " +
+            "until the batch is in any terminal state. If false, the client will exit " +
+            "when the batch is no longer in PENDING state."))
   }
 
 }
