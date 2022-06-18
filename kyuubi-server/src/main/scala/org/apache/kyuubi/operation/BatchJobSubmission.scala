@@ -155,23 +155,27 @@ class BatchJobSubmission(
     val asyncOperation: Runnable = () => {
       setStateIfNotCanceled(OperationState.RUNNING)
       try {
-        // If it is in recovery mode, only re-submit batch job if previous state is PENDING and
-        // fail to fetch the status including appId from resource manager. Otherwise, monitor the
-        // submitted batch application.
-        recoveryMetadata.map { metadata =>
-          if (metadata.state == OperationState.PENDING.toString) {
-            applicationStatus = currentApplicationState
-            applicationStatus.map(_.get(APP_ID_KEY)).map {
-              case Some(appId) => monitorBatchJob(appId)
-              case None => submitAndMonitorBatchJob()
+        if (recoveryMetadata.exists(_.remoteClosed)) {
+          setState(OperationState.CANCELED)
+        } else {
+          // If it is in recovery mode, only re-submit batch job if previous state is PENDING and
+          // fail to fetch the status including appId from resource manager. Otherwise, monitor the
+          // submitted batch application.
+          recoveryMetadata.map { metadata =>
+            if (metadata.state == OperationState.PENDING.toString) {
+              applicationStatus = currentApplicationState
+              applicationStatus.map(_.get(APP_ID_KEY)).map {
+                case Some(appId) => monitorBatchJob(appId)
+                case None => submitAndMonitorBatchJob()
+              }
+            } else {
+              monitorBatchJob(metadata.engineId)
             }
-          } else {
-            monitorBatchJob(metadata.engineId)
+          }.getOrElse {
+            submitAndMonitorBatchJob()
           }
-        }.getOrElse {
-          submitAndMonitorBatchJob()
+          setStateIfNotCanceled(OperationState.FINISHED)
         }
-        setStateIfNotCanceled(OperationState.FINISHED)
       } catch {
         onError()
       } finally {

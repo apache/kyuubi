@@ -27,7 +27,8 @@ import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.METADATA_MAX_AGE
 import org.apache.kyuubi.engine.ApplicationOperation._
-import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
@@ -103,17 +104,14 @@ class MetadataManager extends CompositeService("MetadataManager") {
       endTime: Long,
       from: Int,
       size: Int): Seq[Batch] = {
-    _metadataStore.getMetadataList(
-      SessionType.BATCH,
-      batchType,
-      batchUser,
-      batchState,
-      null,
-      createTime,
-      endTime,
-      from,
-      size,
-      true).map(buildBatch)
+    val filter = MetadataFilter(
+      sessionType = SessionType.BATCH,
+      engineType = batchType,
+      username = batchUser,
+      state = batchState,
+      createTime = createTime,
+      endTime = endTime)
+    _metadataStore.getMetadataList(filter, from, size, true).map(buildBatch)
   }
 
   def getBatchesRecoveryMetadata(
@@ -121,17 +119,24 @@ class MetadataManager extends CompositeService("MetadataManager") {
       kyuubiInstance: String,
       from: Int,
       size: Int): Seq[Metadata] = {
-    _metadataStore.getMetadataList(
-      SessionType.BATCH,
-      null,
-      null,
-      state,
-      kyuubiInstance,
-      0,
-      0,
-      from,
-      size,
-      false)
+    val filter = MetadataFilter(
+      sessionType = SessionType.BATCH,
+      state = state,
+      kyuubiInstance = kyuubiInstance)
+    _metadataStore.getMetadataList(filter, from, size, false)
+  }
+
+  def getRemoteClosedBatchesMetadata(
+      state: String,
+      kyuubiInstance: String,
+      from: Int,
+      size: Int): Seq[Metadata] = {
+    val filter = MetadataFilter(
+      sessionType = SessionType.BATCH,
+      state = state,
+      kyuubiInstance = kyuubiInstance,
+      remoteClosed = true)
+    _metadataStore.getMetadataList(filter, from, size, true)
   }
 
   def updateMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
@@ -158,6 +163,14 @@ class MetadataManager extends CompositeService("MetadataManager") {
       .filter(_._2.isDefined)
       .map(info => (info._1, info._2.get))
 
+    val batchState =
+      if (batchMetadata.remoteClosed &&
+        !OperationState.isTerminal(OperationState.withName(batchMetadata.state))) {
+        OperationState.CANCELED.toString
+      } else {
+        batchMetadata.state
+      }
+
     new Batch(
       batchMetadata.identifier,
       batchMetadata.username,
@@ -165,7 +178,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
       batchMetadata.requestName,
       batchAppInfo.asJava,
       batchMetadata.kyuubiInstance,
-      batchMetadata.state,
+      batchState,
       batchMetadata.createTime,
       batchMetadata.endTime)
   }
