@@ -40,9 +40,7 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
     NzTabsModule,
     NzIconModule
   ],
-  declarations: [
-  ],
-  exports: [
-  ]
+  declarations: [],
+  exports: []
 })
 export class ShareModule {}

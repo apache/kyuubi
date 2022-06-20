@@ -71,8 +71,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
 
-    server.addStaticHandler("web", "/web")
-    server.addRedirectHandler("/", "/web")
+    server.addStaticHandler("web", "/")
     server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")
     server.addRedirectHandler("/docs", "/swagger")
   }
