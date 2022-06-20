@@ -337,6 +337,9 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
     val zkHelpString = "The connection string for the zookeeper ensemble, using zk quorum manually."
     val versionHelpString = "Using the compiled KYUUBI_VERSION default," +
       " change it if the active service is running in another."
+    val waitBatchCompletionHelpString = "Boolean property. If true(default), the client process " +
+      "will stay alive until the batch is in any terminal state. If false, the client will exit " +
+      "when the batch is no longer in PENDING state."
     val helpString =
       s"""kyuubi $KYUUBI_VERSION
          |Usage: kyuubi-ctl [create|get|delete|list|log|submit] [options] <args>...
@@ -435,6 +438,8 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  -f, --filename <value>   Filename to use to create the resource
          |Command: submit batch
          |${"\t"}open batch session and wait for completion.
+         |  --waitCompletion <value>
+         |                           ${waitBatchCompletionHelpString}
          |
          |  -h, --help               Show help message and exit.""".stripMargin
 

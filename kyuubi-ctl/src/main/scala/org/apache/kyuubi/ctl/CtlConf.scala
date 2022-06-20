@@ -60,4 +60,11 @@ object CtlConf {
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(3).toMillis)
+
+  val CTL_BATCH_LOG_QUERY_INTERVAL =
+    buildConf("kyuubi.ctl.batch.log.query.interval")
+      .doc("The interval for fetching batch logs.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(3).toMillis)
 }

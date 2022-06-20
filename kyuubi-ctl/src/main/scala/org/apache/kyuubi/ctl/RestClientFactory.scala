@@ -40,6 +40,18 @@ object RestClientFactory {
     }
   }
 
+  private[ctl] def withKyuubiInstanceRestClient(
+      kyuubiRestClient: KyuubiRestClient,
+      kyuubiInstance: String)(f: KyuubiRestClient => Unit): Unit = {
+    val kyuubiInstanceRestClient = kyuubiRestClient.clone()
+    kyuubiInstanceRestClient.setHostUrls(s"http://${kyuubiInstance}")
+    try {
+      f(kyuubiInstanceRestClient)
+    } finally {
+      kyuubiInstanceRestClient.close()
+    }
+  }
+
   private def getKyuubiRestClient(
       cliConfig: CliConfig,
       map: JMap[String, Object],

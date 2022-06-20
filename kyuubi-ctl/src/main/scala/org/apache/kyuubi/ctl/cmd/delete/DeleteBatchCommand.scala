@@ -25,7 +25,11 @@ import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.BatchUtil
 
 class DeleteBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {
-  def validate(): Unit = {}
+  def validate(): Unit = {
+    if (normalizedCliConfig.batchOpts.batchId == null) {
+      fail("Must specify batchId for delete batch command.")
+    }
+  }
 
   def doRun(): Batch = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>

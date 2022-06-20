@@ -16,12 +16,6 @@
  */
 package org.apache.kyuubi.ctl.cmd
 
-import java.io.{BufferedReader, File, FileInputStream, InputStreamReader}
-import java.nio.charset.StandardCharsets
-import java.util.HashMap
-
-import org.yaml.snakeyaml.Yaml
-
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ctl.CliConfig
@@ -29,8 +23,6 @@ import org.apache.kyuubi.ctl.ControlCli.printMessage
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 
 abstract class Command[T](cliConfig: CliConfig) extends Logging {
-
-  protected val DEFAULT_LOG_QUERY_INTERVAL: Int = 1000
 
   val conf = KyuubiConf().loadFileDefaults()
 
@@ -89,26 +81,6 @@ abstract class Command[T](cliConfig: CliConfig) extends Logging {
       arguments = arguments.copy(commonOpts = arguments.commonOpts.copy(version = KYUUBI_VERSION))
     }
     arguments
-  }
-
-  private[ctl] def readConfig(): HashMap[String, Object] = {
-    var filename = normalizedCliConfig.createOpts.filename
-
-    var map: HashMap[String, Object] = null
-    var br: BufferedReader = null
-    try {
-      val yaml = new Yaml()
-      val input = new FileInputStream(new File(filename))
-      br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))
-      map = yaml.load(br).asInstanceOf[HashMap[String, Object]]
-    } catch {
-      case e: Exception => fail(s"Failed to read yaml file[$filename]: $e")
-    } finally {
-      if (br != null) {
-        br.close()
-      }
-    }
-    map
   }
 
   override def info(msg: => Any): Unit = printMessage(msg)

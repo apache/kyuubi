@@ -24,9 +24,15 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kyuubi.client.auth.*;
 
-public class KyuubiRestClient implements AutoCloseable {
+public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
   private IRestClient httpClient;
+
+  private RestClientConf conf;
+
+  private List<String> baseUrls;
+
+  private ApiVersion version;
 
   private AuthHeaderGenerator authHeaderGenerator;
 
@@ -52,24 +58,43 @@ public class KyuubiRestClient implements AutoCloseable {
     }
   }
 
+  @Override
+  public KyuubiRestClient clone() {
+    KyuubiRestClient kyuubiRestClient = new KyuubiRestClient();
+    kyuubiRestClient.version = this.version;
+    kyuubiRestClient.conf = this.conf;
+    kyuubiRestClient.baseUrls = this.baseUrls;
+    kyuubiRestClient.httpClient = RetryableRestClient.getRestClient(this.baseUrls, this.conf);
+    kyuubiRestClient.authHeaderGenerator = this.authHeaderGenerator;
+    return kyuubiRestClient;
+  }
+
+  public void setHostUrls(String... hostUrls) {
+    setHostUrls(Arrays.asList(hostUrls));
+  }
+
+  public void setHostUrls(List<String> hostUrls) {
+    if (hostUrls.isEmpty()) {
+      throw new IllegalArgumentException("hostUrls cannot be blank.");
+    }
+    List<String> baseUrls = initBaseUrls(hostUrls, version);
+    this.httpClient = RetryableRestClient.getRestClient(baseUrls, this.conf);
+  }
+
   private KyuubiRestClient() {}
 
   private KyuubiRestClient(Builder builder) {
-    List<String> baseUrls = new LinkedList<>();
-    for (String hostUrl : builder.hostUrls) {
-      // Remove the trailing "/" from the hostUrl if present
-      String baseUrl =
-          String.format("%s/%s", hostUrl.replaceAll("/$", ""), builder.version.getApiNamespace());
-      baseUrls.add(baseUrl);
-    }
+    this.version = builder.version;
+    this.baseUrls = initBaseUrls(builder.hostUrls, builder.version);
 
     RestClientConf conf = new RestClientConf();
     conf.setConnectTimeout(builder.connectTimeout);
     conf.setSocketTimeout(builder.socketTimeout);
     conf.setMaxAttempts(builder.maxAttempts);
     conf.setAttemptWaitTime(builder.attemptWaitTime);
+    this.conf = conf;
 
-    this.httpClient = RetryableRestClient.getRestClient(baseUrls, conf);
+    this.httpClient = RetryableRestClient.getRestClient(this.baseUrls, conf);
 
     switch (builder.authHeaderMethod) {
       case BASIC:
@@ -87,6 +112,17 @@ public class KyuubiRestClient implements AutoCloseable {
           this.authHeaderGenerator = builder.authHeaderGenerator;
         }
     }
+  }
+
+  private List<String> initBaseUrls(List<String> hostUrls, ApiVersion version) {
+    List<String> baseUrls = new LinkedList<>();
+    for (String hostUrl : hostUrls) {
+      // Remove the trailing "/" from the hostUrl if present
+      String baseUrl =
+          String.format("%s/%s", hostUrl.replaceAll("/$", ""), version.getApiNamespace());
+      baseUrls.add(baseUrl);
+    }
+    return baseUrls;
   }
 
   public String getAuthHeader() {

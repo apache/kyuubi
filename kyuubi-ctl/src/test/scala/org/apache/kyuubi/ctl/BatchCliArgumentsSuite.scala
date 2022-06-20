@@ -73,20 +73,46 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
     }
   }
 
-  test("get batch without batch id specified") {
+  test("submit batch default option") {
     val args = Array(
-      "get",
-      "batch")
-    testPrematureExitForControlCliArgs(args, "Must specify batchId for get batch command")
+      "submit",
+      "batch",
+      "-f",
+      "src/test/resources/cli/batch.yaml")
+    val opArgs = new ControlCliArguments(args)
+    assert(opArgs.cliConfig.batchOpts.waitCompletion == true)
   }
 
-  test("get batch") {
+  test("submit batch without waitForCompletion") {
     val args = Array(
-      "get",
+      "submit",
       "batch",
-      "f7fd702c-e54e-11ec-8fea-0242ac120002")
+      "-f",
+      "src/test/resources/cli/batch.yaml",
+      "--waitCompletion",
+      "false")
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliConfig.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
+    assert(opArgs.cliConfig.batchOpts.waitCompletion == false)
+  }
+
+  test("get/delete batch") {
+    Seq("get", "delete").foreach { op =>
+      val args = Seq(
+        op,
+        "batch",
+        "f7fd702c-e54e-11ec-8fea-0242ac120002")
+      val opArgs = new ControlCliArguments(args)
+      assert(opArgs.cliConfig.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
+    }
+  }
+
+  test("get/delete batch without batch id specified") {
+    Seq("get", "delete").foreach { op =>
+      val args = Array(
+        op,
+        "batch")
+      testPrematureExitForControlCliArgs(args, s"Must specify batchId for ${op} batch command")
+    }
   }
 
   test("test list batch option") {

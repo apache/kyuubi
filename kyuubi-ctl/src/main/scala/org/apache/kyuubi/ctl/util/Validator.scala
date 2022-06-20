@@ -62,15 +62,11 @@ private[ctl] object Validator {
   }
 
   def validateFilename(cliConfig: CliConfig): Unit = {
-    var filename = cliConfig.createOpts.filename
+    val filename = cliConfig.createOpts.filename
     if (StringUtils.isBlank(filename)) {
       fail(s"Config file is not specified.")
     }
 
-    val currentPath = Paths.get("").toAbsolutePath
-    if (!filename.startsWith("/")) {
-      filename = currentPath + "/" + filename
-    }
     if (!Files.exists(Paths.get(filename))) {
       fail(s"Config file does not exist: ${filename}.")
     }

@@ -56,9 +56,11 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
                          |   - x2
                          |  configs:
                          |    spark.master: local
-                         |    spark.${ENGINE_SPARK_MAX_LIFETIME.key}: "5000"
-                         |    spark.${ENGINE_CHECK_INTERVAL.key}: "1000"
+                         |    wait.completion: true
+                         |    spark.${ENGINE_SPARK_MAX_LIFETIME.key}: 5000
+                         |    spark.${ENGINE_CHECK_INTERVAL.key}: 1000
                          |    k1: v1
+                         |    1: test_integer_key
                          |options:
                          |  verbose: true""".stripMargin
     Files.write(Paths.get(batchFile), batch_basic.getBytes(StandardCharsets.UTF_8))
@@ -115,7 +117,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       ldapUserPasswd)
     result = testPrematureExitForControlCli(logArgs, "")
     val rows = result.split("\n")
-    assert(rows.length > 0)
+    assert(rows.length == 2)
 
     val deleteArgs = Array(
       "delete",
@@ -165,7 +167,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "spnego")
     result = testPrematureExitForControlCli(logArgs, "")
     val rows = result.split("\n")
-    assert(rows.length > 0)
+    assert(rows.length == 2)
 
     val deleteArgs = Array(
       "delete",
@@ -184,7 +186,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       batchFile,
       "--password",
       ldapUserPasswd)
-    val result = testPrematureExitForControlCli(createArgs, "")
+    var result = testPrematureExitForControlCli(createArgs, "")
     assert(result.contains("Type: SPARK"))
     assert(result.contains(s"Kyuubi Instance: ${fe.connectionUrl}"))
     val startIndex = result.indexOf("Id: ") + 4
@@ -202,7 +204,9 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "--password",
       ldapUserPasswd,
       "--forward")
-    testPrematureExitForControlCli(logArgs, s"Submitted application: ${appName}")
+    result = testPrematureExitForControlCli(logArgs, "")
+    assert(result.contains(s"Submitted application: ${appName}"))
+    assert(result.contains("ShutdownHookManager: Shutdown hook called"))
   }
 
   test("submit batch test") {
@@ -213,7 +217,26 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       batchFile,
       "--password",
       ldapUserPasswd)
-    testPrematureExitForControlCli(submitArgs, s"Submitted application: ${appName}")
+    val result = testPrematureExitForControlCli(submitArgs, "")
+    assert(result.contains(s"Submitted application: ${appName}"))
+    assert(result.contains("ShutdownHookManager: Shutdown hook called"))
+  }
+
+  test("submit batch test with waitCompletion=false") {
+    val submitArgs = Array(
+      "submit",
+      "batch",
+      "-f",
+      batchFile,
+      "--password",
+      ldapUserPasswd,
+      "--waitCompletion",
+      "false")
+    val result = testPrematureExitForControlCli(submitArgs, "")
+    assert(result.contains(s"/bin/spark-submit"))
+    assert(!result.contains("ShutdownHookManager: Shutdown hook called"))
+    val numberOfRows = result.split("\n").length
+    assert(numberOfRows <= 100)
   }
 
   test("list batch test") {
