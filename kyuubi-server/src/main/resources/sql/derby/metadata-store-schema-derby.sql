@@ -22,7 +22,8 @@ CREATE TABLE metadata(
     engine_url varchar(1024), -- the engine tracking url
     engine_state varchar(128), -- the engine application state
     engine_error clob, -- the engine application diagnose
-    end_time bigint  -- the metadata end time
+    end_time bigint,  -- the metadata end time
+    peer_instance_closed boolean default FALSE -- closed by peer kyuubi instance
 );
 
 CREATE INDEX metadata_kyuubi_instance_index ON metadata(kyuubi_instance);

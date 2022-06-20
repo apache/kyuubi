@@ -23,6 +23,7 @@ CREATE TABLE metadata(
     engine_state varchar(128) COMMENT 'the engine application state',
     engine_error mediumtext COMMENT 'the engine application diagnose',
     end_time bigint COMMENT 'the metadata end time',
+    peer_instance_closed boolean default '0' COMMENT 'closed by peer kyuubi instance',
     INDEX kyuubi_instance_index(kyuubi_instance),
     UNIQUE INDEX unique_identifier_index(identifier),
     INDEX user_name_index(user_name),

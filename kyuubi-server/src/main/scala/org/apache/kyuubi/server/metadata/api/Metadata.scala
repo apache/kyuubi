@@ -47,6 +47,7 @@ import org.apache.kyuubi.session.SessionType.SessionType
  * @param engineState the engine state.
  * @param engineError the engine error diagnose.
  * @param endTime the end time.
+ * @param peerInstanceClosed closed by peer kyuubi instance.
  */
 case class Metadata(
     identifier: String,
@@ -69,4 +70,5 @@ case class Metadata(
     engineUrl: String = null,
     engineState: String = null,
     engineError: Option[String] = None,
-    endTime: Long = 0L)
+    endTime: Long = 0L,
+    peerInstanceClosed: Boolean = false)

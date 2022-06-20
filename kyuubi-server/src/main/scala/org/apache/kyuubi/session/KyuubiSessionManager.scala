@@ -242,6 +242,16 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
+  def getPeerInstanceClosedBatchSessions(kyuubiInstance: String): Seq[Metadata] = {
+    Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToKill =>
+      metadataManager.getPeerInstanceClosedBatchesMetadata(
+        stateToKill.toString,
+        kyuubiInstance,
+        0,
+        Int.MaxValue)
+    }
+  }
+
   override protected def isServer: Boolean = true
 
   private def initSessionLimiter(conf: KyuubiConf): Unit = {

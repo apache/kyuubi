@@ -19,8 +19,7 @@ package org.apache.kyuubi.server.metadata
 
 import java.io.Closeable
 
-import org.apache.kyuubi.server.metadata.api.Metadata
-import org.apache.kyuubi.session.SessionType.SessionType
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 
 trait MetadataStore extends Closeable {
 
@@ -39,26 +38,14 @@ trait MetadataStore extends Closeable {
 
   /**
    * Get the metadata list with filter conditions, offset and size.
-   * @param sessionType the session type.
-   * @param engineType the engine type.
-   * @param userName the user name.
-   * @param state the state.
-   * @param kyuubiInstance the kyuubi instance.
-   * @param createTime the metadata create time.
-   * @param endTime the end time.
-   * @param from the batch offset.
-   * @param size the batch size to get.
+   * @param filter the metadata filter conditions.
+   * @param from the metadata offset.
+   * @param size the size to get.
    * @param stateOnly only return the state related column values.
    * @return selected metadata list.
    */
   def getMetadataList(
-      sessionType: SessionType,
-      engineType: String,
-      userName: String,
-      state: String,
-      kyuubiInstance: String,
-      createTime: Long,
-      endTime: Long,
+      filter: MetadataFilter,
       from: Int,
       size: Int,
       stateOnly: Boolean): Seq[Metadata]

@@ -64,6 +64,7 @@ class BatchJobSubmission(
     batchArgs: Seq[String],
     recoveryMetadata: Option[Metadata])
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
+  import BatchJobSubmission._
 
   override def statement: String = "BATCH_JOB_SUBMISSION"
 
@@ -153,25 +154,28 @@ class BatchJobSubmission(
 
   override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
-      setStateIfNotCanceled(OperationState.RUNNING)
       try {
-        // If it is in recovery mode, only re-submit batch job if previous state is PENDING and
-        // fail to fetch the status including appId from resource manager. Otherwise, monitor the
-        // submitted batch application.
-        recoveryMetadata.map { metadata =>
-          if (metadata.state == OperationState.PENDING.toString) {
-            applicationStatus = currentApplicationState
-            applicationStatus.map(_.get(APP_ID_KEY)).map {
-              case Some(appId) => monitorBatchJob(appId)
-              case None => submitAndMonitorBatchJob()
+        if (recoveryMetadata.exists(_.peerInstanceClosed)) {
+          setState(OperationState.CANCELED)
+        } else {
+          // If it is in recovery mode, only re-submit batch job if previous state is PENDING and
+          // fail to fetch the status including appId from resource manager. Otherwise, monitor the
+          // submitted batch application.
+          recoveryMetadata.map { metadata =>
+            if (metadata.state == OperationState.PENDING.toString) {
+              applicationStatus = currentApplicationState
+              applicationStatus.map(_.get(APP_ID_KEY)).map {
+                case Some(appId) => monitorBatchJob(appId)
+                case None => submitAndMonitorBatchJob()
+              }
+            } else {
+              monitorBatchJob(metadata.engineId)
             }
-          } else {
-            monitorBatchJob(metadata.engineId)
+          }.getOrElse {
+            submitAndMonitorBatchJob()
           }
-        }.getOrElse {
-          submitAndMonitorBatchJob()
+          setStateIfNotCanceled(OperationState.FINISHED)
         }
-        setStateIfNotCanceled(OperationState.FINISHED)
       } catch {
         onError()
       } finally {
@@ -191,16 +195,6 @@ class BatchJobSubmission(
     }
   }
 
-  private def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
-    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
-      s.contains("KILLED") || s.contains("FAILED"))
-  }
-
-  private def applicationTerminated(applicationStatus: Option[Map[String, String]]): Boolean = {
-    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
-      s.contains("KILLED") || s.contains("FAILED") || s.contains("FINISHED"))
-  }
-
   private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
     try {
@@ -209,6 +203,7 @@ class BatchJobSubmission(
       applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
         if (!appStatusFirstUpdated && applicationStatus.isDefined) {
+          setStateIfNotCanceled(OperationState.RUNNING)
           updateBatchMetadata()
           appStatusFirstUpdated = true
         }
@@ -240,12 +235,16 @@ class BatchJobSubmission(
     if (applicationStatus.isEmpty) {
       applicationStatus = currentApplicationState
     }
+    if (state == OperationState.PENDING) {
+      setStateIfNotCanceled(OperationState.RUNNING)
+    }
     if (applicationStatus.isEmpty) {
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
     } else if (applicationFailed(applicationStatus)) {
       throw new RuntimeException(s"$batchType batch[$batchId] job failed:" +
         applicationStatus.get.mkString(","))
     } else {
+      updateBatchMetadata()
       // TODO: add limit for max batch job submission lifetime
       while (applicationStatus.isDefined && !applicationTerminated(applicationStatus)) {
         Thread.sleep(applicationCheckInterval)
@@ -338,5 +337,17 @@ class BatchJobSubmission(
 
   override def cancel(): Unit = {
     throw new IllegalStateException("Use close instead.")
+  }
+}
+
+object BatchJobSubmission {
+  def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
+    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
+      s.contains("KILLED") || s.contains("FAILED"))
+  }
+
+  def applicationTerminated(applicationStatus: Option[Map[String, String]]): Boolean = {
+    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
+      s.contains("KILLED") || s.contains("FAILED") || s.contains("FINISHED"))
   }
 }

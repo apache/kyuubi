@@ -33,11 +33,10 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataStore
-import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.server.metadata.jdbc.DatabaseType._
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
-import org.apache.kyuubi.session.SessionType.SessionType
 
 class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   import JDBCMetadataStore._
@@ -169,13 +168,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   }
 
   override def getMetadataList(
-      sessionType: SessionType,
-      engineType: String,
-      userName: String,
-      state: String,
-      kyuubiInstance: String,
-      createTime: Long,
-      endTime: Long,
+      filter: MetadataFilter,
       from: Int,
       size: Int,
       stateOnly: Boolean): Seq[Metadata] = {
@@ -187,34 +180,38 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       queryBuilder.append(s"SELECT $METADATA_ALL_COLUMNS FROM $METADATA_TABLE")
     }
     val whereConditions = ListBuffer[String]()
-    Option(sessionType).foreach { _ =>
+    Option(filter.sessionType).foreach { sessionType =>
       whereConditions += " session_type = ?"
       params += sessionType.toString
     }
-    Option(engineType).filter(_.nonEmpty).foreach { _ =>
+    Option(filter.engineType).filter(_.nonEmpty).foreach { engineType =>
       whereConditions += " UPPER(engine_type) = ? "
       params += engineType.toUpperCase(Locale.ROOT)
     }
-    Option(userName).filter(_.nonEmpty).foreach { _ =>
+    Option(filter.username).filter(_.nonEmpty).foreach { username =>
       whereConditions += " user_name = ? "
-      params += userName
+      params += username
     }
-    Option(state).filter(_.nonEmpty).foreach { _ =>
+    Option(filter.state).filter(_.nonEmpty).foreach { state =>
       whereConditions += " state = ? "
       params += state.toUpperCase(Locale.ROOT)
     }
-    Option(kyuubiInstance).filter(_.nonEmpty).foreach { _ =>
+    Option(filter.kyuubiInstance).filter(_.nonEmpty).foreach { kyuubiInstance =>
       whereConditions += " kyuubi_instance = ? "
       params += kyuubiInstance
     }
-    if (createTime > 0) {
+    if (filter.createTime > 0) {
       whereConditions += " create_time >= ? "
-      params += createTime
+      params += filter.createTime
     }
-    if (endTime > 0) {
+    if (filter.endTime > 0) {
       whereConditions += " end_time > 0 "
       whereConditions += " end_time <= ? "
-      params += endTime
+      params += filter.endTime
+    }
+    if (filter.peerInstanceClosed) {
+      whereConditions += " peer_instance_closed = ? "
+      params += filter.peerInstanceClosed
     }
     if (whereConditions.nonEmpty) {
       queryBuilder.append(whereConditions.mkString(" WHERE ", " AND ", " "))
@@ -261,6 +258,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     metadata.engineError.foreach { error =>
       setClauses += " engine_error = ? "
       params += error
+    }
+    if (metadata.peerInstanceClosed) {
+      setClauses += " peer_instance_closed = ? "
+      params += metadata.peerInstanceClosed
     }
     if (setClauses.nonEmpty) {
       queryBuilder.append(setClauses.mkString(" SET ", " , ", " "))
@@ -310,6 +311,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         val engineState = resultSet.getString("engine_state")
         val engineError = Option(resultSet.getString("engine_error"))
         val endTime = resultSet.getLong("end_time")
+        val peerInstanceClosed = resultSet.getBoolean("peer_instance_closed")
 
         var resource: String = null
         var className: String = null
@@ -343,7 +345,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           engineUrl = engineUrl,
           engineState = engineState,
           engineError = engineError,
-          endTime = endTime)
+          endTime = endTime,
+          peerInstanceClosed = peerInstanceClosed)
         metadataList += metadata
       }
       metadataList
@@ -403,6 +406,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         case l: Long => statement.setLong(index + 1, l)
         case d: Double => statement.setDouble(index + 1, d)
         case f: Float => statement.setFloat(index + 1, f)
+        case b: Boolean => statement.setBoolean(index + 1, b)
         case _ => throw new KyuubiException(s"Unsupported param type ${param.getClass.getName}")
       }
     }
@@ -464,7 +468,8 @@ object JDBCMetadataStore {
     "engine_url",
     "engine_state",
     "engine_error",
-    "end_time").mkString(",")
+    "end_time",
+    "peer_instance_closed").mkString(",")
   private val METADATA_ALL_COLUMNS = Seq(
     METADATA_STATE_ONLY_COLUMNS,
     "resource",
