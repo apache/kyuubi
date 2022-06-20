@@ -20,7 +20,7 @@ package org.apache.kyuubi.server.api.v1
 import java.util.Base64
 
 import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
-import org.apache.kyuubi.client.api.v1.dto.{CloseBatchResponse, OperationLog}
+import org.apache.kyuubi.client.api.v1.dto.{Batch, CloseBatchResponse, OperationLog}
 import org.apache.kyuubi.client.auth.AuthHeaderGenerator
 import org.apache.kyuubi.server.http.authentication.AuthSchemes
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
@@ -39,6 +39,12 @@ class InternalRestClient(kyuubiInstance: String, socketTimeout: Int, connectTime
     "Internal secure access across Kyuubi instances is not enabled")
 
   private val internalBatchRestApi = new BatchRestApi(initKyuubiRestClient())
+
+  def getBatch(user: String, batchId: String): Batch = {
+    withAuthUser(user) {
+      internalBatchRestApi.getBatchById(batchId)
+    }
+  }
 
   def getBatchLocalLog(user: String, batchId: String, from: Int, size: Int): OperationLog = {
     withAuthUser(user) {

@@ -91,8 +91,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
             }
           }
         } catch {
-          case e: Throwable =>
-            error("Error checking batch session", e)
+          case e: Throwable => error("Error checking batch sessions", e)
         }
       }
     }

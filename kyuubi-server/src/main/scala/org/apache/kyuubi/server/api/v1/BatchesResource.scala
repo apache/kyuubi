@@ -152,18 +152,27 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @GET
   @Path("{batchId}")
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
+    val userName = fe.getUserName(Map.empty)
     val sessionHandle = formatSessionHandle(batchId)
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       buildBatch(batchSession)
     }.getOrElse {
       Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
-        if (OperationState.isTerminal(OperationState.withName(metadata.state))) {
+        if (OperationState.isTerminal(OperationState.withName(metadata.state)) ||
+          metadata.kyuubiInstance == fe.connectionUrl) {
           MetadataManager.buildBatch(metadata)
         } else {
-          val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
-            metadata.clusterManager,
-            batchId)
-          buildBatch(metadata, batchAppStatus)
+          val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
+          try {
+            internalRestClient.getBatch(userName, batchId)
+          } catch {
+            case e: KyuubiRestException =>
+              error(s"Error redirecting get batch[$batchId] to ${metadata.kyuubiInstance}", e)
+              val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
+                metadata.clusterManager,
+                batchId)
+              buildBatch(metadata, batchAppStatus)
+          }
         }
       }.getOrElse {
         error(s"Invalid batchId: $batchId")
