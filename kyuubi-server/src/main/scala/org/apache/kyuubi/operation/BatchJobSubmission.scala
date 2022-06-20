@@ -154,7 +154,6 @@ class BatchJobSubmission(
 
   override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
-      setStateIfNotCanceled(OperationState.RUNNING)
       try {
         if (recoveryMetadata.exists(_.remoteClosed)) {
           setState(OperationState.CANCELED)
@@ -204,6 +203,7 @@ class BatchJobSubmission(
       applicationStatus = currentApplicationState
       while (!applicationFailed(applicationStatus) && process.isAlive) {
         if (!appStatusFirstUpdated && applicationStatus.isDefined) {
+          setStateIfNotCanceled(OperationState.RUNNING)
           updateBatchMetadata()
           appStatusFirstUpdated = true
         }
@@ -234,6 +234,9 @@ class BatchJobSubmission(
     info(s"Monitoring submitted $batchType batch[$batchId] job: $appId")
     if (applicationStatus.isEmpty) {
       applicationStatus = currentApplicationState
+    }
+    if (state == OperationState.PENDING) {
+      setStateIfNotCanceled(OperationState.RUNNING)
     }
     if (applicationStatus.isEmpty) {
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
