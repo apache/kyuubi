@@ -743,7 +743,6 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
         sql("OPTIMIZE p WHERE c1 = 1 ZORDER BY c1, c2")
       }
       assert(e2.getMessage == "Only partition column filters are allowed")
-      sql("OPTIMIZE p WHERE event_date = current_date - 1 ZORDER BY c1, c2")
     }
   }
 

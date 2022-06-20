@@ -20,7 +20,7 @@ package org.apache.kyuubi.sql.zorder
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.{AttributeSet, PredicateHelper}
+import org.apache.spark.sql.catalyst.expressions.{And, AttributeSet, BinaryComparison, Contains, EndsWith, Expression, In, InSet, MultiLikeBase, Not, Or, StartsWith, StringPredicate, StringRegexExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -29,7 +29,7 @@ import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 /**
  * Resolve `OptimizeZorderStatement` to `OptimizeZorderCommand`
  */
-abstract class ResolveZorderBase extends Rule[LogicalPlan] with PredicateHelper {
+abstract class ResolveZorderBase extends Rule[LogicalPlan] {
   def session: SparkSession
   def buildOptimizeZorderCommand(
       catalogTable: CatalogTable,
@@ -68,6 +68,34 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] with PredicateHelper 
       buildOptimizeZorderCommand(catalogTable, statement.query)
 
     case _ => plan
+  }
+
+  /**
+   * The `PredicateHelper.isLikelySelective()` is available since Spark-3.3, forked for Spark that is lower than 3.3
+   * Forked from Apache Spark's org.apache.spark.sql.catalyst.expressions.PredicateHelper
+   *
+   * Returns whether an expression is likely to be selective
+   */
+  private def isLikelySelective(e: Expression): Boolean = e match {
+    case Not(expr) => isLikelySelective(expr)
+    case And(l, r) => isLikelySelective(l) || isLikelySelective(r)
+    case Or(l, r) => isLikelySelective(l) && isLikelySelective(r)
+    case _: StringRegexExpression => true
+    case _: BinaryComparison => true
+    case _: In | _: InSet => true
+    case _: StringPredicate => true
+    case BinaryPredicate(_) => true
+    case _: MultiLikeBase => true
+    case _ => false
+  }
+
+  private object BinaryPredicate {
+    def unapply(expr: Expression): Option[Expression] = expr match {
+      case _: Contains => Option(expr)
+      case _: StartsWith => Option(expr)
+      case _: EndsWith => Option(expr)
+      case _ => None
+    }
   }
 }
 
