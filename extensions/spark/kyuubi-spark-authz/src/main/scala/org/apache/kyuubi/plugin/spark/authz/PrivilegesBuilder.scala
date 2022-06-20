@@ -567,7 +567,7 @@ object PrivilegesBuilder {
    */
   def build(
       plan: LogicalPlan,
-      spark: SparkSession = null): (Seq[PrivilegeObject], Seq[PrivilegeObject]) = {
+      spark: SparkSession): (Seq[PrivilegeObject], Seq[PrivilegeObject]) = {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     plan match {
