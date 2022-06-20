@@ -71,7 +71,8 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] {
   }
 
   /**
-   * The `PredicateHelper.isLikelySelective()` is available since Spark-3.3, forked for Spark that is lower than 3.3
+   * The `PredicateHelper.isLikelySelective()` is available since Spark-3.3, forked for Spark
+   * that is lower than 3.3.
    * Forked from Apache Spark's org.apache.spark.sql.catalyst.expressions.PredicateHelper
    *
    * Returns whether an expression is likely to be selective
