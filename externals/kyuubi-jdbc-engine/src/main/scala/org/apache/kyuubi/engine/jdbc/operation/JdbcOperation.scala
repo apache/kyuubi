@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.engine.jdbc.operation
 
-import org.apache.hive.service.rpc.thrift.TRowSet
+import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -56,8 +56,6 @@ abstract class JdbcOperation(opType: OperationType, session: Session)
     resultRowSet
   }
 
-  protected def toTRowSet(taken: Iterator[Row]): TRowSet
-
   override def cancel(): Unit = {
     cleanup(OperationState.CANCELED)
   }
@@ -88,4 +86,26 @@ abstract class JdbcOperation(opType: OperationType, session: Session)
         }
       }
   }
+
+  override protected def beforeRun(): Unit = {
+    setState(OperationState.PENDING)
+    setHasResultSet(true)
+  }
+
+  override protected def afterRun(): Unit = {}
+
+  protected def toTRowSet(taken: Iterator[Row]): TRowSet = {
+    val rowSetHelper = dialect.getRowSetHelper()
+    rowSetHelper.toTRowSet(
+      taken.toList.map(_.values),
+      schema.columns,
+      getProtocolVersion)
+  }
+
+  override def getResultSetSchema: TTableSchema = {
+    val schemaHelper = dialect.getSchemaHelper()
+    schemaHelper.toTTTableSchema(schema.columns)
+  }
+
+  override def shouldRunAsync: Boolean = false
 }

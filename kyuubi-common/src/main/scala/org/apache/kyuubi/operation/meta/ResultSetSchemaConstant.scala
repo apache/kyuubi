@@ -39,6 +39,12 @@ object ResultSetSchemaConstant {
 
   /**
    * String.
+   * Schema name
+   */
+  final val TABLE_SCHEMA = "TABLE_SCHEMA"
+
+  /**
+   * String.
    * Table Name
    */
   final val TABLE_NAME = "TABLE_NAME"
