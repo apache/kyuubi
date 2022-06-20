@@ -26,7 +26,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KUBERNETES_CONTEXT
-import org.apache.kyuubi.engine.ApplicationOperation.{APP_ERROR_KEY, APP_ID_KEY, APP_STATE_KEY}
+import org.apache.kyuubi.engine.ApplicationOperation.{APP_ERROR_KEY, APP_ID_KEY, APP_NAME_KEY, APP_STATE_KEY}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation._
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
@@ -65,7 +65,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         (
           operation.delete(),
           s"Operation of deleted appId: " +
-            s"${pod.getMetadata.getLabels.get(LABEL_SPARK_APP_SELECTOR)} is complete")
+            s"${pod.getMetadata.getName} is completed")
       } catch {
         case e: Exception =>
           (false, s"Failed to terminate application with $tag, due to ${e.getMessage}")
@@ -82,10 +82,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val operation = findDriverPodByTag(tag)
         val pod = operation.list().getItems.get(0)
         val res = Map(
-          APP_ID_KEY -> pod.getMetadata.getLabels.get(LABEL_SPARK_APP_SELECTOR),
-          APP_DRIVER_NAME -> pod.getMetadata.getName,
-          APP_DRIVER_NAMESPACE -> pod.getMetadata.getNamespace,
-          APP_STATE_KEY -> pod.getStatus.getMessage,
+          // Can't get appId, get Pod UID instead.
+          APP_ID_KEY -> pod.getMetadata.getUid,
+          APP_NAME_KEY -> pod.getMetadata.getName,
+          APP_STATE_KEY -> pod.getStatus.getPhase,
           APP_ERROR_KEY -> pod.getStatus.getReason)
         debug(s"Successfully got application info by $tag: " + res.mkString(", "))
         res
@@ -122,9 +122,5 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 }
 
 object KubernetesApplicationOperation {
-  val LABEL_SPARK_APP_SELECTOR = "spark-app-selector"
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
-
-  val APP_DRIVER_NAME = "driverName"
-  val APP_DRIVER_NAMESPACE = "namespace"
 }
