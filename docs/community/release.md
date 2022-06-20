@@ -254,8 +254,8 @@ After some time this will be sync’d to [Maven Central](https://search.maven.or
 
 Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuubi-website)
 
-1. Add a new markdown file in `src/news/`
-2. Add a new markdown file in `src/release/`
+1. Add a new markdown file in `src/zh/news/`, `src/en/news/`
+2. Add a new markdown file in `src/zh/release/`, `src/en/release/`
 3. Follow [Build Document](../develop_tools/build_document.md) to build documents, then copy `apache/incubator-kyuubi`'s
    folder `docs/_build/html` to `apache/incubator-kyuubi-website`'s folder `content/docs/r{RELEASE_VERSION}`
 
@@ -264,6 +264,8 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuub
 Once everything is working, create an announcement on the website and then send an e-mail to the mailing list.
 You can generate the announcement via `buld/release/script/announce.sh` automatically.
 The mailing list includes: `general@incubator.apache.org`, `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
+
+Note that, you must use the apache.org email to send announce to `announce@apache.org`.
 
 Enjoy an adult beverage of your choice, and congratulations on making a Kyuubi release.
 
