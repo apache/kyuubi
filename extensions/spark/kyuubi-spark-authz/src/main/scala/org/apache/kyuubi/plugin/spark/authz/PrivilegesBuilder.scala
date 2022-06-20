@@ -67,7 +67,7 @@ object PrivilegesBuilder {
     expr.collect { case p: NamedExpression if p.children.isEmpty => p }
   }
 
-   private def setCurrentDBIfNecessary(
+  private def setCurrentDBIfNecessary(
       tableIdent: TableIdentifier,
       spark: SparkSession): TableIdentifier = {
 
@@ -77,13 +77,7 @@ object PrivilegesBuilder {
       tableIdent
     }
   }
-
-    if (spark != null && tableIdent != null && tableIdent.database.isEmpty) {
-      tableIdent.copy(database = getDbFromSparkSession)
-    } else {
-      tableIdent
-    }
-  }
+ }
 
   /**
    * Build PrivilegeObjects from Spark LogicalPlan
