@@ -67,23 +67,16 @@ object PrivilegesBuilder {
     expr.collect { case p: NamedExpression if p.children.isEmpty => p }
   }
 
-  private def setCurrentDBIfNecessary(
+   private def setCurrentDBIfNecessary(
       tableIdent: TableIdentifier,
       spark: SparkSession): TableIdentifier = {
 
-    def getDbFromSparkSession: Option[String] = {
-      if (isSparkVersionAtMost("2.4")) {
-        return Some(spark.catalog.currentDatabase)
-      } else if (isSparkVersionAtLeast("3.0")) {
-        val catalogManager = invoke(spark.sessionState, "catalogManager")
-        val currentNamespace = invoke(catalogManager.asInstanceOf[AnyRef], "currentNamespace")
-        val namespaces: Array[String] = currentNamespace.asInstanceOf[Array[String]]
-        if (namespaces != null && namespaces.length == 1) {
-          return Some(namespaces.head)
-        }
-      }
-      None
+    if (tableIdent.database.isEmpty) {
+      tableIdent.copy(database = Some(spark.catalog.currentDatabase))
+    } else {
+      tableIdent
     }
+  }
 
     if (spark != null && tableIdent != null && tableIdent.database.isEmpty) {
       tableIdent.copy(database = getDbFromSparkSession)
