@@ -343,7 +343,7 @@ kyuubi.kinit.principal|&lt;undefined&gt;|Name of the Kerberos principal.|string|
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-kyuubi.kubernetes.context|&lt;undefined&gt;|The desired context from your K8S config file used to configure the K8S client for interacting with the cluster.|string|1.6.0
+kyuubi.kubernetes.context|&lt;undefined&gt;|The desired context from your kubernetes config file used to configure the K8S client for interacting with the cluster.|string|1.6.0
 
 
 ### Metadata
