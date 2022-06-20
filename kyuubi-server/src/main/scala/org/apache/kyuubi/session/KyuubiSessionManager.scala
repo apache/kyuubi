@@ -242,9 +242,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  def getRemoteClosedBatchSessions(kyuubiInstance: String): Seq[Metadata] = {
+  def getPeerInstanceClosedBatchSessions(kyuubiInstance: String): Seq[Metadata] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToKill =>
-      metadataManager.getRemoteClosedBatchesMetadata(
+      metadataManager.getPeerInstanceClosedBatchesMetadata(
         stateToKill.toString,
         kyuubiInstance,
         0,

@@ -155,7 +155,7 @@ class BatchJobSubmission(
   override protected def runInternal(): Unit = session.handleSessionException {
     val asyncOperation: Runnable = () => {
       try {
-        if (recoveryMetadata.exists(_.remoteClosed)) {
+        if (recoveryMetadata.exists(_.peerInstanceClosed)) {
           setState(OperationState.CANCELED)
         } else {
           // If it is in recovery mode, only re-submit batch job if previous state is PENDING and

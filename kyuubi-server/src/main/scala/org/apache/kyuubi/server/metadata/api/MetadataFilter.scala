@@ -30,4 +30,4 @@ case class MetadataFilter(
     kyuubiInstance: String = null,
     createTime: Long = 0L,
     endTime: Long = 0L,
-    remoteClosed: Boolean = false)
+    peerInstanceClosed: Boolean = false)

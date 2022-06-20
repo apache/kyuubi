@@ -186,7 +186,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     batches = jdbcMetadataStore.getMetadataList(
       MetadataFilter(
         sessionType = SessionType.BATCH,
-        remoteClosed = true),
+        peerInstanceClosed = true),
       0,
       Int.MaxValue,
       true)
@@ -194,15 +194,15 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
 
     jdbcMetadataStore.updateMetadata(Metadata(
       identifier = batchStateOnlyMetadata.identifier,
-      remoteClosed = true))
+      peerInstanceClosed = true))
 
-    batchStateOnlyMetadata = batchStateOnlyMetadata.copy(remoteClosed = true)
-    batchMetadata = batchMetadata.copy(remoteClosed = true)
+    batchStateOnlyMetadata = batchStateOnlyMetadata.copy(peerInstanceClosed = true)
+    batchMetadata = batchMetadata.copy(peerInstanceClosed = true)
 
     batches = jdbcMetadataStore.getMetadataList(
       MetadataFilter(
         sessionType = SessionType.BATCH,
-        remoteClosed = true),
+        peerInstanceClosed = true),
       0,
       Int.MaxValue,
       true)

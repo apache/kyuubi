@@ -128,7 +128,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
     _metadataStore.getMetadataList(filter, from, size, false)
   }
 
-  def getRemoteClosedBatchesMetadata(
+  def getPeerInstanceClosedBatchesMetadata(
       state: String,
       kyuubiInstance: String,
       from: Int,
@@ -137,7 +137,7 @@ class MetadataManager extends CompositeService("MetadataManager") {
       sessionType = SessionType.BATCH,
       state = state,
       kyuubiInstance = kyuubiInstance,
-      remoteClosed = true)
+      peerInstanceClosed = true)
     _metadataStore.getMetadataList(filter, from, size, true)
   }
 
@@ -287,7 +287,7 @@ object MetadataManager extends Logging {
       .map(info => (info._1, info._2.get))
 
     val batchState =
-      if (batchMetadata.remoteClosed &&
+      if (batchMetadata.peerInstanceClosed &&
         !OperationState.isTerminal(OperationState.withName(batchMetadata.state))) {
         OperationState.CANCELED.toString
       } else {

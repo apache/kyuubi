@@ -209,9 +209,9 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       whereConditions += " end_time <= ? "
       params += filter.endTime
     }
-    if (filter.remoteClosed) {
-      whereConditions += " remote_closed = ? "
-      params += filter.remoteClosed
+    if (filter.peerInstanceClosed) {
+      whereConditions += " peer_instance_closed = ? "
+      params += filter.peerInstanceClosed
     }
     if (whereConditions.nonEmpty) {
       queryBuilder.append(whereConditions.mkString(" WHERE ", " AND ", " "))
@@ -259,9 +259,9 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       setClauses += " engine_error = ? "
       params += error
     }
-    if (metadata.remoteClosed) {
-      setClauses += " remote_closed = ? "
-      params += metadata.remoteClosed
+    if (metadata.peerInstanceClosed) {
+      setClauses += " peer_instance_closed = ? "
+      params += metadata.peerInstanceClosed
     }
     if (setClauses.nonEmpty) {
       queryBuilder.append(setClauses.mkString(" SET ", " , ", " "))
@@ -311,7 +311,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         val engineState = resultSet.getString("engine_state")
         val engineError = Option(resultSet.getString("engine_error"))
         val endTime = resultSet.getLong("end_time")
-        val remoteClosed = resultSet.getBoolean("remote_closed")
+        val peerInstanceClosed = resultSet.getBoolean("peer_instance_closed")
 
         var resource: String = null
         var className: String = null
@@ -346,7 +346,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           engineState = engineState,
           engineError = engineError,
           endTime = endTime,
-          remoteClosed = remoteClosed)
+          peerInstanceClosed = peerInstanceClosed)
         metadataList += metadata
       }
       metadataList
@@ -469,7 +469,7 @@ object JDBCMetadataStore {
     "engine_state",
     "engine_error",
     "end_time",
-    "remote_closed").mkString(",")
+    "peer_instance_closed").mkString(",")
   private val METADATA_ALL_COLUMNS = Seq(
     METADATA_STATE_ONLY_COLUMNS,
     "resource",

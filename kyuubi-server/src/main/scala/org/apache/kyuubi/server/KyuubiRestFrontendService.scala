@@ -84,7 +84,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val task = new Runnable {
       override def run(): Unit = {
         try {
-          sessionManager.getRemoteClosedBatchSessions(connectionUrl).foreach { batch =>
+          sessionManager.getPeerInstanceClosedBatchSessions(connectionUrl).foreach { batch =>
             Utils.tryLogNonFatalError {
               val sessionHandle = SessionHandle.fromUUID(batch.identifier)
               Option(sessionManager.getBatchSessionImpl(sessionHandle)).foreach(_.close())
