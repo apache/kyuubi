@@ -30,7 +30,7 @@ import org.apache.kyuubi.ctl.util.{BatchUtil, Render}
 
 class LogBatchCommand(
     cliConfig: CliConfig,
-    batch: Batch = null,
+    batch: Option[Batch] = None,
     restConfigMap: JMap[String, Object] = null)
   extends Command[Batch](cliConfig) {
 
@@ -49,7 +49,7 @@ class LogBatchCommand(
 
       var log: OperationLog = null
       var done = false
-      var batch: Batch = if (this.batch == null) batchRestApi.getBatchById(batchId) else this.batch
+      var batch = this.batch.getOrElse(batchRestApi.getBatchById(batchId))
       val kyuubiInstance = batch.getKyuubiInstance
 
       withKyuubiInstanceRestClient(kyuubiRestClient, kyuubiInstance) { kyuubiInstanceRestClient =>

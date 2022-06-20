@@ -42,7 +42,7 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
           batchId = batch.getId,
           waitCompletion = normalizedCliConfig.batchOpts.waitCompletion),
         logOpts = LogOpts(forward = true)),
-      batch,
+      Some(batch),
       map)
     batch = logBatchCommand.doRun()
 
