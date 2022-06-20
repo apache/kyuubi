@@ -77,7 +77,6 @@ object PrivilegesBuilder {
       tableIdent
     }
   }
- }
 
   /**
    * Build PrivilegeObjects from Spark LogicalPlan
