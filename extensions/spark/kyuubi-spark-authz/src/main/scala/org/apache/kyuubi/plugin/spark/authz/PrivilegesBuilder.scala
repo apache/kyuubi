@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -64,6 +65,17 @@ object PrivilegesBuilder {
 
   private def collectLeaves(expr: Expression): Seq[NamedExpression] = {
     expr.collect { case p: NamedExpression if p.children.isEmpty => p }
+  }
+
+  private def setCurrentDBIfNecessary(
+      tableIdent: TableIdentifier,
+      spark: SparkSession): TableIdentifier = {
+
+    if (tableIdent.database.isEmpty) {
+      tableIdent.copy(database = Some(spark.catalog.currentDatabase))
+    } else {
+      tableIdent
+    }
   }
 
   /**
@@ -145,7 +157,8 @@ object PrivilegesBuilder {
   private def buildCommand(
       plan: LogicalPlan,
       inputObjs: ArrayBuffer[PrivilegeObject],
-      outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
+      outputObjs: ArrayBuffer[PrivilegeObject],
+      spark: SparkSession): Unit = {
 
     def getPlanField[T](field: String): T = {
       getFieldVal[T](plan, field)
@@ -348,8 +361,8 @@ object PrivilegesBuilder {
         buildQuery(getQuery, inputObjs)
 
       case "CreateTableLikeCommand" =>
-        val target = getPlanField[TableIdentifier]("targetTable")
-        val source = getPlanField[TableIdentifier]("sourceTable")
+        val target = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("targetTable"), spark)
+        val source = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("sourceTable"), spark)
         inputObjs += tablePrivileges(source)
         outputObjs += tablePrivileges(target)
 
@@ -362,7 +375,7 @@ object PrivilegesBuilder {
         inputObjs += tablePrivileges(table, cols)
 
       case "DescribeTableCommand" =>
-        val table = getPlanField[TableIdentifier]("table")
+        val table = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("table"), spark)
         inputObjs += tablePrivileges(table)
 
       case "DescribeDatabaseCommand" | "SetDatabaseCommand" =>
@@ -538,12 +551,14 @@ object PrivilegesBuilder {
    *
    * @param plan A Spark LogicalPlan
    */
-  def build(plan: LogicalPlan): (Seq[PrivilegeObject], Seq[PrivilegeObject]) = {
+  def build(
+      plan: LogicalPlan,
+      spark: SparkSession): (Seq[PrivilegeObject], Seq[PrivilegeObject]) = {
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
     plan match {
       // RunnableCommand
-      case cmd: Command => buildCommand(cmd, inputObjs, outputObjs)
+      case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
       case _ => buildQuery(plan, inputObjs)
     }

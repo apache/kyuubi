@@ -40,7 +40,7 @@ object RuleAuthorization {
     val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = OperationType(plan.nodeName)
-    val (inputs, outputs) = PrivilegesBuilder.build(plan)
+    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
     val requests = new ArrayBuffer[AccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
       val resource = AccessResource(DATABASE, null)
