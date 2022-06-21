@@ -38,28 +38,28 @@ object TrinoStatusPrinter {
       debug: Boolean = false): Unit = {
     val out = new TrinoConsoleProgressBar(operationLog)
     val results = client.finalStatusInfo()
-    val stats = results.getStats()
+    val stats = results.getStats
 
     val wallTime = Duration.succinctDuration(stats.getElapsedTimeMillis(), MILLISECONDS)
 
-    val nodes = stats.getNodes()
-    if ((nodes == 0) || (stats.getTotalSplits() == 0)) {
+    val nodes = stats.getNodes
+    if ((nodes == 0) || (stats.getTotalSplits == 0)) {
       return
     }
 
     // Query 12, FINISHED, 1 node
-    val querySummary = s"Query ${results.getId()}, ${stats.getState()}," +
+    val querySummary = s"Query ${results.getId}, ${stats.getState}," +
       s" ${nodes.formatted("%,d")} ${pluralize("node", nodes)}"
     out.printLine(querySummary)
 
     if (debug) {
-      out.printLine(results.getInfoUri().toString())
+      out.printLine(results.getInfoUri.toString)
     }
 
     // Splits: 1000 total, 842 done (84.20%)
-    val splitsSummary = s"Splits: ${stats.getTotalSplits().formatted("%,d")} total," +
-      s" ${stats.getCompletedSplits().formatted("%,d")}" +
-      s" done (${stats.getProgressPercentage().orElse(0.0).formatted("%.2f")}%)"
+    val splitsSummary = s"Splits: ${stats.getTotalSplits.formatted("%,d")} total," +
+      s" ${stats.getCompletedSplits.formatted("%,d")}" +
+      s" done (${stats.getProgressPercentage.orElse(0.0).formatted("%.2f")}%)"
     out.printLine(splitsSummary)
 
     if (debug) {
@@ -71,7 +71,7 @@ object TrinoStatusPrinter {
           cpuTime,
           false).formatted("%5s")} rows/s, " +
         s"${formatDataRate(
-          DataSize.ofBytes(stats.getProcessedBytes()),
+          DataSize.ofBytes(stats.getProcessedBytes),
           cpuTime,
           true).formatted("%8s")}, " +
         s"${percentage(
@@ -79,7 +79,7 @@ object TrinoStatusPrinter {
           stats.getWallTimeMillis()).formatted("%d")}% active"
       out.printLine(cpuTimeSummary)
 
-      val parallelism = cpuTime.getValue(MILLISECONDS) / wallTime.getValue(MILLISECONDS);
+      val parallelism = cpuTime.getValue(MILLISECONDS) / wallTime.getValue(MILLISECONDS)
 
       // Per Node: 3.5 parallelism, 83.3K rows/s, 0.7 MB/s
       val perNodeSummary = s"Per Node: ${(parallelism / nodes).formatted("%.1f")} parallelism, " +
