@@ -18,7 +18,7 @@
 package org.apache.kyuubi.service
 
 /**
- * A [[FrontendService]] in Kyuubi architecture is responsible for talking requests from clients
+ * A [[FrontendService]] in Kyuubi architecture is responsible for taking requests from clients
  */
 trait FrontendService {
 
