@@ -144,7 +144,7 @@ class ExecuteStatement(
   }
 
   override def cleanup(targetState: OperationState): Unit = {
-    operationListener.foreach(spark.sparkContext.removeSparkListener(_))
+    operationListener.foreach(_.cleanup())
     super.cleanup(targetState)
   }
 

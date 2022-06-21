@@ -44,13 +44,13 @@ class SQLOperationListener(
     spark: SparkSession) extends StatsReportListener with Logging {
 
   private val operationId: String = operation.getHandle.identifier.toString
-  private val activeJobs = new java.util.HashSet[Int]()
-  private val activeStages = new java.util.HashSet[Int]()
+  private lazy val activeJobs = new java.util.HashSet[Int]()
+  private lazy val activeStages = new java.util.HashSet[Int]()
   private var executionId: Option[Long] = None
-  private val liveStages = new ConcurrentHashMap[StageAttempt, StageInfo]()
+  private lazy val liveStages = new ConcurrentHashMap[StageAttempt, StageInfo]()
 
   private val conf: KyuubiConf = operation.getSession.sessionManager.getConf
-  private val consoleProgressBar =
+  private lazy val consoleProgressBar =
     if (conf.get(ENGINE_SPARK_SHOW_PROGRESS)) {
       Some(new SparkConsoleProgressBar(
         operation,
@@ -87,6 +87,7 @@ class SQLOperationListener(
       if (executionId.isEmpty) {
         executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
           .map(_.toLong)
+        consoleProgressBar
         operation match {
           case executeStatement: ExecuteStatement =>
             executeStatement.setCompiledStateIfNeeded()
@@ -163,9 +164,15 @@ class SQLOperationListener(
     event match {
       case sqlExecutionEnd: SparkListenerSQLExecutionEnd
           if executionId.contains(sqlExecutionEnd.executionId) =>
-        spark.sparkContext.removeSparkListener(this)
-        consoleProgressBar.foreach(_.finish())
+        cleanup()
       case _ =>
+    }
+  }
+
+  def cleanup(): Unit = {
+    spark.sparkContext.removeSparkListener(this)
+    if (executionId.isDefined) {
+      consoleProgressBar.foreach(_.finish())
     }
   }
 }
