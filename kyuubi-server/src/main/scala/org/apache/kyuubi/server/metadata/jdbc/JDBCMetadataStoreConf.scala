@@ -40,10 +40,10 @@ object JDBCMetadataStoreConf {
       .doc("The database type for server jdbc metadata store.<ul>" +
         " <li>DERBY: Apache Derby, jdbc driver `org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
         " <li>MYSQL: MySQL, jdbc driver `com.mysql.jdbc.Driver`.</li>" +
-        " <li>CUSTOM: User-defined database type, need specify the jdbc driver in addition.</li>" +
+        " <li>CUSTOM: User-defined database type, need to specify corresponding jdbc driver.</li>" +
         " Note that: The jdbc datasource is powered by HiKariCP, for datasource properties," +
-        " please specify them with prefix: kyuubi.server.metadata.store.jdbc.datasource." +
-        " For example, kyuubi.server.metadata.store.jdbc.datasource.connectionTimeout=10000.")
+        " please specify them with prefix: kyuubi.metadata.store.jdbc.datasource." +
+        " For example, kyuubi.metadata.store.jdbc.datasource.connectionTimeout=10000.")
       .version("1.6.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
