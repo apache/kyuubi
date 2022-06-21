@@ -19,7 +19,6 @@ package org.apache.kyuubi.sql
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.mutable.ListBuffer
-
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.misc.Interval
 import org.antlr.v4.runtime.tree.ParseTree
@@ -28,7 +27,6 @@ import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRe
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.parser.ParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
-
 import org.apache.kyuubi.sql.KyuubiSparkSQLParser._
 import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, Zorder}
 
@@ -42,6 +40,7 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
       unparsedPredicateOptimize
 
     val predicate = tablePredicate.map(parseExpression)
+    verifyPartitionPredicates(predicate)
     val table = UnresolvedRelation(tableIdent)
     val tableWithFilter = predicate match {
       case Some(expr) => Filter(expr, table)
@@ -53,6 +52,43 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
         conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED),
         Project(Seq(UnresolvedStar(None)), tableWithFilter))
     OptimizeZorderStatement(tableIdent, query)
+  }
+
+  private def verifyPartitionPredicates(predicates: Option[Expression]): Unit = {
+    predicates.foreach {
+      case p if !isLikelySelective(p) =>
+        throw new KyuubiSQLExtensionException(s"unsupported partition predicates: ${p.sql}")
+      case _ =>
+    }
+  }
+
+  /**
+   * Forked from Apache Spark's org.apache.spark.sql.catalyst.expressions.PredicateHelper
+   * The `PredicateHelper.isLikelySelective()` is available since Spark-3.3, forked for Spark
+   * that is lower than 3.3.
+   *
+   * Returns whether an expression is likely to be selective
+   */
+  private def isLikelySelective(e: Expression): Boolean = e match {
+    case Not(expr) => isLikelySelective(expr)
+    case And(l, r) => isLikelySelective(l) || isLikelySelective(r)
+    case Or(l, r) => isLikelySelective(l) && isLikelySelective(r)
+    case _: StringRegexExpression => true
+    case _: BinaryComparison => true
+    case _: In | _: InSet => true
+    case _: StringPredicate => true
+    case BinaryPredicate(_) => true
+    case _: MultiLikeBase => true
+    case _ => false
+  }
+
+  private object BinaryPredicate {
+    def unapply(expr: Expression): Option[Expression] = expr match {
+      case _: Contains => Option(expr)
+      case _: StartsWith => Option(expr)
+      case _: EndsWith => Option(expr)
+      case _ => None
+    }
   }
 
   /**
