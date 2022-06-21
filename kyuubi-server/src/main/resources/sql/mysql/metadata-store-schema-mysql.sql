@@ -7,7 +7,7 @@ CREATE TABLE metadata(
     real_user varchar(1024) NOT NULL COMMENT 'the real user',
     user_name varchar(1024) NOT NULL COMMENT 'the user name, might be a proxy user',
     ip_address varchar(512) COMMENT 'the client ip address',
-    kyuubi_instance varchar(1024) NOT NULL COMMENT 'the kyuubi instance that creates this'
+    kyuubi_instance varchar(1024) NOT NULL COMMENT 'the kyuubi instance that creates this',
     state varchar(128) NOT NULL COMMENT 'the session state',
     resource varchar(1024) COMMENT 'the main resource',
     class_name varchar(1024) COMMENT 'the main class name',
