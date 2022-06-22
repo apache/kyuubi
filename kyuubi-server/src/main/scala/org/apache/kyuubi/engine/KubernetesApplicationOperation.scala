@@ -17,10 +17,7 @@
 
 package org.apache.kyuubi.engine
 
-import java.nio.file.Paths
 import java.rmi.UnexpectedException
-
-import scala.sys.process._
 
 import io.fabric8.kubernetes.api.model.{Pod, PodList}
 import io.fabric8.kubernetes.client.{Config, DefaultKubernetesClient, KubernetesClient, KubernetesClientException}
