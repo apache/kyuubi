@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.operation.thrift.http
 
-import org.scalactic.source.Position
-import org.scalatest.Tag
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
 import org.apache.kyuubi.operation.KyuubiOperationKerberosAndPlainAuthSuite
@@ -32,11 +29,4 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
   override protected def getJdbcUrl: String =
     s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/default;transportMode=http;" +
       s"httpPath=cliservice"
-
-  override protected def test(testName: String, testTags: Tag*)(testFun: => Any)(implicit
-      pos: Position): Unit = {
-    if (!testName.equals("test with KERBEROS authentication")) {
-      super.test(testName, testTags: _*)(testFun)(pos)
-    }
-  }
 }
