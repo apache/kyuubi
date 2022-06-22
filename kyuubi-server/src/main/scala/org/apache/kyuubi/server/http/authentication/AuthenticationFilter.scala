@@ -35,9 +35,9 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationHandler._
   import AuthSchemes._
 
-  private[kyuubi] val authSchemeHandlers = new HashMap[AuthScheme, AuthenticationHandler]()
+  private[authentication] val authSchemeHandlers = new HashMap[AuthScheme, AuthenticationHandler]()
 
-  private[kyuubi] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
+  private[authentication] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
     authHandler.init(conf)
     if (authHandler.authenticationSupported) {
       if (authSchemeHandlers.contains(authHandler.authScheme)) {
@@ -82,6 +82,10 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     super.init(filterConfig)
   }
 
+  private[kyuubi] def getMatchedHandler(authorization: String): Option[AuthenticationHandler] = {
+    authSchemeHandlers.values.find(_.matchAuthScheme(authorization))
+  }
+
   /**
    * If the request has a valid authentication token it allows the request to continue to the
    * target resource, otherwise it triggers an authentication sequence using the configured
@@ -101,13 +105,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     val httpResponse = response.asInstanceOf[HttpServletResponse]
 
     val authorization = httpRequest.getHeader(AUTHORIZATION_HEADER)
-    var matchedHandler: AuthenticationHandler = null
-
-    for (authHandler <- authSchemeHandlers.values if matchedHandler == null) {
-      if (authHandler.matchAuthScheme(authorization)) {
-        matchedHandler = authHandler
-      }
-    }
+    val matchedHandler = getMatchedHandler(authorization).orNull
 
     if (matchedHandler == null) {
       debug(s"No auth scheme matched for url: ${httpRequest.getRequestURL}")

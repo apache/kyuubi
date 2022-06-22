@@ -33,7 +33,7 @@ import org.apache.thrift.server.TServlet
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, AuthenticationHandler}
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -282,13 +282,8 @@ class ThriftHttpServlet(
 
   private def authenticate(request: HttpServletRequest, response: HttpServletResponse): String = {
     val authorization = request.getHeader(AUTHORIZATION_HEADER)
-    var matchedHandler: AuthenticationHandler = null
-    for (authHandler <- authenticationFilter.authSchemeHandlers.values if matchedHandler == null) {
-      if (authHandler.matchAuthScheme(authorization)) {
-        matchedHandler = authHandler
-      }
-    }
-    Option(matchedHandler).map(_.authenticate(request, response)).orNull
+    authenticationFilter.getMatchedHandler(authorization).map(
+      _.authenticate(request, response)).orNull
   }
 
   private def getDoAsQueryParam(queryString: String): String = {
