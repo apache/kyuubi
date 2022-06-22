@@ -35,9 +35,9 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationHandler._
   import AuthSchemes._
 
-  private[authentication] val authSchemeHandlers = new HashMap[AuthScheme, AuthenticationHandler]()
+  private[kyuubi] val authSchemeHandlers = new HashMap[AuthScheme, AuthenticationHandler]()
 
-  private[authentication] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
+  private[kyuubi] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
     authHandler.init(conf)
     if (authHandler.authenticationSupported) {
       if (authSchemeHandlers.contains(authHandler.authScheme)) {
@@ -53,7 +53,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     }
   }
 
-  override def init(filterConfig: FilterConfig): Unit = {
+  private[kyuubi] def initAuthHandlers(): Unit = {
     val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
     val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
     val basicAuthTypeOpt = {
@@ -75,6 +75,10 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
       val internalHandler = new KyuubiInternalAuthenticationHandler
       addAuthHandler(internalHandler)
     }
+  }
+
+  override def init(filterConfig: FilterConfig): Unit = {
+    initAuthHandlers()
     super.init(filterConfig)
   }
 
