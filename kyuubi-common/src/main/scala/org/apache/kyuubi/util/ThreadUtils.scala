@@ -26,10 +26,14 @@ import org.apache.kyuubi.{KyuubiException, Logging}
 
 object ThreadUtils extends Logging {
 
-  def newDaemonSingleThreadScheduledExecutor(threadName: String): ScheduledExecutorService = {
+  def newDaemonSingleThreadScheduledExecutor(
+      threadName: String,
+      executeExistingDelayedTasksAfterShutdown: Boolean = true): ScheduledExecutorService = {
     val threadFactory = new NamedThreadFactory(threadName, daemon = true)
     val executor = new ScheduledThreadPoolExecutor(1, threadFactory)
     executor.setRemoveOnCancelPolicy(true)
+    executor
+      .setExecuteExistingDelayedTasksAfterShutdownPolicy(executeExistingDelayedTasksAfterShutdown)
     executor
   }
 
