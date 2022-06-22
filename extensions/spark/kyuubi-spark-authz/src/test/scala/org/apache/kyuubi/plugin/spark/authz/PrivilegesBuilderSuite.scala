@@ -1573,6 +1573,28 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(tuple._2.size === 0)
     }
   }
+
+  test("OptimizedCreateHiveTableAsSelectCommand") {
+    assume(!isSparkV2)
+    val plan = sql(
+      s"CREATE TABLE OptimizedCreateHiveTableAsSelectCommand STORED AS parquet AS SELECT 1 as a")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+
+    assert(operationType === CREATETABLE_AS_SELECT)
+    val tuple = PrivilegesBuilder.build(plan, spark)
+    assert(tuple._1.size === 0)
+
+    assert(tuple._2.size === 1)
+    val po = tuple._2.head
+    assert(po.actionType === PrivilegeObjectActionType.OTHER)
+    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.dbname === "default")
+    assert(po.objectName === "OptimizedCreateHiveTableAsSelectCommand")
+    assert(po.columns === Seq("a"))
+    val accessType = ranger.AccessType(po, operationType, isInput = false)
+    assert(accessType === AccessType.CREATE)
+  }
 }
 
 case class SimpleInsert(userSpecifiedSchema: StructType)(@transient val sparkSession: SparkSession)
