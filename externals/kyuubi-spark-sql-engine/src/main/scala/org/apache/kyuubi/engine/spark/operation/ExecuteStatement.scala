@@ -127,7 +127,7 @@ class ExecuteStatement(
   private def addTimeoutMonitor(): Unit = {
     if (queryTimeout > 0) {
       val timeoutExecutor =
-        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
+        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread", false)
       timeoutExecutor.schedule(
         new Runnable {
           override def run(): Unit = {
