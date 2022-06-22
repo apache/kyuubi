@@ -66,11 +66,11 @@ class EngineSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
     }
   }
 
-  private[authentication] def encrypt(value: String): String = {
+  private[authentication] def encrypt(value: String): String = synchronized {
     byteArrayToHexString(encryptor.doFinal(value.getBytes))
   }
 
-  private[authentication] def decrypt(value: String): String = {
+  private[authentication] def decrypt(value: String): String = synchronized {
     new String(decryptor.doFinal(hexStringToByteArray(value)))
   }
 
