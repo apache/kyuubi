@@ -24,7 +24,7 @@ trait ApplicationOperation {
   /**
    * Step for initializing the instance.
    */
-  def initialize(conf: KyuubiConf): Unit
+  def initialize(conf: KyuubiConf, kyuubiApplicationManager: KyuubiApplicationManager): Unit
 
   /**
    * Step to clean up the instance

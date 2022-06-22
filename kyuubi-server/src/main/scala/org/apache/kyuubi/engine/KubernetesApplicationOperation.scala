@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.engine
 
+import java.nio.file.Paths
 import java.rmi.UnexpectedException
+
+import scala.sys.process._
 
 import io.fabric8.kubernetes.api.model.{Pod, PodList}
 import io.fabric8.kubernetes.client.{Config, DefaultKubernetesClient, KubernetesClient, KubernetesClientException}
@@ -33,21 +36,27 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   @volatile
   private var kubernetesClient: KubernetesClient = _
+  private var manager: KyuubiApplicationManager = _
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(
+      conf: KyuubiConf,
+      kyuubiApplicationManager: KyuubiApplicationManager): Unit = {
+    manager = kyuubiApplicationManager
     info("Start Initialize Kubernetes Client.")
     val contextOpt = conf.get(KUBERNETES_CONTEXT)
     if (contextOpt.isEmpty) {
       warn("Skip Initialize Kubernetes Client, because of Context not set.")
       return
     }
-    try {
-      kubernetesClient = new DefaultKubernetesClient(Config.autoConfigure(contextOpt.get))
-      info(s"Initialized Kubernetes Client connect to: ${kubernetesClient.getMasterUrl}")
-    } catch {
-      case e: KubernetesClientException =>
-        error("Fail to init KubernetesClient for KubernetesApplicationOperation", e)
-    }
+    kubernetesClient =
+      try {
+        info(s"Initialized Kubernetes Client connect to: ${kubernetesClient.getMasterUrl}")
+        new DefaultKubernetesClient(Config.autoConfigure(contextOpt.get))
+      } catch {
+        case e: KubernetesClientException =>
+          error("Fail to init KubernetesClient for KubernetesApplicationOperation", e)
+          null
+      }
   }
 
   override def isSupported(clusterManager: Option[String]): Boolean = {
@@ -61,11 +70,15 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       try {
         // Need driver only
         val operation = findDriverPodByTag(tag)
-        val pod = operation.list().getItems.get(0)
-        (
-          operation.delete(),
-          s"Operation of deleted appId: " +
-            s"${pod.getMetadata.getName} is completed")
+        val podList = operation.list().getItems
+        if (podList.size() != 0) {
+          (
+            operation.delete(),
+            s"Operation of deleted appId: " + s"${podList.get(0).getMetadata.getName} is completed")
+        } else {
+          // client mode
+          manager.killApplication(Some("local"), tag)
+        }
       } catch {
         case e: Exception =>
           (false, s"Failed to terminate application with $tag, due to ${e.getMessage}")
