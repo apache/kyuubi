@@ -36,7 +36,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
   private val operations = ServiceLoader.load(classOf[ApplicationOperation])
     .asScala.filter(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation]))
   private val jps = operations.head
-  jps.initialize(null)
+  jps.initialize(null, null)
 
   test("JpsApplicationOperation with jstat") {
     assert(jps.isSupported(None))

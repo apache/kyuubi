@@ -40,7 +40,7 @@ sealed trait WithKyuubiServerOnYarn extends WithKyuubiServer {
 
   protected lazy val yarnOperation: YarnApplicationOperation = {
     val operation = new YarnApplicationOperation()
-    operation.initialize(miniYarnService.getConf)
+    operation.initialize(miniYarnService.getConf, null)
     operation
   }
 
