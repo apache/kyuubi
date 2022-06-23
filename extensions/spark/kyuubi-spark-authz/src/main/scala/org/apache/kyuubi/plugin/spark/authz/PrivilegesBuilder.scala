@@ -324,13 +324,13 @@ object PrivilegesBuilder {
         // fixme: do we need to add columns to check?
         outputObjs += tablePrivileges(table)
 
-      case "CreateDataSourceTableAsSelectCommand" |
-          "OptimizedCreateHiveTableAsSelectCommand" =>
+      case "CreateDataSourceTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("table").identifier
         outputObjs += tablePrivileges(table)
         buildQuery(getQuery, inputObjs)
 
-      case "CreateHiveTableAsSelectCommand" =>
+      case "CreateHiveTableAsSelectCommand" |
+          "OptimizedCreateHiveTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("tableDesc").identifier
         val cols = getPlanField[Seq[String]]("outputColumnNames")
         outputObjs += tablePrivileges(table, cols)
