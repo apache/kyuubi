@@ -77,8 +77,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             // client mode
             manager.killApplication(Some("local"), tag)
           }
-          (false, s"Failed to terminate application with $tag, " +
-            s"due to can't find $tag engine or KyuubiApplicationManager be null")
+          (
+            false,
+            s"Failed to terminate application with $tag, " +
+              s"due to can't find $tag engine or KyuubiApplicationManager be null")
         }
       } catch {
         case e: Exception =>
