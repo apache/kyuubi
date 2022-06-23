@@ -35,4 +35,30 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
     service.awaitTermination(10, TimeUnit.SECONDS)
     assert(threadName startsWith "ThreadUtilsTest")
   }
+
+  test("New daemon single thread scheduled executor for shutdownNow") {
+    val service = ThreadUtils.newDaemonSingleThreadScheduledExecutor("ThreadUtilsTest")
+    @volatile var threadName = ""
+    service.submit(new Runnable {
+      override def run(): Unit = {
+        threadName = Thread.currentThread().getName
+      }
+    })
+    service.shutdownNow()
+    service.awaitTermination(10, TimeUnit.SECONDS)
+    assert(threadName startsWith "")
+  }
+
+  test("New daemon single thread scheduled executor for cancel delayed tasks") {
+    val service = ThreadUtils.newDaemonSingleThreadScheduledExecutor("ThreadUtilsTest", false)
+    @volatile var threadName = ""
+    service.submit(new Runnable {
+      override def run(): Unit = {
+        threadName = Thread.currentThread().getName
+      }
+    })
+    service.shutdown()
+    service.awaitTermination(10, TimeUnit.SECONDS)
+    assert(threadName startsWith "")
+  }
 }
