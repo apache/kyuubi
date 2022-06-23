@@ -96,15 +96,26 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       debug(s"Getting application info from Kubernetes cluster by $tag tag")
       try {
         val operation = findDriverPodByTag(tag)
-        val pod = operation.list().getItems.get(0)
-        val res = Map(
-          // Can't get appId, get Pod UID instead.
-          APP_ID_KEY -> pod.getMetadata.getUid,
-          APP_NAME_KEY -> pod.getMetadata.getName,
-          APP_STATE_KEY -> pod.getStatus.getPhase,
-          APP_ERROR_KEY -> pod.getStatus.getReason)
-        debug(s"Successfully got application info by $tag: " + res.mkString(", "))
-        res
+        val podList = operation.list().getItems
+        if (podList.size() != 0) {
+          val pod = podList.get(0)
+          val res = Map(
+            // Can't get appId, get Pod UID instead.
+            APP_ID_KEY -> pod.getMetadata.getUid,
+            APP_NAME_KEY -> pod.getMetadata.getName,
+            APP_STATE_KEY -> pod.getStatus.getPhase,
+            APP_ERROR_KEY -> pod.getStatus.getReason)
+          debug(s"Successfully got application info by $tag: " + res.mkString(", "))
+          res
+        } else {
+          if (manager != null) {
+            // client mode
+            manager.getApplicationInfo(Some("local"), tag).get
+          } else {
+            error(s"Failed to get application with $tag, due to KyuubiApplicationManager is null")
+            null
+          }
+        }
       } catch {
         case e: Exception =>
           error(s"Failed to get application with $tag, due to ${e.getMessage}")
