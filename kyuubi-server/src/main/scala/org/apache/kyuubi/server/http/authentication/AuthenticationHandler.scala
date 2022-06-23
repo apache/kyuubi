@@ -98,7 +98,7 @@ trait AuthenticationHandler {
     }
 
     var authorization = authHeader.substring(authScheme.toString.length).trim
-    // For thrift http spnego authorization, its format might be 'NEGOTIATE : $token'
+    // For thrift http spnego authorization, its format is 'NEGOTIATE : $token', see HIVE-26353
     if (authorization.startsWith(":")) {
       authorization = authorization.stripPrefix(":").trim
     }
