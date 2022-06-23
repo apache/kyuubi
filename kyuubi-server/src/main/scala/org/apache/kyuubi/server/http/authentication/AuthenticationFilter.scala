@@ -53,7 +53,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     }
   }
 
-  override def init(filterConfig: FilterConfig): Unit = {
+  private[kyuubi] def initAuthHandlers(): Unit = {
     val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
     val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
     val basicAuthTypeOpt = {
@@ -75,7 +75,15 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
       val internalHandler = new KyuubiInternalAuthenticationHandler
       addAuthHandler(internalHandler)
     }
+  }
+
+  override def init(filterConfig: FilterConfig): Unit = {
+    initAuthHandlers()
     super.init(filterConfig)
+  }
+
+  private[kyuubi] def getMatchedHandler(authorization: String): Option[AuthenticationHandler] = {
+    authSchemeHandlers.values.find(_.matchAuthScheme(authorization))
   }
 
   /**
@@ -97,13 +105,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     val httpResponse = response.asInstanceOf[HttpServletResponse]
 
     val authorization = httpRequest.getHeader(AUTHORIZATION_HEADER)
-    var matchedHandler: AuthenticationHandler = null
-
-    for (authHandler <- authSchemeHandlers.values if matchedHandler == null) {
-      if (authHandler.matchAuthScheme(authorization)) {
-        matchedHandler = authHandler
-      }
-    }
+    val matchedHandler = getMatchedHandler(authorization).orNull
 
     if (matchedHandler == null) {
       debug(s"No auth scheme matched for url: ${httpRequest.getRequestURL}")

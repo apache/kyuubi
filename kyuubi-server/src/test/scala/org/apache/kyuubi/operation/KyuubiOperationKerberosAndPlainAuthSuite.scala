@@ -32,7 +32,7 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
   private val customPasswd: String = "password"
 
   override protected def jdbcUrl: String = getJdbcUrl
-  private def kerberosJdbcUrl: String = jdbcUrl + s"principal=${testPrincipal}"
+  protected def kerberosJdbcUrl: String = jdbcUrl.stripSuffix(";") + s";principal=${testPrincipal}"
   private val currentUser = UserGroupInformation.getCurrentUser
 
   override def beforeAll(): Unit = {

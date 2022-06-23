@@ -97,7 +97,11 @@ trait AuthenticationHandler {
       throw new AuthenticationException("Authorization header received from the client is empty.")
     }
 
-    val authorization = authHeader.substring(authScheme.toString.length).trim
+    var authorization = authHeader.substring(authScheme.toString.length).trim
+    // For thrift http spnego authorization, its format is 'NEGOTIATE : $token', see HIVE-26353
+    if (authorization.startsWith(":")) {
+      authorization = authorization.stripPrefix(":").trim
+    }
     // Authorization header must have a payload
     if (authorization == null || authorization.isEmpty()) {
       throw new AuthenticationException(
