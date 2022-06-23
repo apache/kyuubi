@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.service.authentication
 
+import java.nio.charset.StandardCharsets
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SECURE_SECRET_NODE
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
@@ -33,7 +35,7 @@ class ZooKeeperEngineSecuritySecretProviderImpl extends EngineSecuritySecretProv
   override def getSecret(): String = {
     conf.get(HA_ZK_ENGINE_SECURE_SECRET_NODE).map { zkNode =>
       withDiscoveryClient[String](conf) { discoveryClient =>
-        discoveryClient.getData(zkNode)
+        new String(discoveryClient.getData(zkNode), StandardCharsets.UTF_8)
       }
     }.getOrElse(
       throw new IllegalArgumentException(s"${HA_ZK_ENGINE_SECURE_SECRET_NODE.key} is not defined"))

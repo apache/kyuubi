@@ -111,7 +111,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
-        <etcd.version>0.7.0</etcd.version>
+        <etcd.version>0.7.1</etcd.version>
         <delta.version>2.0.0rc1</delta.version>
         <fb303.version>0.9.3</fb303.version>
         <flink.version>1.14.5</flink.version>
@@ -1029,6 +1029,12 @@
                 <groupId>io.etcd</groupId>
                 <artifactId>jetcd-core</artifactId>
                 <version>${etcd.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.annotation</groupId>
+                        <artifactId>javax.annotation-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>

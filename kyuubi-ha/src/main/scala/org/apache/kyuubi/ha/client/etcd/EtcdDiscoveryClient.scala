@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.ha.client.etcd
 
+import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 import scala.concurrent.TimeoutException
 
-import EtcdUtils._
 import com.google.common.annotations.VisibleForTesting
+import io.etcd.jetcd.ByteSequence
 import io.etcd.jetcd.Client
 import io.etcd.jetcd.KV
 import io.etcd.jetcd.Lease
@@ -81,29 +82,31 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   def create(path: String, mode: String, createParent: Boolean = true): String = {
     // createParent can not effect here
     mode match {
-      case "PERSISTENT" => kvClient.put(path, path).get()
+      case "PERSISTENT" => kvClient.put(
+          ByteSequence.from(path.getBytes()),
+          ByteSequence.from(path.getBytes())).get()
       case m => throw new KyuubiException(s"Create mode $m is not support in etcd!")
     }
     path
   }
 
-  def getData(path: String): String = {
-    val response = kvClient.get(path).get()
+  def getData(path: String): Array[Byte] = {
+    val response = kvClient.get(ByteSequence.from(path.getBytes())).get()
     if (response.getKvs.isEmpty) {
       throw new KyuubiException(s"Key[$path] not exists in ETCD, please check it.")
     } else {
-      response.getKvs.get(0).getValue
+      response.getKvs.get(0).getValue.getBytes
     }
   }
 
   def getChildren(path: String): List[String] = {
     val kvs = kvClient.get(
-      path,
+      ByteSequence.from(path.getBytes()),
       GetOption.newBuilder().isPrefix(true).build()).get().getKvs
     if (kvs.isEmpty) {
       List.empty
     } else {
-      kvs.asScala.map(kv => byteSequenceToString(kv.getKey).stripPrefix(path).stripPrefix("/"))
+      kvs.asScala.map(kv => kv.getKey.toString(UTF_8).stripPrefix(path).stripPrefix("/"))
         .filter(key => key.nonEmpty && !key.startsWith("lock")).toList
     }
   }
@@ -113,12 +116,12 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   def pathNonExists(path: String): Boolean = {
-    kvClient.get(path).get().getKvs.isEmpty
+    kvClient.get(ByteSequence.from(path.getBytes())).get().getKvs.isEmpty
   }
 
   def delete(path: String, deleteChildren: Boolean = false): Unit = {
     kvClient.delete(
-      path,
+      ByteSequence.from(path.getBytes()),
       DeleteOption.newBuilder().isPrefix(deleteChildren).build()).get()
   }
 
@@ -140,7 +143,8 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         // maximum number of leases is increased or another client/process closes a lease
 
         // will throw TimeoutException when we are get lock timeout
-        lockClient.lock(lockPath, leaseId).get(timeout, TimeUnit.MILLISECONDS)
+        lockClient.lock(ByteSequence.from(lockPath.getBytes()), leaseId)
+          .get(timeout, TimeUnit.MILLISECONDS)
       } catch {
         case _: TimeoutException =>
           throw KyuubiSQLException(s"Timeout to lock on path [$lockPath] after " +
@@ -152,7 +156,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       f
     } finally {
       try {
-        lockClient.unlock(lockPath).get()
+        lockClient.unlock(ByteSequence.from(lockPath.getBytes())).get()
         leaseClient.revoke(leaseId).get()
       } catch {
         case e: Exception => throw new KyuubiException(e.getMessage, e.getCause)
@@ -186,7 +190,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       val size = sizeOpt.getOrElse(hosts.size)
       hosts.takeRight(size).map { p =>
         val path = DiscoveryPaths.makePath(namespace, p)
-        val instance = getData(path)
+        val instance = new String(getData(path), UTF_8)
         val (host, port) = DiscoveryClient.parseInstanceHostPort(instance)
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
         val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
@@ -212,7 +216,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
     val serviceNode = createPersistentNode(conf, namespace, instance, version, external)
 
-    client.getWatchClient.watch(serviceNode.path, watcher)
+    client.getWatchClient.watch(ByteSequence.from(serviceNode.path.getBytes()), watcher)
 
     if (pathNonExists(serviceNode.path)) {
       // No node exists, throw exception
@@ -256,7 +260,9 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       basePath: String,
       initData: String,
       useProtection: Boolean = false): Unit = {
-    client.getKVClient.put(basePath, initData).get()
+    client.getKVClient.put(
+      ByteSequence.from(basePath.getBytes()),
+      ByteSequence.from(initData.getBytes())).get()
   }
 
   private def createPersistentNode(
@@ -273,7 +279,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val pathPrefix = DiscoveryPaths.makePath(
       namespace,
       s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)};${session}sequence=")
-    val znodeData = instance
+    val znode = instance
 
     var leaseId: Long = LEASE_NULL_VALUE
     var realPath: String = null
@@ -286,7 +292,9 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       realPath = s"$pathPrefix${"%010d".format(sequence)}"
 
       if (external) {
-        client.getKVClient.put(realPath, znodeData).get()
+        client.getKVClient.put(
+          ByteSequence.from(realPath.getBytes()),
+          ByteSequence.from(znode.getBytes())).get()
       } else {
         leaseId = client.getLeaseClient.grant(leaseTTL).get().getID
         client.getLeaseClient.keepAlive(
@@ -299,8 +307,8 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
             override def onCompleted(): Unit = Unit // do nothing
           })
         client.getKVClient.put(
-          realPath,
-          znodeData,
+          ByteSequence.from(realPath.getBytes()),
+          ByteSequence.from(znode.getBytes()),
           PutOption.newBuilder().withLeaseId(leaseId).build()).get()
       }
     }

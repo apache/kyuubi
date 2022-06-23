@@ -43,7 +43,7 @@ trait DiscoveryClient extends Logging {
   /**
    * Get the stored data under path.
    */
-  def getData(path: String): String
+  def getData(path: String): Array[Byte]
 
   /**
    * Get the paths under given path.

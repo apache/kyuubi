@@ -81,8 +81,8 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       .forPath(path)
   }
 
-  def getData(path: String): String = {
-    new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+  def getData(path: String): Array[Byte] = {
+    zkClient.getData.forPath(path)
   }
 
   def getChildren(path: String): List[String] = {

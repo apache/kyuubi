@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.ha.client.etcd
 
+import java.nio.charset.StandardCharsets
+
 import scala.collection.JavaConverters._
 
 import io.etcd.jetcd.launcher.Etcd
@@ -62,7 +64,7 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
       assert(discoveryClient.pathExists(path))
 
       // get
-      assert(discoveryClient.getData(path) == path)
+      assert(new String(discoveryClient.getData(path), StandardCharsets.UTF_8) == path)
 
       // delete
       discoveryClient.delete(path)
