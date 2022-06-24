@@ -19,7 +19,7 @@ package org.apache.kyuubi.kubernetes.test
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 
-trait WithKyuubiServerOnKubernetes {
+class WithKyuubiServerOnKubernetes {
   protected def connectionConf: Map[String, String] = Map.empty
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
