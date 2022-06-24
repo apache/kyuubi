@@ -374,19 +374,26 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   }
 
   test("test join") {
+    val db = "test"
+    val table1 = "table1"
+    val table2 = "table2"
     try {
-      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS test"))
-      doAs("admin", sql(s"CREATE table IF NOT EXISTS test.test1(id int) stored as orc"))
-      doAs("admin", sql(s"insert into test.test1 select 1"))
-      doAs("admin", sql(s"CREATE table IF NOT EXISTS test.test2(id int, name string)" +
-        s" stored as orc"))
-      doAs("admin", sql(s"insert into test.test2 select 1, 'a'"))
-      doAs("admin", sql(s"select a.id, b.name from test.test1 a join test.test2 b on a.id=b.id")
-        .show(false))
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.$table1(id int) stored as orc"))
+      doAs("admin", sql(s"insert into $db.$table1 select 1"))
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $db.$table2(id int, name string)" +
+          s" stored as orc"))
+      doAs("admin", sql(s"insert into $db.$table2 select 1, 'a'"))
+      doAs(
+        "admin",
+        sql(s"select a.id, b.name from $db.$table1 a join $db.$table2 b on a.id=b.id")
+          .collect().size === 1)
     } finally {
-      doAs("admin", sql(s"drop table IF EXISTS test.test1"))
-      doAs("admin", sql(s"drop table IF EXISTS test.test2"))
-      doAs("admin", sql(s"drop database IF EXISTS test"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table2"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table1"))
+      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
 }
