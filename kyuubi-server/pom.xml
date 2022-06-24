@@ -474,19 +474,9 @@
     <profiles>
         <profile>
             <id>skip-webui-build</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>com.github.eirslett</groupId>
-                            <artifactId>frontend-maven-plugin</artifactId>
-                            <configuration>
-                                <skip>true</skip>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
+            <properties>
+                <webui.build.skip>true</webui.build.skip>
+            </properties>
         </profile>
     </profiles>
 
@@ -528,7 +518,7 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.11.0</version>
+                <version>${maven.plugin.frontend.version}</version>
                 <executions>
                     <execution>
                         <id>install node and npm</id>
@@ -538,6 +528,7 @@
                         <configuration>
                             <nodeVersion>v16.13.2</nodeVersion>
                             <npmVersion>8.1.2</npmVersion>
+                            <skip>${webui.build.skip}</skip>
                         </configuration>
                     </execution>
                     <execution>
@@ -549,6 +540,7 @@
                             <environmentVariables>
                                 <HUSKY_SKIP_INSTALL>true</HUSKY_SKIP_INSTALL>
                             </environmentVariables>
+                            <skip>${webui.build.skip}</skip>
                         </configuration>
                     </execution>
                     <execution>
@@ -558,6 +550,7 @@
                         </goals>
                         <configuration>
                             <arguments>run ci-check</arguments>
+                            <skip>${webui.build.skip}</skip>
                         </configuration>
                     </execution>
                 </executions>

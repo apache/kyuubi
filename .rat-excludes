@@ -49,14 +49,8 @@ build/scala-*/**
 **/org.apache.spark.status.AppHistoryServerPlugin
 **/metadata-store-schema*.sql
 **/statestore-schema*.sql
-**/web-ui/package.json
-**/web-ui/package-lock.json
-**/web-ui/angular.json
-**/web-ui/proxy.conf.json
-**/web-ui/tsconfig.json
-**/web-ui/tslint.json
+**/*.json
 **/web-ui/src/browserslist
-**/web-ui/src/*.json
 **/web-ui/src/assets/**
 **/web-ui/web/**
 **/web-ui/node_modules/**

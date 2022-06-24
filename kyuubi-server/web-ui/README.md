@@ -30,11 +30,11 @@ The framework has very lightweight dependencies.
 
 ## UI Frontend 
 
-The web ui is implemented using *Angular*. The ui build infrastructure uses *node.js*.
+The web ui is implemented using *Angular*. The ui build infrastructure uses *Node.js*.
 
 ### Preparing the Build Environment
 
-Depending on your version of Linux, Windows or MacOS, you may need to manually install *node.js*
+Depending on your version of Linux, Windows or macOS, you may need to manually install *node.js*
 
 #### Ubuntu Linux
 

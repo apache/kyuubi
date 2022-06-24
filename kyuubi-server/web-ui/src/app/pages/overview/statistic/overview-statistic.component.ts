@@ -17,13 +17,11 @@
  */
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-// import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject } from 'rxjs';
 import { mergeMap, takeUntil } from 'rxjs/operators';
 
 import { Overview } from 'interfaces';
 import { OverviewService, StatusService } from 'services';
-// import { OverviewService } from 'services';
 
 @Component({
   selector: 'kyuubi-overview-statistic',

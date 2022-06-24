@@ -19,7 +19,6 @@
 export interface Configuration {
   refreshInterval: number;
   timezoneName: string;
-  timezoneOffset: number;
   kyuubiVersion: string;
   kyuubiRevision: string;
 }

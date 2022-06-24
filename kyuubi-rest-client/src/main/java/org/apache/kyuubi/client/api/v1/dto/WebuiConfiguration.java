@@ -25,8 +25,6 @@ public class WebuiConfiguration {
 
   private String timezoneName;
 
-  private long timezoneOffset;
-
   private String kyuubiVersion;
 
   private String kyuubiRevision;
@@ -34,14 +32,9 @@ public class WebuiConfiguration {
   public WebuiConfiguration() {}
 
   public WebuiConfiguration(
-      long refreshInterval,
-      String timezoneName,
-      long timezoneOffset,
-      String kyuubiVersion,
-      String kyuubiRevision) {
+      long refreshInterval, String timezoneName, String kyuubiVersion, String kyuubiRevision) {
     this.refreshInterval = refreshInterval;
     this.timezoneName = timezoneName;
-    this.timezoneOffset = timezoneOffset;
     this.kyuubiVersion = kyuubiVersion;
     this.kyuubiRevision = kyuubiRevision;
   }
@@ -52,10 +45,6 @@ public class WebuiConfiguration {
 
   public String getTimezoneName() {
     return timezoneName;
-  }
-
-  public long getTimezoneOffset() {
-    return timezoneOffset;
   }
 
   public String getKyuubiVersion() {
@@ -72,10 +61,6 @@ public class WebuiConfiguration {
 
   public void setTimezoneName(String timezoneName) {
     this.timezoneName = timezoneName;
-  }
-
-  public void setTimezoneOffset(long timezoneOffset) {
-    this.timezoneOffset = timezoneOffset;
   }
 
   public void setKyuubiVersion(String kyuubiVersion) {
@@ -96,7 +81,6 @@ public class WebuiConfiguration {
     }
     WebuiConfiguration that = (WebuiConfiguration) o;
     return getRefreshInterval() == that.getRefreshInterval()
-        && getTimezoneOffset() == that.getTimezoneOffset()
         && Objects.equals(getTimezoneName(), that.getTimezoneName())
         && getKyuubiVersion().equals(that.getKyuubiVersion())
         && Objects.equals(getKyuubiRevision(), that.getKyuubiRevision());
@@ -105,10 +89,6 @@ public class WebuiConfiguration {
   @Override
   public int hashCode() {
     return Objects.hash(
-        getRefreshInterval(),
-        getTimezoneName(),
-        getTimezoneOffset(),
-        getKyuubiVersion(),
-        getKyuubiRevision());
+        getRefreshInterval(), getTimezoneName(), getKyuubiVersion(), getKyuubiRevision());
   }
 }

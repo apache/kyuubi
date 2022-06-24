@@ -40,16 +40,12 @@ private[v1] class WebuiResource extends ApiRequestContext with Logging {
 
   private val DEFAULT_REFRESH_INTERVAL = 10000L
 
-  private val TIME_ZONE_OFFSET =
-    ZonedDateTime.now.toOffsetDateTime.getOffset().getTotalSeconds() * 1000
-
   @GET
   @Path("configuration")
   def configuration(): WebuiConfiguration = {
     new WebuiConfiguration(
       DEFAULT_REFRESH_INTERVAL,
       TIME_ZONE,
-      TIME_ZONE_OFFSET,
       new VersionInfo(KYUUBI_VERSION).getVersion,
       REVISION)
   }

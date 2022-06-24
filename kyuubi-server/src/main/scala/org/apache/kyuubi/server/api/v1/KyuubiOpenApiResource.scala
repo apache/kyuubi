@@ -18,7 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import javax.servlet.ServletConfig
-import javax.ws.rs.{GET, Path, PathParam, Produces}
+import javax.ws.rs.{GET, PathParam, Produces}
 import javax.ws.rs.core.{Application, Context, HttpHeaders, MediaType, Response, UriInfo}
 
 import scala.collection.JavaConverters._
@@ -27,16 +27,16 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.integration.api.OpenApiContext
-import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.{tags, OpenAPI}
 import io.swagger.v3.oas.models.info.{Contact, Info, License}
 import io.swagger.v3.oas.models.servers.Server
-import io.swagger.v3.oas.models.tags.Tag
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.server.api.ApiRequestContext
 
-@Path("/openapi.{type:json|yaml}")
+@Tag(name = "OpenAPI")
 class KyuubiOpenApiResource extends BaseOpenApiResource with ApiRequestContext {
   @Context
   protected var config: ServletConfig = _
@@ -97,7 +97,7 @@ class KyuubiOpenApiResource extends BaseOpenApiResource with ApiRequestContext {
         .license(
           new License().name("Apache License 2.0")
             .url("https://www.apache.org/licenses/LICENSE-2.0.txt")))
-      .tags(List(new Tag().name("Session"), new Tag().name("Operation")).asJava)
+      .tags(List(new tags.Tag().name("Session"), new tags.Tag().name("Operation")).asJava)
       .servers(List(new Server().url(apiUrl)).asJava)
   }
 }

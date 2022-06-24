@@ -62,6 +62,9 @@ private[v1] class ApiRootResource extends ApiRequestContext {
   @Path("admin")
   def admin: Class[AdminResource] = classOf[AdminResource]
 
+  @Path("/openapi.{type:json|yaml}")
+  def openapi: Class[KyuubiOpenApiResource] = classOf[KyuubiOpenApiResource]
+
   @Path("webui")
   def webui: Class[WebuiResource] = classOf[WebuiResource]
 
