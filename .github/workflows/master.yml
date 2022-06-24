@@ -313,7 +313,7 @@ jobs:
           ./build/mvn ${MVN_OPT} clean install
           -pl integration-tests/kyuubi-kubernetes-it -am
           -Pkubernetes-it
-          -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.deployment
+          -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.deployment,org.apache.kyuubi.kubernetes.test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v2

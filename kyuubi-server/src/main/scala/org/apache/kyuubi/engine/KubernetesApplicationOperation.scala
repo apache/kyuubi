@@ -47,8 +47,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
     kubernetesClient =
       try {
-        info(s"Initialized Kubernetes Client connect to: ${kubernetesClient.getMasterUrl}")
-        new DefaultKubernetesClient(Config.autoConfigure(contextOpt.get))
+        val client = new DefaultKubernetesClient(Config.autoConfigure(contextOpt.get))
+        info(s"Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
+        client
       } catch {
         case e: KubernetesClientException =>
           error("Fail to init KubernetesClient for KubernetesApplicationOperation", e)
