@@ -372,6 +372,23 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
+
+  test("test join") {
+    try {
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS test"))
+      doAs("admin", sql(s"CREATE table IF NOT EXISTS test.test1(id int) stored as orc"))
+      doAs("admin", sql(s"insert into test.test1 select 1"))
+      doAs("admin", sql(s"CREATE table IF NOT EXISTS test.test2(id int, name string)" +
+        s" stored as orc"))
+      doAs("admin", sql(s"insert into test.test2 select 1, 'a'"))
+      doAs("admin", sql(s"select a.id, b.name from test.test1 a join test.test2 b on a.id=b.id")
+        .show(false))
+    } finally {
+      doAs("admin", sql(s"drop table IF EXISTS test.test1"))
+      doAs("admin", sql(s"drop table IF EXISTS test.test2"))
+      doAs("admin", sql(s"drop database IF EXISTS test"))
+    }
+  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
