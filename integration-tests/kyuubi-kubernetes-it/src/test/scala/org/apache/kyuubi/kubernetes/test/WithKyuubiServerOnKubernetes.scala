@@ -19,20 +19,11 @@ package org.apache.kyuubi.kubernetes.test
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 
-import org.apache.kyuubi.WithKyuubiServer
-import org.apache.kyuubi.config.KyuubiConf
-
-trait WithKyuubiServerOnKubernetes extends WithKyuubiServer {
-  protected val kyuubiServerConf: KyuubiConf = KyuubiConf()
+trait WithKyuubiServerOnKubernetes {
   protected def connectionConf: Map[String, String] = Map.empty
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
-  final override protected lazy val conf: KyuubiConf = {
-    connectionConf.foreach { case (k, v) => kyuubiServerConf.set(k, v) }
-    kyuubiServerConf
-  }
-
-  override protected def getJdbcUrl: String = {
+  protected def getJdbcUrl: String = {
     val kyuubiServers =
       miniKubernetesClient.pods().list().getItems
     assert(kyuubiServers.size() == 1)
