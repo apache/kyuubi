@@ -34,7 +34,7 @@ import org.eclipse.jetty.util.security.Constraint
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.ExecutorThreadPool
 
-import org.apache.kyuubi.{KyuubiException, Utils}
+import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_HTTP_CONN_FAIL, THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL}
@@ -215,10 +215,6 @@ final class KyuubiTHttpFrontendService(
         info(s"Starting and exposing JDBC connection at: jdbc:hive2://$connectionUrl/")
       }
       server.foreach(_.start())
-      // wait a moment for server thread starting ..
-      if (Utils.isTesting) {
-        Thread.sleep(3000)
-      }
     } catch {
       case _: InterruptedException => error(s"$getName is interrupted")
       case t: Throwable =>

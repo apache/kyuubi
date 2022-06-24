@@ -26,6 +26,11 @@ import org.apache.kyuubi.operation.KyuubiOperationKerberosAndPlainAuthSuite
 
 class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
   extends KyuubiOperationKerberosAndPlainAuthSuite {
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    Thread.sleep(3000)
+  }
+
   override protected val frontendProtocols: Seq[KyuubiConf.FrontendProtocols.Value] =
     FrontendProtocols.THRIFT_HTTP :: Nil
 
