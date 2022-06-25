@@ -388,6 +388,7 @@ kyuubi.operation.scheduler.pool|&lt;undefined&gt;|The scheduler pool of job. Not
 kyuubi.operation.spark.listener.enabled|true|When set to true, Spark engine registers a SQLOperationListener before executing the statement, logs a few summary statistics when each stage completes.|boolean|1.6.0
 kyuubi.operation.status.polling.max.attempts|5|(deprecated) - Using kyuubi.operation.thrift.client.request.max.attempts instead|int|1.4.0
 kyuubi.operation.status.polling.timeout|PT5S|Timeout(ms) for long polling asynchronous running sql query's status|duration|1.0.0
+kyuubi.operation.thrift.client.request.attempt.wait|PT3S|Attempt wait for operation thrift request call at server-side on raw transport failures, e.g. TTransportException|duration|1.6.0
 kyuubi.operation.thrift.client.request.max.attempts|5|Max attempts for operation thrift request call at server-side on raw transport failures, e.g. TTransportException|int|1.6.0
 
 
@@ -410,9 +411,6 @@ kyuubi.session.check.interval|PT5M|The check interval for session timeout.|durat
 kyuubi.session.conf.advisor|&lt;undefined&gt;|A config advisor plugin for Kyuubi Server. This plugin can provide some custom configs for different user or session configs and overwrite the session configs before open a new session. This config value should be a class which is a child of 'org.apache.kyuubi.plugin.SessionConfAdvisor' which has zero-arg constructor.|string|1.5.0
 kyuubi.session.conf.ignore.list||A comma separated list of ignored keys. If the client connection contains any of them, the key and the corresponding value will be removed silently during engine bootstrap and connection setup. Note that this rule is for server-side protection defined via administrators to prevent some essential configs from tampering but will not forbid users to set dynamic configurations via SET syntax.|seq|1.2.0
 kyuubi.session.conf.restrict.list||A comma separated list of restricted keys. If the client connection contains any of them, the connection will be rejected explicitly during engine bootstrap and connection setup. Note that this rule is for server-side protection defined via administrators to prevent some essential configs from tampering but will not forbid users to set dynamic configurations via SET syntax.|seq|1.2.0
-kyuubi.session.engine.alive.probe.enabled|false|Whether to enable the engine alive probe, it true, we will create a companion thrift client that sends simple request to check whether the engine is keep alive.|boolean|1.6.0
-kyuubi.session.engine.alive.probe.interval|PT10S|The interval for engine alive probe.|duration|1.6.0
-kyuubi.session.engine.alive.timeout|PT2M|The timeout for engine alive. If there is no alive probe success in the last timeout window, the engine will be marked as no-alive.|duration|1.6.0
 kyuubi.session.engine.check.interval|PT1M|The check interval for engine timeout|duration|1.0.0
 kyuubi.session.engine.flink.main.resource|&lt;undefined&gt;|The package used to create Flink SQL engine remote job. If it is undefined, Kyuubi will use the default|string|1.4.0
 kyuubi.session.engine.flink.max.rows|1000000|Max rows of Flink query results. For batch queries, rows that exceeds the limit would be ignored. For streaming queries, the query would be canceled if the limit is reached.|int|1.5.0

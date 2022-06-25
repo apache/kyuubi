@@ -23,7 +23,7 @@ import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.client.KyuubiSyncThriftClient
+import org.apache.kyuubi.client.{KyuubiThriftClient, RetryingKyuubiThriftClient}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
@@ -34,7 +34,6 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
 
 class KyuubiSessionImpl(
@@ -82,8 +81,8 @@ class KyuubiSessionImpl(
     Option(sessionEvent)
   }
 
-  private var _client: KyuubiSyncThriftClient = _
-  def client: KyuubiSyncThriftClient = _client
+  private var _client: KyuubiThriftClient = _
+  def client: KyuubiThriftClient = _client
 
   private var _engineSessionHandle: SessionHandle = _
 
@@ -108,14 +107,17 @@ class KyuubiSessionImpl(
           optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
       }
       val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
-      val passwd =
-        if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
-          InternalSecurityAccessor.get().issueToken()
-        } else {
-          Option(password).filter(_.nonEmpty).getOrElse("anonymous")
-        }
+      val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
       try {
-        _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
+        openEngineSessionConf ++= Map(SESSION_RESERVE_ON_BROKEN_ENABLED.key -> "true")
+        _client = RetryingKyuubiThriftClient.getKyuubiSyncThriftClient(
+          protocol,
+          user,
+          passwd,
+          host,
+          port,
+          sessionConf,
+          openEngineSessionConf)
         _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
       } catch {
         case e: Throwable =>

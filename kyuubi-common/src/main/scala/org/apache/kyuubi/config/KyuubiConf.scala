@@ -823,29 +823,6 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofSeconds(15).toMillis)
 
-  val ENGINE_ALIVE_PROBE_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.session.engine.alive.probe.enabled")
-      .doc("Whether to enable the engine alive probe, it true, we will create a companion thrift" +
-        " client that sends simple request to check whether the engine is keep alive.")
-      .version("1.6.0")
-      .booleanConf
-      .createWithDefault(false)
-
-  val ENGINE_ALIVE_PROBE_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.session.engine.alive.probe.interval")
-      .doc("The interval for engine alive probe.")
-      .version("1.6.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(10).toMillis)
-
-  val ENGINE_ALIVE_TIMEOUT: ConfigEntry[Long] =
-    buildConf("kyuubi.session.engine.alive.timeout")
-      .doc("The timeout for engine alive. If there is no alive probe success in the last timeout" +
-        " window, the engine will be marked as no-alive.")
-      .version("1.6.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(120).toMillis)
-
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
     .version("1.0.0")
@@ -1129,6 +1106,14 @@ object KyuubiConf {
       .intConf
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(5)
+
+  val OPERATION_THRIFT_CLIENT_REQUEST_ATTEMPT_WAIT: ConfigEntry[Long] =
+    buildConf("kyuubi.operation.thrift.client.request.attempt.wait")
+      .doc("Attempt wait for operation thrift request call at server-side on raw transport" +
+        " failures, e.g. TTransportException")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(3).toMillis)
 
   val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.interrupt.on.cancel")
@@ -1533,6 +1518,27 @@ object KyuubiConf {
       .version("1.4.0")
       .stringConf
       .createOptional
+
+  val SESSION_RESERVE_ON_BROKEN_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.reserve.on.broken.enabled")
+      .internal
+      .doc("Whether to reserve the session on the transport protocol broken. Now we support" +
+        " RetryingKyuubiSyncThriftClient, it will close the recreate the protocol for thrift" +
+        " request retry, and we need reserve the session in engine side for that.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val SESSION_RESERVE_ON_BROKEN_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.reserve.on.broken.timeout")
+      .internal
+      .doc("The maximum timeout to reserve the sessions, whose protocol are broken. To support" +
+        " RetryingKyuubiSyncThriftClient, a new filed connectionBrokenTime for session was" +
+        " introduced, if the session connection is not re-established in the timeout, kyuubi" +
+        " engine will no longer reserve the session.")
+      .version("1.6.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(10).toMillis)
 
   object OperationModes extends Enumeration {
     type OperationMode = Value

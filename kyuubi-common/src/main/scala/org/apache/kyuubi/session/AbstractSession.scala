@@ -51,6 +51,10 @@ abstract class AbstractSession(
     if (lastIdleTime > 0) System.currentTimeMillis() - _lastIdleTime else 0
   }
 
+  @volatile private var _connectionBrokenTime: Long = 0
+  override def getConnectionBrokenTime: Long = _connectionBrokenTime
+  override def setConnectionBrokenTime(brokenTime: Long): Unit = _connectionBrokenTime = brokenTime
+
   val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
 
   override lazy val name: Option[String] = normalizedConf.get(KyuubiConf.SESSION_NAME.key)

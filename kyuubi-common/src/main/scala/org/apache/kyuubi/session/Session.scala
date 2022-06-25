@@ -38,6 +38,8 @@ trait Session {
   def lastAccessTime: Long
   def lastIdleTime: Long
   def getNoOperationTime: Long
+  def getConnectionBrokenTime: Long
+  def setConnectionBrokenTime(brokenTime: Long): Unit
 
   def sessionManager: SessionManager
 
