@@ -22,8 +22,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.ResultSetWrapper
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
-import org.apache.kyuubi.operation.OperationType.OperationType
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
 import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
