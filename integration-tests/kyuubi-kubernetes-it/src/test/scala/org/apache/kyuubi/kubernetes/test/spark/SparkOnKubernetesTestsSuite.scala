@@ -123,7 +123,7 @@ class SparkClusterModeOnKubernetesSuite
 
 class KyuubiOperationKubernetesClusterClientModeSuite
   extends SparkClientModeOnKubernetesSuiteBase {
-  private val k8sOperation: KubernetesApplicationOperation = {
+  private lazy val k8sOperation: KubernetesApplicationOperation = {
     val operation = new KubernetesApplicationOperation
     operation.initialize(conf)
     operation
@@ -139,7 +139,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       sparkProcessBuilder.mainResource.get,
       sparkProcessBuilder.mainClass,
       null,
-      sparkOnK8sConf.getAll.asJava,
+      conf.getAll.asJava,
       Seq.empty[String].asJava)
 
     val sessionHandle = sessionManager.openBatchSession(
@@ -172,7 +172,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
 
 class KyuubiOperationKubernetesClusterClusterModeSuite
   extends SparkClusterModeOnKubernetesSuiteBase {
-  private val k8sOperation: KubernetesApplicationOperation = {
+  private lazy val k8sOperation: KubernetesApplicationOperation = {
     val operation = new KubernetesApplicationOperation
     operation.initialize(conf)
     operation
@@ -188,7 +188,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       sparkProcessBuilder.mainResource.get,
       sparkProcessBuilder.mainClass,
       null,
-      sparkOnK8sConf.getAll.asJava,
+      conf.getAll.asJava,
       Seq.empty[String].asJava)
 
     val sessionHandle = sessionManager.openBatchSession(
