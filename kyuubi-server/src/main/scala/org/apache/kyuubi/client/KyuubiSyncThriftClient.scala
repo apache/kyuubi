@@ -132,7 +132,17 @@ class KyuubiSyncThriftClient private (
       asyncRequestExecutor = newAsyncRequestExecutor()
     }
 
-    asyncRequestExecutor.submit(() => withRetryingRequest(block, request)).get()
+    asyncRequestExecutor.submit(() => {
+      val (resp, shouldResetEngineBroken) = KyuubiSyncThriftClient.withRetryingRequestNoLock(
+        block,
+        request,
+        maxAttempts,
+        remoteEngineBroken,
+        isConnectionValid)
+
+      if (shouldResetEngineBroken) remoteEngineBroken = false
+      resp
+    }).get()
   }
 
   def engineId: Option[String] = _engineId
