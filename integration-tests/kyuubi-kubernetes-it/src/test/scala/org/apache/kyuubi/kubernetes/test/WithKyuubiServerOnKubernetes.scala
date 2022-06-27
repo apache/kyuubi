@@ -19,7 +19,9 @@ package org.apache.kyuubi.kubernetes.test
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 
-class WithKyuubiServerOnKubernetes {
+import org.apache.kyuubi.KyuubiFunSuite
+
+trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
   protected def connectionConf: Map[String, String] = Map.empty
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
