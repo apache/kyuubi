@@ -17,13 +17,11 @@
 
 package org.apache.kyuubi.client
 
-import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Promise
 import scala.concurrent.duration.Duration
-import scala.util.Try
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
@@ -119,22 +117,16 @@ class KyuubiSyncThriftClient private (
     if (asyncRequestExecutor.isShutdown) {
       throw KyuubiSQLException("The request executor is down because of remote engine broken.")
     }
-    val promise = Promise[(T, Boolean)]
-    asyncRequestExecutor.submit(new Runnable {
-      override def run(): Unit = {
-        promise.tryComplete {
-          Try {
-            KyuubiSyncThriftClient.withRetryingRequestNoLock(
-              block,
-              request,
-              maxAttempts,
-              remoteEngineBroken,
-              isConnectionValid)
-          }
-        }
-      }
+
+    val task: Future[(T, Boolean)] = asyncRequestExecutor.submit(() => {
+      KyuubiSyncThriftClient.withRetryingRequestNoLock(
+        block,
+        request,
+        maxAttempts,
+        remoteEngineBroken,
+        isConnectionValid)
     })
-    val (resp, shouldResetEngineBroken) = ThreadUtils.awaitResult(promise.future, Duration.Inf)
+    val (resp, shouldResetEngineBroken) = task.get()
     if (shouldResetEngineBroken) {
       remoteEngineBroken = false
     }
