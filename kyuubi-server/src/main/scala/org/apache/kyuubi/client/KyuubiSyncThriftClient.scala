@@ -30,7 +30,7 @@ import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOGIN_TIMEOUT, ENGINE_REQUEST_TIMEOUT}
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOGIN_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -432,14 +432,13 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       conf: KyuubiConf): KyuubiSyncThriftClient = {
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = conf.get(ENGINE_LOGIN_TIMEOUT).toInt
-    val requestTimeout = conf.get(ENGINE_REQUEST_TIMEOUT).toInt
     val requestMaxAttempts = conf.get(KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS)
     val aliveProbeEnabled = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
     val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
     val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
 
     val (tProtocol, _) = withRetryingRequestNoLock(
-      createTProtocol(user, passwd, host, port, requestTimeout, loginTimeout),
+      createTProtocol(user, passwd, host, port, 0, loginTimeout),
       "CreatingTProtocol",
       requestMaxAttempts,
       false,
