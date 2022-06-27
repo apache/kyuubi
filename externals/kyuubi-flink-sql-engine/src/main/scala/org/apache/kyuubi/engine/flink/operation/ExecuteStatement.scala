@@ -18,13 +18,13 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.time.LocalDate
+import java.util
 import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
-import java.util
 import org.apache.calcite.rel.metadata.{DefaultRelMetadataProvider, JaninoRelMetadataProvider, RelMetadataQueryBase}
 import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.client.gateway.{Executor, TypedResult}
