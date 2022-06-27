@@ -29,11 +29,11 @@ import org.apache.kyuubi.config.KyuubiConf.METADATA_MAX_AGE
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
-import org.apache.kyuubi.service.CompositeService
+import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, ThreadUtils}
 
-class MetadataManager extends CompositeService("MetadataManager") {
+class MetadataManager extends AbstractService("MetadataManager") {
   import MetadataManager._
 
   private var _metadataStore: MetadataStore = _
