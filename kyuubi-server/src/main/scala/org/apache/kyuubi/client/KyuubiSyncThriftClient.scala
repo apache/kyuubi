@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.client
 
-import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
@@ -56,8 +56,12 @@ class KyuubiSyncThriftClient private (
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
 
-  private lazy val asyncRequestExecutor = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
-    "async-request-executor-" + _remoteSessionHandle)
+  private var asyncRequestExecutor: ScheduledExecutorService = _
+
+  private def newAsyncRequestExecutor(): ScheduledExecutorService = {
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor(
+      "async-request-executor-" + _remoteSessionHandle)
+  }
 
   private def startEngineAliveProbe(): Unit = {
     engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
@@ -86,9 +90,7 @@ class KyuubiSyncThriftClient private (
             }
           }
         } else {
-          if (!asyncRequestExecutor.isShutdown) {
-            ThreadUtils.shutdown(asyncRequestExecutor)
-          }
+          Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
         }
       }
     }
@@ -126,8 +128,8 @@ class KyuubiSyncThriftClient private (
   }
 
   private def withAsyncRetryingRequest[T](block: => T, request: String): T = withLockAcquired {
-    if (asyncRequestExecutor.isShutdown) {
-      throw KyuubiSQLException("The request executor is down because of remote engine broken.")
+    if (asyncRequestExecutor == null || asyncRequestExecutor.isShutdown) {
+      asyncRequestExecutor = newAsyncRequestExecutor()
     }
 
     asyncRequestExecutor.submit(() => withRetryingRequest(block, request)).get()
@@ -194,9 +196,7 @@ class KyuubiSyncThriftClient private (
       Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
         if (tProtocol.getTransport.isOpen) tProtocol.getTransport.close()
       }
-      if (!asyncRequestExecutor.isShutdown) {
-        ThreadUtils.shutdown(asyncRequestExecutor)
-      }
+      Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
     }
   }
 
