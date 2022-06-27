@@ -21,7 +21,9 @@ import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
+import scala.concurrent.Promise
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
@@ -56,6 +58,9 @@ class KyuubiSyncThriftClient private (
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
 
+  private lazy val asyncRequestExecutor =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("async-request-pool-" + _remoteSessionHandle)
+
   private def startEngineAliveProbe(): Unit = {
     engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
       "engine-alive-probe-" + _aliveProbeSessionHandle)
@@ -82,6 +87,10 @@ class KyuubiSyncThriftClient private (
                 }
             }
           }
+        } else {
+          if (!asyncRequestExecutor.isShutdown) {
+            ThreadUtils.shutdown(asyncRequestExecutor)
+          }
         }
       }
     }
@@ -107,14 +116,28 @@ class KyuubiSyncThriftClient private (
   }
 
   private def withRetryingRequest[T](block: => T, request: String): T = withLockAcquired {
-    val (resp, shouldResetEngineBroken) = KyuubiSyncThriftClient.withRetryingRequestNoLock(
-      block,
-      request,
-      maxAttempts,
-      remoteEngineBroken,
-      isConnectionValid)
-
-    if (shouldResetEngineBroken) remoteEngineBroken = false
+    if (asyncRequestExecutor.isShutdown) {
+      throw KyuubiSQLException("The request executor is down because of remote engine broken.")
+    }
+    val promise = Promise[(T, Boolean)]
+    asyncRequestExecutor.submit(new Runnable {
+      override def run(): Unit = {
+        promise.tryComplete {
+          Try {
+            KyuubiSyncThriftClient.withRetryingRequestNoLock(
+              block,
+              request,
+              maxAttempts,
+              remoteEngineBroken,
+              isConnectionValid)
+          }
+        }
+      }
+    })
+    val (resp, shouldResetEngineBroken) = ThreadUtils.awaitResult(promise.future, Duration.Inf)
+    if (shouldResetEngineBroken) {
+      remoteEngineBroken = false
+    }
     resp
   }
 
