@@ -51,6 +51,7 @@ abstract class SparkOnKubernetesSuiteBase
       .set("spark.driver.memory", "512M")
       .set("spark.kubernetes.driver.request.cores", "250m")
       .set("spark.kubernetes.executor.request.cores", "250m")
+      .set("kyuubi.kubernetes.context", "minikube")
   }
 }
 
@@ -122,7 +123,7 @@ class SparkClusterModeOnKubernetesSuite
 
 class KyuubiOperationKubernetesClusterClientModeSuite
   extends SparkClientModeOnKubernetesSuiteBase {
-  private lazy val k8sOperation: KubernetesApplicationOperation = {
+  private val k8sOperation: KubernetesApplicationOperation = {
     val operation = new KubernetesApplicationOperation
     operation.initialize(conf)
     operation
@@ -171,7 +172,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
 
 class KyuubiOperationKubernetesClusterClusterModeSuite
   extends SparkClusterModeOnKubernetesSuiteBase {
-  private lazy val k8sOperation: KubernetesApplicationOperation = {
+  private val k8sOperation: KubernetesApplicationOperation = {
     val operation = new KubernetesApplicationOperation
     operation.initialize(conf)
     operation
@@ -180,7 +181,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
   private def sessionManager: KyuubiSessionManager =
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
 
-  test("KyuubiOperationKubernetesClusterClientModeSuite") {
+  test("KyuubiOperationKubernetesClusterClusterModeSuite") {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val batchRequest = new BatchRequest(
       "spark",
