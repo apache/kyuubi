@@ -22,6 +22,11 @@ import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
 import org.apache.kyuubi.operation.KyuubiOperationPerUserSuite
 
 class KyuubiOperationThriftHttpPerUserSuite extends KyuubiOperationPerUserSuite {
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    Thread.sleep(3000)
+  }
+
   override protected val frontendProtocols: Seq[KyuubiConf.FrontendProtocols.Value] =
     FrontendProtocols.THRIFT_HTTP :: Nil
 
