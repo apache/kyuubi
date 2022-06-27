@@ -116,7 +116,7 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
           throw ke
         } else if (isTerminalState(state)) {
           setOperationException(KyuubiSQLException(errMsg))
-          warn(s"Ignore exception in terminal state with $statement: $errMsg")
+          warn(s"Ignore exception in terminal state with $statementId: $errMsg")
         } else {
           error(s"Error operating $opType: $errMsg", e)
           val ke = KyuubiSQLException(s"Error operating $opType: $errMsg", e)
