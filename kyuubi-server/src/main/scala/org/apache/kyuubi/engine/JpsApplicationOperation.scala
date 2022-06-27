@@ -28,9 +28,7 @@ class JpsApplicationOperation extends ApplicationOperation {
 
   private var runner: String = _
 
-  override def initialize(
-      conf: KyuubiConf,
-      kyuubiApplicationManager: KyuubiApplicationManager): Unit = {
+  override def initialize(conf: KyuubiConf): Unit = {
     val jps = sys.env.get("JAVA_HOME").orElse(sys.props.get("java.home"))
       .map(Paths.get(_, "bin", "jps").toString)
       .getOrElse("jps")

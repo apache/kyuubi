@@ -30,9 +30,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
 
   @volatile private var yarnClient: YarnClient = _
 
-  override def initialize(
-      conf: KyuubiConf,
-      kyuubiApplicationManager: KyuubiApplicationManager): Unit = {
+  override def initialize(conf: KyuubiConf): Unit = {
     val yarnConf = KyuubiHadoopUtils.newYarnConfiguration(conf)
     // YarnClient is thread-safe
     val c = YarnClient.createYarnClient()

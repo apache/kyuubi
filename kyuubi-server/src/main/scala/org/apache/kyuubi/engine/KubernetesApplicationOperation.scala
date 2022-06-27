@@ -33,18 +33,17 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   @volatile
   private var kubernetesClient: KubernetesClient = _
-  private var manager: KyuubiApplicationManager = _
+  private var jpsOperation: JpsApplicationOperation = _
 
-  override def initialize(
-      conf: KyuubiConf,
-      kyuubiApplicationManager: KyuubiApplicationManager): Unit = {
-    manager = kyuubiApplicationManager
+  override def initialize(conf: KyuubiConf): Unit = {
     info("Start Initialize Kubernetes Client.")
     val contextOpt = conf.get(KUBERNETES_CONTEXT)
     if (contextOpt.isEmpty) {
       warn("Skip Initialize Kubernetes Client, because of Context not set.")
       return
     }
+    jpsOperation = new JpsApplicationOperation
+    jpsOperation.initialize(conf)
     kubernetesClient =
       try {
         val client = new DefaultKubernetesClient(Config.autoConfigure(contextOpt.get))
@@ -74,14 +73,14 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             operation.delete(),
             s"Operation of deleted appId: " + s"${podList.get(0).getMetadata.getName} is completed")
         } else {
-          if (manager != null) {
+          if (jpsOperation != null) {
             // client mode
-            manager.killApplication(Some("local"), tag)
+            return jpsOperation.killApplicationByTag(tag)
           }
           (
             false,
             s"Failed to terminate application with $tag, " +
-              s"due to can't find $tag engine or KyuubiApplicationManager be null")
+              s"due to can't find $tag engine or JpsApplicationOperation be null")
         }
       } catch {
         case e: Exception =>
@@ -109,11 +108,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           debug(s"Successfully got application info by $tag: " + res.mkString(", "))
           res
         } else {
-          if (manager != null) {
+          if (jpsOperation != null) {
             // client mode
-            manager.getApplicationInfo(Some("local"), tag).get
+            jpsOperation.getApplicationInfoByTag(tag)
           } else {
-            error(s"Failed to get application with $tag, due to KyuubiApplicationManager is null")
+            error(s"Failed to get application with $tag, due to JpsApplicationOperation is null")
             null
           }
         }

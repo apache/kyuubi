@@ -17,18 +17,25 @@
 
 package org.apache.kyuubi.kubernetes.test.spark
 
+import scala.collection.JavaConverters._
+import scala.concurrent.duration._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
 
 import org.apache.kyuubi.{Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
+import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
+import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
 
 abstract class SparkOnKubernetesSuiteBase
-  extends WithKyuubiServer with SparkQueryTests with Logging {
+  extends WithKyuubiServer with Logging {
   private val apiServerAddress = {
     MiniKube.getKubernetesClient.getMasterUrl.toString
   }
@@ -45,8 +52,6 @@ abstract class SparkOnKubernetesSuiteBase
       .set("spark.kubernetes.driver.request.cores", "250m")
       .set("spark.kubernetes.executor.request.cores", "250m")
   }
-
-  override protected def jdbcUrl: String = getJdbcUrl
 }
 
 /**
@@ -59,10 +64,15 @@ abstract class SparkOnKubernetesSuiteBase
  *  |                                                     |         |                   |
  *  -------------------------------------------------------         ---------------------
  */
-class SparkClientModeOnKubernetesSuite extends SparkOnKubernetesSuiteBase {
+class SparkClientModeOnKubernetesSuiteBase extends SparkOnKubernetesSuiteBase {
   override protected val conf: KyuubiConf = {
     sparkOnK8sConf.set("spark.submit.deployMode", "client")
   }
+}
+
+class SparkClientModeOnKubernetesSuite extends SparkClientModeOnKubernetesSuiteBase
+  with SparkQueryTests {
+  override protected def jdbcUrl: String = getJdbcUrl
 }
 
 /**
@@ -75,7 +85,7 @@ class SparkClientModeOnKubernetesSuite extends SparkOnKubernetesSuiteBase {
  *  |                                 |         |                   |         |                   |
  *  ----------------------------------          ---------------------         ---------------------
  */
-class SparkClusterModeOnKubernetesSuite
+class SparkClusterModeOnKubernetesSuiteBase
   extends SparkOnKubernetesSuiteBase with WithSimpleDFSService {
   private val localhostAddress = Utils.findLocalInetAddress.getHostAddress
   private val driverTemplate =
@@ -102,5 +112,108 @@ class SparkClusterModeOnKubernetesSuite
       .set(ZK_CLIENT_PORT_ADDRESS.key, localhostAddress)
       .set(FRONTEND_CONNECTION_URL_USE_HOSTNAME.key, "false")
       .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, localhostAddress)
+  }
+}
+
+class SparkClusterModeOnKubernetesSuite
+  extends SparkClusterModeOnKubernetesSuiteBase with SparkQueryTests {
+  override protected def jdbcUrl: String = getJdbcUrl
+}
+
+class KyuubiOperationKubernetesClusterClientModeSuite
+  extends SparkClientModeOnKubernetesSuiteBase {
+  private lazy val k8sOperation: KubernetesApplicationOperation = {
+    val operation = new KubernetesApplicationOperation
+    operation.initialize(conf)
+    operation
+  }
+
+  private def sessionManager: KyuubiSessionManager =
+    server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+
+  test("KyuubiOperationKubernetesClusterClientModeSuite") {
+    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
+    val batchRequest = new BatchRequest(
+      "spark",
+      sparkProcessBuilder.mainResource.get,
+      sparkProcessBuilder.mainClass,
+      null,
+      sparkOnK8sConf.getAll.asJava,
+      Seq.empty[String].asJava)
+
+    val sessionHandle = sessionManager.openBatchSession(
+      "kyuubi",
+      "passwd",
+      "localhost",
+      batchRequest.getConf.asScala.toMap,
+      batchRequest)
+
+    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    val batchJobSubmissionOp = session.batchJobSubmissionOp
+
+    eventually(timeout(3.minutes), interval(50.milliseconds)) {
+      val state = batchJobSubmissionOp.currentApplicationState
+      assert(state.nonEmpty)
+    }
+
+    val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    assert(killResponse._1)
+    assert(killResponse._2 startsWith "Operation of deleted appId:")
+
+    val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+    assert(appInfo == null)
+
+    val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    assert(!failKillResponse._1)
+    assert(failKillResponse._2 startsWith "Failed to terminate application with")
+  }
+}
+
+class KyuubiOperationKubernetesClusterClusterModeSuite
+  extends SparkClusterModeOnKubernetesSuiteBase {
+  private lazy val k8sOperation: KubernetesApplicationOperation = {
+    val operation = new KubernetesApplicationOperation
+    operation.initialize(conf)
+    operation
+  }
+
+  private def sessionManager: KyuubiSessionManager =
+    server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+
+  test("KyuubiOperationKubernetesClusterClientModeSuite") {
+    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
+    val batchRequest = new BatchRequest(
+      "spark",
+      sparkProcessBuilder.mainResource.get,
+      sparkProcessBuilder.mainClass,
+      null,
+      sparkOnK8sConf.getAll.asJava,
+      Seq.empty[String].asJava)
+
+    val sessionHandle = sessionManager.openBatchSession(
+      "kyuubi",
+      "passwd",
+      "localhost",
+      batchRequest.getConf.asScala.toMap,
+      batchRequest)
+
+    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
+    val batchJobSubmissionOp = session.batchJobSubmissionOp
+
+    eventually(timeout(3.minutes), interval(50.milliseconds)) {
+      val state = batchJobSubmissionOp.currentApplicationState
+      assert(state.nonEmpty)
+    }
+
+    val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    assert(killResponse._1)
+    assert(killResponse._2 startsWith "Succeeded to terminate:")
+
+    val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+    assert(appInfo == null)
+
+    val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
+    assert(!failKillResponse._1)
+    assert(failKillResponse._2 startsWith "Failed to terminate")
   }
 }

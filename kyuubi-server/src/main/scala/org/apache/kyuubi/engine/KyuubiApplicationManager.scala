@@ -39,7 +39,7 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
   override def initialize(conf: KyuubiConf): Unit = {
     operations.foreach { op =>
       try {
-        op.initialize(conf, this)
+        op.initialize(conf)
       } catch {
         case NonFatal(e) => warn(s"Error starting ${op.getClass.getSimpleName}: ${e.getMessage}")
       }
