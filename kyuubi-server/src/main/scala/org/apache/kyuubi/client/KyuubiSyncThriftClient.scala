@@ -38,6 +38,7 @@ import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
 
 class KyuubiSyncThriftClient private (
+    sessionHandle: SessionHandle,
     protocol: TProtocol,
     maxAttempts: Int,
     engineAliveProbeProtocol: Option[TProtocol],
@@ -57,7 +58,7 @@ class KyuubiSyncThriftClient private (
   @volatile private var engineLastAlive: Long = _
 
   private lazy val asyncRequestExecutor =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor("async-request-pool-" + _remoteSessionHandle)
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("async-request-executor-" + sessionHandle)
 
   private def startEngineAliveProbe(): Unit = {
     engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
@@ -440,6 +441,7 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
   }
 
   def createClient(
+      sessionHandle: SessionHandle,
       user: String,
       password: String,
       host: String,
@@ -471,6 +473,7 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
         None
       }
     new KyuubiSyncThriftClient(
+      sessionHandle,
       tProtocol,
       requestMaxAttempts,
       aliveProbeProtocol,
