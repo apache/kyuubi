@@ -34,8 +34,7 @@ class NoopOperationManager extends OperationManager("noop") {
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val operation =
-      new NoopOperation(session, statement == invalid)
+    val operation = new NoopOperation(session, statement == invalid)
     addOperation(operation)
   }
 
