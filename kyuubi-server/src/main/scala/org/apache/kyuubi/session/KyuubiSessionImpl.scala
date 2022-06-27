@@ -115,7 +115,7 @@ class KyuubiSessionImpl(
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }
       try {
-        _client = KyuubiSyncThriftClient.createClient(handle, user, passwd, host, port, sessionConf)
+        _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
         _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
       } catch {
         case e: Throwable =>
