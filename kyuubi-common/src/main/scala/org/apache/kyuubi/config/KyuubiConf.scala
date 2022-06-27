@@ -823,12 +823,6 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofSeconds(15).toMillis)
 
-  val ENGINE_REQUEST_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.engine.request.timeout")
-    .doc("The timeout of awaiting response after sending request to remote sql query engine")
-    .version("1.4.0")
-    .timeConf
-    .createWithDefault(0)
-
   val ENGINE_ALIVE_PROBE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.alive.probe.enabled")
       .doc("Whether to enable the engine alive probe, it true, we will create a companion thrift" +

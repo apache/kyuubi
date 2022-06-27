@@ -65,23 +65,6 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
     }
   }
 
-  test("client sync query cost time longer than engine.request.timeout") {
-    withSessionConf(Map(
-      KyuubiConf.ENGINE_REQUEST_TIMEOUT.key -> "PT5S"))(Map.empty)(Map.empty) {
-      withSessionHandle { (client, handle) =>
-        val executeStmtReq = new TExecuteStatementReq()
-        executeStmtReq.setStatement("select java_method('java.lang.Thread', 'sleep', 6000L)")
-        executeStmtReq.setSessionHandle(handle)
-        executeStmtReq.setRunAsync(false)
-        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
-        val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
-        val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
-        assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-        assert(getOpStatusResp.getOperationState === TOperationState.FINISHED_STATE)
-      }
-    }
-  }
-
   test("sync query causes engine crash") {
     withSessionHandle { (client, handle) =>
       val executeStmtReq = new TExecuteStatementReq()
@@ -233,8 +216,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
       KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "1000",
       KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "3000",
-      KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS.key -> "10000",
-      KyuubiConf.ENGINE_REQUEST_TIMEOUT.key -> "1000"))(Map.empty)(Map.empty) {
+      KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS.key -> "10000"))(Map.empty)(
+      Map.empty) {
       withSessionHandle { (client, handle) =>
         val preReq = new TExecuteStatementReq()
         preReq.setStatement("select engine_name()")
