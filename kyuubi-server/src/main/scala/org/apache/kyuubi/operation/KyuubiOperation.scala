@@ -30,17 +30,13 @@ import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPE
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.OperationState
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.{KyuubiSessionImpl, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
-abstract class KyuubiOperation(opType: OperationType, session: Session)
-  extends AbstractOperation(opType, session) {
+abstract class KyuubiOperation(session: Session)
+  extends AbstractOperation(session) {
 
-  private val opTypeName = (opType match {
-    case OperationType.UNKNOWN_OPERATION => statement
-    case _ => opType.toString
-  }).toLowerCase
+  private val opTypeName = getClass.getSimpleName
 
   MetricsSystem.tracing { ms =>
     ms.incCount(MetricRegistry.name(OPERATION_OPEN, opTypeName))

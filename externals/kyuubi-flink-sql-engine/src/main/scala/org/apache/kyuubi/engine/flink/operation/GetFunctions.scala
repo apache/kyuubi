@@ -28,7 +28,6 @@ import org.apache.flink.types.Row
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.engine.flink.util.StringUtils.filterPattern
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
@@ -37,7 +36,7 @@ class GetFunctions(
     catalogName: String,
     schemaName: String,
     functionName: String)
-  extends FlinkOperation(OperationType.GET_FUNCTIONS, session) {
+  extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

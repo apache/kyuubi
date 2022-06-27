@@ -21,7 +21,6 @@ import java.util.List
 
 import org.apache.hive.service.cli.operation.Operation
 
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class GetTables(
@@ -30,7 +29,7 @@ class GetTables(
     schemaName: String,
     tableName: String,
     tableTypes: List[String])
-  extends HiveOperation(OperationType.GET_TABLES, session) {
+  extends HiveOperation(session) {
 
   override val internalHiveOperation: Operation =
     delegatedOperationManager.newGetTablesOperation(

@@ -26,8 +26,7 @@ class GetPrimaryKeys(
     session: Session,
     catalogName: String,
     schemaName: String,
-    tableName: String)
-  extends HiveOperation(OperationType.GET_FUNCTIONS, session) {
+    tableName: String) extends HiveOperation(session) {
 
   override val internalHiveOperation: Operation =
     delegatedOperationManager.newGetPrimaryKeysOperation(

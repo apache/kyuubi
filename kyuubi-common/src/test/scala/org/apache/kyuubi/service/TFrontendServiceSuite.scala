@@ -27,7 +27,7 @@ import org.scalatest.time._
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_BIND_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
-import org.apache.kyuubi.operation.{OperationHandle, OperationType, TClientTestUtils}
+import org.apache.kyuubi.operation.{OperationHandle, TClientTestUtils}
 import org.apache.kyuubi.service.TFrontendService.{FeServiceServerContext, SERVER_VERSION}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
 
@@ -75,7 +75,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     assert(resp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     assert(resp1.getResults.getColumnCount === 0)
     val invalidHandle =
-      OperationHandle(OperationType.getOperationType(handle.getOperationType), SERVER_VERSION)
+      OperationHandle(SERVER_VERSION)
     tFetchResultsReq.setOperationHandle(invalidHandle)
     val errResp = client.FetchResults(tFetchResultsReq)
     errResp.getStatus
@@ -374,8 +374,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
 
   test("get operation status") {
     withSessionHandle { (client, handle) =>
-      val opHandle =
-        OperationHandle(OperationType.EXECUTE_STATEMENT, SERVER_VERSION)
+      val opHandle = OperationHandle(SERVER_VERSION)
       val req = new TGetOperationStatusReq(opHandle)
       val resp = client.GetOperationStatus(req)
       assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -428,8 +427,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
 
   test("cancel operation") {
     withSessionHandle { (client, handle) =>
-      val opHandle =
-        OperationHandle(OperationType.EXECUTE_STATEMENT, SERVER_VERSION)
+      val opHandle = OperationHandle(SERVER_VERSION)
       val req = new TCancelOperationReq()
       req.setOperationHandle(opHandle)
       val resp = client.CancelOperation(req)
@@ -448,8 +446,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
 
   test("close operation") {
     withSessionHandle { (client, handle) =>
-      val opHandle =
-        OperationHandle(OperationType.EXECUTE_STATEMENT, SERVER_VERSION)
+      val opHandle = OperationHandle(SERVER_VERSION)
       val req = new TCloseOperationReq()
       req.setOperationHandle(opHandle)
       val resp = client.CloseOperation(req)
@@ -477,7 +474,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getSchema.getColumns.get(0).getComment === "comment")
       assert(resp.getSchema.getColumns.get(0).getPosition === 0)
 
-      req1.setOperationHandle(OperationHandle(OperationType.EXECUTE_STATEMENT, SERVER_VERSION))
+      req1.setOperationHandle(OperationHandle(SERVER_VERSION))
       val resp1 = client.GetResultSetMetadata(req1)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
       assert(resp1.getStatus.getSqlState === null)

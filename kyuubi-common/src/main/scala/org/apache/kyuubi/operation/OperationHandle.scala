@@ -26,11 +26,9 @@ import org.apache.hive.service.rpc.thrift.{TOperationHandle, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.Handle
-import org.apache.kyuubi.operation.OperationType.OperationType
 
 case class OperationHandle(
     identifier: UUID,
-    typ: OperationType,
     protocol: TProtocolVersion) extends Handle {
 
   private var _hasResultSet: Boolean = _
@@ -40,35 +38,29 @@ case class OperationHandle(
   implicit def toTOperationHandle: TOperationHandle = {
     val tOperationHandle = new TOperationHandle
     tOperationHandle.setOperationId(Handle.toTHandleIdentifier(identifier))
-    tOperationHandle.setOperationType(OperationType.toTOperationType(typ))
     tOperationHandle.setHasResultSet(_hasResultSet)
     tOperationHandle
   }
 
-  override def hashCode(): Int = {
-    (Objects.hashCode(identifier) + 31) * 31 + Objects.hashCode(typ)
-  }
+  override def hashCode(): Int = Objects.hashCode(identifier) + 31
 
   override def equals(obj: Any): Boolean = obj match {
-    case OperationHandle(id, typ, _) =>
-      Objects.equals(this.typ, typ) && Objects.equals(this.identifier, id)
+    case OperationHandle(id, _) => Objects.equals(this.identifier, id)
     case _ => false
   }
 
-  override def toString: String = {
-    s"OperationHandle [type=$typ, identifier: $identifier]"
-  }
+  override def toString: String = s"OperationHandle [$identifier]"
+
 }
 
 object OperationHandle {
-  def apply(operationType: OperationType, protocol: TProtocolVersion): OperationHandle = {
-    new OperationHandle(UUID.randomUUID(), operationType, protocol)
+  def apply(protocol: TProtocolVersion): OperationHandle = {
+    new OperationHandle(UUID.randomUUID(), protocol)
   }
 
   def apply(tOperationHandle: TOperationHandle, protocol: TProtocolVersion): OperationHandle = {
     new OperationHandle(
       Handle.fromTHandleIdentifier(tOperationHandle.getOperationId),
-      OperationType.getOperationType(tOperationHandle.getOperationType),
       protocol)
   }
 
@@ -79,24 +71,14 @@ object OperationHandle {
   implicit def toTOperationHandle(handle: OperationHandle): TOperationHandle = {
     val tOperationHandle = new TOperationHandle
     tOperationHandle.setOperationId(Handle.toTHandleIdentifier(handle.identifier))
-    tOperationHandle.setOperationType(OperationType.toTOperationType(handle.typ))
     tOperationHandle.setHasResultSet(handle._hasResultSet)
     tOperationHandle
   }
 
   def apply(operationHandleStr: String): OperationHandle = {
     try {
-      val operationHandleParts = operationHandleStr.split("\\|")
-      require(
-        operationHandleParts.size == 2,
-        s"Expected 4 parameters but found ${operationHandleParts.size}.")
-
-      val handleIdentifier = UUID.fromString(operationHandleParts.head)
-      val operationType = OperationType.withName(operationHandleParts.last)
-      OperationHandle(
-        handleIdentifier,
-        operationType,
-        TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+      val handleIdentifier = UUID.fromString(operationHandleStr)
+      OperationHandle(handleIdentifier, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
     } catch {
       case NonFatal(e) =>
         throw KyuubiSQLException(s"Invalid $operationHandleStr", e)

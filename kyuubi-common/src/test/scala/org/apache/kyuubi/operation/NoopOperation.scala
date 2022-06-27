@@ -25,13 +25,12 @@ import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeE
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThriftUtils
 
-class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = false)
-  extends AbstractOperation(typ, session) {
+class NoopOperation(session: Session, shouldFail: Boolean = false)
+  extends AbstractOperation(session) {
   override protected def runInternal(): Unit = {
     setState(OperationState.RUNNING)
     if (shouldFail) {
@@ -75,7 +74,7 @@ class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = 
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
-    val col = TColumn.stringVal(new TStringColumn(Seq(typ.toString).asJava, ByteBuffer.allocate(0)))
+    val col = TColumn.stringVal(new TStringColumn(Seq(opType).asJava, ByteBuffer.allocate(0)))
     val tRowSet = ThriftUtils.newEmptyRowSet
     tRowSet.addToColumns(col)
     tRowSet

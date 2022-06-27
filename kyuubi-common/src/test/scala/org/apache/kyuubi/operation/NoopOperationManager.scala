@@ -35,37 +35,37 @@ class NoopOperationManager extends OperationManager("noop") {
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val operation =
-      new NoopOperation(OperationType.EXECUTE_STATEMENT, session, statement == invalid)
+      new NoopOperation(session, statement == invalid)
     addOperation(operation)
   }
 
   override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
-    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
   override def newGetCurrentCatalogOperation(session: Session): Operation = {
-    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
   override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
-    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
   override def newGetCurrentDatabaseOperation(session: Session): Operation = {
-    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
-    val operation = new NoopOperation(OperationType.GET_TYPE_INFO, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
   override def newGetCatalogsOperation(session: Session): Operation = {
-    val operation = new NoopOperation(OperationType.GET_CATALOGS, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
@@ -73,7 +73,7 @@ class NoopOperationManager extends OperationManager("noop") {
       session: Session,
       catalog: String,
       schema: String): Operation = {
-    val operation = new NoopOperation(OperationType.GET_SCHEMAS, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
@@ -83,12 +83,12 @@ class NoopOperationManager extends OperationManager("noop") {
       schemaName: String,
       tableName: String,
       tableTypes: java.util.List[String]): Operation = {
-    val operation = new NoopOperation(OperationType.GET_TABLES, session, schemaName == invalid)
+    val operation = new NoopOperation(session, schemaName == invalid)
     addOperation(operation)
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
-    val operation = new NoopOperation(OperationType.GET_TABLE_TYPES, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
@@ -98,7 +98,7 @@ class NoopOperationManager extends OperationManager("noop") {
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    val operation = new NoopOperation(OperationType.GET_COLUMNS, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
@@ -107,7 +107,7 @@ class NoopOperationManager extends OperationManager("noop") {
       catalogName: String,
       schemaName: String,
       functionName: String): Operation = {
-    val operation = new NoopOperation(OperationType.GET_FUNCTIONS, session)
+    val operation = new NoopOperation(session)
     addOperation(operation)
   }
 
@@ -117,7 +117,7 @@ class NoopOperationManager extends OperationManager("noop") {
       schemaName: String,
       tableName: String): Operation = {
     val operation =
-      new NoopOperation(OperationType.GET_FUNCTIONS, session, schemaName == invalid)
+      new NoopOperation(session, schemaName == invalid)
     addOperation(operation)
   }
 
@@ -130,7 +130,7 @@ class NoopOperationManager extends OperationManager("noop") {
       foreignSchema: String,
       foreignTable: String): Operation = {
     val operation =
-      new NoopOperation(OperationType.GET_FUNCTIONS, session, primarySchema == invalid)
+      new NoopOperation(session, primarySchema == invalid)
     addOperation(operation)
   }
 

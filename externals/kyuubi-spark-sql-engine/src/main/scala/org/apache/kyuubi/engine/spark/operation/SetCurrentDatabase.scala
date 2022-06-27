@@ -24,7 +24,7 @@ import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class SetCurrentDatabase(session: Session, database: String)
-  extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) {
+  extends SparkOperation(session) {
 
   override protected def resultSchema: StructType = {
     new StructType()

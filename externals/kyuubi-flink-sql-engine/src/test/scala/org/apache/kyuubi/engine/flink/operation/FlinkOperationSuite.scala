@@ -73,7 +73,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         null,
         null,
         null)).getMessage
-      assert(exceptionMsg.contains(s"Unsupported Operation type ${OperationType.GET_COLUMNS}."))
+      assert(exceptionMsg.contains(s"Unsupported Operation type GetColumns"))
     }
   }
 

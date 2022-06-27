@@ -50,7 +50,7 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     resultMaxRows: Int)
-  extends FlinkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
+  extends FlinkOperation(session) with Logging {
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session, getHandle)

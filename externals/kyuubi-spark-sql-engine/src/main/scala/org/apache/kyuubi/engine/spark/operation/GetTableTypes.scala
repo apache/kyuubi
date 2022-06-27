@@ -21,12 +21,12 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetTableTypes(session: Session)
-  extends SparkOperation(OperationType.GET_TABLE_TYPES, session) {
+  extends SparkOperation(session) {
   override protected def resultSchema: StructType = {
     new StructType()
       .add(TABLE_TYPE, "string", nullable = true, "Table type name.")

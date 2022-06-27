@@ -20,12 +20,11 @@ package org.apache.kyuubi.engine.spark.operation
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_SCHEM
 import org.apache.kyuubi.session.Session
 
-class GetCurrentDatabase(session: Session)
-  extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) {
+class GetCurrentDatabase(session: Session) extends SparkOperation(session) {
 
   override protected def resultSchema: StructType = {
     new StructType()

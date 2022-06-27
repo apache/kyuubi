@@ -35,12 +35,11 @@ import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
-abstract class SparkOperation(opType: OperationType, session: Session)
-  extends AbstractOperation(opType, session) {
+abstract class SparkOperation(session: Session)
+  extends AbstractOperation(session) {
 
   protected val spark: SparkSession = session.asInstanceOf[SparkSessionImpl].spark
 

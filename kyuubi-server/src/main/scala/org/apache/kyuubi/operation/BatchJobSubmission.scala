@@ -63,7 +63,7 @@ class BatchJobSubmission(
     batchConf: Map[String, String],
     batchArgs: Seq[String],
     recoveryMetadata: Option[Metadata])
-  extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
+  extends KyuubiOperation(session) {
   import BatchJobSubmission._
 
   override def statement: String = "BATCH_JOB_SUBMISSION"

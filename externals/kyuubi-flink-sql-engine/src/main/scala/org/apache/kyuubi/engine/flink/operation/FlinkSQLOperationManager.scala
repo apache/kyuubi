@@ -144,7 +144,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       tableName: String,
       columnName: String): Operation = {
     throw new UnsupportedOperationException(
-      s"Unsupported Operation type ${OperationType.GET_COLUMNS}. You can execute " +
+      "Unsupported Operation type GetColumns. You can execute " +
         "DESCRIBE statement instead to get column infos.")
   }
 

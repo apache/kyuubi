@@ -31,7 +31,7 @@ class GetFunctions(
     catalogName: String,
     schemaName: String,
     functionName: String)
-  extends SparkOperation(OperationType.GET_FUNCTIONS, session) {
+  extends SparkOperation(session) {
 
   override def statement: String = {
     super.statement +

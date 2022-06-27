@@ -23,7 +23,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_PLAN_ONLY_EXCLUDES
 import org.apache.kyuubi.config.KyuubiConf.OperationModes._
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -34,7 +34,7 @@ class PlanOnlyStatement(
     session: Session,
     override val statement: String,
     mode: OperationMode)
-  extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) {
+  extends SparkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   private val planExcludes: Seq[String] = {

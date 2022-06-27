@@ -25,7 +25,7 @@ class GetTables(
     schemaName: String,
     tableName: String,
     tableTypes: java.util.List[String])
-  extends KyuubiOperation(OperationType.GET_TABLES, session) {
+  extends KyuubiOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

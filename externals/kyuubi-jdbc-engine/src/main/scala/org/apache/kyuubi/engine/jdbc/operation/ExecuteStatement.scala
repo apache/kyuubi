@@ -27,13 +27,12 @@ import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
-    opType: OperationType = OperationType.EXECUTE_STATEMENT,
     session: Session,
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean)
-  extends JdbcOperation(opType, session) with Logging {
+  extends JdbcOperation(session) with Logging {
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
