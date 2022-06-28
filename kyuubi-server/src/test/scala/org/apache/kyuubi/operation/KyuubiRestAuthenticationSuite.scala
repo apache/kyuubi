@@ -113,8 +113,8 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
     val response = webTarget.path("swagger").request().get()
     assert(HttpServletResponse.SC_OK == response.getStatus)
 
-    val openApiResponse = webTarget.path("api/openapi.json").request().get()
-    assert(HttpServletResponse.SC_OK == openApiResponse.getStatus)
+    val openApiResponse = webTarget.path("api/v1/openapi.json").request().get()
+    assert(HttpServletResponse.SC_UNAUTHORIZED == openApiResponse.getStatus)
   }
 
   test("test with ugi wrapped open session") {
