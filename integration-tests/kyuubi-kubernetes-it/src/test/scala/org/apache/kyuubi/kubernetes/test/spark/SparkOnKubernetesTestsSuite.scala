@@ -150,7 +150,6 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       batchRequest)
 
     val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
-    val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val state = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
@@ -188,7 +187,9 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
 
   test("KyuubiOperationKubernetesClusterClusterModeSuite") {
     val driverPodNamePrefix = "kyuubi-spark-driver"
-    conf.set("spark.kubernetes.driver.pod.name", driverPodNamePrefix + System.currentTimeMillis())
+    conf.set(
+      "spark.kubernetes.driver.pod.name",
+      driverPodNamePrefix + "-" + System.currentTimeMillis())
 
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val batchRequest = new BatchRequest(
@@ -200,7 +201,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       Seq.empty[String].asJava)
 
     val sessionHandle = sessionManager.openBatchSession(
-      "kyuubi",
+      "runner",
       "passwd",
       "localhost",
       batchRequest.getConf.asScala.toMap,
@@ -210,10 +211,10 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-      assert(appInfo.nonEmpty)
-      assert(appInfo("name").startsWith(driverPodNamePrefix))
-      assert(appInfo("state") == "Running")
+      val state = batchJobSubmissionOp.currentApplicationState
+      assert(state.nonEmpty)
+      assert(state.exists(_("state") == "Running"))
+      assert(state.exists(_("name").startsWith(driverPodNamePrefix)))
     }
     // Sleep for driver bootstrap
     Thread.sleep(30000)
@@ -224,7 +225,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-      assert(appInfo == null)
+      assert(appInfo == null || appInfo("state") == "FINISHED")
     }
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
