@@ -386,10 +386,6 @@ class KyuubiSyncThriftClient private (
       case e: Exception => warn(s"$req failed on engine side", e)
     }
   }
-
-  def isConnectionValid(): Boolean = {
-    !remoteEngineBroken && protocol.getTransport.isOpen
-  }
 }
 
 private[kyuubi] object KyuubiSyncThriftClient extends Logging {
