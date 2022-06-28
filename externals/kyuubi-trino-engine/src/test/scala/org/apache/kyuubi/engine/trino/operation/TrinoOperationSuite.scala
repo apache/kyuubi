@@ -709,8 +709,7 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
       tFetchResultsReq.setMaxRows(1000)
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle" +
-        " [type=EXECUTE_STATEMENT, identifier:")
+      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle [")
 
       val tCloseSessionReq = new TCloseSessionReq()
       tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
