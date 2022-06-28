@@ -1,6 +1,6 @@
 {
   "name": "kyuubi-web-ui",
-  "version": "2.0.0",
+  "version": "1.6.0-SNAPSHOT",
   "scripts": {
     "ng": "node node_modules/@angular/cli/bin/ng",
     "start": "ng serve",
