@@ -33,14 +33,11 @@ import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.session.{KyuubiSessionImpl, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
-abstract class KyuubiOperation(session: Session)
-  extends AbstractOperation(session) {
-
-  private val opTypeName = getClass.getSimpleName
+abstract class KyuubiOperation(session: Session) extends AbstractOperation(session) {
 
   MetricsSystem.tracing { ms =>
-    ms.incCount(MetricRegistry.name(OPERATION_OPEN, opTypeName))
-    ms.incCount(MetricRegistry.name(OPERATION_TOTAL, opTypeName))
+    ms.incCount(MetricRegistry.name(OPERATION_OPEN, opType))
+    ms.incCount(MetricRegistry.name(OPERATION_TOTAL, opType))
     ms.incCount(MetricRegistry.name(OPERATION_TOTAL))
     ms.markMeter(MetricRegistry.name(OPERATION_STATE, state.toString.toLowerCase))
   }
@@ -63,7 +60,7 @@ abstract class KyuubiOperation(session: Session)
         } else {
           val errorType = e.getClass.getSimpleName
           MetricsSystem.tracing(_.incCount(
-            MetricRegistry.name(OPERATION_FAIL, opTypeName, errorType)))
+            MetricRegistry.name(OPERATION_FAIL, opType, errorType)))
           val ke = e match {
             case kse: KyuubiSQLException => kse
             case te: TTransportException
@@ -99,7 +96,7 @@ abstract class KyuubiOperation(session: Session)
   override def cancel(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       setState(OperationState.CANCELED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName)))
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
       if (_remoteOpHandle != null) {
         try {
           client.cancelOperation(_remoteOpHandle)
@@ -114,7 +111,7 @@ abstract class KyuubiOperation(session: Session)
   override def close(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       setState(OperationState.CLOSED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName)))
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
       try {
         // For launch engine operation, we use OperationLog to pass engine submit log but
         // at that time we do not have remoteOpHandle
