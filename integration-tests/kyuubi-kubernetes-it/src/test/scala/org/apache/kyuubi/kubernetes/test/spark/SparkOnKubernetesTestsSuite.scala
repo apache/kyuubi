@@ -230,6 +230,6 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
-    assert(failKillResponse._2 startsWith "Failed to terminate")
+    assert(failKillResponse._2 === ApplicationOperation.NOT_FOUND)
   }
 }
