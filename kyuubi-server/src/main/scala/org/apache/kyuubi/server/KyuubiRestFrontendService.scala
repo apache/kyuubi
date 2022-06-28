@@ -56,7 +56,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val host = conf.get(FRONTEND_REST_BIND_HOST)
-      .getOrElse(Utils.findLocalInetAddress.getCanonicalHostName)
+      .getOrElse {
+        if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
+          Utils.findLocalInetAddress.getCanonicalHostName
+        } else {
+          Utils.findLocalInetAddress.getHostAddress
+        }
+      }
     server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
     super.initialize(conf)
   }
