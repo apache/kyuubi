@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine
 
-import java.rmi.UnexpectedException
-
 import io.fabric8.kubernetes.api.model.{Pod, PodList}
 import io.fabric8.kubernetes.client.{Config, DefaultKubernetesClient, KubernetesClient, KubernetesClientException}
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
@@ -130,11 +128,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     val operation = kubernetesClient.pods()
       .withLabel(LABEL_KYUUBI_UNIQUE_KEY, tag)
     val size = operation.list().getItems.size()
-    if (size == 1) {
-      operation
-    } else {
-      throw new UnexpectedException(s"Get Tag: ${tag} Driver Pod size: ${size}, we expect 1")
+    if (size != 1) {
+      warn(s"Get Tag: ${tag} Driver Pod In Kubernetes size: ${size}, we expect 1")
     }
+    operation
   }
 
   override def stop(): Unit = {

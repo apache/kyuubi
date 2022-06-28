@@ -153,20 +153,25 @@ class KyuubiOperationKubernetesClusterClientModeSuite
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val state = batchJobSubmissionOp.currentApplicationState
+      val state = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
       assert(state.nonEmpty)
+      assert(state.contains("id"))
+      assert(state.contains("name"))
+      assert(state("state") === "RUNNING")
     }
 
     val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(killResponse._1)
-    assert(killResponse._2 startsWith "Operation of deleted appId:")
+    assert(killResponse._2 startsWith "Succeeded to terminate:")
 
     val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-    assert(appInfo == null)
+    assert(!appInfo.contains("id"))
+    assert(!appInfo.contains("name"))
+    assert(appInfo("state") === "FINISHED")
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
-    assert(failKillResponse._2 startsWith "Failed to terminate application with")
+    assert(failKillResponse._2 startsWith "Failed to terminate")
   }
 }
 
@@ -182,6 +187,9 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   test("KyuubiOperationKubernetesClusterClusterModeSuite") {
+    val driverPodNamePrefix = "kyuubi-spark-driver"
+    conf.set("spark.kubernetes.driver.pod.name", driverPodNamePrefix + System.currentTimeMillis())
+
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val batchRequest = new BatchRequest(
       "spark",
@@ -204,14 +212,20 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val state = batchJobSubmissionOp.currentApplicationState
       assert(state.nonEmpty)
+      assert(state.exists(_("name").startsWith(driverPodNamePrefix)))
+      assert(state.exists(_("state") == "Running"))
     }
+    // Sleep for driver bootstrap
+    Thread.sleep(30000)
 
     val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(killResponse._1)
-    assert(killResponse._2 startsWith "Succeeded to terminate:")
+    assert(killResponse._2 startsWith "Operation of deleted appId:")
 
-    val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-    assert(appInfo == null)
+    eventually(timeout(3.minutes), interval(50.milliseconds)) {
+      val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+      assert(appInfo == null)
+    }
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
