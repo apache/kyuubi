@@ -45,9 +45,9 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
 
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val batch_basic = s"""apiVersion: v1
-                         |batchType: Spark
                          |username: ${ldapUser}
                          |request:
+                         |  batchType: Spark
                          |  name: ${appName}
                          |  resource: ${sparkProcessBuilder.mainResource.get}
                          |  className: ${sparkProcessBuilder.mainClass}

@@ -45,7 +45,7 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
       val args = request.get("args").asInstanceOf[JList[Object]].asScala
         .map(x => x.toString).asJava
       val batchRequest = new BatchRequest(
-        map.get("batchType").asInstanceOf[String],
+        request.get("batchType").asInstanceOf[String],
         request.get("resource").asInstanceOf[String],
         request.get("className").asInstanceOf[String],
         request.get("name").asInstanceOf[String],
