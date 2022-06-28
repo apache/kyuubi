@@ -181,10 +181,17 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
         executeStmtReq.setSessionHandle(handle)
         executeStmtReq.setRunAsync(false)
         val startTime = System.currentTimeMillis()
-        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
-        assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-        assert(executeStmtResp.getStatus.getErrorMessage.contains(
-          "java.net.SocketException: Connection reset"))
+        try {
+          val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+          assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+          assert(executeStmtResp.getStatus.getErrorMessage.contains(
+            "java.net.SocketException: Connection reset"))
+        } catch {
+          case e: Throwable =>
+            assert(e.getMessage.contains("java.net.SocketException: Connection reset") ||
+              e.getMessage.contains("java.net.SocketException: Broken pipe"))
+        }
+
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
       }
