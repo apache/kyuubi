@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import java.io.IOException
-
-import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Statistics}
@@ -47,26 +44,7 @@ class RuleEliminateMarker(spark: SparkSession) extends Rule[LogicalPlan] {
 
   private def hiveTableWithStats(relation: HiveTableRelation): HiveTableRelation = {
     val conf = SQLConf.get
-    val table = relation.tableMeta
-    val partitionCols = relation.partitionCols
-    // For partitioned tables, the partition directory may be outside of the table directory.
-    // Which is expensive to get table size. Please see how we implemented it in the AnalyzeTable.
-    val sizeInBytes =
-      if (conf.fallBackToHdfsForStatsEnabled && partitionCols.isEmpty) {
-        try {
-          val hadoopConf = spark.sessionState.newHadoopConf()
-          val tablePath = new Path(table.location)
-          val fs: FileSystem = tablePath.getFileSystem(hadoopConf)
-          fs.getContentSummary(tablePath).getLength
-        } catch {
-          case e: IOException =>
-            logWarning("Failed to get table size from HDFS.", e)
-            conf.defaultSizeInBytes
-        }
-      } else {
-        conf.defaultSizeInBytes
-      }
-
+    val sizeInBytes = conf.defaultSizeInBytes
     val stats = Some(Statistics(sizeInBytes = BigInt(sizeInBytes)))
     relation.copy(tableStats = stats)
   }
