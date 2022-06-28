@@ -18,6 +18,7 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
+import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 
 class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
@@ -467,5 +468,23 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "--conf",
       s"${CtlConf.CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS.key}")
     testPrematureExitForControlCliArgs(args2.toArray, "Kyuubi config without '='")
+  }
+
+  test("test ctl client conf") {
+    val args = Seq(
+      "delete",
+      "batch",
+      "123",
+      "--hostUrl",
+      "https://kyuubi.test.com",
+      "--conf",
+      s"${CtlConf.CTL_REST_CLIENT_CONNECT_TIMEOUT.key}=5000")
+    val opArgs = new ControlCliArguments(args)
+    withKyuubiRestClient(opArgs.cliConfig, null, opArgs.command.conf) { kyuubiRestClient =>
+      assert(kyuubiRestClient.getConf.getConnectTimeout == 5000)
+      assert(kyuubiRestClient.getConf.getSocketTimeout == 30000)
+      assert(kyuubiRestClient.getConf.getMaxAttempts == 3)
+      assert(kyuubiRestClient.getConf.getAttemptWaitTime == 3000)
+    }
   }
 }

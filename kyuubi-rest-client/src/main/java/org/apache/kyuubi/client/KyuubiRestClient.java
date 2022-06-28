@@ -133,6 +133,10 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
     return httpClient;
   }
 
+  public RestClientConf getConf() {
+    return conf;
+  }
+
   public static Builder builder(String hostUrl) {
     return new Builder(hostUrl);
   }
