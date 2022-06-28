@@ -17,14 +17,13 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Statistics}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.DDLUtils
 import org.apache.spark.sql.internal.SQLConf
 
-class RuleEliminateMarker(spark: SparkSession) extends Rule[LogicalPlan] {
+class RuleEliminateMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transformUp {
       case rf: RowFilterAndDataMaskingMarker =>
