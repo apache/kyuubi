@@ -42,7 +42,7 @@ case class OperationHandle(
     tOperationHandle
   }
 
-  override def hashCode(): Int = Objects.hashCode(identifier) + 31
+  override def hashCode(): Int = Objects.hashCode(identifier)
 
   override def equals(obj: Any): Boolean = obj match {
     case OperationHandle(id, _) => Objects.equals(this.identifier, id)
