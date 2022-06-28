@@ -40,8 +40,8 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
 
   override def apply(v1: SparkSessionExtensions): Unit = {
     v1.injectResolutionRule(_ => new RuleReplaceShowObjectCommands())
-    v1.injectPostHocResolutionRule(new RuleApplyRowFilterAndDataMasking(_))
-    v1.injectOptimizerRule(_ => new RuleEliminateMarker())
+    v1.injectResolutionRule(new RuleApplyRowFilterAndDataMasking(_))
+    v1.injectOptimizerRule(spark => new RuleEliminateMarker(spark))
     v1.injectOptimizerRule(new RuleAuthorization(_))
     v1.injectPlannerStrategy(new FilterDataSourceV2Strategy(_))
   }

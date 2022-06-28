@@ -17,11 +17,55 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.rules.Rule
+import java.io.IOException
 
-class RuleEliminateMarker extends Rule[LogicalPlan] {
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Statistics}
+import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.command.DDLUtils
+
+class RuleEliminateMarker(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp { case rf: RowFilterAndDataMaskingMarker => rf.table }
+    plan.transformUp {
+      case rf: RowFilterAndDataMaskingMarker =>
+        val table = rf.table
+        table match {
+          case relation: HiveTableRelation =>
+            if (DDLUtils.isHiveTable(relation.tableMeta) && relation.tableMeta.stats.isEmpty) {
+              hiveTableWithStats(relation)
+            } else {
+              relation
+            }
+          case _ =>
+            table
+        }
+    }
+  }
+
+  private def hiveTableWithStats(relation: HiveTableRelation): HiveTableRelation = {
+    val table = relation.tableMeta
+    val partitionCols = relation.partitionCols
+    // For partitioned tables, the partition directory may be outside of the table directory.
+    // Which is expensive to get table size. Please see how we implemented it in the AnalyzeTable.
+    val sizeInBytes =
+      if (conf.fallBackToHdfsForStatsEnabled && partitionCols.isEmpty) {
+        try {
+          val hadoopConf = spark.sessionState.newHadoopConf()
+          val tablePath = new Path(table.location)
+          val fs: FileSystem = tablePath.getFileSystem(hadoopConf)
+          fs.getContentSummary(tablePath).getLength
+        } catch {
+          case e: IOException =>
+            logWarning("Failed to get table size from HDFS.", e)
+            conf.defaultSizeInBytes
+        }
+      } else {
+        conf.defaultSizeInBytes
+      }
+
+    val stats = Some(Statistics(sizeInBytes = BigInt(sizeInBytes)))
+    relation.copy(tableStats = stats)
   }
 }
