@@ -291,7 +291,7 @@ class KyuubiSyncThriftClient private (
     req.setCatalogName(catalogName)
     req.setSchemaName(schemaName)
     req.setTableName(tableName)
-    val resp = withLockAcquired(GetPrimaryKeys(req))
+    val resp = withLockAcquiredAsyncRequest(GetPrimaryKeys(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getOperationHandle
   }
@@ -376,7 +376,7 @@ class KyuubiSyncThriftClient private (
     req.setSessionHandle(_remoteSessionHandle)
     req.setDelegationToken(encodedCredentials)
     try {
-      val resp = withLockAcquired(RenewDelegationToken(req))
+      val resp = withLockAcquiredAsyncRequest(RenewDelegationToken(req))
       if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
         debug(s"$req succeed on engine side")
       } else {

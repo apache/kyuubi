@@ -169,24 +169,22 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
         preReq.setRunAsync(false)
         client.ExecuteStatement(preReq)
 
+        val systemExitReq = new TExecuteStatementReq()
+        systemExitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 2000l)," +
+          " java_method('java.lang.System', 'exit', 1)")
+        systemExitReq.setSessionHandle(handle)
+        systemExitReq.setRunAsync(true)
+        client.ExecuteStatement(systemExitReq)
+
         val executeStmtReq = new TExecuteStatementReq()
-        executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 3600000l)")
+        executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
         executeStmtReq.setSessionHandle(handle)
-        executeStmtReq.setRunAsync(true)
+        executeStmtReq.setRunAsync(false)
         val startTime = System.currentTimeMillis()
         val executeStmtResp = client.ExecuteStatement(executeStmtReq)
-
-        withSessionHandle { (client2, handle2) =>
-          val executeStmtReq = new TExecuteStatementReq()
-          executeStmtReq.setSessionHandle(handle2)
-          executeStmtReq.setStatement("select java_method('java.lang.System', 'exit', 1)")
-          executeStmtReq.setRunAsync(true)
-          client2.ExecuteStatement(executeStmtReq)
-        }
-
-        eventually(timeout(20.seconds)) {
-          assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-        }
+        assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+        val elapsedTime = System.currentTimeMillis() - startTime
+        assert(elapsedTime < 20 * 1000)
       }
     }
   }
