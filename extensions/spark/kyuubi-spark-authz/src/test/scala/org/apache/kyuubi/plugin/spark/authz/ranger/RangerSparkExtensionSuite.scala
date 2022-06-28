@@ -36,7 +36,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 // scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
-  private def doAs[T](user: String, f: => T): T = {
+  protected def doAs[T](user: String, f: => T): T = {
     UserGroupInformation.createRemoteUser(user).doAs[T](
       new PrivilegedExceptionAction[T] {
         override def run(): T = f
@@ -372,8 +372,16 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
+}
 
-  test("test join") {
+class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+  override protected val catalogImpl: String = "in-memory"
+}
+
+class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+  override protected val catalogImpl: String = "hive"
+
+  test("hive table join") {
     val db = "test"
     val table1 = "table1"
     val table2 = "table2"
@@ -396,12 +404,4 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
-}
-
-class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
-  override protected val catalogImpl: String = "in-memory"
-}
-
-class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
-  override protected val catalogImpl: String = "hive"
 }

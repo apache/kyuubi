@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Statistics}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.DDLUtils
+import org.apache.spark.sql.internal.SQLConf
 
 class RuleEliminateMarker(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
@@ -45,6 +46,7 @@ class RuleEliminateMarker(spark: SparkSession) extends Rule[LogicalPlan] {
   }
 
   private def hiveTableWithStats(relation: HiveTableRelation): HiveTableRelation = {
+    val conf = SQLConf.get
     val table = relation.tableMeta
     val partitionCols = relation.partitionCols
     // For partitioned tables, the partition directory may be outside of the table directory.
