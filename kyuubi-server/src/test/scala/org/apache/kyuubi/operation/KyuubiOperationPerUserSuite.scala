@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TStatusCode}
 import org.scalatest.time.SpanSugar._
-
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -150,6 +150,33 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
         val resultUnLimit = statement.executeQuery("select * from va")
         assert(resultUnLimit.next())
         assert(resultUnLimit.next())
+      }
+    }
+  }
+
+  test("support to interrupt the thrift request if remote engine is broken") {
+    withSessionConf(Map(
+      KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
+      KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "1000",
+      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "3000",
+      KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS.key -> "10000"))(Map.empty)(
+      Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("select engine_name()")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        client.ExecuteStatement(preReq)
+
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setStatement("select java_method('java.lang.System', 'exit', 1)")
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(false)
+        val startTime = System.currentTimeMillis()
+        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+        assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+        val elapsedTime = System.currentTimeMillis() - startTime
+        assert(elapsedTime > 3 * 1000 && elapsedTime < 20 * 1000)
       }
     }
   }
