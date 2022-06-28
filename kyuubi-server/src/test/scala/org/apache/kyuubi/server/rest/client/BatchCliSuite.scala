@@ -54,6 +54,8 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
                          |  args:
                          |   - x1
                          |   - x2
+                         |   - 123
+                         |   - true
                          |  configs:
                          |    spark.master: local
                          |    wait.completion: true
