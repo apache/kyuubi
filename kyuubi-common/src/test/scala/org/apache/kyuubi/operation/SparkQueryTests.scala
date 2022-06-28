@@ -323,13 +323,16 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
 
   test("execute statement - analysis exception") {
     val sql = "select date_sub(date'2011-11-11', '1.2')"
+    val errors = Set(
+      "The second argument of 'date_sub' function needs to be an integer.",
+      // unquoted since Spark-3.4, see https://github.com/apache/spark/pull/36693
+      "The second argument of date_sub function needs to be an integer.")
 
     withJdbcStatement() { statement =>
       val e = intercept[SQLException] {
         statement.executeQuery(sql)
       }
-      assert(e.getMessage
-        .contains("The second argument of 'date_sub' function needs to be an integer."))
+      assert(errors.exists(msg => e.getMessage.contains(msg)))
     }
   }
 
