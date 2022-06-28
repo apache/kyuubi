@@ -114,7 +114,7 @@ abstract class TFrontendService(name: String)
     val host = serverHost match {
       case Some(h) => h // respect user's setting ahead
       case None if conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME) =>
-        serverAddr.getHostName
+        serverAddr.getCanonicalHostName
       case None =>
         serverAddr.getHostAddress
     }
