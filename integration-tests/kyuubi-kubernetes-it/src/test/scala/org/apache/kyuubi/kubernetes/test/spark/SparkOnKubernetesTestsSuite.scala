@@ -27,7 +27,7 @@ import org.apache.kyuubi.{Logging, Utils, WithKyuubiServer, WithSimpleDFSService
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
-import org.apache.kyuubi.engine.KubernetesApplicationOperation
+import org.apache.kyuubi.engine.{ApplicationOperation, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
@@ -171,7 +171,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
-    assert(failKillResponse._2 startsWith "Failed to terminate")
+    assert(failKillResponse._2 === ApplicationOperation.NOT_FOUND)
   }
 }
 
@@ -210,10 +210,10 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val state = batchJobSubmissionOp.currentApplicationState
-      assert(state.nonEmpty)
-      assert(state.exists(_("name").startsWith(driverPodNamePrefix)))
-      assert(state.exists(_("state") == "Running"))
+      val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
+      assert(appInfo.nonEmpty)
+      assert(appInfo("name").startsWith(driverPodNamePrefix))
+      assert(appInfo("state") == "Running")
     }
     // Sleep for driver bootstrap
     Thread.sleep(30000)
