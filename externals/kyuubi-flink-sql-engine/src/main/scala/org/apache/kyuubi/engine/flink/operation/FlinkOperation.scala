@@ -31,14 +31,10 @@ import org.apache.kyuubi.engine.flink.schema.RowSet
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
-abstract class FlinkOperation(
-    opType: OperationType,
-    session: Session)
-  extends AbstractOperation(opType, session) {
+abstract class FlinkOperation(session: Session) extends AbstractOperation(session) {
 
   protected val sessionContext: SessionContext = {
     session.asInstanceOf[FlinkSessionImpl].sessionContext

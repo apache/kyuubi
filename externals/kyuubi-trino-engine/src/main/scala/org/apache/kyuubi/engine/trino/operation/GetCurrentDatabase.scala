@@ -22,11 +22,11 @@ import io.trino.client.{ClientTypeSignature, ClientTypeSignatureParameter, Colum
 import io.trino.client.ClientStandardTypes.VARCHAR
 import io.trino.client.ClientTypeSignature.VARCHAR_UNBOUNDED_LENGTH
 
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.session.Session
 
 class GetCurrentDatabase(session: Session)
-  extends TrinoOperation(OperationType.EXECUTE_STATEMENT, session) {
+  extends TrinoOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

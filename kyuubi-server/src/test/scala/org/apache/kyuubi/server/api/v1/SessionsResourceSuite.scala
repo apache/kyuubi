@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiSessionEvent
-import org.apache.kyuubi.operation.{OperationHandle, OperationType}
+import org.apache.kyuubi.operation.OperationHandle
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -184,20 +184,20 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     var operationHandle = response.readEntity(classOf[OperationHandle])
-    assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
+    assert(operationHandle !== null)
 
     response = webTarget.path(s"$pathPrefix/operations/typeInfo").request()
       .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     operationHandle = response.readEntity(classOf[OperationHandle])
-    assert(operationHandle.typ == OperationType.GET_TYPE_INFO)
+    assert(operationHandle !== null)
 
     response = webTarget.path(s"$pathPrefix/operations/catalogs")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     operationHandle = response.readEntity(classOf[OperationHandle])
-    assert(operationHandle.typ == OperationType.GET_CATALOGS)
+    assert(operationHandle !== null)
 
     val getSchemasReq = new GetSchemasRequest("spark_catalog", "default")
     response = webTarget.path(s"$pathPrefix/operations/schemas")
@@ -205,7 +205,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(Entity.entity(getSchemasReq, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     operationHandle = response.readEntity(classOf[OperationHandle])
-    assert(operationHandle.typ == OperationType.GET_SCHEMAS)
+    assert(operationHandle !== null)
 
     val tableTypes = new util.ArrayList[String]()
     val getTablesReq = new GetTablesRequest("spark_catalog", "default", "default", tableTypes)
@@ -214,13 +214,13 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(Entity.entity(getTablesReq, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     operationHandle = response.readEntity(classOf[OperationHandle])
-    assert(operationHandle.typ == OperationType.GET_TABLES)
+    assert(operationHandle !== null)
 
     response = webTarget.path(s"$pathPrefix/operations/tableTypes").request()
       .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     operationHandle = response.readEntity(classOf[OperationHandle])
-    assert(operationHandle.typ == OperationType.GET_TABLE_TYPES)
+    assert(operationHandle !== null)
 
     val getColumnsReq = new GetColumnsRequest("spark_catalog", "default", "default", "default")
     response = webTarget.path(s"$pathPrefix/operations/columns")
@@ -228,7 +228,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(Entity.entity(getColumnsReq, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     operationHandle = response.readEntity(classOf[OperationHandle])
-    assert(operationHandle.typ == OperationType.GET_COLUMNS)
+    assert(operationHandle !== null)
 
     val getFunctionsReq = new GetFunctionsRequest("default", "default", "default")
     response = webTarget.path(s"$pathPrefix/operations/functions")
@@ -236,7 +236,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .post(Entity.entity(getFunctionsReq, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
     operationHandle = response.readEntity(classOf[OperationHandle])
-    assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
+    assert(operationHandle !== null)
 
     val getPrimaryKeysReq = new GetPrimaryKeysRequest("spark_catalog", "default", "default")
     response = webTarget.path(s"$pathPrefix/operations/primaryKeys")

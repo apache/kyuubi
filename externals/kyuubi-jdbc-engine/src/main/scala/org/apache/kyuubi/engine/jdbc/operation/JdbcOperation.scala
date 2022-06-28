@@ -24,11 +24,9 @@ import org.apache.kyuubi.engine.jdbc.dialect.{JdbcDialect, JdbcDialects}
 import org.apache.kyuubi.engine.jdbc.schema.{Row, Schema}
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.Session
 
-abstract class JdbcOperation(opType: OperationType, session: Session)
-  extends AbstractOperation(opType, session) {
+abstract class JdbcOperation(session: Session) extends AbstractOperation(session) {
 
   protected var schema: Schema = _
 

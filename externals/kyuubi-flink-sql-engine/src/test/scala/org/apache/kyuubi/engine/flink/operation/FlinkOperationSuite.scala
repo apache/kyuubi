@@ -33,7 +33,7 @@ import org.apache.kyuubi.config.KyuubiConf.OperationModes.NONE
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
-import org.apache.kyuubi.operation.{HiveJDBCTestHelper, OperationType}
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.service.ServiceState._
 
@@ -73,7 +73,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         null,
         null,
         null)).getMessage
-      assert(exceptionMsg.contains(s"Unsupported Operation type ${OperationType.GET_COLUMNS}."))
+      assert(exceptionMsg.contains(s"Unsupported Operation type GetColumns"))
     }
   }
 

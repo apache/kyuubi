@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.catalog.ObjectIdentifier
 
 import org.apache.kyuubi.engine.flink.result.{Constants, ResultSetUtil}
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class GetTables(
@@ -33,7 +32,7 @@ class GetTables(
     schema: String,
     tableName: String,
     tableTypes: Set[String])
-  extends FlinkOperation(OperationType.GET_TABLES, session) {
+  extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

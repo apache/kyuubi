@@ -26,16 +26,16 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThreadUtils
 
-abstract class AbstractOperation(opType: OperationType, session: Session)
+abstract class AbstractOperation(session: Session)
   extends Operation with Logging {
 
+  final protected val opType: String = getClass.getSimpleName
   final protected val createTime = System.currentTimeMillis()
-  final private val handle = OperationHandle(opType, session.protocol)
+  final private val handle = OperationHandle(session.protocol)
   final private val operationTimeout: Long = {
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }
@@ -85,7 +85,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   def getBackgroundHandle: Future[_] = _backgroundHandle
 
-  def statement: String = opType.toString
+  def statement: String = opType
 
   def redactedStatement: String = statement
 

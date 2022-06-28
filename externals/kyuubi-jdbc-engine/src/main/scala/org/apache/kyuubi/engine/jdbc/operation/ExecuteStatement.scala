@@ -22,18 +22,16 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.ResultSetWrapper
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
-import org.apache.kyuubi.operation.OperationType.OperationType
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
 import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
-    opType: OperationType = OperationType.EXECUTE_STATEMENT,
     session: Session,
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean)
-  extends JdbcOperation(opType, session) with Logging {
+  extends JdbcOperation(session) with Logging {
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)

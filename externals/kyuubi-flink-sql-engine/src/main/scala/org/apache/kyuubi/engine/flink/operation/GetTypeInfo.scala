@@ -26,12 +26,10 @@ import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
-class GetTypeInfo(session: Session)
-  extends FlinkOperation(OperationType.GET_TYPE_INFO, session) {
+class GetTypeInfo(session: Session) extends FlinkOperation(session) {
 
   private def isNumericType(javaType: Int): Boolean = {
     javaType == TINYINT || javaType == SMALLINT || javaType == INTEGER || javaType == BIGINT ||

@@ -17,11 +17,10 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class SetCurrentDatabase(session: Session, database: String)
-  extends FlinkOperation(OperationType.EXECUTE_STATEMENT, session) {
+  extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

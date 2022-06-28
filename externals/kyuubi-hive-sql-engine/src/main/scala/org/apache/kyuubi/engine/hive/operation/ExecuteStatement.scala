@@ -23,7 +23,6 @@ import org.apache.hive.service.cli.operation.Operation
 
 import org.apache.kyuubi.engine.hive.events.HiveOperationEvent
 import org.apache.kyuubi.events.EventBus
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
@@ -32,7 +31,7 @@ class ExecuteStatement(
     confOverlay: Map[String, String],
     runAsync: Boolean,
     queryTimeout: Long)
-  extends HiveOperation(OperationType.EXECUTE_STATEMENT, session) {
+  extends HiveOperation(session) {
 
   override val internalHiveOperation: Operation = {
     delegatedOperationManager.newExecuteStatementOperation(

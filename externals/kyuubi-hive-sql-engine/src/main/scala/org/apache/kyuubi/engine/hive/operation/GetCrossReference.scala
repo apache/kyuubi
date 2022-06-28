@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.hive.operation
 
 import org.apache.hive.service.cli.operation.Operation
 
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class GetCrossReference(
@@ -30,7 +29,7 @@ class GetCrossReference(
     foreignCatalog: String,
     foreignSchema: String,
     foreignTable: String)
-  extends HiveOperation(OperationType.GET_FUNCTIONS, session) {
+  extends HiveOperation(session) {
 
   override val internalHiveOperation: Operation =
     delegatedOperationManager.newGetCrossReferenceOperation(

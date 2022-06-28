@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.util.UUID
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
@@ -29,22 +30,20 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.{ExecuteStatement, OperationState, OperationType}
+import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
-import org.apache.kyuubi.operation.OperationType.OperationType
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("get an operation event") {
-    val catalogsHandleStr = getOpHandleStr(OperationType.GET_CATALOGS)
+    val catalogsHandleStr = getOpHandleStr("")
     checkOpState(catalogsHandleStr, FINISHED)
 
-    val statementHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
+    val statementHandleStr = getOpHandleStr()
     checkOpState(statementHandleStr, FINISHED)
 
     // Invalid operationHandleStr
-    val invalidOperationHandle =
-      statementHandleStr.replaceAll("EXECUTE_STATEMENT", "GET_TYPE_INFO")
+    val invalidOperationHandle = UUID.randomUUID().toString
     val response = webTarget.path(s"api/v1/operations/$invalidOperationHandle/event")
       .request(MediaType.APPLICATION_JSON_TYPE).get()
     assert(404 == response.getStatus)
@@ -62,8 +61,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     val op = new ExecuteStatement(session, "show tables", Map.empty, true, 3000)
     op.setState(OperationState.RUNNING)
     sessionManager.operationManager.addOperation(op)
-    val opHandleStr = s"${op.getHandle.identifier}|" +
-      s"${op.getHandle.typ.toString}"
+    val opHandleStr = op.getHandle.identifier.toString
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .put(Entity.entity(new OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
@@ -80,7 +78,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("get result set metadata") {
-    val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
+    val opHandleStr = getOpHandleStr()
     checkOpState(opHandleStr, FINISHED)
     val response = webTarget.path(s"api/v1/operations/$opHandleStr/resultsetmetadata")
       .request(MediaType.APPLICATION_JSON_TYPE).get()
@@ -90,7 +88,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("get operation log") {
-    val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
+    val opHandleStr = getOpHandleStr()
     checkOpState(opHandleStr, FINISHED)
     val response = webTarget.path(
       s"api/v1/operations/$opHandleStr/log")
@@ -103,8 +101,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("test get result row set") {
-    val opHandleStr =
-      getOpHandleStr(OperationType.EXECUTE_STATEMENT, "select \"test\", 1, 0.32d, true")
+    val opHandleStr = getOpHandleStr("select \"test\", 1, 0.32d, true")
     checkOpState(opHandleStr, FINISHED)
     val response = webTarget.path(
       s"api/v1/operations/$opHandleStr/rowset")
@@ -117,7 +114,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(logRowSet.getRowCount == 1)
   }
 
-  def getOpHandleStr(typ: OperationType, statement: String = "show tables"): String = {
+  def getOpHandleStr(statement: String = "show tables"): String = {
     val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
       "admin",
@@ -125,13 +122,14 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    val op = typ match {
-      case OperationType.EXECUTE_STATEMENT =>
+    val op =
+      if (statement.nonEmpty) {
         fe.be.executeStatement(sessionHandle, statement, Map.empty, runAsync = true, 3000)
-      case OperationType.GET_CATALOGS => fe.be.getCatalogs(sessionHandle)
-    }
+      } else {
+        fe.be.getCatalogs(sessionHandle)
+      }
 
-    s"${op.identifier}|${op.typ.toString}"
+    op.identifier.toString
   }
 
   private def checkOpState(opHandleStr: String, state: OperationState): Unit = {

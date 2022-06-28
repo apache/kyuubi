@@ -24,7 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf.OPERATION_INCREMENTAL_COLLECT
 import org.apache.kyuubi.engine.jdbc.dialect.{JdbcDialect, JdbcDialects}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
-import org.apache.kyuubi.operation.{Operation, OperationManager, OperationType}
+import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
 class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOperationManager")
@@ -46,7 +46,6 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       session.sessionManager.getConf.get(OPERATION_INCREMENTAL_COLLECT))
     val executeStatement =
       new ExecuteStatement(
-        OperationType.EXECUTE_STATEMENT,
         session,
         statement,
         runAsync,
@@ -81,7 +80,7 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       tableTypes: util.List[String]): Operation = {
     val query = dialect.getTablesQuery(catalogName, schemaName, tableName, tableTypes)
     val executeStatement =
-      new ExecuteStatement(OperationType.GET_TABLES, session, query, false, 0L, true)
+      new ExecuteStatement(session, query, false, 0L, true)
     addOperation(executeStatement)
   }
 

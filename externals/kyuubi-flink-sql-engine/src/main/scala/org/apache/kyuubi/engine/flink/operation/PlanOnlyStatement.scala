@@ -23,7 +23,6 @@ import org.apache.flink.table.operations.command._
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.OperationModes._
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -33,8 +32,7 @@ import org.apache.kyuubi.session.Session
 class PlanOnlyStatement(
     session: Session,
     override val statement: String,
-    mode: OperationMode)
-  extends FlinkOperation(OperationType.EXECUTE_STATEMENT, session) {
+    mode: OperationMode) extends FlinkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   private val lineSeparator: String = System.lineSeparator()

@@ -26,7 +26,7 @@ import org.apache.kyuubi.engine.trino.TrinoStatement
 import org.apache.kyuubi.engine.trino.event.TrinoOperationEvent
 import org.apache.kyuubi.engine.trino.schema.RowSet
 import org.apache.kyuubi.events.EventBus
-import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, OperationState, OperationType}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -37,7 +37,7 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean)
-  extends TrinoOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
+  extends TrinoOperation(session) with Logging {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)

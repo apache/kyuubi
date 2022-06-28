@@ -27,11 +27,9 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, FetchOrientation, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.Session
 
-abstract class HiveOperation(opType: OperationType, session: Session)
-  extends AbstractOperation(opType, session) {
+abstract class HiveOperation(session: Session) extends AbstractOperation(session) {
 
   protected val hive: HiveSession = session.asInstanceOf[HiveSessionImpl].hive
 

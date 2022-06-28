@@ -35,7 +35,7 @@ class ExecuteStatement(
     confOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
-  extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session) {
+  extends KyuubiOperation(session) {
   EventBus.post(KyuubiOperationEvent(this))
 
   final private val _operationLog: OperationLog =

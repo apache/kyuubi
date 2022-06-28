@@ -21,7 +21,7 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean)
-  extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
+  extends KyuubiOperation(session) {
 
   override def statement: String = "LAUNCH_ENGINE"
 

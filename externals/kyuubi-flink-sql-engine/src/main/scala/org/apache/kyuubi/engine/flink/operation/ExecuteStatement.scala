@@ -39,7 +39,7 @@ import org.apache.flink.types.Row
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.engine.flink.schema.RowSet.toHiveString
-import org.apache.kyuubi.operation.{OperationState, OperationType}
+import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.RowSetUtils
@@ -50,7 +50,7 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     resultMaxRows: Int)
-  extends FlinkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
+  extends FlinkOperation(session) with Logging {
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session, getHandle)

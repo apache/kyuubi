@@ -22,7 +22,7 @@ import java.sql.DatabaseMetaData
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
+import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
@@ -31,7 +31,7 @@ class GetFunctions(
     catalogName: String,
     schemaName: String,
     functionName: String)
-  extends SparkOperation(OperationType.GET_FUNCTIONS, session) {
+  extends SparkOperation(session) {
 
   override def statement: String = {
     super.statement +

@@ -21,11 +21,9 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.operation.Operation
 
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
-class GetCurrentDatabase(session: Session)
-  extends HiveOperation(OperationType.EXECUTE_STATEMENT, session) {
+class GetCurrentDatabase(session: Session) extends HiveOperation(session) {
 
   override val internalHiveOperation: Operation =
     delegatedOperationManager.newExecuteStatementOperation(

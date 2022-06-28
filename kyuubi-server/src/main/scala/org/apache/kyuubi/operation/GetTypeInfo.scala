@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.session.Session
 
-class GetTypeInfo(session: Session) extends KyuubiOperation(OperationType.GET_TYPE_INFO, session) {
+class GetTypeInfo(session: Session) extends KyuubiOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

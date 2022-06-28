@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.engine.trino.TrinoStatement
-import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
+import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{COLUMN_NAME, TABLE_CAT, TABLE_NAME, TABLE_SCHEM}
 import org.apache.kyuubi.session.Session
 
@@ -32,7 +32,7 @@ class GetColumns(
     schemaName: String,
     tableName: String,
     columnName: String)
-  extends TrinoOperation(OperationType.GET_COLUMNS, session) {
+  extends TrinoOperation(session) {
 
   private val SEARCH_STRING_ESCAPE: String = "\\"
 

@@ -18,11 +18,11 @@
 package org.apache.kyuubi.engine.trino.operation
 
 import org.apache.kyuubi.engine.trino.TrinoStatement
-import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
+import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.session.Session
 
 class GetTypeInfo(session: Session)
-  extends TrinoOperation(OperationType.GET_TYPE_INFO, session) {
+  extends TrinoOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

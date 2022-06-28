@@ -20,11 +20,10 @@ package org.apache.kyuubi.engine.spark.operation
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class SetCurrentDatabase(session: Session, database: String)
-  extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) {
+  extends SparkOperation(session) {
 
   override protected def resultSchema: StructType = {
     new StructType()

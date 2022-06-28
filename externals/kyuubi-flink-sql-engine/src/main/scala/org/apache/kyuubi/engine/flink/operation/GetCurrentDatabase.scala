@@ -18,12 +18,10 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_SCHEM
 import org.apache.kyuubi.session.Session
 
-class GetCurrentDatabase(session: Session)
-  extends FlinkOperation(OperationType.EXECUTE_STATEMENT, session) {
+class GetCurrentDatabase(session: Session) extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {

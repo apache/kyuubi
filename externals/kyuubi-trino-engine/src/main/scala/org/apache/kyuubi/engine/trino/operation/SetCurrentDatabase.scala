@@ -19,11 +19,10 @@ package org.apache.kyuubi.engine.trino.operation
 
 import io.trino.client.ClientSession
 
-import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class SetCurrentDatabase(session: Session, database: String)
-  extends TrinoOperation(OperationType.EXECUTE_STATEMENT, session) {
+  extends TrinoOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {
