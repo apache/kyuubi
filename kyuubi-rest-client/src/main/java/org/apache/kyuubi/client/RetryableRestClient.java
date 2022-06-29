@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RetryableRestClient implements InvocationHandler {
 
-  private Logger LOG = LoggerFactory.getLogger(RetryableRestClient.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RetryableRestClient.class);
 
   private final RestClientConf conf;
   private final List<String> uris;
