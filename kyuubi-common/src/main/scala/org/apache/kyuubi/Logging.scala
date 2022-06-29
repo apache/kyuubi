@@ -96,7 +96,7 @@ trait Logging {
       // scalastyle:off println
       if (Logging.isLog4j2DefaultConfigured()) {
         Logging.useDefault = true
-        val defaultLogProps = "log4j2-defaults.properties"
+        val defaultLogProps = "log4j2-defaults.xml"
         Option(Thread.currentThread().getContextClassLoader.getResource(defaultLogProps)) match {
           case Some(url) =>
             val context = LogManager.getContext(false).asInstanceOf[LoggerContext]
