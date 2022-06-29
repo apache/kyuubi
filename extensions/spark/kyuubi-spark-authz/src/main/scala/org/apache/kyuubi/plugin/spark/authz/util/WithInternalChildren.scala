@@ -17,15 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-case class RowFilterAndDataMaskingMarker(child: LogicalPlan) extends UnaryNode
-  with WithInternalChild {
-
-  override def output: Seq[Attribute] = child.output
-
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
-    copy(child = newChild)
-
+trait WithInternalChildren {
+  def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan
 }
