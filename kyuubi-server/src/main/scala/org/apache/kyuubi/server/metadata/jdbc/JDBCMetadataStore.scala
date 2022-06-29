@@ -269,9 +269,14 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     queryBuilder.append(" WHERE identifier = ? ")
     params += metadata.identifier
 
+    val query = queryBuilder.toString()
     withConnection() { connection =>
-      execute(connection, queryBuilder.toString(), params: _*)
-
+      withUpdateCount(connection, query, params: _*) { updateCount =>
+        if (updateCount == 0) {
+          throw new KyuubiException(
+            s"Error updating metadata for ${metadata.identifier} with $query")
+        }
+      }
     }
   }
 
@@ -391,6 +396,26 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       if (resultSet != null) {
         Utils.tryLogNonFatalError(resultSet.close())
       }
+      if (statement != null) {
+        Utils.tryLogNonFatalError(statement.close())
+      }
+    }
+  }
+
+  private def withUpdateCount[T](
+      conn: Connection,
+      sql: String,
+      params: Any*)(f: Int => T): T = {
+    debug(s"executing sql $sql with update count")
+    var statement: PreparedStatement = null
+    try {
+      statement = conn.prepareStatement(sql)
+      setStatementParams(statement, params: _*)
+      f(statement.executeUpdate())
+    } catch {
+      case e: SQLException =>
+        throw new KyuubiException(e.getMessage, e)
+    } finally {
       if (statement != null) {
         Utils.tryLogNonFatalError(statement.close())
       }
