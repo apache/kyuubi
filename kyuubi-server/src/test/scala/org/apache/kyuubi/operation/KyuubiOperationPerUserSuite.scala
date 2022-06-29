@@ -18,6 +18,7 @@
 package org.apache.kyuubi.operation
 
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TStatusCode}
+import org.apache.thrift.transport.TTransportException
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
@@ -181,12 +182,19 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
         executeStmtReq.setSessionHandle(handle)
         executeStmtReq.setRunAsync(false)
         val startTime = System.currentTimeMillis()
-        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
-        assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-        assert(executeStmtResp.getStatus.getErrorMessage.contains(
-          "java.net.SocketException: Connection reset") ||
-        executeStmtResp.getStatus.getErrorMessage.contains(
-          "Caused by: java.net.SocketException: Broken pipe (Write failed)"))
+        try {
+          val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+          assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+          assert(executeStmtResp.getStatus.getErrorMessage.contains(
+            "java.net.SocketException: Connection reset") ||
+            executeStmtResp.getStatus.getErrorMessage.contains(
+              "Caused by: java.net.SocketException: Broken pipe (Write failed)"))
+        } catch {
+          case e: TTransportException =>
+            assert(httpMode)
+            assert(e.getMessage.contains("Invalid status 72"))
+        }
+
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
       }
