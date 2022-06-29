@@ -17,19 +17,15 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.{Objects, UUID}
+import java.util.UUID
 
 import scala.language.implicitConversions
-import scala.util.control.NonFatal
 
-import org.apache.hive.service.rpc.thrift.{TOperationHandle, TProtocolVersion}
+import org.apache.hive.service.rpc.thrift.TOperationHandle
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.Handle
 
-case class OperationHandle(
-    identifier: UUID,
-    protocol: TProtocolVersion) extends Handle {
+case class OperationHandle(identifier: UUID) {
 
   private var _hasResultSet: Boolean = _
 
@@ -42,30 +38,16 @@ case class OperationHandle(
     tOperationHandle
   }
 
-  override def hashCode(): Int = Objects.hashCode(identifier)
-
-  override def equals(obj: Any): Boolean = obj match {
-    case OperationHandle(id, _) => Objects.equals(this.identifier, id)
-    case _ => false
-  }
-
   override def toString: String = s"OperationHandle [$identifier]"
 
 }
 
 object OperationHandle {
-  def apply(protocol: TProtocolVersion): OperationHandle = {
-    new OperationHandle(UUID.randomUUID(), protocol)
-  }
-
-  def apply(tOperationHandle: TOperationHandle, protocol: TProtocolVersion): OperationHandle = {
-    new OperationHandle(
-      Handle.fromTHandleIdentifier(tOperationHandle.getOperationId),
-      protocol)
-  }
+  def apply(): OperationHandle = new OperationHandle(UUID.randomUUID())
 
   def apply(tOperationHandle: TOperationHandle): OperationHandle = {
-    apply(tOperationHandle, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+    new OperationHandle(
+      Handle.fromTHandleIdentifier(tOperationHandle.getOperationId))
   }
 
   implicit def toTOperationHandle(handle: OperationHandle): TOperationHandle = {
@@ -76,12 +58,6 @@ object OperationHandle {
   }
 
   def apply(operationHandleStr: String): OperationHandle = {
-    try {
-      val handleIdentifier = UUID.fromString(operationHandleStr)
-      OperationHandle(handleIdentifier, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
-    } catch {
-      case NonFatal(e) =>
-        throw KyuubiSQLException(s"Invalid $operationHandleStr", e)
-    }
+    OperationHandle(UUID.fromString(operationHandleStr))
   }
 }

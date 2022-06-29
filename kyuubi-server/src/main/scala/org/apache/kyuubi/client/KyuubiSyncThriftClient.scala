@@ -150,7 +150,7 @@ class KyuubiSyncThriftClient private (
       }
     }
 
-    SessionHandle(_remoteSessionHandle, protocol)
+    SessionHandle(_remoteSessionHandle)
   }
 
   def closeSession(): Unit = {

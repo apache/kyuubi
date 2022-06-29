@@ -40,11 +40,9 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
     session.asInstanceOf[FlinkSessionImpl].sessionContext
   }
 
-  protected var executor: Executor = session.asInstanceOf[FlinkSessionImpl].executor
+  protected val executor: Executor = session.asInstanceOf[FlinkSessionImpl].executor
 
-  protected def setExecutor(executor: Executor): Unit = this.executor = executor
-
-  protected var sessionId: String = session.handle.identifier.toString
+  protected val sessionId: String = session.handle.identifier.toString
 
   protected var resultSet: ResultSet = _
 

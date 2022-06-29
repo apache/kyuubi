@@ -28,7 +28,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_BIND_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
 import org.apache.kyuubi.operation.{OperationHandle, TClientTestUtils}
-import org.apache.kyuubi.service.TFrontendService.{FeServiceServerContext, SERVER_VERSION}
+import org.apache.kyuubi.service.TFrontendService.FeServiceServerContext
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
 
 class TFrontendServiceSuite extends KyuubiFunSuite {
@@ -74,8 +74,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     val resp1 = client.FetchResults(tFetchResultsReq)
     assert(resp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     assert(resp1.getResults.getColumnCount === 0)
-    val invalidHandle =
-      OperationHandle(SERVER_VERSION).toTOperationHandle
+    val invalidHandle = OperationHandle().toTOperationHandle
     invalidHandle.setOperationType(TOperationType.EXECUTE_STATEMENT)
     tFetchResultsReq.setOperationHandle(invalidHandle)
     val errResp = client.FetchResults(tFetchResultsReq)
@@ -204,7 +203,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(opHandle.getOperationType === TOperationType.GET_CATALOGS)
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
 
       val resp1 = client.GetCatalogs(req)
       assert(resp1.getOperationHandle === null)
@@ -223,7 +222,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
       val resp1 = client.GetSchemas(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -241,7 +240,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
       val resp1 = client.GetTables(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -259,7 +258,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
       val resp1 = client.GetTableTypes(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -277,7 +276,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
       val resp1 = client.GetColumns(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -295,7 +294,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
       val resp1 = client.GetFunctions(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -314,7 +313,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
       val resp1 = client.GetTypeInfo(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -332,7 +331,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
       val resp1 = client.GetPrimaryKeys(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -350,7 +349,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
       val resp1 = client.GetCrossReference(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -375,7 +374,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
 
   test("get operation status") {
     withSessionHandle { (client, handle) =>
-      val opHandle = OperationHandle(SERVER_VERSION).toTOperationHandle
+      val opHandle = OperationHandle().toTOperationHandle
       opHandle.setOperationType(TOperationType.GET_TABLES)
       val req = new TGetOperationStatusReq(opHandle)
       val resp = client.GetOperationStatus(req)
@@ -418,7 +417,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       val opHandle1 = resp1.getOperationHandle
       checkOperationResult(client, opHandle1)
 
-      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle().toTSessionHandle)
       val resp2 = client.ExecuteStatement(req)
       assert(resp2.getOperationHandle === null)
       assert(resp2.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -429,7 +428,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
 
   test("cancel operation") {
     withSessionHandle { (client, handle) =>
-      val opHandle = OperationHandle(SERVER_VERSION).toTOperationHandle
+      val opHandle = OperationHandle().toTOperationHandle
       opHandle.setOperationType(TOperationType.EXECUTE_STATEMENT)
       val req = new TCancelOperationReq()
       req.setOperationHandle(opHandle)
@@ -449,7 +448,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
 
   test("close operation") {
     withSessionHandle { (client, handle) =>
-      val opHandle = OperationHandle(SERVER_VERSION).toTOperationHandle
+      val opHandle = OperationHandle().toTOperationHandle
       opHandle.setOperationType(TOperationType.EXECUTE_STATEMENT)
       val req = new TCloseOperationReq()
       req.setOperationHandle(opHandle)
@@ -478,7 +477,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getSchema.getColumns.get(0).getComment === "comment")
       assert(resp.getSchema.getColumns.get(0).getPosition === 0)
 
-      val handle1 = OperationHandle(SERVER_VERSION).toTOperationHandle
+      val handle1 = OperationHandle().toTOperationHandle
       handle1.setOperationType(TOperationType.GET_SCHEMAS)
       req1.setOperationHandle(handle1)
       val resp1 = client.GetResultSetMetadata(req1)

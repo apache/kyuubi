@@ -72,7 +72,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    val sessionHandle = SessionHandle(protocol)
+    val sessionHandle = SessionHandle()
     val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
     val hive = {
       val sessionWithUGI = new ImportedHiveSessionImpl(

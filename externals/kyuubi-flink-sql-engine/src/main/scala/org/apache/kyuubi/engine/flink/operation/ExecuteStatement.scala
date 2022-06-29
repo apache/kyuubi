@@ -57,9 +57,6 @@ class ExecuteStatement(
 
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  @VisibleForTesting
-  override def setExecutor(executor: Executor): Unit = super.setExecutor(executor)
-
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(operationLog)
     setState(OperationState.PENDING)
