@@ -71,14 +71,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             operation.delete(),
             s"Operation of deleted appId: " + s"${podList.get(0).getMetadata.getName} is completed")
         } else {
-          if (jpsOperation != null) {
-            // client mode
-            return jpsOperation.killApplicationByTag(tag)
-          }
-          (
-            false,
-            s"Failed to terminate application with $tag, " +
-              s"due to can't find $tag engine or JpsApplicationOperation be null")
+          // client mode
+          return jpsOperation.killApplicationByTag(tag)
         }
       } catch {
         case e: Exception =>
@@ -106,13 +100,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           debug(s"Successfully got application info by $tag: " + res.mkString(", "))
           res
         } else {
-          if (jpsOperation != null) {
-            // client mode
-            jpsOperation.getApplicationInfoByTag(tag)
-          } else {
-            error(s"Failed to get application with $tag, due to JpsApplicationOperation is null")
-            null
-          }
+          // client mode
+          jpsOperation.getApplicationInfoByTag(tag)
         }
       } catch {
         case e: Exception =>

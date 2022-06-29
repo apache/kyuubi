@@ -132,7 +132,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
   private def sessionManager: KyuubiSessionManager =
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
 
-  test("KyuubiOperationKubernetesClusterClientModeSuite") {
+  test("Spark Client Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
     val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val batchRequest = new BatchRequest(
       "spark",
@@ -148,8 +148,6 @@ class KyuubiOperationKubernetesClusterClientModeSuite
       "localhost",
       batchRequest.getConf.asScala.toMap,
       batchRequest)
-
-    val session = sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSessionImpl]
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val state = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
@@ -185,7 +183,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
   private def sessionManager: KyuubiSessionManager =
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
 
-  test("KyuubiOperationKubernetesClusterClusterModeSuite") {
+  test("Spark Cluster Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
     val driverPodNamePrefix = "kyuubi-spark-driver"
     conf.set(
       "spark.kubernetes.driver.pod.name",
@@ -216,8 +214,6 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       assert(state.exists(_("state") == "Running"))
       assert(state.exists(_("name").startsWith(driverPodNamePrefix)))
     }
-    // Sleep for driver bootstrap
-    Thread.sleep(30000)
 
     val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(killResponse._1)
@@ -225,7 +221,9 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-      assert(appInfo == null || appInfo("state") == "FINISHED")
+      // We may kill engine start but not ready
+      // An EOF Error occurred when the driver was starting
+      assert(appInfo("state") == "Error" || appInfo("state") == "FINISHED")
     }
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
