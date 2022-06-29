@@ -184,7 +184,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
         val executeStmtResp = client.ExecuteStatement(executeStmtReq)
         assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
         assert(executeStmtResp.getStatus.getErrorMessage.contains(
-          "java.net.SocketException: Connection reset"))
+          "Caused by: java.net.SocketException: Broken pipe (Write failed)"))
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
       }
