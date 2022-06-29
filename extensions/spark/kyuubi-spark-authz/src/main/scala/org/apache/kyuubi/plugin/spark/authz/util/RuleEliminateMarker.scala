@@ -20,8 +20,9 @@ package org.apache.kyuubi.plugin.spark.authz.util
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Statistics}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.DDLUtils
 import org.apache.spark.sql.internal.SQLConf
+
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getHiveTable, hasResolvedHiveTable}
 
 class RuleEliminateMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
@@ -29,11 +30,11 @@ class RuleEliminateMarker extends Rule[LogicalPlan] {
       case rf: RowFilterAndDataMaskingMarker =>
         val table = rf.table
         table match {
-          case relation: HiveTableRelation =>
-            if (DDLUtils.isHiveTable(relation.tableMeta) && relation.tableMeta.stats.isEmpty) {
-              hiveTableWithStats(relation)
+          case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
+            if (getHiveTable(hiveTableRelation).stats.isEmpty) {
+              hiveTableWithStats(hiveTableRelation.asInstanceOf[HiveTableRelation])
             } else {
-              relation
+              hiveTableRelation
             }
           case _ =>
             table

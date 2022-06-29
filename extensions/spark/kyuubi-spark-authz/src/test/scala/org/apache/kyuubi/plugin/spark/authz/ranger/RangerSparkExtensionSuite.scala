@@ -381,7 +381,8 @@ class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
 
-  test("hive table join") {
+  test(
+    "[KYUUBI #2918] Fix: Kyuubi integrated Ranger failed to query: table stats must be specified") {
     val db = "test"
     val table1 = "table1"
     val table2 = "table2"
