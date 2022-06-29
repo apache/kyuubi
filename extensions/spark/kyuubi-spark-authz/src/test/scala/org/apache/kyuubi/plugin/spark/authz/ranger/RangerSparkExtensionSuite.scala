@@ -415,8 +415,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test(
-    "Pass through JoinSelection") {
+  test("Pass through JoinSelection") {
     val db = "test"
     val table1 = "table1"
     val table2 = "table2"
