@@ -64,6 +64,8 @@ object RestClientFactory {
 
     val maxAttempts = conf.get(CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS)
     val attemptWaitTime = conf.get(CTL_REST_CLIENT_REQUEST_ATTEMPT_WAIT).toInt
+    val connectionTimeout = conf.get(CTL_REST_CLIENT_CONNECT_TIMEOUT).toInt
+    val socketTimeout = conf.get(CTL_REST_CLIENT_SOCKET_TIMEOUT).toInt
 
     var kyuubiRestClient: KyuubiRestClient = null
     authSchema.toLowerCase match {
@@ -75,6 +77,8 @@ object RestClientFactory {
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
           .username(username)
           .password(password)
+          .connectionTimeout(connectionTimeout)
+          .socketTimeout(socketTimeout)
           .maxAttempts(maxAttempts)
           .attemptWaitTime(attemptWaitTime)
           .build()
@@ -85,6 +89,8 @@ object RestClientFactory {
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
           .spnegoHost(spnegoHost)
+          .connectionTimeout(connectionTimeout)
+          .socketTimeout(socketTimeout)
           .maxAttempts(maxAttempts)
           .attemptWaitTime(attemptWaitTime)
           .build()
