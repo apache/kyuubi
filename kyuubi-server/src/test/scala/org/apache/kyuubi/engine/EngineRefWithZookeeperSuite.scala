@@ -55,7 +55,8 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
   def getConnectString(): String = zkServer.getConnectString
 
   // TODO mvoe to EngineRefTests when etcd discovery support more engines
-  test("different engine type should use its own lock") {
+  // KYUUBI #2827 remove all engines dependencies except to spark from server
+  ignore("different engine type should use its own lock") {
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
