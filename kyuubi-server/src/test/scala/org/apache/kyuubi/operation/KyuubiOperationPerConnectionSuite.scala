@@ -74,10 +74,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val executeStmtResp = client.ExecuteStatement(executeStmtReq)
       assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
       assert(executeStmtResp.getOperationHandle === null)
-      assert(executeStmtResp.getStatus.getErrorMessage.contains(
-        "Caused by: java.net.SocketException: Broken pipe (Write failed)") ||
-        executeStmtResp.getStatus.getErrorMessage.contains(
-          "java.net.SocketException: Connection reset"))
+      assert(executeStmtResp.getStatus.getErrorMessage contains
+        "Caused by: java.net.SocketException: Connection reset")
     }
   }
 
@@ -234,6 +232,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         val startTime = System.currentTimeMillis()
         val executeStmtResp = client.ExecuteStatement(executeStmtReq)
         assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+        assert(executeStmtResp.getStatus.getErrorMessage contains
+          "Caused by: java.net.SocketException: Connection reset")
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime > 3 * 1000 && elapsedTime < 20 * 1000)
       }
