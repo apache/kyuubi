@@ -21,6 +21,7 @@ import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionException
 import scala.concurrent.duration.Duration
 
 import org.apache.hive.service.rpc.thrift._
@@ -120,11 +121,18 @@ class KyuubiSyncThriftClient private (
       asyncRequestExecutor = newAsyncRequestExecutor()
     }
 
-    asyncRequestExecutor.submit(() => {
+    val task = asyncRequestExecutor.submit(() => {
       val resp = block
       remoteEngineBroken = false
       resp
-    }).get()
+    })
+
+    try {
+      task.get()
+    } catch {
+      case e: ExecutionException => throw e.getCause
+      case e: Throwable => throw e
+    }
   }
 
   def engineId: Option[String] = _engineId
