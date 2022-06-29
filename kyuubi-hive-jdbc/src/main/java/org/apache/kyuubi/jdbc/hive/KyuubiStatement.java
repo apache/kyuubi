@@ -18,20 +18,16 @@
 package org.apache.kyuubi.jdbc.hive;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLTimeoutException;
-import java.sql.SQLWarning;
+import java.sql.*;
 import java.util.*;
 import org.apache.commons.lang.StringUtils;
-import org.apache.hive.service.cli.FetchType;
-import org.apache.hive.service.cli.RowSet;
-import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLStatement;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
+import org.apache.kyuubi.service.cli.FetchType;
+import org.apache.kyuubi.service.cli.RowSet;
+import org.apache.kyuubi.service.cli.RowSetFactory;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

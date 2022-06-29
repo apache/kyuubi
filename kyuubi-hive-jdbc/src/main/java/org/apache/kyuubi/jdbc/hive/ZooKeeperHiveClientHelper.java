@@ -31,10 +31,10 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hive.service.server.HS2ActivePassiveHARegistry;
-import org.apache.hive.service.server.HS2ActivePassiveHARegistryClient;
-import org.apache.hive.service.server.HiveServer2Instance;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.service.server.HS2ActivePassiveHARegistry;
+import org.apache.kyuubi.service.server.HS2ActivePassiveHARegistryClient;
+import org.apache.kyuubi.service.server.HiveServer2Instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

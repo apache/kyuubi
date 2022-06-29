@@ -20,11 +20,11 @@ package org.apache.kyuubi.jdbc.hive;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.security.auth.Subject;
-import org.apache.hive.service.auth.HttpAuthUtils;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.protocol.HttpContext;
+import org.apache.kyuubi.service.auth.HttpAuthUtils;
 
 /**
  * Authentication interceptor which adds Base64 encoded payload, containing the username and
