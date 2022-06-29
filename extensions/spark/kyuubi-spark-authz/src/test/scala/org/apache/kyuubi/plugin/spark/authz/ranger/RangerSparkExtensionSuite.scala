@@ -390,9 +390,9 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
       doAs(
         "admin", {
-          val df = sql(s"SELECT * FROM $table")
-          df.queryExecution.optimizedPlan.collectLeaves().filter(_.isInstanceOf[HiveTableRelation])
-            .foreach(t => assert(getFieldVal[Option[Statistics]](t, "tableStats").nonEmpty))
+          val hiveTableRelation = sql(s"SELECT * FROM $table")
+            .queryExecution.optimizedPlan.collectLeaves().head.asInstanceOf[HiveTableRelation]
+          assert(getFieldVal[Option[Statistics]](hiveTableRelation, "tableStats").nonEmpty)
         })
     } finally {
       doAs("admin", sql(s"DROP TABLE IF EXISTS $table"))
