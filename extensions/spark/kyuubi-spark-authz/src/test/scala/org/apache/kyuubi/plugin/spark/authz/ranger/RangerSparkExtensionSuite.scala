@@ -27,6 +27,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
@@ -396,6 +397,43 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         })
     } finally {
       doAs("admin", sql(s"DROP TABLE IF EXISTS $table"))
+    }
+  }
+
+  test("HiveTableRelation should be converted to LogicalRelation") {
+    val table = "hive_src"
+    try {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int) STORED AS PARQUET"))
+      doAs(
+        "admin", {
+          val relation = sql(s"SELECT * FROM $table")
+            .queryExecution.optimizedPlan.collectLeaves().head
+          assert(relation.isInstanceOf[LogicalRelation])
+        })
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $table"))
+    }
+  }
+
+  test(
+    "Pass through JoinSelection") {
+    val db = "test"
+    val table1 = "table1"
+    val table2 = "table2"
+    try {
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.$table1(id int) STORED AS PARQUET"))
+      doAs("admin", sql(s"INSERT INTO $db.$table1 SELECT 1"))
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $db.$table2(id int, name string) STORED AS PARQUET"))
+      doAs("admin", sql(s"INSERT INTO $db.$table2 SELECT 1, 'a'"))
+      val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
+      doAs("admin", assert(sql(join).collect().length == 1))
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table2"))
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table1"))
+      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
 }

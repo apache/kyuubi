@@ -22,3 +22,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 trait WithInternalChildren {
   def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan
 }
+
+trait WithInternalChild {
+  def withNewChildInternal(newChild: LogicalPlan): LogicalPlan
+}
