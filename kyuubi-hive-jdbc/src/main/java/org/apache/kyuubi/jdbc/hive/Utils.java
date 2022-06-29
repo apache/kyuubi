@@ -50,6 +50,7 @@ public class Utils {
 
   private static final String URI_HIVE_PREFIX = "hive2:";
 
+
   /** Escape equal sign, pick up %3D from https://www.urldecoder.org/dec/beeline */
   private static final String ENCODE_EQUAL_SIGN = "%3D";
   private static final String EQUAL_SIGN = "=";
