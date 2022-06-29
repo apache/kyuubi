@@ -623,7 +623,7 @@ private[kyuubi] object TFrontendService {
 
   final val CURRENT_SERVER_CONTEXT = new ThreadLocal[FeServiceServerContext]()
 
-  final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
+  final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11
 
   class FeServiceServerContext extends ServerContext {
     private var sessionHandle: SessionHandle = _
