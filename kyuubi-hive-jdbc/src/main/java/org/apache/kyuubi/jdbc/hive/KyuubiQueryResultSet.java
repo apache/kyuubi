@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hive.service.rpc.thrift.*;
-import org.apache.kyuubi.service.cli.RowSet;
-import org.apache.kyuubi.service.cli.RowSetFactory;
+import org.apache.kyuubi.jdbc.service.cli.RowSet;
+import org.apache.kyuubi.jdbc.service.cli.RowSetFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

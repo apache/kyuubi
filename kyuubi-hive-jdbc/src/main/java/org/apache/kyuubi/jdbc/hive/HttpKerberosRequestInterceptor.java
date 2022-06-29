@@ -24,7 +24,7 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.protocol.HttpContext;
-import org.apache.kyuubi.service.auth.HttpAuthUtils;
+import org.apache.kyuubi.jdbc.service.auth.HttpAuthUtils;
 
 /**
  * Authentication interceptor which adds Base64 encoded payload, containing the username and
