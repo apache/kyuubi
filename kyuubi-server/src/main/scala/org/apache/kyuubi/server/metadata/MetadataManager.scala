@@ -20,13 +20,10 @@ package org.apache.kyuubi.server.metadata
 import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.collection.JavaConverters._
-
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.METADATA_MAX_AGE
-import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.AbstractService
@@ -277,15 +274,6 @@ object MetadataManager extends Logging {
   }
 
   def buildBatch(batchMetadata: Metadata): Batch = {
-    val batchAppInfo = Map(
-      APP_ID_KEY -> Option(batchMetadata.engineId),
-      APP_NAME_KEY -> Option(batchMetadata.engineName),
-      APP_STATE_KEY -> Option(batchMetadata.engineState),
-      APP_URL_KEY -> Option(batchMetadata.engineUrl),
-      APP_ERROR_KEY -> batchMetadata.engineError)
-      .filter(_._2.isDefined)
-      .map(info => (info._1, info._2.get))
-
     val batchState =
       if (batchMetadata.peerInstanceClosed &&
         !OperationState.isTerminal(OperationState.withName(batchMetadata.state))) {
@@ -294,12 +282,17 @@ object MetadataManager extends Logging {
         batchMetadata.state
       }
 
+    val name = Option(batchMetadata.requestName).getOrElse(Option(batchMetadata.engineName).orNull)
+
     new Batch(
       batchMetadata.identifier,
       batchMetadata.username,
       batchMetadata.engineType,
-      batchMetadata.requestName,
-      batchAppInfo.asJava,
+      name,
+      batchMetadata.engineId,
+      batchMetadata.engineUrl,
+      batchMetadata.engineState,
+      batchMetadata.engineError.orNull,
       batchMetadata.kyuubiInstance,
       batchState,
       batchMetadata.createTime,

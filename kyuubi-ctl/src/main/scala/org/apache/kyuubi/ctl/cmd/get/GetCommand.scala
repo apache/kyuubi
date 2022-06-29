@@ -35,6 +35,6 @@ class GetCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](cli
 
   def render(nodes: Seq[ServiceNodeInfo]): Unit = {
     val title = "Zookeeper service nodes"
-    info(Render.renderServiceNodesInfo(title, nodes, verbose))
+    info(Render.renderServiceNodesInfo(title, nodes))
   }
 }

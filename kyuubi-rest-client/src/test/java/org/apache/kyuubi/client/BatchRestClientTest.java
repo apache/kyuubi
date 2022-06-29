@@ -116,6 +116,10 @@ public class BatchRestClientTest {
     assertEquals(result.getUser(), expectedBatch.getUser());
     assertEquals(result.getBatchType(), expectedBatch.getBatchType());
     assertEquals(result.getName(), expectedBatch.getName());
+    assertEquals(result.getAppId(), expectedBatch.getAppId());
+    assertEquals(result.getAppUrl(), expectedBatch.getAppUrl());
+    assertEquals(result.getAppState(), expectedBatch.getAppState());
+    assertEquals(result.getAppDiagnostic(), expectedBatch.getAppDiagnostic());
     assertEquals(result.getState(), expectedBatch.getState());
     assertEquals(result.getCreateTime(), expectedBatch.getCreateTime());
     assertEquals(result.getEndTime(), expectedBatch.getEndTime());
@@ -140,6 +144,10 @@ public class BatchRestClientTest {
     assertEquals(result.getUser(), expectedBatch.getUser());
     assertEquals(result.getBatchType(), expectedBatch.getBatchType());
     assertEquals(result.getName(), expectedBatch.getName());
+    assertEquals(result.getAppId(), expectedBatch.getAppId());
+    assertEquals(result.getAppUrl(), expectedBatch.getAppUrl());
+    assertEquals(result.getAppState(), expectedBatch.getAppState());
+    assertEquals(result.getAppDiagnostic(), expectedBatch.getAppDiagnostic());
     assertEquals(result.getState(), expectedBatch.getState());
     assertEquals(result.getCreateTime(), expectedBatch.getCreateTime());
     assertEquals(result.getEndTime(), expectedBatch.getEndTime());
@@ -167,6 +175,10 @@ public class BatchRestClientTest {
     assertEquals(result.getUser(), expectedBatch.getUser());
     assertEquals(result.getBatchType(), expectedBatch.getBatchType());
     assertEquals(result.getName(), expectedBatch.getName());
+    assertEquals(result.getAppId(), expectedBatch.getAppId());
+    assertEquals(result.getAppUrl(), expectedBatch.getAppUrl());
+    assertEquals(result.getAppState(), expectedBatch.getAppState());
+    assertEquals(result.getAppDiagnostic(), expectedBatch.getAppDiagnostic());
     assertEquals(result.getState(), expectedBatch.getState());
     assertEquals(result.getCreateTime(), expectedBatch.getCreateTime());
     assertEquals(result.getEndTime(), expectedBatch.getEndTime());
@@ -194,6 +206,10 @@ public class BatchRestClientTest {
     assertEquals(result.getUser(), expectedBatch.getUser());
     assertEquals(result.getBatchType(), expectedBatch.getBatchType());
     assertEquals(result.getName(), expectedBatch.getName());
+    assertEquals(result.getAppId(), expectedBatch.getAppId());
+    assertEquals(result.getAppUrl(), expectedBatch.getAppUrl());
+    assertEquals(result.getAppState(), expectedBatch.getAppState());
+    assertEquals(result.getAppDiagnostic(), expectedBatch.getAppDiagnostic());
     assertEquals(result.getState(), expectedBatch.getState());
     assertEquals(result.getCreateTime(), expectedBatch.getCreateTime());
     assertEquals(result.getEndTime(), expectedBatch.getEndTime());

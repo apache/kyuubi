@@ -18,9 +18,7 @@
 package org.apache.kyuubi.client;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
 import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
@@ -46,27 +44,16 @@ public class RestClientTestUtil {
   }
 
   public static Batch generateTestBatch(String id) {
-    Map<String, String> batchInfo = new HashMap<>();
-    batchInfo.put("id", id);
-    batchInfo.put(
-        "name",
-        "org.apache.spark.deploy.SparkSubmit --conf spark.master=local "
-            + "--conf spark.kyuubi.session.engine.spark.max.lifetime=5000 "
-            + "--conf spark.kyuubi.session.engine.check.interval=1000 "
-            + "--conf spark.yarn.tags=f3dfa392-f55f-493c-bea8-559be4ba67e8 "
-            + "--conf spark.app.name=spark-batch-submission "
-            + "--class org.apache.kyuubi.engine.spark.SparkSQLEngine "
-            + "--proxy-user anonymous "
-            + "/MySpace/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar");
-    batchInfo.put("state", "RUNNING");
-
     Batch batch =
         new Batch(
             id,
             TEST_USERNAME,
             "spark",
             "batch_name",
-            batchInfo,
+            id,
+            null,
+            "RUNNING",
+            null,
             "192.168.31.130:64573",
             "RUNNING",
             BATCH_CREATE_TIME,

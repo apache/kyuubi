@@ -91,6 +91,6 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeI
 
   def render(nodes: Seq[ServiceNodeInfo]): Unit = {
     val title = "Created zookeeper service nodes"
-    info(Render.renderServiceNodesInfo(title, nodes, verbose))
+    info(Render.renderServiceNodesInfo(title, nodes))
   }
 }
