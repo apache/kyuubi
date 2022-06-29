@@ -58,8 +58,6 @@ class KyuubiBatchSessionImpl(
 
   override def createTime: Long = recoveryMetadata.map(_.createTime).getOrElse(super.createTime)
 
-  private[kyuubi] var metadataCreated: Boolean = recoveryMetadata.isDefined
-
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] = {
     sessionConf.getBatchConf(batchRequest.getBatchType) ++
@@ -122,7 +120,7 @@ class KyuubiBatchSessionImpl(
         engineType = batchRequest.getBatchType,
         clusterManager = batchJobSubmissionOp.builder.clusterManager())
 
-      metadataCreated = sessionManager.insertMetadata(metaData)
+      sessionManager.insertMetadata(metaData)
     }
 
     // we should call super.open before running batch job submission operation
