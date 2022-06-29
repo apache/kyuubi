@@ -296,11 +296,7 @@ public class Utils {
 
   // Decode equal sing ( "=" )
   public static String decodeEqualSign(String s) {
-    if (null == s ) {
-      return null;
-    }
-
-    return s.replaceAll(ENCODE_EQUAL_SIGN, EQUAL_SIGN);
+    return null == s ? null : s.replaceAll(ENCODE_EQUAL_SIGN, EQUAL_SIGN);
   }
 
   public static JdbcConnectionParams parseURL(String uri)
