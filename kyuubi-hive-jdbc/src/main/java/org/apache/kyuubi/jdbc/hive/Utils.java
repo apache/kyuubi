@@ -50,6 +50,10 @@ public class Utils {
 
   private static final String URI_HIVE_PREFIX = "hive2:";
 
+  /** Escape base64 hive var */
+  private static final String ENCODE_EQUAL_SIGN = "%3D";
+  private static final String EQUAL_SIGN = "=";
+
   // This value is set to true by the setServiceUnavailableRetryStrategy() when the server returns
   // 401
   static final String HIVE_SERVER2_RETRY_KEY = "hive.server2.retryserver";
@@ -259,6 +263,15 @@ public class Utils {
     throw new HiveSQLException(status);
   }
 
+  // Decode equal sing ( "=" )
+  private static String decodeEqualSign(String s) {
+    if (null == s ) {
+      return null;
+    }
+
+    return s.replaceAll(ENCODE_EQUAL_SIGN, EQUAL_SIGN);
+  }
+
   public static JdbcConnectionParams parseURL(String uri)
       throws JdbcUriParseException, SQLException, ZooKeeperHiveClientException {
     return parseURL(uri, new Properties());
@@ -342,8 +355,9 @@ public class Utils {
         if (sessVars != null) {
           Matcher sessMatcher = pattern.matcher(sessVars);
           while (sessMatcher.find()) {
-            if (connParams.getSessionVars().put(sessMatcher.group(1), sessMatcher.group(2))
-                != null) {
+            String key = decodeEqualSign(sessMatcher.group(1));
+            String value = decodeEqualSign(sessMatcher.group(2));
+            if (connParams.getSessionVars().put(key, value) != null) {
               throw new JdbcUriParseException(
                   "Bad URL format: Multiple values for property " + sessMatcher.group(1));
             }
