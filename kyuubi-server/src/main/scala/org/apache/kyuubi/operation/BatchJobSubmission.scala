@@ -130,7 +130,7 @@ class BatchJobSubmission(
       engineState = engineAppStatus.get(APP_STATE_KEY).orNull,
       engineError = engineAppStatus.get(APP_ERROR_KEY),
       endTime = endTime)
-    session.sessionManager.updateMetadata(metadataToUpdate)
+    session.sessionManager.updateMetadata(metadataToUpdate, session.metadataCreated)
   }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)

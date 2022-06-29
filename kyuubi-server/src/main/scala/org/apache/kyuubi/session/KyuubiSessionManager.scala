@@ -167,12 +167,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     getSessionOption(sessionHandle).map(_.asInstanceOf[KyuubiBatchSessionImpl]).orNull
   }
 
-  def insertMetadata(metadata: Metadata): Unit = {
+  def insertMetadata(metadata: Metadata): Boolean = {
     metadataManager.insertMetadata(metadata)
   }
 
-  def updateMetadata(metadata: Metadata): Unit = {
-    metadataManager.updateMetadata(metadata)
+  def updateMetadata(metadata: Metadata, updateDirectly: Boolean = true): Unit = {
+    metadataManager.updateMetadata(metadata, updateDirectly = updateDirectly)
   }
 
   def getMetadataRequestsRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {

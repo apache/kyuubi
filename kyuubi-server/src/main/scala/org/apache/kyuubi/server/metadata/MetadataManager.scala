@@ -79,13 +79,20 @@ class MetadataManager extends AbstractService("MetadataManager") {
     super.stop()
   }
 
-  def insertMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
+  /**
+   * @param metadata the metadata to insert.
+   * @param retryOnError if the insert request failed, whether to retry it.
+   * @return whether the metadata is inserted successfully.
+   */
+  def insertMetadata(metadata: Metadata, retryOnError: Boolean = true): Boolean = {
     try {
       _metadataStore.insertMetadata(metadata)
+      true
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
         addMetadataRetryRequest(InsertMetadata(metadata))
+        false
     }
   }
 
@@ -141,9 +148,22 @@ class MetadataManager extends AbstractService("MetadataManager") {
     _metadataStore.getMetadataList(filter, from, size, true)
   }
 
-  def updateMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
+  /**
+   * @param metadata the metadata to update.
+   * @param retryOnError if the insert operation failed, whether to retry it.
+   * @param updateDirectly update metadata directly or add into metadata request retry queue. If the
+   *                       metadata was not inserted successfully, we should not update it directly.
+   */
+  def updateMetadata(
+      metadata: Metadata,
+      retryOnError: Boolean = true,
+      updateDirectly: Boolean = true): Unit = {
     try {
-      _metadataStore.updateMetadata(metadata)
+      if (updateDirectly) {
+        _metadataStore.updateMetadata(metadata)
+      } else {
+        addMetadataRetryRequest(UpdateMetadata(metadata))
+      }
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)

@@ -566,4 +566,28 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(deleteResp.readEntity(classOf[CloseBatchResponse]).getMsg.contains(
       s"Api request failed for http://${metadata2.kyuubiInstance}"))
   }
+
+  test("do not update metadata directly on metadata insert failure") {
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val metadata = Metadata(
+      identifier = UUID.randomUUID().toString,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      ipAddress = "localhost",
+      kyuubiInstance = fe.connectionUrl,
+      state = "PENDING",
+      resource = "resource",
+      className = "className",
+      requestName = "LOCAL_LOG_NOT_FOUND",
+      engineType = "SPARK")
+    assert(sessionManager.insertMetadata(metadata))
+    assert(!sessionManager.insertMetadata(metadata))
+
+    val metadataToUpdate = Metadata(
+      identifier = metadata.identifier,
+      state = "RUNNING")
+    sessionManager.updateMetadata(metadataToUpdate, updateDirectly = false)
+    assert(sessionManager.getBatchFromMetadataStore(metadata.identifier).getState == "PENDING")
+  }
 }
