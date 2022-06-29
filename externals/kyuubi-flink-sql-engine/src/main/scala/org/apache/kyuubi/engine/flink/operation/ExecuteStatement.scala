@@ -24,10 +24,9 @@ import java.util.concurrent.RejectedExecutionException
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import com.google.common.annotations.VisibleForTesting
 import org.apache.calcite.rel.metadata.{DefaultRelMetadataProvider, JaninoRelMetadataProvider, RelMetadataQueryBase}
 import org.apache.flink.table.api.ResultKind
-import org.apache.flink.table.client.gateway.{Executor, TypedResult}
+import org.apache.flink.table.client.gateway.TypedResult
 import org.apache.flink.table.data.{GenericArrayData, GenericMapData, RowData}
 import org.apache.flink.table.data.binary.{BinaryArrayData, BinaryMapData}
 import org.apache.flink.table.operations.{Operation, QueryOperation}
