@@ -482,7 +482,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
     val opArgs = new ControlCliArguments(args)
     withKyuubiRestClient(opArgs.cliConfig, null, opArgs.command.conf) { kyuubiRestClient =>
       assert(kyuubiRestClient.getConf.getConnectTimeout == 5000)
-      assert(kyuubiRestClient.getConf.getSocketTimeout == 30000)
+      assert(kyuubiRestClient.getConf.getSocketTimeout == 120000)
       assert(kyuubiRestClient.getConf.getMaxAttempts == 3)
       assert(kyuubiRestClient.getConf.getAttemptWaitTime == 3000)
     }

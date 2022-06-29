@@ -190,10 +190,10 @@ Key | Default | Meaning | Type | Since
 kyuubi.ctl.batch.log.query.interval|PT3S|The interval for fetching batch logs.|duration|1.6.0
 kyuubi.ctl.rest.auth.schema|basic|The authentication schema. Valid values are: basic, spnego.|string|1.6.0
 kyuubi.ctl.rest.base.url|&lt;undefined&gt;|The REST API base URL, which contains the scheme (http:// or https://), host name, port number|string|1.6.0
-kyuubi.ctl.rest.connect.timeout|PT30S|The timeout[ms] for establishing the connection with the kyuubi server.|duration|1.6.0
+kyuubi.ctl.rest.connect.timeout|PT30S|The timeout[ms] for establishing the connection with the kyuubi server.A timeout value of zero is interpreted as an infinite timeout.|duration|1.6.0
 kyuubi.ctl.rest.request.attempt.wait|PT3S|How long to wait between attempts of ctl rest request.|duration|1.6.0
 kyuubi.ctl.rest.request.max.attempts|3|The max attempts number for ctl rest request.|int|1.6.0
-kyuubi.ctl.rest.socket.timeout|PT30S|The timeout[ms] for waiting for data packets after connection is established.|duration|1.6.0
+kyuubi.ctl.rest.socket.timeout|PT2M|The timeout[ms] for waiting for data packets after connection is established.A timeout value of zero is interpreted as an infinite timeout.|duration|1.6.0
 kyuubi.ctl.rest.spnego.host|&lt;undefined&gt;|When auth schema is spnego, need to config spnego host.|string|1.6.0
 
 
