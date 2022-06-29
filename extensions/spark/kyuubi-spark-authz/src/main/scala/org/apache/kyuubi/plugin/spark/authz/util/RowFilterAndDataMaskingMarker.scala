@@ -18,8 +18,16 @@
 package org.apache.kyuubi.plugin.spark.authz.util
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
-case class RowFilterAndDataMaskingMarker(table: LogicalPlan) extends LeafNode {
+case class RowFilterAndDataMaskingMarker(table: LogicalPlan) extends UnaryNode {
+
   override def output: Seq[Attribute] = table.output
+
+  override def child: LogicalPlan = table
+
+  // Omit `override` modifier to avoid compilation error when build against spark version before 3.2
+  protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
+    copy(table = newChild)
+
 }

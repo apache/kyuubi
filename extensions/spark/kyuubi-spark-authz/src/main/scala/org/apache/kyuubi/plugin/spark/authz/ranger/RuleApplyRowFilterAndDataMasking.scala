@@ -17,11 +17,15 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -30,17 +34,45 @@ import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan transformUp {
-      case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
-        val table = getHiveTable(hiveTableRelation)
-        applyFilterAndMasking(hiveTableRelation, table, spark)
-      case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
-        val table = getDatasourceTable(logicalRelation)
-        if (table.isEmpty) {
-          logicalRelation
+    // Wrap HiveTableRelation/LogicalRelation with RowFilterAndDataMaskingMarker if it is not
+    // wrapped yet.
+    // Not using TreeNode#transformUpWithPruning as transformUpWithPruning is not present until
+    // Spark 3.2
+    if (plan.isInstanceOf[RowFilterAndDataMaskingMarker]) {
+      plan
+    } else {
+      val afterRuleOnChildren = plan.mapChildren(apply)
+      val newNode =
+        if (plan.fastEquals(afterRuleOnChildren)) {
+          plan match {
+            case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
+              val table = getHiveTable(hiveTableRelation)
+              applyFilterAndMasking(hiveTableRelation, table, spark)
+            case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
+              val table = getDatasourceTable(logicalRelation)
+              if (table.isEmpty) {
+                logicalRelation
+              } else {
+                applyFilterAndMasking(logicalRelation, table.get, spark)
+              }
+            case _ => plan
+          }
         } else {
-          applyFilterAndMasking(logicalRelation, table.get, spark)
+          afterRuleOnChildren
         }
+      if (plan.eq(newNode)) {
+        plan
+      } else {
+        // TreeNode#tags is not present until Spark 3.0
+        if (isSparkVersionAtLeast("3.0")) {
+          val tags = getPlanTags(newNode)
+          val originTags = getPlanTags(plan)
+          if (tags.isEmpty) {
+            tags ++= originTags
+          }
+        }
+        newNode
+      }
     }
   }
 
@@ -73,6 +105,20 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
     } else {
       val filterExpr = parse(filterExprStr.get)
       Project(newOutput, Filter(filterExpr, RowFilterAndDataMaskingMarker(plan)))
+    }
+  }
+
+  private def getPlanTags(plan: LogicalPlan): mutable.Map[Any, Any] = {
+    val clazz = classOf[TreeNode[_]]
+    Try {
+      val field = clazz.getDeclaredField("tags")
+      field.setAccessible(true)
+      field.get(plan)
+    } match {
+      case Success(value) => value.asInstanceOf[mutable.Map[Any, Any]]
+      case Failure(e) =>
+        val candidates = clazz.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
+        throw new RuntimeException(s"tags not in $candidates", e)
     }
   }
 }
