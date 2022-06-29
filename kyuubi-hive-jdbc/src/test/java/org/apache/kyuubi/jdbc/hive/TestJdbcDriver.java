@@ -26,6 +26,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -86,5 +89,31 @@ public class TestJdbcDriver {
       assertEquals(
           Arrays.asList(expected.split(",")), KyuubiConnection.parseInitFile(file.toString()));
     }
+  }
+
+  @Test
+  public void testEscapeEqualSign() throws Exception {
+    Pattern pattern = Pattern.compile(Utils.KEY_VALUE_PATTERN);
+    String sessVars = "fs.azure.account.key.pfsdpstorage.dfs.core.windows.net=S3l1dWJpS3l1dWJpCg%3D%3D";
+    Matcher sessMatcher = pattern.matcher(sessVars);
+    sessMatcher.find();
+    String key = Utils.decodeEqualSign(sessMatcher.group(1));
+    String value = Utils.decodeEqualSign(sessMatcher.group(2));
+
+    assertEquals(key, "fs.azure.account.key.pfsdpstorage.dfs.core.windows.net");
+    assertEquals(value, "S3l1dWJpS3l1dWJpCg==");
+  }
+
+  @Test
+  public void testWithoutEscapeEqualSign() throws Exception {
+    Pattern pattern = Pattern.compile(Utils.KEY_VALUE_PATTERN);
+    String sessVars = "a=1";
+    Matcher sessMatcher = pattern.matcher(sessVars);
+    sessMatcher.find();
+    String key = Utils.decodeEqualSign(sessMatcher.group(1));
+    String value = Utils.decodeEqualSign(sessMatcher.group(2));
+
+    assertEquals(key, "a");
+    assertEquals(value, "1");
   }
 }
