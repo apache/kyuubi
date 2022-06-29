@@ -31,7 +31,7 @@ import java.util.jar.Attributes;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLDatabaseMetaData;
-import org.apache.kyuubi.jdbc.service.cli.HiveSQLException;
+import org.apache.kyuubi.jdbc.hive.cli.HiveSQLException;
 import org.apache.thrift.TException;
 
 /** KyuubiDatabaseMetaData. */
