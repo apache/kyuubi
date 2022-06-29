@@ -26,6 +26,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -95,5 +98,41 @@ public class TestJdbcDriver {
         bw.close();
       }
     }
+  }
+
+  @Test
+  public void testEscapeEqualSign() throws Exception {
+    Pattern pattern = Pattern.compile(Utils.KEY_VALUE_PATTERN);
+    String sessVars = "fs.azure.account.key.pfsdpstorage.dfs.core.windows.net=BASE64123A%3D%3D";
+    Matcher sessMatcher = pattern.matcher(sessVars);
+    String key = Utils.decodeEqualSign(sessMatcher.group(1));
+    String value = Utils.decodeEqualSign(sessMatcher.group(2));
+
+    assertEquals(key, "fs.azure.account.key.pfsdpstorage.dfs.core.windows.net");
+    assertEquals(value, "BASE64123A==");
+  }
+
+  @Test
+  public void testEscapeEqualSignNormalCase() throws Exception {
+    Pattern pattern = Pattern.compile(Utils.KEY_VALUE_PATTERN);
+    String sessVars = "a=1";
+    Matcher sessMatcher = pattern.matcher(sessVars);
+    String key = Utils.decodeEqualSign(sessMatcher.group(1));
+    String value = Utils.decodeEqualSign(sessMatcher.group(2));
+
+    assertEquals(key, "a");
+    assertEquals(value, "1");
+  }
+
+  @Test
+  public void testEscapeEqualSignNegativeCase() throws Exception {
+    Pattern pattern = Pattern.compile(Utils.KEY_VALUE_PATTERN);
+    String sessVars = "";
+    Matcher sessMatcher = pattern.matcher(sessVars);
+    String key = Utils.decodeEqualSign(sessMatcher.group(1));
+    String value = Utils.decodeEqualSign(sessMatcher.group(2));
+
+    Assert.assertNull(key);
+    Assert.assertNull(value);
   }
 }

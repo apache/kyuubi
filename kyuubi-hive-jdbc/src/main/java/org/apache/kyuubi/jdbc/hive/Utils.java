@@ -50,6 +50,7 @@ public class Utils {
 
   private static final String URI_HIVE_PREFIX = "hive2:";
 
+  public static final String KEY_VALUE_PATTERN = "([^;]*)=([^;]*)[;]?";
 
   /** Escape equal sign, pick up %3D from https://www.urldecoder.org/dec/beeline */
   private static final String ENCODE_EQUAL_SIGN = "%3D";
@@ -265,7 +266,7 @@ public class Utils {
   }
 
   // Decode equal sing ( "=" )
-  private static String decodeEqualSign(String s) {
+  public static String decodeEqualSign(String s) {
     if (null == s ) {
       return null;
     }
@@ -338,7 +339,7 @@ public class Utils {
     URI jdbcURI = URI.create(uri.substring(URI_JDBC_PREFIX.length()));
 
     // key=value pattern
-    Pattern pattern = Pattern.compile("([^;]*)=([^;]*)[;]?");
+    Pattern pattern = Pattern.compile(KEY_VALUE_PATTERN);
 
     // dbname and session settings
     String sessVars = jdbcURI.getPath();
