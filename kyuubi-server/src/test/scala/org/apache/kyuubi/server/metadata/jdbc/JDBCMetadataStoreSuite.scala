@@ -22,7 +22,7 @@ import java.util.UUID
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
@@ -264,6 +264,13 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     eventually(Timeout(3.seconds)) {
       jdbcMetadataStore.cleanupMetadataByAge(1000)
       assert(jdbcMetadataStore.getMetadata(batchId, true) == null)
+    }
+  }
+
+  test("throw exception if update count is 0") {
+    val metadata = Metadata(identifier = UUID.randomUUID().toString, state = "RUNNING")
+    intercept[KyuubiException] {
+      jdbcMetadataStore.updateMetadata(metadata)
     }
   }
 }
