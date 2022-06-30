@@ -21,9 +21,6 @@ import com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.util.Objects;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.registry.impl.ServiceInstanceBase;
-import org.apache.hadoop.registry.client.types.Endpoint;
-import org.apache.hadoop.registry.client.types.ServiceRecord;
 
 public class HiveServer2Instance extends ServiceInstanceBase {
   private boolean isLeader;

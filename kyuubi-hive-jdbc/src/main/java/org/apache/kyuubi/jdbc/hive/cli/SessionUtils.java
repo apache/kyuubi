@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive.cli.session;
+package org.apache.kyuubi.jdbc.hive.cli;
 
 import java.io.IOException;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenSelector;

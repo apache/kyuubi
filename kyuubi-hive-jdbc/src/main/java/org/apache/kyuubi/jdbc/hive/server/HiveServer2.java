@@ -42,8 +42,4 @@ public class HiveServer2 {
     }
     return false;
   }
-
-  interface FailoverHandler {
-    void failover() throws Exception;
-  }
 }

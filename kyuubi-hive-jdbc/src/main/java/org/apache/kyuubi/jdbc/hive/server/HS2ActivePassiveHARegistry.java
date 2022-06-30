@@ -35,20 +35,13 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.llap.registry.ServiceRegistry;
 import org.apache.hadoop.hive.registry.ServiceInstanceSet;
 import org.apache.hadoop.hive.registry.ServiceInstanceStateChangeListener;
-import org.apache.hadoop.hive.registry.impl.ZkRegistryBase;
-import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
-import org.apache.hadoop.registry.client.binding.RegistryUtils;
-import org.apache.hadoop.registry.client.types.Endpoint;
-import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.kyuubi.jdbc.hive.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HS2ActivePassiveHARegistry extends ZkRegistryBase<HiveServer2Instance>
-    implements ServiceRegistry<HiveServer2Instance>,
-        HiveServer2HAInstanceSet,
-        HiveServer2.FailoverHandler {
+    implements ServiceRegistry<HiveServer2Instance>, HiveServer2HAInstanceSet {
   private static final Logger LOG = LoggerFactory.getLogger(HS2ActivePassiveHARegistry.class);
   static final String ACTIVE_ENDPOINT = "activeEndpoint";
   static final String PASSIVE_ENDPOINT = "passiveEndpoint";
@@ -232,33 +225,6 @@ public class HS2ActivePassiveHARegistry extends ZkRegistryBase<HiveServer2Instan
 
   private boolean hasLeadership() {
     return leaderLatch.hasLeadership();
-  }
-
-  @Override
-  public void failover() throws Exception {
-    if (hasLeadership()) {
-      LOG.info(
-          "Failover request received for HS2 instance: {}. Restarting leader latch..", uniqueId);
-      leaderLatch.close(LeaderLatch.CloseMode.NOTIFY_LEADER);
-      leaderLatch = getNewLeaderLatchPath();
-      // re-attach all registered listeners
-      for (Map.Entry<LeaderLatchListener, ExecutorService> registeredListener :
-          registeredListeners.entrySet()) {
-        if (registeredListener.getValue() == null) {
-          leaderLatch.addListener(registeredListener.getKey());
-        } else {
-          leaderLatch.addListener(registeredListener.getKey(), registeredListener.getValue());
-        }
-      }
-      leaderLatch.start();
-      LOG.info(
-          "Failover complete. Leader latch restarted successfully. New leader: {}",
-          leaderLatch.getLeader().getId());
-    } else {
-      LOG.warn(
-          "Failover request received for HS2 instance: {} that is not leader. Skipping..",
-          uniqueId);
-    }
   }
 
   /**

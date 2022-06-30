@@ -68,7 +68,7 @@ import org.apache.kyuubi.jdbc.hive.auth.SaslQOP;
 import org.apache.kyuubi.jdbc.hive.cli.FetchType;
 import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
-import org.apache.kyuubi.jdbc.hive.cli.session.SessionUtils;
+import org.apache.kyuubi.jdbc.hive.cli.SessionUtils;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
