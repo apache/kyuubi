@@ -22,6 +22,6 @@ import org.apache.spark.sql.catalyst.rules.Rule
 
 class RuleEliminateMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp { case rf: RowFilterAndDataMaskingMarker => rf.table }
+    plan.transformUp { case rf: RowFilterAndDataMaskingMarker => rf.child }
   }
 }

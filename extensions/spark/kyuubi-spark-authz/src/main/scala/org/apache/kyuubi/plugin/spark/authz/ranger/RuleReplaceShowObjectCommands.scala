@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.{RunnableCommand, ShowColumnsCommand}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceHolder, WithInternalChild}
+import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceHolder, WithInternalChildren}
 
 class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
@@ -76,7 +76,7 @@ case class FilteredShowDatabasesCommand(delegated: RunnableCommand)
 }
 
 abstract class FilteredShowObjectCommand(delegated: RunnableCommand)
-  extends RunnableCommand with WithInternalChild {
+  extends RunnableCommand with WithInternalChildren {
 
   override val output: Seq[Attribute] = delegated.output
 
@@ -92,7 +92,7 @@ abstract class FilteredShowObjectCommand(delegated: RunnableCommand)
 }
 
 case class FilteredShowFunctionsCommand(delegated: RunnableCommand)
-  extends FilteredShowObjectCommand(delegated) with WithInternalChild {
+  extends FilteredShowObjectCommand(delegated) with WithInternalChildren {
 
   override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val functionName = r.getString(0)
@@ -110,7 +110,7 @@ case class FilteredShowFunctionsCommand(delegated: RunnableCommand)
 }
 
 case class FilteredShowColumnsCommand(delegated: RunnableCommand)
-  extends FilteredShowObjectCommand(delegated) with WithInternalChild {
+  extends FilteredShowObjectCommand(delegated) with WithInternalChildren {
 
   override val output: Seq[Attribute] = delegated.output
 

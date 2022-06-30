@@ -19,6 +19,10 @@ package org.apache.kyuubi.plugin.spark.authz.util
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-trait WithInternalChild {
+trait WithInternalChildren {
   def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan
+}
+
+trait WithInternalChild {
+  def withNewChildInternal(newChild: LogicalPlan): LogicalPlan
 }

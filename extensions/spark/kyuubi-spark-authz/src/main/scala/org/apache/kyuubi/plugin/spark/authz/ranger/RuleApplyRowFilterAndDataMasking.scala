@@ -30,7 +30,10 @@ import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan transformUp {
+    // Apply FilterAndMasking and wrap HiveTableRelation/LogicalRelation with
+    // RowFilterAndDataMaskingMarker if it is not wrapped yet.
+    plan mapChildren {
+      case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
         applyFilterAndMasking(hiveTableRelation, table, spark)
@@ -41,6 +44,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         } else {
           applyFilterAndMasking(logicalRelation, table.get, spark)
         }
+      case other => apply(other)
     }
   }
 

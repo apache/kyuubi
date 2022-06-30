@@ -25,18 +25,22 @@ import scala.util.Try
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
+import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
+import org.apache.spark.sql.catalyst.plans.logical.Statistics
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
 // scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
-  private def doAs[T](user: String, f: => T): T = {
+  protected def doAs[T](user: String, f: => T): T = {
     UserGroupInformation.createRemoteUser(user).doAs[T](
       new PrivilegedExceptionAction[T] {
         override def run(): T = f
@@ -380,4 +384,56 @@ class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite
 
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+
+  test("table stats must be specified") {
+    val table = "hive_src"
+    try {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
+      doAs(
+        "admin", {
+          val hiveTableRelation = sql(s"SELECT * FROM $table")
+            .queryExecution.optimizedPlan.collectLeaves().head.asInstanceOf[HiveTableRelation]
+          assert(getFieldVal[Option[Statistics]](hiveTableRelation, "tableStats").nonEmpty)
+        })
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $table"))
+    }
+  }
+
+  test("HiveTableRelation should be able to be converted to LogicalRelation") {
+    val table = "hive_src"
+    try {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int) STORED AS PARQUET"))
+      doAs(
+        "admin", {
+          val relation = sql(s"SELECT * FROM $table")
+            .queryExecution.optimizedPlan.collectLeaves().head
+          assert(relation.isInstanceOf[LogicalRelation])
+        })
+    } finally {
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $table"))
+    }
+  }
+
+  test("Pass through JoinSelection") {
+    val db = "test"
+    val table1 = "table1"
+    val table2 = "table2"
+
+    doAs(
+      "admin",
+      try {
+        sql(s"CREATE DATABASE IF NOT EXISTS $db")
+        sql(s"CREATE TABLE IF NOT EXISTS $db.$table1(id int) STORED AS PARQUET")
+        sql(s"INSERT INTO $db.$table1 SELECT 1")
+        sql(s"CREATE TABLE IF NOT EXISTS $db.$table2(id int, name string) STORED AS PARQUET")
+        sql(s"INSERT INTO $db.$table2 SELECT 1, 'a'")
+        val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
+        assert(sql(join).collect().length == 1)
+      } finally {
+        sql(s"DROP TABLE IF EXISTS $db.$table2")
+        sql(s"DROP TABLE IF EXISTS $db.$table1")
+        sql(s"DROP DATABASE IF EXISTS $db")
+      })
+  }
 }
