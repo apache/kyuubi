@@ -67,6 +67,7 @@ public class SpnegoAuthHeaderGenerator implements AuthHeaderGenerator {
       Object ugiCurrentUser = ugiGetCurrentUserMethod.invoke(null);
       LOG.debug("The user credential is {}", ugiCurrentUser);
       Field ugiSubjectField = ugiCurrentUser.getClass().getDeclaredField("subject");
+      ugiSubjectField.setAccessible(true);
       subject = (Subject) ugiSubjectField.get(ugiCurrentUser);
     } catch (ClassNotFoundException e) {
       // TODO do kerberos authentication using JDK class directly
