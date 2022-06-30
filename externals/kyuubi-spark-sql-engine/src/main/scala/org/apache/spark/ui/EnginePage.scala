@@ -276,6 +276,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         <td> {session.ip} </td>
         <td> {session.serverIp} </td>
         <td> <a href={sessionLink}> {session.sessionId} </a> </td>
+        <td> {session.name} </td>
         <td> {formatDate(session.startTime)} </td>
         <td> {if (session.endTime > 0) formatDate(session.endTime)} </td>
         <td> {formatDurationVerbose(session.duration)} </td>
