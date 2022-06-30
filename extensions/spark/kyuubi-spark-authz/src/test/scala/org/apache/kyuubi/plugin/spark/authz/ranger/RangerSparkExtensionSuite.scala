@@ -431,9 +431,9 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
         assert(sql(join).collect().length == 1)
       } finally {
-        doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table2"))
-        doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table1"))
-        doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+        sql(s"DROP TABLE IF EXISTS $db.$table2")
+        sql(s"DROP TABLE IF EXISTS $db.$table1")
+        sql(s"DROP DATABASE IF EXISTS $db")
       })
   }
 }
