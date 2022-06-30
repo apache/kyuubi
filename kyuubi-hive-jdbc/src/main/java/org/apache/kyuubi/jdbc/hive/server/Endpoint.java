@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
 
 /**
  * Description of a single service/component endpoint. It is designed to be marshalled as JSON.
@@ -33,8 +31,6 @@ import org.apache.hadoop.classification.InterfaceStability;
  * service, or a (hostname, port) pair. Each of these address entries is represented as a string
  * list, as that is the only reliably marshallable form of a tuple JSON can represent.
  */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
 public final class Endpoint implements Cloneable {
 
   /** API implemented at the end of the binding */

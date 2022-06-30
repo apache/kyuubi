@@ -1,12 +1,13 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,8 +21,6 @@ package org.apache.kyuubi.jdbc.hive.server;
 import java.io.EOFException;
 import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.util.JsonSerialization;
 
 /**
@@ -35,13 +34,11 @@ import org.apache.hadoop.util.JsonSerialization;
  *   <li>Specific IOException subclasses for a failure.
  * </ol>
  *
- * The rationale for this is not only to support different things in the, registry, but the fact
+ * <p>The rationale for this is not only to support different things in the, registry, but the fact
  * that all ZK nodes have a size &gt; 0 when examined.
  *
  * @param <T> Type to marshal.
  */
-@InterfaceAudience.Private
-@InterfaceStability.Evolving
 public class JsonSerDeser<T> extends JsonSerialization<T> {
 
   private static final String UTF_8 = "UTF-8";
@@ -104,7 +101,7 @@ public class JsonSerDeser<T> extends JsonSerialization<T> {
     }
     try {
       return fromJson(json);
-    } catch (Exception e) {
+    } catch (JsonProcessingException e) {
       throw new InvalidRecordException(path, e.toString(), e);
     }
   }

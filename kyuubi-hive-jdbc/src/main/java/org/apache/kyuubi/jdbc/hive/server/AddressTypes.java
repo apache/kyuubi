@@ -17,15 +17,10 @@
 
 package org.apache.kyuubi.jdbc.hive.server;
 
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
-
 /**
  * Enum of address types -as integers. Why integers and not enums? Cross platform serialization as
  * JSON
  */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
 public interface AddressTypes {
 
   /**
@@ -71,7 +66,7 @@ public interface AddressTypes {
    *   ["zk1","2181","/registry"]
    * </pre>
    *
-   * An endpoint with multiple elements would list them as
+   * <p>An endpoint with multiple elements would list them as
    *
    * <pre>
    *   [

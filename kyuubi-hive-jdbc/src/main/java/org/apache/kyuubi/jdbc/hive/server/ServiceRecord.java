@@ -22,15 +22,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
 
 /**
  * JSON-marshallable description of a single component. It supports the deserialization of unknown
  * attributes, but does not support their creation.
  */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
 public class ServiceRecord implements Cloneable {
 
   /**

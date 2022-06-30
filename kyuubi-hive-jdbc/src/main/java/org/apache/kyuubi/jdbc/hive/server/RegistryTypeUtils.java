@@ -28,15 +28,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
 
 /**
  * Static methods to work with registry types —primarily endpoints and the list representation of
  * addresses.
  */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
 public class RegistryTypeUtils {
 
   /**

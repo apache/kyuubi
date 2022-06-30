@@ -17,12 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive.server;
 
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
-
 /** Raised if an attempt to parse a record failed. */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
 public class InvalidRecordException extends RegistryIOException {
 
   public InvalidRecordException(String path, String error) {

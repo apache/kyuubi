@@ -17,17 +17,12 @@
 
 package org.apache.kyuubi.jdbc.hive.server;
 
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
-
 /**
  * Raised if there is no {@link ServiceRecord} resolved at the end of the specified path.
  *
  * <p>There may be valid data of some form at the end of the path, but it does not appear to be a
  * Service Record.
  */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
 public class NoRecordException extends RegistryIOException {
 
   public NoRecordException(String path, String error) {

@@ -17,12 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive.server;
 
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
-
 /** some common protocol types */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
 public interface ProtocolTypes {
 
   /** Addresses are URIs of Hadoop Filesystem paths: {@value}. */

@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.jdbc.hive.server;
 
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.fs.PathIOException;
 
 /**
@@ -27,8 +25,6 @@ import org.apache.hadoop.fs.PathIOException;
  * <p>These exceptions include the path of the failing operation wherever possible; this can be
  * retrieved via {@link PathIOException#getPath()}.
  */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
 public class RegistryIOException extends PathIOException {
 
   /**

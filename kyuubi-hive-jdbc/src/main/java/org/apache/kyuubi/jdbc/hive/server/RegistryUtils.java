@@ -21,15 +21,11 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.IDN;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Utility methods for working with a registry. */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
 public class RegistryUtils {
   private static final Logger LOG = LoggerFactory.getLogger(RegistryUtils.class);
 
