@@ -24,7 +24,7 @@ import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
 import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
-import org.apache.kyuubi.client.util.JsonUtil;
+import org.apache.kyuubi.client.util.JsonUtils;
 
 public class BatchRestApi {
 
@@ -39,7 +39,7 @@ public class BatchRestApi {
   }
 
   public Batch createBatch(BatchRequest request) {
-    String requestBody = JsonUtil.toJson(request);
+    String requestBody = JsonUtils.toJson(request);
     return this.getClient().post(API_BASE_PATH, requestBody, Batch.class, client.getAuthHeader());
   }
 

@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.client;
 
-import static org.apache.kyuubi.client.RestClientTestUtil.*;
+import static org.apache.kyuubi.client.RestClientTestUtils.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
@@ -263,12 +264,12 @@ public class BatchRestClientTest {
     // test spnego auth
     BatchTestServlet.setAuthSchema(NEGOTIATE_AUTH);
     CloseBatchResponse response = spnegoBatchRestApi.deleteBatch("71535", "b_test");
-    assertEquals(response.isSuccess(), true);
+    assertTrue(response.isSuccess());
 
     // test basic auth
     BatchTestServlet.setAuthSchema(BASIC_AUTH);
     BatchTestServlet.allowAnonymous(false);
     response = basicBatchRestApi.deleteBatch("71535", "b_test");
-    assertEquals(response.isSuccess(), true);
+    assertTrue(response.isSuccess());
   }
 }

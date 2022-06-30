@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.client;
 
-import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,7 +28,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.utils.URIBuilder;
@@ -38,8 +36,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
-import org.apache.kyuubi.client.exception.KyuubiRetryableException;
-import org.apache.kyuubi.client.util.JsonUtil;
+import org.apache.kyuubi.client.exception.RetryableKyuubiRestException;
+import org.apache.kyuubi.client.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +64,7 @@ public class RestClient implements IRestClient {
   @Override
   public <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = get(path, params, authHeader);
-    return JsonUtil.toObject(responseJson, type);
+    return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
@@ -77,7 +75,7 @@ public class RestClient implements IRestClient {
   @Override
   public <T> T post(String path, String body, Class<T> type, String authHeader) {
     String responseJson = post(path, body, authHeader);
-    return JsonUtil.toObject(responseJson, type);
+    return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
@@ -90,7 +88,7 @@ public class RestClient implements IRestClient {
   @Override
   public <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     String responseJson = delete(path, params, authHeader);
-    return JsonUtil.toObject(responseJson, type);
+    return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
@@ -99,8 +97,7 @@ public class RestClient implements IRestClient {
   }
 
   private String doRequest(URI uri, String authHeader, RequestBuilder requestBuilder) {
-    String response = "";
-    CloseableHttpResponse httpResponse = null;
+    String response;
     try {
       if (StringUtils.isNotBlank(authHeader)) {
         requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
@@ -129,18 +126,12 @@ public class RestClient implements IRestClient {
       LOG.debug("Response: {}", response);
     } catch (ConnectException | ConnectTimeoutException e) {
       // net exception can be retried by connecting to other Kyuubi server
-      throw new KyuubiRetryableException("Api request failed for " + uri.toString(), e);
+      throw new RetryableKyuubiRestException("Api request failed for " + uri.toString(), e);
+    } catch (KyuubiRestException rethrow) {
+      throw rethrow;
     } catch (Exception e) {
       LOG.error("Error: ", e);
       throw new KyuubiRestException("Api request failed for " + uri.toString(), e);
-    } finally {
-      if (httpResponse != null) {
-        try {
-          httpResponse.close();
-        } catch (IOException e) {
-          throw new KyuubiRestException("Failed to close HttpResponse.", e);
-        }
-      }
     }
 
     return response;
@@ -151,7 +142,7 @@ public class RestClient implements IRestClient {
   }
 
   private URI buildURI(String path, Map<String, Object> params) {
-    URI uri = null;
+    URI uri;
     try {
       String url = StringUtils.isNotBlank(path) ? this.baseUrl + "/" + path : this.baseUrl;
       URIBuilder builder = new URIBuilder(url);

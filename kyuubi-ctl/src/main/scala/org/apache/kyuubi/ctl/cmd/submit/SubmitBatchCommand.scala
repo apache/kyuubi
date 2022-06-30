@@ -17,7 +17,7 @@
 package org.apache.kyuubi.ctl.cmd.submit
 
 import org.apache.kyuubi.client.api.v1.dto.Batch
-import org.apache.kyuubi.client.util.JsonUtil
+import org.apache.kyuubi.client.util.JsonUtils
 import org.apache.kyuubi.ctl.{BatchOpts, CliConfig, ControlCliException, LogOpts}
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.cmd.create.CreateBatchCommand
@@ -47,7 +47,7 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
     batch = logBatchCommand.doRun()
 
     if (BatchUtil.isTerminalState(batch.getState) && !BatchUtil.isFinishedState(batch.getState)) {
-      error(s"Batch ${batch.getId} failed: ${JsonUtil.toJson(batch)}")
+      error(s"Batch ${batch.getId} failed: ${JsonUtils.toJson(batch)}")
       throw ControlCliException(1)
     }
 

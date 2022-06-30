@@ -25,7 +25,7 @@ import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
 
-public class RestClientTestUtil {
+public class RestClientTestUtils {
 
   public static final String BASIC_AUTH = "BASIC";
   public static final String NEGOTIATE_AUTH = "NEGOTIATE";

@@ -31,8 +31,7 @@ public class BasicAuthHeaderGenerator implements AuthHeaderGenerator {
     } else {
       password = StringUtils.isNotBlank(password) ? password : "";
       String authorization = String.format("%s:%s", user, password);
-      this.authHeader =
-          String.format("BASIC %s", Base64.getEncoder().encodeToString(authorization.getBytes()));
+      this.authHeader = "BASIC " + Base64.getEncoder().encodeToString(authorization.getBytes());
     }
   }
 
