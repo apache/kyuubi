@@ -53,8 +53,8 @@ class KyuubiBatchSessionImpl(
   override val sessionType: SessionType = SessionType.BATCH
 
   override val handle: SessionHandle = recoveryMetadata.map { metadata =>
-    SessionHandle(UUID.fromString(metadata.identifier), protocol)
-  }.getOrElse(SessionHandle(protocol))
+    SessionHandle(UUID.fromString(metadata.identifier))
+  }.getOrElse(SessionHandle())
 
   override def createTime: Long = recoveryMetadata.map(_.createTime).getOrElse(super.createTime)
 

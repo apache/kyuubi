@@ -19,11 +19,13 @@ package org.apache.kyuubi.engine.flink.session
 
 import scala.util.control.NonFatal
 
-import org.apache.flink.table.client.gateway.{Executor, SqlExecutionException}
+import org.apache.flink.table.client.gateway.SqlExecutionException
 import org.apache.flink.table.client.gateway.context.SessionContext
+import org.apache.flink.table.client.gateway.local.LocalExecutor
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils
+import org.apache.kyuubi.session.{AbstractSession, SessionManager}
 
 class FlinkSessionImpl(
     protocol: TProtocolVersion,
@@ -32,11 +34,12 @@ class FlinkSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
-    override val handle: SessionHandle,
-    val sessionContext: SessionContext)
+    val executor: LocalExecutor)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
+  lazy val sessionContext: SessionContext = {
+    FlinkEngineUtils.getSessionContext(executor, handle.identifier.toString)
+  }
 
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
@@ -47,6 +50,7 @@ class FlinkSessionImpl(
   }
 
   override def open(): Unit = {
+    executor.openSession(handle.identifier.toString)
     normalizedConf.foreach {
       case ("use:database", database) =>
         val tableEnv = sessionContext.getExecutionContext.getTableEnvironment

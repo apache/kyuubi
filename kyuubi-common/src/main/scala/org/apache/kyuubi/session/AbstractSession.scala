@@ -34,7 +34,7 @@ abstract class AbstractSession(
     val ipAddress: String,
     val conf: Map[String, String],
     val sessionManager: SessionManager) extends Session with Logging {
-  override val handle: SessionHandle = SessionHandle(protocol)
+  override val handle: SessionHandle = SessionHandle()
 
   protected def logSessionInfo(msg: String): Unit = info(s"[$user:$ipAddress] $handle - $msg")
 

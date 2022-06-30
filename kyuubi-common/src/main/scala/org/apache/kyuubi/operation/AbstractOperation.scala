@@ -30,12 +30,11 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThreadUtils
 
-abstract class AbstractOperation(session: Session)
-  extends Operation with Logging {
+abstract class AbstractOperation(session: Session) extends Operation with Logging {
 
   final protected val opType: String = getClass.getSimpleName
   final protected val createTime = System.currentTimeMillis()
-  final private val handle = OperationHandle(session.protocol)
+  final private val handle = OperationHandle()
   final private val operationTimeout: Long = {
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }
@@ -170,7 +169,7 @@ abstract class AbstractOperation(session: Session)
 
   override def close(): Unit
 
-  override def getProtocolVersion: TProtocolVersion = handle.protocol
+  protected def getProtocolVersion: TProtocolVersion = session.protocol
 
   override def getResultSetSchema: TTableSchema
 

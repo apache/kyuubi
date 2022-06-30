@@ -108,7 +108,7 @@ class ExecuteStatement(
               // this will cause the client of the lower version to get stuck.
               // Check thrift protocol version <= HIVE_CLI_SERVICE_PROTOCOL_V8(Hive 2.1.0),
               // convert TIMEDOUT_STATE to CANCELED.
-              if getSession.protocol.getValue <=
+              if getProtocolVersion.getValue <=
                 TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue =>
             setState(OperationState.CANCELED)
 

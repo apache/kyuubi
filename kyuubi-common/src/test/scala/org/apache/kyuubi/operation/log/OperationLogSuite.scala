@@ -45,8 +45,7 @@ class OperationLogSuite extends KyuubiFunSuite {
       "localhost",
       Map.empty)
     val session = sessionManager.getSession(sHandle)
-    val oHandle = OperationHandle(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val oHandle = OperationHandle()
     assert(sessionManager.operationLogRoot.isDefined)
     val operationLogRoot = sessionManager.operationLogRoot.get
 
@@ -97,8 +96,7 @@ class OperationLogSuite extends KyuubiFunSuite {
       "localhost",
       Map.empty)
     val session = sessionManager.getSession(sHandle)
-    val oHandle = OperationHandle(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val oHandle = OperationHandle()
 
     OperationLog.createOperationLogRootDirectory(session)
     val operationLog = OperationLog.createOperationLog(session, oHandle)
@@ -147,8 +145,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     assert(logRoot.exists())
     OperationLog.createOperationLogRootDirectory(session)
     assert(logRoot.isFile)
-    val oHandle = OperationHandle(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val oHandle = OperationHandle()
     intercept[Exception] {
       val log = OperationLog.createOperationLog(session, oHandle)
       log.read(1)
@@ -188,8 +185,7 @@ class OperationLogSuite extends KyuubiFunSuite {
       "localhost",
       Map.empty)
     val session = sessionManager.getSession(sHandle)
-    val oHandle = OperationHandle(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val oHandle = OperationHandle()
     OperationLog.createOperationLogRootDirectory(session)
 
     val operationLog = OperationLog.createOperationLog(session, oHandle)
