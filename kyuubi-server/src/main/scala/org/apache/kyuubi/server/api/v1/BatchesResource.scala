@@ -71,10 +71,23 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val batchAppStatus = batchOp.currentApplicationState.getOrElse(Map.empty)
 
     val name = Option(batchOp.batchName).getOrElse(batchAppStatus.get(APP_NAME_KEY).orNull)
-    val appId = batchAppStatus.get(APP_ID_KEY).orNull
-    val appUrl = batchAppStatus.get(APP_URL_KEY).orNull
-    val appState = batchAppStatus.get(APP_STATE_KEY).orNull
-    val appDiagnostic = batchAppStatus.get(APP_ERROR_KEY).orNull
+    var appId: String = null
+    var appUrl: String = null
+    var appState: String = null
+    var appDiagnostic: String = null
+
+    if (batchAppStatus.nonEmpty) {
+      appId = batchAppStatus.get(APP_ID_KEY).orNull
+      appUrl = batchAppStatus.get(APP_URL_KEY).orNull
+      appState = batchAppStatus.get(APP_STATE_KEY).orNull
+      appDiagnostic = batchAppStatus.get(APP_ERROR_KEY).orNull
+    } else {
+      val metadata = sessionManager.getBatchMetadata(batchOp.batchId)
+      appId = metadata.engineId
+      appUrl = metadata.engineUrl
+      appState = metadata.engineState
+      appDiagnostic = metadata.engineError.orNull
+    }
 
     new Batch(
       batchOp.batchId,
