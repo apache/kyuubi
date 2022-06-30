@@ -19,8 +19,6 @@ package org.apache.kyuubi.operation
 
 import java.util.UUID
 
-import scala.language.implicitConversions
-
 import org.apache.hive.service.rpc.thrift.TOperationHandle
 
 import org.apache.kyuubi.cli.Handle
@@ -31,7 +29,7 @@ case class OperationHandle(identifier: UUID) {
 
   def setHasResultSet(hasResultSet: Boolean): Unit = _hasResultSet = hasResultSet
 
-  implicit def toTOperationHandle: TOperationHandle = {
+  def toTOperationHandle: TOperationHandle = {
     val tOperationHandle = new TOperationHandle
     tOperationHandle.setOperationId(Handle.toTHandleIdentifier(identifier))
     tOperationHandle.setHasResultSet(_hasResultSet)
@@ -48,13 +46,6 @@ object OperationHandle {
   def apply(tOperationHandle: TOperationHandle): OperationHandle = {
     new OperationHandle(
       Handle.fromTHandleIdentifier(tOperationHandle.getOperationId))
-  }
-
-  implicit def toTOperationHandle(handle: OperationHandle): TOperationHandle = {
-    val tOperationHandle = new TOperationHandle
-    tOperationHandle.setOperationId(Handle.toTHandleIdentifier(handle.identifier))
-    tOperationHandle.setHasResultSet(handle._hasResultSet)
-    tOperationHandle
   }
 
   def apply(operationHandleStr: String): OperationHandle = {

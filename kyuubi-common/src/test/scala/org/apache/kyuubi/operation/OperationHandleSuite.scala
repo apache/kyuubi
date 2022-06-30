@@ -26,7 +26,6 @@ class OperationHandleSuite extends KyuubiFunSuite {
   test("OperationHandle") {
     val h1 = OperationHandle()
     val t1 = h1.toTOperationHandle
-    OperationHandle(t1)
     assert(OperationHandle(t1) === h1)
     assert(!t1.isHasResultSet)
     h1.setHasResultSet(true)
