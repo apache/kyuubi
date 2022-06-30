@@ -250,6 +250,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           ("Client IP", true, None),
           ("Server IP", true, None),
           ("Session ID", true, None),
+          ("Session Name", true, None),
           ("Start Time", true, None),
           ("Finish Time", true, None),
           ("Duration", true, None),
@@ -275,6 +276,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         <td> {session.ip} </td>
         <td> {session.serverIp} </td>
         <td> <a href={sessionLink}> {session.sessionId} </a> </td>
+        <td> {session.name} </td>
         <td> {formatDate(session.startTime)} </td>
         <td> {if (session.endTime > 0) formatDate(session.endTime)} </td>
         <td> {formatDurationVerbose(session.duration)} </td>
@@ -428,6 +430,7 @@ private class SessionStatsTableDataSource(
       case "Client IP" => Ordering.by(_.ip)
       case "Server IP" => Ordering.by(_.serverIp)
       case "Session ID" => Ordering.by(_.sessionId)
+      case "Session Name" => Ordering.by(_.name)
       case "Start Time" => Ordering.by(_.startTime)
       case "Finish Time" => Ordering.by(_.endTime)
       case "Duration" => Ordering.by(_.duration)
