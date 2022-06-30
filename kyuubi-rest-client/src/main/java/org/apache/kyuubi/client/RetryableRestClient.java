@@ -57,7 +57,7 @@ public class RetryableRestClient implements InvocationHandler {
             client);
   }
 
-  private synchronized void newRestClient() {
+  private void newRestClient() {
     if (restClient != null) {
       try {
         restClient.close();
@@ -74,7 +74,7 @@ public class RetryableRestClient implements InvocationHandler {
   }
 
   @Override
-  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+  public synchronized Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     int retryTimes = 0;
     while (true) {
       try {
