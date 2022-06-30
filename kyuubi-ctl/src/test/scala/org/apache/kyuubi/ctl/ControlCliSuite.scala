@@ -61,15 +61,8 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   }
 
   /** Get the rendered service node info without title */
-  private def getRenderedNodesInfoWithoutTitle(
-      nodesInfo: Seq[ServiceNodeInfo],
-      verbose: Boolean): String = {
-    val renderedInfo = Render.renderServiceNodesInfo("", nodesInfo, verbose)
-    if (verbose) {
-      renderedInfo.substring(renderedInfo.indexOf("|"))
-    } else {
-      renderedInfo
-    }
+  private def getRenderedNodesInfoWithoutTitle(nodesInfo: Seq[ServiceNodeInfo]): String = {
+    Render.renderServiceNodesInfo("", nodesInfo)
   }
 
   test("test expose to same namespace") {
@@ -143,20 +136,22 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     val title = "test render"
     val nodes = Seq(
       ServiceNodeInfo("/kyuubi", "serviceNode", "localhost", 10000, Some("version"), None))
-    val renderedInfo = Render.renderServiceNodesInfo(title, nodes, true)
+    val renderedInfo = Render.renderServiceNodesInfo(title, nodes)
+    // scalastyle:off
     val expected = {
-      s"\n               $title               " +
+      s"\n                $title                " +
         """
-          |+----------+----------+----------+----------+
-          ||Namespace |   Host   |   Port   | Version  |
-          |+----------+----------+----------+----------+
-          || /kyuubi  |localhost |  10000   | version  |
-          |+----------+----------+----------+----------+
+          |╔═══════════╤═══════════╤═══════╤═════════╗
+          |║ Namespace │ Host      │ Port  │ Version ║
+          |╠═══════════╪═══════════╪═══════╪═════════╣
+          |║ /kyuubi   │ localhost │ 10000 │ version ║
+          |╚═══════════╧═══════════╧═══════╧═════════╝
           |1 row(s)
           |""".stripMargin
     }
+    // scalastyle:on
     assert(renderedInfo == expected)
-    assert(renderedInfo.contains(getRenderedNodesInfoWithoutTitle(nodes, true)))
+    assert(renderedInfo.contains(getRenderedNodesInfoWithoutTitle(nodes)))
   }
 
   test("test expose zk service node to another namespace") {
@@ -188,7 +183,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
       testPrematureExitForControlCli(
         args,
-        getRenderedNodesInfoWithoutTitle(expectedCreatedNodes, false))
+        getRenderedNodesInfoWithoutTitle(expectedCreatedNodes))
       val znodeRoot = s"/$newNamespace"
       val children = framework.getChildren(znodeRoot).sorted
       assert(children.size == 2)
@@ -255,7 +250,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
 
-      testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
+      testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
     }
   }
 
@@ -287,7 +282,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       val expectedNodes = Seq(
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None))
 
-      testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
+      testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
     }
   }
 
@@ -323,7 +318,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
       testPrematureExitForControlCli(
         args,
-        getRenderedNodesInfoWithoutTitle(expectedDeletedNodes, false))
+        getRenderedNodesInfoWithoutTitle(expectedDeletedNodes))
     }
   }
 
@@ -353,7 +348,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
 
-      testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes, true))
+      testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
     }
   }
 

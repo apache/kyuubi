@@ -39,6 +39,6 @@ class GetBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {
   }
 
   def render(batch: Batch): Unit = {
-    info(Render.renderBatchInfo(batch.asInstanceOf[Batch]))
+    info(Render.renderBatchInfo(batch))
   }
 }

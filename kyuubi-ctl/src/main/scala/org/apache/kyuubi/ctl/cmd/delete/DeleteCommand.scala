@@ -60,6 +60,6 @@ class DeleteCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](
 
   def render(nodes: Seq[ServiceNodeInfo]): Unit = {
     val title = "Deleted zookeeper service nodes"
-    info(Render.renderServiceNodesInfo(title, nodes, verbose))
+    info(Render.renderServiceNodesInfo(title, nodes))
   }
 }

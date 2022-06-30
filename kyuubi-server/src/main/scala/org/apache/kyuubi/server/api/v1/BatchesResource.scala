@@ -33,6 +33,7 @@ import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
@@ -67,12 +68,23 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
     val batchOp = session.batchJobSubmissionOp
     val batchOpStatus = batchOp.getStatus
+    val batchAppStatus = batchOp.currentApplicationState.getOrElse(Map.empty)
+
+    val name = Option(batchOp.batchName).getOrElse(batchAppStatus.get(APP_NAME_KEY).orNull)
+    val appId = batchAppStatus.get(APP_ID_KEY).orNull
+    val appUrl = batchAppStatus.get(APP_URL_KEY).orNull
+    val appState = batchAppStatus.get(APP_STATE_KEY).orNull
+    val appDiagnostic = batchAppStatus.get(APP_ERROR_KEY).orNull
+
     new Batch(
       batchOp.batchId,
       session.user,
       batchOp.batchType,
-      batchOp.batchName,
-      batchOp.currentApplicationState.getOrElse(Map.empty).asJava,
+      name,
+      appId,
+      appUrl,
+      appState,
+      appDiagnostic,
       fe.connectionUrl,
       batchOpStatus.state.toString,
       session.createTime,
@@ -94,12 +106,21 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           metadata.state
         }
 
+      val name = Option(metadata.requestName).getOrElse(appStatus.get(APP_NAME_KEY).orNull)
+      val appId = appStatus.get(APP_ID_KEY).orNull
+      val appUrl = appStatus.get(APP_URL_KEY).orNull
+      val appState = appStatus.get(APP_STATE_KEY).orNull
+      val appDiagnostic = appStatus.get(APP_ERROR_KEY).orNull
+
       new Batch(
         metadata.identifier,
         metadata.username,
         metadata.engineType,
-        metadata.requestName,
-        appStatus.asJava,
+        name,
+        appId,
+        appUrl,
+        appState,
+        appDiagnostic,
         metadata.kyuubiInstance,
         currentBatchState,
         metadata.createTime,
