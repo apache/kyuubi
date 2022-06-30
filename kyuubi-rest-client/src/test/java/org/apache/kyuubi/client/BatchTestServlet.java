@@ -17,12 +17,10 @@
 
 package org.apache.kyuubi.client;
 
-import static org.apache.kyuubi.client.RestClientTestUtil.*;
+import static org.apache.kyuubi.client.RestClientTestUtils.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Base64;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,10 +28,9 @@ import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
+import org.apache.kyuubi.client.util.JsonUtils;
 
 public class BatchTestServlet extends HttpServlet {
-
-  private static ObjectMapper MAPPER = new ObjectMapper();
 
   private static String authSchema = BASIC_AUTH;
   private static boolean allowAnonymous;
@@ -47,28 +44,27 @@ public class BatchTestServlet extends HttpServlet {
   }
 
   @Override
-  protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException, IOException {
+  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     if (!validAuthHeader(req, resp)) return;
 
     if (req.getPathInfo().matches("/api/v1/batches/\\d+")) {
       resp.setStatus(HttpServletResponse.SC_OK);
 
       Batch batch = generateTestBatch();
-      resp.getWriter().write(MAPPER.writeValueAsString(batch));
+      resp.getWriter().write(JsonUtils.toJson(batch));
       resp.getWriter().flush();
     } else if (req.getPathInfo().matches("/api/v1/batches")
-        && req.getQueryString().matches("[\\w]+(=[\\w]*)(&[\\w]+(=[\\w]*))+$")) {
+        && req.getQueryString().matches("\\w+(=\\w*)(&\\w+(=\\w*))+$")) {
       resp.setStatus(HttpServletResponse.SC_OK);
 
       GetBatchesResponse batchesResponse = generateTestBatchesResponse();
-      resp.getWriter().write(MAPPER.writeValueAsString(batchesResponse));
+      resp.getWriter().write(JsonUtils.toJson(batchesResponse));
       resp.getWriter().flush();
     } else if (req.getPathInfo().matches("/api/v1/batches/\\d+/localLog")) {
       resp.setStatus(HttpServletResponse.SC_OK);
 
       OperationLog log = generateTestOperationLog();
-      resp.getWriter().write(MAPPER.writeValueAsString(log));
+      resp.getWriter().write(JsonUtils.toJson(log));
       resp.getWriter().flush();
     } else {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -76,15 +72,14 @@ public class BatchTestServlet extends HttpServlet {
   }
 
   @Override
-  protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException, IOException {
+  protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     if (!validAuthHeader(req, resp)) return;
 
     if (req.getPathInfo().equalsIgnoreCase("/api/v1/batches")) {
       resp.setStatus(HttpServletResponse.SC_OK);
 
       Batch batch = generateTestBatch();
-      resp.getWriter().write(MAPPER.writeValueAsString(batch));
+      resp.getWriter().write(JsonUtils.toJson(batch));
       resp.getWriter().flush();
     } else {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -92,21 +87,19 @@ public class BatchTestServlet extends HttpServlet {
   }
 
   @Override
-  protected void doPut(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException, IOException {
+  protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
     resp.setStatus(HttpServletResponse.SC_OK);
   }
 
   @Override
-  protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException, IOException {
+  protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     if (!validAuthHeader(req, resp)) return;
 
     if (req.getPathInfo().matches("/api/v1/batches/\\d+")) {
       resp.setStatus(HttpServletResponse.SC_OK);
 
       CloseBatchResponse closeResp = generateTestCloseBatchResp();
-      resp.getWriter().write(MAPPER.writeValueAsString(closeResp));
+      resp.getWriter().write(JsonUtils.toJson(closeResp));
       resp.getWriter().flush();
     } else {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
