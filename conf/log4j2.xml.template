@@ -16,6 +16,7 @@
   ~ limitations under the License.
   -->
 
+<!-- Provide log4j2.xml.template to fix `ERROR Filters contains invalid attributes "onMatch", "onMismatch"`, see KYUUBI-2247 -->
 <!-- Extra logging related to initialization of Log4j.
  Set to debug or trace if log4j initialization is failing. -->
 <Configuration status="INFO">
