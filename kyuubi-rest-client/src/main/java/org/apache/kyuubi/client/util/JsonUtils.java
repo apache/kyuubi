@@ -15,14 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.client.exception;
+package org.apache.kyuubi.client.util;
 
-/**
- * A retryable exception which is thrown by underlying rest client. The call side can do retry by
- * catching this exception.
- */
-public class KyuubiRetryableException extends KyuubiRestException {
-  public KyuubiRetryableException(String message, Throwable cause) {
-    super(message, cause);
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.kyuubi.client.exception.KyuubiRestException;
+
+public final class JsonUtils {
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
+  public static String toJson(Object object) {
+    try {
+      return MAPPER.writeValueAsString(object);
+    } catch (Exception e) {
+      throw new KyuubiRestException(
+          String.format("Failed to convert object(%s) to json", object), e);
+    }
+  }
+
+  public static <T> T fromJson(String json, Class<T> clazz) {
+    try {
+      return MAPPER.readValue(json, clazz);
+    } catch (Exception e) {
+      throw new KyuubiRestException(
+          String.format("Failed to convert json string(%s) to %s", json, clazz.getName()), e);
+    }
   }
 }
