@@ -291,6 +291,7 @@ org.apache.zookeeper:zookeeper
 org.scala-lang:scala-library
 com.zaxxer:HikariCP
 org.apache.derby:derby
+com.jakewharton.fliptables:fliptables
 
 
 kyuubi-server/src/main/resources/org/apache/kyuubi/ui/swagger/*
