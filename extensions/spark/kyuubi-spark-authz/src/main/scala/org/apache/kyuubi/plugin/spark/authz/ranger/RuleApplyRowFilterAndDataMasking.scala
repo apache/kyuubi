@@ -30,10 +30,8 @@ import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    // Wrap HiveTableRelation/LogicalRelation with RowFilterAndDataMaskingMarker if it is not
-    // wrapped yet.
-    // Not using TreeNode#transformUpWithPruning as transformUpWithPruning is not present until
-    // Spark 3.2
+    // Apply FilterAndMasking and wrap HiveTableRelation/LogicalRelation with
+    // RowFilterAndDataMaskingMarker if it is not wrapped yet.
     plan mapChildren {
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>

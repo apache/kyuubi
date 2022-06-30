@@ -400,7 +400,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("HiveTableRelation should be converted to LogicalRelation") {
+  test("HiveTableRelation should be able to be converted to LogicalRelation") {
     val table = "hive_src"
     try {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int) STORED AS PARQUET"))
@@ -419,20 +419,21 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val db = "test"
     val table1 = "table1"
     val table2 = "table2"
-    try {
-      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
-      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.$table1(id int) STORED AS PARQUET"))
-      doAs("admin", sql(s"INSERT INTO $db.$table1 SELECT 1"))
-      doAs(
-        "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $db.$table2(id int, name string) STORED AS PARQUET"))
-      doAs("admin", sql(s"INSERT INTO $db.$table2 SELECT 1, 'a'"))
-      val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
-      doAs("admin", assert(sql(join).collect().length == 1))
-    } finally {
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table2"))
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table1"))
-      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
-    }
+
+    doAs(
+      "admin",
+      try {
+        sql(s"CREATE DATABASE IF NOT EXISTS $db")
+        sql(s"CREATE TABLE IF NOT EXISTS $db.$table1(id int) STORED AS PARQUET")
+        sql(s"INSERT INTO $db.$table1 SELECT 1")
+        sql(s"CREATE TABLE IF NOT EXISTS $db.$table2(id int, name string) STORED AS PARQUET")
+        sql(s"INSERT INTO $db.$table2 SELECT 1, 'a'")
+        val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
+        assert(sql(join).collect().length == 1)
+      } finally {
+        doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table2"))
+        doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table1"))
+        doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+      })
   }
 }
