@@ -32,19 +32,27 @@ import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+import org.apache.kyuubi.spark.connector.common.SparkConfParser
+
 class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
   extends SparkTable with SupportsRead {
 
+  private val confParser: SparkConfParser = SparkConfParser(options, null, null)
   // When true, use CHAR VARCHAR; otherwise use STRING
-  val useAnsiStringType: Boolean = options.getBoolean("useAnsiStringType", false)
-
+  lazy val useAnsiStringType: Boolean = confParser.booleanConf()
+    .option("useAnsiStringType")
+    .defaultValue(false)
+    .parse()
   // 09-26-2017 v2.6.0
   // Replaced two occurrences of "c_last_review_date" with "c_last_review_date_sk" to be consistent
   // with Table 2-14 (Customer Table Column Definitions) in section 2.4.7 of the specification
   // (fogbugz 2046).
   //
   // https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v3.2.0.pdf
-  val useTableSchema_2_6: Boolean = options.getBoolean("useTableSchema_2_6", true)
+  lazy val useTableSchema_2_6: Boolean = confParser.booleanConf()
+    .option("useTableSchema_2_6")
+    .defaultValue(true)
+    .parse()
 
   val tpcdsTable: Table = Table.getTable(tbl)
 
