@@ -96,9 +96,11 @@ class TPCDSPartitionReader(
     .constructResults(chuckInfo.getOnlyTableToGenerate, chuckInfo)
     .iterator.asScala
     .map { _.get(0).asScala } // the 1st row is specific table row
-    .map { row =>
-      row.zipWithIndex.map { case (v, i) =>
-        (v, schema(i).dataType) match {
+    .map { stringRow =>
+      var i = 0
+      val row = new Array[Any](stringRow.length)
+      while (i < stringRow.length) {
+        row(i) = (stringRow(i), schema(i).dataType) match {
           case (null, _) => null
           case (Options.DEFAULT_NULL_STRING, _) => null
           case (v, IntegerType) => v.toInt
@@ -110,9 +112,10 @@ class TPCDSPartitionReader(
           case (v, DecimalType()) => Decimal(v)
           case (v, dt) => throw new IllegalArgumentException(s"value: $v, type: $dt")
         }
+        i += 1
       }
+      InternalRow(row)
     }
-    .map { row => InternalRow.fromSeq(row) }
 
   private var currentRow: InternalRow = _
 
