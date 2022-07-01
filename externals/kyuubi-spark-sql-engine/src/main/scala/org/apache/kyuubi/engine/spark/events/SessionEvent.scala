@@ -39,7 +39,6 @@ import org.apache.kyuubi.events.KyuubiEvent
  */
 case class SessionEvent(
     @KVIndexParam sessionId: String,
-    name: String,
     engineId: String,
     username: String,
     ip: String,
@@ -68,7 +67,6 @@ object SessionEvent {
   def apply(session: SparkSessionImpl): SessionEvent = {
     new SessionEvent(
       session.handle.identifier.toString,
-      session.name.getOrElse(""),
       KyuubiSparkUtil.engineId,
       session.user,
       session.ipAddress,
