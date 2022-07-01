@@ -38,9 +38,9 @@ version: 0.1.0
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
-appVersion: "1.4.0"
+appVersion: "1.5.2"
 
-icon: https://github.com/apache/incubator-kyuubi/blob/master/docs/imgs/kyuubi_logo.png
+icon: https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docs/imgs/kyuubi_logo.png
 
 sources:
   - https://github.com/apache/incubator-kyuubi/tree/master/docker
