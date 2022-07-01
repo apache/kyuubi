@@ -21,7 +21,6 @@ package org.apache.kyuubi.jdbc.hive.cli;
 import java.io.IOException;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenSelector;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
@@ -50,21 +49,5 @@ public class SessionUtils {
         tokenSelector.selectToken(
             tokenSignature == null ? new Text() : new Text(tokenSignature), ugi.getTokens());
     return token != null ? token.encodeToUrlString() : null;
-  }
-
-  /**
-   * Create a new token using the given string and service
-   *
-   * @param tokenStr
-   * @param tokenService
-   * @return
-   * @throws IOException
-   */
-  private static Token<DelegationTokenIdentifier> createToken(String tokenStr, String tokenService)
-      throws IOException {
-    Token<DelegationTokenIdentifier> delegationToken = new Token<DelegationTokenIdentifier>();
-    delegationToken.decodeFromUrlString(tokenStr);
-    delegationToken.setService(new Text(tokenService));
-    return delegationToken;
   }
 }
