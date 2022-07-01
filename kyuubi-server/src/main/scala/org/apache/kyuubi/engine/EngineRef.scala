@@ -206,7 +206,8 @@ private[kyuubi] class EngineRef(
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
-            s"Timeout($timeout ms) to launched $engineType engine with $redactedCmd. $killMessage",
+            s"Timeout($timeout ms, you can modify ${ENGINE_INIT_TIMEOUT.key} to change it) to" +
+              s" launched $engineType engine with $redactedCmd. $killMessage",
             builder.getError)
         }
         engineRef = discoveryClient.getEngineByRefId(engineSpace, engineRefId)
