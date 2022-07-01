@@ -28,11 +28,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.jar.Attributes;
-import org.apache.hive.service.cli.GetInfoType;
-import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLDatabaseMetaData;
+import org.apache.kyuubi.jdbc.hive.cli.HiveSQLException;
 import org.apache.thrift.TException;
 
 /** KyuubiDatabaseMetaData. */
@@ -280,7 +279,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   @Override
   public String getDatabaseProductName() throws SQLException {
-    TGetInfoResp resp = getServerInfo(GetInfoType.CLI_DBMS_NAME.toTGetInfoType());
+    TGetInfoResp resp = getServerInfo(TGetInfoType.CLI_DBMS_NAME);
     return resp.getInfoValue().getStringValue();
   }
 
@@ -290,7 +289,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
       return dbVersion;
     }
 
-    TGetInfoResp resp = getServerInfo(GetInfoType.CLI_DBMS_VER.toTGetInfoType());
+    TGetInfoResp resp = getServerInfo(TGetInfoType.CLI_DBMS_VER);
     this.dbVersion = resp.getInfoValue().getStringValue();
     return dbVersion;
   }
@@ -573,7 +572,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     // Note: the definitions of what ODBC and JDBC keywords exclude are different in different
     //       places. For now, just return the ODBC version here; that excludes Hive keywords
     //       that are also ODBC reserved keywords. We could also exclude SQL:2003.
-    TGetInfoResp resp = getServerInfo(GetInfoType.CLI_ODBC_KEYWORDS.toTGetInfoType());
+    TGetInfoResp resp = getServerInfo(TGetInfoType.CLI_ODBC_KEYWORDS);
     return resp.getInfoValue().getStringValue();
   }
 
