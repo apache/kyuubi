@@ -24,7 +24,6 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.registry.impl.ZkRegistryBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

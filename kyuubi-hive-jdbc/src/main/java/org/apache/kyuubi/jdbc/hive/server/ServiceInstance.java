@@ -17,12 +17,34 @@
 
 package org.apache.kyuubi.jdbc.hive.server;
 
-public interface HiveServer2HAInstanceSet extends ServiceInstanceSet<HiveServer2Instance> {
+import java.util.Map;
+
+public interface ServiceInstance {
 
   /**
-   * In Active/Passive setup, returns current active leader.
-   *
-   * @return leader instance
+   * Worker identity is a UUID (unique across restarts), to identify a node which died &amp; was
+   * brought back on the same host/port
    */
-  HiveServer2Instance getLeader();
+  String getWorkerIdentity();
+
+  /**
+   * Hostname of the service instance
+   *
+   * @return service hostname
+   */
+  String getHost();
+
+  /**
+   * RPC Endpoint for service instance
+   *
+   * @return rpc port
+   */
+  int getRpcPort();
+
+  /**
+   * Config properties of the Service Instance (llap.daemon.*)
+   *
+   * @return properties
+   */
+  Map<String, String> getProperties();
 }

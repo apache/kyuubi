@@ -17,12 +17,40 @@
 
 package org.apache.kyuubi.jdbc.hive.server;
 
-public interface HiveServer2HAInstanceSet extends ServiceInstanceSet<HiveServer2Instance> {
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.UUID;
+
+public class RegistryUtilities {
+  private static final String LOCALHOST = "localhost";
 
   /**
-   * In Active/Passive setup, returns current active leader.
+   * Will return hostname stored in InetAddress.
    *
-   * @return leader instance
+   * @return hostname
    */
-  HiveServer2Instance getLeader();
+  public static String getHostName() {
+    try {
+      return InetAddress.getLocalHost().getHostName();
+    } catch (UnknownHostException e) {
+      return LOCALHOST;
+    }
+  }
+
+  /**
+   * Will return FQDN of the host after doing reverse DNS lookip.
+   *
+   * @return FQDN of host
+   */
+  public static String getCanonicalHostName() {
+    try {
+      return InetAddress.getLocalHost().getCanonicalHostName();
+    } catch (UnknownHostException e) {
+      return LOCALHOST;
+    }
+  }
+
+  public static String getUUID() {
+    return String.valueOf(UUID.randomUUID());
+  }
 }
