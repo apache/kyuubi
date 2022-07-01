@@ -20,7 +20,6 @@ package org.apache.kyuubi.jdbc.hive.server;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
-import org.apache.hadoop.hive.registry.ServiceInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

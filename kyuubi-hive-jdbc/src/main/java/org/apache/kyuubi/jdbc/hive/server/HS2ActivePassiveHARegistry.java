@@ -19,7 +19,6 @@ package org.apache.kyuubi.jdbc.hive.server;
 
 import com.google.common.base.Preconditions;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -28,9 +27,6 @@ import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.llap.registry.ServiceRegistry;
-import org.apache.hadoop.hive.registry.ServiceInstanceSet;
-import org.apache.hadoop.hive.registry.ServiceInstanceStateChangeListener;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +36,11 @@ public class HS2ActivePassiveHARegistry extends ZkRegistryBase<HiveServer2Instan
   private static final Logger LOG = LoggerFactory.getLogger(HS2ActivePassiveHARegistry.class);
   static final String ACTIVE_ENDPOINT = "activeEndpoint";
   static final String PASSIVE_ENDPOINT = "passiveEndpoint";
-  private static final String SASL_LOGIN_CONTEXT_NAME = "HS2ActivePassiveHAZooKeeperClient";
   private static final String INSTANCE_PREFIX = "instance-";
   private static final String INSTANCE_GROUP = "instances";
   private static final String LEADER_LATCH_PATH = "/_LEADER";
   private LeaderLatch leaderLatch;
   private String latchPath;
-  private ServiceRecord srv;
   private final String uniqueId;
 
   // There are 2 paths under which the instances get registered
@@ -110,23 +104,6 @@ public class HS2ActivePassiveHARegistry extends ZkRegistryBase<HiveServer2Instan
     LOG.info("Populating instances cache for client");
   }
 
-  @Override
-  protected void unregisterInternal() {
-    super.unregisterInternal();
-  }
-
-  @Override
-  public String register() throws IOException {
-    updateEndpoint(srv, PASSIVE_ENDPOINT);
-    return registerServiceRecord(srv, uniqueId);
-  }
-
-  @Override
-  public void unregister() {
-    CloseableUtils.closeQuietly(leaderLatch);
-    unregisterInternal();
-  }
-
   private void populateCache() throws IOException {
     PathChildrenCache pcc = ensureInstancesCache(0);
     populateCache(pcc, false);
@@ -136,17 +113,6 @@ public class HS2ActivePassiveHARegistry extends ZkRegistryBase<HiveServer2Instan
   public ServiceInstanceSet<HiveServer2Instance> getInstances(
       final String component, final long clusterReadyTimeoutMs) throws IOException {
     throw new IOException("Not supported to get instances by component name");
-  }
-
-  private void updateEndpoint(final ServiceRecord srv, final String endpointName) {
-    final String instanceUri = srv.get(HiveServer2.INSTANCE_URI_CONFIG);
-    final String[] tokens = instanceUri.split(":");
-    final String hostname = tokens[0];
-    final int port = Integer.parseInt(tokens[1]);
-    Endpoint urlEndpoint =
-        RegistryTypeUtils.ipcEndpoint(endpointName, new InetSocketAddress(hostname, port));
-    srv.addInternalEndpoint(urlEndpoint);
-    LOG.info("Added {} endpoint to service record", urlEndpoint);
   }
 
   @Override

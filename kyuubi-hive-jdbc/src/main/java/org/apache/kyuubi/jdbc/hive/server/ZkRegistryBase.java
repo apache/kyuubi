@@ -47,9 +47,6 @@ import org.apache.curator.utils.CloseableUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-import org.apache.hadoop.hive.registry.RegistryUtilities;
-import org.apache.hadoop.hive.registry.ServiceInstance;
-import org.apache.hadoop.hive.registry.ServiceInstanceStateChangeListener;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.kyuubi.jdbc.hive.server.RegistryUtils.ServiceRecordMarshal;
@@ -663,10 +660,6 @@ public abstract class ZkRegistryBase<InstanceType extends ServiceInstance> {
       String[] components = principal.split("[/@]");
       return components != null && components.length == 3 ? components[0] : principal;
     }
-  }
-
-  protected void unregisterInternal() {
-    CloseableUtils.closeQuietly(znode);
   }
 
   public void stop() {

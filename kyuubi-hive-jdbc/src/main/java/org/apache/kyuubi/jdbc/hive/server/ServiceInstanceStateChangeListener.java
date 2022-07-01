@@ -17,12 +17,26 @@
 
 package org.apache.kyuubi.jdbc.hive.server;
 
-public interface HiveServer2HAInstanceSet extends ServiceInstanceSet<HiveServer2Instance> {
+/** Callback listener for instance state change events */
+public interface ServiceInstanceStateChangeListener<InstanceType extends ServiceInstance> {
+  /**
+   * Called when new {@link ServiceInstance} is created.
+   *
+   * @param serviceInstance - created service instance
+   */
+  void onCreate(InstanceType serviceInstance, int ephSeqVersion);
 
   /**
-   * In Active/Passive setup, returns current active leader.
+   * Called when an existing {@link ServiceInstance} is updated.
    *
-   * @return leader instance
+   * @param serviceInstance - updated service instance
    */
-  HiveServer2Instance getLeader();
+  void onUpdate(InstanceType serviceInstance, int ephSeqVersion);
+
+  /**
+   * Called when an existing {@link ServiceInstance} is removed.
+   *
+   * @param serviceInstance - removed service instance
+   */
+  void onRemove(InstanceType serviceInstance, int ephSeqVersion);
 }
