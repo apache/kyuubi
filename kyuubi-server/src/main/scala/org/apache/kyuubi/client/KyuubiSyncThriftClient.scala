@@ -63,6 +63,9 @@ class KyuubiSyncThriftClient private (
   @VisibleForTesting
   @volatile private[kyuubi] var asyncRequestInterrupted: Boolean = false
 
+  @VisibleForTesting
+  private[kyuubi] def getEngineAliveProbeProtocol: Option[TProtocol] = engineAliveProbeProtocol
+
   private def newAsyncRequestExecutor(): ScheduledExecutorService = {
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(
       "async-request-executor-" + _remoteSessionHandle)

@@ -22,6 +22,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 
 class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests {
 
@@ -170,12 +171,17 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
           preReq.setRunAsync(false)
           client.ExecuteStatement(preReq)
 
-          val systemExitReq = new TExecuteStatementReq()
-          systemExitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 2000l)," +
-            " java_method('java.lang.System', 'exit', 1)")
-          systemExitReq.setSessionHandle(handle)
-          systemExitReq.setRunAsync(true)
-          client.ExecuteStatement(systemExitReq)
+          val sessionHandle = SessionHandle(handle)
+          val session = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+            .getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
+          session.client.getEngineAliveProbeProtocol.foreach(_.getTransport.close())
+
+          val exitReq = new TExecuteStatementReq()
+          exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
+            "java_method('java.lang.System', 'exit', 1)")
+          exitReq.setSessionHandle(handle)
+          exitReq.setRunAsync(true)
+          client.ExecuteStatement(exitReq)
 
           val executeStmtReq = new TExecuteStatementReq()
           executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
@@ -190,6 +196,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
               "Caused by: java.net.SocketException: Broken pipe (Write failed)"))
           val elapsedTime = System.currentTimeMillis() - startTime
           assert(elapsedTime < 20 * 1000)
+          assert(session.client.asyncRequestInterrupted)
         }
       }
     }
