@@ -213,6 +213,7 @@ org.apache.commons:commons-lang3
 org.apache.curator:curator-client
 org.apache.curator:curator-framework
 org.apache.curator:curator-recipes
+com.github.mifmif:generex
 com.google.guava:guava
 org.apache.hadoop:hadoop-client-api
 org.apache.hadoop:hadoop-client-runtime
@@ -261,6 +262,7 @@ io.dropwizard.metrics:metrics-core
 io.dropwizard.metrics:metrics-jmx
 io.dropwizard.metrics:metrics-json
 io.dropwizard.metrics:metrics-jvm
+io.fabric8:kubernetes-client
 io.netty:netty-all
 io.netty:netty-buffer
 io.netty:netty-codec
@@ -300,6 +302,7 @@ BSD
 ------------
 jline:jline
 com.thoughtworks.paranamer:paranamer
+dk.brics.automaton:automaton
 
 Eclipse Distribution License - v 1.0
 ------------------------------------

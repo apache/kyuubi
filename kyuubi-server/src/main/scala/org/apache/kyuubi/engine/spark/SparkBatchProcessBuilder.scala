@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 import org.apache.kyuubi.operation.log.OperationLog
 
 class SparkBatchProcessBuilder(
@@ -43,9 +44,14 @@ class SparkBatchProcessBuilder(
       buffer += cla
     }
 
+    // tag for YARN
     val batchJobTag = batchConf.get(TAG_KEY).map(_ + ",").getOrElse("") + batchId
+    var allConf = batchConf ++ Map(TAG_KEY -> batchJobTag) ++ sparkAppNameConf()
 
-    val allConf = batchConf ++ Map(TAG_KEY -> batchJobTag) ++ sparkAppNameConf()
+    // tag for K8S
+    conf.getOption("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY).foreach(option => {
+      allConf = allConf ++ Map("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY -> option)
+    })
 
     allConf.foreach { case (k, v) =>
       buffer += CONF

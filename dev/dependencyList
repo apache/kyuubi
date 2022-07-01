@@ -17,6 +17,7 @@
 
 HikariCP/4.0.3//HikariCP-4.0.3.jar
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
+automaton/1.11-8//automaton-1.11-8.jar
 classgraph/4.8.95//classgraph-4.8.95.jar
 commons-codec/1.15//commons-codec-1.15.jar
 commons-collections/3.2.2//commons-collections-3.2.2.jar
@@ -28,6 +29,7 @@ curator-framework/2.12.0//curator-framework-2.12.0.jar
 curator-recipes/2.12.0//curator-recipes-2.12.0.jar
 derby/10.14.2.0//derby-10.14.2.0.jar
 fliptables/1.0.2//fliptables-1.0.2.jar
+generex/1.0.2//generex-1.0.2.jar
 guava/30.1-jre//guava-30.1-jre.jar
 hadoop-client-api/3.3.1//hadoop-client-api-3.3.1.jar
 hadoop-client-runtime/3.3.1//hadoop-client-runtime-3.3.1.jar
@@ -78,12 +80,34 @@ jetty-servlet/9.4.41.v20210516//jetty-servlet-9.4.41.v20210516.jar
 jetty-util-ajax/9.4.41.v20210516//jetty-util-ajax-9.4.41.v20210516.jar
 jetty-util/9.4.41.v20210516//jetty-util-9.4.41.v20210516.jar
 jline/0.9.94//jline-0.9.94.jar
+kubernetes-client/5.12.1//kubernetes-client-5.12.1.jar
+kubernetes-model-admissionregistration/5.12.1//kubernetes-model-admissionregistration-5.12.1.jar
+kubernetes-model-apiextensions/5.12.1//kubernetes-model-apiextensions-5.12.1.jar
+kubernetes-model-apps/5.12.1//kubernetes-model-apps-5.12.1.jar
+kubernetes-model-autoscaling/5.12.1//kubernetes-model-autoscaling-5.12.1.jar
+kubernetes-model-batch/5.12.1//kubernetes-model-batch-5.12.1.jar
+kubernetes-model-certificates/5.12.1//kubernetes-model-certificates-5.12.1.jar
+kubernetes-model-common/5.12.1//kubernetes-model-common-5.12.1.jar
+kubernetes-model-coordination/5.12.1//kubernetes-model-coordination-5.12.1.jar
+kubernetes-model-core/5.12.1//kubernetes-model-core-5.12.1.jar
+kubernetes-model-discovery/5.12.1//kubernetes-model-discovery-5.12.1.jar
+kubernetes-model-events/5.12.1//kubernetes-model-events-5.12.1.jar
+kubernetes-model-extensions/5.12.1//kubernetes-model-extensions-5.12.1.jar
+kubernetes-model-flowcontrol/5.12.1//kubernetes-model-flowcontrol-5.12.1.jar
+kubernetes-model-metrics/5.12.1//kubernetes-model-metrics-5.12.1.jar
+kubernetes-model-networking/5.12.1//kubernetes-model-networking-5.12.1.jar
+kubernetes-model-node/5.12.1//kubernetes-model-node-5.12.1.jar
+kubernetes-model-policy/5.12.1//kubernetes-model-policy-5.12.1.jar
+kubernetes-model-rbac/5.12.1//kubernetes-model-rbac-5.12.1.jar
+kubernetes-model-scheduling/5.12.1//kubernetes-model-scheduling-5.12.1.jar
+kubernetes-model-storageclass/5.12.1//kubernetes-model-storageclass-5.12.1.jar
 libfb303/0.9.3//libfb303-0.9.3.jar
 libthrift/0.9.3//libthrift-0.9.3.jar
 log4j-1.2-api/2.17.2//log4j-1.2-api-2.17.2.jar
 log4j-api/2.17.2//log4j-api-2.17.2.jar
 log4j-core/2.17.2//log4j-core-2.17.2.jar
 log4j-slf4j-impl/2.17.2//log4j-slf4j-impl-2.17.2.jar
+logging-interceptor/3.12.12//logging-interceptor-3.12.12.jar
 metrics-core/4.2.8//metrics-core-4.2.8.jar
 metrics-jmx/4.2.8//metrics-jmx-4.2.8.jar
 metrics-json/4.2.8//metrics-json-4.2.8.jar
@@ -103,6 +127,8 @@ netty-transport-native-kqueue/4.1.73.Final/osx-aarch_64/netty-transport-native-k
 netty-transport-native-kqueue/4.1.73.Final/osx-x86_64/netty-transport-native-kqueue-4.1.73.Final-osx-x86_64.jar
 netty-transport-native-unix-common/4.1.73.Final//netty-transport-native-unix-common-4.1.73.Final.jar
 netty-transport/4.1.73.Final//netty-transport-4.1.73.Final.jar
+okhttp/3.12.12//okhttp-3.12.12.jar
+okio/1.15.0//okio-1.15.0.jar
 osgi-resource-locator/1.0.3//osgi-resource-locator-1.0.3.jar
 paranamer/2.8//paranamer-2.8.jar
 scala-library/2.12.15//scala-library-2.12.15.jar
@@ -122,4 +148,5 @@ swagger-core/2.1.11//swagger-core-2.1.11.jar
 swagger-integration/2.1.11//swagger-integration-2.1.11.jar
 swagger-jaxrs2/2.1.11//swagger-jaxrs2-2.1.11.jar
 swagger-models/2.1.11//swagger-models-2.1.11.jar
+zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar
 zookeeper/3.4.14//zookeeper-3.4.14.jar

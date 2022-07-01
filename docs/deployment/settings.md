@@ -339,6 +339,13 @@ kyuubi.kinit.max.attempts|10|How many times will `kinit` process retry|int|1.0.0
 kyuubi.kinit.principal|&lt;undefined&gt;|Name of the Kerberos principal.|string|1.0.0
 
 
+### Kubernetes
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.kubernetes.context|&lt;undefined&gt;|The desired context from your kubernetes config file used to configure the K8S client for interacting with the cluster.|string|1.6.0
+
+
 ### Metadata
 
 Key | Default | Meaning | Type | Since
