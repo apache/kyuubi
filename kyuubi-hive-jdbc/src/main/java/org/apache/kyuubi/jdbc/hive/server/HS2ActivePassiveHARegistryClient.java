@@ -51,7 +51,7 @@ public class HS2ActivePassiveHARegistryClient {
     String nsKey = ZkRegistryBase.getRootNamespace(null, namespace + "-");
     HS2ActivePassiveHARegistry registry = hs2Registries.get(nsKey);
     if (registry == null) {
-      registry = HS2ActivePassiveHARegistry.create(conf, true);
+      registry = HS2ActivePassiveHARegistry.create(conf);
       registry.start();
       hs2Registries.put(nsKey, registry);
       LOG.info("Added registry client to cache with namespace: {}", nsKey);

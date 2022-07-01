@@ -54,7 +54,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.kyuubi.jdbc.hive.server.RegistryUtils.ServiceRecordMarshal;
 import org.apache.zookeeper.KeeperException.InvalidACLException;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Id;
@@ -73,9 +72,7 @@ public abstract class ZkRegistryBase<InstanceType extends ServiceInstance> {
   private static final Logger LOG = LoggerFactory.getLogger(ZkRegistryBase.class);
   private static final String SASL_NAMESPACE = "sasl";
   private static final String UNSECURE_NAMESPACE = "unsecure";
-  protected static final String USER_SCOPE_PATH_PREFIX = "user-";
   protected static final String WORKER_PREFIX = "worker-";
-  protected static final String WORKER_GROUP = "workers";
   public static final String UNIQUE_IDENTIFIER = "registry.unique.id";
   protected static final UUID UNIQUE_ID = UUID.randomUUID();
   private static final Joiner PATH_JOINER = Joiner.on("/").skipNulls();
@@ -292,10 +289,6 @@ public abstract class ZkRegistryBase<InstanceType extends ServiceInstance> {
 
   protected abstract String getZkPathUser(Configuration conf);
 
-  protected final String registerServiceRecord(ServiceRecord srv) throws IOException {
-    return registerServiceRecord(srv, UNIQUE_ID.toString());
-  }
-
   protected final String registerServiceRecord(ServiceRecord srv, final String uniqueId)
       throws IOException {
     // restart sensitive instance id
@@ -364,27 +357,6 @@ public abstract class ZkRegistryBase<InstanceType extends ServiceInstance> {
       if (closeOnFailure) {
         CloseableUtils.closeQuietly(znode);
       }
-      throw (e instanceof IOException) ? (IOException) e : new IOException(e);
-    }
-  }
-
-  final void initializeWithoutRegisteringInternal() throws IOException {
-    // Create a znode under the rootNamespace parent for this instance of the server
-    try {
-      try {
-        zooKeeperClient.create().creatingParentsIfNeeded().forPath(workersPath);
-      } catch (NodeExistsException ex) {
-        // Ignore - this is expected.
-      }
-      if (doCheckAcls) {
-        try {
-          checkAndSetAcls();
-        } catch (Exception ex) {
-          throw new IOException("Error validating or setting ACLs. " + disableMessage, ex);
-        }
-      }
-    } catch (Exception e) {
-      LOG.error("Unable to create a parent znode for the registry", e);
       throw (e instanceof IOException) ? (IOException) e : new IOException(e);
     }
   }
@@ -701,14 +673,6 @@ public abstract class ZkRegistryBase<InstanceType extends ServiceInstance> {
     CloseableUtils.closeQuietly(znode);
     CloseableUtils.closeQuietly(instancesCache);
     CloseableUtils.closeQuietly(zooKeeperClient);
-  }
-
-  protected final InstanceType getInstanceByPath(String path) {
-    return pathToInstanceCache.get(path);
-  }
-
-  protected final String getRegistrationZnodePath() {
-    return znodePath;
   }
 
   private int extractSeqNum(String nodeName) {

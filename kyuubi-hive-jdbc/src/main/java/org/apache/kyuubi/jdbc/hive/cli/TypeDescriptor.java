@@ -30,10 +30,6 @@ public class TypeDescriptor {
   private final TTypeId type;
   private TypeQualifiers typeQualifiers = null;
 
-  public TypeDescriptor(TTypeId type) {
-    this.type = type;
-  }
-
   public TypeDescriptor(TTypeDesc tTypeDesc) {
     List<TTypeEntry> tTypeEntries = tTypeDesc.getTypes();
     TPrimitiveTypeEntry top = tTypeEntries.get(0).getPrimitiveEntry();

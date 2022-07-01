@@ -19,14 +19,8 @@ package org.apache.kyuubi.jdbc.hive.server;
 
 import static org.apache.kyuubi.jdbc.hive.server.AddressTypes.*;
 
-import com.google.common.base.Preconditions;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,58 +28,6 @@ import java.util.Map;
  * addresses.
  */
 public class RegistryTypeUtils {
-
-  /**
-   * Create a URL endpoint from a list of URIs
-   *
-   * @param api implemented API
-   * @param protocolType protocol type
-   * @param uris URIs
-   * @return a new endpoint
-   */
-  public static Endpoint urlEndpoint(String api, String protocolType, URI... uris) {
-    return new Endpoint(api, protocolType, uris);
-  }
-
-  /**
-   * Create a REST endpoint from a list of URIs
-   *
-   * @param api implemented API
-   * @param uris URIs
-   * @return a new endpoint
-   */
-  public static Endpoint restEndpoint(String api, URI... uris) {
-    return urlEndpoint(api, ProtocolTypes.PROTOCOL_REST, uris);
-  }
-
-  /**
-   * Create a Web UI endpoint from a list of URIs
-   *
-   * @param api implemented API
-   * @param uris URIs
-   * @return a new endpoint
-   */
-  public static Endpoint webEndpoint(String api, URI... uris) {
-    return urlEndpoint(api, ProtocolTypes.PROTOCOL_WEBUI, uris);
-  }
-
-  /**
-   * Create an internet address endpoint from a list of URIs
-   *
-   * @param api implemented API
-   * @param protocolType protocol type
-   * @param hostname hostname/FQDN
-   * @param port port
-   * @return a new endpoint
-   */
-  public static Endpoint inetAddrEndpoint(
-      String api, String protocolType, String hostname, int port) {
-    Preconditions.checkArgument(api != null, "null API");
-    Preconditions.checkArgument(protocolType != null, "null protocolType");
-    Preconditions.checkArgument(hostname != null, "null hostname");
-    return new Endpoint(
-        api, ADDRESS_HOSTNAME_AND_PORT, protocolType, hostnamePortPair(hostname, port));
-  }
 
   /**
    * Create an IPC endpoint
@@ -98,7 +40,7 @@ public class RegistryTypeUtils {
     return new Endpoint(
         api,
         ADDRESS_HOSTNAME_AND_PORT,
-        ProtocolTypes.PROTOCOL_HADOOP_IPC,
+        "hadoop/IPC",
         address == null ? null : hostnamePortPair(address));
   }
 
@@ -149,46 +91,6 @@ public class RegistryTypeUtils {
   }
 
   /**
-   * Require a specific address type on an endpoint
-   *
-   * @param required required type
-   * @param epr endpoint
-   * @throws InvalidRecordException if the type is wrong
-   */
-  public static void requireAddressType(String required, Endpoint epr)
-      throws InvalidRecordException {
-    if (!required.equals(epr.addressType)) {
-      throw new InvalidRecordException(
-          epr.toString(),
-          "Address type of " + epr.addressType + " does not match required type of " + required);
-    }
-  }
-
-  /**
-   * Get a single URI endpoint
-   *
-   * @param epr endpoint
-   * @return the uri of the first entry in the address list. Null if the endpoint itself is null
-   * @throws InvalidRecordException if the type is wrong, there are no addresses or the payload
-   *     ill-formatted
-   */
-  public static List<String> retrieveAddressesUriType(Endpoint epr) throws InvalidRecordException {
-    if (epr == null) {
-      return null;
-    }
-    requireAddressType(ADDRESS_URI, epr);
-    List<Map<String, String>> addresses = epr.addresses;
-    if (addresses.size() < 1) {
-      throw new InvalidRecordException(epr.toString(), "No addresses in endpoint");
-    }
-    List<String> results = new ArrayList<String>(addresses.size());
-    for (Map<String, String> address : addresses) {
-      results.add(getAddressField(address, ADDRESS_URI));
-    }
-    return results;
-  }
-
-  /**
    * Get a specific field from an address -raising an exception if the field is not present
    *
    * @param address address to query
@@ -203,28 +105,6 @@ public class RegistryTypeUtils {
       throw new InvalidRecordException("", "Missing address field: " + field);
     }
     return val;
-  }
-
-  /**
-   * Get the address URLs. Guranteed to return at least one address.
-   *
-   * @param epr endpoint
-   * @return the address as a URL
-   * @throws InvalidRecordException if the type is wrong, there are no addresses or the payload
-   *     ill-formatted
-   * @throws MalformedURLException address can't be turned into a URL
-   */
-  public static List<URL> retrieveAddressURLs(Endpoint epr)
-      throws InvalidRecordException, MalformedURLException {
-    if (epr == null) {
-      throw new InvalidRecordException("", "Null endpoint");
-    }
-    List<String> addresses = retrieveAddressesUriType(epr);
-    List<URL> results = new ArrayList<URL>(addresses.size());
-    for (String address : addresses) {
-      results.add(new URL(address));
-    }
-    return results;
   }
 
   /**

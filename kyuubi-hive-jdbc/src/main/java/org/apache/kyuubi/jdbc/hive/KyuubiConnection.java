@@ -61,7 +61,6 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLConnection;
-import org.apache.kyuubi.jdbc.hive.auth.HiveAuthConstants;
 import org.apache.kyuubi.jdbc.hive.auth.KerberosSaslHelper;
 import org.apache.kyuubi.jdbc.hive.auth.PlainSaslHelper;
 import org.apache.kyuubi.jdbc.hive.auth.SaslQOP;
@@ -82,6 +81,8 @@ import org.slf4j.LoggerFactory;
 public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
+  public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
+  public static final String HS2_CLIENT_TOKEN = "hiveserver2ClientToken";
   public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
 
   private String jdbcUriString;
@@ -763,7 +764,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         jdbcConnConf.get(JdbcConnectionParams.AUTH_TYPE))) {
       // check delegation token in job conf if any
       try {
-        tokenStr = SessionUtils.getTokenStrForm(HiveAuthConstants.HS2_CLIENT_TOKEN);
+        tokenStr = SessionUtils.getTokenStrForm(HS2_CLIENT_TOKEN);
       } catch (IOException e) {
         throw new SQLException("Error reading token ", e);
       }
@@ -798,9 +799,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
     // set the session configuration
     Map<String, String> sessVars = connParams.getSessionVars();
-    if (sessVars.containsKey(HiveAuthConstants.HS2_PROXY_USER)) {
-      openConf.put(
-          HiveAuthConstants.HS2_PROXY_USER, sessVars.get(HiveAuthConstants.HS2_PROXY_USER));
+    if (sessVars.containsKey(HS2_PROXY_USER)) {
+      openConf.put(HS2_PROXY_USER, sessVars.get(HS2_PROXY_USER));
     }
     openReq.setConfiguration(openConf);
 

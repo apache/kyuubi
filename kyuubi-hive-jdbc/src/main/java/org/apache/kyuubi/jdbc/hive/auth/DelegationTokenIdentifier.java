@@ -27,17 +27,6 @@ public class DelegationTokenIdentifier extends AbstractDelegationTokenIdentifier
   /** Create an empty delegation token identifier for reading into. */
   public DelegationTokenIdentifier() {}
 
-  /**
-   * Create a new delegation token identifier
-   *
-   * @param owner the effective username of the token owner
-   * @param renewer the username of the renewer
-   * @param realUser the real username of the token owner
-   */
-  public DelegationTokenIdentifier(Text owner, Text renewer, Text realUser) {
-    super(owner, renewer, realUser);
-  }
-
   @Override
   public Text getKind() {
     return HIVE_DELEGATION_KIND;

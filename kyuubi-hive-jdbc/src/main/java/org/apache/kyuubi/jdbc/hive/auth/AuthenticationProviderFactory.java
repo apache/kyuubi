@@ -19,9 +19,6 @@ package org.apache.kyuubi.jdbc.hive.auth;
 
 import javax.security.sasl.AuthenticationException;
 
-/**
- * This class helps select a {@link PasswdAuthenticationProvider} for a given {@code AuthMethod}.
- */
 public final class AuthenticationProviderFactory {
 
   public enum AuthMethods {

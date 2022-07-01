@@ -24,17 +24,6 @@ import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 public class HiveServer2 {
   public static final String INSTANCE_URI_CONFIG = "hive.server2.instance.uri";
 
-  public static boolean isHTTPTransportMode(Configuration hiveConf) {
-    String transportMode = System.getenv("HIVE_SERVER2_TRANSPORT_MODE");
-    if (transportMode == null) {
-      transportMode = hiveConf.get(ConfVars.HIVE_SERVER2_TRANSPORT_MODE.varname);
-    }
-    if (transportMode != null && (transportMode.equalsIgnoreCase("http"))) {
-      return true;
-    }
-    return false;
-  }
-
   public static boolean isKerberosAuthMode(Configuration hiveConf) {
     String authMode = hiveConf.get(ConfVars.HIVE_SERVER2_AUTHENTICATION.varname);
     if (authMode != null && (authMode.equalsIgnoreCase("KERBEROS"))) {

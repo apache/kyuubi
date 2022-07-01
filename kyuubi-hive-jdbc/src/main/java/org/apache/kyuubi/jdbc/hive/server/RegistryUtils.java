@@ -56,7 +56,7 @@ public class RegistryUtils {
    *     variables.
    */
   private static String currentUsernameUnencoded() {
-    String env_hadoop_username = System.getenv(RegistryInternalConstants.HADOOP_USER_NAME);
+    String env_hadoop_username = System.getenv("HADOOP_USER_NAME");
     return getCurrentUsernameUnencoded(env_hadoop_username);
   }
 

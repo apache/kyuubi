@@ -31,19 +31,10 @@ public interface AddressTypes {
    *   ["namenode.example.org", "9870"]
    * </pre>
    */
-  public static final String ADDRESS_HOSTNAME_AND_PORT = "host/port";
+  String ADDRESS_HOSTNAME_AND_PORT = "host/port";
 
-  public static final String ADDRESS_HOSTNAME_FIELD = "host";
-  public static final String ADDRESS_PORT_FIELD = "port";
-
-  /**
-   * Path <code>/a/b/c</code> style: {@value}. The entire path is encoded in a single entry
-   *
-   * <pre>
-   *   ["/users/example/dataset"]
-   * </pre>
-   */
-  public static final String ADDRESS_PATH = "path";
+  String ADDRESS_HOSTNAME_FIELD = "host";
+  String ADDRESS_PORT_FIELD = "port";
 
   /**
    * URI entries: {@value}.
@@ -52,34 +43,5 @@ public interface AddressTypes {
    *   ["http://example.org"]
    * </pre>
    */
-  public static final String ADDRESS_URI = "uri";
-
-  /**
-   * Zookeeper addresses as a triple : {@value}.
-   *
-   * <p>These are provide as a 3 element tuple of: hostname, port and optionally path (depending on
-   * the application)
-   *
-   * <p>A single element would be
-   *
-   * <pre>
-   *   ["zk1","2181","/registry"]
-   * </pre>
-   *
-   * <p>An endpoint with multiple elements would list them as
-   *
-   * <pre>
-   *   [
-   *    ["zk1","2181","/registry"]
-   *    ["zk2","1600","/registry"]
-   *   ]
-   * </pre>
-   *
-   * <p>the third element in each entry , the path, MUST be the same in each entry. A client reading
-   * the addresses of an endpoint is free to pick any of the set, so they must be the same.
-   */
-  public static final String ADDRESS_ZOOKEEPER = "zktriple";
-
-  /** Any other address: {@value}. */
-  public static final String ADDRESS_OTHER = "";
+  String ADDRESS_URI = "uri";
 }

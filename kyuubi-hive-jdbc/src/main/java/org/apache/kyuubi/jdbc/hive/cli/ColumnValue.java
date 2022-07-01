@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.jdbc.hive.cli;
 
-import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 import org.apache.hadoop.hive.common.type.*;
@@ -173,8 +172,6 @@ public class ColumnValue {
         return floatValue((Float) value);
       case DOUBLE_TYPE:
         return doubleValue((Double) value);
-      case STRING_TYPE:
-        return stringValue((String) value);
       case CHAR_TYPE:
         return stringValue((HiveChar) value);
       case VARCHAR_TYPE:
@@ -192,14 +189,13 @@ public class ColumnValue {
       case DECIMAL_TYPE:
         return stringValue((HiveDecimal) value, typeDescriptor);
       case BINARY_TYPE:
-        return stringValue((String) value);
       case ARRAY_TYPE:
       case MAP_TYPE:
       case STRUCT_TYPE:
       case UNION_TYPE:
       case USER_DEFINED_TYPE:
-        return stringValue((String) value);
       case NULL_TYPE:
+      case STRING_TYPE:
         return stringValue((String) value);
       default:
         return null;
@@ -251,27 +247,6 @@ public class ColumnValue {
   private static String getStringValue(TStringValue tStringValue) {
     if (tStringValue.isSetValue()) {
       return tStringValue.getValue();
-    }
-    return null;
-  }
-
-  private static Timestamp getTimestampValue(TStringValue tStringValue) {
-    if (tStringValue.isSetValue()) {
-      return Timestamp.valueOf(tStringValue.getValue());
-    }
-    return null;
-  }
-
-  private static byte[] getBinaryValue(TStringValue tString) {
-    if (tString.isSetValue()) {
-      return tString.getValue().getBytes();
-    }
-    return null;
-  }
-
-  private static BigDecimal getBigDecimalValue(TStringValue tStringValue) {
-    if (tStringValue.isSetValue()) {
-      return new BigDecimal(tStringValue.getValue());
     }
     return null;
   }

@@ -176,11 +176,4 @@ public class ColumnBasedSet implements RowSet {
       }
     };
   }
-
-  public Object[] fill(int index, Object[] convey) {
-    for (int i = 0; i < columns.size(); i++) {
-      convey[i] = columns.get(i).get(index);
-    }
-    return convey;
-  }
 }

@@ -53,34 +53,6 @@ public class SessionUtils {
   }
 
   /**
-   * Create a delegation token object for the given token string and service. Add the token to given
-   * UGI
-   *
-   * @param ugi
-   * @param tokenStr
-   * @param tokenService
-   * @throws IOException
-   */
-  public static void setTokenStr(UserGroupInformation ugi, String tokenStr, String tokenService)
-      throws IOException {
-    Token<DelegationTokenIdentifier> delegationToken = createToken(tokenStr, tokenService);
-    ugi.addToken(delegationToken);
-  }
-
-  /**
-   * Add a given service to delegation token string.
-   *
-   * @param tokenStr
-   * @param tokenService
-   * @return
-   * @throws IOException
-   */
-  public static String addServiceToToken(String tokenStr, String tokenService) throws IOException {
-    Token<DelegationTokenIdentifier> delegationToken = createToken(tokenStr, tokenService);
-    return delegationToken.encodeToUrlString();
-  }
-
-  /**
    * Create a new token using the given string and service
    *
    * @param tokenStr

@@ -18,8 +18,9 @@
 package org.apache.kyuubi.jdbc.hive.auth;
 
 import java.security.PrivilegedExceptionAction;
-import java.security.SecureRandom;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import javax.security.auth.Subject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -29,17 +30,11 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Utility functions for HTTP mode authentication. */
 public final class HttpAuthUtils {
-  public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
   public static final String AUTHORIZATION = "Authorization";
-  public static final String BASIC = "Basic";
   public static final String NEGOTIATE = "Negotiate";
-  private static final Logger LOG = LoggerFactory.getLogger(HttpAuthUtils.class);
-  private static final String COOKIE_ATTR_SEPARATOR = "&";
   private static final String COOKIE_CLIENT_USER_NAME = "cu";
   private static final String COOKIE_CLIENT_RAND_NUMBER = "rn";
   private static final String COOKIE_KEY_VALUE_SEPARATOR = "=";
@@ -65,65 +60,6 @@ public final class HttpAuthUtils {
     }
   }
 
-  /**
-   * Creates and returns a HS2 cookie token.
-   *
-   * @param clientUserName Client User name.
-   * @return An unsigned cookie token generated from input parameters. The final cookie generated is
-   *     of the following format : cu=<username>&rn=<randomNumber>&s=<cookieSignature>
-   */
-  public static String createCookieToken(String clientUserName) {
-    StringBuilder sb = new StringBuilder();
-    sb.append(COOKIE_CLIENT_USER_NAME)
-        .append(COOKIE_KEY_VALUE_SEPARATOR)
-        .append(clientUserName)
-        .append(COOKIE_ATTR_SEPARATOR);
-    sb.append(COOKIE_CLIENT_RAND_NUMBER)
-        .append(COOKIE_KEY_VALUE_SEPARATOR)
-        .append((new SecureRandom()).nextLong());
-    return sb.toString();
-  }
-
-  /**
-   * Parses a cookie token to retrieve client user name.
-   *
-   * @param tokenStr Token String.
-   * @return A valid user name if input is of valid format, else returns null.
-   */
-  public static String getUserNameFromCookieToken(String tokenStr) {
-    Map<String, String> map = splitCookieToken(tokenStr);
-
-    if (!map.keySet().equals(COOKIE_ATTRIBUTES)) {
-      LOG.error("Invalid token with missing attributes " + tokenStr);
-      return null;
-    }
-    return map.get(COOKIE_CLIENT_USER_NAME);
-  }
-
-  /**
-   * Splits the cookie token into attributes pairs.
-   *
-   * @param str input token.
-   * @return a map with the attribute pairs of the token if the input is valid. Else, returns null.
-   */
-  private static Map<String, String> splitCookieToken(String tokenStr) {
-    Map<String, String> map = new HashMap<String, String>();
-    StringTokenizer st = new StringTokenizer(tokenStr, COOKIE_ATTR_SEPARATOR);
-
-    while (st.hasMoreTokens()) {
-      String part = st.nextToken();
-      int separator = part.indexOf(COOKIE_KEY_VALUE_SEPARATOR);
-      if (separator == -1) {
-        LOG.error("Invalid token string " + tokenStr);
-        return null;
-      }
-      String key = part.substring(0, separator);
-      String value = part.substring(separator + 1);
-      map.put(key, value);
-    }
-    return map;
-  }
-
   private HttpAuthUtils() {
     throw new UnsupportedOperationException("Can't initialize class");
   }
@@ -133,7 +69,6 @@ public final class HttpAuthUtils {
    * can be read from the Subject
    */
   public static class HttpKerberosClientAction implements PrivilegedExceptionAction<String> {
-    public static final String HTTP_RESPONSE = "HTTP_RESPONSE";
     public static final String SERVER_HTTP_URL = "SERVER_HTTP_URL";
     private final String serverPrincipal;
     private final String serverHttpUrl;
