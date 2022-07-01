@@ -92,15 +92,15 @@ class TPCDSPartitionReader(
 
   private lazy val dateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
+  private val reusedRow = new Array[Any](schema.length)
   private val iterator = Results
     .constructResults(chuckInfo.getOnlyTableToGenerate, chuckInfo)
     .iterator.asScala
     .map { _.get(0).asScala } // the 1st row is specific table row
     .map { stringRow =>
       var i = 0
-      val row = new Array[Any](stringRow.length)
       while (i < stringRow.length) {
-        row(i) = (stringRow(i), schema(i).dataType) match {
+        reusedRow(i) = (stringRow(i), schema(i).dataType) match {
           case (null, _) => null
           case (Options.DEFAULT_NULL_STRING, _) => null
           case (v, IntegerType) => v.toInt
@@ -114,7 +114,7 @@ class TPCDSPartitionReader(
         }
         i += 1
       }
-      InternalRow(row)
+      InternalRow(reusedRow)
     }
 
   private var currentRow: InternalRow = _

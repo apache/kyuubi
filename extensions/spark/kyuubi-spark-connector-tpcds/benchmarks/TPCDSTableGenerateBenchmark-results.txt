@@ -2,14 +2,14 @@ OpenJDK 64-Bit Server VM 1.8.0_332-b09 on Mac OS X 12.4
 Apple M1 Pro
 TPCDS table generates 1000000 rows benchmark:  Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
 ----------------------------------------------------------------------------------------------------------------------------
-catalog_returns benchmark                             13496          13836         398          0.1       13496.3       1.0X
-catalog_sales benchmark                               10084          10119          56          0.1       10084.0       1.3X
-customer benchmark                                     8900           8917          18          0.1        8900.0       1.5X
-customer_address benchmark                             5287           5295          10          0.2        5287.2       2.6X
-customer_demographics benchmark                         880            888           6          1.1         880.3      15.3X
-inventory benchmark                                     523            550          34          1.9         522.6      25.8X
-store_returns benchmark                               10853          10876          40          0.1       10852.9       1.2X
-store_sales benchmark                                  7764           7818          50          0.1        7764.0       1.7X
-web_returns benchmark                                 12840          12863          23          0.1       12839.7       1.1X
-web_sales benchmark                                   10810          10955         193          0.1       10809.6       1.2X
+catalog_returns benchmark                             13391          13544         251          0.1       13390.8       1.0X
+catalog_sales benchmark                               11690          11708          25          0.1       11690.1       1.1X
+customer benchmark                                     8527           8535           9          0.1        8526.9       1.6X
+customer_address benchmark                             5463           5474          11          0.2        5462.8       2.5X
+customer_demographics benchmark                         857            862           7          1.2         856.7      15.6X
+inventory benchmark                                     472            479           7          2.1         471.6      28.4X
+store_returns benchmark                               11655          11676          21          0.1       11655.4       1.1X
+store_sales benchmark                                  8898           9003         103          0.1        8898.5       1.5X
+web_returns benchmark                                 13377          13394          15          0.1       13377.3       1.0X
+web_sales benchmark                                   11948          11992          55          0.1       11947.7       1.1X
 
