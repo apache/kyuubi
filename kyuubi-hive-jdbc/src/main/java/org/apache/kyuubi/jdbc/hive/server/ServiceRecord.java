@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.jdbc.hive.server;
 
-import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,77 +56,6 @@ public class ServiceRecord implements Cloneable {
   public ServiceRecord() {}
 
   /**
-   * Deep cloning constructor
-   *
-   * @param that service record source
-   */
-  public ServiceRecord(ServiceRecord that) {
-    this.description = that.description;
-    // others
-    Map<String, String> thatAttrs = that.attributes;
-    for (Map.Entry<String, String> entry : thatAttrs.entrySet()) {
-      attributes.put(entry.getKey(), entry.getValue());
-    }
-    // endpoints
-    List<Endpoint> src = that.internal;
-    if (src != null) {
-      internal = new ArrayList<Endpoint>(src.size());
-      for (Endpoint endpoint : src) {
-        internal.add(new Endpoint(endpoint));
-      }
-    }
-    src = that.external;
-    if (src != null) {
-      external = new ArrayList<Endpoint>(src.size());
-      for (Endpoint endpoint : src) {
-        external.add(new Endpoint(endpoint));
-      }
-    }
-  }
-
-  /**
-   * Add an external endpoint
-   *
-   * @param endpoint endpoint to set
-   */
-  public void addExternalEndpoint(Endpoint endpoint) {
-    Preconditions.checkArgument(endpoint != null);
-    endpoint.validate();
-    external.add(endpoint);
-  }
-
-  /**
-   * Add an internal endpoint
-   *
-   * @param endpoint endpoint to set
-   */
-  public void addInternalEndpoint(Endpoint endpoint) {
-    Preconditions.checkArgument(endpoint != null);
-    endpoint.validate();
-    internal.add(endpoint);
-  }
-
-  /**
-   * Look up an internal endpoint
-   *
-   * @param api API
-   * @return the endpoint or null if there was no match
-   */
-  public Endpoint getInternalEndpoint(String api) {
-    return findByAPI(internal, api);
-  }
-
-  /**
-   * Look up an external endpoint
-   *
-   * @param api API
-   * @return the endpoint or null if there was no match
-   */
-  public Endpoint getExternalEndpoint(String api) {
-    return findByAPI(external, api);
-  }
-
-  /**
    * Handle unknown attributes by storing them in the {@link #attributes} map
    *
    * @param key attribute name
@@ -135,16 +63,6 @@ public class ServiceRecord implements Cloneable {
    */
   public void set(String key, Object value) {
     attributes.put(key, value.toString());
-  }
-
-  /**
-   * The map of "other" attributes set when parsing. These are not included in the JSON value of
-   * this record when it is generated.
-   *
-   * @return a map of any unknown attributes in the deserialized JSON.
-   */
-  public Map<String, String> attributes() {
-    return attributes;
   }
 
   /**
@@ -167,22 +85,6 @@ public class ServiceRecord implements Cloneable {
   public String get(String key, String defVal) {
     String val = attributes.get(key);
     return val != null ? val : defVal;
-  }
-
-  /**
-   * Find an endpoint by its API
-   *
-   * @param list list
-   * @param api api name
-   * @return the endpoint or null if there was no match
-   */
-  private Endpoint findByAPI(List<Endpoint> list, String api) {
-    for (Endpoint endpoint : list) {
-      if (endpoint.api.equals(api)) {
-        return endpoint;
-      }
-    }
-    return null;
   }
 
   @Override

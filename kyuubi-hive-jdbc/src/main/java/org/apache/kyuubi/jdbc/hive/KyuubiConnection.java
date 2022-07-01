@@ -127,8 +127,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     // if zk is disabled or if HA service discovery is enabled we return the already populated
     // params.
     // in HA mode, params is already populated with Active server host info.
-    if (params.getZooKeeperEnsemble() == null
-        || ZooKeeperHiveClientHelper.isZkHADynamicDiscoveryMode(params.getSessionVars())) {
+    if (params.getZooKeeperEnsemble() == null) {
       return Collections.singletonList(params);
     }
     return ZooKeeperHiveClientHelper.getDirectParamsList(params);

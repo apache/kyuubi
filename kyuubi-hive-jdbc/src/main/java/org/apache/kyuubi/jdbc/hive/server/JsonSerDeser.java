@@ -71,21 +71,6 @@ public class JsonSerDeser<T> {
   }
 
   /**
-   * Deserialize from a byte array
-   *
-   * @param path path the data came from
-   * @param bytes byte array
-   * @throws IOException all problems
-   * @throws EOFException not enough data
-   * @throws InvalidRecordException if the parsing failed -the record is invalid
-   * @throws NoRecordException if the data is not considered a record: either it is too short or it
-   *     did not contain the marker string.
-   */
-  public T fromBytes(String path, byte[] bytes) throws IOException {
-    return fromBytes(path, bytes, "");
-  }
-
-  /**
    * Deserialize from a byte array, optionally checking for a marker string.
    *
    * <p>If the marker parameter is supplied (and not empty), then its presence will be verified
@@ -168,16 +153,5 @@ public class JsonSerDeser<T> {
       LOG.error("Exception while parsing json : {}\n{}", e, json, e);
       throw e;
     }
-  }
-
-  /**
-   * Convert JSON to bytes.
-   *
-   * @param instance instance to convert
-   * @return a byte array
-   * @throws IOException IO problems
-   */
-  public byte[] toBytes(T instance) throws IOException {
-    return mapper.writeValueAsBytes(instance);
   }
 }
