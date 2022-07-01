@@ -100,77 +100,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-metastore</artifactId>
-            <version>${hive.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-standalone-metastore</artifactId>
-            <version>${hive.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-llap-client</artifactId>
-            <version>${hive.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-serde</artifactId>
-            <version>${hive.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-service</artifactId>
-            <version>${hive.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
         </dependency>
 
         <dependency>
@@ -256,24 +187,6 @@
                             </includes>
                         </filter>
                         <filter>
-                            <artifact>org.apache.hive:hive-metastore</artifact>
-                            <excludes>
-                                <exclude>package.jdo</exclude>
-                            </excludes>
-                        </filter>
-                        <filter>
-                            <artifact>org.apache.hive:hive-standalone-metastore</artifact>
-                            <excludes>
-                                <exclude>package.jdo</exclude>
-                            </excludes>
-                        </filter>
-                        <filter>
-                            <artifact>org.apache.hive:hive-llap-client</artifact>
-                            <includes>
-                                <include>**</include>
-                            </includes>
-                        </filter>
-                        <filter>
                             <artifact>org.apache.hive.shims:hive-shims-common</artifact>
                             <includes>
                                 <include>**</include>
@@ -290,12 +203,6 @@
                             <includes>
                                 <include>**</include>
                             </includes>
-                        </filter>
-                        <filter>
-                            <artifact>org.apache.hive:hive-service</artifact>
-                            <excludes>
-                                <exclude>hive-webapps/**</exclude>
-                            </excludes>
                         </filter>
                         <filter>
                             <artifact>*:*</artifact>
@@ -328,10 +235,6 @@
                         <relocation>
                             <pattern>org.apache.commons.codec</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.codec</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.commons.lang</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.lang</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>org.apache.commons.lang3</pattern>

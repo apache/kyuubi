@@ -111,12 +111,10 @@ public class Utils {
     static final String SERVICE_DISCOVERY_MODE_NONE = "none";
     // Use ZooKeeper for indirection while using dynamic service discovery
     static final String SERVICE_DISCOVERY_MODE_ZOOKEEPER = "zooKeeper";
-    public static final String SERVICE_DISCOVERY_MODE_ZOOKEEPER_HA = "zooKeeperHA";
     static final String ZOOKEEPER_NAMESPACE = "zooKeeperNamespace";
     // Default namespace value on ZooKeeper.
     // This value is used if the param "zooKeeperNamespace" is not specified in the JDBC Uri.
     static final String ZOOKEEPER_DEFAULT_NAMESPACE = "hiveserver2";
-    static final String ZOOKEEPER_ACTIVE_PASSIVE_HA_DEFAULT_NAMESPACE = "hs2ActivePassiveHA";
     static final String COOKIE_AUTH = "cookieAuth";
     static final String COOKIE_AUTH_FALSE = "false";
     static final String COOKIE_NAME = "cookieName";

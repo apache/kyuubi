@@ -39,7 +39,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.Subject;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
@@ -127,8 +127,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     // if zk is disabled or if HA service discovery is enabled we return the already populated
     // params.
     // in HA mode, params is already populated with Active server host info.
-    if (params.getZooKeeperEnsemble() == null
-        || ZooKeeperHiveClientHelper.isZkHADynamicDiscoveryMode(params.getSessionVars())) {
+    if (params.getZooKeeperEnsemble() == null) {
       return Collections.singletonList(params);
     }
     return ZooKeeperHiveClientHelper.getDirectParamsList(params);

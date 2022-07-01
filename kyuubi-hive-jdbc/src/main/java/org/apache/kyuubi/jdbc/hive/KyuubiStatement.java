@@ -20,7 +20,7 @@ package org.apache.kyuubi.jdbc.hive;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.*;
 import java.util.*;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLStatement;
 import org.apache.kyuubi.jdbc.hive.cli.FetchType;

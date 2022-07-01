@@ -18,20 +18,13 @@
 package org.apache.kyuubi.jdbc.hive.auth;
 
 import java.io.IOException;
-import java.security.Security;
 import java.util.HashMap;
 import javax.security.auth.callback.*;
 import javax.security.sasl.SaslException;
-import org.apache.kyuubi.jdbc.hive.auth.PlainSaslServer.SaslPlainProvider;
 import org.apache.thrift.transport.TSaslClientTransport;
 import org.apache.thrift.transport.TTransport;
 
 public final class PlainSaslHelper {
-
-  // Register Plain SASL server provider
-  static {
-    Security.addProvider(new SaslPlainProvider());
-  }
 
   public static TTransport getPlainTransport(
       String username, String password, TTransport underlyingTransport) throws SaslException {
