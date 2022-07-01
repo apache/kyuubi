@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionException
 import scala.concurrent.duration.Duration
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
@@ -59,9 +60,17 @@ class KyuubiSyncThriftClient private (
 
   private var asyncRequestExecutor: ScheduledExecutorService = _
 
+  @VisibleForTesting
+  @volatile private[kyuubi] var asyncRequestInterrupted: Boolean = false
+
   private def newAsyncRequestExecutor(): ScheduledExecutorService = {
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(
       "async-request-executor-" + _remoteSessionHandle)
+  }
+
+  private def shutdownAsyncRequestExecutor(): Unit = {
+    Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
+    asyncRequestInterrupted = true
   }
 
   private def startEngineAliveProbe(): Unit = {
@@ -91,7 +100,7 @@ class KyuubiSyncThriftClient private (
             }
           }
         } else {
-          Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
+          shutdownAsyncRequestExecutor()
         }
       }
     }
@@ -196,7 +205,7 @@ class KyuubiSyncThriftClient private (
       Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
         if (tProtocol.getTransport.isOpen) tProtocol.getTransport.close()
       }
-      Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
+      shutdownAsyncRequestExecutor()
     }
   }
 
