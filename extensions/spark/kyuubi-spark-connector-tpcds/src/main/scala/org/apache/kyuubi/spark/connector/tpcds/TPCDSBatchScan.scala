@@ -114,7 +114,7 @@ class TPCDSPartitionReader(
         }
         i += 1
       }
-      InternalRow(reusedRow)
+      InternalRow(reusedRow: _*)
     }
 
   private var currentRow: InternalRow = _
