@@ -17,37 +17,38 @@
 
 package org.apache.kyuubi.jdbc.hive.auth;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
+import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
-import javax.security.auth.Subject;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 /**
- * This is used on the client side, where the API explicitly opens a transport to the server using
- * the Subject.doAs().
+ * The Thrift SASL transports call Sasl.createSaslServer and Sasl.createSaslClient inside open().
+ * So, we need to assume the correct UGI when the transport is opened so that the SASL mechanisms
+ * have access to the right principal. This transport wraps the Sasl transports to set up the right
+ * UGI context for open().
+ *
+ * <p>This is used on the client side, where the API explicitly opens a transport to the server.
  */
-public class TSubjectAssumingTransport extends TFilterTransport {
+public class TUGIAssumingTransport extends TFilterTransport {
+  protected UserGroupInformation ugi;
 
-  public TSubjectAssumingTransport(TTransport wrapped) {
+  public TUGIAssumingTransport(TTransport wrapped, UserGroupInformation ugi) {
     super(wrapped);
+    this.ugi = ugi;
   }
 
   @Override
   public void open() throws TTransportException {
     try {
-      AccessControlContext context = AccessController.getContext();
-      Subject subject = Subject.getSubject(context);
-      Subject.doAs(
-          subject,
+      ugi.doAs(
           new PrivilegedExceptionAction<Void>() {
             public Void run() {
               try {
                 wrapped.open();
               } catch (TTransportException tte) {
-                // Wrap the transport exception in an RTE, since Subject.doAs() then goes
+                // Wrap the transport exception in an RTE, since UGI.doAs() then goes
                 // and unwraps this for us out of the doAs block. We then unwrap one
                 // more time in our catch clause to get back the TTE. (ugh)
                 throw new RuntimeException(tte);
@@ -55,8 +56,10 @@ public class TSubjectAssumingTransport extends TFilterTransport {
               return null;
             }
           });
-    } catch (PrivilegedActionException ioe) {
+    } catch (IOException ioe) {
       throw new RuntimeException("Received an ioe we never threw!", ioe);
+    } catch (InterruptedException ie) {
+      throw new RuntimeException("Received an ie we never threw!", ie);
     } catch (RuntimeException rte) {
       if (rte.getCause() instanceof TTransportException) {
         throw (TTransportException) rte.getCause();

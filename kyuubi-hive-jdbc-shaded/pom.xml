@@ -61,32 +61,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hive.shims</groupId>
-            <artifactId>hive-shims-common</artifactId>
-            <version>${hive.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hive.shims</groupId>
-            <artifactId>hive-shims-0.23</artifactId>
-            <version>${hive.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-common</artifactId>
             <version>${hive.version}</version>
@@ -182,18 +156,6 @@
                     <filters>
                         <filter>
                             <artifact>org.apache.kyuubi:kyuubi-hive-jdbc</artifact>
-                            <includes>
-                                <include>**</include>
-                            </includes>
-                        </filter>
-                        <filter>
-                            <artifact>org.apache.hive.shims:hive-shims-common</artifact>
-                            <includes>
-                                <include>**</include>
-                            </includes>
-                        </filter>
-                        <filter>
-                            <artifact>org.apache.hive.shims:hive-shims-0.23</artifact>
                             <includes>
                                 <include>**</include>
                             </includes>
