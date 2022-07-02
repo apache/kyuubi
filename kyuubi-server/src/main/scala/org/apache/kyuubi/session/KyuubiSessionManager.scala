@@ -17,13 +17,15 @@
 
 package org.apache.kyuubi.session
 
+import java.net.URI
+
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -48,6 +50,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private val metadataManager = new MetadataManager()
 
   private var limiter: Option[SessionLimiter] = None
+  lazy val localDirAllowList: Seq[String] = conf.get(SESSION_LOCAL_DIR_ALLOW_LIST)
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(applicationManager)
@@ -260,6 +263,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
     if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
       limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
+    }
+  }
+
+  private[kyuubi] def checkSessionAccessPathURI(uri: URI): Unit = {
+    if (localDirAllowList.nonEmpty && (uri.getScheme == null || uri.getScheme == "file")) {
+      if (!localDirAllowList.exists(uri.getPath.startsWith(_))) {
+        throw new KyuubiException(
+          s"The file ${uri.getPath} to access by the session is not allowed.")
+      }
     }
   }
 }

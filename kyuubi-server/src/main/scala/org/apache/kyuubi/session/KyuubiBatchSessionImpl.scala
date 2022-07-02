@@ -26,6 +26,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -94,6 +95,13 @@ class KyuubiBatchSessionImpl(
     Option(sessionEvent)
   }
 
+  override def checkSessionAccessPathURIs(): Unit = {
+    KyuubiApplicationManager.checkApplicationPathURI(
+      batchRequest.getBatchType,
+      normalizedConf,
+      sessionManager)
+  }
+
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
@@ -125,6 +133,8 @@ class KyuubiBatchSessionImpl(
 
     // we should call super.open before running batch job submission operation
     super.open()
+
+    checkSessionAccessPathURIs()
 
     runOperation(batchJobSubmissionOp)
   }

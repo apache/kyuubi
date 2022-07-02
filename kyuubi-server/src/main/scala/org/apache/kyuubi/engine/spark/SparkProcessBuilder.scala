@@ -168,6 +168,13 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
+  final val PATH_CONFIGS = Seq(
+    SPARK_FILES,
+    "spark.jars",
+    "spark.archives",
+    "spark.yarn.dist.files",
+    "spark.yarn.dist.jars",
+    "spark.yarn.dist.archives")
 
   final private[spark] val CONF = "--conf"
   final private[spark] val CLASS = "--class"

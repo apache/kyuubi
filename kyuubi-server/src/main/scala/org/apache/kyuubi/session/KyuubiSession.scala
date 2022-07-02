@@ -34,6 +34,8 @@ abstract class KyuubiSession(
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 
+  def checkSessionAccessPathURIs(): Unit
+
   private[kyuubi] def handleSessionException(f: => Unit): Unit = {
     try {
       f

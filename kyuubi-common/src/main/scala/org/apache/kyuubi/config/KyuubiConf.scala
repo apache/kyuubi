@@ -153,7 +153,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     SERVER_NAME,
     SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS,
     SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS,
-    SERVER_LIMIT_CONNECTIONS_PER_USER)
+    SERVER_LIMIT_CONNECTIONS_PER_USER,
+    SESSION_LOCAL_DIR_ALLOW_LIST)
 
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
@@ -950,6 +951,19 @@ object KyuubiConf {
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
+
+  val SESSION_LOCAL_DIR_ALLOW_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.session.local.dir.allow.list")
+      .doc("The local dir list that can be accessed by the kyuubi session application. User" +
+        " might set some parameters such as `spark.files` and it will upload some local files" +
+        " when launching the kyuubi engine, if the local dir allow list is defined, kyuubi will" +
+        " check whether the path to upload is in the allow list. Note that, if it is empty, there" +
+        " is no limitation for that.")
+      .version("1.6.0")
+      .stringConf
+      .transform(dir => dir.stripSuffix("/") + "/")
+      .toSequence()
+      .createWithDefault(Nil)
 
   val BATCH_APPLICATION_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.batch.application.check.interval")

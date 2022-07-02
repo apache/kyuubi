@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.engine
 
-import java.util.ServiceLoader
+import java.net.{URI, URISyntaxException}
+import java.util.{Locale, ServiceLoader}
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
@@ -27,6 +28,7 @@ import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQ
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.session.KyuubiSessionManager
 
 class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager") {
 
@@ -106,6 +108,22 @@ object KyuubiApplicationManager {
     conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
   }
 
+  private def checkSparkPathURIs(
+      appConf: Map[String, String],
+      sessionManager: KyuubiSessionManager): Unit = {
+    SparkProcessBuilder.PATH_CONFIGS.flatMap { key =>
+      appConf.get(key).map(_.split(",")).getOrElse(Array.empty)
+    }.filter(_.nonEmpty).foreach { path =>
+      val uri =
+        try {
+          new URI(path)
+        } catch {
+          case e: URISyntaxException => throw new IllegalArgumentException(e)
+        }
+      sessionManager.checkSessionAccessPathURI(uri)
+    }
+  }
+
   /**
    * Add a unique tag on the application
    * @param applicationTag a unique tag to identify application
@@ -129,6 +147,17 @@ object KyuubiApplicationManager {
         // running flink on other platforms is not yet supported
         setupFlinkK8sTag(applicationTag, conf)
       // other engine types are running locally yet
+      case _ =>
+    }
+  }
+
+  def checkApplicationPathURI(
+      applicationType: String,
+      appConf: Map[String, String],
+      sessionManager: KyuubiSessionManager): Unit = {
+    applicationType.toUpperCase(Locale.ROOT) match {
+      case appType if appType.startsWith("SPARK") => checkSparkPathURIs(appConf, sessionManager)
+      case appType if appType.startsWith("FLINK") => // TODO: check flink app access local paths
       case _ =>
     }
   }
