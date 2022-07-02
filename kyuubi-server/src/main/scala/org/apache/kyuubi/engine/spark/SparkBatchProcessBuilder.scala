@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.config.KyuubiConf
