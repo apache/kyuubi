@@ -46,7 +46,7 @@ class SparkBatchProcessBuilder(
     }
 
     val batchKyuubiConf = new KyuubiConf(false)
-    batchConf.foreach(entry => {batchKyuubiConf.set(entry._1, entry._2)})
+    batchConf.foreach(entry => { batchKyuubiConf.set(entry._1, entry._2) })
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
