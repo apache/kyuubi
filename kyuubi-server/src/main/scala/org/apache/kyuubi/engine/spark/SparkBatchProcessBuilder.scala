@@ -49,7 +49,7 @@ class SparkBatchProcessBuilder(
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    batchKyuubiConf.getAll.foreach { case (k, v) =>
+    (batchKyuubiConf.getAll ++ sparkAppNameConf()).foreach { case (k, v) =>
       buffer += CONF
       buffer += s"$k=$v"
     }
