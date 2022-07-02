@@ -22,6 +22,7 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
 import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table => SparkTable, TableCatalog, TableChange}
 import org.apache.spark.sql.connector.expressions.Transform
@@ -37,6 +38,8 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces with Logging {
   var options: CaseInsensitiveStringMap = _
 
   var _name: String = _
+
+  lazy val spark = SparkSession.active
 
   override def name: String = _name
 
@@ -64,7 +67,8 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces with Logging {
   override def loadTable(ident: Identifier): SparkTable = (ident.namespace, ident.name) match {
     case (Array(db), table) if (databases contains db) && tables.contains(table.toLowerCase) =>
       val scale = TPCDSSchemaUtils.scale(db)
-      new TPCDSTable(table.toLowerCase, scale, options)
+      val tableConf = TPCDSTableConf(spark, options)
+      new TPCDSTable( table.toLowerCase, scale, tableConf)
     case (_, _) => throw new NoSuchTableException(ident)
   }
 
