@@ -142,7 +142,18 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_MYSQL_BIND_HOST,
     FRONTEND_MYSQL_BIND_PORT,
     AUTHENTICATION_METHOD,
-    KINIT_INTERVAL)
+    KINIT_INTERVAL,
+    SERVER_KEYTAB,
+    SERVER_PRINCIPAL,
+    SERVER_SPNEGO_KEYTAB,
+    SERVER_SPNEGO_PRINCIPAL,
+    SERVER_EVENT_LOGGERS,
+    SERVER_EVENT_JSON_LOG_PATH,
+    SERVER_OPERATION_LOG_DIR_ROOT,
+    SERVER_NAME,
+    SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS,
+    SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS,
+    SERVER_LIMIT_CONNECTIONS_PER_USER)
 
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
@@ -181,7 +192,7 @@ object KyuubiConf {
   private def register(entry: ConfigEntry[_]): Unit = kyuubiConfEntries.synchronized {
     require(
       !kyuubiConfEntries.containsKey(entry.key),
-      s"Duplicate SQLConfigEntry. ${entry.key} has been registered")
+      s"Duplicate ConfigEntry. ${entry.key} has been registered")
     kyuubiConfEntries.put(entry.key, entry)
   }
 
