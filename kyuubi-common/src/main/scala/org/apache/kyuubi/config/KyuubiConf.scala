@@ -954,7 +954,7 @@ object KyuubiConf {
 
   val SESSION_LOCAL_DIR_ALLOW_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.local.dir.allow.list")
-      .doc("The local dir list that can be accessed by the kyuubi session application. User" +
+      .doc("The local dir list that are allowed to access by the kyuubi session application. User" +
         " might set some parameters such as `spark.files` and it will upload some local files" +
         " when launching the kyuubi engine, if the local dir allow list is defined, kyuubi will" +
         " check whether the path to upload is in the allow list. Note that, if it is empty, there" +
