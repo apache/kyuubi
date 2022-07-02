@@ -144,7 +144,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     AUTHENTICATION_METHOD,
     KINIT_INTERVAL,
     SERVER_KEYTAB,
-    SERVER_PRINCIPAL)
+    SERVER_PRINCIPAL,
+    SERVER_SPNEGO_KEYTAB,
+    SERVER_SPNEGO_PRINCIPAL)
 
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
