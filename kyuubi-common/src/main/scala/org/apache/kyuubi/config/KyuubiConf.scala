@@ -142,7 +142,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_MYSQL_BIND_HOST,
     FRONTEND_MYSQL_BIND_PORT,
     AUTHENTICATION_METHOD,
-    KINIT_INTERVAL)
+    KINIT_INTERVAL,
+    SERVER_KEYTAB,
+    SERVER_PRINCIPAL)
 
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
