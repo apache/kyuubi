@@ -181,7 +181,7 @@ object KyuubiConf {
   private def register(entry: ConfigEntry[_]): Unit = kyuubiConfEntries.synchronized {
     require(
       !kyuubiConfEntries.containsKey(entry.key),
-      s"Duplicate SQLConfigEntry. ${entry.key} has been registered")
+      s"Duplicate ConfigEntry. ${entry.key} has been registered")
     kyuubiConfEntries.put(entry.key, entry)
   }
 
