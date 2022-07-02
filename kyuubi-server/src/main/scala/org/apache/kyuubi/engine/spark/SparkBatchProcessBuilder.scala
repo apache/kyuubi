@@ -45,14 +45,12 @@ class SparkBatchProcessBuilder(
       buffer += cla
     }
 
-    // session conf + batch conf
-    // user set batch conf should override session conf
-    batchConf.asJava.entrySet().forEach(entry => conf.set(entry.getKey, entry.getValue))
-
+    val batchKyuubiConf = new KyuubiConf(false)
+    batchConf.foreach(entry => {batchKyuubiConf.set(entry._1, entry._2)})
     // tag batch application
-    KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), conf)
+    KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    conf.getAll.foreach { case (k, v) =>
+    batchKyuubiConf.getAll.foreach { case (k, v) =>
       buffer += CONF
       buffer += s"$k=$v"
     }
