@@ -270,12 +270,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private[kyuubi] def checkSessionAccessPathURI(uri: URI): Unit = {
     if (localDirAllowList.nonEmpty && (uri.getScheme == null || uri.getScheme == "file")) {
       if (!uri.getPath.startsWith(File.separator)) {
-        throw new KyuubiException(s"${uri.getPath} is a relative path and is not allowed.")
+        throw new KyuubiException(
+          s"Relative path ${uri.getPath} is not allowed, please use absolute path.")
       }
 
       if (!localDirAllowList.exists(uri.getPath.startsWith(_))) {
         throw new KyuubiException(
-          s"The file ${uri.getPath} to access by the session is not allowed.")
+          s"The file ${uri.getPath} to access is not in the local dir allow list" +
+            s" [${localDirAllowList.mkString(",")}].")
       }
     }
   }

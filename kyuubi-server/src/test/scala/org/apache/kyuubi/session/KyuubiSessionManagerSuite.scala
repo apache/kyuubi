@@ -37,7 +37,7 @@ class KyuubiSessionManagerSuite extends KyuubiFunSuite {
 
     uri = new URI("/apache/kyuubijar")
     var e = intercept[KyuubiException](sessionManager.checkSessionAccessPathURI(uri))
-    assert(e.getMessage.contains("to access by the session is not allowed"))
+    assert(e.getMessage.contains("is not in the local dir allow list"))
     noLocalDirLimitSessionManager.checkSessionAccessPathURI(uri)
 
     uri = new URI("hdfs:/apache/kyuubijar")
@@ -46,7 +46,7 @@ class KyuubiSessionManagerSuite extends KyuubiFunSuite {
 
     uri = new URI("path/to/kyuubijar")
     e = intercept[KyuubiException](sessionManager.checkSessionAccessPathURI(uri))
-    assert(e.getMessage.contains("is a relative path and is not allowed"))
+    assert(e.getMessage.contains("please use absolute path"))
     noLocalDirLimitSessionManager.checkSessionAccessPathURI(uri)
 
     sessionManager.stop()
