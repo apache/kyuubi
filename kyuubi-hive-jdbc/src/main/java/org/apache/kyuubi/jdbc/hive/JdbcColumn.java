@@ -24,9 +24,9 @@ import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
-import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
-import org.apache.hadoop.hive.common.type.TimestampTZ;
 import org.apache.hive.service.rpc.thrift.TTypeId;
+import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
+import org.apache.kyuubi.jdbc.hive.common.TimestampTZ;
 
 /** Column metadata. */
 public class JdbcColumn {

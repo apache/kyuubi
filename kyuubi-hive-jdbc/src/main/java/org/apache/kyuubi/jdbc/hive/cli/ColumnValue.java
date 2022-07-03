@@ -19,8 +19,13 @@ package org.apache.kyuubi.jdbc.hive.cli;
 
 import java.sql.Date;
 import java.sql.Timestamp;
-import org.apache.hadoop.hive.common.type.*;
+import org.apache.hadoop.hive.common.type.HiveDecimal;
+import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.jdbc.hive.common.HiveChar;
+import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
+import org.apache.kyuubi.jdbc.hive.common.HiveVarchar;
+import org.apache.kyuubi.jdbc.hive.common.TimestampTZ;
 
 /** Protocols before HIVE_CLI_SERVICE_PROTOCOL_V6 (used by RowBasedSet) */
 public class ColumnValue {
