@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.session
 
+import java.io.File
 import java.net.URI
 
 import scala.collection.JavaConverters._
@@ -268,6 +269,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   private[kyuubi] def checkSessionAccessPathURI(uri: URI): Unit = {
     if (localDirAllowList.nonEmpty && (uri.getScheme == null || uri.getScheme == "file")) {
+      if (!uri.getPath.startsWith(File.separator)) {
+        throw new KyuubiException(s"${uri.getPath} is a relative path and is not allowed.")
+      }
+
       if (!localDirAllowList.exists(uri.getPath.startsWith(_))) {
         throw new KyuubiException(
           s"The file ${uri.getPath} to access by the session is not allowed.")

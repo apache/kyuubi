@@ -23,7 +23,7 @@ import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 
 class KyuubiSessionManagerSuite extends KyuubiFunSuite {
-  test("local dir whitelist") {
+  test("local dir allow list") {
     val conf = KyuubiConf().set(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST, Seq("/apache/kyuubi"))
     val sessionManager = new KyuubiSessionManager()
     sessionManager.initialize(conf)
@@ -36,11 +36,17 @@ class KyuubiSessionManagerSuite extends KyuubiFunSuite {
     noLocalDirLimitSessionManager.checkSessionAccessPathURI(uri)
 
     uri = new URI("/apache/kyuubijar")
-    intercept[KyuubiException](sessionManager.checkSessionAccessPathURI(uri))
+    var e = intercept[KyuubiException](sessionManager.checkSessionAccessPathURI(uri))
+    assert(e.getMessage.contains("to access by the session is not allowed"))
     noLocalDirLimitSessionManager.checkSessionAccessPathURI(uri)
 
     uri = new URI("hdfs:/apache/kyuubijar")
     sessionManager.checkSessionAccessPathURI(uri)
+    noLocalDirLimitSessionManager.checkSessionAccessPathURI(uri)
+
+    uri = new URI("path/to/kyuubijar")
+    e = intercept[KyuubiException](sessionManager.checkSessionAccessPathURI(uri))
+    assert(e.getMessage.contains("is a relative path and is not allowed"))
     noLocalDirLimitSessionManager.checkSessionAccessPathURI(uri)
 
     sessionManager.stop()
