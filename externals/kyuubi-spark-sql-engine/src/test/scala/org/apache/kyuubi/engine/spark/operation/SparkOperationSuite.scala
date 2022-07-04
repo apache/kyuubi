@@ -449,7 +449,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       val tOpenSessionResp = client.OpenSession(req)
       val status = tOpenSessionResp.getStatus
       assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(status.getErrorMessage.contains("Database 'default2' does not exist"))
+      assert(status.getErrorMessage.contains("Database 'default2' not found"))
     }
   }
 
