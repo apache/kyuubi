@@ -526,59 +526,55 @@ Please refer to the Flink official online documentation for [SET Statements](htt
 
 ## Logging
 
-Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j2.properties`.
+Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j2.xml`.
 ```bash
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
 
-# Set everything to be logged to the file
-rootLogger.level = info
-rootLogger.appenderRef.stdout.ref = STDOUT
-
-# Console Appender
-appender.console.type = Console
-appender.console.name = STDOUT
-appender.console.target = SYSTEM_OUT
-appender.console.layout.type = PatternLayout
-appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n
-
-appender.console.filter.1.type = Filters
-
-appender.console.filter.1.a.type = ThresholdFilter
-appender.console.filter.1.a.level = info
-
-# SPARK-34128: Suppress undesirable TTransportException warnings, due to THRIFT-4805
-appender.console.filter.1.b.type = RegexFilter
-appender.console.filter.1.b.regex = .*Thrift error occurred during processing of message.*
-appender.console.filter.1.b.onMatch = deny
-appender.console.filter.1.b.onMismatch = neutral
-
-# Set the default kyuubi-ctl log level to WARN. When running the kyuubi-ctl, the
-# log level for this class is used to overwrite the root logger's log level.
-logger.ctl.name = org.apache.kyuubi.ctl.ServiceControlCli
-logger.ctl.level = error
-
-# Analysis MySQLFrontend protocol traffic
-# logger.mysql.name = org.apache.kyuubi.server.mysql.codec
-# logger.mysql.level = trace
-
-# Kyuubi BeeLine
-logger.beeline.name = org.apache.hive.beeline.KyuubiBeeLine
-logger.beeline.level = error
+<!-- Provide log4j2.xml.template to fix `ERROR Filters contains invalid attributes "onMatch", "onMismatch"`, see KYUUBI-2247 -->
+<!-- Extra logging related to initialization of Log4j.
+ Set to debug or trace if log4j initialization is failing. -->
+<Configuration status="INFO">
+    <Appenders>
+        <Console name="stdout" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n"/>
+            <Filters>
+                <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
+            </Filters>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="stdout"/>
+        </Root>
+        <Logger name="org.apache.kyuubi.ctl.ServiceControlCli" level="error" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+        <!--
+        <Logger name="org.apache.kyuubi.server.mysql.codec" level="trace" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+        -->
+        <Logger name="org.apache.hive.beeline.KyuubiBeeLine" level="error" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+    </Loggers>
+</Configuration>
 ```
 
 ## Other Configurations

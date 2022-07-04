@@ -74,6 +74,6 @@ embedded_zookeeper/
 **/operation_logs/
 **/server_operation_logs/
 **/engine_operation_logs/
-conf/log4j2.properties
+conf/log4j2.xml
 conf/kyuubi-defaults.conf
 conf/kyuubi-env.sh
