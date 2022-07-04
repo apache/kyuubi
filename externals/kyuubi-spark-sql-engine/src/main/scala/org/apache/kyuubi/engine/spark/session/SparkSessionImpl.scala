@@ -57,8 +57,9 @@ class SparkSessionImpl(
         try {
           SparkCatalogShim().setCurrentDatabase(spark, database)
         } catch {
-          case e if database == "default" && e.getMessage != null &&
-            e.getMessage.contains("not found") =>
+          case e
+              if database == "default" && e.getMessage != null &&
+                e.getMessage.contains("not found") =>
           // use:database is from hive so the catalog is always session catalog which must have
           // default namespace `default`. But as spark support v2 catalog, catalog may not have
           // default namespace. Here we do nothing for compatible both session and v2 catalog.
