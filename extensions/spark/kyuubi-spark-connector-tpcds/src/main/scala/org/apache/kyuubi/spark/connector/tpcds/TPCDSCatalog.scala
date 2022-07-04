@@ -67,8 +67,7 @@ class TPCDSCatalog extends TableCatalog with SupportsNamespaces with Logging {
   override def loadTable(ident: Identifier): SparkTable = (ident.namespace, ident.name) match {
     case (Array(db), table) if (databases contains db) && tables.contains(table.toLowerCase) =>
       val scale = TPCDSSchemaUtils.scale(db)
-      val tableConf = TPCDSTableConf(spark, options)
-      new TPCDSTable( table.toLowerCase, scale, tableConf)
+      new TPCDSTable(table.toLowerCase, scale, options)
     case (_, _) => throw new NoSuchTableException(ident)
   }
 

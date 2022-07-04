@@ -32,12 +32,14 @@ import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCDSTable(tbl: String, scale: Double, tableConf: TPCDSTableConf)
+class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
   extends SparkTable with SupportsRead {
 
   val tpcdsTable: Table = Table.getTable(tbl)
 
   lazy val spark: SparkSession = SparkSession.active
+
+  lazy val tpcdsConf: TPCDSConf = TPCDSConf(spark, options);
 
   override def name: String = s"${TPCDSSchemaUtils.dbName(scale)}.$tbl"
 
@@ -56,14 +58,14 @@ class TPCDSTable(tbl: String, scale: Double, tableConf: TPCDSTableConf)
         // Like: io.trino.tpcds.row.CallCenterRow.getValues
         val index = TPCDSSchemaUtils.reviseNullColumnIndex(tpcdsTable, i)
         StructField(
-          TPCDSSchemaUtils.reviseColumnName(c, tableConf.useTableSchema_2_6),
+          TPCDSSchemaUtils.reviseColumnName(c, tpcdsConf.useTableSchema_2_6),
           toSparkDataType(c.getType),
           nullable(index))
       })
   }
 
   override def partitioning: Array[Transform] = TPCDSSchemaUtils
-    .tablePartitionColumnNames(tpcdsTable, tableConf.useTableSchema_2_6)
+    .tablePartitionColumnNames(tpcdsTable, tpcdsConf.useTableSchema_2_6)
     .map { Expressions.identity }
 
   override def capabilities(): util.Set[TableCapability] =
@@ -81,9 +83,9 @@ class TPCDSTable(tbl: String, scale: Double, tableConf: TPCDSTableConf)
       case (DATE, None, None) => DateType
       case (DECIMAL, Some(precision), Some(scale)) => DecimalType(precision, scale)
       case (VARCHAR, Some(precision), None) =>
-        if (tableConf.useAnsiStringType) VarcharType(precision) else StringType
+        if (tpcdsConf.useAnsiStringType) VarcharType(precision) else StringType
       case (CHAR, Some(precision), None) =>
-        if (tableConf.useAnsiStringType) CharType(precision) else StringType
+        if (tpcdsConf.useAnsiStringType) CharType(precision) else StringType
       case (t, po, so) =>
         throw new IllegalArgumentException(s"Unsupported TPC-DS type: ($t, $po, $so)")
     }

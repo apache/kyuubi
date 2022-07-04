@@ -21,10 +21,9 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.common.SparkConfParser
-import org.apache.kyuubi.spark.connector.tpcds.TPCDSTableConf._
+import org.apache.kyuubi.spark.connector.tpcds.TPCDSConf._
 
-case class TPCDSTableConf(spark: SparkSession,
-                     options: CaseInsensitiveStringMap) {
+case class TPCDSConf(spark: SparkSession, options: CaseInsensitiveStringMap) {
 
   private val confParser: SparkConfParser = SparkConfParser(options, spark.conf, null)
   // When true, use CHAR VARCHAR; otherwise use STRING
@@ -46,7 +45,7 @@ case class TPCDSTableConf(spark: SparkSession,
     .parse()
 }
 
-object TPCDSTableConf{
+object TPCDSConf {
   val USE_ANSI_STRING_TYPE = "useAnsiStringType"
   val USE_ANSI_STRING_TYPE_DEFAULT = false;
   val USE_TABLE_SCHEMA_2_6 = "useTableSchema_2_6"
