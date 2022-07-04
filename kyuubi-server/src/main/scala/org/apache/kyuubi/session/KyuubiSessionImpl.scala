@@ -27,7 +27,7 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
-import org.apache.kyuubi.engine.EngineRef
+import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -82,6 +82,13 @@ class KyuubiSessionImpl(
     Option(sessionEvent)
   }
 
+  override def checkSessionAccessPathURIs(): Unit = {
+    KyuubiApplicationManager.checkApplicationAccessPaths(
+      sessionConf.get(ENGINE_TYPE),
+      sessionConf.getAll,
+      sessionManager.getConf)
+  }
+
   private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client
 
@@ -92,6 +99,8 @@ class KyuubiSessionImpl(
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
+
+    checkSessionAccessPathURIs()
 
     // we should call super.open before running launch engine operation
     super.open()

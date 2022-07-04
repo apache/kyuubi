@@ -17,11 +17,14 @@
 
 package org.apache.kyuubi.engine
 
-import java.util.ServiceLoader
+import java.io.File
+import java.net.{URI, URISyntaxException}
+import java.util.{Locale, ServiceLoader}
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
+import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
@@ -106,6 +109,40 @@ object KyuubiApplicationManager {
     conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
   }
 
+  private[kyuubi] def checkApplicationPathURI(uri: URI, conf: KyuubiConf): Unit = {
+    val localDirAllowList = conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
+    if (localDirAllowList.nonEmpty && (uri.getScheme == null || uri.getScheme == "file")) {
+      if (!uri.getPath.startsWith(File.separator)) {
+        throw new KyuubiException(
+          s"Relative path ${uri.getPath} is not allowed, please use absolute path.")
+      }
+
+      if (!localDirAllowList.exists(uri.getPath.startsWith(_))) {
+        throw new KyuubiException(
+          s"The file ${uri.getPath} to access is not in the local dir allow list" +
+            s" [${localDirAllowList.mkString(",")}].")
+      }
+    }
+  }
+
+  private def checkSparkPathURIs(
+      appConf: Map[String, String],
+      kyuubiConf: KyuubiConf): Unit = {
+    if (kyuubiConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).nonEmpty) {
+      SparkProcessBuilder.PATH_CONFIGS.flatMap { key =>
+        appConf.get(key).map(_.split(",")).getOrElse(Array.empty)
+      }.filter(_.nonEmpty).foreach { path =>
+        val uri =
+          try {
+            new URI(path)
+          } catch {
+            case e: URISyntaxException => throw new IllegalArgumentException(e)
+          }
+        checkApplicationPathURI(uri, kyuubiConf)
+      }
+    }
+  }
+
   /**
    * Add a unique tag on the application
    * @param applicationTag a unique tag to identify application
@@ -129,6 +166,17 @@ object KyuubiApplicationManager {
         // running flink on other platforms is not yet supported
         setupFlinkK8sTag(applicationTag, conf)
       // other engine types are running locally yet
+      case _ =>
+    }
+  }
+
+  def checkApplicationAccessPaths(
+      applicationType: String,
+      appConf: Map[String, String],
+      kyuubiConf: KyuubiConf): Unit = {
+    applicationType.toUpperCase(Locale.ROOT) match {
+      case appType if appType.startsWith("SPARK") => checkSparkPathURIs(appConf, kyuubiConf)
+      case appType if appType.startsWith("FLINK") => // TODO: check flink app access local paths
       case _ =>
     }
   }

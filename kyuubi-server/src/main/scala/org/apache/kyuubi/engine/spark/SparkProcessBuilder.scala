@@ -169,6 +169,27 @@ object SparkProcessBuilder {
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
 
+  /**
+   * The path configs from Spark project that might upload local files:
+   * - SparkSubmit
+   * - org.apache.spark.deploy.yarn.Client::prepareLocalResources
+   * - KerberosConfDriverFeatureStep::configurePod
+   * - KubernetesUtils.uploadAndTransformFileUris
+   */
+  final val PATH_CONFIGS = Seq(
+    SPARK_FILES,
+    "spark.jars",
+    "spark.archives",
+    "spark.yarn.jars",
+    "spark.yarn.dist.files",
+    "spark.yarn.dist.pyFiles",
+    "spark.yarn.dist.jars",
+    "spark.yarn.dist.archives",
+    "spark.kerberos.keytab",
+    "spark.yarn.keytab",
+    "spark.kubernetes.kerberos.krb5.path",
+    "spark.kubernetes.file.upload.path")
+
   final private[spark] val CONF = "--conf"
   final private[spark] val CLASS = "--class"
   final private[spark] val PROXY_USER = "--proxy-user"
