@@ -525,7 +525,7 @@ Please refer to the Flink official online documentation for [SET Statements](htt
 
 ## Logging
 
-Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j2.properties`.
+Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j2.xml`.
 ```bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
