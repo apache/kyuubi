@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.client
 
-import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.{ExecutorService, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
@@ -58,7 +58,7 @@ class KyuubiSyncThriftClient private (
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
 
-  private var asyncRequestExecutor: ScheduledExecutorService = _
+  private var asyncRequestExecutor: ExecutorService = _
 
   @VisibleForTesting
   @volatile private[kyuubi] var asyncRequestInterrupted: Boolean = false
@@ -66,7 +66,7 @@ class KyuubiSyncThriftClient private (
   @VisibleForTesting
   private[kyuubi] def getEngineAliveProbeProtocol: Option[TProtocol] = engineAliveProbeProtocol
 
-  private def newAsyncRequestExecutor(): ScheduledExecutorService = {
+  private def newAsyncRequestExecutor(): ExecutorService = {
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(
       "async-request-executor-" + _remoteSessionHandle)
   }
