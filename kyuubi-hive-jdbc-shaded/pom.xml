@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-storage-api</artifactId>
-            <version>${hive.client.storage-api.version}</version>
+            <version>${hive.storage-api.version}</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>
@@ -109,7 +109,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>${hive.client.httpcomponents-core.version}</version>
+            <version>${httpcore.version}</version>
             <optional>true</optional>
         </dependency>
 
