@@ -25,11 +25,11 @@ import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.List;
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
-import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
-import org.apache.hadoop.hive.common.type.TimestampTZUtil;
 import org.apache.hive.service.rpc.thrift.TTableSchema;
 import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSet;
+import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
+import org.apache.kyuubi.jdbc.hive.common.TimestampTZUtil;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
 public abstract class KyuubiBaseResultSet implements SQLResultSet {
