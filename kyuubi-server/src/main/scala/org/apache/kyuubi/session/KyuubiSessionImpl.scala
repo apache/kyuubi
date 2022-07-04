@@ -83,8 +83,10 @@ class KyuubiSessionImpl(
   }
 
   override def checkSessionAccessPathURIs(): Unit = {
-    val engineType = sessionConf.get(ENGINE_TYPE)
-    KyuubiApplicationManager.checkApplicationPathURI(engineType, sessionConf.getAll, sessionManager)
+    KyuubiApplicationManager.checkApplicationPathURI(
+      sessionConf.get(ENGINE_TYPE),
+      sessionConf.getAll,
+      sessionManager.getConf)
   }
 
   private var _client: KyuubiSyncThriftClient = _

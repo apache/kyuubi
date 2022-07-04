@@ -17,16 +17,13 @@
 
 package org.apache.kyuubi.session
 
-import java.io.File
-import java.net.URI
-
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -264,21 +261,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
     if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
       limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
-    }
-  }
-
-  private[kyuubi] def checkSessionAccessPathURI(uri: URI): Unit = {
-    if (localDirAllowList.nonEmpty && (uri.getScheme == null || uri.getScheme == "file")) {
-      if (!uri.getPath.startsWith(File.separator)) {
-        throw new KyuubiException(
-          s"Relative path ${uri.getPath} is not allowed, please use absolute path.")
-      }
-
-      if (!localDirAllowList.exists(uri.getPath.startsWith(_))) {
-        throw new KyuubiException(
-          s"The file ${uri.getPath} to access is not in the local dir allow list" +
-            s" [${localDirAllowList.mkString(",")}].")
-      }
     }
   }
 }
