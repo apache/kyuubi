@@ -22,6 +22,7 @@ import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
@@ -52,7 +53,17 @@ class SparkSessionImpl(
 
   override def open(): Unit = {
     normalizedConf.foreach {
-      case ("use:database", database) => spark.catalog.setCurrentDatabase(database)
+      case ("use:database", database) =>
+        try {
+          SparkCatalogShim().setCurrentDatabase(spark, database)
+        } catch {
+          case e
+              if database == "default" && e.getMessage != null &&
+                e.getMessage.contains("not found") =>
+          // use:database is from hive so the catalog is always session catalog which must have
+          // default namespace `default`. But as spark support v2 catalog, catalog may not have
+          // default namespace. Here we do nothing for compatible both session and v2 catalog.
+        }
       case (key, value) => setModifiableConfig(key, value)
     }
     KDFRegistry.registerAll(spark)
