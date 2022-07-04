@@ -24,10 +24,10 @@ import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.List;
-import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hive.service.rpc.thrift.TTableSchema;
 import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSet;
+import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZUtil;
 
