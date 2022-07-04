@@ -23,8 +23,8 @@ import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hive.service.rpc.thrift.TTypeId;
+import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
 import org.apache.kyuubi.jdbc.hive.common.HiveIntervalYearMonth;
 import org.apache.kyuubi.jdbc.hive.common.TimestampTZ;
 

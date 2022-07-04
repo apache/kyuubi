@@ -18,11 +18,11 @@
 package org.apache.kyuubi.jdbc.hive.cli;
 
 import java.util.List;
-import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hive.service.rpc.thrift.TPrimitiveTypeEntry;
 import org.apache.hive.service.rpc.thrift.TTypeDesc;
 import org.apache.hive.service.rpc.thrift.TTypeEntry;
 import org.apache.hive.service.rpc.thrift.TTypeId;
+import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
 
 /** TypeDescriptor. */
 public class TypeDescriptor {

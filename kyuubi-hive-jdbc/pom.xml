@@ -38,18 +38,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-storage-api</artifactId>
-            <version>${hive.storage-api.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libfb303</artifactId>
         </dependency>
