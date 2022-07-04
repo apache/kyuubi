@@ -48,7 +48,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private val metadataManager = new MetadataManager()
 
   private var limiter: Option[SessionLimiter] = None
-  lazy val localDirAllowList: Seq[String] = conf.get(SESSION_LOCAL_DIR_ALLOW_LIST)
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(applicationManager)
