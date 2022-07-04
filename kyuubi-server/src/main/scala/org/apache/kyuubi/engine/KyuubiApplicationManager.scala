@@ -109,7 +109,7 @@ object KyuubiApplicationManager {
     conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
   }
 
-  private[kyuubi] def checkAccessPathURI(uri: URI, conf: KyuubiConf): Unit = {
+  private[kyuubi] def checkApplicationPathURI(uri: URI, conf: KyuubiConf): Unit = {
     val localDirAllowList = conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
     if (localDirAllowList.nonEmpty && (uri.getScheme == null || uri.getScheme == "file")) {
       if (!uri.getPath.startsWith(File.separator)) {
@@ -128,16 +128,18 @@ object KyuubiApplicationManager {
   private def checkSparkPathURIs(
       appConf: Map[String, String],
       kyuubiConf: KyuubiConf): Unit = {
-    SparkProcessBuilder.PATH_CONFIGS.flatMap { key =>
-      appConf.get(key).map(_.split(",")).getOrElse(Array.empty)
-    }.filter(_.nonEmpty).foreach { path =>
-      val uri =
-        try {
-          new URI(path)
-        } catch {
-          case e: URISyntaxException => throw new IllegalArgumentException(e)
-        }
-      checkAccessPathURI(uri, kyuubiConf)
+    if (kyuubiConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).nonEmpty) {
+      SparkProcessBuilder.PATH_CONFIGS.flatMap { key =>
+        appConf.get(key).map(_.split(",")).getOrElse(Array.empty)
+      }.filter(_.nonEmpty).foreach { path =>
+        val uri =
+          try {
+            new URI(path)
+          } catch {
+            case e: URISyntaxException => throw new IllegalArgumentException(e)
+          }
+        checkApplicationPathURI(uri, kyuubiConf)
+      }
     }
   }
 
@@ -168,7 +170,7 @@ object KyuubiApplicationManager {
     }
   }
 
-  def checkApplicationPathURI(
+  def checkApplicationAccessPaths(
       applicationType: String,
       appConf: Map[String, String],
       kyuubiConf: KyuubiConf): Unit = {

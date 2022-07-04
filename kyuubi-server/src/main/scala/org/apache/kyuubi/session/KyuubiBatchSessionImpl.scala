@@ -96,7 +96,7 @@ class KyuubiBatchSessionImpl(
   }
 
   override def checkSessionAccessPathURIs(): Unit = {
-    KyuubiApplicationManager.checkApplicationPathURI(
+    KyuubiApplicationManager.checkApplicationAccessPaths(
       batchRequest.getBatchType,
       normalizedConf,
       sessionManager.getConf)

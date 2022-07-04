@@ -83,7 +83,7 @@ class KyuubiSessionImpl(
   }
 
   override def checkSessionAccessPathURIs(): Unit = {
-    KyuubiApplicationManager.checkApplicationPathURI(
+    KyuubiApplicationManager.checkApplicationAccessPaths(
       sessionConf.get(ENGINE_TYPE),
       sessionConf.getAll,
       sessionManager.getConf)
