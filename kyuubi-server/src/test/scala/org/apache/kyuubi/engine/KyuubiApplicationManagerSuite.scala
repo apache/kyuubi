@@ -29,26 +29,26 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
     val noLocalDirLimitConf = KyuubiConf()
 
     var uri = new URI("/apache/kyuubi/a.jar")
-    KyuubiApplicationManager.checkApplicationPathURI(uri, localDirLimitConf)
-    KyuubiApplicationManager.checkApplicationPathURI(uri, noLocalDirLimitConf)
+    KyuubiApplicationManager.checkApplicationAccessPath(uri, localDirLimitConf)
+    KyuubiApplicationManager.checkApplicationAccessPath(uri, noLocalDirLimitConf)
 
     uri = new URI("/apache/kyuubijar")
     var e = intercept[KyuubiException] {
-      KyuubiApplicationManager.checkApplicationPathURI(uri, localDirLimitConf)
+      KyuubiApplicationManager.checkApplicationAccessPath(uri, localDirLimitConf)
     }
     assert(e.getMessage.contains("is not in the local dir allow list"))
-    KyuubiApplicationManager.checkApplicationPathURI(uri, noLocalDirLimitConf)
+    KyuubiApplicationManager.checkApplicationAccessPath(uri, noLocalDirLimitConf)
 
     uri = new URI("hdfs:/apache/kyuubijar")
-    KyuubiApplicationManager.checkApplicationPathURI(uri, localDirLimitConf)
-    KyuubiApplicationManager.checkApplicationPathURI(uri, noLocalDirLimitConf)
+    KyuubiApplicationManager.checkApplicationAccessPath(uri, localDirLimitConf)
+    KyuubiApplicationManager.checkApplicationAccessPath(uri, noLocalDirLimitConf)
 
     uri = new URI("path/to/kyuubijar")
     e = intercept[KyuubiException] {
-      KyuubiApplicationManager.checkApplicationPathURI(uri, localDirLimitConf)
+      KyuubiApplicationManager.checkApplicationAccessPath(uri, localDirLimitConf)
     }
     assert(e.getMessage.contains("please use absolute path"))
-    KyuubiApplicationManager.checkApplicationPathURI(uri, noLocalDirLimitConf)
+    KyuubiApplicationManager.checkApplicationAccessPath(uri, noLocalDirLimitConf)
 
     var appConf = Map("spark.files" -> "/apache/kyuubi/jars/a.jar")
     KyuubiApplicationManager.checkApplicationAccessPaths(
