@@ -131,10 +131,10 @@ class KyuubiBatchSessionImpl(
       sessionManager.insertMetadata(metaData)
     }
 
+    checkSessionAccessPathURIs()
+
     // we should call super.open before running batch job submission operation
     super.open()
-
-    checkSessionAccessPathURIs()
 
     runOperation(batchJobSubmissionOp)
   }
