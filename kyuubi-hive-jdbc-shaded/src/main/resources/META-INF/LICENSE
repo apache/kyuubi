@@ -207,20 +207,10 @@ This project bundles some components that are licensed under the
 
 Apache License Version 2.0
 --------------------------
-org.apache.hive:hive-storage-api
 org.apache.hive:hive-service-rpc
-org.apache.hive.shims:hive-shims-common
-org.apache.hive.shims:hive-shims-0.23
-org.apache.hive:hive-common
-org.apache.hive:hive-metastore
-org.apache.hive:hive-standalone-metastore
-org.apache.hive:hive-llap-client
-org.apache.hive:hive-serde
-org.apache.hive:hive-service
 com.google.guava:failureaccess
 com.google.guava:guava
 commons-codec:commons-codec
-commons-lang:commons-lang
 org.apache.commons:commons-lang3
 org.apache.curator:curator-framework
 org.apache.curator:curator-client
@@ -229,3 +219,8 @@ org.apache.httpcomponents:httpcore
 org.apache.thrift:fb303
 org.apache.thrift:libthrift
 org.apache.zookeeper:zookeeper
+
+MIT License
+-----------
+org.slf4j:slf4j-api
+org.slf4j:jcl-over-slf4j
