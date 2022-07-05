@@ -397,7 +397,6 @@ kyuubi.operation.scheduler.pool|&lt;undefined&gt;|The scheduler pool of job. Not
 kyuubi.operation.spark.listener.enabled|true|When set to true, Spark engine registers a SQLOperationListener before executing the statement, logs a few summary statistics when each stage completes.|boolean|1.6.0
 kyuubi.operation.status.polling.max.attempts|5|(deprecated) - Using kyuubi.operation.thrift.client.request.max.attempts instead|int|1.4.0
 kyuubi.operation.status.polling.timeout|PT5S|Timeout(ms) for long polling asynchronous running sql query's status|duration|1.0.0
-kyuubi.operation.thrift.client.request.max.attempts|5|Max attempts for operation thrift request call at server-side on raw transport failures, e.g. TTransportException|int|1.6.0
 
 
 ### Server
