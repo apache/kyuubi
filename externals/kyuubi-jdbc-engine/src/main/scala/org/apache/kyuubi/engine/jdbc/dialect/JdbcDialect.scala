@@ -48,7 +48,12 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
 
   def getTableTypesOperation(session: Session): Operation
 
-  def getColumnsOperation(session: Session): Operation
+  def getColumnsQuery(
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      columnName: String): String
 
   def getFunctionsOperation(session: Session): Operation
 
