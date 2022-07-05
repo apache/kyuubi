@@ -109,36 +109,39 @@ object KyuubiApplicationManager {
     conf.set(FlinkProcessBuilder.TAG_KEY, newTag)
   }
 
-  private[kyuubi] def checkApplicationPathURI(uri: URI, conf: KyuubiConf): Unit = {
+  private[kyuubi] def checkApplicationAccessPath(path: String, conf: KyuubiConf): Unit = {
     val localDirAllowList = conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
-    if (localDirAllowList.nonEmpty && (uri.getScheme == null || uri.getScheme == "file")) {
-      if (!uri.getPath.startsWith(File.separator)) {
-        throw new KyuubiException(
-          s"Relative path ${uri.getPath} is not allowed, please use absolute path.")
-      }
+    if (localDirAllowList.nonEmpty) {
+      val uri =
+        try {
+          new URI(path)
+        } catch {
+          case e: URISyntaxException => throw new IllegalArgumentException(e)
+        }
 
-      if (!localDirAllowList.exists(uri.getPath.startsWith(_))) {
-        throw new KyuubiException(
-          s"The file ${uri.getPath} to access is not in the local dir allow list" +
-            s" [${localDirAllowList.mkString(",")}].")
+      if (uri.getScheme == null || uri.getScheme == "file") {
+        if (!uri.getPath.startsWith(File.separator)) {
+          throw new KyuubiException(
+            s"Relative path ${uri.getPath} is not allowed, please use absolute path.")
+        }
+
+        if (!localDirAllowList.exists(uri.getPath.startsWith(_))) {
+          throw new KyuubiException(
+            s"The file ${uri.getPath} to access is not in the local dir allow list" +
+              s" [${localDirAllowList.mkString(",")}].")
+        }
       }
     }
   }
 
-  private def checkSparkPathURIs(
+  private def checkSparkAccessPaths(
       appConf: Map[String, String],
       kyuubiConf: KyuubiConf): Unit = {
     if (kyuubiConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).nonEmpty) {
       SparkProcessBuilder.PATH_CONFIGS.flatMap { key =>
         appConf.get(key).map(_.split(",")).getOrElse(Array.empty)
       }.filter(_.nonEmpty).foreach { path =>
-        val uri =
-          try {
-            new URI(path)
-          } catch {
-            case e: URISyntaxException => throw new IllegalArgumentException(e)
-          }
-        checkApplicationPathURI(uri, kyuubiConf)
+        checkApplicationAccessPath(path, kyuubiConf)
       }
     }
   }
@@ -175,7 +178,7 @@ object KyuubiApplicationManager {
       appConf: Map[String, String],
       kyuubiConf: KyuubiConf): Unit = {
     applicationType.toUpperCase(Locale.ROOT) match {
-      case appType if appType.startsWith("SPARK") => checkSparkPathURIs(appConf, kyuubiConf)
+      case appType if appType.startsWith("SPARK") => checkSparkAccessPaths(appConf, kyuubiConf)
       case appType if appType.startsWith("FLINK") => // TODO: check flink app access local paths
       case _ =>
     }
