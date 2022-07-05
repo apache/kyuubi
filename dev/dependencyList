@@ -143,10 +143,10 @@ simpleclient_tracer_otel/0.14.1//simpleclient_tracer_otel-0.14.1.jar
 simpleclient_tracer_otel_agent/0.14.1//simpleclient_tracer_otel_agent-0.14.1.jar
 slf4j-api/1.7.35//slf4j-api-1.7.35.jar
 snakeyaml/1.30//snakeyaml-1.30.jar
-swagger-annotations/2.1.11//swagger-annotations-2.1.11.jar
-swagger-core/2.1.11//swagger-core-2.1.11.jar
-swagger-integration/2.1.11//swagger-integration-2.1.11.jar
-swagger-jaxrs2/2.1.11//swagger-jaxrs2-2.1.11.jar
-swagger-models/2.1.11//swagger-models-2.1.11.jar
+swagger-annotations/2.2.1/swagger-annotations-2.2.1.jar
+swagger-core/2.2.1//swagger-core-2.2.1.jar
+swagger-integration/2.2.1//swagger-integration-2.2.1.jar
+swagger-jaxrs2/2.2.1//swagger-jaxrs2-2.2.1.jar
+swagger-models/2.2.1//swagger-models-2.2.1.jar
 zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar
 zookeeper/3.4.14//zookeeper-3.4.14.jar
