@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TStatusCode}
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 
 class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests {
 
@@ -150,6 +152,51 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
         val resultUnLimit = statement.executeQuery("select * from va")
         assert(resultUnLimit.next())
         assert(resultUnLimit.next())
+      }
+    }
+  }
+
+  test("support to interrupt the thrift request if remote engine is broken") {
+    if (!httpMode) {
+      withSessionConf(Map(
+        KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
+        KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "1000",
+        KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "1000"))(Map.empty)(
+        Map.empty) {
+        withSessionHandle { (client, handle) =>
+          val preReq = new TExecuteStatementReq()
+          preReq.setStatement("select engine_name()")
+          preReq.setSessionHandle(handle)
+          preReq.setRunAsync(false)
+          client.ExecuteStatement(preReq)
+
+          val sessionHandle = SessionHandle(handle)
+          val session = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+            .getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
+          session.client.getEngineAliveProbeProtocol.foreach(_.getTransport.close())
+
+          val exitReq = new TExecuteStatementReq()
+          exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
+            "java_method('java.lang.System', 'exit', 1)")
+          exitReq.setSessionHandle(handle)
+          exitReq.setRunAsync(true)
+          client.ExecuteStatement(exitReq)
+
+          val executeStmtReq = new TExecuteStatementReq()
+          executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
+          executeStmtReq.setSessionHandle(handle)
+          executeStmtReq.setRunAsync(false)
+          val startTime = System.currentTimeMillis()
+          val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+          assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+          assert(executeStmtResp.getStatus.getErrorMessage.contains(
+            "java.net.SocketException: Connection reset") ||
+            executeStmtResp.getStatus.getErrorMessage.contains(
+              "Caused by: java.net.SocketException: Broken pipe (Write failed)"))
+          val elapsedTime = System.currentTimeMillis() - startTime
+          assert(elapsedTime < 20 * 1000)
+          assert(session.client.asyncRequestInterrupted)
+        }
       }
     }
   }
