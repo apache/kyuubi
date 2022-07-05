@@ -121,7 +121,7 @@ class DorisDialect extends JdbcDialect {
       filters += s"$TABLE_CATALOG = '$catalogName'"
     }
     if (StringUtils.isNotEmpty(schemaName)) {
-      filters += s"$TABLE_CATALOG LIKE '$schemaName'"
+      filters += s"$TABLE_SCHEMA LIKE '$schemaName'"
     }
     if (StringUtils.isNotEmpty(tableName)) {
       filters += s"$TABLE_NAME LIKE '$tableName'"
