@@ -1154,14 +1154,6 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
-  @deprecated(s"using kyuubi.operation.thrift.client.request.max.attempts instead", "1.6.0")
-  val OPERATION_STATUS_POLLING_MAX_ATTEMPTS: ConfigEntry[Int] =
-    buildConf("kyuubi.operation.status.polling.max.attempts")
-      .doc(s"(deprecated) - Using kyuubi.operation.thrift.client.request.max.attempts instead")
-      .version("1.4.0")
-      .intConf
-      .createWithDefault(5)
-
   val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.interrupt.on.cancel")
       .doc("When true, all running tasks will be interrupted if one cancels a query. " +
