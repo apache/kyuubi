@@ -18,7 +18,7 @@
 HikariCP/4.0.3//HikariCP-4.0.3.jar
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
 automaton/1.11-8//automaton-1.11-8.jar
-classgraph/4.8.95//classgraph-4.8.95.jar
+classgraph/4.8.138//classgraph-4.8.138.jar
 commons-codec/1.15//commons-codec-1.15.jar
 commons-collections/3.2.2//commons-collections-3.2.2.jar
 commons-lang/2.6//commons-lang-2.6.jar
@@ -143,7 +143,7 @@ simpleclient_tracer_otel/0.14.1//simpleclient_tracer_otel-0.14.1.jar
 simpleclient_tracer_otel_agent/0.14.1//simpleclient_tracer_otel_agent-0.14.1.jar
 slf4j-api/1.7.35//slf4j-api-1.7.35.jar
 snakeyaml/1.30//snakeyaml-1.30.jar
-swagger-annotations/2.2.1/swagger-annotations-2.2.1.jar
+swagger-annotations/2.2.1//swagger-annotations-2.2.1.jar
 swagger-core/2.2.1//swagger-core-2.2.1.jar
 swagger-integration/2.2.1//swagger-integration-2.2.1.jar
 swagger-jaxrs2/2.2.1//swagger-jaxrs2-2.2.1.jar
