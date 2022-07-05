@@ -395,9 +395,7 @@ kyuubi.operation.query.timeout|&lt;undefined&gt;|Timeout for query executions at
 kyuubi.operation.result.max.rows|0|Max rows of Spark query results. Rows that exceeds the limit would be ignored. By setting this value to 0 to disable the max rows limit.|int|1.6.0
 kyuubi.operation.scheduler.pool|&lt;undefined&gt;|The scheduler pool of job. Note that, this config should be used after change Spark config spark.scheduler.mode=FAIR.|string|1.1.1
 kyuubi.operation.spark.listener.enabled|true|When set to true, Spark engine registers a SQLOperationListener before executing the statement, logs a few summary statistics when each stage completes.|boolean|1.6.0
-kyuubi.operation.status.polling.max.attempts|5|(deprecated) - Using kyuubi.operation.thrift.client.request.max.attempts instead|int|1.4.0
 kyuubi.operation.status.polling.timeout|PT5S|Timeout(ms) for long polling asynchronous running sql query's status|duration|1.0.0
-kyuubi.operation.thrift.client.request.max.attempts|5|Max attempts for operation thrift request call at server-side on raw transport failures, e.g. TTransportException|int|1.6.0
 
 
 ### Server

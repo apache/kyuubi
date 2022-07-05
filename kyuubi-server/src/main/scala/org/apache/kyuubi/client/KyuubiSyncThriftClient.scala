@@ -41,7 +41,6 @@ import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
 
 class KyuubiSyncThriftClient private (
     protocol: TProtocol,
-    maxAttempts: Int,
     engineAliveProbeProtocol: Option[TProtocol],
     engineAliveProbeInterval: Long,
     engineAliveTimeout: Long)
@@ -458,7 +457,6 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       conf: KyuubiConf): KyuubiSyncThriftClient = {
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = conf.get(ENGINE_LOGIN_TIMEOUT).toInt
-    val requestMaxAttempts = conf.get(KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS)
     val aliveProbeEnabled = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
     val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
     val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
@@ -473,7 +471,6 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       }
     new KyuubiSyncThriftClient(
       tProtocol,
-      requestMaxAttempts,
       aliveProbeProtocol,
       aliveProbeInterval,
       aliveTimeout)
