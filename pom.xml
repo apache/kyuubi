@@ -169,7 +169,7 @@
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
-        <swagger.version>2.1.11</swagger.version>
+        <swagger.version>2.2.1</swagger.version>
         <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
         <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
