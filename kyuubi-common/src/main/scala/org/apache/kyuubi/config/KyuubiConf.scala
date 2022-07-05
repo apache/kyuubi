@@ -1162,15 +1162,6 @@ object KyuubiConf {
       .intConf
       .createWithDefault(5)
 
-  val OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS: ConfigEntry[Int] =
-    buildConf("kyuubi.operation.thrift.client.request.max.attempts")
-      .doc("Max attempts for operation thrift request call at server-side on raw transport" +
-        " failures, e.g. TTransportException")
-      .version("1.6.0")
-      .intConf
-      .checkValue(_ > 0, "must be positive number")
-      .createWithDefault(5)
-
   val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.interrupt.on.cancel")
       .doc("When true, all running tasks will be interrupted if one cancels a query. " +

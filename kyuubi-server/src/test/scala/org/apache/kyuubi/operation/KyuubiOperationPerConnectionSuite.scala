@@ -215,8 +215,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
     withSessionConf(Map(
       KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
       KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "1000",
-      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "3000",
-      KyuubiConf.OPERATION_THRIFT_CLIENT_REQUEST_MAX_ATTEMPTS.key -> "10000"))(Map.empty)(
+      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "3000"))(Map.empty)(
       Map.empty) {
       withSessionHandle { (client, handle) =>
         val preReq = new TExecuteStatementReq()
