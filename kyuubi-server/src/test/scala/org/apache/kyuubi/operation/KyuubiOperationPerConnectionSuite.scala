@@ -20,18 +20,16 @@ package org.apache.kyuubi.operation
 import java.sql.SQLException
 import java.util
 import java.util.Properties
-
 import scala.collection.JavaConverters._
-
 import org.apache.hive.service.rpc.thrift._
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
-
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection
 import org.apache.kyuubi.plugin.SessionConfAdvisor
+import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
@@ -211,11 +209,11 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
     }
   }
 
-  test("KYUUBI #2102 - support engine alive probe to fast fail on engine broken") {
+  test("KYUUBI #2102 #2953 - support to interrupt the thrift request if remote engine is broken") {
     withSessionConf(Map(
       KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
       KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL.key -> "1000",
-      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "3000"))(Map.empty)(
+      KyuubiConf.ENGINE_ALIVE_TIMEOUT.key -> "1000"))(Map.empty)(
       Map.empty) {
       withSessionHandle { (client, handle) =>
         val preReq = new TExecuteStatementReq()
@@ -224,17 +222,32 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         preReq.setRunAsync(false)
         client.ExecuteStatement(preReq)
 
+        val sessionHandle = SessionHandle(handle)
+        val session = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+          .getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
+        session.client.getEngineAliveProbeProtocol.foreach(_.getTransport.close())
+
+        val exitReq = new TExecuteStatementReq()
+        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
+          "java_method('java.lang.System', 'exit', 1)")
+        exitReq.setSessionHandle(handle)
+        exitReq.setRunAsync(true)
+        client.ExecuteStatement(exitReq)
+
         val executeStmtReq = new TExecuteStatementReq()
-        executeStmtReq.setStatement("select java_method('java.lang.System', 'exit', 1)")
+        executeStmtReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
         executeStmtReq.setSessionHandle(handle)
         executeStmtReq.setRunAsync(false)
         val startTime = System.currentTimeMillis()
         val executeStmtResp = client.ExecuteStatement(executeStmtReq)
         assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-        assert(executeStmtResp.getStatus.getErrorMessage contains
-          "Caused by: java.net.SocketException: Connection reset")
+        assert(executeStmtResp.getStatus.getErrorMessage.contains(
+          "java.net.SocketException: Connection reset") ||
+          executeStmtResp.getStatus.getErrorMessage.contains(
+            "Caused by: java.net.SocketException: Broken pipe (Write failed)"))
         val elapsedTime = System.currentTimeMillis() - startTime
-        assert(elapsedTime > 3 * 1000 && elapsedTime < 20 * 1000)
+        assert(elapsedTime < 20 * 1000)
+        assert(session.client.asyncRequestInterrupted)
       }
     }
   }
