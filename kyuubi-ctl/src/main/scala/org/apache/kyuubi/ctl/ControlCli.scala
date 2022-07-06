@@ -53,32 +53,24 @@ private[kyuubi] class ControlCli extends Logging {
 
 object ControlCli extends CommandLineUtils with Logging {
   override def main(args: Array[String]): Unit = {
-    val ctl = new ControlCli() {
-      self =>
+    val ctl = new ControlCli() { self =>
       override protected def parseArguments(args: Array[String]): ControlCliArguments = {
         new ControlCliArguments(args) {
           override def info(msg: => Any): Unit = self.info(msg)
-
           override def warn(msg: => Any): Unit = self.warn(msg)
-
           override def error(msg: => Any): Unit = self.error(msg)
 
           override private[kyuubi] lazy val effectSetup = new KyuubiOEffectSetup {
             override def displayToOut(msg: String): Unit = self.info(msg)
-
-            override def displayToErr(msg: String): Unit = self.info(msg)
-
-            override def reportError(msg: String): Unit = self.info(msg)
-
+            override def displayToErr(msg: String): Unit = self.error(msg)
             override def reportWarning(msg: String): Unit = self.warn(msg)
+            override def reportError(msg: String): Unit = self.error(msg)
           }
         }
       }
 
       override def info(msg: => Any): Unit = printMessage(msg)
-
       override def warn(msg: => Any): Unit = printMessage(s"Warning: $msg")
-
       override def error(msg: => Any): Unit = printMessage(s"Error: $msg")
 
       override def doAction(args: Array[String]): Unit = {
@@ -86,8 +78,7 @@ object ControlCli extends CommandLineUtils with Logging {
           super.doAction(args)
           exitFn(0)
         } catch {
-          case e: ControlCliException =>
-            exitFn(e.exitCode)
+          case e: ControlCliException => exitFn(e.exitCode)
         }
       }
     }
