@@ -17,66 +17,28 @@
 
 package org.apache.kyuubi.jdbc.hive.auth;
 
-import java.io.IOException;
 import java.util.Map;
+import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import org.apache.thrift.transport.TSaslClientTransport;
 import org.apache.thrift.transport.TTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class KerberosSaslHelper {
-
-  public static TTransport getKerberosTransport(
-      String principal,
-      String host,
-      TTransport underlyingTransport,
-      Map<String, String> saslProps,
-      boolean assumeSubject)
-      throws SaslException {
-    try {
-      String[] names = principal.split("[/@]");
-      if (names.length != 3) {
-        throw new IllegalArgumentException("Kerberos principal should have 3 parts: " + principal);
-      }
-
-      if (assumeSubject) {
-        return createSubjectAssumedTransport(principal, underlyingTransport, saslProps);
-      } else {
-        HadoopThriftAuthBridge.Client authBridge =
-            HadoopThriftAuthBridge.getBridge().createClientWithConf("kerberos");
-        return authBridge.createClientTransport(
-            principal, host, "KERBEROS", null, underlyingTransport, saslProps);
-      }
-    } catch (IOException e) {
-      throw new SaslException("Failed to open client transport", e);
-    }
-  }
+  private static final Logger LOG = LoggerFactory.getLogger(KerberosSaslHelper.class);
 
   public static TTransport createSubjectAssumedTransport(
-      String principal, TTransport underlyingTransport, Map<String, String> saslProps)
-      throws IOException {
-    String[] names = principal.split("[/@]");
-    try {
-      TTransport saslTransport =
-          new TSaslClientTransport(
-              "GSSAPI", null, names[0], names[1], saslProps, null, underlyingTransport);
-      return new TSubjectAssumingTransport(saslTransport);
-    } catch (SaslException se) {
-      throw new IOException("Could not instantiate SASL transport", se);
-    }
-  }
-
-  public static TTransport getTokenTransport(
-      String tokenStr, String host, TTransport underlyingTransport, Map<String, String> saslProps)
+      Subject subject,
+      String serverPrincipal,
+      TTransport underlyingTransport,
+      Map<String, String> saslProps)
       throws SaslException {
-    HadoopThriftAuthBridge.Client authBridge =
-        HadoopThriftAuthBridge.getBridge().createClientWithConf("kerberos");
-
-    try {
-      return authBridge.createClientTransport(
-          null, host, "DIGEST", tokenStr, underlyingTransport, saslProps);
-    } catch (IOException e) {
-      throw new SaslException("Failed to open client transport", e);
-    }
+    String[] names = KerberosUtils.splitPrincipal(serverPrincipal);
+    TTransport saslTransport =
+        new TSaslClientTransport(
+            "GSSAPI", null, names[0], names[1], saslProps, null, underlyingTransport);
+    return new TSubjectTransport(saslTransport, subject);
   }
 
   private KerberosSaslHelper() {
