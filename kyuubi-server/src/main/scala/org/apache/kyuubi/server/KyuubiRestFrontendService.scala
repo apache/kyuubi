@@ -81,8 +81,11 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
     server.addStaticHandler("org/apache/kyuubi/ui/static", "/static/")
     server.addRedirectHandler("/", "/static/")
+    server.addRedirectHandler("/static", "/static/")
     server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger/")
     server.addRedirectHandler("/docs", "/swagger/")
+    server.addRedirectHandler("/docs/", "/swagger/")
+    server.addRedirectHandler("/swagger", "/swagger/")
   }
 
   private def startBatchChecker(): Unit = {
