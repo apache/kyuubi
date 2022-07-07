@@ -21,15 +21,18 @@ import org.apache.kyuubi.ctl.util.DateTimeUtils._
 
 class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
 
+  val batchYamlFile: String = Thread.currentThread.getContextClassLoader
+    .getResource("cli/batch.yaml").getFile
+
   test("create/submit batch") {
     Seq("create", "submit").foreach { op =>
       val args = Seq(
         op,
         "batch",
         "-f",
-        "src/test/resources/cli/batch.yaml")
+        batchYamlFile)
       val opArgs = new ControlCliArguments(args)
-      assert(opArgs.cliConfig.createOpts.filename == "src/test/resources/cli/batch.yaml")
+      assert(opArgs.cliConfig.createOpts.filename == batchYamlFile)
     }
   }
 
@@ -39,7 +42,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
         op,
         "batch",
         "-f",
-        "src/test/resources/cli/batch.yaml",
+        batchYamlFile,
         "--hostUrl",
         "https://localhost:8440",
         "--username",
@@ -78,7 +81,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "submit",
       "batch",
       "-f",
-      "src/test/resources/cli/batch.yaml")
+      batchYamlFile)
     val opArgs = new ControlCliArguments(args)
     assert(opArgs.cliConfig.batchOpts.waitCompletion == true)
   }
@@ -88,7 +91,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "submit",
       "batch",
       "-f",
-      "src/test/resources/cli/batch.yaml",
+      batchYamlFile,
       "--waitCompletion",
       "false")
     val opArgs = new ControlCliArguments(args)
