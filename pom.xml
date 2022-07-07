@@ -158,7 +158,7 @@
         <scalacheck.version>3.2.9.0</scalacheck.version>
         <scalatest.version>3.2.9</scalatest.version>
         <scalatestplus.version>3.2.9.0</scalatestplus.version>
-        <scopt.version>4.0.1</scopt.version>
+        <scopt.version>4.1.0</scopt.version>
         <slf4j.version>1.7.35</slf4j.version>
         <snakeyaml.version>1.30</snakeyaml.version>
         <!--
