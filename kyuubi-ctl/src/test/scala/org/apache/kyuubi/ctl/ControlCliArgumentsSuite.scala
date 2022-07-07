@@ -56,11 +56,12 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
   test("test basic kyuubi service arguments parser") {
     Seq("get", "list", "delete").foreach { op =>
       Seq("server", "engine").foreach { service =>
-        val engineUser = if (service == "engine") {
-          Seq("-u", user)
-        } else {
-          Seq.empty[String]
-        }
+        val engineUser =
+          if (service == "engine") {
+            Seq("-u", user)
+          } else {
+            Seq.empty[String]
+          }
         val args = Seq(
           op,
           service,
@@ -301,11 +302,12 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
   test("test use short options") {
     Seq("get", "list", "delete").foreach { op =>
       Seq("server", "engine").foreach { service =>
-        val engineUser = if (service == "engine") {
-          Seq("-u", user)
-        } else {
-          Seq.empty[String]
-        }
+        val engineUser =
+          if (service == "engine") {
+            Seq("-u", user)
+          } else {
+            Seq.empty[String]
+          }
         val args = Seq(
           op,
           service,
