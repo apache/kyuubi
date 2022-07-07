@@ -16,11 +16,12 @@
  */
 package org.apache.kyuubi.engine.jdbc.doris
 
+import java.sql.ResultSet
+
 import scala.collection.mutable.ArrayBuffer
+
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
-
-import java.sql.ResultSet
 
 class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
   test("doris - get tables") {
