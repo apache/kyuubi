@@ -19,10 +19,9 @@ package org.apache.kyuubi.engine.jdbc.doris
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{TABLE_CATALOG, TABLE_NAME, TABLE_SCHEMA, TABLE_TYPE}
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
-
   test("doris - get tables") {
     case class Table(catalog: String, schema: String, tableName: String, tableType: String)
 
@@ -153,6 +152,110 @@ class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
       statement.execute("drop table db2.test1")
       statement.execute("drop table db2.test2")
       statement.execute("drop database db1")
+      statement.execute("drop database db2")
+    }
+  }
+
+  test("doris - get columns") {
+    case class Column(tableSchema: String, tableName: String, columnName: String)
+    withJdbcStatement() { statement =>
+      val metadata = statement.getConnection.getMetaData
+      statement.execute("create database if not exists db1")
+      statement.execute("create table if not exists db1.test1" +
+        "(id bigint, str1 string, str2 string, age int)" +
+        "ENGINE=OLAP DISTRIBUTED BY HASH(`id`) BUCKETS 32 " +
+        "PROPERTIES ('replication_num' = '1')")
+      statement.execute("create table if not exists db1.test2" +
+        "(id bigint, str1 string, str2 string, age int)" +
+        "ENGINE=OLAP DISTRIBUTED BY HASH(`id`) BUCKETS 32 " +
+        "PROPERTIES ('replication_num' = '1')")
+
+      statement.execute("create database if not exists db2")
+
+      statement.execute("create table if not exists db2.test1" +
+        "(id bigint, str1 string, str2 string, age int)" +
+        "ENGINE=OLAP DISTRIBUTED BY HASH(`id`) BUCKETS 32 " +
+        "PROPERTIES ('replication_num' = '1')")
+
+      val resultBuffer = ArrayBuffer[Column]()
+      val resultSet1 = metadata.getColumns(null, "db1", null, null)
+      while (resultSet1.next()) {
+        val schema = resultSet1.getString(TABLE_SCHEMA)
+        val tableName = resultSet1.getString(TABLE_NAME)
+        val columnName = resultSet1.getString(COLUMN_NAME)
+        val column = Column(schema, tableName, columnName)
+        resultBuffer += column
+      }
+
+      assert(resultBuffer.contains(Column("db1", "test1", "id")))
+      assert(resultBuffer.contains(Column("db1", "test1", "str1")))
+      assert(resultBuffer.contains(Column("db1", "test1", "str2")))
+      assert(resultBuffer.contains(Column("db1", "test1", "age")))
+
+      assert(resultBuffer.contains(Column("db1", "test2", "id")))
+      assert(resultBuffer.contains(Column("db1", "test2", "str1")))
+      assert(resultBuffer.contains(Column("db1", "test2", "str2")))
+      assert(resultBuffer.contains(Column("db1", "test2", "age")))
+
+      resultBuffer.clear()
+
+      val resultSet2 = metadata.getColumns(null, null, "test1", null)
+      while (resultSet2.next()) {
+        val schema = resultSet2.getString(TABLE_SCHEMA)
+        val tableName = resultSet2.getString(TABLE_NAME)
+        val columnName = resultSet2.getString(COLUMN_NAME)
+        val column = Column(schema, tableName, columnName)
+        resultBuffer += column
+      }
+
+      assert(resultBuffer.contains(Column("db1", "test1", "id")))
+      assert(resultBuffer.contains(Column("db1", "test1", "str1")))
+      assert(resultBuffer.contains(Column("db1", "test1", "str2")))
+      assert(resultBuffer.contains(Column("db1", "test1", "age")))
+
+      assert(resultBuffer.contains(Column("db2", "test1", "id")))
+      assert(resultBuffer.contains(Column("db2", "test1", "str1")))
+      assert(resultBuffer.contains(Column("db2", "test1", "str2")))
+      assert(resultBuffer.contains(Column("db2", "test1", "age")))
+
+      resultBuffer.clear()
+
+      val resultSet3 = metadata.getColumns(null, null, null, "age")
+      while (resultSet3.next()) {
+        val schema = resultSet3.getString(TABLE_SCHEMA)
+        val tableName = resultSet3.getString(TABLE_NAME)
+        val columnName = resultSet3.getString(COLUMN_NAME)
+        val column = Column(schema, tableName, columnName)
+        resultBuffer += column
+      }
+
+      assert(resultBuffer.contains(Column("db1", "test1", "age")))
+      assert(resultBuffer.contains(Column("db1", "test2", "age")))
+      assert(resultBuffer.contains(Column("db2", "test1", "age")))
+
+      resultBuffer.clear()
+
+      val resultSet4 = metadata.getColumns(null, "d%1", "t%1", "str%")
+      while (resultSet4.next()) {
+        val schema = resultSet4.getString(TABLE_SCHEMA)
+        val tableName = resultSet4.getString(TABLE_NAME)
+        val columnName = resultSet4.getString(COLUMN_NAME)
+        val column = Column(schema, tableName, columnName)
+        resultBuffer += column
+      }
+
+      assert(resultBuffer.contains(Column("db1", "test1", "str1")))
+      assert(resultBuffer.contains(Column("db1", "test1", "str2")))
+
+      resultBuffer.clear()
+
+      val resultSet5 = metadata.getColumns(null, "d%1", "t%1", "fake")
+      assert(!resultSet5.next())
+
+      statement.execute("drop table db1.test1")
+      statement.execute("drop table db1.test2")
+      statement.execute("drop database db1")
+      statement.execute("drop table db2.test1")
       statement.execute("drop database db2")
     }
   }
