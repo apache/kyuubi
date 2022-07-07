@@ -17,9 +17,10 @@
 package org.apache.kyuubi.engine.jdbc.doris
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+
+import java.sql.ResultSet
 
 class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
   test("doris - get tables") {
@@ -158,6 +159,15 @@ class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
 
   test("doris - get columns") {
     case class Column(tableSchema: String, tableName: String, columnName: String)
+
+    def buildColumn(resultSet: ResultSet): Column = {
+      val schema = resultSet.getString(TABLE_SCHEMA)
+      val tableName = resultSet.getString(TABLE_NAME)
+      val columnName = resultSet.getString(COLUMN_NAME)
+      val column = Column(schema, tableName, columnName)
+      column
+    }
+
     withJdbcStatement() { statement =>
       val metadata = statement.getConnection.getMetaData
       statement.execute("create database if not exists db1")
@@ -180,10 +190,7 @@ class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
       val resultBuffer = ArrayBuffer[Column]()
       val resultSet1 = metadata.getColumns(null, "db1", null, null)
       while (resultSet1.next()) {
-        val schema = resultSet1.getString(TABLE_SCHEMA)
-        val tableName = resultSet1.getString(TABLE_NAME)
-        val columnName = resultSet1.getString(COLUMN_NAME)
-        val column = Column(schema, tableName, columnName)
+        val column = buildColumn(resultSet1)
         resultBuffer += column
       }
 
@@ -201,10 +208,7 @@ class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
 
       val resultSet2 = metadata.getColumns(null, null, "test1", null)
       while (resultSet2.next()) {
-        val schema = resultSet2.getString(TABLE_SCHEMA)
-        val tableName = resultSet2.getString(TABLE_NAME)
-        val columnName = resultSet2.getString(COLUMN_NAME)
-        val column = Column(schema, tableName, columnName)
+        val column = buildColumn(resultSet2)
         resultBuffer += column
       }
 
@@ -222,10 +226,7 @@ class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
 
       val resultSet3 = metadata.getColumns(null, null, null, "age")
       while (resultSet3.next()) {
-        val schema = resultSet3.getString(TABLE_SCHEMA)
-        val tableName = resultSet3.getString(TABLE_NAME)
-        val columnName = resultSet3.getString(COLUMN_NAME)
-        val column = Column(schema, tableName, columnName)
+        val column = buildColumn(resultSet3)
         resultBuffer += column
       }
 
@@ -237,10 +238,7 @@ class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
 
       val resultSet4 = metadata.getColumns(null, "d%1", "t%1", "str%")
       while (resultSet4.next()) {
-        val schema = resultSet4.getString(TABLE_SCHEMA)
-        val tableName = resultSet4.getString(TABLE_NAME)
-        val columnName = resultSet4.getString(COLUMN_NAME)
-        val column = Column(schema, tableName, columnName)
+        val column = buildColumn(resultSet4)
         resultBuffer += column
       }
 
