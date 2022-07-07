@@ -79,10 +79,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
 
-    server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
-    server.addRedirectHandler("/", "/static")
-    server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")
-    server.addRedirectHandler("/docs", "/swagger")
+    server.addStaticHandler("org/apache/kyuubi/ui/static", "/static/")
+    server.addRedirectHandler("/", "/static/")
+    server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger/")
+    server.addRedirectHandler("/docs", "/swagger/")
   }
 
   private def startBatchChecker(): Unit = {
