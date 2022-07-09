@@ -149,9 +149,9 @@ public class KyuubiBeeLine extends BeeLine {
     if (!connSuccessful && !exit) {
       try {
         Method defaultBeelineConnectMethod =
-            BeeLine.class.getDeclaredMethod("defaultBeelineConnect");
+            BeeLine.class.getDeclaredMethod("defaultBeelineConnect", CommandLine.class);
         defaultBeelineConnectMethod.setAccessible(true);
-        connSuccessful = (boolean) defaultBeelineConnectMethod.invoke(this);
+        connSuccessful = (boolean) defaultBeelineConnectMethod.invoke(this, cl);
 
       } catch (Exception t) {
         error(t.getMessage());
