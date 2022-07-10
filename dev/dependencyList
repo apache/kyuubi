@@ -65,6 +65,7 @@ jakarta.ws.rs-api/2.1.6//jakarta.ws.rs-api-2.1.6.jar
 jakarta.xml.bind-api/2.3.2//jakarta.xml.bind-api-2.3.2.jar
 javassist/3.25.0-GA//javassist-3.25.0-GA.jar
 jcl-over-slf4j/1.7.35//jcl-over-slf4j-1.7.35.jar
+jul-over-slf4j/1.7.35//jul-over-slf4j-1.7.35.jar
 jersey-client/2.36//jersey-client-2.36.jar
 jersey-common/2.36//jersey-common-2.36.jar
 jersey-container-servlet-core/2.36//jersey-container-servlet-core-2.36.jar
