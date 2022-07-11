@@ -59,7 +59,7 @@ Sbt
 
 .. code-block:: sbt
 
-   libraryDependencies += "org.apache.kyuubi" % "kyuubi-hive-jdbc-shaded" % "1.5.0-incubating"
+   libraryDependencies += "org.apache.kyuubi" % "kyuubi-hive-jdbc-shaded" % "1.5.2-incubating"
 
 
 Gradle
