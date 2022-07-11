@@ -13,27 +13,14 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Clients
-=======
 
-This section aims to document the APIs, clients and tools for end-users who are not necessary to care about deployment at the kyuubi server side.
+`MySQL Connectors`_
+================
 
-Kyuubi provides standards-based drivers for JDBC, and ODBC enabling developers to build database applications in their language of choice.
+.. versionadded:: 1.4.0
 
-In addition, APIs like REST, Thrift, etc., allow developers to access kyuubi directly and flexibly.
+Kyuubi provides an frontend service that enables the connectivity and accessibility from MySQL connectors.
 
-.. note::
-   When you try some of the examples in this section, make sure you have a available server.
+.. warning:: The document you are visiting now is incomplete, please help kyuubi community to fix it if appropriate for you.
 
-.. toctree::
-    :maxdepth: 2
-
-    jdbc/index
-    cli/index
-    bi_tools/index
-    odbc/index
-    thrift/index
-    rest/index
-    ui/index
-    python/index
-    advanced/index
+.. _MySQL Connectors: https://www.mysql.com/products/connector/

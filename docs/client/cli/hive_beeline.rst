@@ -13,27 +13,19 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Clients
-=======
+Hive Beeline
+============
 
-This section aims to document the APIs, clients and tools for end-users who are not necessary to care about deployment at the kyuubi server side.
+Kyuubi supports Apache Hive beeline that works with Kyuubi server.
+Hive beeline is a `SQLLine CLI <http://sqlline.sourceforge.net/>`_ based on the `Hive JDBC Driver <../jdbc/hive_jdbc.html>`_.
 
-Kyuubi provides standards-based drivers for JDBC, and ODBC enabling developers to build database applications in their language of choice.
+Prerequisites
+-------------
 
-In addition, APIs like REST, Thrift, etc., allow developers to access kyuubi directly and flexibly.
+- Kyuubi server installed and launched.
+- Hive beeline installed
 
-.. note::
-   When you try some of the examples in this section, make sure you have a available server.
+.. important:: Kyuubi does not support embedded mode which beeline and server run in the same process.
+   It always uses remote mode for connecting beeline with a separate server process over thrift.
 
-.. toctree::
-    :maxdepth: 2
-
-    jdbc/index
-    cli/index
-    bi_tools/index
-    odbc/index
-    thrift/index
-    rest/index
-    ui/index
-    python/index
-    advanced/index
+.. warning:: The document you are visiting now is incomplete, please help kyuubi community to fix it if appropriate for you.

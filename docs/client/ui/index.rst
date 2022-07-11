@@ -13,27 +13,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Clients
-=======
 
-This section aims to document the APIs, clients and tools for end-users who are not necessary to care about deployment at the kyuubi server side.
-
-Kyuubi provides standards-based drivers for JDBC, and ODBC enabling developers to build database applications in their language of choice.
-
-In addition, APIs like REST, Thrift, etc., allow developers to access kyuubi directly and flexibly.
-
-.. note::
-   When you try some of the examples in this section, make sure you have a available server.
+Web UI
+======
 
 .. toctree::
     :maxdepth: 2
 
-    jdbc/index
-    cli/index
-    bi_tools/index
-    odbc/index
-    thrift/index
-    rest/index
-    ui/index
-    python/index
-    advanced/index
+    hive_beeline
+
