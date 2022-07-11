@@ -327,6 +327,7 @@ com.github.scopt:scopt_*
 io.github.classgraph:classgraph
 org.slf4j:slf4j-api
 org.slf4j:jcl-over-slf4j
+org.slf4j:jul-over-slf4j
 
 kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/assets/fonts/*
 kyuubi-server/src/main/resources/org/apache/kyuubi/ui/static/icon.min.css

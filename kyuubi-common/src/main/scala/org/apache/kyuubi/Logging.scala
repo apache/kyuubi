@@ -21,6 +21,7 @@ import org.apache.logging.log4j.{Level, LogManager}
 import org.apache.logging.log4j.core.{Logger => Log4jLogger, LoggerContext}
 import org.apache.logging.log4j.core.config.DefaultConfiguration
 import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.bridge.SLF4JBridgeHandler
 import org.slf4j.impl.StaticLoggerBinder
 
 /**
@@ -92,6 +93,10 @@ trait Logging {
   }
 
   private def initializeLogging(isInterpreter: Boolean): Unit = {
+    // Handles configuring the JUL -> SLF4J bridge
+    SLF4JBridgeHandler.removeHandlersForRootLogger()
+    SLF4JBridgeHandler.install()
+
     if (Logging.isLog4j2) {
       // scalastyle:off println
       if (Logging.isLog4j2DefaultConfigured()) {

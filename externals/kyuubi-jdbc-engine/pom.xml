@@ -60,12 +60,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>com.dimafeng</groupId>
             <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>
             <scope>test</scope>
