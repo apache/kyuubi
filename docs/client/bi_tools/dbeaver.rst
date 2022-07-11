@@ -18,17 +18,17 @@ DBeaver
 
 What is DBeaver
 ---------------
+
 .. image:: https://raw.githubusercontent.com/wiki/dbeaver/dbeaver/images/dbeaver-icon-64x64.png
 
-`DBeaver <https://dbeaver.io/>`_ is a free multi-platform database tool for developers, database administrators, analysts, and all people who need to work with databases.
+`DBeaver`_ is a free multi-platform database tool for developers, database administrators, analysts, and all people who need to work with databases.
 Supports all popular databases as well as kyuubi JDBC.
 
-.. seealso::
-   `DBeaver Wiki <https://github.com/dbeaver/dbeaver/wiki>`_.
+.. seealso:: `DBeaver Wiki`
 
 Installation
 ------------
-Please go to `Download DBeaver <https://dbeaver.io/download/>`_ page to get and install an appropriate release version for yourself.
+Please go to `Download DBeaver`_ page to get and install an appropriate release version for yourself.
 
 .. versionadded:: 22.1.0(dbeaver)
    DBeaver officially supports apache kyuubi JDBC driver since 06 Jun 2022 via `PR 16567 <https://github.com/dbeaver/dbeaver/issues/16567>`_.
@@ -117,4 +117,9 @@ Now, we can use the SQL editor to write queries to interact with Kyuubi server t
 
 Client Authentication
 ---------------------
-For kerberized kyuubi clusters, please refer to `this page <../kerberized_kyuubi.html#bi-tools>`_ for more information.
+For kerberized kyuubi clusters, please refer to `Kerberos Authentication`_ for more information.
+
+.. _DBeaver: https://dbeaver.io/
+.. _DBeaver Wiki: https://github.com/dbeaver/dbeaver/wiki
+.. _Download DBeaver: https://dbeaver.io/download/
+.. _Kerberos Authentication: ../advanced/kerberized_kyuubi.html#bi-tools
