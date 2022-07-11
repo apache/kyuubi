@@ -31,7 +31,6 @@ import java.util.jar.Attributes;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLDatabaseMetaData;
-import org.apache.kyuubi.jdbc.hive.cli.HiveSQLException;
 import org.apache.thrift.TException;
 
 /** KyuubiDatabaseMetaData. */
@@ -79,7 +78,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       catalogResp = client.GetCatalogs(new TGetCatalogsReq(sessHandle));
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(catalogResp.getStatus());
 
@@ -128,7 +127,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
       for (int i = 0; i < COLUMNS.length; ++i) {
         if (COLUMNS[i].equalsIgnoreCase(columnLabel)) return getObject(i, type);
       }
-      throw new SQLException("No column " + columnLabel);
+      throw new KyuubiSQLException("No column " + columnLabel);
     }
 
     @SuppressWarnings("unchecked")
@@ -198,7 +197,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       colResp = client.GetColumns(colReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(colResp.getStatus());
     // build the resultset from response
@@ -256,7 +255,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       getFKResp = client.GetCrossReference(getFKReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(getFKResp.getStatus());
 
@@ -338,7 +337,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       funcResp = client.GetFunctions(getFunctionsReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(funcResp.getStatus());
 
@@ -464,7 +463,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       getPKResp = client.GetPrimaryKeys(getPKReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(getPKResp.getStatus());
 
@@ -608,7 +607,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       schemaResp = client.GetSchemas(schemaReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(schemaResp.getStatus());
 
@@ -641,7 +640,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       tableTypeResp = client.GetTableTypes(new TGetTableTypesReq(sessHandle));
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(tableTypeResp.getStatus());
 
@@ -668,11 +667,11 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       getTableResp = client.GetTables(getTableReq);
     } catch (TException rethrow) {
-      throw new SQLException(rethrow.getMessage(), "08S01", rethrow);
+      throw new KyuubiSQLException(rethrow.getMessage(), "08S01", rethrow);
     }
     TStatus tStatus = getTableResp.getStatus();
     if (tStatus.getStatusCode() != TStatusCode.SUCCESS_STATUS) {
-      throw new HiveSQLException(tStatus);
+      throw new KyuubiSQLException(tStatus);
     }
     return new KyuubiQueryResultSet.Builder(connection)
         .setClient(client)
@@ -732,7 +731,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       getTypeInfoResp = client.GetTypeInfo(getTypeInfoReq);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(getTypeInfoResp.getStatus());
     return new KyuubiQueryResultSet.Builder(connection)
@@ -929,7 +928,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     try {
       resp = client.GetInfo(req);
     } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+      throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(resp.getStatus());
     return resp;

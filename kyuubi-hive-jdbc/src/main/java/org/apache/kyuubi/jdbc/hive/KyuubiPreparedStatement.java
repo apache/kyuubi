@@ -99,7 +99,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements SQLPrepa
     StringBuilder newSql = new StringBuilder(parts.get(0));
     for (int i = 1; i < parts.size(); i++) {
       if (!parameters.containsKey(i)) {
-        throw new SQLException("Parameter #" + i + " is unset");
+        throw new KyuubiSQLException("Parameter #" + i + " is unset");
       }
       newSql.append(parameters.get(i));
       newSql.append(parts.get(i));
@@ -234,7 +234,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements SQLPrepa
       setString(parameterIndex, x.toString());
     } else {
       // Can't infer a type.
-      throw new SQLException(
+      throw new KyuubiSQLException(
           MessageFormat.format(
               "Can't infer the SQL type to use for an instance of {0}. Use setObject() with an explicit Types value to specify the type to use.",
               x.getClass().getName()));

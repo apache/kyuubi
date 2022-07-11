@@ -117,7 +117,7 @@ public class JdbcColumn {
       case STRUCT:
         return String.class.getName();
       default:
-        throw new SQLException("Invalid column type: " + columnType);
+        throw new KyuubiSQLException("Invalid column type: " + columnType);
     }
   }
 
@@ -164,7 +164,7 @@ public class JdbcColumn {
       case NULL_TYPE:
         return NULL;
       default:
-        throw new SQLException("Invalid column type: " + type);
+        throw new KyuubiSQLException("Invalid column type: " + type);
     }
   }
 
@@ -213,7 +213,7 @@ public class JdbcColumn {
       case NULL_TYPE:
         return "void";
       default:
-        throw new SQLException("Invalid column type: " + type);
+        throw new KyuubiSQLException("Invalid column type: " + type);
     }
   }
 
@@ -258,7 +258,7 @@ public class JdbcColumn {
       case STRUCT:
         return Integer.MAX_VALUE;
       default:
-        throw new SQLException("Invalid column type: " + columnType);
+        throw new KyuubiSQLException("Invalid column type: " + columnType);
     }
   }
 
@@ -317,7 +317,7 @@ public class JdbcColumn {
       case STRUCT:
         return Integer.MAX_VALUE;
       default:
-        throw new SQLException("Invalid column type: " + columnType);
+        throw new KyuubiSQLException("Invalid column type: " + columnType);
     }
   }
 
@@ -350,7 +350,7 @@ public class JdbcColumn {
       case STRUCT:
         return 0;
       default:
-        throw new SQLException("Invalid column type: " + columnType);
+        throw new KyuubiSQLException("Invalid column type: " + columnType);
     }
   }
 
