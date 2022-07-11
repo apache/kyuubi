@@ -47,7 +47,7 @@ public class KyuubiDataSource implements SQLDataSource {
       }
       return new KyuubiConnection("", info);
     } catch (Exception ex) {
-      throw new SQLException("Error in getting HiveConnection", ex);
+      throw new KyuubiSQLException("Error in getting HiveConnection", ex);
     }
   }
 }

@@ -25,6 +25,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.logging.Logger;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
+import org.apache.kyuubi.jdbc.hive.KyuubiSQLException;
 import org.apache.kyuubi.jdbc.hive.Utils;
 
 /** Kyuubi JDBC driver to connect to Kyuubi server via HiveServer2 thrift protocol. */
@@ -125,14 +126,14 @@ public class KyuubiHiveDriver implements Driver {
     Properties urlProps = (defaults != null) ? new Properties(defaults) : new Properties();
 
     if (!acceptsURL(url)) {
-      throw new SQLException("Invalid connection url: " + url);
+      throw new KyuubiSQLException("Invalid connection url: " + url);
     }
 
     Utils.JdbcConnectionParams params;
     try {
       params = Utils.parseURL(url, defaults);
     } catch (Exception e) {
-      throw new SQLException(e);
+      throw new KyuubiSQLException(e);
     }
     String host = params.getHost();
     if (host == null) {
@@ -175,7 +176,7 @@ public class KyuubiHiveDriver implements Driver {
     try {
       loadManifestAttributes();
     } catch (IOException e) {
-      throw new SQLException("Couldn't load manifest attributes.", e);
+      throw new KyuubiSQLException("Couldn't load manifest attributes.", e);
     }
     return manifestAttributes.getValue(attributeName);
   }

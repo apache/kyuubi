@@ -15,20 +15,64 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive.cli;
+package org.apache.kyuubi.jdbc.hive;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.hive.service.rpc.thrift.TStatus;
 
-/** HiveSQLException. */
-public class HiveSQLException extends SQLException {
+public class KyuubiSQLException extends SQLException {
 
-  /** */
-  private static final long serialVersionUID = -6095254671958748094L;
+  /** Constructor. */
+  public KyuubiSQLException() {
+    super();
+  }
 
-  public HiveSQLException(TStatus status) {
+  /**
+   * Constructs a SQLException object with a given reason. The SQLState is initialized to null and
+   * the vendor code is initialized to 0. The cause is not initialized, and may subsequently be
+   * initialized by a call to the Throwable.initCause(java.lang.Throwable) method.
+   *
+   * @param reason a description of the exception
+   */
+  public KyuubiSQLException(String reason) {
+    super(reason);
+  }
+
+  /**
+   * Constructs a SQLException object with a given cause. The SQLState is initialized to null and
+   * the vendor code is initialized to 0. The reason is initialized to null if cause==null or to
+   * cause.toString() if cause!=null.
+   *
+   * @param cause the underlying reason for this SQLException - may be null indicating the cause is
+   *     non-existent or unknown
+   */
+  public KyuubiSQLException(Throwable cause) {
+    super(cause);
+  }
+
+  public KyuubiSQLException(String reason, String sqlState) {
+    super(reason, sqlState);
+  }
+
+  public KyuubiSQLException(String reason, Throwable cause) {
+    super(reason, cause);
+  }
+
+  public KyuubiSQLException(String reason, String sqlState, int vendorCode) {
+    super(reason, sqlState, vendorCode);
+  }
+
+  public KyuubiSQLException(String reason, String sqlState, Throwable cause) {
+    super(reason, sqlState, cause);
+  }
+
+  public KyuubiSQLException(String reason, String sqlState, int vendorCode, Throwable cause) {
+    super(reason, sqlState, vendorCode, cause);
+  }
+
+  public KyuubiSQLException(TStatus status) {
     // TODO: set correct vendorCode field
     super(status.getErrorMessage(), status.getSqlState(), status.getErrorCode());
     if (status.getInfoMessages() != null) {
@@ -67,7 +111,7 @@ public class HiveSQLException extends SQLException {
   }
 
   private static List<String> enroll(Throwable ex, StackTraceElement[] trace, int max) {
-    List<String> details = new ArrayList<String>();
+    List<String> details = new ArrayList<>();
     StringBuilder builder = new StringBuilder();
     builder.append('*').append(ex.getClass().getName()).append(':');
     builder.append(ex.getMessage()).append(':');

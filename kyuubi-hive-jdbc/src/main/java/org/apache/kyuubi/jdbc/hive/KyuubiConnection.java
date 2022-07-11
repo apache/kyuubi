@@ -138,7 +138,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     try {
       connParams = Utils.parseURL(uri, info);
     } catch (ZooKeeperHiveClientException e) {
-      throw new SQLException(e);
+      throw new KyuubiSQLException(e);
     }
     isBeeLineMode = Boolean.parseBoolean(info.getProperty(BEELINE_MODE_PROPERTY));
     jdbcUriString = connParams.getJdbcUriString();
@@ -228,7 +228,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         }
 
         if (numRetries >= maxRetries) {
-          throw new SQLException(errMsg + e.getMessage(), " 08S01", e);
+          throw new KyuubiSQLException(errMsg + e.getMessage(), " 08S01", e);
         } else {
           LOG.warn(warnMsg + e.getMessage() + " Retrying " + numRetries + " of " + maxRetries);
         }
@@ -281,7 +281,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         logs.add(String.valueOf(row[0]));
       }
     } catch (TException e) {
-      throw new SQLException("Error building result set for query log", e);
+      throw new KyuubiSQLException("Error building result set for query log", e);
     }
     engineLogInflight = !logs.isEmpty();
     return Collections.unmodifiableList(logs);
@@ -336,7 +336,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         }
       } catch (Exception e) {
         LOG.error("Failed to execute initial SQL");
-        throw new SQLException(e.getMessage());
+        throw new KyuubiSQLException(e.getMessage());
       }
     }
     initFileCompleted = true;
@@ -465,7 +465,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         AccessControlContext context = AccessController.getContext();
         loggedInSubject = Subject.getSubject(context);
         if (loggedInSubject == null) {
-          throw new SQLException("The Subject is not set");
+          throw new KyuubiSQLException("The Subject is not set");
         }
       }
       /**
@@ -603,7 +603,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       } catch (Exception e) {
         String msg =
             "Could not create an https connection to " + jdbcUriString + ". " + e.getMessage();
-        throw new SQLException(msg, " 08S01", e);
+        throw new KyuubiSQLException(msg, " 08S01", e);
       }
     }
     return httpClientBuilder.build();
@@ -662,7 +662,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           try {
             saslQOP = SaslQOP.fromString(sessConfMap.get(JdbcConnectionParams.AUTH_QOP));
           } catch (IllegalArgumentException e) {
-            throw new SQLException(
+            throw new KyuubiSQLException(
                 "Invalid " + JdbcConnectionParams.AUTH_QOP + " parameter. " + e.getMessage(),
                 "42000",
                 e);
@@ -700,7 +700,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         transport = socketTransport;
       }
     } catch (SaslException e) {
-      throw new SQLException(
+      throw new KyuubiSQLException(
           "Could not create secure connection to " + jdbcUriString + ": " + e.getMessage(),
           " 08S01",
           e);
@@ -751,7 +751,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           new SecureRandom());
       socketFactory = new SSLConnectionSocketFactory(context);
     } catch (Exception e) {
-      throw new SQLException("Error while initializing 2 way ssl socket factory ", e);
+      throw new KyuubiSQLException("Error while initializing 2 way ssl socket factory ", e);
     }
     return socketFactory;
   }
@@ -765,7 +765,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       try {
         tokenStr = SessionUtils.getTokenStrForm(HS2_CLIENT_TOKEN);
       } catch (IOException e) {
-        throw new SQLException("Error reading token ", e);
+        throw new KyuubiSQLException("Error reading token ", e);
       }
     }
     return tokenStr;
@@ -847,7 +847,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       }
     } catch (TException e) {
       LOG.error("Error opening session", e);
-      throw new SQLException(
+      throw new KyuubiSQLException(
           "Could not establish connection to " + jdbcUriString + ": " + e.getMessage(),
           " 08S01",
           e);
@@ -915,7 +915,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   public String getDelegationToken(String owner, String renewer) throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     TGetDelegationTokenReq req = new TGetDelegationTokenReq(sessHandle, owner, renewer);
     try {
@@ -923,13 +923,13 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       Utils.verifySuccess(tokenResp.getStatus());
       return tokenResp.getDelegationToken();
     } catch (TException e) {
-      throw new SQLException("Could not retrieve token: " + e.getMessage(), " 08S01", e);
+      throw new KyuubiSQLException("Could not retrieve token: " + e.getMessage(), " 08S01", e);
     }
   }
 
   public void cancelDelegationToken(String tokenStr) throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     TCancelDelegationTokenReq cancelReq = new TCancelDelegationTokenReq(sessHandle, tokenStr);
     try {
@@ -937,13 +937,13 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       Utils.verifySuccess(cancelResp.getStatus());
       return;
     } catch (TException e) {
-      throw new SQLException("Could not cancel token: " + e.getMessage(), " 08S01", e);
+      throw new KyuubiSQLException("Could not cancel token: " + e.getMessage(), " 08S01", e);
     }
   }
 
   public void renewDelegationToken(String tokenStr) throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     TRenewDelegationTokenReq cancelReq = new TRenewDelegationTokenReq(sessHandle, tokenStr);
     try {
@@ -951,7 +951,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       Utils.verifySuccess(renewResp.getStatus());
       return;
     } catch (TException e) {
-      throw new SQLException("Could not renew token: " + e.getMessage(), " 08S01", e);
+      throw new KyuubiSQLException("Could not renew token: " + e.getMessage(), " 08S01", e);
     }
   }
 
@@ -968,7 +968,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         client.CloseSession(closeReq);
       }
     } catch (TException e) {
-      throw new SQLException("Error while cleaning up the server resources", e);
+      throw new KyuubiSQLException("Error while cleaning up the server resources", e);
     } finally {
       isClosed = true;
       client = null;
@@ -1000,7 +1000,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   @Override
   public Statement createStatement() throws SQLException {
     if (isClosed) {
-      throw new SQLException("Can't create Statement, connection is closed");
+      throw new KyuubiSQLException("Can't create Statement, connection is closed");
     }
     return new KyuubiStatement(this, client, sessHandle, fetchSize);
   }
@@ -1013,17 +1013,17 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public Statement createStatement(int resultSetType, int resultSetConcurrency)
       throws SQLException {
     if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
-      throw new SQLException(
+      throw new KyuubiSQLException(
           "Statement with resultset concurrency " + resultSetConcurrency + " is not supported",
           "HYC00"); // Optional feature not implemented
     }
     if (resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE) {
-      throw new SQLException(
+      throw new KyuubiSQLException(
           "Statement with resultset type " + resultSetType + " is not supported",
           "HYC00"); // Optional feature not implemented
     }
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     return new KyuubiStatement(
         this, client, sessHandle, resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE, fetchSize);
@@ -1037,12 +1037,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   @Override
   public String getCatalog() throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     try (KyuubiStatement stmt = createKyuubiStatement();
         ResultSet res = stmt.executeGetCurrentCatalog("_GET_CATALOG")) {
       if (!res.next()) {
-        throw new SQLException("Failed to get catalog information");
+        throw new KyuubiSQLException("Failed to get catalog information");
       }
       return res.getString(1);
     } catch (Exception e) {
@@ -1064,7 +1064,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   @Override
   public DatabaseMetaData getMetaData() throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     return new KyuubiDatabaseMetaData(this, client, sessHandle);
   }
@@ -1072,12 +1072,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   @Override
   public String getSchema() throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     try (KyuubiStatement stmt = createKyuubiStatement();
         ResultSet res = stmt.executeGetCurrentDatabase("SELECT current_database()")) {
       if (!res.next()) {
-        throw new SQLException("Failed to get schema information");
+        throw new KyuubiSQLException("Failed to get schema information");
       }
       return res.getString(1);
     }
@@ -1106,7 +1106,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   @Override
   public boolean isValid(int timeout) throws SQLException {
     if (timeout < 0) {
-      throw new SQLException("timeout value was negative");
+      throw new KyuubiSQLException("timeout value was negative");
     }
     if (isClosed) {
       return false;
@@ -1125,7 +1125,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   @Override
   public PreparedStatement prepareStatement(String sql) throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
@@ -1133,7 +1133,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   @Override
   public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
@@ -1142,7 +1142,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
       throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
@@ -1151,7 +1151,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public void setAutoCommit(boolean autoCommit) throws SQLException {
     // Per JDBC spec, if the connection is closed a SQLException should be thrown.
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     // The auto-commit mode is always enabled for this connection. Per JDBC spec,
     // if setAutoCommit is called and the auto-commit mode is not changed, the call is a no-op.
@@ -1166,7 +1166,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   @Override
   public void setCatalog(String catalog) throws SQLException {
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     try (KyuubiStatement stmt = createKyuubiStatement()) {
       stmt.executeSetCurrentCatalog("_SET_CATALOG", catalog);
@@ -1216,14 +1216,14 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public void setReadOnly(boolean readOnly) throws SQLException {
     // Per JDBC spec, if the connection is closed a SQLException should be thrown.
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     // Per JDBC spec, the request defines a hint to the driver to enable database optimizations.
     // The read-only mode for this connection is disabled and cannot be enabled (isReadOnly always
     // returns false).
     // The most correct behavior is to throw only if the request tries to enable the read-only mode.
     if (readOnly) {
-      throw new SQLException("Enabling read-only mode not supported");
+      throw new KyuubiSQLException("Enabling read-only mode not supported");
     }
   }
 
@@ -1231,10 +1231,10 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public void setSchema(String schema) throws SQLException {
     // JDK 1.7
     if (isClosed) {
-      throw new SQLException("Connection is closed");
+      throw new KyuubiSQLException("Connection is closed");
     }
     if (schema == null || schema.isEmpty()) {
-      throw new SQLException("Schema name is null or empty");
+      throw new KyuubiSQLException("Schema name is null or empty");
     }
     try (KyuubiStatement stmt = createKyuubiStatement()) {
       stmt.executeSetCurrentDatabase("use " + schema, schema);
@@ -1254,7 +1254,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
     if (!isWrapperFor(iface)) {
-      throw new SQLException(
+      throw new KyuubiSQLException(
           this.getClass().getName() + " not unwrappable from " + iface.getName());
     }
     return iface.cast(this);
@@ -1321,17 +1321,17 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
               break;
             case CANCELED_STATE:
               // 01000 -> warning
-              throw new SQLException("Launch engine was cancelled", "01000");
+              throw new KyuubiSQLException("Launch engine was cancelled", "01000");
             case TIMEDOUT_STATE:
               throw new SQLTimeoutException("Launch engine timeout");
             case ERROR_STATE:
               // Get the error details from the underlying exception
-              throw new SQLException(
+              throw new KyuubiSQLException(
                   statusResp.getErrorMessage(),
                   statusResp.getSqlState(),
                   statusResp.getErrorCode());
             case UKNOWN_STATE:
-              throw new SQLException("Unknown state", "HY000");
+              throw new KyuubiSQLException("Unknown state", "HY000");
             case INITIALIZED_STATE:
             case PENDING_STATE:
             case RUNNING_STATE:
@@ -1344,7 +1344,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         if (e instanceof SQLException) {
           throw (SQLException) e;
         } else {
-          throw new SQLException(e.getMessage(), "08S01", e);
+          throw new KyuubiSQLException(e.getMessage(), "08S01", e);
         }
       }
     }

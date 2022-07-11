@@ -125,10 +125,10 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
 
   protected int toZeroIndex(int column) throws SQLException {
     if (columnTypes == null) {
-      throw new SQLException("Could not determine column type name for ResultSet");
+      throw new KyuubiSQLException("Could not determine column type name for ResultSet");
     }
     if (column < 1 || column > columnTypes.size()) {
-      throw new SQLException("Invalid column value: " + column);
+      throw new KyuubiSQLException("Invalid column value: " + column);
     }
     return column - 1;
   }

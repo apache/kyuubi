@@ -28,7 +28,6 @@ import org.apache.hive.service.rpc.thrift.TStatus;
 import org.apache.hive.service.rpc.thrift.TStatusCode;
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
-import org.apache.kyuubi.jdbc.hive.cli.HiveSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -283,7 +282,7 @@ public class Utils {
         || (withInfo && status.getStatusCode() == TStatusCode.SUCCESS_WITH_INFO_STATUS)) {
       return;
     }
-    throw new HiveSQLException(status);
+    throw new KyuubiSQLException(status);
   }
 
   public static JdbcConnectionParams parseURL(String uri)

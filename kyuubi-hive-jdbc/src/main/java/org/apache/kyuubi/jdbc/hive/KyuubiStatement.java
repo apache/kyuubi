@@ -134,7 +134,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     } catch (SQLException e) {
       throw e;
     } catch (Exception e) {
-      throw new SQLException(e.toString(), "08S01", e);
+      throw new KyuubiSQLException(e.toString(), "08S01", e);
     }
     isCancelled = true;
   }
@@ -160,7 +160,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     } catch (SQLException e) {
       throw e;
     } catch (Exception e) {
-      throw new SQLException(e.toString(), "08S01", e);
+      throw new KyuubiSQLException(e.toString(), "08S01", e);
     }
   }
 
@@ -279,7 +279,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     } catch (Exception ex) {
       isExecuteStatementFailed = true;
       isLogBeingGenerated = false;
-      throw new SQLException(ex.toString(), "08S01", ex);
+      throw new KyuubiSQLException(ex.toString(), "08S01", ex);
     }
   }
 
@@ -298,7 +298,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         statusResp = client.GetOperationStatus(statusReq);
       } catch (TException e) {
         isLogBeingGenerated = false;
-        throw new SQLException(e.toString(), "08S01", e);
+        throw new KyuubiSQLException(e.toString(), "08S01", e);
       }
     }
 
@@ -336,20 +336,20 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
               // 01000 -> warning
               String errMsg = statusResp.getErrorMessage();
               if (errMsg != null && !errMsg.isEmpty()) {
-                throw new SQLException("Query was cancelled. " + errMsg, "01000");
+                throw new KyuubiSQLException("Query was cancelled. " + errMsg, "01000");
               } else {
-                throw new SQLException("Query was cancelled", "01000");
+                throw new KyuubiSQLException("Query was cancelled", "01000");
               }
             case TIMEDOUT_STATE:
               throw new SQLTimeoutException("Query timed out after " + queryTimeout + " seconds");
             case ERROR_STATE:
               // Get the error details from the underlying exception
-              throw new SQLException(
+              throw new KyuubiSQLException(
                   statusResp.getErrorMessage(),
                   statusResp.getSqlState(),
                   statusResp.getErrorCode());
             case UKNOWN_STATE:
-              throw new SQLException("Unknown query", "HY000");
+              throw new KyuubiSQLException("Unknown query", "HY000");
             case INITIALIZED_STATE:
             case PENDING_STATE:
             case RUNNING_STATE:
@@ -361,7 +361,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         throw e;
       } catch (Exception e) {
         isLogBeingGenerated = false;
-        throw new SQLException(e.toString(), "08S01", e);
+        throw new KyuubiSQLException(e.toString(), "08S01", e);
       }
     }
 
@@ -374,7 +374,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
 
   private void checkConnection(String action) throws SQLException {
     if (isClosed) {
-      throw new SQLException("Can't " + action + " after statement has been closed");
+      throw new KyuubiSQLException("Can't " + action + " after statement has been closed");
     }
   }
 
@@ -395,7 +395,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     if (!execute(sql)) {
-      throw new SQLException("The query did not generate a result set!");
+      throw new KyuubiSQLException("The query did not generate a result set!");
     }
     return resultSet;
   }
@@ -403,7 +403,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public ResultSet executeScala(String code) throws SQLException {
     if (!executeWithConfOverlay(
         code, Collections.singletonMap("kyuubi.operation.language", "SCALA"))) {
-      throw new SQLException("The query did not generate a result set!");
+      throw new KyuubiSQLException("The query did not generate a result set!");
     }
     return resultSet;
   }
@@ -418,7 +418,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public ResultSet executeGetCurrentCatalog(String sql) throws SQLException {
     if (!executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.get.current.catalog", ""))) {
-      throw new SQLException("The query did not generate a result set!");
+      throw new KyuubiSQLException("The query did not generate a result set!");
     }
     return resultSet;
   }
@@ -433,7 +433,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public ResultSet executeGetCurrentDatabase(String sql) throws SQLException {
     if (!executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.get.current.database", ""))) {
-      throw new SQLException("The query did not generate a result set!");
+      throw new KyuubiSQLException("The query did not generate a result set!");
     }
     return resultSet;
   }
@@ -528,7 +528,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public void setFetchDirection(int direction) throws SQLException {
     checkConnection("setFetchDirection");
     if (direction != ResultSet.FETCH_FORWARD) {
-      throw new SQLException("Not supported direction " + direction);
+      throw new KyuubiSQLException("Not supported direction " + direction);
     }
   }
 
@@ -543,7 +543,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       // In this case it means reverting it to the default value.
       fetchSize = DEFAULT_FETCH_SIZE;
     } else {
-      throw new SQLException("Fetch size must be greater or equal to 0");
+      throw new KyuubiSQLException("Fetch size must be greater or equal to 0");
     }
   }
 
@@ -551,7 +551,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public void setMaxRows(int max) throws SQLException {
     checkConnection("setMaxRows");
     if (max < 0) {
-      throw new SQLException("max must be >= 0");
+      throw new KyuubiSQLException("max must be >= 0");
     }
     maxRows = max;
   }
@@ -568,7 +568,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
 
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    throw new SQLException("Cannot unwrap to " + iface);
+    throw new KyuubiSQLException("Cannot unwrap to " + iface);
   }
 
   /**
@@ -637,9 +637,9 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     } catch (SQLException e) {
       throw e;
     } catch (TException e) {
-      throw new SQLException("Error when getting query log: " + e, e);
+      throw new KyuubiSQLException("Error when getting query log: " + e, e);
     } catch (Exception e) {
-      throw new SQLException("Error when getting query log: " + e, e);
+      throw new KyuubiSQLException("Error when getting query log: " + e, e);
     }
 
     try {
@@ -649,7 +649,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         logs.add(String.valueOf(row[0]));
       }
     } catch (TException e) {
-      throw new SQLException("Error building result set for query log: " + e, e);
+      throw new KyuubiSQLException("Error building result set for query log: " + e, e);
     }
 
     return logs;
@@ -700,7 +700,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       // queryId can be empty string if query was already closed. Need to return null in such case.
       return StringUtils.isBlank(queryId) ? null : queryId;
     } catch (TException e) {
-      throw new SQLException(e);
+      throw new KyuubiSQLException(e);
     }
   }
 
