@@ -65,7 +65,6 @@ jakarta.ws.rs-api/2.1.6//jakarta.ws.rs-api-2.1.6.jar
 jakarta.xml.bind-api/2.3.2//jakarta.xml.bind-api-2.3.2.jar
 javassist/3.25.0-GA//javassist-3.25.0-GA.jar
 jcl-over-slf4j/1.7.35//jcl-over-slf4j-1.7.35.jar
-jul-over-slf4j/1.7.35//jul-over-slf4j-1.7.35.jar
 jersey-client/2.36//jersey-client-2.36.jar
 jersey-common/2.36//jersey-common-2.36.jar
 jersey-container-servlet-core/2.36//jersey-container-servlet-core-2.36.jar
@@ -81,6 +80,7 @@ jetty-servlet/9.4.48.v20220622//jetty-servlet-9.4.48.v20220622.jar
 jetty-util-ajax/9.4.48.v20220622//jetty-util-ajax-9.4.48.v20220622.jar
 jetty-util/9.4.48.v20220622//jetty-util-9.4.48.v20220622.jar
 jline/0.9.94//jline-0.9.94.jar
+jul-to-slf4j/1.7.35//jul-to-slf4j-1.7.35.jar
 kubernetes-client/5.12.1//kubernetes-client-5.12.1.jar
 kubernetes-model-admissionregistration/5.12.1//kubernetes-model-admissionregistration-5.12.1.jar
 kubernetes-model-apiextensions/5.12.1//kubernetes-model-apiextensions-5.12.1.jar
