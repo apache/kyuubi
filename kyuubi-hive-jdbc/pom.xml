@@ -33,7 +33,6 @@
 
     <properties>
         <!-- only used in kyuubi-hive-jdbc module -->
-        <junit.version>4.13.1</junit.version>
         <mockito-all.version>1.9.5</mockito-all.version>
     </properties>
 
@@ -221,7 +220,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
 

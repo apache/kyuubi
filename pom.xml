@@ -124,6 +124,7 @@
         <jersey.version>2.34</jersey.version>
         <jetty.version>9.4.41.v20210516</jetty.version>
         <jline.version>0.9.94</jline.version>
+        <junit.version>4.13.1</junit.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <log4j.version>2.17.2</log4j.version>
@@ -880,6 +881,12 @@
                 <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
                 <version>${scalacheck.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
             </dependency>
 
             <dependency>
