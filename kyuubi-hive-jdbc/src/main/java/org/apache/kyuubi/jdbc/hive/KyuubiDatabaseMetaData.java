@@ -696,12 +696,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     }
   }
 
-  /**
-   * Translate hive table types into jdbc table types.
-   *
-   * @param hivetabletype
-   * @return the type of the table
-   */
+  /** Translate hive table types into jdbc table types. */
   public static String toJdbcTableType(String hivetabletype) {
     if (hivetabletype == null) {
       return null;
@@ -914,12 +909,6 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
   @Override
   public boolean supportsUnionAll() throws SQLException {
     return true;
-  }
-
-  public static void main(String[] args) throws SQLException {
-    KyuubiDatabaseMetaData meta = new KyuubiDatabaseMetaData(null, null, null);
-    System.out.println("DriverName: " + meta.getDriverName());
-    System.out.println("DriverVersion: " + meta.getDriverVersion());
   }
 
   private TGetInfoResp getServerInfo(TGetInfoType type) throws SQLException {

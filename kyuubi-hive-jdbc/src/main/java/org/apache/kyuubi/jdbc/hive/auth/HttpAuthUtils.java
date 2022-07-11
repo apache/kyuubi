@@ -18,14 +18,9 @@
 package org.apache.kyuubi.jdbc.hive.auth;
 
 import java.security.PrivilegedExceptionAction;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import javax.security.auth.Subject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
@@ -35,28 +30,21 @@ import org.ietf.jgss.Oid;
 public final class HttpAuthUtils {
   public static final String AUTHORIZATION = "Authorization";
   public static final String NEGOTIATE = "Negotiate";
-  private static final String COOKIE_CLIENT_USER_NAME = "cu";
-  private static final String COOKIE_CLIENT_RAND_NUMBER = "rn";
-  private static final String COOKIE_KEY_VALUE_SEPARATOR = "=";
-  private static final Set<String> COOKIE_ATTRIBUTES =
-      new HashSet<String>(Arrays.asList(COOKIE_CLIENT_USER_NAME, COOKIE_CLIENT_RAND_NUMBER));
 
   /**
    * @return Stringified Base64 encoded kerberosAuthHeader on success
    * @throws Exception
    */
   public static String getKerberosServiceTicket(
-      String principal, String host, String serverHttpUrl, Subject loggedInSubject)
-      throws Exception {
+      String principal, String host, Subject loggedInSubject) throws Exception {
     String serverPrincipal = HadoopThriftAuthBridge.getBridge().getServerPrincipal(principal, host);
     if (loggedInSubject != null) {
-      return Subject.doAs(
-          loggedInSubject, new HttpKerberosClientAction(serverPrincipal, serverHttpUrl));
+      return Subject.doAs(loggedInSubject, new HttpKerberosClientAction(serverPrincipal));
     } else {
       // JAAS login from ticket cache to setup the client UserGroupInformation
       UserGroupInformation clientUGI =
           HadoopThriftAuthBridge.getBridge().getCurrentUGIWithConf("kerberos");
-      return clientUGI.doAs(new HttpKerberosClientAction(serverPrincipal, serverHttpUrl));
+      return clientUGI.doAs(new HttpKerberosClientAction(serverPrincipal));
     }
   }
 
@@ -69,18 +57,12 @@ public final class HttpAuthUtils {
    * can be read from the Subject
    */
   public static class HttpKerberosClientAction implements PrivilegedExceptionAction<String> {
-    public static final String SERVER_HTTP_URL = "SERVER_HTTP_URL";
     private final String serverPrincipal;
-    private final String serverHttpUrl;
     private final Base64 base64codec;
-    private final HttpContext httpContext;
 
-    public HttpKerberosClientAction(String serverPrincipal, String serverHttpUrl) {
+    public HttpKerberosClientAction(String serverPrincipal) {
       this.serverPrincipal = serverPrincipal;
-      this.serverHttpUrl = serverHttpUrl;
       base64codec = new Base64(0);
-      httpContext = new BasicHttpContext();
-      httpContext.setAttribute(SERVER_HTTP_URL, serverHttpUrl);
     }
 
     @Override

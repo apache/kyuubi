@@ -29,7 +29,7 @@ public enum SaslQOP {
 
   public final String saslQop;
 
-  private static final Map<String, SaslQOP> STR_TO_ENUM = new HashMap<String, SaslQOP>();
+  private static final Map<String, SaslQOP> STR_TO_ENUM = new HashMap<>();
 
   static {
     for (SaslQOP saslQop : values()) {
@@ -41,6 +41,7 @@ public enum SaslQOP {
     this.saslQop = saslQop;
   }
 
+  @Override
   public String toString() {
     return saslQop;
   }

@@ -17,14 +17,12 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import java.sql.SQLException;
-
 /** Table metadata. */
 public class JdbcTable {
-  private String tableCatalog;
-  private String tableName;
-  private String type;
-  private String comment;
+  private final String tableCatalog;
+  private final String tableName;
+  private final String type;
+  private final String comment;
 
   public JdbcTable(String tableCatalog, String tableName, String type, String comment) {
     this.tableCatalog = tableCatalog;
@@ -45,7 +43,7 @@ public class JdbcTable {
     return type;
   }
 
-  public String getSqlTableType() throws SQLException {
+  public String getSqlTableType() {
     return KyuubiDatabaseMetaData.toJdbcTableType(type);
   }
 
