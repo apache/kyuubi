@@ -21,7 +21,7 @@
 ## Instructions
 When Kyuubi is secured by Kerberos, the authentication procedure becomes a little complicated.
 
-![](../imgs/kyuubi_kerberos_authentication.png)
+![](../../imgs/kyuubi_kerberos_authentication.png)
 
 The graph above shows a simplified kerberos authentication procedure:
 1. Kerberos client sends user principal and secret key to KDC. Secret key can be a password or a keytab file.   

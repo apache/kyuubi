@@ -16,7 +16,7 @@
  -->
 
 
-# Getting Started with Kyuubi and Cloudera Hue
+# Cloudera Hue
 
 ## What is Hue
 
@@ -26,7 +26,7 @@
 
 ### Get Kyuubi Started
 
-[Get the server Started](quick_start.md) first before your try Hue with Kyuubi.
+[Get the server Started](../../quick_start.md) first before your try Hue with Kyuubi.
 
 ```bash
 Welcome to
@@ -90,11 +90,11 @@ docker run -p 8888:8888 -v $PWD/hue.ini:/usr/share/hue/desktop/conf/hue.ini geth
 
 Go http://localhost:8888/ and follow the guide to create an account.
 
-![](../imgs/hue/start.png)
+![](../../imgs/hue/start.png)
 
 Having fun with Hue and Kyuubi!
 
-![](../imgs/hue/spark_sql_docker.png)
+![](../../imgs/hue/spark_sql_docker.png)
 
 ## For CDH 6.x Users
 
@@ -103,7 +103,7 @@ overwrite the `desktop.app_blacklist` to remove this restriction.
 
 Config Hue in Cloudera Manager.
 
-![](../imgs/hue/cloudera_manager.png)
+![](../../imgs/hue/cloudera_manager.png)
 
 Refer following configuration and tune it to fit your environment.
 ```
@@ -123,8 +123,8 @@ sql_server_port=10009
 
 You need to restart the Hue Service to activate the configuration changes, and then Spark SQL will available in editor list.
 
-![](../imgs/hue/editor.png)
+![](../../imgs/hue/editor.png)
 
 Having fun with Hue and Kyuubi!
 
-![](../imgs/hue/spark_sql_cdh6.png)
+![](../../imgs/hue/spark_sql_cdh6.png)

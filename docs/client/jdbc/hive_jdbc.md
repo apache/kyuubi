@@ -16,7 +16,7 @@
  -->
 
 
-# Access Kyuubi with Hive JDBC and ODBC Drivers
+# Hive JDBC Driver
 
 
 ## Instructions
