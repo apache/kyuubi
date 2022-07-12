@@ -345,7 +345,6 @@ jobs:
       - name: integration tests
         run: >-
           ./build/mvn ${MVN_OPT} clean install
-          -Dspark.version=3.2.1
           -Pflink-provided,hive-provided
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.spark
