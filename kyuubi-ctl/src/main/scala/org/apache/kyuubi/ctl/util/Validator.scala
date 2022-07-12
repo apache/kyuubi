@@ -72,5 +72,11 @@ private[ctl] object Validator {
     }
   }
 
+  def validateAdminCommand(cliConfig: CliConfig): Unit = {
+    if (cliConfig.adminOpts.adminCmd == null) {
+      fail("The admin command is not specified.")
+    }
+  }
+
   private def fail(msg: String): Unit = throw new KyuubiException(msg)
 }

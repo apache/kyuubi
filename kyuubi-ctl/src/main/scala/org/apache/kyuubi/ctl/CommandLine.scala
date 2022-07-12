@@ -29,6 +29,7 @@ object CommandLine {
       programName("kyuubi-ctl"),
       head("kyuubi", KYUUBI_VERSION),
       common(builder),
+      admin(builder),
       create(builder),
       get(builder),
       delete(builder),
@@ -37,7 +38,7 @@ object CommandLine {
       submit(builder),
       checkConfig(f => {
         if (f.action == null) {
-          failure("Must specify action command: [create|get|delete|list|log|submit].")
+          failure("Must specify action command: [admin|create|get|delete|list|log|submit].")
         } else {
           success
         }
@@ -92,6 +93,16 @@ object CommandLine {
           }
         })
         .text("Kyuubi config property pair, formatted key=value."))
+  }
+
+  private def admin(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    OParser.sequence(
+      note(""),
+      cmd("admin")
+        .text("\tAdminister resources.")
+        .action((_, c) => c.copy(action = ControlAction.ADMIN))
+        .children(adminServerCmd(builder).text("\tAdminister the server.")))
   }
 
   private def create(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -177,6 +188,17 @@ object CommandLine {
             .action((v, c) => c.copy(createOpts = c.createOpts.copy(filename = v)))
             .text("Filename to use to create the resource"),
           submitBatchCmd(builder).text("\topen batch session and wait for completion.")))
+  }
+
+  private def adminServerCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("server").action((_, c) => c.copy(resource = ControlObject.SERVER))
+      .children(
+        arg[String]("<adminCmd>")
+          .optional()
+          .action((v, c) => c.copy(adminOpts = c.adminOpts.copy(adminCmd = v)))
+          .text(
+            "Admin command. The valid command can be one of the following: refreshHadoopConf."))
   }
 
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -317,5 +339,4 @@ object CommandLine {
             "until the batch is in any terminal state. If false, the client will exit " +
             "when the batch is no longer in PENDING state."))
   }
-
 }
