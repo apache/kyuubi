@@ -1986,20 +1986,6 @@
         </profile>
 
         <profile>
-            <id>spark-3.0</id>
-            <properties>
-                <spark.version>3.0.3</spark.version>
-                <delta.version>0.8.0</delta.version>
-                <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-                <!--
-                    https://hudi.apache.org/releases/release-0.11.0/#bundle-usage-updates
-                    Hudi 0.11.0 Spark bundle for 3.0.x is no longer officially supported.
-                -->
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
-            </properties>
-        </profile>
-
-        <profile>
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.3</spark.version>

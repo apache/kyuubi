@@ -46,7 +46,7 @@ jobs:
           cache: 'maven'
           check-latest: false
       - name: Scalastyle with maven
-        run: build/mvn scalastyle:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,spark-3.0,tpcds
+        run: build/mvn scalastyle:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
       - name: Print scalastyle error report
         if: failure()
         run: >-
@@ -57,4 +57,4 @@ jobs:
               fi
           done
       - name: JavaStyle with maven
-        run: build/mvn spotless:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,spark-3.0,tpcds
+        run: build/mvn spotless:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
