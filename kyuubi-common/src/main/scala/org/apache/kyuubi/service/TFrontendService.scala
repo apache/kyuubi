@@ -160,7 +160,7 @@ abstract class TFrontendService(name: String)
     val userName = getUserName(req)
     val ipAddress =
       if (isServer() && req.getConfiguration != null) {
-        Option(req.getConfiguration.remove(KyuubiReservedKeys.KYUUBI_SESSION_IP_KEY)).getOrElse(
+        Option(req.getConfiguration.get(KyuubiReservedKeys.KYUUBI_SESSION_IP_KEY)).getOrElse(
           getIpAddress)
       } else {
         getIpAddress
