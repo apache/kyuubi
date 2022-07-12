@@ -167,7 +167,7 @@
           -->
         <spark.version>3.2.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
-        <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
+        <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.2.2-rc1-bin/</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.2.1</swagger.version>
         <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
@@ -244,6 +244,16 @@
             </releases>
             <snapshots>
                 <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>Apache Staging Repository</id>
+            <url>https://repository.apache.org/content/repositories/orgapachespark-1409</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
             </snapshots>
         </repository>
     </repositories>
@@ -2003,6 +2013,7 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.3</spark.version>
+                <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
                 <delta.version>1.0.1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.1_${scala.binary.version}</iceberg.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
@@ -2016,22 +2027,8 @@
 
         <profile>
             <id>spark-3.2</id>
-            <repositories>
-                <repository>
-                    <id>Apache Staging Repository</id>
-                    <url>https://repository.apache.org/content/repositories/orgapachespark-1409</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
             <properties>
                 <spark.version>3.2.2</spark.version>
-                <!-- use the default value of ${spark.archive.mirror} once spark-3.2.2 released -->
-                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.2.2-rc1-bin/</spark.archive.mirror>
                 <delta.version>2.0.0rc1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
                 <!--
