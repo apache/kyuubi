@@ -75,8 +75,6 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
           check-latest: false
-      - name: Check kinit
-        run: kinit --version
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
           TEST_MODULES="dev/kyuubi-codecov"
