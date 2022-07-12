@@ -44,8 +44,6 @@ build/scala-*/**
 **/semantic.min.css
 **/icon.png
 **/icon.min.css
-**/io.grpc.LoadBalancerProvider
-**/io.grpc.NameResolverProvider
 **/org/apache/kyuubi/ui/static/assets/**
 **/org/apache/kyuubi/ui/swagger/**
 **/org.apache.spark.status.AppHistoryServerPlugin
