@@ -158,9 +158,15 @@ abstract class TFrontendService(name: String)
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
     val userName = getUserName(req)
-    val kyuubiSessionIp =
-      Option(req.getConfiguration).map(_.remove(KyuubiReservedKeys.KYUUBI_SESSION_IP_KEY)).orNull
-    val ipAddress = Option(kyuubiSessionIp).getOrElse(getIpAddress)
+    val ipAddress =
+      if (isServer()) {
+        val kyuubiSessionIp =
+          Option(req.getConfiguration).map(
+            _.remove(KyuubiReservedKeys.KYUUBI_SESSION_IP_KEY)).orNull
+        Option(kyuubiSessionIp).getOrElse(getIpAddress)
+      } else {
+        getIpAddress
+      }
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
     val sessionHandle = be.openSession(
