@@ -159,11 +159,9 @@ abstract class TFrontendService(name: String)
     res.setServerProtocolVersion(protocol)
     val userName = getUserName(req)
     val ipAddress =
-      if (isServer()) {
-        val kyuubiSessionIp =
-          Option(req.getConfiguration).map(
-            _.remove(KyuubiReservedKeys.KYUUBI_SESSION_IP_KEY)).orNull
-        Option(kyuubiSessionIp).getOrElse(getIpAddress)
+      if (isServer() && req.getConfiguration != null) {
+        Option(req.getConfiguration.remove(KyuubiReservedKeys.KYUUBI_SESSION_IP_KEY)).getOrElse(
+          getIpAddress)
       } else {
         getIpAddress
       }
