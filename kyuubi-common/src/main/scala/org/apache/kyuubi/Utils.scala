@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi
 
-import java.io.{File, InputStreamReader, IOException, PrintWriter, StringWriter}
+import java.io._
 import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, TimeZone, UUID}
 
 import scala.collection.JavaConverters._
+import scala.sys.process._
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
@@ -339,4 +340,6 @@ object Utils extends Logging {
         (key, value)
     }.asInstanceOf[Seq[(K, V)]]
   }
+
+  def isCommandAvailable(cmd: String): Boolean = s"which $cmd".! == 0
 }
