@@ -30,22 +30,21 @@ import org.apache.zookeeper.ZooDefs
 import org.apache.zookeeper.data.ACL
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
+import org.apache.kyuubi.KerberizedTestHelper
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.AuthTypes
-import org.apache.kyuubi.ha.client.DiscoveryClient
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider
+import org.apache.kyuubi.ha.client.DiscoveryClientTests
 import org.apache.kyuubi.ha.client.EngineServiceDiscovery
-import org.apache.kyuubi.ha.client.KyuubiServiceDiscovery
 import org.apache.kyuubi.service._
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
-class ZookeeperDiscoveryClientSuite extends KerberizedTestHelper {
-  import DiscoveryClientProvider._
+class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests with KerberizedTestHelper {
 
   val zkServer = new EmbeddedZookeeper()
-  val conf: KyuubiConf = KyuubiConf()
+  override val conf: KyuubiConf = KyuubiConf()
+
+  override def getConnectString(): String = zkServer.getConnectString
 
   override def beforeAll(): Unit = {
     conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
@@ -60,51 +59,6 @@ class ZookeeperDiscoveryClientSuite extends KerberizedTestHelper {
     conf.unset(HA_ADDRESSES)
     zkServer.stop()
     super.afterAll()
-  }
-
-  test("publish instance to embedded zookeeper server") {
-    val namespace = "kyuubiserver"
-
-    conf
-      .unset(KyuubiConf.SERVER_KEYTAB)
-      .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ADDRESSES, zkServer.getConnectString)
-      .set(HA_NAMESPACE, namespace)
-      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-
-    var serviceDiscovery: KyuubiServiceDiscovery = null
-    val server: Serverable = new NoopTBinaryFrontendServer() {
-      override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
-        new NoopTBinaryFrontendService(this) {
-          override val discoveryService: Option[Service] = {
-            serviceDiscovery = new KyuubiServiceDiscovery(this)
-            Some(serviceDiscovery)
-          }
-        })
-    }
-    server.initialize(conf)
-    server.start()
-    val znodeRoot = s"/$namespace"
-    withDiscoveryClient(conf) { framework =>
-      try {
-        assert(framework.pathNonExists("/abc"))
-        assert(framework.pathExists(znodeRoot))
-        val children = framework.getChildren(znodeRoot)
-        assert(children.head ===
-          s"serviceUri=${server.frontendServices.head.connectionUrl};" +
-          s"version=$KYUUBI_VERSION;sequence=0000000000")
-
-        children.foreach { child =>
-          framework.delete(s"""$znodeRoot/$child""")
-        }
-        eventually(timeout(5.seconds), interval(100.millis)) {
-          assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
-          assert(server.getServiceState === ServiceState.STOPPED)
-        }
-      } finally {
-        server.stop()
-      }
-    }
   }
 
   test("acl for zookeeper") {
@@ -124,12 +78,12 @@ class ZookeeperDiscoveryClientSuite extends KerberizedTestHelper {
     val serverACL = new ZookeeperACLProvider(serverConf).getDefaultAcl
     assertACL(expectedEnableACL, serverACL)
 
-    val engineConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
+    val engineConf = serverConf.clone.set(HA_ENGINE_REF_ID, "ref")
     engineConf.set(HA_ZK_ENGINE_AUTH_TYPE, AuthTypes.NONE.toString)
     val engineACL = new ZookeeperACLProvider(engineConf).getDefaultAcl
     assertACL(expectedNoACL, engineACL)
 
-    val enableEngineACLConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
+    val enableEngineACLConf = serverConf.clone.set(HA_ENGINE_REF_ID, "ref")
     enableEngineACLConf.set(HA_ZK_ENGINE_AUTH_TYPE, AuthTypes.KERBEROS.toString)
     val enableEngineACL = new ZookeeperACLProvider(enableEngineACLConf).getDefaultAcl
     assertACL(expectedEnableACL, enableEngineACL)
@@ -159,79 +113,6 @@ class ZookeeperDiscoveryClientSuite extends KerberizedTestHelper {
       val e = intercept[IOException](ZookeeperClientProvider.setUpZooKeeperAuth(conf))
       assert(e.getMessage === s"${HA_ZK_AUTH_KEYTAB.key} does not exists")
     }
-  }
-
-  test("KYUUBI-304: Stop engine service gracefully when related zk node is deleted") {
-    val logAppender = new LogAppender("test stop engine gracefully")
-    withLogAppender(logAppender) {
-      val namespace = "kyuubiengine"
-
-      conf
-        .unset(KyuubiConf.SERVER_KEYTAB)
-        .unset(KyuubiConf.SERVER_PRINCIPAL)
-        .set(HA_ADDRESSES, zkServer.getConnectString)
-        .set(HA_NAMESPACE, namespace)
-        .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-        .set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
-
-      var serviceDiscovery: KyuubiServiceDiscovery = null
-      val server: Serverable = new NoopTBinaryFrontendServer() {
-        override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
-          new NoopTBinaryFrontendService(this) {
-            override val discoveryService: Option[Service] = {
-              serviceDiscovery = new KyuubiServiceDiscovery(this)
-              Some(serviceDiscovery)
-            }
-          })
-      }
-      server.initialize(conf)
-      server.start()
-
-      val znodeRoot = s"/$namespace"
-      withDiscoveryClient(conf) { framework =>
-        try {
-
-          assert(framework.pathNonExists("/abc"))
-          assert(framework.pathExists(znodeRoot))
-          val children = framework.getChildren(znodeRoot)
-          assert(children.head ===
-            s"serviceUri=${server.frontendServices.head.connectionUrl};" +
-            s"version=$KYUUBI_VERSION;sequence=0000000000")
-
-          children.foreach { child =>
-            framework.delete(s"""$znodeRoot/$child""")
-          }
-          eventually(timeout(5.seconds), interval(100.millis)) {
-            assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
-            assert(server.getServiceState === ServiceState.STOPPED)
-            val msg = s"This Kyuubi instance ${server.frontendServices.head.connectionUrl}" +
-              s" is now de-registered"
-            assert(logAppender.loggingEvents.exists(
-              _.getMessage.getFormattedMessage.contains(msg)))
-          }
-        } finally {
-          server.stop()
-          serviceDiscovery.stop()
-        }
-      }
-    }
-  }
-
-  test("parse host and port from instance string") {
-    val host = "127.0.0.1"
-    val port = 10009
-    val instance1 = s"$host:$port"
-    val (host1, port1) = DiscoveryClient.parseInstanceHostPort(instance1)
-    assert(host === host1)
-    assert(port === port1)
-
-    val instance2 = s"hive.server2.thrift.sasl.qop=auth;hive.server2.thrift.bind.host=$host;" +
-      s"hive.server2.transport.mode=binary;hive.server2.authentication=KERBEROS;" +
-      s"hive.server2.thrift.port=$port;" +
-      s"hive.server2.authentication.kerberos.principal=test/_HOST@apache.org"
-    val (host2, port2) = DiscoveryClient.parseInstanceHostPort(instance2)
-    assert(host === host2)
-    assert(port === port2)
   }
 
   test("stop engine in time while zk ensemble terminates") {

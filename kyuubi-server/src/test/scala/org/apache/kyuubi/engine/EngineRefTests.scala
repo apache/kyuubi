@@ -23,32 +23,28 @@ import java.util.concurrent.Executors
 import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.EngineType._
+import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.metrics.MetricsConstants.ENGINE_TOTAL
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.util.NamedThreadFactory
-import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
-class EngineRefSuite extends KyuubiFunSuite {
-  import EngineType._
-  import ShareLevel._
-  private val zkServer = new EmbeddedZookeeper
-  private val conf = KyuubiConf()
-  private val user = Utils.currentUser
+trait EngineRefTests extends KyuubiFunSuite {
+
+  protected val user = Utils.currentUser
   private val metricsSystem = new MetricsSystem
 
+  protected val conf: KyuubiConf
+  protected def getConnectString(): String
+
   override def beforeAll(): Unit = {
-    val zkData = Utils.createTempDir()
-    conf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
-      .set(ZookeeperConf.ZK_CLIENT_PORT, 0)
-      .set("spark.sql.catalogImplementation", "in-memory")
-    zkServer.initialize(conf)
-    zkServer.start()
     metricsSystem.initialize(conf)
     metricsSystem.start()
     super.beforeAll()
@@ -56,7 +52,6 @@ class EngineRefSuite extends KyuubiFunSuite {
 
   override def afterAll(): Unit = {
     metricsSystem.stop()
-    zkServer.stop()
     super.afterAll()
   }
 
@@ -222,7 +217,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
-    conf.set(HighAvailabilityConf.HA_ADDRESSES, zkServer.getConnectString)
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
     val engine = new EngineRef(conf, user, id, null)
 
     var port1 = 0
@@ -257,53 +252,6 @@ class EngineRefSuite extends KyuubiFunSuite {
     }
   }
 
-  // KYUUBI #2827 remove all engines dependencies except to spark from server
-  ignore("different engine type should use its own lock") {
-    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
-    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
-    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test1")
-    conf.set(HighAvailabilityConf.HA_ADDRESSES, zkServer.getConnectString)
-    val conf1 = conf.clone
-    conf1.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
-    val conf2 = conf.clone
-    conf2.set(KyuubiConf.ENGINE_TYPE, HIVE_SQL.toString)
-
-    val start = System.currentTimeMillis()
-    val times = new Array[Long](2)
-    val executor = Executors.newFixedThreadPool(2)
-    try {
-      executor.execute(() => {
-        DiscoveryClientProvider.withDiscoveryClient(conf1) { client =>
-          try {
-            new EngineRef(conf1, user, UUID.randomUUID().toString, null)
-              .getOrCreate(client)
-          } finally {
-            times(0) = System.currentTimeMillis()
-          }
-        }
-      })
-      executor.execute(() => {
-        DiscoveryClientProvider.withDiscoveryClient(conf2) { client =>
-          try {
-            new EngineRef(conf2, user, UUID.randomUUID().toString, null)
-              .getOrCreate(client)
-          } finally {
-            times(1) = System.currentTimeMillis()
-          }
-        }
-      })
-
-      eventually(timeout(10.seconds), interval(200.milliseconds)) {
-        assert(times.forall(_ > start))
-        // ENGINE_INIT_TIMEOUT is 3000ms
-        assert(times.max - times.min < 2500)
-      }
-    } finally {
-      executor.shutdown()
-    }
-  }
-
   test("three same lock request with initialization timeout") {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
@@ -311,7 +259,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test2")
-    conf.set(HighAvailabilityConf.HA_ADDRESSES, zkServer.getConnectString)
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
 
     val beforeEngines = MetricsSystem.counterValue(ENGINE_TOTAL).getOrElse(0L)
     val start = System.currentTimeMillis()

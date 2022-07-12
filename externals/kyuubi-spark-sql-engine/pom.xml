@@ -52,6 +52,16 @@
         </dependency>
 
         <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
             <scope>provided</scope>
@@ -179,6 +189,12 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.etcd</groupId>
+            <artifactId>jetcd-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -192,6 +208,14 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
+                            <include>com.google.guava:*</include>
+                            <include>com.google.protobuf:*</include>
+                            <include>io.etcd:*</include>
+                            <include>io.grpc:*</include>
+                            <include>io.netty:*</include>
+                            <include>io.perfmark:perfmark-api</include>
+                            <include>io.vertx:*</include>
+                            <include>net.jodah:failsafe</include>
                             <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-events_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
@@ -247,6 +271,41 @@
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
                             <includes>
                                 <include>org.apache.thrift.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google</shadedPattern>
+                            <includes>
+                                <include>com.google.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.netty</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.netty</shadedPattern>
+                            <includes>
+                                <include>io.netty.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.vertx</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.vertx</shadedPattern>
+                            <includes>
+                                <include>io.vertx.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>net.jodah</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.net.jodah</shadedPattern>
+                            <includes>
+                                <include>net.jodah.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.perfmark</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.perfmark</shadedPattern>
+                            <includes>
+                                <include>io.perfmark.**</include>
                             </includes>
                         </relocation>
                     </relocations>

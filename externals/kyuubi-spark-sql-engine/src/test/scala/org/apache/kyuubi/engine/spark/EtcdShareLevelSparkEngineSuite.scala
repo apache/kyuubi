@@ -17,29 +17,27 @@
 
 package org.apache.kyuubi.engine.spark
 
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
-import org.apache.kyuubi.ha.client.DiscoveryClient
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_CHECK_INTERVAL
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAX_LIFETIME
+import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.ShareLevel.ShareLevel
 
-trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
-
-  def namespace: String
-
+trait EtcdShareLevelSparkEngineSuite
+  extends ShareLevelSparkEngineTests with WithEtcdCluster {
   override def withKyuubiConf: Map[String, String] = {
-    Map(HA_NAMESPACE.key -> namespace)
+    super.withKyuubiConf ++
+      etcdConf ++ Map(
+        ENGINE_SHARE_LEVEL.key -> shareLevel.toString,
+        ENGINE_SPARK_MAX_LIFETIME.key -> "PT20s",
+        ENGINE_CHECK_INTERVAL.key -> "PT5s")
   }
+}
 
-  override protected def beforeEach(): Unit = {
-    super.beforeEach()
-    startSparkEngine()
-  }
+class EtcdConnectionLevelSparkEngineSuite extends EtcdShareLevelSparkEngineSuite {
+  override def shareLevel: ShareLevel = ShareLevel.CONNECTION
+}
 
-  override protected def afterEach(): Unit = {
-    super.afterEach()
-    stopSparkEngine()
-  }
-
-  def withDiscoveryClient(f: DiscoveryClient => Unit): Unit = {
-    DiscoveryClientProvider.withDiscoveryClient(kyuubiConf)(f)
-  }
+class EtcdUserLevelSparkEngineSuite extends EtcdShareLevelSparkEngineSuite {
+  override def shareLevel: ShareLevel = ShareLevel.USER
 }
