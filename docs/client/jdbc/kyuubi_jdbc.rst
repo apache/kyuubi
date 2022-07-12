@@ -138,8 +138,8 @@ Connection URL over Http
 
 - http_endpoint is the corresponding HTTP endpoint configured by `kyuubi.frontend.thrift.http.path` at the server side.
 
-Connection URL over Http
-************************
+Connection URL over Service Discovery
+*************************************
 
 .. code-block:: jdbc
 
