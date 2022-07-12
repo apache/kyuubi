@@ -86,7 +86,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
   public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
-  private static final String KYUUBI_SESSION_IP = "kyuubi.session.ip";
   public static final String HS2_CLIENT_TOKEN = "hiveserver2ClientToken";
   public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
 
@@ -780,7 +779,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       openConf.put(HS2_PROXY_USER, sessVars.get(HS2_PROXY_USER));
     }
     try {
-      openConf.put(KYUUBI_SESSION_IP, InetAddress.getLocalHost().getHostAddress());
+      openConf.put("kyuubi.session.ip", InetAddress.getLocalHost().getHostAddress());
     } catch (UnknownHostException e) {
       LOG.debug("Error getting Kyuubi session local client ip address", e);
     }
