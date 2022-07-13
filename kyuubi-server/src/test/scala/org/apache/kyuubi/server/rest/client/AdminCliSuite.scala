@@ -37,7 +37,7 @@ class AdminCliSuite extends RestClientTestHelper with TestPrematureExit {
 
   test("refresh kyuubi server hadoop conf") {
     fe.connectionUrl
-    val args = Array("admin", "server", "refreshHadoopConf")
+    val args = Array("administer", "server", "refreshHadoopConf")
     testPrematureExitForControlCli(
       args,
       s"Refresh the hadoop conf for ${fe.connectionUrl} successfully")
