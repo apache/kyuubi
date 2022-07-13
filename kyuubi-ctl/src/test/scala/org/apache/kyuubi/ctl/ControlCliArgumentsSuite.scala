@@ -120,10 +120,10 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
   test("prints usage on empty input") {
     testPrematureExitForControlCliArgs(
       Array.empty[String],
-      "Must specify action command: [create|get|delete|list|log|submit].")
+      "Must specify action command: [administer|create|get|delete|list|log|submit].")
     testPrematureExitForControlCliArgs(
       Array("--verbose"),
-      "Must specify action command: [create|get|delete|list|log|submit].")
+      "Must specify action command: [administer|create|get|delete|list|log|submit].")
   }
 
   test("prints error with unrecognized options") {
@@ -504,5 +504,16 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       assert(kyuubiRestClient.getConf.getMaxAttempts == 3)
       assert(kyuubiRestClient.getConf.getAttemptWaitTime == 3000)
     }
+  }
+
+  test("test administer command") {
+    val args = Seq("administer", "server", "refreshHadoopCOnf")
+    val opArgs = new ControlCliArguments(args)
+    assert(opArgs.cliConfig.action === ControlAction.ADMINISTER)
+    assert(opArgs.cliConfig.resource === ControlObject.SERVER)
+    assert(opArgs.cliConfig.administerOpts.cmd === "refreshHadoopCOnf")
+
+    val args2 = Seq("administer", "engine", "refreshHadoopCOnf")
+    testPrematureExitForControlCliArgs(args2.toArray, "Unknown argument 'engine'")
   }
 }
