@@ -29,6 +29,6 @@ class AdminRestApiSuite extends RestClientTestHelper {
         .build()
     val adminRestApi = new AdminRestApi(spnegoKyuubiRestClient)
     val result = adminRestApi.refreshHadoopConf()
-    assert(result === s"Refresh the hadoop conf for ${fe.connectionUrl} successfully")
+    assert(result === s"Refresh the hadoop conf for ${fe.connectionUrl} successfully.")
   }
 }
