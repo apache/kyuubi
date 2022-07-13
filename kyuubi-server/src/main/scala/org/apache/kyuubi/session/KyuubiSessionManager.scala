@@ -114,6 +114,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       batchRequest: BatchRequest,
       recoveryMetadata: Option[Metadata] = None): KyuubiBatchSessionImpl = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
+    batchRequest.setConf((batchRequest.getConf.asScala ++ Map(CLIENT_IP_KEY -> ipAddress)).asJava)
     new KyuubiBatchSessionImpl(
       username,
       password,
