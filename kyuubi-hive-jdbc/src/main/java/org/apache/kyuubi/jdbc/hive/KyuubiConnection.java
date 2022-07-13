@@ -779,7 +779,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       openConf.put(HS2_PROXY_USER, sessVars.get(HS2_PROXY_USER));
     }
     try {
-      openConf.put("kyuubi.session.ip", InetAddress.getLocalHost().getHostAddress());
+      openConf.put("kyuubi.client.ipAddress", InetAddress.getLocalHost().getHostAddress());
     } catch (UnknownHostException e) {
       LOG.debug("Error getting Kyuubi session local client ip address", e);
     }

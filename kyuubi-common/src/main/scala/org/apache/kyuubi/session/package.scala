@@ -28,5 +28,5 @@ package object session {
 
   val SPARK_PREFIX = "spark."
 
-  val CLIENT_IP_KEY = "kyuubi.client.ip"
+  val CLIENT_IP_KEY = "kyuubi.client.ipAddress"
 }
