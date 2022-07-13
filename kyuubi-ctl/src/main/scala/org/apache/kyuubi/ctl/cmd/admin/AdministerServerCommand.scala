@@ -23,9 +23,9 @@ import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.util.Validator
 
-class AdminServerCommand(cliConfig: CliConfig) extends Command[String](cliConfig) {
+class AdministerServerCommand(cliConfig: CliConfig) extends Command[String](cliConfig) {
   override def validate(): Unit = {
-    Validator.validateAdminCommand(normalizedCliConfig)
+    Validator.validateAdministerCommand(normalizedCliConfig)
   }
 
   override def doRun(): String = {

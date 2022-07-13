@@ -21,7 +21,7 @@ import scopt.OParser
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.ctl.cmd._
-import org.apache.kyuubi.ctl.cmd.admin.AdminServerCommand
+import org.apache.kyuubi.ctl.cmd.admin.AdministerServerCommand
 import org.apache.kyuubi.ctl.cmd.create.{CreateBatchCommand, CreateServerCommand}
 import org.apache.kyuubi.ctl.cmd.delete.{DeleteBatchCommand, DeleteEngineCommand, DeleteServerCommand}
 import org.apache.kyuubi.ctl.cmd.get.{GetBatchCommand, GetEngineCommand, GetServerCommand}
@@ -66,7 +66,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
   private def getCommand(cliConfig: CliConfig): Command[_] = {
     cliConfig.action match {
       case ControlAction.ADMINISTER => cliConfig.resource match {
-          case ControlObject.SERVER => new AdminServerCommand(cliConfig)
+          case ControlObject.SERVER => new AdministerServerCommand(cliConfig)
           case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
         }
       case ControlAction.CREATE => cliConfig.resource match {
