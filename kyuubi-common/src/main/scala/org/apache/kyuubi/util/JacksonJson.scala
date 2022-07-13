@@ -17,15 +17,12 @@
 
 package org.apache.kyuubi.util
 
-import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, SerializationFeature}
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
 class JacksonJson extends Json {
 
-  private val mapper = new ObjectMapper()
-    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    .enable(SerializationFeature.INDENT_OUTPUT)
-    .registerModule(DefaultScalaModule)
+  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   def toJson[T](value: T): String = mapper.writeValueAsString(value)
 
