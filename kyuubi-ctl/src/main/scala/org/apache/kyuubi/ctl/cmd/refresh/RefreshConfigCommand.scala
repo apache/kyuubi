@@ -15,32 +15,31 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ctl
-
-import scopt.OParser
+package org.apache.kyuubi.ctl.cmd.refresh
 
 import org.apache.kyuubi.KyuubiException
+import org.apache.kyuubi.client.AdminRestApi
+import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
-import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommand
+import org.apache.kyuubi.ctl.util.Validator
 
-class AdminControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
-  extends ControlCliArguments(args, env) {
-  override def parser(): OParser[Unit, CliConfig] = {
-    val builder = OParser.builder[CliConfig]
-    CommandLine.getAdminCtlOptionParser(builder)
+class RefreshConfigCommand(cliConfig: CliConfig) extends Command[String](cliConfig) {
+  def validate(): Unit = {
+    Validator.validateAdminConfigType(cliConfig)
   }
 
-  override protected def getCommand(cliConfig: CliConfig): Command[_] = {
-    cliConfig.action match {
-      case ControlAction.REFRESH => cliConfig.resource match {
-        case ControlObject.CONFIG => new RefreshConfigCommand(cliConfig)
-        case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
+  def doRun(): String = {
+    withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
+      val adminRestApi = new AdminRestApi(kyuubiRestClient)
+      normalizedCliConfig.adminConfigOpts.configType match {
+        case "hadoopConf" => adminRestApi.refreshHadoopConf()
+        case configType => throw new KyuubiException(s"Invalid config type:$configType")
       }
-      case _ => throw new KyuubiException(s"Invalid operation: ${cliConfig.action}")
     }
   }
 
-  override def toString: String = {
-    super.toString
+  def render(resp: String): Unit = {
+    info(resp)
   }
 }

@@ -72,5 +72,11 @@ private[ctl] object Validator {
     }
   }
 
+  def validateAdminConfigType(cliConfig: CliConfig): Unit = {
+    if (cliConfig.adminConfigOpts.configType == null) {
+      fail("The config type is not specified.")
+    }
+  }
+
   private def fail(msg: String): Unit = throw new KyuubiException(msg)
 }

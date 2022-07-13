@@ -52,6 +52,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
     info(s"Reloading the Kyuubi server hadoop conf")
     KyuubiServer.reloadHadoopConf()
-    Response.ok().build()
+    Response.ok(s"Refresh the hadoop conf for ${fe.connectionUrl} successfully.").build()
   }
 }
