@@ -24,7 +24,7 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.client.CookieStore;
-import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.protocol.HttpContext;
 
 public abstract class HttpRequestInterceptorBase implements HttpRequestInterceptor {
@@ -62,7 +62,7 @@ public abstract class HttpRequestInterceptorBase implements HttpRequestIntercept
       // cookiestore which can be send back or when the server returns a 401 error code
       // indicating that the previous cookie has expired.
       if (isCookieEnabled) {
-        httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
+        httpContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
       }
       // Generate the kerberos ticket under the following scenarios:
       // 1. Cookie Authentication is disabled OR
@@ -72,8 +72,7 @@ public abstract class HttpRequestInterceptorBase implements HttpRequestIntercept
       if (!isCookieEnabled
           || ((httpContext.getAttribute(Utils.HIVE_SERVER2_RETRY_KEY) == null
                   && (cookieStore == null
-                      || (cookieStore != null
-                          && Utils.needToSendCredentials(cookieStore, cookieName, isSSL))))
+                      || Utils.needToSendCredentials(cookieStore, cookieName, isSSL)))
               || (httpContext.getAttribute(Utils.HIVE_SERVER2_RETRY_KEY) != null
                   && httpContext
                       .getAttribute(Utils.HIVE_SERVER2_RETRY_KEY)
@@ -91,18 +90,22 @@ public abstract class HttpRequestInterceptorBase implements HttpRequestIntercept
       }
       // Add custom cookies if passed to the jdbc driver
       if (customCookies != null) {
-        String cookieHeaderKeyValues = "";
+        StringBuilder cookieHeaderKeyValues = new StringBuilder();
         Header cookieHeaderServer = httpRequest.getFirstHeader("Cookie");
         if ((cookieHeaderServer != null) && (cookieHeaderServer.getValue() != null)) {
-          cookieHeaderKeyValues = cookieHeaderServer.getValue();
+          cookieHeaderKeyValues = new StringBuilder(cookieHeaderServer.getValue());
         }
         for (Map.Entry<String, String> entry : customCookies.entrySet()) {
-          cookieHeaderKeyValues += ";" + entry.getKey() + "=" + entry.getValue();
+          cookieHeaderKeyValues
+              .append(";")
+              .append(entry.getKey())
+              .append("=")
+              .append(entry.getValue());
         }
-        if (cookieHeaderKeyValues.startsWith(";")) {
-          cookieHeaderKeyValues = cookieHeaderKeyValues.substring(1);
+        if (cookieHeaderKeyValues.toString().startsWith(";")) {
+          cookieHeaderKeyValues = new StringBuilder(cookieHeaderKeyValues.substring(1));
         }
-        httpRequest.addHeader("Cookie", cookieHeaderKeyValues);
+        httpRequest.addHeader("Cookie", cookieHeaderKeyValues.toString());
       }
     } catch (Exception e) {
       throw new HttpException(e.getMessage(), e);

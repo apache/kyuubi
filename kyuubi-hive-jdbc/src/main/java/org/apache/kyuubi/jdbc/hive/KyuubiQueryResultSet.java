@@ -255,12 +255,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     }
   }
 
-  /**
-   * Set the specified schema to the resultset
-   *
-   * @param colNames
-   * @param colTypes
-   */
+  /** Set the specified schema to the resultset */
   private void setSchema(
       List<String> colNames, List<TTypeId> colTypes, List<JdbcColumnAttributes> colAttributes) {
     columnNames.addAll(colNames);
@@ -318,7 +313,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
       return false;
     }
 
-    /**
+    /*
      * Poll on the operation status, till the operation is complete. We need to wait only for
      * HiveStatement to complete. HiveDatabaseMetaData which also uses this ResultSet returns only
      * after the RPC is complete.

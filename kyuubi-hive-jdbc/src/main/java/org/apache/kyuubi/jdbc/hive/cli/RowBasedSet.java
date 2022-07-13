@@ -27,31 +27,13 @@ import org.apache.hive.service.rpc.thrift.TRowSet;
 /** RowBasedSet */
 public class RowBasedSet implements RowSet {
 
-  private long startOffset;
+  private final long startOffset;
 
-  private final TypeDescriptor[] descriptors; // non-null only for writing (server-side)
   private final RemovableList<TRow> rows;
 
   public RowBasedSet(TRowSet tRowSet) {
-    descriptors = null;
-    rows = new RemovableList<TRow>(tRowSet.getRows());
+    rows = new RemovableList<>(tRowSet.getRows());
     startOffset = tRowSet.getStartRowOffset();
-  }
-
-  private RowBasedSet(TypeDescriptor[] descriptors, List<TRow> rows, long startOffset) {
-    this.descriptors = descriptors;
-    this.rows = new RemovableList<TRow>(rows);
-    this.startOffset = startOffset;
-  }
-
-  @Override
-  public RowBasedSet addRow(Object[] fields) {
-    TRow tRow = new TRow();
-    for (int i = 0; i < fields.length; i++) {
-      tRow.addToColVals(ColumnValue.toTColumnValue(descriptors[i], fields[i]));
-    }
-    rows.add(tRow);
-    return this;
   }
 
   @Override
@@ -64,31 +46,9 @@ public class RowBasedSet implements RowSet {
     return rows.size();
   }
 
-  public RowBasedSet extractSubset(int maxRows) {
-    int numRows = Math.min(numRows(), maxRows);
-    RowBasedSet result = new RowBasedSet(descriptors, rows.subList(0, numRows), startOffset);
-    rows.removeRange(0, numRows);
-    startOffset += numRows;
-    return result;
-  }
-
+  @Override
   public long getStartOffset() {
     return startOffset;
-  }
-
-  public void setStartOffset(long startOffset) {
-    this.startOffset = startOffset;
-  }
-
-  public int getSize() {
-    return rows.size();
-  }
-
-  public TRowSet toTRowSet() {
-    TRowSet tRowSet = new TRowSet();
-    tRowSet.setStartRowOffset(startOffset);
-    tRowSet.setRows(new ArrayList<TRow>(rows));
-    return tRowSet;
   }
 
   @Override

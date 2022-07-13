@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.jdbc.hive.auth;
 
-import java.io.IOException;
 import java.util.HashMap;
 import javax.security.auth.callback.*;
 import javax.security.sasl.SaslException;
@@ -33,7 +32,7 @@ public final class PlainSaslHelper {
         null,
         null,
         null,
-        new HashMap<String, String>(),
+        new HashMap<>(),
         new PlainCallbackHandler(username, password),
         underlyingTransport);
   }
@@ -53,7 +52,7 @@ public final class PlainSaslHelper {
     }
 
     @Override
-    public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+    public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
       for (Callback callback : callbacks) {
         if (callback instanceof NameCallback) {
           NameCallback nameCallback = (NameCallback) callback;

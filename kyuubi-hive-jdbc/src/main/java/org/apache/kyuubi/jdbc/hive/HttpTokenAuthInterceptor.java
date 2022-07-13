@@ -27,7 +27,7 @@ import org.apache.http.protocol.HttpContext;
  * these credentials to HTTP requests
  */
 public class HttpTokenAuthInterceptor extends HttpRequestInterceptorBase {
-  private String tokenStr;
+  private final String tokenStr;
   private static final String HIVE_DELEGATION_TOKEN_HEADER = "X-Hive-Delegation-Token";
 
   public HttpTokenAuthInterceptor(

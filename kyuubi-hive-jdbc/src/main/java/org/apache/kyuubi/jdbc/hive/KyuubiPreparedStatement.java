@@ -60,19 +60,13 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements SQLPrepa
    *
    * @return boolean Returns true if a resultSet is created, false if not. Note: If the result set
    *     is empty a true is returned.
-   * @throws SQLException
    */
   @Override
   public boolean execute() throws SQLException {
     return super.execute(updateSql(sql, parameters));
   }
 
-  /**
-   * Invokes executeQuery(sql) using the sql provided to the constructor.
-   *
-   * @return ResultSet
-   * @throws SQLException
-   */
+  /** Invokes executeQuery(sql) using the sql provided to the constructor. */
   @Override
   public ResultSet executeQuery() throws SQLException {
     return super.executeQuery(updateSql(sql, parameters));
@@ -84,14 +78,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements SQLPrepa
     return 0;
   }
 
-  /**
-   * update the SQL string with parameters set by setXXX methods of {@link PreparedStatement}
-   *
-   * @param sql
-   * @param parameters
-   * @return updated SQL string
-   * @throws SQLException
-   */
+  /** update the SQL string with parameters set by setXXX methods of {@link PreparedStatement} */
   private String updateSql(final String sql, HashMap<Integer, String> parameters)
       throws SQLException {
     List<String> parts = splitSqlStatement(sql);
@@ -113,9 +100,6 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements SQLPrepa
    * <p>taking into account ' and \ escaping.
    *
    * <p>output for: 'select 1 from ? where a = ?' ['select 1 from ',' where a = ','']
-   *
-   * @param sql
-   * @return
    */
   private List<String> splitSqlStatement(String sql) {
     List<String> parts = new ArrayList<>();

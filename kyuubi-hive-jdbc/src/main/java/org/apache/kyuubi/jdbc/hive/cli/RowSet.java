@@ -17,21 +17,11 @@
 
 package org.apache.kyuubi.jdbc.hive.cli;
 
-import org.apache.hive.service.rpc.thrift.TRowSet;
-
 public interface RowSet extends Iterable<Object[]> {
-
-  RowSet addRow(Object[] fields);
-
-  RowSet extractSubset(int maxRows);
 
   int numColumns();
 
   int numRows();
 
   long getStartOffset();
-
-  void setStartOffset(long startOffset);
-
-  TRowSet toTRowSet();
 }

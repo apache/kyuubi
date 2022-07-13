@@ -31,15 +31,6 @@ public enum FetchType {
     this.tFetchType = tFetchType;
   }
 
-  public static FetchType getFetchType(short tFetchType) {
-    for (FetchType fetchType : values()) {
-      if (tFetchType == fetchType.toTFetchType()) {
-        return fetchType;
-      }
-    }
-    return QUERY_OUTPUT;
-  }
-
   public short toTFetchType() {
     return tFetchType;
   }

@@ -308,10 +308,6 @@ public class Utils {
    * <p>Connect to http://server:10001/hs2, with specified basicAuth credentials and initial
    * database:
    * jdbc:hive2://server:10001/db;user=foo;password=bar?hive.server2.transport.mode=http;hive.server2.thrift.http.path=hs2
-   *
-   * @param uri
-   * @return
-   * @throws SQLException
    */
   public static JdbcConnectionParams parseURL(String uri, Properties info)
       throws JdbcUriParseException, SQLException, ZooKeeperHiveClientException {
@@ -326,11 +322,6 @@ public class Utils {
   /**
    * This method handles the base parsing of the given jdbc uri. Some of JdbcConnectionParams
    * returned from this method are updated if ZooKeeper is used for service discovery
-   *
-   * @param uri
-   * @param info
-   * @return
-   * @throws JdbcUriParseException
    */
   public static JdbcConnectionParams extractURLComponents(String uri, Properties info)
       throws JdbcUriParseException {
@@ -355,7 +346,7 @@ public class Utils {
     URI jdbcURI = URI.create(uri.substring(URI_JDBC_PREFIX.length()));
 
     // key=value pattern
-    Pattern pattern = Pattern.compile("([^;]*)=([^;]*)[;]?");
+    Pattern pattern = Pattern.compile("([^;]*)=([^;]*);?");
 
     // dbname and session settings
     String sessVars = jdbcURI.getPath();
@@ -370,14 +361,11 @@ public class Utils {
         // we have dbname followed by session parameters
         dbName = sessVars.substring(0, sessVars.indexOf(';'));
         sessVars = sessVars.substring(sessVars.indexOf(';') + 1);
-        if (sessVars != null) {
-          Matcher sessMatcher = pattern.matcher(sessVars);
-          while (sessMatcher.find()) {
-            if (connParams.getSessionVars().put(sessMatcher.group(1), sessMatcher.group(2))
-                != null) {
-              throw new JdbcUriParseException(
-                  "Bad URL format: Multiple values for property " + sessMatcher.group(1));
-            }
+        Matcher sessMatcher = pattern.matcher(sessVars);
+        while (sessMatcher.find()) {
+          if (connParams.getSessionVars().put(sessMatcher.group(1), sessMatcher.group(2)) != null) {
+            throw new JdbcUriParseException(
+                "Bad URL format: Multiple values for property " + sessMatcher.group(1));
           }
         }
       }
@@ -551,12 +539,6 @@ public class Utils {
   /**
    * Remove the deprecatedName param from the fromMap and put the key value in the toMap. Also log a
    * deprecation message for the client.
-   *
-   * @param fromMap
-   * @param toMap
-   * @param deprecatedName
-   * @param newName
-   * @param newUsage
    */
   private static void handleParamDeprecation(
       Map<String, String> fromMap,
@@ -576,11 +558,6 @@ public class Utils {
   /**
    * Get the authority string from the supplied uri, which could potentially contain multiple
    * host:port pairs.
-   *
-   * @param uri
-   * @param connParams
-   * @return
-   * @throws JdbcUriParseException
    */
   private static String getAuthorityFromJdbcURL(String uri) throws JdbcUriParseException {
     String authorities;

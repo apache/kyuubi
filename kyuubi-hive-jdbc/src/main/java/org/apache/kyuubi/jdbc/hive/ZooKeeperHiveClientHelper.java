@@ -28,13 +28,10 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class ZooKeeperHiveClientHelper {
-  static final Logger LOG = LoggerFactory.getLogger(ZooKeeperHiveClientHelper.class.getName());
   // Pattern for key1=value1;key2=value2
-  private static final Pattern kvPattern = Pattern.compile("([^=;]*)=([^;]*)[;]?");
+  private static final Pattern kvPattern = Pattern.compile("([^=;]*)=([^;]*);?");
 
   private static String getZooKeeperNamespace(JdbcConnectionParams connParams) {
     String zooKeeperNamespace =
@@ -109,9 +106,7 @@ class ZooKeeperHiveClientHelper {
 
   static void configureConnParams(JdbcConnectionParams connParams)
       throws ZooKeeperHiveClientException {
-    CuratorFramework zooKeeperClient = null;
-    try {
-      zooKeeperClient = getZkClient(connParams);
+    try (CuratorFramework zooKeeperClient = getZkClient(connParams)) {
       List<String> serverHosts = getServerHosts(connParams, zooKeeperClient);
       // Now pick a server node randomly
       String serverNode = serverHosts.get(new Random().nextInt(serverHosts.size()));
@@ -119,19 +114,13 @@ class ZooKeeperHiveClientHelper {
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
           "Unable to read HiveServer2 configs from ZooKeeper", e);
-    } finally {
-      // Close the client connection with ZooKeeper
-      if (zooKeeperClient != null) {
-        zooKeeperClient.close();
-      }
     }
+    // Close the client connection with ZooKeeper
   }
 
   static List<JdbcConnectionParams> getDirectParamsList(JdbcConnectionParams connParams)
       throws ZooKeeperHiveClientException {
-    CuratorFramework zooKeeperClient = null;
-    try {
-      zooKeeperClient = getZkClient(connParams);
+    try (CuratorFramework zooKeeperClient = getZkClient(connParams)) {
       List<String> serverHosts = getServerHosts(connParams, zooKeeperClient);
       final List<JdbcConnectionParams> directParamsList = new ArrayList<>();
       // For each node
@@ -144,21 +133,13 @@ class ZooKeeperHiveClientHelper {
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
           "Unable to read HiveServer2 configs from ZooKeeper", e);
-    } finally {
-      // Close the client connection with ZooKeeper
-      if (zooKeeperClient != null) {
-        zooKeeperClient.close();
-      }
     }
+    // Close the client connection with ZooKeeper
   }
 
   /**
    * Apply configs published by the server. Configs specified from client's JDBC URI override
    * configs published by the server.
-   *
-   * @param serverConfStr
-   * @param connParams
-   * @throws Exception
    */
   private static void applyConfs(String serverConfStr, Utils.JdbcConnectionParams connParams)
       throws Exception {
@@ -207,7 +188,7 @@ class ZooKeeperHiveClientHelper {
             && !(connParams.getSessionVars().containsKey(Utils.JdbcConnectionParams.USE_SSL))) {
           connParams.getSessionVars().put(Utils.JdbcConnectionParams.USE_SSL, matcher.group(2));
         }
-        /**
+        /*
          * Note: this is pretty messy, but sticking to the current implementation. Set
          * authentication configs. Note that in JDBC driver, we have 3 auth modes: NOSASL, Kerberos
          * (including delegation token mechanism) and password based. The use of
