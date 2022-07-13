@@ -329,6 +329,13 @@ kyuubi.ha.zookeeper.quorum||(deprecated) The connection string for the zookeeper
 kyuubi.ha.zookeeper.session.timeout|60000|The timeout(ms) of a connected session to be idled|int|1.0.0
 
 
+### Http
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.http.proxy.client.ip.header|X-Real-IP|The header to record the real client ip address. If your server is behind a load balancer or other proxy, the server will see this  load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP herader that will be added to the request for other devices to use.|string|1.6.0
+
+
 ### Kinit
 
 Key | Default | Meaning | Type | Since
