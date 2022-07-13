@@ -580,6 +580,17 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER: ConfigEntry[String] =
+    buildConf("kyuubi.frontend.proxy.http.client.ip.header")
+      .doc("The http header to record the real client ip address. If your server is behind a load" +
+        " balancer or other proxy, the server will see this load balancer or proxy IP address as" +
+        " the client IP address, to get around this common issue, most load balancers or proxies" +
+        " offer the ability to record the real remote IP address in an HTTP herader that will be" +
+        " added to the request for other devices to use.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("X-Real-IP")
+
   val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("kyuubi.authentication")
     .doc("A comma separated list of client authentication types.<ul>" +
       " <li>NOSASL: raw transport.</li>" +
@@ -912,17 +923,6 @@ object KyuubiConf {
     .version("1.0.0")
     .timeConf
     .createWithDefault(Duration.ofMinutes(30L).toMillis)
-
-  val HTTP_PROXY_CLIENT_IP_HEADER: ConfigEntry[String] =
-    buildConf("kyuubi.http.proxy.client.ip.header")
-      .doc("The header to record the real client ip address. If your server is behind a load" +
-        " balancer or other proxy, the server will see this  load balancer or proxy IP address as" +
-        " the client IP address, to get around this common issue, most load balancers or proxies" +
-        " offer the ability to record the real remote IP address in an HTTP herader that will be" +
-        " added to the request for other devices to use.")
-      .version("1.6.0")
-      .stringConf
-      .createWithDefault("X-Real-IP")
 
   val SESSION_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.conf.ignore.list")

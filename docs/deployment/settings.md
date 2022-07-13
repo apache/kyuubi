@@ -273,6 +273,7 @@ kyuubi.frontend.mysql.min.worker.threads|9|Minimum number of threads in the comm
 kyuubi.frontend.mysql.netty.worker.threads|&lt;undefined&gt;|Number of thread in the netty worker event loop of MySQL frontend service. Use min(cpu_cores, 8) in default.|int|1.4.0
 kyuubi.frontend.mysql.worker.keepalive.time|PT1M|Time(ms) that an idle async thread of the command execution thread pool will wait for a new task to arrive before terminating in MySQL frontend service|duration|1.4.0
 kyuubi.frontend.protocols|THRIFT_BINARY|A comma separated list for all frontend protocols <ul> <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li> <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li> <li>REST - Kyuubi defined REST API(experimental).</li>  <li>MYSQL - MySQL compatible text protocol(experimental).</li> </ul>|seq|1.4.0
+kyuubi.frontend.proxy.http.client.ip.header|X-Real-IP|The http header to record the real client ip address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP herader that will be added to the request for other devices to use.|string|1.6.0
 kyuubi.frontend.rest.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the REST frontend service.|string|1.4.0
 kyuubi.frontend.rest.bind.port|10099|Port of the machine on which to run the REST frontend service.|int|1.4.0
 kyuubi.frontend.thrift.backoff.slot.length|PT0.1S|Time to back off during login to the thrift frontend service.|duration|1.4.0
@@ -327,13 +328,6 @@ kyuubi.ha.zookeeper.node.creation.timeout|PT2M|Timeout for creating zookeeper no
 kyuubi.ha.zookeeper.publish.configs|false|When set to true, publish Kerberos configs to Zookeeper.Note that the Hive driver needs to be greater than 1.3 or 2.0 or apply HIVE-11581 patch.|boolean|1.4.0
 kyuubi.ha.zookeeper.quorum||(deprecated) The connection string for the zookeeper ensemble|string|1.0.0
 kyuubi.ha.zookeeper.session.timeout|60000|The timeout(ms) of a connected session to be idled|int|1.0.0
-
-
-### Http
-
-Key | Default | Meaning | Type | Since
---- | --- | --- | --- | ---
-kyuubi.http.proxy.client.ip.header|X-Real-IP|The header to record the real client ip address. If your server is behind a load balancer or other proxy, the server will see this  load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP herader that will be added to the request for other devices to use.|string|1.6.0
 
 
 ### Kinit
