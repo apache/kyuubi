@@ -26,7 +26,7 @@ import scala.collection.mutable.HashMap
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
+import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
@@ -114,7 +114,8 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
         HttpServletResponse.SC_UNAUTHORIZED,
         s"No auth scheme matched for $authorization")
     } else {
-      HTTP_CLIENT_IP_ADDRESS.set(httpRequest.getRemoteAddr)
+      HTTP_CLIENT_IP_ADDRESS.set(Option(httpRequest.getHeader(
+        conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER))).getOrElse(httpRequest.getRemoteAddr))
       try {
         val authUser = matchedHandler.authenticate(httpRequest, httpResponse)
         if (authUser != null) {
