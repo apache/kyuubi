@@ -99,4 +99,63 @@ trait TestPrematureExit {
         _.getMessage.getFormattedMessage.contains(searchString)))
     }
   }
+
+  /** Returns true if the script exits and the given search string is printed. */
+  private[kyuubi] def testPrematureExitForAdminControlCli(
+      input: Array[String],
+      searchString: String,
+      mainObject: CommandLineUtils = AdminControlCli): String = {
+    val printStream = new BufferPrintStream()
+    mainObject.printStream = printStream
+
+    @volatile var exitedCleanly = false
+    val original = mainObject.exitFn
+    mainObject.exitFn = (_) => exitedCleanly = true
+    try {
+      @volatile var exception: Exception = null
+      val thread = new Thread {
+        override def run() =
+          try {
+            mainObject.main(input)
+          } catch {
+            // Capture the exception to check whether the exception contains searchString or not
+            case e: Exception => exception = e
+          }
+      }
+      thread.start()
+      thread.join()
+      var joined = ""
+      if (exitedCleanly) {
+        joined = printStream.lineBuffer.mkString("\n")
+        assert(joined.contains(searchString))
+      } else {
+        assert(exception != null)
+        if (!exception.getMessage.contains(searchString)) {
+          throw exception
+        }
+      }
+      joined
+    } finally {
+      mainObject.exitFn = original
+    }
+  }
+
+  def testPrematureExitForAdminControlCliArgs(args: Array[String], searchString: String): Unit = {
+    val logAppender = new LogAppender("test premature exit")
+    withLogAppender(logAppender) {
+      val thread = new Thread {
+        override def run(): Unit =
+          try {
+            new AdminControlCliArguments(args)
+          } catch {
+            case e: Exception =>
+              error(e)
+          }
+      }
+      thread.start()
+      thread.join()
+      assert(logAppender.loggingEvents.exists(
+        _.getMessage.getFormattedMessage.contains(searchString)))
+    }
+  }
 }
