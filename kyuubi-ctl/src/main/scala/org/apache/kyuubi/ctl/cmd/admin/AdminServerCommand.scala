@@ -31,9 +31,9 @@ class AdminServerCommand(cliConfig: CliConfig) extends Command[String](cliConfig
   override def doRun(): String = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
       val adminRestApi = new AdminRestApi(kyuubiRestClient)
-      normalizedCliConfig.adminOpts.adminCmd match {
+      normalizedCliConfig.administerOpts.cmd match {
         case "refreshHadoopConf" => adminRestApi.refreshHadoopConf()
-        case cmd => throw new KyuubiException(s"Invalid admin command:$cmd")
+        case cmd => throw new KyuubiException(s"Invalid administer command:$cmd")
       }
     }
   }

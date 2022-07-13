@@ -65,6 +65,10 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   private def getCommand(cliConfig: CliConfig): Command[_] = {
     cliConfig.action match {
+      case ControlAction.ADMINISTER => cliConfig.resource match {
+          case ControlObject.SERVER => new AdminServerCommand(cliConfig)
+          case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
+        }
       case ControlAction.CREATE => cliConfig.resource match {
           case ControlObject.BATCH => new CreateBatchCommand(cliConfig)
           case ControlObject.SERVER => new CreateServerCommand(cliConfig)
@@ -94,10 +98,6 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
         }
       case ControlAction.SUBMIT => cliConfig.resource match {
           case ControlObject.BATCH => new SubmitBatchCommand(cliConfig)
-          case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
-        }
-      case ControlAction.ADMIN => cliConfig.resource match {
-          case ControlObject.SERVER => new AdminServerCommand(cliConfig)
           case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
         }
       case _ => throw new KyuubiException(s"Invalid operation: ${cliConfig.action}")

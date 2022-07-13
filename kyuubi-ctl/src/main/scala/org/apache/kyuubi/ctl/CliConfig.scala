@@ -21,7 +21,7 @@ import org.apache.kyuubi.ctl.ControlObject.ControlObject
 
 private[ctl] object ControlAction extends Enumeration {
   type ControlAction = Value
-  val CREATE, GET, DELETE, LIST, LOG, SUBMIT, ADMIN = Value
+  val ADMINISTER, CREATE, GET, DELETE, LIST, LOG, SUBMIT = Value
 }
 
 private[ctl] object ControlObject extends Enumeration {
@@ -37,7 +37,7 @@ case class CliConfig(
     logOpts: LogOpts = LogOpts(),
     batchOpts: BatchOpts = BatchOpts(),
     engineOpts: EngineOpts = EngineOpts(),
-    adminOpts: AdminOpts = AdminOpts(),
+    administerOpts: AdministerOpts = AdministerOpts(),
     conf: Map[String, String] = Map.empty)
 
 case class CommonOpts(
@@ -75,4 +75,4 @@ case class EngineOpts(
     engineSubdomain: String = null,
     engineShareLevel: String = null)
 
-case class AdminOpts(adminCmd: String = null)
+case class AdministerOpts(cmd: String = null)

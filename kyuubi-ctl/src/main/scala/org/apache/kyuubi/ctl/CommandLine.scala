@@ -29,7 +29,7 @@ object CommandLine {
       programName("kyuubi-ctl"),
       head("kyuubi", KYUUBI_VERSION),
       common(builder),
-      admin(builder),
+      administer(builder),
       create(builder),
       get(builder),
       delete(builder),
@@ -38,7 +38,7 @@ object CommandLine {
       submit(builder),
       checkConfig(f => {
         if (f.action == null) {
-          failure("Must specify action command: [admin|create|get|delete|list|log|submit].")
+          failure("Must specify action command: [administer|create|get|delete|list|log|submit].")
         } else {
           success
         }
@@ -95,14 +95,14 @@ object CommandLine {
         .text("Kyuubi config property pair, formatted key=value."))
   }
 
-  private def admin(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+  private def administer(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
     OParser.sequence(
       note(""),
-      cmd("admin")
+      cmd("administer")
         .text("\tAdminister resources.")
-        .action((_, c) => c.copy(action = ControlAction.ADMIN))
-        .children(adminServerCmd(builder).text("\tAdminister the server.")))
+        .action((_, c) => c.copy(action = ControlAction.ADMINISTER))
+        .children(administerServerCmd(builder).text("\tAdminister the server.")))
   }
 
   private def create(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -190,15 +190,15 @@ object CommandLine {
           submitBatchCmd(builder).text("\topen batch session and wait for completion.")))
   }
 
-  private def adminServerCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+  private def administerServerCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
     cmd("server").action((_, c) => c.copy(resource = ControlObject.SERVER))
       .children(
-        arg[String]("<adminCmd>")
+        arg[String]("<cmd>")
           .optional()
-          .action((v, c) => c.copy(adminOpts = c.adminOpts.copy(adminCmd = v)))
+          .action((v, c) => c.copy(administerOpts = c.administerOpts.copy(cmd = v)))
           .text(
-            "Admin command. The valid command can be one of the following: refreshHadoopConf."))
+            "The valid command can be one of the following: refreshHadoopConf."))
   }
 
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {

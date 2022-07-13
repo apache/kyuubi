@@ -355,7 +355,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "when the batch is no longer in PENDING state."
     val helpString =
       s"""kyuubi $KYUUBI_VERSION
-         |Usage: kyuubi-ctl [admin|create|get|delete|list|log|submit] [options]
+         |Usage: kyuubi-ctl [administer|create|get|delete|list|log|submit] [options]
          |
          |  -zk, --zk-quorum <value>
          |                           $zkHelpString
@@ -371,11 +371,11 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  --spnegoHost <value>     Spnego host for spnego authentication.
          |  --conf <value>           Kyuubi config property pair, formatted key=value.
          |
-         |Command: admin [server] <args>...
+         |Command: administer [server] <args>...
          |${"\t"}Administer resources.
-         |Command: admin server [<adminCmd>]
+         |Command: administer server [<cmd>]
          |${"\t"}Administer the server.
-         |  <adminCmd>               Admin command. The valid command can be one of the following: refreshHadoopConf.
+         |  <cmd>                    The valid command can be one of the following: refreshHadoopConf.
          |
          |Command: create [batch|server] [options]
          |${"\t"}Create a resource.

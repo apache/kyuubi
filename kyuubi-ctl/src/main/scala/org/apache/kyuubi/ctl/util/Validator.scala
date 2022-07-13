@@ -73,8 +73,8 @@ private[ctl] object Validator {
   }
 
   def validateAdminCommand(cliConfig: CliConfig): Unit = {
-    if (cliConfig.adminOpts.adminCmd == null) {
-      fail("The admin command is not specified.")
+    if (cliConfig.administerOpts.cmd == null) {
+      fail("The administer command is not specified.")
     }
   }
 
