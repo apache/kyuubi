@@ -27,13 +27,27 @@ import org.apache.hive.service.rpc.thrift.TRowSet;
 /** RowBasedSet */
 public class RowBasedSet implements RowSet {
 
-  private final long startOffset;
+  private long startOffset;
 
   private final RemovableList<TRow> rows;
 
   public RowBasedSet(TRowSet tRowSet) {
     rows = new RemovableList<>(tRowSet.getRows());
     startOffset = tRowSet.getStartRowOffset();
+  }
+
+  private RowBasedSet(List<TRow> rows, long startOffset) {
+    this.rows = new RemovableList<>(rows);
+    this.startOffset = startOffset;
+  }
+
+  @Override
+  public RowBasedSet extractSubset(int maxRows) {
+    int numRows = Math.min(numRows(), maxRows);
+    RowBasedSet result = new RowBasedSet(rows.subList(0, numRows), startOffset);
+    rows.removeRange(0, numRows);
+    startOffset += numRows;
+    return result;
   }
 
   @Override
@@ -49,6 +63,15 @@ public class RowBasedSet implements RowSet {
   @Override
   public long getStartOffset() {
     return startOffset;
+  }
+
+  @Override
+  public void setStartOffset(long startOffset) {
+    this.startOffset = startOffset;
+  }
+
+  public int getSize() {
+    return rows.size();
   }
 
   @Override

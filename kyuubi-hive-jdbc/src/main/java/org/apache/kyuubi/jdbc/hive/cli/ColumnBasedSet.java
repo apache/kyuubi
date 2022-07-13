@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 public class ColumnBasedSet implements RowSet {
   public static final Logger LOG = LoggerFactory.getLogger(ColumnBasedSet.class);
 
-  private final long startOffset;
+  private long startOffset;
   private final List<ColumnBuffer> columns;
 
   public ColumnBasedSet(TRowSet tRowSet) throws TException {
@@ -65,6 +65,24 @@ public class ColumnBasedSet implements RowSet {
     startOffset = tRowSet.getStartRowOffset();
   }
 
+  private ColumnBasedSet(List<ColumnBuffer> columns, long startOffset) {
+    this.columns = columns;
+    this.startOffset = startOffset;
+  }
+
+  @Override
+  public ColumnBasedSet extractSubset(int maxRows) {
+    int numRows = Math.min(numRows(), maxRows);
+
+    List<ColumnBuffer> subset = new ArrayList<>();
+    for (ColumnBuffer column : columns) {
+      subset.add(column.extractSubset(numRows));
+    }
+    ColumnBasedSet result = new ColumnBasedSet(subset, startOffset);
+    startOffset += numRows;
+    return result;
+  }
+
   @Override
   public int numColumns() {
     return columns.size();
@@ -78,6 +96,11 @@ public class ColumnBasedSet implements RowSet {
   @Override
   public long getStartOffset() {
     return startOffset;
+  }
+
+  @Override
+  public void setStartOffset(long startOffset) {
+    this.startOffset = startOffset;
   }
 
   @Override

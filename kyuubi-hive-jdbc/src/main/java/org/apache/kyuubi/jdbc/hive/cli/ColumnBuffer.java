@@ -20,6 +20,7 @@ package org.apache.kyuubi.jdbc.hive.cli;
 import com.google.common.primitives.*;
 import java.nio.ByteBuffer;
 import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import org.apache.hive.service.rpc.thrift.TColumn;
@@ -30,9 +31,9 @@ public class ColumnBuffer extends AbstractList<Object> {
 
   private final TTypeId type;
 
-  private final BitSet nulls;
+  private BitSet nulls;
 
-  private final int size;
+  private int size;
   private boolean[] boolVars;
   private byte[] byteVars;
   private short[] shortVars;
@@ -88,6 +89,38 @@ public class ColumnBuffer extends AbstractList<Object> {
     }
   }
 
+  public ColumnBuffer(TTypeId type, BitSet nulls, Object values) {
+    this.type = type;
+    this.nulls = nulls;
+    if (type == TTypeId.BOOLEAN_TYPE) {
+      boolVars = (boolean[]) values;
+      size = boolVars.length;
+    } else if (type == TTypeId.TINYINT_TYPE) {
+      byteVars = (byte[]) values;
+      size = byteVars.length;
+    } else if (type == TTypeId.SMALLINT_TYPE) {
+      shortVars = (short[]) values;
+      size = shortVars.length;
+    } else if (type == TTypeId.INT_TYPE) {
+      intVars = (int[]) values;
+      size = intVars.length;
+    } else if (type == TTypeId.BIGINT_TYPE) {
+      longVars = (long[]) values;
+      size = longVars.length;
+    } else if (type == TTypeId.DOUBLE_TYPE || type == TTypeId.FLOAT_TYPE) {
+      doubleVars = (double[]) values;
+      size = doubleVars.length;
+    } else if (type == TTypeId.BINARY_TYPE) {
+      binaryVars = (List<ByteBuffer>) values;
+      size = binaryVars.size();
+    } else if (type == TTypeId.STRING_TYPE) {
+      stringVars = (List<String>) values;
+      size = stringVars.size();
+    } else {
+      throw new IllegalStateException("invalid union object");
+    }
+  }
+
   private static final byte[] MASKS =
       new byte[] {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (byte) 0x80};
 
@@ -98,6 +131,73 @@ public class ColumnBuffer extends AbstractList<Object> {
       bitset.set(i, (nulls[i / 8] & MASKS[i % 8]) != 0);
     }
     return bitset;
+  }
+
+  /**
+   * Get a subset of this ColumnBuffer, starting from the 1st value.
+   *
+   * @param end index after the last value to include
+   */
+  public ColumnBuffer extractSubset(int end) {
+    BitSet subNulls = nulls.get(0, end);
+    if (type == TTypeId.BOOLEAN_TYPE) {
+      ColumnBuffer subset = new ColumnBuffer(type, subNulls, Arrays.copyOfRange(boolVars, 0, end));
+      boolVars = Arrays.copyOfRange(boolVars, end, size);
+      nulls = nulls.get(end, size);
+      size = boolVars.length;
+      return subset;
+    }
+    if (type == TTypeId.TINYINT_TYPE) {
+      ColumnBuffer subset = new ColumnBuffer(type, subNulls, Arrays.copyOfRange(byteVars, 0, end));
+      byteVars = Arrays.copyOfRange(byteVars, end, size);
+      nulls = nulls.get(end, size);
+      size = byteVars.length;
+      return subset;
+    }
+    if (type == TTypeId.SMALLINT_TYPE) {
+      ColumnBuffer subset = new ColumnBuffer(type, subNulls, Arrays.copyOfRange(shortVars, 0, end));
+      shortVars = Arrays.copyOfRange(shortVars, end, size);
+      nulls = nulls.get(end, size);
+      size = shortVars.length;
+      return subset;
+    }
+    if (type == TTypeId.INT_TYPE) {
+      ColumnBuffer subset = new ColumnBuffer(type, subNulls, Arrays.copyOfRange(intVars, 0, end));
+      intVars = Arrays.copyOfRange(intVars, end, size);
+      nulls = nulls.get(end, size);
+      size = intVars.length;
+      return subset;
+    }
+    if (type == TTypeId.BIGINT_TYPE) {
+      ColumnBuffer subset = new ColumnBuffer(type, subNulls, Arrays.copyOfRange(longVars, 0, end));
+      longVars = Arrays.copyOfRange(longVars, end, size);
+      nulls = nulls.get(end, size);
+      size = longVars.length;
+      return subset;
+    }
+    if (type == TTypeId.DOUBLE_TYPE || type == TTypeId.FLOAT_TYPE) {
+      ColumnBuffer subset =
+          new ColumnBuffer(type, subNulls, Arrays.copyOfRange(doubleVars, 0, end));
+      doubleVars = Arrays.copyOfRange(doubleVars, end, size);
+      nulls = nulls.get(end, size);
+      size = doubleVars.length;
+      return subset;
+    }
+    if (type == TTypeId.BINARY_TYPE) {
+      ColumnBuffer subset = new ColumnBuffer(type, subNulls, binaryVars.subList(0, end));
+      binaryVars = binaryVars.subList(end, binaryVars.size());
+      nulls = nulls.get(end, size);
+      size = binaryVars.size();
+      return subset;
+    }
+    if (type == TTypeId.STRING_TYPE) {
+      ColumnBuffer subset = new ColumnBuffer(type, subNulls, stringVars.subList(0, end));
+      stringVars = stringVars.subList(end, stringVars.size());
+      nulls = nulls.get(end, size);
+      size = stringVars.size();
+      return subset;
+    }
+    throw new IllegalStateException("invalid union object");
   }
 
   public TTypeId getType() {
