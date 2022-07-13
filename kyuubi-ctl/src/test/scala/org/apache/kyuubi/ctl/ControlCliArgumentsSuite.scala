@@ -346,7 +346,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
   }
 
   test("test --help") {
-    // some string is too long for check style
+    // scalastyle:off
     val zkHelpString = "The connection string for the zookeeper ensemble, using zk quorum manually."
     val versionHelpString = "Using the compiled KYUUBI_VERSION default," +
       " change it if the active service is running in another."
@@ -461,6 +461,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |                           ${waitBatchCompletionHelpString}
          |
          |  -h, --help               Show help message and exit.""".stripMargin
+    // scalastyle:on
 
     testHelpExit(Array("--help"), helpString)
   }
