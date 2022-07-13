@@ -41,6 +41,14 @@ class AdminControlCliArguments(args: Seq[String], env: Map[String, String] = sys
   }
 
   override def toString: String = {
-    super.toString
+    cliConfig.resource match {
+      case ControlObject.CONFIG =>
+        s"""Parsed arguments:
+           |  action                  ${cliConfig.action}
+           |  resource                ${cliConfig.resource}
+           |  configType              ${cliConfig.adminConfigOpts.configType}
+        """.stripMargin
+      case _ => ""
+    }
   }
 }

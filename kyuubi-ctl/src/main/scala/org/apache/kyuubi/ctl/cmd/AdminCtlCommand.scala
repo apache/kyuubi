@@ -21,10 +21,7 @@ import org.apache.kyuubi.ctl.AdminControlCli.printMessage
 import org.apache.kyuubi.ctl.CliConfig
 
 abstract class AdminCtlCommand[T](cliConfig: CliConfig) extends Command[T](cliConfig) {
-
   override def info(msg: => Any): Unit = printMessage(msg)
-
   override def warn(msg: => Any): Unit = printMessage(s"Warning: $msg")
-
   override def error(msg: => Any): Unit = printMessage(s"Error: $msg")
 }
