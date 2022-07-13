@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl.cmd
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ctl.CliConfig
-import org.apache.kyuubi.ctl.ControlCli.printMessage
+import org.apache.kyuubi.ctl.ControlCli
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 
 abstract class Command[T](cliConfig: CliConfig) extends Logging {
@@ -83,10 +83,7 @@ abstract class Command[T](cliConfig: CliConfig) extends Logging {
     arguments
   }
 
-  override def info(msg: => Any): Unit = printMessage(msg)
-
-  override def warn(msg: => Any): Unit = printMessage(s"Warning: $msg")
-
-  override def error(msg: => Any): Unit = printMessage(s"Error: $msg")
-
+  override def info(msg: => Any): Unit = ControlCli.printMessage(msg)
+  override def warn(msg: => Any): Unit = ControlCli.printMessage(s"Warning: $msg")
+  override def error(msg: => Any): Unit = ControlCli.printMessage(s"Error: $msg")
 }

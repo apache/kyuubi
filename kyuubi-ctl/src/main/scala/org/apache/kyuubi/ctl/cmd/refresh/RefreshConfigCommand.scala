@@ -22,7 +22,7 @@ import org.apache.kyuubi.client.AdminRestApi
 import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.AdminCtlCommand
-import org.apache.kyuubi.ctl.util.Validator
+import org.apache.kyuubi.ctl.util.{Tabulator, Validator}
 
 class RefreshConfigCommand(cliConfig: CliConfig) extends AdminCtlCommand[String](cliConfig) {
   def validate(): Unit = {
@@ -40,6 +40,6 @@ class RefreshConfigCommand(cliConfig: CliConfig) extends AdminCtlCommand[String]
   }
 
   def render(resp: String): Unit = {
-    info(resp)
+    info(Tabulator.format("", Array("Response"), Array(Array(resp))))
   }
 }
