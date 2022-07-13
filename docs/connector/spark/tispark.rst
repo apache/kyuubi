@@ -13,12 +13,24 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Integrations
-===========================
+`TiSpark`_
+==========
 
-.. toctree::
-    :maxdepth: 2
+TiSpark Integration
+-------------------
 
-    kudu
-    delta_lake
-    delta_lake_with_azure_blob
+.. _dependencies:
+
+Dependencies
+************
+
+.. _configurations:
+
+Configurations
+**************
+
+
+TiSpark Operations
+------------------
+
+.. _TiSpark: https://docs.pingcap.com/tidb/dev/tispark-overview
