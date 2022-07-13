@@ -33,6 +33,7 @@ import org.apache.thrift.server.TServlet
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.HTTP_PROXY_CLIENT_IP_HEADER
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
@@ -118,7 +119,8 @@ class ThriftHttpServlet(
       val doAsQueryParam = getDoAsQueryParam(request.getQueryString)
       if (doAsQueryParam != null) SessionManager.setProxyUserName(doAsQueryParam)
 
-      clientIpAddress = request.getRemoteAddr
+      clientIpAddress = Option(request.getHeader(conf.get(HTTP_PROXY_CLIENT_IP_HEADER))).getOrElse(
+        request.getRemoteAddr)
       debug("Client IP Address: " + clientIpAddress)
       // Set the thread local ip address
       SessionManager.setIpAddress(clientIpAddress)
