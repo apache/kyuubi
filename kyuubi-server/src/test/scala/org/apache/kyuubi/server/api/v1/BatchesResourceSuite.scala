@@ -623,16 +623,19 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       getBatchJobSubmissionStateCounter(OperationState.PENDING) +
       getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
 
-    val deleteResp = webTarget.path(s"api/v1/batches/${batch.getId}")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .delete()
-    assert(200 == deleteResp.getStatus)
+    // to prevent flaky test with jps application manager
+    eventually(timeout(20.seconds)) {
+      val deleteResp = webTarget.path(s"api/v1/batches/${batch.getId}")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .delete()
+      assert(200 == deleteResp.getStatus)
 
-    assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
-    assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
-    assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
-    assert(
-      getBatchJobSubmissionStateCounter(OperationState.CANCELED) - originalCanceledCounter === 1)
+      assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
+      assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
+      assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
+      assert(
+        getBatchJobSubmissionStateCounter(OperationState.CANCELED) - originalCanceledCounter === 1)
+    }
   }
 
   private def getBatchJobSubmissionStateCounter(state: OperationState): Long = {
