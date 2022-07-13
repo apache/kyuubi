@@ -78,10 +78,10 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
         val opArgs = new ControlCliArguments(args)
         assert(opArgs.cliConfig.action.toString.equalsIgnoreCase(op))
         assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase(service))
-        assert(opArgs.cliConfig.commonOpts.zkQuorum == zkQuorum)
-        assert(opArgs.cliConfig.commonOpts.namespace == namespace)
-        assert(opArgs.cliConfig.commonOpts.host == host)
-        assert(opArgs.cliConfig.commonOpts.port == port)
+        assert(opArgs.cliConfig.zkOpts.zkQuorum == zkQuorum)
+        assert(opArgs.cliConfig.zkOpts.namespace == namespace)
+        assert(opArgs.cliConfig.zkOpts.host == host)
+        assert(opArgs.cliConfig.zkOpts.port == port)
         assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
         if (service == "engine") {
           assert(opArgs.cliConfig.engineOpts.user == user)
@@ -109,10 +109,10 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       val opArgs = new ControlCliArguments(args)
       assert(opArgs.cliConfig.action.toString.equalsIgnoreCase(op))
       assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase(service))
-      assert(opArgs.cliConfig.commonOpts.zkQuorum == zkQuorum)
-      assert(opArgs.cliConfig.commonOpts.namespace == newNamespace)
-      assert(opArgs.cliConfig.commonOpts.host == host)
-      assert(opArgs.cliConfig.commonOpts.port == port)
+      assert(opArgs.cliConfig.zkOpts.zkQuorum == zkQuorum)
+      assert(opArgs.cliConfig.zkOpts.namespace == newNamespace)
+      assert(opArgs.cliConfig.zkOpts.host == host)
+      assert(opArgs.cliConfig.zkOpts.port == port)
       assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
     }
   }
@@ -295,7 +295,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "--zk-quorum",
       zkQuorum)
     val opArgs = new ControlCliArguments(args)
-    assert(opArgs.cliConfig.commonOpts.namespace == namespace)
+    assert(opArgs.cliConfig.zkOpts.namespace == namespace)
     assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
   }
 
@@ -324,10 +324,10 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
         val opArgs = new ControlCliArguments(args)
         assert(opArgs.cliConfig.action.toString.equalsIgnoreCase(op))
         assert(opArgs.cliConfig.resource.toString.equalsIgnoreCase(service))
-        assert(opArgs.cliConfig.commonOpts.zkQuorum == zkQuorum)
-        assert(opArgs.cliConfig.commonOpts.namespace == namespace)
-        assert(opArgs.cliConfig.commonOpts.host == host)
-        assert(opArgs.cliConfig.commonOpts.port == port)
+        assert(opArgs.cliConfig.zkOpts.zkQuorum == zkQuorum)
+        assert(opArgs.cliConfig.zkOpts.namespace == namespace)
+        assert(opArgs.cliConfig.zkOpts.host == host)
+        assert(opArgs.cliConfig.zkOpts.port == port)
         assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
         if (service == "engine") {
           assert(opArgs.cliConfig.engineOpts.user == user)
@@ -357,11 +357,6 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       s"""kyuubi $KYUUBI_VERSION
          |Usage: kyuubi-ctl [create|get|delete|list|log|submit] [options]
          |
-         |  -zk, --zk-quorum <value>
-         |                           $zkHelpString
-         |  -n, --namespace <value>  The namespace, using kyuubi-defaults/conf if absent.
-         |  -s, --host <value>       Hostname or IP address of a service.
-         |  -p, --port <value>       Listening port of a service.
          |  -v, --version <value>    $versionHelpString
          |  -b, --verbose            Print additional debug output.
          |  --hostUrl <value>        Host url for rest api.
@@ -370,6 +365,11 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  --password <value>       Password for basic authentication.
          |  --spnegoHost <value>     Spnego host for spnego authentication.
          |  --conf <value>           Kyuubi config property pair, formatted key=value.
+         |  -zk, --zk-quorum <value>
+         |                           $zkHelpString
+         |  -n, --namespace <value>  The namespace, using kyuubi-defaults/conf if absent.
+         |  -s, --host <value>       Hostname or IP address of a service.
+         |  -p, --port <value>       Listening port of a service.
          |
          |Command: create [batch|server] [options]
          |${"\t"}Create a resource.

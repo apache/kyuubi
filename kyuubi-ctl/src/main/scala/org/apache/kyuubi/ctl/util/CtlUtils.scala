@@ -34,7 +34,7 @@ object CtlUtils {
   private[ctl] def getZkNamespace(conf: KyuubiConf, cliConfig: CliConfig): String = {
     cliConfig.resource match {
       case ControlObject.SERVER =>
-        DiscoveryPaths.makePath(null, cliConfig.commonOpts.namespace)
+        DiscoveryPaths.makePath(null, cliConfig.zkOpts.namespace)
       case ControlObject.ENGINE =>
         val engineType = Some(cliConfig.engineOpts.engineType)
           .filter(_ != null).filter(_.nonEmpty)
@@ -48,7 +48,7 @@ object CtlUtils {
         // The path of the engine defined in zookeeper comes from
         // org.apache.kyuubi.engine.EngineRef#engineSpace
         DiscoveryPaths.makePath(
-          s"${cliConfig.commonOpts.namespace}_" +
+          s"${cliConfig.zkOpts.namespace}_" +
             s"${cliConfig.commonOpts.version}_" +
             s"${engineShareLevel}_${engineType}",
           cliConfig.engineOpts.user,
@@ -81,7 +81,7 @@ object CtlUtils {
       val znodeRoot = getZkNamespace(conf, cliConfig)
       val hostPortOpt =
         if (filterHostPort) {
-          Some((cliConfig.commonOpts.host, cliConfig.commonOpts.port.toInt))
+          Some((cliConfig.zkOpts.host, cliConfig.zkOpts.port.toInt))
         } else None
       nodes = getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
     }

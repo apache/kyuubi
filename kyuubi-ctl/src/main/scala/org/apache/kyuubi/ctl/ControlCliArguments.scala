@@ -42,7 +42,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   override def parser(): OParser[Unit, CliConfig] = {
     val builder = OParser.builder[CliConfig]
-    CommandLine.getOptionParser(builder)
+    CommandLine.getCtlOptionParser(builder)
   }
 
   private[kyuubi] lazy val effectSetup = new KyuubiOEffectSetup
@@ -62,7 +62,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
     }
   }
 
-  private def getCommand(cliConfig: CliConfig): Command[_] = {
+  protected def getCommand(cliConfig: CliConfig): Command[_] = {
     cliConfig.action match {
       case ControlAction.CREATE => cliConfig.resource match {
           case ControlObject.BATCH => new CreateBatchCommand(cliConfig)
@@ -118,10 +118,10 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
         s"""Parsed arguments:
            |  action                  ${cliConfig.action}
            |  resource                ${cliConfig.resource}
-           |  zkQuorum                ${cliConfig.commonOpts.zkQuorum}
-           |  namespace               ${cliConfig.commonOpts.namespace}
-           |  host                    ${cliConfig.commonOpts.host}
-           |  port                    ${cliConfig.commonOpts.port}
+           |  zkQuorum                ${cliConfig.zkOpts.zkQuorum}
+           |  namespace               ${cliConfig.zkOpts.namespace}
+           |  host                    ${cliConfig.zkOpts.host}
+           |  port                    ${cliConfig.zkOpts.port}
            |  version                 ${cliConfig.commonOpts.version}
            |  verbose                 ${cliConfig.commonOpts.verbose}
         """.stripMargin
@@ -129,11 +129,11 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
         s"""Parsed arguments:
            |  action                  ${cliConfig.action}
            |  resource                ${cliConfig.resource}
-           |  zkQuorum                ${cliConfig.commonOpts.zkQuorum}
-           |  namespace               ${cliConfig.commonOpts.namespace}
+           |  zkQuorum                ${cliConfig.zkOpts.zkQuorum}
+           |  namespace               ${cliConfig.zkOpts.namespace}
            |  user                    ${cliConfig.engineOpts.user}
-           |  host                    ${cliConfig.commonOpts.host}
-           |  port                    ${cliConfig.commonOpts.port}
+           |  host                    ${cliConfig.zkOpts.host}
+           |  port                    ${cliConfig.zkOpts.port}
            |  version                 ${cliConfig.commonOpts.version}
            |  verbose                 ${cliConfig.commonOpts.verbose}
         """.stripMargin

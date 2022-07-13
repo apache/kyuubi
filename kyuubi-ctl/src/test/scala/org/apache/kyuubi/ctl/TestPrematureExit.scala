@@ -99,4 +99,30 @@ trait TestPrematureExit {
         _.getMessage.getFormattedMessage.contains(searchString)))
     }
   }
+
+  /** Returns true if the script exits and the given search string is printed. */
+  private[kyuubi] def testPrematureExitForAdminControlCli(
+      input: Array[String],
+      searchString: String): String = {
+    testPrematureExitForControlCli(input, searchString, AdminControlCli)
+  }
+
+  def testPrematureExitForAdminControlCliArgs(args: Array[String], searchString: String): Unit = {
+    val logAppender = new LogAppender("test premature exit")
+    withLogAppender(logAppender) {
+      val thread = new Thread {
+        override def run(): Unit =
+          try {
+            new AdminControlCliArguments(args)
+          } catch {
+            case e: Exception =>
+              error(e)
+          }
+      }
+      thread.start()
+      thread.join()
+      assert(logAppender.loggingEvents.exists(
+        _.getMessage.getFormattedMessage.contains(searchString)))
+    }
+  }
 }

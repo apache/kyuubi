@@ -39,7 +39,7 @@ class DeleteCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeInfo]](
     withDiscoveryClient(conf) { discoveryClient =>
       val znodeRoot = CtlUtils.getZkNamespace(conf, normalizedCliConfig)
       val hostPortOpt =
-        Some((normalizedCliConfig.commonOpts.host, normalizedCliConfig.commonOpts.port.toInt))
+        Some((normalizedCliConfig.zkOpts.host, normalizedCliConfig.zkOpts.port.toInt))
       val nodesToDelete = CtlUtils.getServiceNodes(discoveryClient, znodeRoot, hostPortOpt)
 
       val deletedNodes = ListBuffer[ServiceNodeInfo]()
