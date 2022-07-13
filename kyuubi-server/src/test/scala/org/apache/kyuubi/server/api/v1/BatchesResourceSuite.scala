@@ -34,7 +34,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ApplicationOperation.{APP_ERROR_KEY, APP_ID_KEY, APP_NAME_KEY, APP_STATE_KEY, APP_URL_KEY}
 import org.apache.kyuubi.engine.spark.{SparkBatchProcessBuilder, SparkProcessBuilder}
-import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
+import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.metadata.api.Metadata
@@ -591,5 +593,51 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val batch = response.readEntity(classOf[Batch])
     val batchSession = sessionManager.getBatchSessionImpl(SessionHandle.fromUUID(batch.getId))
     assert(batchSession.ipAddress === realClientIp)
+  }
+
+  test("expose the metrics with operation type and current state") {
+    assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
+    assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
+    assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
+    val originalCanceledCounter = getBatchJobSubmissionStateCounter(OperationState.CANCELED)
+
+    val appName = "spark-batch-submission"
+    val requestObj = new BatchRequest(
+      "spark",
+      sparkProcessBuilder.mainResource.get,
+      sparkProcessBuilder.mainClass,
+      appName,
+      Map(
+        "spark.master" -> "local",
+        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
+        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
+      Seq.empty[String].asJava)
+
+    val response = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    val batch = response.readEntity(classOf[Batch])
+
+    assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) +
+      getBatchJobSubmissionStateCounter(OperationState.PENDING) +
+      getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
+
+    val deleteResp = webTarget.path(s"api/v1/batches/${batch.getId}")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .delete()
+    assert(200 == deleteResp.getStatus)
+
+    assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
+    assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
+    assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
+    assert(
+      getBatchJobSubmissionStateCounter(OperationState.CANCELED) - originalCanceledCounter === 1)
+  }
+
+  private def getBatchJobSubmissionStateCounter(state: OperationState): Long = {
+    val opType = classOf[BatchJobSubmission].getSimpleName
+    val counterName = s"${MetricsConstants.OPERATION_STATE}.$opType.${state.toString.toLowerCase}"
+    MetricsSystem.counterValue(counterName).getOrElse(0L)
   }
 }
