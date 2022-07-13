@@ -23,10 +23,16 @@ import org.apache.kyuubi.ctl.{CtlConf, TestPrematureExit}
 class AdminCliSuite extends RestClientTestHelper with TestPrematureExit {
   override def beforeAll(): Unit = {
     super.beforeAll()
-
     System.setProperty(CtlConf.CTL_REST_CLIENT_BASE_URL.key, baseUri.toString)
     System.setProperty(CtlConf.CTL_REST_CLIENT_SPNEGO_HOST.key, "localhost")
     System.setProperty(CtlConf.CTL_REST_CLIENT_AUTH_SCHEMA.key, "spnego")
+  }
+
+  override def afterAll(): Unit = {
+    System.clearProperty(CtlConf.CTL_REST_CLIENT_BASE_URL.key)
+    System.clearProperty(CtlConf.CTL_REST_CLIENT_SPNEGO_HOST.key)
+    System.clearProperty(CtlConf.CTL_REST_CLIENT_AUTH_SCHEMA.key)
+    super.afterAll()
   }
 
   test("refresh kyuubi server hadoop conf") {

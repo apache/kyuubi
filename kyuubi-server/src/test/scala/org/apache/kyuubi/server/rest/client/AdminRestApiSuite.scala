@@ -15,25 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.client;
+package org.apache.kyuubi.server.rest.client
 
-public class AdminRestApi {
-  private KyuubiRestClient client;
+import org.apache.kyuubi.RestClientTestHelper
+import org.apache.kyuubi.client.{AdminRestApi, KyuubiRestClient}
 
-  private static final String API_BASE_PATH = "admin";
-
-  private AdminRestApi() {}
-
-  public AdminRestApi(KyuubiRestClient client) {
-    this.client = client;
-  }
-
-  public String refreshHadoopConf() {
-    String path = String.format("%s/%s", API_BASE_PATH, "refresh/hadoop_conf");
-    return this.getClient().post(path, null, client.getAuthHeader());
-  }
-
-  private IRestClient getClient() {
-    return this.client.getHttpClient();
+class AdminRestApiSuite extends RestClientTestHelper {
+  test("refresh kyuubi server hadoop conf") {
+    val spnegoKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
+        .spnegoHost("localhost")
+        .build()
+    val adminRestApi = new AdminRestApi(spnegoKyuubiRestClient)
+    val result = adminRestApi.refreshHadoopConf()
+    assert(result === s"Refresh the hadoop conf for ${fe.connectionUrl} successfully")
   }
 }
