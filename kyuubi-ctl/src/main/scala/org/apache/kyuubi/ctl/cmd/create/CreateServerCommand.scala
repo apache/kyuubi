@@ -36,7 +36,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeI
 
     val defaultNamespace = conf.getOption(HA_NAMESPACE.key)
       .getOrElse(HA_NAMESPACE.defaultValStr)
-    if (defaultNamespace.equals(normalizedCliConfig.commonOpts.namespace)) {
+    if (defaultNamespace.equals(normalizedCliConfig.zkOpts.namespace)) {
       fail(
         s"""
            |Only support expose Kyuubi server instance to another domain, a different namespace
@@ -52,7 +52,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeI
   def doRun(): Seq[ServiceNodeInfo] = {
     val kyuubiConf = conf
 
-    kyuubiConf.setIfMissing(HA_ADDRESSES, normalizedCliConfig.commonOpts.zkQuorum)
+    kyuubiConf.setIfMissing(HA_ADDRESSES, normalizedCliConfig.zkOpts.zkQuorum)
     withDiscoveryClient(kyuubiConf) { discoveryClient =>
       val fromNamespace =
         DiscoveryPaths.makePath(null, kyuubiConf.get(HA_NAMESPACE))
@@ -68,7 +68,7 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeI
               s" from $fromNamespace to $toNamespace")
             val newNodePath = zc.createAndGetServiceNode(
               kyuubiConf,
-              normalizedCliConfig.commonOpts.namespace,
+              normalizedCliConfig.zkOpts.namespace,
               sn.instance,
               sn.version,
               true)
@@ -78,10 +78,10 @@ class CreateServerCommand(cliConfig: CliConfig) extends Command[Seq[ServiceNodeI
           }
         }
 
-        if (kyuubiConf.get(HA_ADDRESSES) == normalizedCliConfig.commonOpts.zkQuorum) {
+        if (kyuubiConf.get(HA_ADDRESSES) == normalizedCliConfig.zkOpts.zkQuorum) {
           doCreate(discoveryClient)
         } else {
-          kyuubiConf.set(HA_ADDRESSES, normalizedCliConfig.commonOpts.zkQuorum)
+          kyuubiConf.set(HA_ADDRESSES, normalizedCliConfig.zkOpts.zkQuorum)
           withDiscoveryClient(kyuubiConf)(doCreate)
         }
       }

@@ -23,12 +23,13 @@ import org.apache.kyuubi.ctl.util.DateTimeUtils._
 
 object CommandLine {
 
-  def getOptionParser(builder: OParserBuilder[CliConfig]): OParser[Unit, CliConfig] = {
+  def getCtlOptionParser(builder: OParserBuilder[CliConfig]): OParser[Unit, CliConfig] = {
     import builder._
     OParser.sequence(
       programName("kyuubi-ctl"),
       head("kyuubi", KYUUBI_VERSION),
       common(builder),
+      zooKeeper(builder),
       create(builder),
       get(builder),
       delete(builder),
@@ -46,22 +47,27 @@ object CommandLine {
       help('h', "help").text("Show help message and exit."))
   }
 
+  def getAdminCtlOptionParser(builder: OParserBuilder[CliConfig]): OParser[Unit, CliConfig] = {
+    import builder._
+    OParser.sequence(
+      programName("kyuubi-adminctl"),
+      head("kyuubi", KYUUBI_VERSION),
+      common(builder),
+      refresh(builder),
+      checkConfig(f => {
+        if (f.action == null) {
+          failure("Must specify action command: [refresh].")
+        } else {
+          success
+        }
+      }),
+      note(""),
+      help('h', "help").text("Show help message and exit."))
+  }
+
   private def common(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
     OParser.sequence(
-      opt[String]("zk-quorum").abbr("zk")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(zkQuorum = v)))
-        .text("The connection string for the zookeeper ensemble," +
-          " using zk quorum manually."),
-      opt[String]('n', "namespace")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(namespace = v)))
-        .text("The namespace, using kyuubi-defaults/conf if absent."),
-      opt[String]('s', "host")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(host = v)))
-        .text("Hostname or IP address of a service."),
-      opt[String]('p', "port")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(port = v)))
-        .text("Listening port of a service."),
       opt[String]('v', "version")
         .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(version = v)))
         .text("Using the compiled KYUUBI_VERSION default," +
@@ -92,6 +98,24 @@ object CommandLine {
           }
         })
         .text("Kyuubi config property pair, formatted key=value."))
+  }
+
+  private def zooKeeper(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    OParser.sequence(
+      opt[String]("zk-quorum").abbr("zk")
+        .action((v, c) => c.copy(zkOpts = c.zkOpts.copy(zkQuorum = v)))
+        .text("The connection string for the zookeeper ensemble," +
+          " using zk quorum manually."),
+      opt[String]('n', "namespace")
+        .action((v, c) => c.copy(zkOpts = c.zkOpts.copy(namespace = v)))
+        .text("The namespace, using kyuubi-defaults/conf if absent."),
+      opt[String]('s', "host")
+        .action((v, c) => c.copy(zkOpts = c.zkOpts.copy(host = v)))
+        .text("Hostname or IP address of a service."),
+      opt[String]('p', "port")
+        .action((v, c) => c.copy(zkOpts = c.zkOpts.copy(port = v)))
+        .text("Listening port of a service."))
   }
 
   private def create(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -177,6 +201,17 @@ object CommandLine {
             .action((v, c) => c.copy(createOpts = c.createOpts.copy(filename = v)))
             .text("Filename to use to create the resource"),
           submitBatchCmd(builder).text("\topen batch session and wait for completion.")))
+  }
+
+  private def refresh(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    OParser.sequence(
+      note(""),
+      cmd("refresh")
+        .text("\tRefresh the resource.")
+        .action((_, c) => c.copy(action = ControlAction.REFRESH))
+        .children(
+          refreshConfigCmd(builder).text("\tRefresh the config with specified type.")))
   }
 
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -318,4 +353,13 @@ object CommandLine {
             "when the batch is no longer in PENDING state."))
   }
 
+  private def refreshConfigCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("config").action((_, c) => c.copy(resource = ControlObject.CONFIG))
+      .children(
+        arg[String]("<configType>")
+          .optional()
+          .action((v, c) => c.copy(adminConfigOpts = c.adminConfigOpts.copy(configType = v)))
+          .text("The valid config type can be one of the following: hadoopConf."))
+  }
 }

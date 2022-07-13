@@ -50,27 +50,27 @@ abstract class Command[T](cliConfig: CliConfig) extends Logging {
   def fail(msg: String): Unit = throw new KyuubiException(msg)
 
   protected def mergeArgsIntoKyuubiConf(): Unit = {
-    conf.set(HA_ADDRESSES.key, normalizedCliConfig.commonOpts.zkQuorum)
-    conf.set(HA_NAMESPACE.key, normalizedCliConfig.commonOpts.namespace)
+    conf.set(HA_ADDRESSES.key, normalizedCliConfig.zkOpts.zkQuorum)
+    conf.set(HA_NAMESPACE.key, normalizedCliConfig.zkOpts.namespace)
   }
 
   private def useDefaultPropertyValueIfMissing(): CliConfig = {
     var arguments: CliConfig = cliConfig.copy()
-    if (cliConfig.commonOpts.zkQuorum == null) {
+    if (cliConfig.zkOpts.zkQuorum == null) {
       conf.getOption(HA_ADDRESSES.key).foreach { v =>
         if (verbose) {
           super.info(s"Zookeeper quorum is not specified, use value from default conf:$v")
         }
-        arguments = arguments.copy(commonOpts = arguments.commonOpts.copy(zkQuorum = v))
+        arguments = arguments.copy(zkOpts = arguments.zkOpts.copy(zkQuorum = v))
       }
     }
 
-    if (arguments.commonOpts.namespace == null) {
-      arguments = arguments.copy(commonOpts =
-        arguments.commonOpts.copy(namespace = conf.get(HA_NAMESPACE)))
+    if (arguments.zkOpts.namespace == null) {
+      arguments = arguments.copy(zkOpts =
+        arguments.zkOpts.copy(namespace = conf.get(HA_NAMESPACE)))
       if (verbose) {
         super.info(s"Zookeeper namespace is not specified, use value from default conf:" +
-          s"${arguments.commonOpts.namespace}")
+          s"${arguments.zkOpts.namespace}")
       }
     }
 

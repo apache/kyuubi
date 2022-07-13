@@ -21,29 +21,27 @@ import org.apache.kyuubi.ctl.ControlObject.ControlObject
 
 private[ctl] object ControlAction extends Enumeration {
   type ControlAction = Value
-  val CREATE, GET, DELETE, LIST, LOG, SUBMIT = Value
+  val CREATE, GET, DELETE, LIST, LOG, SUBMIT, REFRESH = Value
 }
 
 private[ctl] object ControlObject extends Enumeration {
   type ControlObject = Value
-  val SERVER, ENGINE, BATCH = Value
+  val SERVER, ENGINE, BATCH, CONFIG = Value
 }
 
 case class CliConfig(
     action: ControlAction = null,
     resource: ControlObject = ControlObject.SERVER,
     commonOpts: CommonOpts = CommonOpts(),
+    zkOpts: ZookeeperOpts = ZookeeperOpts(),
     createOpts: CreateOpts = CreateOpts(),
     logOpts: LogOpts = LogOpts(),
     batchOpts: BatchOpts = BatchOpts(),
     engineOpts: EngineOpts = EngineOpts(),
+    adminConfigOpts: AdminConfigOpts = AdminConfigOpts(),
     conf: Map[String, String] = Map.empty)
 
 case class CommonOpts(
-    zkQuorum: String = null,
-    namespace: String = null,
-    host: String = null,
-    port: String = null,
     version: String = null,
     verbose: Boolean = false,
     hostUrl: String = null,
@@ -51,6 +49,12 @@ case class CommonOpts(
     username: String = null,
     password: String = null,
     spnegoHost: String = null)
+
+case class ZookeeperOpts(
+    zkQuorum: String = null,
+    namespace: String = null,
+    host: String = null,
+    port: String = null)
 
 case class CreateOpts(filename: String = null)
 
@@ -73,3 +77,5 @@ case class EngineOpts(
     engineType: String = null,
     engineSubdomain: String = null,
     engineShareLevel: String = null)
+
+case class AdminConfigOpts(configType: String = null)
