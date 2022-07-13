@@ -138,8 +138,7 @@
         <httpclient.version>4.5.13</httpclient.version>
         <httpcore.version>4.4.15</httpcore.version>
         <hudi.version>0.11.1</hudi.version>
-        <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
-        <iceberg.version>0.13.2</iceberg.version>
+        <iceberg.version>0.14.0</iceberg.version>
         <jackson.version>2.13.3</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
@@ -165,9 +164,10 @@
         <snakeyaml.version>1.30</snakeyaml.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
-          `delta.version`, `iceberg.name`, `maven.plugin.scalatest.exclude.tags`
+          `delta.version`, `maven.plugin.scalatest.exclude.tags`
           -->
         <spark.version>3.2.2</spark.version>
+        <spark.binary.version>3.2</spark.binary.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
@@ -1075,7 +1075,7 @@
 
             <dependency>
                 <groupId>org.apache.iceberg</groupId>
-                <artifactId>${iceberg.name}</artifactId>
+                <artifactId>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</artifactId>
                 <version>${iceberg.version}</version>
             </dependency>
 
@@ -2039,8 +2039,8 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.3</spark.version>
+                <spark.binary.version>3.1</spark.binary.version>
                 <delta.version>1.0.1</delta.version>
-                <iceberg.name>iceberg-spark-runtime-3.1_${scala.binary.version}</iceberg.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
@@ -2054,8 +2054,8 @@
             <id>spark-3.2</id>
             <properties>
                 <spark.version>3.2.2</spark.version>
+                <spark.binary.version>3.2</spark.binary.version>
                 <delta.version>2.0.0rc1</delta.version>
-                <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
                 <!--
                     See https://github.com/apache/incubator-kyuubi/pull/2576
                     Hudi 0.11 requires hudi-spark3.2-bundle to execute UT
@@ -2073,6 +2073,7 @@
             <id>spark-3.3</id>
             <properties>
                 <spark.version>3.3.0</spark.version>
+                <spark.binary.version>3.3</spark.binary.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
