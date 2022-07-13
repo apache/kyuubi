@@ -56,7 +56,9 @@ object HighAvailabilityConf {
 
   val HA_CLIENT_CLASS: ConfigEntry[String] =
     buildConf("kyuubi.ha.client.class")
-      .doc("Class name for service discovery client.")
+      .doc("Class name for service discovery client.<ul>" +
+        " <li>Zookeeper: org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient</li>" +
+        " <li>Etcd: org.apache.kyuubi.ha.client.etcd.EtcdDiscoveryClient</li></ul>")
       .version("1.6.0")
       .stringConf
       .checkValue(_.nonEmpty, "must not be empty")
