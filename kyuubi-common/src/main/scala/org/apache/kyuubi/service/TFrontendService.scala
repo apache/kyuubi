@@ -32,9 +32,10 @@ import org.apache.thrift.transport.TTransport
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.{CLIENT_IP_KEY, SessionHandle}
+import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, NamedThreadFactory}
 
 /**
@@ -159,7 +160,7 @@ abstract class TFrontendService(name: String)
     val userName = getUserName(req)
     val ipAddress =
       if (isServer() && req.getConfiguration != null) {
-        Option(req.getConfiguration.get(CLIENT_IP_KEY)).getOrElse(getIpAddress)
+        Option(req.getConfiguration.get(KYUUBI_CLIENT_IP_KEY)).getOrElse(getIpAddress)
       } else {
         getIpAddress
       }

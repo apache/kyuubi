@@ -27,6 +27,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -64,7 +65,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): Session = {
     // inject client ip into session conf
-    val newConf = conf + (CLIENT_IP_KEY -> ipAddress)
+    val newConf = conf + (KYUUBI_CLIENT_IP_KEY -> ipAddress)
     new KyuubiSessionImpl(
       protocol,
       user,
@@ -114,7 +115,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       batchRequest: BatchRequest,
       recoveryMetadata: Option[Metadata] = None): KyuubiBatchSessionImpl = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    batchRequest.setConf((batchRequest.getConf.asScala ++ Map(CLIENT_IP_KEY -> ipAddress)).asJava)
+    batchRequest.setConf(
+      (batchRequest.getConf.asScala ++ Map(KYUUBI_CLIENT_IP_KEY -> ipAddress)).asJava)
     new KyuubiBatchSessionImpl(
       username,
       password,
