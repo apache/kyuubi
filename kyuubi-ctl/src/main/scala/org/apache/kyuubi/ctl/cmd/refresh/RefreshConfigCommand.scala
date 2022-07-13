@@ -21,10 +21,10 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.client.AdminRestApi
 import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
-import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.cmd.AdminCtlCommand
 import org.apache.kyuubi.ctl.util.Validator
 
-class RefreshConfigCommand(cliConfig: CliConfig) extends Command[String](cliConfig) {
+class RefreshConfigCommand(cliConfig: CliConfig) extends AdminCtlCommand[String](cliConfig) {
   def validate(): Unit = {
     Validator.validateAdminConfigType(cliConfig)
   }
