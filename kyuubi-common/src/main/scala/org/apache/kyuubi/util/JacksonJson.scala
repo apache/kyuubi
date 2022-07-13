@@ -15,17 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.util
 
-import org.apache.kyuubi.util.Json
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, SerializationFeature}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
-object JsonProtocol {
+class JacksonJson extends Json {
 
-  private val json = Json.defaultJson
+  private val mapper = new ObjectMapper()
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    .enable(SerializationFeature.INDENT_OUTPUT)
+    .registerModule(DefaultScalaModule)
 
-  def productToJson[T <: KyuubiEvent](value: T): String = json.toJson(value)
+  def toJson[T](value: T): String = mapper.writeValueAsString(value)
 
-  def jsonToEvent[T <: KyuubiEvent](jsonValue: String, cls: Class[T]): KyuubiEvent = {
-    json.fromJson(jsonValue, cls)
+  def fromJson[T](jsonValue: String, cls: Class[T]): T = {
+    mapper.readValue(jsonValue, cls)
   }
 }

@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.util
 
-import org.apache.kyuubi.util.Json
+trait Json {
 
-object JsonProtocol {
+  def toJson[T](value: T): String
 
-  private val json = Json.defaultJson
+  def fromJson[T](jsonValue: String, cls: Class[T]): T
+}
 
-  def productToJson[T <: KyuubiEvent](value: T): String = json.toJson(value)
+object Json {
 
-  def jsonToEvent[T <: KyuubiEvent](jsonValue: String, cls: Class[T]): KyuubiEvent = {
-    json.fromJson(jsonValue, cls)
-  }
+  val defaultJson: Json = new JacksonJson()
 }

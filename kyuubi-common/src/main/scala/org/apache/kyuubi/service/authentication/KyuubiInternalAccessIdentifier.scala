@@ -20,8 +20,8 @@ package org.apache.kyuubi.service.authentication
 import com.fasterxml.jackson.annotation.{JsonAutoDetect, JsonInclude, JsonPropertyOrder}
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility
 import com.fasterxml.jackson.annotation.JsonInclude.Include
-import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, SerializationFeature}
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
+
+import org.apache.kyuubi.util.Json
 
 @JsonInclude(Include.NON_ABSENT)
 @JsonAutoDetect(getterVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
@@ -31,18 +31,16 @@ class KyuubiInternalAccessIdentifier {
   var maxDate: Long = 0
 
   def toJson: String = {
-    KyuubiInternalAccessIdentifier.mapper.writeValueAsString(this)
+    KyuubiInternalAccessIdentifier.jsonProtocol.toJson(this)
   }
 }
 
 private[kyuubi] object KyuubiInternalAccessIdentifier {
-  private val mapper = new ObjectMapper()
-    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    .enable(SerializationFeature.INDENT_OUTPUT)
-    .registerModule(DefaultScalaModule)
+
+  private val jsonProtocol: Json = Json.defaultJson
 
   def fromJson(json: String): KyuubiInternalAccessIdentifier = {
-    mapper.readValue(json, classOf[KyuubiInternalAccessIdentifier])
+    jsonProtocol.fromJson(json, classOf[KyuubiInternalAccessIdentifier])
   }
 
   def newIdentifier(maxDate: Long): KyuubiInternalAccessIdentifier = {
