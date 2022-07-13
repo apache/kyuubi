@@ -159,8 +159,7 @@ abstract class TFrontendService(name: String)
     val userName = getUserName(req)
     val ipAddress =
       if (isServer() && req.getConfiguration != null) {
-        Option(req.getConfiguration.get(CLIENT_IP_KEY)).getOrElse(
-          getIpAddress)
+        Option(req.getConfiguration.get(CLIENT_IP_KEY)).getOrElse(getIpAddress)
       } else {
         getIpAddress
       }
