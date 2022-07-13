@@ -566,4 +566,30 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(deleteResp.readEntity(classOf[CloseBatchResponse]).getMsg.contains(
       s"Api request failed for http://${metadata2.kyuubiInstance}"))
   }
+
+  test("support to get the real client ip for http proxy use case") {
+    val realClientIp = "localtest.me"
+
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val appName = "spark-batch-submission"
+    val requestObj = new BatchRequest(
+      "spark",
+      sparkProcessBuilder.mainResource.get,
+      sparkProcessBuilder.mainClass,
+      appName,
+      Map(
+        "spark.master" -> "local",
+        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
+        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
+      Seq.empty[String].asJava)
+
+    val response = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER), realClientIp)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    val batch = response.readEntity(classOf[Batch])
+    val batchSession = sessionManager.getBatchSessionImpl(SessionHandle.fromUUID(batch.getId))
+    assert(batchSession.ipAddress === realClientIp)
+  }
 }
