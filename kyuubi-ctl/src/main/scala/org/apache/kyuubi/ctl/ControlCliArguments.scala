@@ -62,7 +62,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
     }
   }
 
-  private def getCommand(cliConfig: CliConfig): Command[_] = {
+  protected def getCommand(cliConfig: CliConfig): Command[_] = {
     cliConfig.action match {
       case ControlAction.CREATE => cliConfig.resource match {
           case ControlObject.BATCH => new CreateBatchCommand(cliConfig)
