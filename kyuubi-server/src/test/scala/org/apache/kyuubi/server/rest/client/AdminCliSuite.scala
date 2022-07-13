@@ -15,25 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.client;
+package org.apache.kyuubi.server.rest.client
 
-public class AdminRestApi {
-  private KyuubiRestClient client;
+import org.apache.kyuubi.RestClientTestHelper
+import org.apache.kyuubi.ctl.{CtlConf, TestPrematureExit}
 
-  private static final String API_BASE_PATH = "admin";
+class AdminCliSuite extends RestClientTestHelper with TestPrematureExit {
+  override def beforeAll(): Unit = {
+    super.beforeAll()
 
-  private AdminRestApi() {}
-
-  public AdminRestApi(KyuubiRestClient client) {
-    this.client = client;
+    System.setProperty(CtlConf.CTL_REST_CLIENT_BASE_URL.key, baseUri.toString)
+    System.setProperty(CtlConf.CTL_REST_CLIENT_SPNEGO_HOST.key, "localhost")
+    System.setProperty(CtlConf.CTL_REST_CLIENT_AUTH_SCHEMA.key, "spnego")
   }
 
-  public String refreshHadoopConf() {
-    String path = String.format("%s/%s", API_BASE_PATH, "refresh/hadoop_conf");
-    return this.getClient().post(path, null, String.class, client.getAuthHeader());
-  }
-
-  private IRestClient getClient() {
-    return this.client.getHttpClient();
+  test("refresh kyuubi server hadoop conf") {
+    fe.connectionUrl
+    val args = Array("admin", "server", "refreshHadoopConf")
+    testPrematureExitForControlCli(
+      args,
+      s"Refresh the hadoop conf for ${fe.connectionUrl} successfully")
   }
 }

@@ -80,8 +80,10 @@ public class RestClient implements IRestClient {
 
   @Override
   public String post(String path, String body, String authHeader) {
-    RequestBuilder postRequestBuilder =
-        RequestBuilder.post().setEntity(new StringEntity(body, StandardCharsets.UTF_8));
+    RequestBuilder postRequestBuilder = RequestBuilder.post();
+    if (body != null) {
+      postRequestBuilder.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
+    }
     return doRequest(buildURI(path), authHeader, postRequestBuilder);
   }
 
