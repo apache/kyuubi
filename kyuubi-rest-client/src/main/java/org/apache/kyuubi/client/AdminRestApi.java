@@ -18,22 +18,22 @@
 package org.apache.kyuubi.client;
 
 public class AdminRestApi {
-    private KyuubiRestClient client;
+  private KyuubiRestClient client;
 
-    private static final String API_BASE_PATH = "admin";
+  private static final String API_BASE_PATH = "admin";
 
-    private AdminRestApi() {}
+  private AdminRestApi() {}
 
-    public AdminRestApi(KyuubiRestClient client) {
-        this.client = client;
-    }
+  public AdminRestApi(KyuubiRestClient client) {
+    this.client = client;
+  }
 
-    public String refreshHadoopConf() {
-        String path = String.format("%s/%s", API_BASE_PATH, "refresh/hadoop_conf");
-        return this.getClient().post(path, null, client.getAuthHeader());
-    }
+  public String refreshHadoopConf() {
+    String path = String.format("%s/%s", API_BASE_PATH, "refresh/hadoop_conf");
+    return this.getClient().post(path, null, client.getAuthHeader());
+  }
 
-    private IRestClient getClient() {
-        return this.client.getHttpClient();
-    }
+  private IRestClient getClient() {
+    return this.client.getHttpClient();
+  }
 }

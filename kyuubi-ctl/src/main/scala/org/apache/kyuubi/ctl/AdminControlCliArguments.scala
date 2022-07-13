@@ -33,9 +33,9 @@ class AdminControlCliArguments(args: Seq[String], env: Map[String, String] = sys
   override protected def getCommand(cliConfig: CliConfig): Command[_] = {
     cliConfig.action match {
       case ControlAction.REFRESH => cliConfig.resource match {
-        case ControlObject.CONFIG => new RefreshConfigCommand(cliConfig)
-        case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
-      }
+          case ControlObject.CONFIG => new RefreshConfigCommand(cliConfig)
+          case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
+        }
       case _ => throw new KyuubiException(s"Invalid operation: ${cliConfig.action}")
     }
   }
