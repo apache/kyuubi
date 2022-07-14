@@ -15,7 +15,7 @@
  - limitations under the License.
  -->
 
-# Kyuubi On Apache Kudu
+# Kudu
 
 ## What is Apache Kudu
 

@@ -93,18 +93,30 @@ High Availability
 Kyuubi provides both high availability and load balancing solutions based on Zookeeper.
 
 .. toctree::
-   :caption: Usage Guide
+   :caption: Admin Guide
    :maxdepth: 2
    :glob:
 
    quick_start/index
    deployment/index
    Security <security/index>
-   client/index
-   integrations/index
    monitor/index
-   sql/index
    tools/index
+
+.. toctree::
+   :caption: User Guide
+   :maxdepth: 2
+   :glob:
+
+   Clients & APIs <client/index>
+   SQL References <sql/index>
+
+.. toctree::
+   :caption: Connectors
+   :maxdepth: 2
+   :glob:
+
+   connector/index
 
 .. toctree::
    :caption: Kyuubi Insider
