@@ -54,9 +54,10 @@ Command: refresh config [<configType>]
 
 ## Refresh config
 
-Refresh the config with specified type. The valid config type can be one of the following: hadoopConf.
+Refresh the config with specified type.
 
-```shell
-bin/kyuubi-admin refresh config hadoopConf
-```
+Usage: `bin/kyuubi-admin refresh config [options] [<configType>]`
 
+| Config Type | Description                                       |
+|-------------|---------------------------------------------------|
+| hadoopConf  | The hadoop conf used for proxy user verification. |
