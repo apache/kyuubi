@@ -20,5 +20,5 @@ RESTful APIs and Clients
 .. toctree::
     :maxdepth: 2
 
-    hive_beeline
+    rest_api
 
