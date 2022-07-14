@@ -27,7 +27,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.jdbc.doris.{DorisRowSetHelper, DorisSchemaHelper}
 import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
 import org.apache.kyuubi.operation.Operation
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{TABLE_CATALOG, TABLE_NAME, TABLE_SCHEMA, TABLE_TYPE}
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class DorisDialect extends JdbcDialect {
@@ -100,8 +100,43 @@ class DorisDialect extends JdbcDialect {
     throw KyuubiSQLException.featureNotSupported()
   }
 
-  override def getColumnsOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+  override def getColumnsQuery(
+      session: Session,
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      columnName: String): String = {
+    val query = new StringBuilder(
+      """
+        |SELECT
+        |`TABLE_CATALOG`,`TABLE_SCHEMA`,`TABLE_NAME`, `COLUMN_NAME`,`ORDINAL_POSITION`,
+        |`COLUMN_DEFAULT`,`IS_NULLABLE`,`DATA_TYPE`,`CHARACTER_MAXIMUM_LENGTH`,
+        |`CHARACTER_OCTET_LENGTH`,`NUMERIC_PRECISION`,`NUMERIC_SCALE`,`DATETIME_PRECISION`,
+        |`CHARACTER_SET_NAME`,`COLLATION_NAME`,`COLUMN_TYPE`,`COLUMN_KEY`,`EXTRA`,`PRIVILEGES`,
+        |`COLUMN_COMMENT`,`COLUMN_SIZE`,`DECIMAL_DIGITS`,`GENERATION_EXPRESSION`,`SRS_ID`
+        |FROM information_schema.columns
+        |""".stripMargin)
+
+    val filters = ArrayBuffer[String]()
+    if (StringUtils.isNotEmpty(catalogName)) {
+      filters += s"$TABLE_CATALOG = '$catalogName'"
+    }
+    if (StringUtils.isNotEmpty(schemaName)) {
+      filters += s"$TABLE_SCHEMA LIKE '$schemaName'"
+    }
+    if (StringUtils.isNotEmpty(tableName)) {
+      filters += s"$TABLE_NAME LIKE '$tableName'"
+    }
+    if (StringUtils.isNotEmpty(columnName)) {
+      filters += s"$COLUMN_NAME LIKE '$columnName'"
+    }
+
+    if (filters.nonEmpty) {
+      query.append(" WHERE ")
+      query.append(filters.mkString(" AND "))
+    }
+
+    query.toString()
   }
 
   override def getFunctionsOperation(session: Session): Operation = {
