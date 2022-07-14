@@ -638,6 +638,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   private def getBatchJobSubmissionStateCounter(state: OperationState): Long = {
     val opType = classOf[BatchJobSubmission].getSimpleName
     val counterName = s"${MetricsConstants.OPERATION_STATE}.$opType.${state.toString.toLowerCase}"
-    MetricsSystem.counterValue(counterName).getOrElse(0L)
+    MetricsSystem.meterValue(counterName).getOrElse(0L)
   }
 }

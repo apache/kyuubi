@@ -38,7 +38,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
   MetricsSystem.tracing { ms =>
     ms.incCount(MetricRegistry.name(OPERATION_OPEN, opType))
     ms.incCount(MetricRegistry.name(OPERATION_TOTAL, opType))
-    ms.incCount(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase))
+    ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase))
     ms.incCount(MetricRegistry.name(OPERATION_TOTAL))
     ms.markMeter(MetricRegistry.name(OPERATION_STATE, state.toString.toLowerCase))
   }
@@ -158,8 +158,8 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   override def setState(newState: OperationState): Unit = {
     MetricsSystem.tracing { ms =>
-      ms.decCount(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase))
-      ms.incCount(MetricRegistry.name(OPERATION_STATE, opType, newState.toString.toLowerCase))
+      ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase), -1)
+      ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, newState.toString.toLowerCase))
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, newState.toString.toLowerCase))
     }
     super.setState(newState)

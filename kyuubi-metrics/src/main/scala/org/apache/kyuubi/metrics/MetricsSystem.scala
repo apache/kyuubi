@@ -117,4 +117,8 @@ object MetricsSystem {
   def counterValue(name: String): Option[Long] = {
     maybeSystem.map(_.registry.counter(name).getCount)
   }
+
+  def meterValue(name: String): Option[Long] = {
+    maybeSystem.map(_.registry.meter(name).getCount)
+  }
 }
