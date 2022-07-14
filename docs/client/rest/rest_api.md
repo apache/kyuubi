@@ -23,7 +23,7 @@ Note that: now the api version is v1 and the base uri is `/api/v1`.
 
 ### GET /batches
 
-Returns all the batch sessions.
+Returns all the batches.
 
 #### Request Parameters
 
@@ -50,11 +50,11 @@ Returns all the batch sessions.
 #### Request Body
 
 | Name      | Description                                        | Type             |
-| :-------- | :------------------------------------------------- | :--------------- |
-| batchType | The batch job type, such as Spark, Flink           | String           |
+| :-------- |:---------------------------------------------------| :--------------- |
+| batchType | The batch type, such as Spark, Flink               | String           |
 | resource  | The resource containing the application to execute | path (required)  |
 | className | Application main class                             | string(required) |
-| name      | The name of this batch job.                        | string           |
+| name      | The name of this batch.                            | string           |
 | conf      | Configuration properties                           | Map of key=val   |
 | args      | Command line arguments for the application         | list of strings  |
 
@@ -65,7 +65,7 @@ The created [Batch](#batch) object.
 
 ### GET /batches/{batchId}
 
-Returns the batch session information.
+Returns the batch information.
 
 #### Response Body
 
@@ -73,7 +73,7 @@ The [Batch](#batch).
 
 ### DELETE /batches/${batchId}
 
-Kill the batch job if it is still running.
+Kill the batch if it is still running.
 
 #### Request Parameters
 
@@ -83,10 +83,10 @@ Kill the batch job if it is still running.
 
 #### Response Body
 
-| Name    | Description                             | Type    |
-| :------ | :-------------------------------------- | :------ |
-| success | Whether kill the batch job successfully | boolean |
-| msg     | The kill batch job response             | string  |
+| Name    | Description                           | Type    |
+| :------ |:--------------------------------------| :------ |
+| success | Whether killed the batch successfully | boolean |
+| msg     | The kill batch message                | string  |
 
 ### GET /batches/${batchId}/localLog
 
@@ -113,12 +113,12 @@ Gets the local log lines from this batch.
 | id             | The batch id                                                      | string |
 | user           | The user created the batch                                        | string |
 | batchType      | The batch type                                                    | string |
-| name           | The batch job name                                                | string |
-| appId          | The batch job applicationId                                       | string |
-| appUrl         | The batch job application tracking url                            | string |
-| appState       | The batch job application state                                   | string |
-| appDiagnostic  | The batch job application diagnostic                              | string |
+| name           | The batch name                                                    | string |
+| appId          | The batch application Id                                          | string |
+| appUrl         | The batch application tracking url                                | string |
+| appState       | The batch application state                                       | string |
+| appDiagnostic  | The batch application diagnostic                                  | string |
 | kyuubiInstance | The kyuubi instance that created the batch                        | string |
 | state          | The kyuubi batch operation state                                  | string |
 | createTime     | The batch create time                                             | long   |
-| endTime        | The batch end time, if the batch has not been terminated, it is 0 | long   |
+| endTime        | The batch end time, if it has not been terminated, the value is 0 | long   |
