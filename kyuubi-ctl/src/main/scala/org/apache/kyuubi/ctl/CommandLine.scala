@@ -68,10 +68,6 @@ object CommandLine {
   private def common(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
     OParser.sequence(
-      opt[String]('v', "version")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(version = v)))
-        .text("Using the compiled KYUUBI_VERSION default," +
-          " change it if the active service is running in another."),
       opt[Unit]('b', "verbose")
         .action((_, c) => c.copy(commonOpts = c.commonOpts.copy(verbose = true)))
         .text("Print additional debug output."),
@@ -115,7 +111,11 @@ object CommandLine {
         .text("Hostname or IP address of a service."),
       opt[String]('p', "port")
         .action((v, c) => c.copy(zkOpts = c.zkOpts.copy(port = v)))
-        .text("Listening port of a service."))
+        .text("Listening port of a service."),
+      opt[String]('v', "version")
+        .action((v, c) => c.copy(zkOpts = c.zkOpts.copy(version = v)))
+        .text("Using the compiled KYUUBI_VERSION default," +
+          " change it if the active service is running in another."))
   }
 
   private def create(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {

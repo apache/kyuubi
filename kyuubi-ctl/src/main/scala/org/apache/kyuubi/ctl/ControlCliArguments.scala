@@ -122,7 +122,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
            |  namespace               ${cliConfig.zkOpts.namespace}
            |  host                    ${cliConfig.zkOpts.host}
            |  port                    ${cliConfig.zkOpts.port}
-           |  version                 ${cliConfig.commonOpts.version}
+           |  version                 ${cliConfig.zkOpts.version}
            |  verbose                 ${cliConfig.commonOpts.verbose}
         """.stripMargin
       case ControlObject.ENGINE =>
@@ -134,7 +134,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
            |  user                    ${cliConfig.engineOpts.user}
            |  host                    ${cliConfig.zkOpts.host}
            |  port                    ${cliConfig.zkOpts.port}
-           |  version                 ${cliConfig.commonOpts.version}
+           |  version                 ${cliConfig.zkOpts.version}
            |  verbose                 ${cliConfig.commonOpts.verbose}
         """.stripMargin
       case _ => ""

@@ -74,11 +74,11 @@ abstract class Command[T](cliConfig: CliConfig) extends Logging {
       }
     }
 
-    if (arguments.commonOpts.version == null) {
+    if (arguments.zkOpts.version == null) {
       if (verbose) {
         super.info(s"version is not specified, use built-in KYUUBI_VERSION:$KYUUBI_VERSION")
       }
-      arguments = arguments.copy(commonOpts = arguments.commonOpts.copy(version = KYUUBI_VERSION))
+      arguments = arguments.copy(zkOpts = arguments.zkOpts.copy(version = KYUUBI_VERSION))
     }
     arguments
   }

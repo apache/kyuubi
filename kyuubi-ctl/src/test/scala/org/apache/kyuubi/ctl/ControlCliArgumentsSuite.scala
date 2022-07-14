@@ -82,7 +82,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
         assert(opArgs.cliConfig.zkOpts.namespace == namespace)
         assert(opArgs.cliConfig.zkOpts.host == host)
         assert(opArgs.cliConfig.zkOpts.port == port)
-        assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
+        assert(opArgs.cliConfig.zkOpts.version == KYUUBI_VERSION)
         if (service == "engine") {
           assert(opArgs.cliConfig.engineOpts.user == user)
         }
@@ -113,7 +113,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       assert(opArgs.cliConfig.zkOpts.namespace == newNamespace)
       assert(opArgs.cliConfig.zkOpts.host == host)
       assert(opArgs.cliConfig.zkOpts.port == port)
-      assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
+      assert(opArgs.cliConfig.zkOpts.version == KYUUBI_VERSION)
     }
   }
 
@@ -296,7 +296,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       zkQuorum)
     val opArgs = new ControlCliArguments(args)
     assert(opArgs.cliConfig.zkOpts.namespace == namespace)
-    assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
+    assert(opArgs.cliConfig.zkOpts.version == KYUUBI_VERSION)
   }
 
   test("test use short options") {
@@ -328,7 +328,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
         assert(opArgs.cliConfig.zkOpts.namespace == namespace)
         assert(opArgs.cliConfig.zkOpts.host == host)
         assert(opArgs.cliConfig.zkOpts.port == port)
-        assert(opArgs.cliConfig.commonOpts.version == KYUUBI_VERSION)
+        assert(opArgs.cliConfig.zkOpts.version == KYUUBI_VERSION)
         if (service == "engine") {
           assert(opArgs.cliConfig.engineOpts.user == user)
         }
@@ -357,7 +357,6 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       s"""kyuubi $KYUUBI_VERSION
          |Usage: kyuubi-ctl [create|get|delete|list|log|submit] [options]
          |
-         |  -v, --version <value>    $versionHelpString
          |  -b, --verbose            Print additional debug output.
          |  --hostUrl <value>        Host url for rest api.
          |  --authSchema <value>     Auth schema for rest api, valid values are basic, spnego.
@@ -370,6 +369,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  -n, --namespace <value>  The namespace, using kyuubi-defaults/conf if absent.
          |  -s, --host <value>       Hostname or IP address of a service.
          |  -p, --port <value>       Listening port of a service.
+         |  -v, --version <value>    $versionHelpString
          |
          |Command: create [batch|server] [options]
          |${"\t"}Create a resource.

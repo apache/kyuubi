@@ -16,7 +16,7 @@
  -->
 
 
-# Administer kyuubi server Tool
+# Administer Kyuubi Server Tool
 
 ## Usage
 ```shell
@@ -27,7 +27,6 @@ Output
 kyuubi 1.6.0-SNAPSHOT
 Usage: kyuubi-adminctl [refresh] [options]
 
-  -v, --version <value>    Using the compiled KYUUBI_VERSION default, change it if the active service is running in another.
   -b, --verbose            Print additional debug output.
   --hostUrl <value>        Host url for rest api.
   --authSchema <value>     Auth schema for rest api, valid values are basic, spnego.
@@ -46,6 +45,9 @@ Command: refresh config [<configType>]
 ```
 
 ## Administer kyuubi server
+
+The tool is based on admin rest api.
+You can specify the rest host url(`--hostUrl`), auth schema(`--authSchema`), spnego host(`--spnegoHost`) and so on for rest rpc call.
 
 ### Refresh config
 Refresh the config with specified type. The valid config type can be one of the following: hadoopConf.

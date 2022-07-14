@@ -49,7 +49,7 @@ object CtlUtils {
         // org.apache.kyuubi.engine.EngineRef#engineSpace
         DiscoveryPaths.makePath(
           s"${cliConfig.zkOpts.namespace}_" +
-            s"${cliConfig.commonOpts.version}_" +
+            s"${cliConfig.zkOpts.version}_" +
             s"${engineShareLevel}_${engineType}",
           cliConfig.engineOpts.user,
           Array(engineSubdomain))
