@@ -89,3 +89,12 @@ Since v1.5.0, you can use the following metrics to replace:
 - `kyuubi.operation.total.ExecuteStatement`
 - `kyuubi.operation.opened.ExecuteStatement`
 - `kyuubi.operation.failed.ExecuteStatement.${errorType}`
+
+Since v1.6.0, you can use the following metrics to get the current state counter for a specified operation type:
+- `kyuubi.operation.state.${opType}.initialized`
+- `kyuubi.operation.state.${opType}.pending`
+- `kyuubi.operation.state.${opType}.running`
+- `kyuubi.operation.state.${opType}.finished`
+- `kyuubi.operation.state.${opType}.error`
+- `kyuubi.operation.state.${opType}.canceled`
+- `kyuubi.operation.state.${opType}.closed`
