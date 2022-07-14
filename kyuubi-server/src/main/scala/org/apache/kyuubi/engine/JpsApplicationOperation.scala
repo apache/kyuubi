@@ -65,13 +65,14 @@ class JpsApplicationOperation extends ApplicationOperation {
       val (id, _) = idAndCmd.splitAt(idAndCmd.indexOf(" "))
       try {
         s"kill -15 $id".lineStream
-        if (getEngine(tag).nonEmpty) {
-          killApplicationByTag(tag)
-        }
         (true, s"Succeeded to terminate: $idAndCmd")
       } catch {
         case e: Exception =>
-          (false, s"Failed to terminate: $idAndCmd, due to ${e.getMessage}")
+          if (getEngine(tag).nonEmpty) {
+            killApplicationByTag(tag)
+          } else {
+            (false, s"Failed to terminate: $idAndCmd, due to ${e.getMessage}")
+          }
       }
     } else {
       (false, NOT_FOUND)
