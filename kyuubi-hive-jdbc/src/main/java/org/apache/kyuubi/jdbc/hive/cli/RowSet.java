@@ -19,9 +19,13 @@ package org.apache.kyuubi.jdbc.hive.cli;
 
 public interface RowSet extends Iterable<Object[]> {
 
+  RowSet extractSubset(int maxRows);
+
   int numColumns();
 
   int numRows();
 
   long getStartOffset();
+
+  void setStartOffset(long startOffset);
 }

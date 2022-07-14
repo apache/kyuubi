@@ -76,6 +76,26 @@ public class JdbcColumn {
     return ordinalPos;
   }
 
+  public Integer getNumPrecRadix() {
+    if (type.equalsIgnoreCase("tinyint")) {
+      return 10;
+    } else if (type.equalsIgnoreCase("smallint")) {
+      return 10;
+    } else if (type.equalsIgnoreCase("int")) {
+      return 10;
+    } else if (type.equalsIgnoreCase("bigint")) {
+      return 10;
+    } else if (type.equalsIgnoreCase("float")) {
+      return 10;
+    } else if (type.equalsIgnoreCase("double")) {
+      return 10;
+    } else if (type.equalsIgnoreCase("decimal")) {
+      return 10;
+    } else { // anything else including boolean and string is null
+      return null;
+    }
+  }
+
   static String columnClassName(TTypeId tType, JdbcColumnAttributes columnAttributes)
       throws SQLException {
     int columnType = convertTTypeIdToSqlType(tType);
