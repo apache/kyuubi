@@ -68,6 +68,7 @@ class JpsApplicationOperation extends ApplicationOperation {
         (true, s"Succeeded to terminate: $idAndCmd")
       } catch {
         case e: Exception =>
+          // the application might generate multiple processes, ensure that it is killed eventually.
           if (retryable && getEngine(tag).nonEmpty) {
             killJpsApplicationByTag(tag, false)
           } else {
