@@ -102,9 +102,9 @@ Gets the local log lines from this batch.
 #### Response Body
 
 | Name      | Description       | Type          |
-| :-------- | :---------------- | :------------ |
+| :-------- | :---------------- |:--------------|
 | logRowSet | The log lines     | list of sting |
-| rowCount  | The log row count | Int           |
+| rowCount  | The log row count | int           |
 
 ### Batch
 
