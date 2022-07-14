@@ -310,7 +310,7 @@ kyuubi.frontend.worker.keepalive.time|PT1M|(deprecated) Keep-alive time (in mill
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
 kyuubi.ha.addresses||The connection string for the discovery ensemble|string|1.6.0
-kyuubi.ha.client.class|org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient|Class name for service discovery client.|string|1.6.0
+kyuubi.ha.client.class|org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient|Class name for service discovery client.<ul> <li>Zookeeper: org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient</li> <li>Etcd: org.apache.kyuubi.ha.client.etcd.EtcdDiscoveryClient</li></ul>|string|1.6.0
 kyuubi.ha.etcd.lease.timeout|PT10S|Timeout for etcd keep alive lease. The kyuubi server will known unexpected loss of engine after up to this seconds.|duration|1.6.0
 kyuubi.ha.namespace|kyuubi|The root directory for the service to deploy its instance uri|string|1.6.0
 kyuubi.ha.zookeeper.acl.enabled|false|Set to true if the zookeeper ensemble is kerberized|boolean|1.0.0
