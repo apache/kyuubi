@@ -58,7 +58,7 @@ class JpsApplicationOperation extends ApplicationOperation {
     }
   }
 
-  override def killApplicationByTag(tag: String): KillResponse = {
+  private def killJpsApplicationByTag(tag: String, retryable: Boolean): KillResponse = {
     val commandOption = getEngine(tag)
     if (commandOption.nonEmpty) {
       val idAndCmd = commandOption.get
@@ -68,11 +68,18 @@ class JpsApplicationOperation extends ApplicationOperation {
         (true, s"Succeeded to terminate: $idAndCmd")
       } catch {
         case e: Exception =>
+          if (retryable && getEngine(tag).nonEmpty) {
+            killJpsApplicationByTag(tag, false)
+          }
           (false, s"Failed to terminate: $idAndCmd, due to ${e.getMessage}")
       }
     } else {
       (false, NOT_FOUND)
     }
+  }
+
+  override def killApplicationByTag(tag: String): KillResponse = {
+    killJpsApplicationByTag(tag, true)
   }
 
   override def getApplicationInfoByTag(tag: String): Map[String, String] = {
