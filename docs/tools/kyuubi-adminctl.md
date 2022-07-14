@@ -46,7 +46,6 @@ Command: refresh config [<configType>]
 ```
 
 ## Administer kyuubi server
-You can specify the zookeeper address(`--zk-quorum`) and namespace(`--namespace`), version(`--version`) parameters to query a specific kyuubi server cluster.
 
 ### Refresh config
 Refresh the config with specified type. The valid config type can be one of the following: hadoopConf.
