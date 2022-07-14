@@ -29,34 +29,34 @@ Returns all the batches.
 
 | Name       | Description                                                                                             | Type   |
 | :--------- |:--------------------------------------------------------------------------------------------------------| :----- |
-| batchType  | The batch type, such as spark/flink, if no batchType is specified,<br/> return all types                | string |
-| batchState | The valid batch state can be one of the following:<br/> PENDING, RUNNING, FINISHED, ERROR, CANCELED     | string |
-| batchUser  | The user name that created the batch                                                                    | string |
-| createTime | Return the batch that created after this timestamp                                                      | long   |
-| endTime    | Return the batch that ended before this timestamp                                                       | long   |
-| from       | The start index to fetch sessions                                                                       | int    |
-| size       | Number of sessions to fetch                                                                             | int    |
+| batchType  | The batch type, such as spark/flink, if no batchType is specified,<br/> return all types                | String |
+| batchState | The valid batch state can be one of the following:<br/> PENDING, RUNNING, FINISHED, ERROR, CANCELED     | String |
+| batchUser  | The user name that created the batch                                                                    | String |
+| createTime | Return the batch that created after this timestamp                                                      | Long   |
+| endTime    | Return the batch that ended before this timestamp                                                       | Long   |
+| from       | The start index to fetch sessions                                                                       | Int    |
+| size       | Number of sessions to fetch                                                                             | Int    |
 
 #### Response Body
 
 | Name    | Description                         | Type |
 | :------ | :---------------------------------- | :--- |
-| from    | The start index of fetched sessions | int  |
-| total   | Number of sessions fetched          | int  |
-| batches | [Batch](#batch) list                | list |
+| from    | The start index of fetched sessions | Int  |
+| total   | Number of sessions fetched          | Int  |
+| batches | [Batch](#batch) List                | List |
 
 ### POST /batches
 
 #### Request Body
 
 | Name      | Description                                        | Type             |
-| :-------- |:---------------------------------------------------| :--------------- |
+| :-------- |:---------------------------------------------------|:-----------------|
 | batchType | The batch type, such as Spark, Flink               | String           |
-| resource  | The resource containing the application to execute | path (required)  |
-| className | Application main class                             | string(required) |
-| name      | The name of this batch.                            | string           |
+| resource  | The resource containing the application to execute | Path (required)  |
+| className | Application main class                             | String(required) |
+| name      | The name of this batch.                            | String           |
 | conf      | Configuration properties                           | Map of key=val   |
-| args      | Command line arguments for the application         | list of strings  |
+| args      | Command line arguments for the application         | List of Strings  |
 
 
 #### Response Body
@@ -85,8 +85,8 @@ Kill the batch if it is still running.
 
 | Name    | Description                           | Type    |
 | :------ |:--------------------------------------| :------ |
-| success | Whether killed the batch successfully | boolean |
-| msg     | The kill batch message                | string  |
+| success | Whether killed the batch successfully | Boolean |
+| msg     | The kill batch message                | String  |
 
 ### GET /batches/${batchId}/localLog
 
@@ -96,29 +96,29 @@ Gets the local log lines from this batch.
 
 | Name | Description                       | Type |
 | :--- | :-------------------------------- | :--- |
-| from | Offset                            | int  |
-| size | Max number of log lines to return | int  |
+| from | Offset                            | Int  |
+| size | Max number of log lines to return | Int  |
 
 #### Response Body
 
 | Name      | Description       | Type          |
 | :-------- | :---------------- |:--------------|
-| logRowSet | The log lines     | list of sting |
-| rowCount  | The log row count | int           |
+| logRowSet | The log lines     | List of sting |
+| rowCount  | The log row count | Int           |
 
 ### Batch
 
 | Name           | Description                                                       | Type   |
 | :------------- |:------------------------------------------------------------------| :----- |
-| id             | The batch id                                                      | string |
-| user           | The user created the batch                                        | string |
-| batchType      | The batch type                                                    | string |
-| name           | The batch name                                                    | string |
-| appId          | The batch application Id                                          | string |
-| appUrl         | The batch application tracking url                                | string |
-| appState       | The batch application state                                       | string |
-| appDiagnostic  | The batch application diagnostic                                  | string |
-| kyuubiInstance | The kyuubi instance that created the batch                        | string |
-| state          | The kyuubi batch operation state                                  | string |
-| createTime     | The batch create time                                             | long   |
-| endTime        | The batch end time, if it has not been terminated, the value is 0 | long   |
+| id             | The batch id                                                      | String |
+| user           | The user created the batch                                        | String |
+| batchType      | The batch type                                                    | String |
+| name           | The batch name                                                    | String |
+| appId          | The batch application Id                                          | String |
+| appUrl         | The batch application tracking url                                | String |
+| appState       | The batch application state                                       | String |
+| appDiagnostic  | The batch application diagnostic                                  | String |
+| kyuubiInstance | The kyuubi instance that created the batch                        | String |
+| state          | The kyuubi batch operation state                                  | String |
+| createTime     | The batch create time                                             | Long   |
+| endTime        | The batch end time, if it has not been terminated, the value is 0 | Long   |
