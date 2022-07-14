@@ -16,14 +16,40 @@
  -->
 
 
-# Administer Kyuubi Server Tool
+# Kyuubi Administer Tool
 
-The tool to administer the Kyuubi server based on admin resource rest api.
-You can specify the rest host url(`--hostUrl`), auth schema(`--authSchema`), spnego host(`--spnegoHost`) and so on for rest rpc call.
+Kyuubi administer tool(kyuubi-admin) provides administrators with some maintenance operations against a kyuubi server or cluster.
+
+## Installation
+To install kyuubi-admin, you need to unpack the tarball. For example,
+
+```bash
+tar zxf apache-kyuubi-1.6.0-incubating-bin.tgz
+```
+
+This will result in the creation of a subdirectory named `apache-kyuubi-1.6.0-incubating-bin` shown below,
+
+```bash
+apache-kyuubi-1.6.0-incubating-bin
+├── ...
+├── bin
+|   ├── kyuubi-admin
+│   ├── ...
+├── ...
+```
 
 ## Usage
 ```shell
 bin/kyuubi-admin --help
+```
+
+Sub commands usage
+```shell
+Command: refresh [config] <args>...
+        Refresh the resource.
+Command: refresh config [<configType>]
+        Refresh the config with specified type.
+  <configType>             The valid config type can be one of the following: hadoopConf.
 ```
 
 ## Refresh config
