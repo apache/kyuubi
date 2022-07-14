@@ -79,6 +79,7 @@ Metrics Prefix | Metrics Suffix | Type | Since | Description
 `kyuubi.backend_service.fetch_result_rows_rate`  | | meter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `fetchResults` method that fetch result rows rate </div>
 `kyuubi.backend_service.get_primary_keys`  | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `get_primary_keys` method execution time and rate </div>
 `kyuubi.backend_service.get_cross_reference`  | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `get_cross_reference` method execution time and rate </div>
+`kyuubi.operation.state`   | `${operationType}`<br/>`.${state}`     | counter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  current count for the `${operationType}` with a particular `${state}`, e.g. `BatchJobSubmission.pending`</div>
 
 Before v1.5.0, if you use these metrics:
 - `kyuubi.statement.total`
@@ -89,12 +90,3 @@ Since v1.5.0, you can use the following metrics to replace:
 - `kyuubi.operation.total.ExecuteStatement`
 - `kyuubi.operation.opened.ExecuteStatement`
 - `kyuubi.operation.failed.ExecuteStatement.${errorType}`
-
-Since v1.6.0, you can use the following metrics to get the current state counter for a specified operation type:
-- `kyuubi.operation.state.${opType}.initialized`
-- `kyuubi.operation.state.${opType}.pending`
-- `kyuubi.operation.state.${opType}.running`
-- `kyuubi.operation.state.${opType}.finished`
-- `kyuubi.operation.state.${opType}.error`
-- `kyuubi.operation.state.${opType}.canceled`
-- `kyuubi.operation.state.${opType}.closed`
