@@ -70,8 +70,9 @@ class JpsApplicationOperation extends ApplicationOperation {
         case e: Exception =>
           if (retryable && getEngine(tag).nonEmpty) {
             killJpsApplicationByTag(tag, false)
+          } else {
+            (false, s"Failed to terminate: $idAndCmd, due to ${e.getMessage}")
           }
-          (false, s"Failed to terminate: $idAndCmd, due to ${e.getMessage}")
       }
     } else {
       (false, NOT_FOUND)
