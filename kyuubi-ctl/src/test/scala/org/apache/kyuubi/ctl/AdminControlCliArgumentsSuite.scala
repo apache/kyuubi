@@ -75,7 +75,7 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
     // scalastyle:off
     val helpString =
       s"""kyuubi $KYUUBI_VERSION
-         |Usage: kyuubi-adminctl [refresh] [options]
+         |Usage: kyuubi-admin [refresh] [options]
          |
          |  -b, --verbose            Print additional debug output.
          |  --hostUrl <value>        Host url for rest api.

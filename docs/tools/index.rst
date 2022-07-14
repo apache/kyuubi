@@ -24,4 +24,4 @@ Tools
 
     spark_block_cleaner
     kyuubi-ctl
-    kyuubi-adminctl
+    kyuubi-admin

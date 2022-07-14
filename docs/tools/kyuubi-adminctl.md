@@ -20,12 +20,12 @@
 
 ## Usage
 ```shell
-bin/kyuubi-adminctl --help
+bin/kyuubi-admin --help
 ```
 Output
 ```shell
 kyuubi 1.6.0-SNAPSHOT
-Usage: kyuubi-adminctl [refresh] [options]
+Usage: kyuubi-admin [refresh] [options]
 
   -b, --verbose            Print additional debug output.
   --hostUrl <value>        Host url for rest api.
@@ -52,6 +52,6 @@ You can specify the rest host url(`--hostUrl`), auth schema(`--authSchema`), spn
 ### Refresh config
 Refresh the config with specified type. The valid config type can be one of the following: hadoopConf.
 ```shell
-bin/kyuubi-adminctl refresh config hadoopConf
+bin/kyuubi-admin refresh config hadoopConf
 ```
 

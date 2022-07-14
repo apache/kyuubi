@@ -50,7 +50,7 @@ object CommandLine {
   def getAdminCtlOptionParser(builder: OParserBuilder[CliConfig]): OParser[Unit, CliConfig] = {
     import builder._
     OParser.sequence(
-      programName("kyuubi-adminctl"),
+      programName("kyuubi-admin"),
       head("kyuubi", KYUUBI_VERSION),
       common(builder),
       refresh(builder),
