@@ -158,9 +158,9 @@ abstract class TFrontendService(name: String)
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
     val userName = getUserName(req)
-    val configuration = Map(KYUUBI_CLIENT_IP_KEY -> getIpAddress) ++
+    val ipAddress = getIpAddress
+    val configuration = Map(KYUUBI_CLIENT_IP_KEY -> ipAddress) ++
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
-    val ipAddress = configuration.getOrElse(KYUUBI_CLIENT_IP_KEY, getIpAddress)
     val sessionHandle = be.openSession(
       protocol,
       userName,

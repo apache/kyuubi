@@ -24,6 +24,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
@@ -135,6 +136,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
+    val clientIp = conf.getOrElse(KYUUBI_CLIENT_IP_KEY, ipAddress)
     val sparkSession =
       try {
         getOrNewSparkSession(user)
@@ -147,7 +149,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       user,
       password,
       ipAddress,
-      ipAddress,
+      clientIp,
       conf,
       this,
       sparkSession)
