@@ -28,7 +28,6 @@ import org.apache.hive.service.cli.session.{HiveSessionImplwithUGI => ImportedHi
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.engine.hive.operation.HiveOperationManager
@@ -74,7 +73,6 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       ipAddress: String,
       conf: Map[String, String]): Session = {
     val sessionHandle = SessionHandle()
-    val clientIp = conf.getOrElse(KYUUBI_CLIENT_IP_KEY, ipAddress)
     val hive = {
       val sessionWithUGI = new ImportedHiveSessionImpl(
         new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
@@ -84,7 +82,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
         HiveSQLEngine.hiveConf,
         ipAddress,
         null,
-        Seq(clientIp).asJava)
+        Seq(ipAddress).asJava)
       val proxy = HiveSessionProxy.getProxy(sessionWithUGI, sessionWithUGI.getSessionUgi)
       sessionWithUGI.setProxySession(proxy)
       proxy
@@ -97,7 +95,6 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       user,
       password,
       ipAddress,
-      clientIp,
       conf,
       this,
       sessionHandle,
