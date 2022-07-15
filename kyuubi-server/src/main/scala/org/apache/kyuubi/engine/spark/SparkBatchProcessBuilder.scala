@@ -49,19 +49,15 @@ class SparkBatchProcessBuilder(
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    /**
-     * Converts kyuubi configs to configs that Spark could identify.
-     * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
-     * - Otherwise, the key will be added a `spark.` prefix
-     * - We do not consider the parameter started with `hadoop.` here, assume that it is well set
-     */
     (batchKyuubiConf.getAll ++ sparkAppNameConf()).foreach { case (k, v) =>
-      val newKey =
-        if (k.startsWith("spark.")) {
-          k
-        } else {
+      val newKey = {
+        // convert the kyuubi config with `spark` prefix, so that spark could identify
+        if (k.startsWith("kyuubi.")) {
           "spark." + k
+        } else {
+          k
         }
+      }
       buffer += CONF
       buffer += s"$newKey=$v"
     }
