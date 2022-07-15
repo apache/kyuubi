@@ -42,7 +42,6 @@ case class CliConfig(
     conf: Map[String, String] = Map.empty)
 
 case class CommonOpts(
-    version: String = null,
     verbose: Boolean = false,
     hostUrl: String = null,
     authSchema: String = null,
@@ -54,7 +53,8 @@ case class ZookeeperOpts(
     zkQuorum: String = null,
     namespace: String = null,
     host: String = null,
-    port: String = null)
+    port: String = null,
+    version: String = null)
 
 case class CreateOpts(filename: String = null)
 
