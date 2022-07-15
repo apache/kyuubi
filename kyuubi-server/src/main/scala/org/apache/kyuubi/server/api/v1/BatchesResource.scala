@@ -38,7 +38,6 @@ import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
-import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -168,7 +167,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
 
     val userName = fe.getUserName(request.getConf.asScala.toMap)
-    val ipAddress = AuthenticationFilter.getUserIpAddress
+    val ipAddress = fe.getIpAddress
     request.setConf(
       (request.getConf.asScala ++ Map(KYUUBI_CLIENT_IP_KEY -> ipAddress)).asJava)
     val sessionHandle = sessionManager.openBatchSession(

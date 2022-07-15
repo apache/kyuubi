@@ -585,8 +585,9 @@ object KyuubiConf {
       .doc("The http header to record the real client ip address. If your server is behind a load" +
         " balancer or other proxy, the server will see this load balancer or proxy IP address as" +
         " the client IP address, to get around this common issue, most load balancers or proxies" +
-        " offer the ability to record the real remote IP address in an HTTP herader that will be" +
-        " added to the request for other devices to use.")
+        " offer the ability to record the real remote IP address in an HTTP header that will be" +
+        " added to the request for other devices to use. Note that, because the header value can" +
+        " be specified to any ip address, so it will not be used for authentication.")
       .version("1.6.0")
       .stringConf
       .createWithDefault("X-Real-IP")

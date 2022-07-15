@@ -27,7 +27,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -44,7 +43,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @Path("refresh/hadoop_conf")
   def refreshFrontendHadoopConf(): Response = {
     val userName = fe.getUserName(Map.empty)
-    val ipAddress = AuthenticationFilter.getUserIpAddress
+    val ipAddress = fe.getIpAddress
     info(s"Receive refresh Kyuubi server hadoop conf request from $userName/$ipAddress")
     if (!userName.equals(administrator)) {
       throw new NotAllowedException(

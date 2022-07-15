@@ -114,8 +114,9 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
         HttpServletResponse.SC_UNAUTHORIZED,
         s"No auth scheme matched for $authorization")
     } else {
-      HTTP_CLIENT_IP_ADDRESS.set(Option(httpRequest.getHeader(
-        conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER))).getOrElse(httpRequest.getRemoteAddr))
+      HTTP_CLIENT_IP_ADDRESS.set(httpRequest.getRemoteAddr)
+      HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
+        httpRequest.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
       try {
         val authUser = matchedHandler.authenticate(httpRequest, httpResponse)
         if (authUser != null) {
@@ -126,6 +127,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
         case e: AuthenticationException =>
           HTTP_CLIENT_USER_NAME.remove()
           HTTP_CLIENT_IP_ADDRESS.remove()
+          HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
           httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN)
           httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage)
       }
@@ -163,11 +165,16 @@ object AuthenticationFilter {
   final val HTTP_CLIENT_IP_ADDRESS = new ThreadLocal[String]() {
     override protected def initialValue: String = null
   }
+  final val HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS = new ThreadLocal[String]() {
+    override protected def initialValue: String = null
+  }
   final val HTTP_CLIENT_USER_NAME = new ThreadLocal[String]() {
     override protected def initialValue: String = null
   }
 
   def getUserIpAddress: String = HTTP_CLIENT_IP_ADDRESS.get
+
+  def getUserProxyHeaderIpAddress: String = HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()
 
   def getUserName: String = HTTP_CLIENT_USER_NAME.get
 }
