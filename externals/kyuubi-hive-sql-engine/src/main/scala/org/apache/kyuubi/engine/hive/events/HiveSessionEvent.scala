@@ -52,8 +52,8 @@ object HiveSessionEvent {
       session.handle.identifier.toString,
       engineId = "",
       session.user,
+      session.clientIpAddress,
       session.ipAddress,
-      serverIp = session.serverIpAddress(),
       session.createTime)
   }
 }
