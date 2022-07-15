@@ -33,7 +33,6 @@ class HiveSessionImpl(
     protocol: TProtocolVersion,
     user: String,
     password: String,
-    serverIpAddress: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
@@ -42,8 +41,6 @@ class HiveSessionImpl(
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   private val sessionEvent = HiveSessionEvent(this)
-
-  def serverIpAddress(): String = serverIpAddress
 
   override def open(): Unit = {
     val confClone = new HashMap[String, String]()

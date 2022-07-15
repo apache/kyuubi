@@ -32,7 +32,6 @@ class SparkSessionImpl(
     protocol: TProtocolVersion,
     user: String,
     password: String,
-    serverIpAddress: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,

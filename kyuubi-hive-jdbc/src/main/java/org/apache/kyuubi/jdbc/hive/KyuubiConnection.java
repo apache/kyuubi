@@ -24,6 +24,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessControlContext;
@@ -775,6 +777,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     Map<String, String> sessVars = connParams.getSessionVars();
     if (sessVars.containsKey(HS2_PROXY_USER)) {
       openConf.put(HS2_PROXY_USER, sessVars.get(HS2_PROXY_USER));
+    }
+    try {
+      openConf.put("kyuubi.client.ipAddress", InetAddress.getLocalHost().getHostAddress());
+    } catch (UnknownHostException e) {
+      LOG.debug("Error getting Kyuubi session local client ip address", e);
     }
     openReq.setConfiguration(openConf);
 

@@ -32,7 +32,7 @@ import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.engine.hive.operation.HiveOperationManager
 import org.apache.kyuubi.operation.OperationManager
-import org.apache.kyuubi.session.{CLIENT_IP_KEY, Session, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 
 class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSessionManager") {
   override protected def isServer: Boolean = false
@@ -73,7 +73,6 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       ipAddress: String,
       conf: Map[String, String]): Session = {
     val sessionHandle = SessionHandle()
-    val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
     val hive = {
       val sessionWithUGI = new ImportedHiveSessionImpl(
         new ImportedSessionHandle(sessionHandle.toTSessionHandle, protocol),
@@ -83,7 +82,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
         HiveSQLEngine.hiveConf,
         ipAddress,
         null,
-        Seq(clientIp).asJava)
+        Seq(ipAddress).asJava)
       val proxy = HiveSessionProxy.getProxy(sessionWithUGI, sessionWithUGI.getSessionUgi)
       sessionWithUGI.setProxySession(proxy)
       proxy
@@ -96,7 +95,6 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       user,
       password,
       ipAddress,
-      clientIp,
       conf,
       this,
       sessionHandle,

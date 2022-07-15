@@ -63,14 +63,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    // inject client ip into session conf
-    val newConf = conf + (CLIENT_IP_KEY -> ipAddress)
     new KyuubiSessionImpl(
       protocol,
       user,
       password,
       ipAddress,
-      newConf,
+      conf,
       this,
       this.getConf.getUserDefaults(user))
   }
@@ -114,7 +112,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       batchRequest: BatchRequest,
       recoveryMetadata: Option[Metadata] = None): KyuubiBatchSessionImpl = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    batchRequest.setConf((batchRequest.getConf.asScala ++ Map(CLIENT_IP_KEY -> ipAddress)).asJava)
     new KyuubiBatchSessionImpl(
       username,
       password,

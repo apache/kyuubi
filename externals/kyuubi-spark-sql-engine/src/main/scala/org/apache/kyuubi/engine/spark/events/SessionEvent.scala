@@ -71,8 +71,8 @@ object SessionEvent {
       session.name.getOrElse(""),
       KyuubiSparkUtil.engineId,
       session.user,
+      session.clientIpAddress,
       session.ipAddress,
-      session.serverIpAddress,
       session.conf,
       session.createTime)
   }

@@ -135,7 +135,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
     val sparkSession =
       try {
         getOrNewSparkSession(user)
@@ -148,7 +147,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       user,
       password,
       ipAddress,
-      clientIp,
       conf,
       this,
       sparkSession)

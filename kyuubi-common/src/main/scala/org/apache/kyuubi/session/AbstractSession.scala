@@ -23,6 +23,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtoco
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
@@ -36,7 +37,8 @@ abstract class AbstractSession(
     val sessionManager: SessionManager) extends Session with Logging {
   override val handle: SessionHandle = SessionHandle()
 
-  protected def logSessionInfo(msg: String): Unit = info(s"[$user:$ipAddress] $handle - $msg")
+  def clientIpAddress: String = conf.getOrElse(KYUUBI_CLIENT_IP_KEY, ipAddress)
+  protected def logSessionInfo(msg: String): Unit = info(s"[$user:$clientIpAddress] $handle - $msg")
 
   final private val _createTime: Long = System.currentTimeMillis()
   override def createTime: Long = _createTime
