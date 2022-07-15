@@ -66,8 +66,6 @@ class BatchJobSubmission(
   extends KyuubiOperation(session) {
   import BatchJobSubmission._
 
-  override def statement: String = "BATCH_JOB_SUBMISSION"
-
   override def shouldRunAsync: Boolean = true
 
   private val _operationLog = OperationLog.createOperationLog(session, getHandle)
@@ -306,9 +304,7 @@ class BatchJobSubmission(
         case e: IOException => error(e.getMessage, e)
       }
 
-      MetricsSystem.tracing(_.decCount(
-        MetricRegistry.name(OPERATION_OPEN, statement.toLowerCase(Locale.getDefault))))
-
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
       // fast fail
       if (isTerminalState(state)) {
         killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
