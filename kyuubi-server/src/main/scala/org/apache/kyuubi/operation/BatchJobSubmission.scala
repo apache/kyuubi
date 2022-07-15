@@ -66,8 +66,6 @@ class BatchJobSubmission(
   extends KyuubiOperation(session) {
   import BatchJobSubmission._
 
-  override def statement: String = "BATCH_JOB_SUBMISSION"
-
   override def shouldRunAsync: Boolean = true
 
   private val _operationLog = OperationLog.createOperationLog(session, getHandle)
