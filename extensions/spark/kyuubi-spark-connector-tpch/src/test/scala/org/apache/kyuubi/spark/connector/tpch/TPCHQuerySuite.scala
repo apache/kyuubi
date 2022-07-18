@@ -63,7 +63,7 @@ class TPCHQuerySuite extends KyuubiFunSuite {
       spark.sql("USE tpch.tiny")
       queries.map { queryName =>
         val in = getClass.getClassLoader.getResourceAsStream(
-          s"tpch/$queryName.sql")
+          s"kyuubi/tpch/$queryName.sql")
         val queryContent: String = Source.fromInputStream(in)(Codec.UTF8).mkString
         in.close()
         queryName -> queryContent
@@ -75,7 +75,7 @@ class TPCHQuerySuite extends KyuubiFunSuite {
           spark.createDataFrame(result.toList.asJava, schema).createTempView(s"$name$viewSuffix")
           val sumHashResult = LICENSE_HEADER + spark.sql(
             s"select sum(hash(*)) from $name$viewSuffix").collect().head.get(0) + "\n"
-          val tuple = generateGoldenFiles("tpch", name, schemaDDL, sumHashResult)
+          val tuple = generateGoldenFiles("kyuubi/tpch", name, schemaDDL, sumHashResult)
           assert(schemaDDL == tuple._1)
           assert(sumHashResult == tuple._2)
         } catch {
