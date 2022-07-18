@@ -18,8 +18,8 @@
 package org.apache.kyuubi.jdbc.hive.auth;
 
 import java.security.PrivilegedExceptionAction;
+import java.util.Base64;
 import javax.security.auth.Subject;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSManager;
@@ -58,11 +58,9 @@ public final class HttpAuthUtils {
    */
   public static class HttpKerberosClientAction implements PrivilegedExceptionAction<String> {
     private final String serverPrincipal;
-    private final Base64 base64codec;
 
     public HttpKerberosClientAction(String serverPrincipal) {
       this.serverPrincipal = serverPrincipal;
-      base64codec = new Base64(0);
     }
 
     @Override
@@ -84,7 +82,7 @@ public final class HttpAuthUtils {
       byte[] outToken = gssContext.initSecContext(inToken, 0, inToken.length);
       gssContext.dispose();
       // Base64 encoded and stringified token for server
-      return new String(base64codec.encode(outToken));
+      return Base64.getEncoder().encodeToString(outToken);
     }
   }
 }

@@ -18,8 +18,7 @@
 package org.apache.kyuubi.server.http.util
 
 import java.security.{MessageDigest, NoSuchAlgorithmException}
-
-import org.apache.commons.codec.binary.Base64
+import java.util.Base64
 
 import org.apache.kyuubi.Logging
 
@@ -78,7 +77,7 @@ class CookieSigner(secret: Array[Byte]) extends Logging {
       md.update(str.getBytes)
       md.update(secretBytes)
       val digest = md.digest
-      new Base64(0).encodeToString(digest)
+      Base64.getEncoder.encodeToString(digest)
     } catch {
       case ex: NoSuchAlgorithmException =>
         throw new RuntimeException(
