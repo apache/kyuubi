@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive.common;
+package org.apache.kyuubi.jdbc.hive.auth;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
@@ -28,7 +28,7 @@ import org.apache.thrift.transport.TTransportException;
  * This class helps in some aspects of authentication. It creates the proper Thrift classes for the
  * given configuration as well as helps with authenticating requests.
  */
-public class HiveAuthUtils {
+public class ThriftUtils {
   public static TTransport getSocketTransport(String host, int port, int loginTimeout) {
     return new TSocket(host, port, loginTimeout);
   }

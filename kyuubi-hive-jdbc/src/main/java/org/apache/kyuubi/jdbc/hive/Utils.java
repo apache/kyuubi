@@ -26,13 +26,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.hive.service.rpc.thrift.TStatus;
 import org.apache.hive.service.rpc.thrift.TStatusCode;
-import org.apache.http.client.CookieStore;
-import org.apache.http.cookie.Cookie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Utils {
-  static final Logger LOG = LoggerFactory.getLogger(Utils.class.getName());
+  static final Logger LOG = LoggerFactory.getLogger(Utils.class);
   /** The required prefix list for the connection URL. */
   public static final List<String> URL_PREFIX_LIST =
       Arrays.asList("jdbc:hive2://", "jdbc:kyuubi://");
@@ -52,9 +50,9 @@ public class Utils {
 
   // This value is set to true by the setServiceUnavailableRetryStrategy() when the server returns
   // 401
-  static final String HIVE_SERVER2_RETRY_KEY = "hive.server2.retryserver";
-  static final String HIVE_SERVER2_RETRY_TRUE = "true";
-  static final String HIVE_SERVER2_RETRY_FALSE = "false";
+  public static final String HIVE_SERVER2_RETRY_KEY = "hive.server2.retryserver";
+  public static final String HIVE_SERVER2_RETRY_TRUE = "true";
+  public static final String HIVE_SERVER2_RETRY_FALSE = "false";
 
   static String getMatchedUrlPrefix(String uri) throws JdbcUriParseException {
     for (String urlPrefix : URL_PREFIX_LIST) {
@@ -115,7 +113,6 @@ public class Utils {
     // This value is used if the param "zooKeeperNamespace" is not specified in the JDBC Uri.
     static final String ZOOKEEPER_DEFAULT_NAMESPACE = "hiveserver2";
     static final String COOKIE_AUTH = "cookieAuth";
-    static final String COOKIE_AUTH_FALSE = "false";
     static final String COOKIE_NAME = "cookieName";
     // The default value of the cookie name when CookieAuth=true
     static final String DEFAULT_COOKIE_NAMES_HS2 = "hive.server2.auth";
@@ -157,13 +154,13 @@ public class Utils {
     private int port = 0;
     private String jdbcUriString;
     private String dbName = DEFAULT_DATABASE;
-    private Map<String, String> hiveConfs = new LinkedHashMap<String, String>();
-    private Map<String, String> hiveVars = new LinkedHashMap<String, String>();
-    private Map<String, String> sessionVars = new LinkedHashMap<String, String>();
+    private Map<String, String> hiveConfs = new LinkedHashMap<>();
+    private Map<String, String> hiveVars = new LinkedHashMap<>();
+    private Map<String, String> sessionVars = new LinkedHashMap<>();
     private String suppliedURLAuthority;
     private String zooKeeperEnsemble = null;
     private String currentHostZnodePath;
-    private final List<String> rejectedHostZnodePaths = new ArrayList<String>();
+    private final List<String> rejectedHostZnodePaths = new ArrayList<>();
 
     public JdbcConnectionParams() {}
 
@@ -561,7 +558,7 @@ public class Utils {
    */
   private static String getAuthorityFromJdbcURL(String uri) throws JdbcUriParseException {
     String authorities;
-    /**
+    /*
      * For a jdbc uri like:
      * jdbc:hive2://<host1>:<port1>,<host2>:<port2>/dbName;sess_var_list?conf_list#var_list Extract
      * the uri host:port list starting after "jdbc:hive2://", till the 1st "/" or "?" or "#"
@@ -574,7 +571,7 @@ public class Utils {
     String matchedUrlPrefix = getMatchedUrlPrefix(uri);
     int fromIndex = matchedUrlPrefix.length();
     int toIndex = -1;
-    ArrayList<String> toIndexChars = new ArrayList<String>(Arrays.asList("/", "?", "#"));
+    ArrayList<String> toIndexChars = new ArrayList<>(Arrays.asList("/", "?", "#"));
     for (String toIndexChar : toIndexChars) {
       toIndex = uri.indexOf(toIndexChar, fromIndex);
       if (toIndex > 0) {
@@ -630,47 +627,14 @@ public class Utils {
   static int getVersionPart(String fullVersion, int position) {
     int version = -1;
     try {
-      String[] tokens = fullVersion.split("[\\.-]"); // $NON-NLS-1$
+      String[] tokens = fullVersion.split("[.-]"); // $NON-NLS-1$
 
-      if (tokens != null && tokens.length > 1 && tokens[position] != null) {
+      if (tokens.length > 1 && tokens[position] != null) {
         version = Integer.parseInt(tokens[position]);
       }
-    } catch (Exception e) {
-      version = -1;
+    } catch (Exception ignore) {
     }
     return version;
-  }
-
-  /**
-   * The function iterates through the list of cookies in the cookiestore and tries to match them
-   * with the cookieName. If there is a match, the cookieStore already has a valid cookie and the
-   * client need not send Credentials for validation purpose.
-   *
-   * @param cookieStore The cookie Store
-   * @param cookieName Name of the cookie which needs to be validated
-   * @param isSSL Whether this is a http/https connection
-   * @return true or false based on whether the client needs to send the credentials or not to the
-   *     server.
-   */
-  static boolean needToSendCredentials(CookieStore cookieStore, String cookieName, boolean isSSL) {
-    if (cookieName == null || cookieStore == null) {
-      return true;
-    }
-
-    List<Cookie> cookies = cookieStore.getCookies();
-
-    for (Cookie c : cookies) {
-      // If this is a secured cookie and the current connection is non-secured,
-      // then, skip this cookie. We need to skip this cookie because, the cookie
-      // replay will not be transmitted to the server.
-      if (c.isSecure() && !isSSL) {
-        continue;
-      }
-      if (c.getName().equals(cookieName)) {
-        return false;
-      }
-    }
-    return true;
   }
 
   public static String parsePropertyFromUrl(final String url, final String key) {

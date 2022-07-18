@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive;
+package org.apache.kyuubi.jdbc.hive.auth;
 
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.protocol.HttpContext;
 
-public class XsrfHttpRequestInterceptor implements HttpRequestInterceptor {
+public class HttpXsrfRequestInterceptor implements HttpRequestInterceptor {
 
   // Note : This implements HttpRequestInterceptor rather than extending
   // HttpRequestInterceptorBase, because that class is an auth-specific

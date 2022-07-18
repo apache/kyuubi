@@ -15,44 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive;
+package org.apache.kyuubi.jdbc.hive.auth;
 
 import java.util.Map;
-import org.apache.http.Header;
 import org.apache.http.HttpRequest;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CookieStore;
-import org.apache.http.impl.auth.AuthSchemeBase;
-import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.protocol.HttpContext;
 
 /**
  * The class is instantiated with the username and password, it is then used to add header with
  * these credentials to HTTP requests
  */
-public class HttpBasicAuthInterceptor extends HttpRequestInterceptorBase {
-  UsernamePasswordCredentials credentials;
-  AuthSchemeBase authScheme;
+public class HttpTokenAuthInterceptor extends HttpRequestInterceptorBase {
+  private final String tokenStr;
+  private static final String HIVE_DELEGATION_TOKEN_HEADER = "X-Hive-Delegation-Token";
 
-  public HttpBasicAuthInterceptor(
-      String username,
-      String password,
+  public HttpTokenAuthInterceptor(
+      String tokenStr,
       CookieStore cookieStore,
       String cn,
       boolean isSSL,
       Map<String, String> additionalHeaders,
       Map<String, String> customCookies) {
     super(cookieStore, cn, isSSL, additionalHeaders, customCookies);
-    this.authScheme = new BasicScheme();
-    if (username != null) {
-      this.credentials = new UsernamePasswordCredentials(username, password);
-    }
+    this.tokenStr = tokenStr;
   }
 
   @Override
   protected void addHttpAuthHeader(HttpRequest httpRequest, HttpContext httpContext)
       throws Exception {
-    Header basicAuthHeader = authScheme.authenticate(credentials, httpRequest, httpContext);
-    httpRequest.addHeader(basicAuthHeader);
+    httpRequest.addHeader(HIVE_DELEGATION_TOKEN_HEADER, tokenStr);
   }
 }

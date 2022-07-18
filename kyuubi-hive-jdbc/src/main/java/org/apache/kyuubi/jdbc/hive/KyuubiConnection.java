@@ -47,8 +47,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.CookieStore;
-import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.ServiceUnavailableRetryStrategy;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -64,14 +64,11 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLConnection;
-import org.apache.kyuubi.jdbc.hive.auth.KerberosSaslHelper;
-import org.apache.kyuubi.jdbc.hive.auth.PlainSaslHelper;
-import org.apache.kyuubi.jdbc.hive.auth.SaslQOP;
+import org.apache.kyuubi.jdbc.hive.auth.*;
 import org.apache.kyuubi.jdbc.hive.cli.FetchType;
 import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
 import org.apache.kyuubi.jdbc.hive.cli.SessionUtils;
-import org.apache.kyuubi.jdbc.hive.common.HiveAuthUtils;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -225,7 +222,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         }
 
         if (numRetries >= maxRetries) {
-          throw new KyuubiSQLException(errMsg + e.getMessage(), " 08S01", e);
+          throw new KyuubiSQLException(errMsg + e.getMessage(), "08S01", e);
         } else {
           LOG.warn(warnMsg + e.getMessage() + " Retrying " + numRetries + " of " + maxRetries);
         }
@@ -425,13 +422,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private CloseableHttpClient getHttpClient(Boolean useSsl) throws SQLException {
-    boolean isCookieEnabled =
-        sessConfMap.get(COOKIE_AUTH) == null
-            || (!COOKIE_AUTH_FALSE.equalsIgnoreCase(sessConfMap.get(COOKIE_AUTH)));
-    String cookieName =
-        sessConfMap.get(COOKIE_NAME) == null
-            ? DEFAULT_COOKIE_NAMES_HS2
-            : sessConfMap.get(COOKIE_NAME);
+    boolean isCookieEnabled = isCookieEnabled();
+    String cookieName = sessConfMap.getOrDefault(COOKIE_NAME, DEFAULT_COOKIE_NAMES_HS2);
     CookieStore cookieStore = isCookieEnabled ? new BasicCookieStore() : null;
     HttpClientBuilder httpClientBuilder;
     // Request interceptor for any request pre-processing logic
@@ -535,27 +527,23 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     // In case the server's idletimeout is set to a lower value, it might close it's side of
     // connection. However we retry one more time on NoHttpResponseException
     httpClientBuilder.setRetryHandler(
-        new HttpRequestRetryHandler() {
-          @Override
-          public boolean retryRequest(
-              IOException exception, int executionCount, HttpContext context) {
-            if (executionCount > 1) {
-              LOG.info("Retry attempts to connect to server exceeded.");
-              return false;
-            }
-            if (exception instanceof org.apache.http.NoHttpResponseException) {
-              LOG.info("Could not connect to the server. Retrying one more time.");
-              return true;
-            }
+        (exception, executionCount, context) -> {
+          if (executionCount > 1) {
+            LOG.info("Retry attempts to connect to server exceeded.");
             return false;
           }
+          if (exception instanceof NoHttpResponseException) {
+            LOG.info("Could not connect to the server. Retrying one more time.");
+            return true;
+          }
+          return false;
         });
 
     // Add the request interceptor to the client builder
     httpClientBuilder.addInterceptorFirst(requestInterceptor);
 
     // Add an interceptor to add in an XSRF header
-    httpClientBuilder.addInterceptorLast(new XsrfHttpRequestInterceptor());
+    httpClientBuilder.addInterceptorLast(new HttpXsrfRequestInterceptor());
 
     // Configure http client for SSL
     if (useSsl) {
@@ -595,7 +583,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       } catch (Exception e) {
         String msg =
             "Could not create an https connection to " + jdbcUriString + ". " + e.getMessage();
-        throw new KyuubiSQLException(msg, " 08S01", e);
+        throw new KyuubiSQLException(msg, "08S01", e);
       }
     }
     return httpClientBuilder.build();
@@ -615,15 +603,15 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       String sslTrustStorePassword = sessConfMap.get(SSL_TRUST_STORE_PASSWORD);
 
       if (sslTrustStore == null || sslTrustStore.isEmpty()) {
-        transport = HiveAuthUtils.getSSLSocket(host, port, loginTimeout);
+        transport = ThriftUtils.getSSLSocket(host, port, loginTimeout);
       } else {
         transport =
-            HiveAuthUtils.getSSLSocket(
+            ThriftUtils.getSSLSocket(
                 host, port, loginTimeout, sslTrustStore, sslTrustStorePassword);
       }
     } else {
       // get non-SSL socket transport
-      transport = HiveAuthUtils.getSocketTransport(host, port, loginTimeout);
+      transport = ThriftUtils.getSocketTransport(host, port, loginTimeout);
     }
     return transport;
   }
@@ -682,7 +670,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     } catch (SaslException e) {
       throw new KyuubiSQLException(
           "Could not create secure connection to " + jdbcUriString + ": " + e.getMessage(),
-          " 08S01",
+          "08S01",
           e);
     }
     return transport;
@@ -830,9 +818,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     } catch (TException e) {
       LOG.error("Error opening session", e);
       throw new KyuubiSQLException(
-          "Could not establish connection to " + jdbcUriString + ": " + e.getMessage(),
-          " 08S01",
-          e);
+          "Could not establish connection to " + jdbcUriString + ": " + e.getMessage(), "08S01", e);
     }
     isClosed = false;
   }
@@ -847,6 +833,10 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return getSessionValue(AUTH_PASSWD, ANONYMOUS_PASSWD);
   }
 
+  private boolean isCookieEnabled() {
+    return !"false".equalsIgnoreCase(sessConfMap.get(COOKIE_AUTH));
+  }
+
   private boolean isSslConnection() {
     return "true".equalsIgnoreCase(sessConfMap.get(USE_SSL));
   }
@@ -857,8 +847,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private boolean isHttpTransportMode() {
-    String transportMode = sessConfMap.get(TRANSPORT_MODE);
-    return transportMode != null && (transportMode.equalsIgnoreCase("http"));
+    return "http".equalsIgnoreCase(sessConfMap.get(TRANSPORT_MODE));
   }
 
   private void logZkDiscoveryMessage(String message) {
@@ -870,7 +859,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   /** Lookup varName in sessConfMap, if its null or empty return the default value varDefault */
   private String getSessionValue(String varName, String varDefault) {
     String varValue = sessConfMap.get(varName);
-    if ((varValue == null) || varValue.isEmpty()) {
+    if (varValue == null || varValue.isEmpty()) {
       varValue = varDefault;
     }
     return varValue;
@@ -896,7 +885,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       Utils.verifySuccess(tokenResp.getStatus());
       return tokenResp.getDelegationToken();
     } catch (TException e) {
-      throw new KyuubiSQLException("Could not retrieve token: " + e.getMessage(), " 08S01", e);
+      throw new KyuubiSQLException("Could not retrieve token: " + e.getMessage(), "08S01", e);
     }
   }
 
@@ -909,7 +898,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       TCancelDelegationTokenResp cancelResp = client.CancelDelegationToken(cancelReq);
       Utils.verifySuccess(cancelResp.getStatus());
     } catch (TException e) {
-      throw new KyuubiSQLException("Could not cancel token: " + e.getMessage(), " 08S01", e);
+      throw new KyuubiSQLException("Could not cancel token: " + e.getMessage(), "08S01", e);
     }
   }
 
@@ -922,7 +911,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       TRenewDelegationTokenResp renewResp = client.RenewDelegationToken(cancelReq);
       Utils.verifySuccess(renewResp.getStatus());
     } catch (TException e) {
-      throw new KyuubiSQLException("Could not renew token: " + e.getMessage(), " 08S01", e);
+      throw new KyuubiSQLException("Could not renew token: " + e.getMessage(), "08S01", e);
     }
   }
 
@@ -955,7 +944,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       engineLogThread.interrupt();
       try {
         engineLogThread.join(DEFAULT_ENGINE_LOG_THREAD_TIMEOUT);
-      } catch (Exception e) {
+      } catch (Exception ignore) {
       }
     }
     engineLogThread = null;
@@ -1016,7 +1005,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         throw new KyuubiSQLException("Failed to get catalog information");
       }
       return res.getString(1);
-    } catch (Exception e) {
+    } catch (Exception ignore) {
       return "";
     }
   }
@@ -1084,11 +1073,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
     boolean rc = false;
     try {
-      String productName =
-          new KyuubiDatabaseMetaData(this, client, sessHandle).getDatabaseProductName();
+      new KyuubiDatabaseMetaData(this, client, sessHandle).getDatabaseProductName();
       rc = true;
-    } catch (SQLException e) {
-      // IGNORE
+    } catch (SQLException ignore) {
     }
     return rc;
   }
@@ -1141,7 +1128,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
     try (KyuubiStatement stmt = createKyuubiStatement()) {
       stmt.executeSetCurrentCatalog("_SET_CATALOG", catalog);
-    } catch (SQLException e) {
+    } catch (SQLException ignore) {
 
     }
   }
@@ -1259,7 +1246,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       } catch (InvocationTargetException e) {
         // all IFace APIs throw TException
         if (e.getTargetException() instanceof TException) {
-          throw (TException) e.getTargetException();
+          throw e.getTargetException();
         } else {
           // should not happen
           throw new TException(
