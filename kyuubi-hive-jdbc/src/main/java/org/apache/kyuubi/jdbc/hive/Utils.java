@@ -82,6 +82,7 @@ public class Utils {
     public static final String AUTH_QOP_DEPRECATED = "sasl.qop";
     public static final String AUTH_QOP = "saslQop";
     public static final String AUTH_SIMPLE = "noSasl";
+    public static final String AUTH_TOKEN = "delegationToken";
     public static final String AUTH_USER = "user";
     public static final String AUTH_PRINCIPAL = "principal";
     public static final String AUTH_KYUUBI_CLIENT_PRINCIPAL = "kyuubiClientPrincipal";

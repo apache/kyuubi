@@ -191,9 +191,11 @@ class ZooKeeperHiveClientHelper {
         /*
          * Note: this is pretty messy, but sticking to the current implementation. Set
          * authentication configs. Note that in JDBC driver, we have 3 auth modes: NOSASL, Kerberos
-         * and password based. The use of
+         * (including delegation token mechanism) and password based. The use of
          * JdbcConnectionParams.AUTH_TYPE==JdbcConnectionParams.AUTH_SIMPLE picks NOSASL. The
-         * presence of JdbcConnectionParams.AUTH_PRINCIPAL==<principal> picks Kerberos.
+         * presence of JdbcConnectionParams.AUTH_PRINCIPAL==<principal> picks Kerberos. If principal
+         * is absent, the presence of
+         * JdbcConnectionParams.AUTH_TYPE==JdbcConnectionParams.AUTH_TOKEN uses delegation token.
          * Otherwise password based (which includes NONE, PAM, LDAP, CUSTOM)
          */
         if (matcher.group(1).equals("hive.server2.authentication")) {
@@ -210,7 +212,13 @@ class ZooKeeperHiveClientHelper {
           }
         }
         // KERBEROS
+        // If delegation token is passed from the client side, do not set the principal
         if (matcher.group(1).equalsIgnoreCase("hive.server2.authentication.kerberos.principal")
+            && !(connParams.getSessionVars().containsKey(Utils.JdbcConnectionParams.AUTH_TYPE)
+                && connParams
+                    .getSessionVars()
+                    .get(Utils.JdbcConnectionParams.AUTH_TYPE)
+                    .equalsIgnoreCase(Utils.JdbcConnectionParams.AUTH_TOKEN))
             && !(connParams
                 .getSessionVars()
                 .containsKey(Utils.JdbcConnectionParams.AUTH_PRINCIPAL))) {

@@ -82,6 +82,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
   public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
+  public static final String HS2_CLIENT_TOKEN = "hiveserver2ClientToken";
   public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
 
   private String jdbcUriString;
@@ -451,6 +452,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
               useSsl,
               additionalHttpHeaders,
               customCookies);
+    } else if (isDelegationTokenAuthMode()) {
+      // Check for delegation token, if present add it in the header
+      String tokenStr = getClientDelegationToken();
+      requestInterceptor =
+          new HttpTokenAuthInterceptor(
+              tokenStr, cookieStore, cookieName, useSsl, additionalHttpHeaders, customCookies);
     } else {
       // Configure http client for kerberos-based authentication
       Subject subject = createSubject();
@@ -591,9 +598,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   /**
    * Create transport per the connection options Supported transport options are: - SASL based
-   * transports over + Kerberos + SSL + non-SSL - Raw (non-SASL) socket
+   * transports over + Kerberos + Delegation token + SSL + non-SSL - Raw (non-SASL) socket
    *
-   * <p>Kerberos supports SASL QOP configurations
+   * <p>Kerberos and Delegation token supports SASL QOP configurations
    *
    * @throws SQLException, TTransportException
    */
@@ -625,6 +632,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           throw new KyuubiSQLException(
               "Invalid " + AUTH_QOP + " parameter. " + e.getMessage(), "42000", e);
         }
+      }
+      if (isDelegationTokenAuthMode()) {
+        // If there's a delegation token available then use token based connection
+        String tokenStr = getClientDelegationToken();
+        return KerberosSaslHelper.createTokenTransport(tokenStr, socketTransport, saslProps);
       }
 
       Subject subject = createSubject();
@@ -680,6 +692,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     } catch (Exception e) {
       throw new KyuubiSQLException("Error while initializing 2 way ssl socket factory ", e);
     }
+  }
+
+  // Lookup the delegation token. First in the connection URL, then Configuration
+  private String getClientDelegationToken() {
+    // check delegation token in job conf if any
+    return getSessionValue(HS2_CLIENT_TOKEN, HadoopShim.getTokenStrForm(HS2_CLIENT_TOKEN));
   }
 
   private void openSession() throws SQLException {
@@ -812,8 +830,16 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB);
   }
 
+  private boolean isDelegationTokenAuthMode() {
+    return isSaslAuthMode()
+        && !hasSessionValue(AUTH_PRINCIPAL)
+        && AUTH_TOKEN.equalsIgnoreCase(sessConfMap.get(AUTH_TYPE));
+  }
+
   private boolean isPlainSaslAuthMode() {
-    return isSaslAuthMode() && !hasSessionValue(AUTH_PRINCIPAL);
+    return isSaslAuthMode()
+        && !hasSessionValue(AUTH_PRINCIPAL)
+        && !AUTH_TOKEN.equalsIgnoreCase(sessConfMap.get(AUTH_TYPE));
   }
 
   private Subject createSubject() {

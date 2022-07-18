@@ -32,8 +32,8 @@ public final class HttpAuthUtils {
 
   /** @return Stringified Base64 encoded kerberosAuthHeader on success */
   public static String getKerberosServiceTicket(
-      String serverPrinciple, String host, Subject loggedInSubject) throws Exception {
-    String spn = KerberosUtils.canonicalPrincipal(serverPrinciple, host);
+      String serverPrincipal, String host, Subject loggedInSubject) throws Exception {
+    String spn = KerberosUtils.canonicalPrincipal(serverPrincipal, host);
     return Subject.doAs(loggedInSubject, new HttpKerberosClientAction(spn));
   }
 
