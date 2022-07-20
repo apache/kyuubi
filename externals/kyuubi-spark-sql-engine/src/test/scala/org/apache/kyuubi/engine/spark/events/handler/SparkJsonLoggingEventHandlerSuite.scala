@@ -41,6 +41,7 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
   override def withKyuubiConf: Map[String, String] = Map(
     KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON",
     KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot,
+    KyuubiConf.OPERATION_LINEAGE_ENABLED.key -> "true",
     "spark.eventLog.enabled" -> "true",
     "spark.eventLog.dir" -> logRoot)
 
@@ -127,5 +128,38 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
         assert(result.select("statement").first().get(0) === sql)
       }
     }
+  }
+
+  test("statementEvent - for columns lineage") {
+    val statementEventPath = Paths.get(
+      logRoot,
+      "spark_operation",
+      s"day=$currentDate",
+      spark.sparkContext.applicationId + ".json")
+    spark.sql("create table test_table0(a string, b string)")
+    val sql = "select a as col0, b as col1 from test_table0;"
+    withSessionHandle { (client, handle) =>
+      val table = statementEventPath.getParent
+      val req = new TExecuteStatementReq()
+      req.setSessionHandle(handle)
+      req.setStatement(sql)
+      val tExecuteStatementResp = client.ExecuteStatement(req)
+      val opHandle = tExecuteStatementResp.getOperationHandle
+      val statementId = OperationHandle(opHandle).identifier.toString
+
+      eventually(timeout(60.seconds), interval(5.seconds)) {
+        val result = spark.sql(s"select * from `json`.`$table`")
+          .where(s"statementId = '$statementId' and state = 'FINISHED_STATE'")
+        val expected =
+          "WrappedArray(WrappedArray(col0, [\"default.test_table0.a\"]), " +
+            "WrappedArray(col1, [\"default.test_table0.b\"]))"
+        assert(result.select("lineage")
+          .first()
+          .getStruct(0)
+          .getAs("columnLineage")
+          .toString == expected)
+      }
+    }
+
   }
 }

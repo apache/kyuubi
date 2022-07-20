@@ -21,7 +21,7 @@ import java.time.{Instant, LocalDateTime, ZoneId}
 
 import scala.annotation.meta.getter
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
 
@@ -91,5 +91,17 @@ object KyuubiSparkUtil extends Logging {
     val runtimeSparkVer = org.apache.spark.SPARK_VERSION
     val runtimeVersion = SemanticVersion(runtimeSparkVer)
     (runtimeVersion.majorVersion, runtimeVersion.minorVersion)
+  }
+
+  def isSparkVersionAtMost(targetVersionString: String): Boolean = {
+    SemanticVersion(SPARK_VERSION).isVersionAtMost(targetVersionString)
+  }
+
+  def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
+    SemanticVersion(SPARK_VERSION).isVersionAtLeast(targetVersionString)
+  }
+
+  def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
+    SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
   }
 }

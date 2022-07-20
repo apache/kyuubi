@@ -29,23 +29,24 @@ import org.apache.kyuubi.events.KyuubiEvent
 /**
  * A [[SparkOperationEvent]] used to tracker the lifecycle of an operation at Spark SQL Engine side.
  * <ul>
- *   <li>Operation Basis</li>
- *   <li>Operation Live Status</li>
- *   <li>Parent Session Id</li>
+ * <li>Operation Basis</li>
+ * <li>Operation Live Status</li>
+ * <li>Parent Session Id</li>
  * </ul>
  *
- * @param statementId the unique identifier of a single operation
- * @param statement the sql that you execute
+ * @param statementId    the unique identifier of a single operation
+ * @param statement      the sql that you execute
  * @param shouldRunAsync the flag indicating whether the query runs synchronously or not
- * @param state the current operation state
- * @param eventTime the time when the event created & logged
- * @param createTime the time for changing to the current operation state
- * @param startTime the time the query start to time of this operation
- * @param completeTime time time the query ends
- * @param exception: caught exception if have
- * @param sessionId the identifier of the parent session
- * @param sessionUser the authenticated client user
- * @param executionId the query execution id of this operation
+ * @param state          the current operation state
+ * @param eventTime      the time when the event created & logged
+ * @param createTime     the time for changing to the current operation state
+ * @param startTime      the time the query start to time of this operation
+ * @param completeTime   time time the query ends
+ * @param exception      : caught exception if have
+ * @param sessionId      the identifier of the parent session
+ * @param sessionUser    the authenticated client user
+ * @param executionId    the query execution id of this operation
+ * @param lineage        the lineage information id of this operation
  */
 case class SparkOperationEvent(
     @KVIndexParam statementId: String,
@@ -59,7 +60,8 @@ case class SparkOperationEvent(
     exception: Option[Throwable],
     sessionId: String,
     sessionUser: String,
-    executionId: Option[Long]) extends KyuubiEvent with SparkListenerEvent {
+    executionId: Option[Long],
+    lineage: Option[Lineage]) extends KyuubiEvent with SparkListenerEvent {
 
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
@@ -72,14 +74,21 @@ case class SparkOperationEvent(
     }
   }
 
-  @JsonIgnore @KVIndex("completeTime")
+  @JsonIgnore
+  @KVIndex("completeTime")
   private def completeTimeIndex: Long = if (completeTime > 0L) completeTime else -1L
 }
+
+case class Lineage(
+    inputTables: List[String],
+    outputTables: List[String],
+    columnLineage: List[(String, List[String])])
 
 object SparkOperationEvent {
   def apply(
       operation: SparkOperation,
-      executionId: Option[Long] = None): SparkOperationEvent = {
+      executionId: Option[Long] = None,
+      lineage: Option[Lineage] = None): SparkOperationEvent = {
     val session = operation.getSession
     val status = operation.getStatus
     new SparkOperationEvent(
@@ -94,6 +103,7 @@ object SparkOperationEvent {
       status.exception,
       session.handle.identifier.toString,
       session.user,
-      executionId)
+      executionId,
+      lineage)
   }
 }

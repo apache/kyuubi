@@ -22,14 +22,14 @@ import java.util.concurrent.RejectedExecutionException
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
-import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
+import org.apache.spark.kyuubi.{SparkProgressMonitor, SparkSQLLineageParseHelper, SQLOperationListener}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE}
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_LINEAGE_ENABLED, OPERATION_RESULT_MAX_ROWS, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
+import org.apache.kyuubi.engine.spark.events.{Lineage, SparkOperationEvent}
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -46,6 +46,7 @@ class ExecuteStatement(
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
+  private var sqlLineage: Option[Lineage] = None
 
   private val operationSparkListenerEnabled =
     spark.conf.getOption(OPERATION_SPARK_LISTENER_ENABLED.key) match {
@@ -63,6 +64,11 @@ class ExecuteStatement(
   private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
     case Some(s) => s.toBoolean
     case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
+  }
+
+  private val lineageEnable = spark.conf.getOption(OPERATION_LINEAGE_ENABLED.key) match {
+    case Some(s) => s.toBoolean
+    case _ => session.sessionManager.getConf.get(OPERATION_LINEAGE_ENABLED)
   }
 
   EventBus.post(SparkOperationEvent(this))
@@ -108,6 +114,11 @@ class ExecuteStatement(
           }
         }
       setCompiledStateIfNeeded()
+      if (lineageEnable) {
+        sqlLineage = SparkSQLLineageParseHelper(spark).transformToLineage(
+          this.statementId,
+          result.queryExecution.optimizedPlan)
+      }
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
@@ -151,7 +162,7 @@ class ExecuteStatement(
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
     EventBus.post(
-      SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+      SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId), sqlLineage))
   }
 
   override def getStatus: OperationStatus = {

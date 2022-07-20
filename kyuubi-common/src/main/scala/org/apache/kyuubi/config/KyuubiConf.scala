@@ -1854,6 +1854,14 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val OPERATION_LINEAGE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.lineage.enabled")
+      .doc("When set to true, the operation lineage information will be setting in the " +
+        "`SparkOperationEvent`.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_JDBC_DRIVER_CLASS: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.driver.class")
       .doc("The driver class for jdbc engine connection")
