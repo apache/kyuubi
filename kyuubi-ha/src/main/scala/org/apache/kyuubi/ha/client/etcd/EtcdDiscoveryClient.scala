@@ -64,8 +64,8 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   var leaseTTL: Long = _
 
   def createClient(): Unit = {
-    val endpoints = conf.get(HighAvailabilityConf.HA_ADDRESSES)
-    client = Client.builder.endpoints(endpoints).build
+    val endpoints = conf.get(HighAvailabilityConf.HA_ADDRESSES).split(",")
+    client = Client.builder.endpoints(endpoints: _*).build
     kvClient = client.getKVClient()
     lockClient = client.getLockClient()
     leaseClient = client.getLeaseClient()
