@@ -13,15 +13,14 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-
-Kyuubi Spark AuthZ Plugin
-=========================
-
-.. versionadded:: 1.6.0
+Extensions for Spark
+====================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    Overview <overview>
-    Building <build>
-    Installing <install>
+    z-order
+    rules
+    ../../../security/authorization/spark/index
+    functions
+    ../../../connector/spark/index

@@ -15,13 +15,19 @@
  - limitations under the License.
  -->
 
-# Z-order introduction
+# Z-Ordering Support
+
+To improve query speed, Kyuubi supports Z-Ordering to optimize the layout of data
+stored in all kind of storage with various data format.
+
+Please check our benchmark report [here](z-order-benchmark.md).
+
 
 ## Introduction
 
 The following picture shows the workflow of z-order.
 
-![](../imgs/extension/zorder-workflow.png)
+![](../../../imgs/extension/zorder-workflow.png)
 
 It contains three parties:
 - Upstream

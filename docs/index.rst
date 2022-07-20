@@ -112,6 +112,13 @@ Kyuubi provides both high availability and load balancing solutions based on Zoo
    SQL References <sql/index>
 
 .. toctree::
+   :caption: Extension Guide
+   :maxdepth: 2
+   :glob:
+
+   Extensions <extensions/index>
+
+.. toctree::
    :caption: Connectors
    :maxdepth: 2
    :glob:

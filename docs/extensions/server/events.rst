@@ -13,15 +13,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+Handle Events with Custom Event Handler
+=======================================
 
-Kyuubi Spark AuthZ Plugin
-=========================
+.. caution:: unstable
 
-.. versionadded:: 1.6.0
-
-.. toctree::
-    :maxdepth: 2
-
-    Overview <overview>
-    Building <build>
-    Installing <install>
+.. warning::
+   This page is still in-progress.

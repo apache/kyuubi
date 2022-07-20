@@ -13,15 +13,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-
-Kyuubi Spark AuthZ Plugin
-=========================
+Manage Applications against Extra Cluster Managers
+==================================================
 
 .. versionadded:: 1.6.0
 
-.. toctree::
-    :maxdepth: 2
+.. caution:: unstable
 
-    Overview <overview>
-    Building <build>
-    Installing <install>
+.. warning::
+   This page is still in-progress.

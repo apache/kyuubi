@@ -13,15 +13,13 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-
-Kyuubi Spark AuthZ Plugin
-=========================
-
-.. versionadded:: 1.6.0
+Extensions for Hive
+===================
 
 .. toctree::
     :maxdepth: 2
 
-    Overview <overview>
-    Building <build>
-    Installing <install>
+    ../../../connector/hive/index
+
+.. warning::
+   This page is still in-progress.

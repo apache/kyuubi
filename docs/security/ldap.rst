@@ -14,14 +14,8 @@
    limitations under the License.
 
 
-Kyuubi Spark AuthZ Plugin
-=========================
+Configure Kyuubi to use LDAP Authentication
+===============================================
 
-.. versionadded:: 1.6.0
-
-.. toctree::
-    :maxdepth: 2
-
-    Overview <overview>
-    Building <build>
-    Installing <install>
+.. warning::
+   the page is still in-progress.

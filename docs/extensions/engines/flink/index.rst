@@ -13,17 +13,13 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-
-SQL References
-==============
-
-This part describes the use of the SQL References in Kyuubi, including lists of the available extension, data types and functions for use in SQL commands.
+Extensions for Flink
+====================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    rules
-    functions
-    z-order-introduction
-    z-order-benchmark
+    ../../../connector/flink/index
 
+.. warning::
+   This page is still in-progress.
