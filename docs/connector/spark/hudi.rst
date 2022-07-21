@@ -45,7 +45,7 @@ The **classpath** of kyuubi spark sql engine with Hudi supported consists of
 
 1. kyuubi-spark-sql-engine-|release|.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution
-3. hudi-spark<spark.version>-bundle_<scala.version>-<hudi.version>.jar, which can be found in the `Maven Central`_
+3. hudi-spark<spark.version>-bundle_<scala.version>-<hudi.version>.jar (example: hudi-spark3.2-bundle_2.12-0.11.1.jar), which can be found in the `Maven Central`_
 
 In order to make the Hudi packages visible for the runtime classpath of engines, we can use one of these methods:
 
@@ -72,6 +72,8 @@ To activate functionality of Hudi, we can set the following configurations:
 Hudi Operations
 ---------------
 
+Taking ``Create Table`` as a example,
+
 .. code-block:: sql
 
    CREATE TABLE hudi_cow_nonpcf_tbl (
@@ -79,6 +81,31 @@ Hudi Operations
      name STRING,
      price DOUBLE
    ) USING HUDI;
+
+Taking ``Query Data`` as a example,
+
+.. code-block:: sql
+
+   SELECT * FROM hudi_cow_nonpcf_tbl WHERE id < 20;
+
+Taking ``Insert Data`` as a example,
+
+.. code-block:: sql
+
+   INSERT INTO hudi_cow_nonpcf_tbl SELECT 1, 'a1', 20;
+
+
+Taking ``Update Data`` as a example,
+
+.. code-block:: sql
+
+   UPDATE hudi_cow_nonpcf_tbl SET name = 'foo', price = price * 2 WHERE id = 1;
+
+Taking ``Delete Data`` as a example,
+
+.. code-block:: sql
+
+   DELETE FROM hudi_cow_nonpcf_tbl WHERE uuid = 1;
 
 .. _Hudi: https://hudi.apache.org/
 .. _Official Documentation: https://hudi.apache.org/docs/overview
