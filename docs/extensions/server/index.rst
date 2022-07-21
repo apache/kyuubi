@@ -13,15 +13,17 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+Server Side Extensions
+======================
 
-Kyuubi Spark AuthZ Plugin
-=========================
-
-.. versionadded:: 1.6.0
+Server side extensions for injecting custom functionality to some of the modules at the
+kyuubi server. They are applied by kyuubi administrators to extend the
+ability of kyuubi servers.
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    Overview <overview>
-    Building <build>
-    Installing <install>
+    authentication
+    configuration
+    events
+    applications

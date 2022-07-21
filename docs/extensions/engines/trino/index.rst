@@ -13,15 +13,14 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+Extensions for Trino
+====================
 
-Kyuubi Spark AuthZ Plugin
-=========================
 
-.. versionadded:: 1.6.0
+.. warning::
+   This page is still in-progress.
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    Overview <overview>
-    Building <build>
-    Installing <install>
+    ../../../connector/trino/index

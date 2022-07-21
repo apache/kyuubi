@@ -16,7 +16,7 @@
  -->
 
 
-# Access Kerberized Kyuubi with Beeline & BI Tools
+# Configure Kerberos for clients to Access Kerberized Kyuubi
 
 ## Instructions
 When Kyuubi is secured by Kerberos, the authentication procedure becomes a little complicated.

@@ -13,15 +13,18 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+Engine Side Extensions
+======================
 
-Kyuubi Spark AuthZ Plugin
-=========================
+Engine side extensions are applied to kyuubi engines, some of them can be
+managed by administrators, some of them can be applied by end-users dynamically
+at runtime.
 
-.. versionadded:: 1.6.0
 
 .. toctree::
     :maxdepth: 2
 
-    Overview <overview>
-    Building <build>
-    Installing <install>
+    spark/index
+    flink/index
+    hive/index
+    trino/index

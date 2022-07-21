@@ -13,15 +13,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+Inject Session Conf with Custom Config Advisor
+==============================================
 
-Kyuubi Spark AuthZ Plugin
-=========================
+.. versionadded:: 1.5.0
 
-.. versionadded:: 1.6.0
+.. caution:: unstable
 
-.. toctree::
-    :maxdepth: 2
-
-    Overview <overview>
-    Building <build>
-    Installing <install>
+.. warning::
+   This page is still in-progress.

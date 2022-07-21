@@ -13,15 +13,27 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+Extensions
+==========
 
-Kyuubi Spark AuthZ Plugin
-=========================
+Besides the base use case, Kyuubi also has some extension points for
+extending use cases. By defining plugin of your own or applying
+third-party ones, kyuubi allows to run your plugin's functionality at
+the specific point.
 
-.. versionadded:: 1.6.0
+The extension points can be divided into server side extensions and
+engine side extensions.
+
+Server side extensions are applied by kyuubi administrators to extend the
+ability of kyuubi servers.
+
+Engine side extensions are applied to kyuubi engines, some of them can be
+managed by administrators, some of them can be applied by end-users dynamically
+at runtime.
+
 
 .. toctree::
     :maxdepth: 2
 
-    Overview <overview>
-    Building <build>
-    Installing <install>
+    Server Side Extensions <server/index>
+    Engine Side Extensions <engines/index>
