@@ -60,8 +60,8 @@ class SparkTBinaryFrontendService(
     info("Client protocol version: " + req.getClient_protocol)
     val resp = new TOpenSessionResp
     try {
-      val respConfiguration = new java.util.HashMap[String, String]()
-      respConfiguration.put("kyuubi.engine.id", sc.applicationId)
+      val respConfiguration =
+        java.util.Collections.singletonMap("kyuubi.engine.id", sc.applicationId)
 
       if (req.getConfiguration != null) {
         val credentials = req.getConfiguration.remove(KYUUBI_ENGINE_CREDENTIALS_KEY)
