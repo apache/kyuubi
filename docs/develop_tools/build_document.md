@@ -31,7 +31,7 @@ pip install virtualenv
 Switch to the `docs` root directory.
 
 ```bash
-cd $KYUUBI_HOME/docs
+cd $KYUUBI_SOURCE_PATH/docs
 ```
 
 Create a virtual environment named 'kyuubi' or anything you like using `virtualenv` if it's not existing.
@@ -43,7 +43,7 @@ virtualenv kyuubi
 Activate it,
 
 ```bash
-source $KYUUBI_HOME/bin/activate
+source ./kyuubi/bin/activate
 ```
 
 ## Install all dependencies
@@ -55,18 +55,20 @@ pip install -r requirements.txt
 ```
 
 ## Create Documentation
+
+Make sure you are in the `$KYUUBI_SOURCE_PATH/docs` directory.
+
 linux & macos
 ```bash
-cd $KYUUBI_HOME
 make html
 ```
 windows
 ```bash
-cd $KYUUBI_HOME
 make.bat html
 ```
-If the build process succeed, the HTML pages are in `$KYUUBI_HOME/_build/html`.
+
+If the build process succeed, the HTML pages are in `$KYUUBI_SOURCE_PATH/docs/_build/html`.
 
 ## View Locally
 
-Open the `$KYUUBI_HOME/_build/html/index.html` file in your favorite web browser.
+Open the `$KYUUBI_SOURCE_PATH/docs/_build/html/index.html` file in your favorite web browser.
