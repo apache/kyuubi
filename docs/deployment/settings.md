@@ -312,6 +312,10 @@ Key | Default | Meaning | Type | Since
 kyuubi.ha.addresses||The connection string for the discovery ensemble|string|1.6.0
 kyuubi.ha.client.class|org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient|Class name for service discovery client.<ul> <li>Zookeeper: org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient</li> <li>Etcd: org.apache.kyuubi.ha.client.etcd.EtcdDiscoveryClient</li></ul>|string|1.6.0
 kyuubi.ha.etcd.lease.timeout|PT10S|Timeout for etcd keep alive lease. The kyuubi server will known unexpected loss of engine after up to this seconds.|duration|1.6.0
+kyuubi.ha.etcd.ssl.ca.path|&lt;undefined&gt;|Where the etcd CA certificate file is stored.|string|1.6.0
+kyuubi.ha.etcd.ssl.client.certificate.path|&lt;undefined&gt;|Where the etcd SSL certificate file is stored.|string|1.6.0
+kyuubi.ha.etcd.ssl.client.key.path|&lt;undefined&gt;|Where the etcd SSL key file is stored.|string|1.6.0
+kyuubi.ha.etcd.ssl.enable|false|When set to true, will build a ssl secured etcd client.|boolean|1.6.0
 kyuubi.ha.namespace|kyuubi|The root directory for the service to deploy its instance uri|string|1.6.0
 kyuubi.ha.zookeeper.acl.enabled|false|Set to true if the zookeeper ensemble is kerberized|boolean|1.0.0
 kyuubi.ha.zookeeper.auth.digest|&lt;undefined&gt;|The digest auth string is used for zookeeper authentication, like: username:password.|string|1.3.2

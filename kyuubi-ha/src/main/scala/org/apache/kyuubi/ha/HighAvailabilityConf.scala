@@ -191,4 +191,32 @@ object HighAvailabilityConf {
       .timeConf
       .checkValue(_ > 0, "Must be positive")
       .createWithDefault(Duration.ofSeconds(10).toMillis)
+
+  val HA_ETCD_SSL_ENABLE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.ha.etcd.ssl.enable")
+      .doc("When set to true, will build a ssl secured etcd client.")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val HA_ETCD_SSL_CA_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.ha.etcd.ssl.ca.path")
+      .doc("Where the etcd CA certificate file is stored.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val HA_ETCD_SSL_CLINET_CRT_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.ha.etcd.ssl.client.certificate.path")
+      .doc("Where the etcd SSL certificate file is stored.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val HA_ETCD_SSL_CLINET_KEY_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.ha.etcd.ssl.client.key.path")
+      .doc("Where the etcd SSL key file is stored.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 }
