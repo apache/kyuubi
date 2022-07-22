@@ -25,6 +25,10 @@ using a high-performance table format that works just like a SQL table.
    For the knowledge about Iceberg not mentioned in this article,
    you can obtain it from its `Official Documentation`_.
 
+By using kyuubi, we can run SQL queries towards Iceberg which is more
+convenient, easy to understand, and easy to expand than directly using
+spark to manipulate Iceberg.
+
 Iceberg Integration
 -------------------
 
@@ -49,6 +53,9 @@ In order to make the Iceberg packages visible for the runtime classpath of engin
 
 1. Put the Iceberg packages into ``$SPARK_HOME/jars`` directly
 2. Set ``spark.jars=/path/to/iceberg-spark-runtime``
+
+.. warning::
+   Please mind the compatibility of different Iceberg and Spark versions, which can be confirmed on the page of `Iceberg multi engine support`_.
 
 .. _configurations:
 
@@ -103,4 +110,4 @@ Taking ``DELETE FROM`` as a example, Spark 3 added support for DELETE FROM queri
 .. _Iceberg: https://iceberg.apache.org/
 .. _Official Documentation: https://iceberg.apache.org/docs/latest/
 .. _Maven Central: https://mvnrepository.com/artifact/org.apache.iceberg
-
+.. _Iceberg multi engine support: https://iceberg.apache.org/multi-engine-support/
