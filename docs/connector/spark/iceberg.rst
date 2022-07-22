@@ -107,6 +107,17 @@ Taking ``DELETE FROM`` as a example, Spark 3 added support for DELETE FROM queri
 
    DELETE FROM foo WHERE id >= 1 and id < 2;
 
+Taking ``MERGE INTO`` as a example,
+
+.. code-block:: sql
+
+   MERGE INTO target_table t
+   USING source_table s
+   ON t.id = s.id
+   WHEN MATCHED AND s.opType = 'delete' THEN DELETE
+   WHEN MATCHED AND s.opType = 'update' THEN UPDATE SET id = s.id, data = s.data
+   WHEN NOT MATCHED AND s.opType = 'insert' THEN INSERT (id, data) VALUES (s.id, s.data);
+
 .. _Iceberg: https://iceberg.apache.org/
 .. _Official Documentation: https://iceberg.apache.org/docs/latest/
 .. _Maven Central: https://mvnrepository.com/artifact/org.apache.iceberg
