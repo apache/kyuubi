@@ -46,7 +46,7 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
-  private val sparkHome = getEngineHome(shortName)
+  private[kyuubi] val sparkHome = getEngineHome(shortName)
 
   override protected val executable: String = {
     Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toFile.getCanonicalPath

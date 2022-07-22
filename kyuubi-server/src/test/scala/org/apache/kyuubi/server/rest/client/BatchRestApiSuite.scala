@@ -19,16 +19,12 @@ package org.apache.kyuubi.server.rest.client
 
 import java.util.Base64
 
-import scala.collection.JavaConverters._
-
-import org.apache.kyuubi.RestClientTestHelper
+import org.apache.kyuubi.{BatchTestHelper, RestClientTestHelper}
 import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
-import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
+import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.client.exception.KyuubiRestException
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_CHECK_INTERVAL, ENGINE_SPARK_MAX_LIFETIME}
-import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 
-class BatchRestApiSuite extends RestClientTestHelper {
+class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
 
   test("basic batch rest client") {
     val basicKyuubiRestClient: KyuubiRestClient =
@@ -40,19 +36,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
         .build()
     val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
 
-    // create batch
-    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
-    val appName = "spark-batch-submission"
-    val requestObj = new BatchRequest(
-      "spark",
-      sparkProcessBuilder.mainResource.get,
-      sparkProcessBuilder.mainClass,
-      appName,
-      Map(
-        "spark.master" -> "local",
-        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
-        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
-      Seq.empty[String].asJava)
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
 
     var batch: Batch = batchRestApi.createBatch(requestObj)
     assert(batch.getKyuubiInstance === fe.connectionUrl)
@@ -101,18 +85,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
         .build()
     val batchRestApi: BatchRestApi = new BatchRestApi(spnegoKyuubiRestClient)
     // create batch
-    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
-    val appName = "spark-batch-submission"
-    val requestObj = new BatchRequest(
-      "spark",
-      sparkProcessBuilder.mainResource.get,
-      sparkProcessBuilder.mainClass,
-      appName,
-      Map(
-        "spark.master" -> "local",
-        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
-        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
-      Seq.empty[String].asJava)
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
 
     var batch: Batch = batchRestApi.createBatch(requestObj)
     assert(batch.getKyuubiInstance === fe.connectionUrl)
@@ -129,7 +102,7 @@ class BatchRestApiSuite extends RestClientTestHelper {
 
     // delete batch
     val closeResp = batchRestApi.deleteBatch(batch.getId(), null)
-    assert(closeResp.isSuccess)
+    assert(closeResp.getMsg.nonEmpty)
 
     // list batches
     var listBatchesResp = batchRestApi.listBatches("SPARK", null, null, null, null, 0, Int.MaxValue)

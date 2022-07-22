@@ -28,12 +28,12 @@ import scala.concurrent.duration.DurationInt
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ApplicationOperation.{APP_ERROR_KEY, APP_ID_KEY, APP_NAME_KEY, APP_STATE_KEY, APP_URL_KEY}
-import org.apache.kyuubi.engine.spark.{SparkBatchProcessBuilder, SparkProcessBuilder}
+import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -43,14 +43,12 @@ import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.authentication.{KyuubiAuthenticationFactory, UserDefinedEngineSecuritySecretProvider}
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 
-class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper with BatchTestHelper {
   override protected lazy val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
     .set(
       KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
       classOf[UserDefinedEngineSecuritySecretProvider].getName)
-
-  private val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
 
   override def afterEach(): Unit = {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -65,17 +63,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("open batch session") {
-    val appName = "spark-batch-submission"
-    val requestObj = new BatchRequest(
-      "spark",
-      sparkProcessBuilder.mainResource.get,
-      sparkProcessBuilder.mainClass,
-      appName,
-      Map(
-        "spark.master" -> "local",
-        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
-        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
-      Seq.empty[String].asJava)
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
 
     val response = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -84,7 +72,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     var batch = response.readEntity(classOf[Batch])
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "SPARK")
-    assert(batch.getName === appName)
+    assert(batch.getName === sparkBatchTestAppName)
     assert(batch.getCreateTime > 0)
     assert(batch.getEndTime === 0)
 
@@ -103,7 +91,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     batch = getBatchResponse.readEntity(classOf[Batch])
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "SPARK")
-    assert(batch.getName === appName)
+    assert(batch.getName === sparkBatchTestAppName)
     assert(batch.getCreateTime > 0)
     assert(batch.getEndTime === 0)
 
@@ -127,7 +115,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     logs.append(head)
     eventually(timeout(10.seconds), interval(1.seconds)) {
       logResponse = webTarget.path(s"api/v1/batches/${batch.getId()}/localLog")
-        .queryParam("from", "0")
+        .queryParam("from", "-1")
         .queryParam("size", "100")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .get()
@@ -137,8 +125,9 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       }
 
       // check both kyuubi log and engine log
-      assert(logs.exists(_.contains("/bin/spark-submit")) && logs.exists(
-        _.contains(s"SparkContext: Submitted application: $appName")))
+      assert(
+        logs.exists(_.contains("/bin/spark-submit")) && logs.exists(
+          _.contains(s"SparkContext: Submitted application: $sparkBatchTestAppName")))
     }
 
     // invalid user name
@@ -186,7 +175,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     if (closeBatchResponse.isSuccess) {
       assert(batch.getState == "CANCELED")
     } else {
-      assert(closeBatchResponse.getMsg.contains("No such process"))
       assert(batch.getState != "CANCELED")
     }
 
@@ -223,7 +211,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
       Map.empty,
-      new BatchRequest(
+      newBatchRequest(
         "spark",
         "",
         "",
@@ -245,7 +233,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
       Map.empty,
-      new BatchRequest(
+      newBatchRequest(
         "spark",
         "",
         "",
@@ -255,7 +243,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
       Map.empty,
-      new BatchRequest(
+      newBatchRequest(
         "spark",
         "",
         "",
@@ -335,24 +323,24 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // open batch session
     Seq(
       (
-        new BatchRequest(
+        newBatchRequest(
           null,
-          sparkProcessBuilder.mainResource.get,
-          sparkProcessBuilder.mainClass,
-          "test-name"),
+          sparkBatchTestResource.get,
+          sparkBatchTestMainClass,
+          sparkBatchTestAppName),
         "is not in the supported list"),
       (
-        new BatchRequest(
+        newBatchRequest(
           "sp",
-          sparkProcessBuilder.mainResource.get,
-          sparkProcessBuilder.mainClass,
-          "test-name"),
+          sparkBatchTestResource.get,
+          sparkBatchTestMainClass,
+          sparkBatchTestAppName),
         "is not in the supported list"),
       (
-        new BatchRequest(
+        newBatchRequest(
           "SPARK",
           null,
-          sparkProcessBuilder.mainClass,
+          sparkBatchTestMainClass,
           "test-name"),
         "resource is a required parameter")).foreach { case (req, msg) =>
       val response = webTarget.path("api/v1/batches")
@@ -392,13 +380,10 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       ipAddress = "localhost",
       kyuubiInstance = kyuubiInstance,
       state = OperationState.PENDING.toString,
-      resource = sparkProcessBuilder.mainResource.get,
-      className = sparkProcessBuilder.mainClass,
+      resource = sparkBatchTestResource.get,
+      className = sparkBatchTestMainClass,
       requestName = "PENDING_RECOVERY",
-      requestConf = Map(
-        "spark.master" -> "local",
-        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "3000",
-        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000"),
+      requestConf = Map("spark.master" -> "local"),
       requestArgs = Seq.empty,
       createTime = System.currentTimeMillis(),
       engineType = "SPARK")
@@ -417,8 +402,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       conf,
       batchId2,
       "RUNNING_RECOVERY",
-      sparkProcessBuilder.mainResource,
-      sparkProcessBuilder.mainClass,
+      sparkBatchTestResource,
+      sparkBatchTestMainClass,
       batchMetadata2.requestConf,
       batchMetadata2.requestArgs,
       None)
@@ -573,17 +558,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val realClientIp = "localtest.me"
 
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
-    val appName = "spark-batch-submission"
-    val requestObj = new BatchRequest(
-      "spark",
-      sparkProcessBuilder.mainResource.get,
-      sparkProcessBuilder.mainClass,
-      appName,
-      Map(
-        "spark.master" -> "local",
-        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
-        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
-      Seq.empty[String].asJava)
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
 
     val response = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -596,22 +571,14 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("expose the metrics with operation type and current state") {
-    assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
-    assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
-    assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
+    eventually(timeout(10.seconds)) {
+      assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
+      assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
+      assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
+    }
     val originalCanceledCounter = getBatchJobSubmissionStateCounter(OperationState.CANCELED)
 
-    val appName = "spark-batch-submission"
-    val requestObj = new BatchRequest(
-      "spark",
-      sparkProcessBuilder.mainResource.get,
-      sparkProcessBuilder.mainClass,
-      appName,
-      Map(
-        "spark.master" -> "local",
-        s"spark.${ENGINE_SPARK_MAX_LIFETIME.key}" -> "5000",
-        s"spark.${ENGINE_CHECK_INTERVAL.key}" -> "1000").asJava,
-      Seq.empty[String].asJava)
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
 
     val response = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -623,16 +590,18 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       getBatchJobSubmissionStateCounter(OperationState.PENDING) +
       getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
 
-    val deleteResp = webTarget.path(s"api/v1/batches/${batch.getId}")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .delete()
-    assert(200 == deleteResp.getStatus)
+    eventually(timeout(10.seconds)) {
+      val deleteResp = webTarget.path(s"api/v1/batches/${batch.getId}")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .delete()
+      assert(200 == deleteResp.getStatus)
 
-    assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
-    assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
-    assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
-    assert(
-      getBatchJobSubmissionStateCounter(OperationState.CANCELED) - originalCanceledCounter === 1)
+      assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
+      assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
+      assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
+      assert(
+        getBatchJobSubmissionStateCounter(OperationState.CANCELED) - originalCanceledCounter === 1)
+    }
   }
 
   private def getBatchJobSubmissionStateCounter(state: OperationState): Long = {

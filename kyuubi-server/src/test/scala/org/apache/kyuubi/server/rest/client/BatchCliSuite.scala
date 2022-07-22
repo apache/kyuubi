@@ -24,18 +24,14 @@ import java.nio.file.{Files, Paths}
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.{RestClientTestHelper, Utils}
-import org.apache.kyuubi.client.api.v1.dto.BatchRequest
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_CHECK_INTERVAL, ENGINE_SPARK_MAX_LIFETIME}
+import org.apache.kyuubi.{BatchTestHelper, RestClientTestHelper, Utils}
 import org.apache.kyuubi.ctl.TestPrematureExit
-import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.session.KyuubiSessionManager
 
-class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
+class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with BatchTestHelper {
 
   val basePath: String = Utils.getCodeSourceLocation(getClass)
   val batchFile: String = s"${basePath}/batch.yaml"
-  val appName: String = "test_batch"
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -43,24 +39,21 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
     System.setProperty("kyuubi.ctl.rest.base.url", baseUri.toString)
     System.setProperty("kyuubi.ctl.rest.spnego.host", "localhost")
 
-    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
     val batch_basic = s"""apiVersion: v1
                          |username: ${ldapUser}
                          |request:
                          |  batchType: Spark
-                         |  name: ${appName}
-                         |  resource: ${sparkProcessBuilder.mainResource.get}
-                         |  className: ${sparkProcessBuilder.mainClass}
+                         |  name: ${sparkBatchTestAppName}
+                         |  resource: ${sparkBatchTestResource.get}
+                         |  className: $sparkBatchTestMainClass
                          |  args:
+                         |   - 1
                          |   - x1
                          |   - x2
-                         |   - 123
                          |   - true
                          |  configs:
                          |    spark.master: local
                          |    wait.completion: true
-                         |    spark.${ENGINE_SPARK_MAX_LIFETIME.key}: 5000
-                         |    spark.${ENGINE_CHECK_INTERVAL.key}: 1000
                          |    k1: v1
                          |    1: test_integer_key
                          |options:
@@ -201,7 +194,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       ldapUserPasswd,
       "--forward")
     result = testPrematureExitForControlCli(logArgs, "")
-    assert(result.contains(s"Submitted application: ${appName}"))
+    assert(result.contains(s"Submitted application: ${sparkBatchTestAppName}"))
     assert(result.contains("ShutdownHookManager: Shutdown hook called"))
   }
 
@@ -214,7 +207,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "--password",
       ldapUserPasswd)
     val result = testPrematureExitForControlCli(submitArgs, "")
-    assert(result.contains(s"Submitted application: ${appName}"))
+    assert(result.contains(s"Submitted application: ${sparkBatchTestAppName}"))
     assert(result.contains("ShutdownHookManager: Shutdown hook called"))
   }
 
@@ -245,7 +238,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
       Map.empty,
-      new BatchRequest(
+      newBatchRequest(
         "spark",
         "",
         "",
@@ -267,7 +260,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
       Map.empty,
-      new BatchRequest(
+      newBatchRequest(
         "spark",
         "",
         "",
@@ -277,7 +270,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit {
       "kyuubi",
       InetAddress.getLocalHost.getCanonicalHostName,
       Map.empty,
-      new BatchRequest(
+      newBatchRequest(
         "spark",
         "",
         "",
