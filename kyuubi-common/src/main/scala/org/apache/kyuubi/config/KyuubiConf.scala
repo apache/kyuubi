@@ -395,6 +395,13 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
 
+  val FRONTEND_THRIFT_CLOSE_SESSION_ON_DISCONNECT =
+    buildConf("kyuubi.frontend.thrift.close.session.disconnect")
+      .doc("Whether to keep the session on client disconnected")
+      .version("1.6.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val FRONTEND_MAX_WORKER_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.max.worker.threads")
       .doc("(deprecated) Maximum number of threads in the of frontend worker thread pool for " +
