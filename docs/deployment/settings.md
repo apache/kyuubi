@@ -279,6 +279,7 @@ kyuubi.frontend.rest.bind.port|10099|Port of the machine on which to run the RES
 kyuubi.frontend.thrift.backoff.slot.length|PT0.1S|Time to back off during login to the thrift frontend service.|duration|1.4.0
 kyuubi.frontend.thrift.binary.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.|string|1.4.0
 kyuubi.frontend.thrift.binary.bind.port|10009|Port of the machine on which to run the thrift frontend service via binary protocol.|int|1.4.0
+kyuubi.frontend.thrift.close.session.on.disconnect|true|Whether to keep the backend service session on client disconnected. When it is false, the backend service session would not close, let the client be able to re-establish the previous session.|boolean|1.6.0
 kyuubi.frontend.thrift.http.allow.user.substitution|true|Allow alternate user to be specified as part of open connection request when using HTTP transport mode.|boolean|1.6.0
 kyuubi.frontend.thrift.http.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the thrift frontend service via http protocol.|string|1.6.0
 kyuubi.frontend.thrift.http.bind.port|10010|Port of the machine on which to run the thrift frontend service via http protocol.|int|1.6.0

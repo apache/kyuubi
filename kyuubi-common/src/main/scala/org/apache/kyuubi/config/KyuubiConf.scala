@@ -396,7 +396,7 @@ object KyuubiConf {
       .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
 
   val FRONTEND_THRIFT_CLOSE_SESSION_ON_DISCONNECT =
-    buildConf("kyuubi.frontend.thrift.close.session.disconnect")
+    buildConf("kyuubi.frontend.thrift.close.session.on.disconnect")
       .doc("Whether to keep the session on client disconnected")
       .version("1.6.0")
       .booleanConf
