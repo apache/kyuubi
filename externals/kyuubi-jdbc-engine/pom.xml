@@ -43,12 +43,6 @@
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-ha_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -91,16 +85,24 @@
                     <artifactSet>
                         <includes>
                             <include>org.scala-lang:scala-library</include>
-                            <include>com.fasterxml.jackson.core:jackson-annotations</include>
-                            <include>com.fasterxml.jackson.core:jackson-core</include>
-                            <include>com.fasterxml.jackson.core:jackson-databind</include>
-                            <include>com.fasterxml.jackson.module:jackson-module-scala_2.12</include>
+                            <include>com.fasterxml.jackson.core:*</include>
+                            <include>com.fasterxml.jackson.module:*</include>
                             <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-events_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
+                            <include>com.google.guava:failureaccess</include>
+                            <include>com.google.guava:guava</include>
+                            <include>org.apache.commons:commons-lang3</include>
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
+                            <include>org.apache.hive:hive-service-rpc</include>
+                            <include>org.apache.thrift:*</include>
+                            <include>org.apache.zookeeper:*</include>
+                            <include>org.slf4j:*</include>
+                            <include>org.apache.logging.log4j:*</include>
+                            <include>org.apache.hadoop:hadoop-client-api</include>
+                            <include>org.apache.hadoop:hadoop-client-runtime</include>
                         </includes>
                     </artifactSet>
                     <filters>
@@ -129,7 +131,71 @@
                                 <include>org.apache.curator.**</include>
                             </includes>
                         </relocation>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.fasterxml.jackson</shadedPattern>
+                            <includes>
+                                <include>com.fasterxml.jackson.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.common</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.common</shadedPattern>
+                            <includes>
+                                <include>com.google.common.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.thirdparty</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.thirdparty</shadedPattern>
+                            <includes>
+                                <include>com.google.thirdparty.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.lang3</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.lang3</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.hive.service.rpc.thrift</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>
+                            <includes>
+                                <include>org.apache.hive.service.rpc.thrift.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.facebook.fb303</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.facebook.fb303</shadedPattern>
+                            <includes>
+                                <include>com.facebook.fb303.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.thrift</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
+                            <includes>
+                                <include>org.apache.thrift.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.zookeeper</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.zookeeper</shadedPattern>
+                            <includes>
+                                <include>org.apache.zookeeper.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.slf4j.bridge</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.slf4j.bridge</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.slf4j.impl</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.slf4j.impl</shadedPattern>
+                        </relocation>
                     </relocations>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    </transformers>
                 </configuration>
                 <executions>
                     <execution>
