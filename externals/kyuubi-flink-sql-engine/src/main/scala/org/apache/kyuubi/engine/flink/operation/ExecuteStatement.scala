@@ -24,13 +24,14 @@ import java.util.concurrent.RejectedExecutionException
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.calcite.rel.metadata.{DefaultRelMetadataProvider, JaninoRelMetadataProvider, RelMetadataQueryBase}
+import org.apache.calcite.rel.metadata.{JaninoRelMetadataProvider, RelMetadataQueryBase}
 import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.client.gateway.TypedResult
 import org.apache.flink.table.data.{GenericArrayData, GenericMapData, RowData}
 import org.apache.flink.table.data.binary.{BinaryArrayData, BinaryMapData}
 import org.apache.flink.table.operations.{Operation, QueryOperation}
 import org.apache.flink.table.operations.command._
+import org.apache.flink.table.planner.plan.metadata.FlinkDefaultRelMetadataProvider
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
@@ -99,7 +100,7 @@ class ExecuteStatement(
 
       // set the thread variable THREAD_PROVIDERS
       RelMetadataQueryBase.THREAD_PROVIDERS.set(
-        JaninoRelMetadataProvider.of(DefaultRelMetadataProvider.INSTANCE))
+        JaninoRelMetadataProvider.of(FlinkDefaultRelMetadataProvider.INSTANCE))
       val operation = executor.parseStatement(sessionId, statement)
       operation match {
         case queryOperation: QueryOperation => runQueryOperation(queryOperation)
