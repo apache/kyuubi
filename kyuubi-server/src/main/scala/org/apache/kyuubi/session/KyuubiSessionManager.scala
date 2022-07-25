@@ -45,21 +45,23 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
-  private var metadataManagerOpt: Option[MetadataManager] = None
+  private lazy val metadataManager: Option[MetadataManager] = {
+    // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
+    // so we initialize it only when Kyuubi starts with the REST frontend.
+    if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
+        .contains(FrontendProtocols.REST)) {
+      Some(new MetadataManager())
+    } else {
+      None
+    }
+  }
 
   private var limiter: Option[SessionLimiter] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(applicationManager)
     addService(credentialsManager)
-
-    // metadata manager is only used for batch session so if frontend does not support rest
-    // it's unused.
-    if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
-        .contains(FrontendProtocols.REST)) {
-      metadataManagerOpt = Some(new MetadataManager())
-      addService(metadataManagerOpt.get)
-    }
+    metadataManager.foreach(addService)
 
     initSessionLimiter(conf)
     super.initialize(conf)
@@ -174,33 +176,23 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def insertMetadata(metadata: Metadata): Unit = {
-    metadataManagerOpt.foreach { metadataManager =>
-      metadataManager.insertMetadata(metadata)
-    }
+    metadataManager.foreach(_.insertMetadata(metadata))
   }
 
   def updateMetadata(metadata: Metadata): Unit = {
-    metadataManagerOpt.foreach { metadataManager =>
-      metadataManager.updateMetadata(metadata)
-    }
+    metadataManager.foreach(_.updateMetadata(metadata))
   }
 
   def getMetadataRequestsRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {
-    metadataManagerOpt.map { metadataManager =>
-      metadataManager.getMetadataRequestsRetryRef(identifier)
-    }
+    metadataManager.map(_.getMetadataRequestsRetryRef(identifier))
   }
 
   def deRegisterMetadataRequestsRetryRef(identifier: String): Unit = {
-    metadataManagerOpt.foreach { metadataManager =>
-      metadataManager.deRegisterRequestsRetryRef(identifier)
-    }
+    metadataManager.foreach(_.deRegisterRequestsRetryRef(identifier))
   }
 
   def getBatchFromMetadataStore(batchId: String): Batch = {
-    metadataManagerOpt.map { metadataManager =>
-      metadataManager.getBatch(batchId)
-    }.orNull
+    metadataManager.map(_.getBatch(batchId)).orNull
   }
 
   def getBatchesFromMetadataStore(
@@ -211,22 +203,18 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       endTime: Long,
       from: Int,
       size: Int): Seq[Batch] = {
-    metadataManagerOpt.map { metadataManager =>
-      metadataManager.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
-    }.getOrElse(Seq.empty)
+    metadataManager.map(
+      _.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size))
+      .getOrElse(Seq.empty)
   }
 
   def getBatchMetadata(batchId: String): Metadata = {
-    metadataManagerOpt.map { metadataManager =>
-      metadataManager.getBatchSessionMetadata(batchId)
-    }.orNull
+    metadataManager.map(_.getBatchSessionMetadata(batchId)).orNull
   }
 
   @VisibleForTesting
   def cleanupMetadata(identifier: String): Unit = {
-    metadataManagerOpt.foreach { metadataManager =>
-      metadataManager.cleanupMetadataById(identifier)
-    }
+    metadataManager.foreach(_.cleanupMetadataById(identifier))
   }
 
   override def start(): Unit = synchronized {
@@ -240,41 +228,39 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSessionImpl] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
-      metadataManagerOpt.map { metadataManager =>
-        metadataManager.getBatchesRecoveryMetadata(
-          stateToRecover.toString,
-          kyuubiInstance,
-          0,
-          Int.MaxValue).map { metadata =>
-          val batchRequest = new BatchRequest(
-            metadata.engineType,
-            metadata.resource,
-            metadata.className,
-            metadata.requestName,
-            metadata.requestConf.asJava,
-            metadata.requestArgs.asJava)
+      metadataManager.map(_.getBatchesRecoveryMetadata(
+        stateToRecover.toString,
+        kyuubiInstance,
+        0,
+        Int.MaxValue).map { metadata =>
+        val batchRequest = new BatchRequest(
+          metadata.engineType,
+          metadata.resource,
+          metadata.className,
+          metadata.requestName,
+          metadata.requestConf.asJava,
+          metadata.requestArgs.asJava)
 
-          createBatchSession(
-            metadata.username,
-            "anonymous",
-            metadata.ipAddress,
-            metadata.requestConf,
-            batchRequest,
-            Some(metadata))
-        }
-      }.getOrElse(Seq.empty)
+        createBatchSession(
+          metadata.username,
+          "anonymous",
+          metadata.ipAddress,
+          metadata.requestConf,
+          batchRequest,
+          Some(metadata))
+      })
+        .getOrElse(Seq.empty)
     }
   }
 
   def getPeerInstanceClosedBatchSessions(kyuubiInstance: String): Seq[Metadata] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToKill =>
-      metadataManagerOpt.map { metadataManager =>
-        metadataManager.getPeerInstanceClosedBatchesMetadata(
-          stateToKill.toString,
-          kyuubiInstance,
-          0,
-          Int.MaxValue)
-      }.getOrElse(Seq.empty)
+      metadataManager.map(_.getPeerInstanceClosedBatchesMetadata(
+        stateToKill.toString,
+        kyuubiInstance,
+        0,
+        Int.MaxValue))
+        .getOrElse(Seq.empty)
     }
   }
 
