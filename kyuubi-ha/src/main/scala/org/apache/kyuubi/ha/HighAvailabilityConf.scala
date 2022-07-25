@@ -192,8 +192,8 @@ object HighAvailabilityConf {
       .checkValue(_ > 0, "Must be positive")
       .createWithDefault(Duration.ofSeconds(10).toMillis)
 
-  val HA_ETCD_SSL_ENABLE: ConfigEntry[Boolean] =
-    buildConf("kyuubi.ha.etcd.ssl.enable")
+  val HA_ETCD_SSL_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.ha.etcd.ssl.enabled")
       .doc("When set to true, will build a ssl secured etcd client.")
       .version("1.6.0")
       .booleanConf

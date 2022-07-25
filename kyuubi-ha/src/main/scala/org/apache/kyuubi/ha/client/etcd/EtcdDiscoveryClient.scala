@@ -67,8 +67,8 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
   private def buildClient(): Client = {
     val endpoints = conf.get(HA_ADDRESSES).split(",")
-    val sslEnable = conf.get(HA_ETCD_SSL_ENABLE)
-    if (!sslEnable) {
+    val sslEnabled = conf.get(HA_ETCD_SSL_ENABLED)
+    if (!sslEnabled) {
       Client.builder.endpoints(endpoints: _*).build
     } else {
       val caPath = conf.getOption(HA_ETCD_SSL_CA_PATH.key).getOrElse(
