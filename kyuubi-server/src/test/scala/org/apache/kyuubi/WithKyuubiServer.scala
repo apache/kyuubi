@@ -38,7 +38,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
   protected var server: KyuubiServer = _
 
   override def beforeAll(): Unit = {
-    conf.set(FRONTEND_PROTOCOLS, frontendProtocols.map(_.toString))
+    conf.setIfMissing(FRONTEND_PROTOCOLS, frontendProtocols.map(_.toString))
     conf.set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(FRONTEND_REST_BIND_PORT, 0)
     conf.set(FRONTEND_MYSQL_BIND_PORT, 0)
