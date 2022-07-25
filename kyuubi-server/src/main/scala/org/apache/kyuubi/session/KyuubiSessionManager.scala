@@ -58,7 +58,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
         .contains(FrontendProtocols.REST)) {
       metadataManagerOpt = Some(new MetadataManager())
-      addService(metadataManager)
+      addService(metadataManagerOpt.get)
     }
 
     initSessionLimiter(conf)
@@ -173,29 +173,34 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     getSessionOption(sessionHandle).map(_.asInstanceOf[KyuubiBatchSessionImpl]).orNull
   }
 
-  private def metadataManager: MetadataManager = {
-    assert(metadataManagerOpt.isDefined)
-    metadataManagerOpt.get
-  }
-
   def insertMetadata(metadata: Metadata): Unit = {
-    metadataManager.insertMetadata(metadata)
+    metadataManagerOpt.foreach { metadataManager =>
+      metadataManager.insertMetadata(metadata)
+    }
   }
 
   def updateMetadata(metadata: Metadata): Unit = {
-    metadataManager.updateMetadata(metadata)
+    metadataManagerOpt.foreach { metadataManager =>
+      metadataManager.updateMetadata(metadata)
+    }
   }
 
   def getMetadataRequestsRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {
-    Option(metadataManager.getMetadataRequestsRetryRef(identifier))
+    metadataManagerOpt.map { metadataManager =>
+      metadataManager.getMetadataRequestsRetryRef(identifier)
+    }
   }
 
   def deRegisterMetadataRequestsRetryRef(identifier: String): Unit = {
-    metadataManager.deRegisterRequestsRetryRef(identifier)
+    metadataManagerOpt.foreach { metadataManager =>
+      metadataManager.deRegisterRequestsRetryRef(identifier)
+    }
   }
 
   def getBatchFromMetadataStore(batchId: String): Batch = {
-    metadataManager.getBatch(batchId)
+    metadataManagerOpt.map { metadataManager =>
+      metadataManager.getBatch(batchId)
+    }.orNull
   }
 
   def getBatchesFromMetadataStore(
@@ -206,16 +211,22 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       endTime: Long,
       from: Int,
       size: Int): Seq[Batch] = {
-    metadataManager.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
+    metadataManagerOpt.map { metadataManager =>
+      metadataManager.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size)
+    }.getOrElse(Seq.empty)
   }
 
   def getBatchMetadata(batchId: String): Metadata = {
-    metadataManager.getBatchSessionMetadata(batchId)
+    metadataManagerOpt.map { metadataManager =>
+      metadataManager.getBatchSessionMetadata(batchId)
+    }.orNull
   }
 
   @VisibleForTesting
   def cleanupMetadata(identifier: String): Unit = {
-    metadataManager.cleanupMetadataById(identifier)
+    metadataManagerOpt.foreach { metadataManager =>
+      metadataManager.cleanupMetadataById(identifier)
+    }
   }
 
   override def start(): Unit = synchronized {
@@ -229,37 +240,41 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSessionImpl] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
-      metadataManager.getBatchesRecoveryMetadata(
-        stateToRecover.toString,
-        kyuubiInstance,
-        0,
-        Int.MaxValue).map { metadata =>
-        val batchRequest = new BatchRequest(
-          metadata.engineType,
-          metadata.resource,
-          metadata.className,
-          metadata.requestName,
-          metadata.requestConf.asJava,
-          metadata.requestArgs.asJava)
+      metadataManagerOpt.map { metadataManager =>
+        metadataManager.getBatchesRecoveryMetadata(
+          stateToRecover.toString,
+          kyuubiInstance,
+          0,
+          Int.MaxValue).map { metadata =>
+          val batchRequest = new BatchRequest(
+            metadata.engineType,
+            metadata.resource,
+            metadata.className,
+            metadata.requestName,
+            metadata.requestConf.asJava,
+            metadata.requestArgs.asJava)
 
-        createBatchSession(
-          metadata.username,
-          "anonymous",
-          metadata.ipAddress,
-          metadata.requestConf,
-          batchRequest,
-          Some(metadata))
-      }
+          createBatchSession(
+            metadata.username,
+            "anonymous",
+            metadata.ipAddress,
+            metadata.requestConf,
+            batchRequest,
+            Some(metadata))
+        }
+      }.getOrElse(Seq.empty)
     }
   }
 
   def getPeerInstanceClosedBatchSessions(kyuubiInstance: String): Seq[Metadata] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToKill =>
-      metadataManager.getPeerInstanceClosedBatchesMetadata(
-        stateToKill.toString,
-        kyuubiInstance,
-        0,
-        Int.MaxValue)
+      metadataManagerOpt.map { metadataManager =>
+        metadataManager.getPeerInstanceClosedBatchesMetadata(
+          stateToKill.toString,
+          kyuubiInstance,
+          0,
+          Int.MaxValue)
+      }.getOrElse(Seq.empty)
     }
   }
 
