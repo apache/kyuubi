@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi
 
+import scala.util.control.NonFatal
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
@@ -67,7 +69,12 @@ trait WithKyuubiServer extends KyuubiFunSuite {
         val sessionManager = frontend.be.sessionManager.asInstanceOf[KyuubiSessionManager]
         sessionManager.allSessions().foreach { session =>
           logger.warn(s"found unclosed session ${session.handle}.")
-          sessionManager.closeSession(session.handle)
+          try {
+            sessionManager.closeSession(session.handle)
+          } catch {
+            case NonFatal(e) =>
+              logger.warn(s"catching an error while closing the session ${session.handle}", e)
+          }
         }
       case _ =>
     }
