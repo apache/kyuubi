@@ -19,11 +19,14 @@ package org.apache.kyuubi.engine
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.client.api.YarnClient
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationOperation._
+import org.apache.kyuubi.engine.ApplicationState.ApplicationState
+import org.apache.kyuubi.engine.YarnApplicationOperation.applicationStateMapping
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class YarnApplicationOperation extends ApplicationOperation with Logging {
@@ -84,7 +87,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
         val info = ApplicationInfo(
           id = report.getApplicationId.toString,
           name = report.getName,
-          state = ApplicationState.fromName(report.getYarnApplicationState.toString),
+          state = applicationStateMapping(report.getYarnApplicationState),
           url = Option(report.getTrackingUrl),
           error = Option(report.getDiagnostics))
         debug(s"Successfully got application info by $tag: $info")
@@ -103,5 +106,19 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
         case e: Exception => error(e.getMessage)
       }
     }
+  }
+}
+
+object YarnApplicationOperation {
+  def applicationStateMapping(state: YarnApplicationState): ApplicationState = state match {
+    case YarnApplicationState.NEW => ApplicationState.PENDING
+    case YarnApplicationState.NEW_SAVING => ApplicationState.PENDING
+    case YarnApplicationState.SUBMITTED => ApplicationState.PENDING
+    case YarnApplicationState.ACCEPTED => ApplicationState.PENDING
+    case YarnApplicationState.RUNNING => ApplicationState.RUNNING
+    case YarnApplicationState.FINISHED => ApplicationState.FINISHED
+    case YarnApplicationState.FAILED => ApplicationState.FAILED
+    case YarnApplicationState.KILLED => ApplicationState.KILLED
+    case _ => throw new IllegalStateException("Not support state: " + state)
   }
 }

@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KUBERNETES_CONTEXT
+import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation._
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
@@ -94,7 +95,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             // Can't get appId, get Pod UID instead.
             id = pod.getMetadata.getUid,
             name = pod.getMetadata.getName,
-            state = ApplicationState.fromName(pod.getStatus.getPhase),
+            state = applicationStateMapping(pod.getStatus.getPhase),
             error = Option(pod.getStatus.getReason))
           debug(s"Successfully got application info by $tag: $info")
           info
@@ -135,4 +136,16 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
 object KubernetesApplicationOperation {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
+
+  def applicationStateMapping(state: String): ApplicationState = state match {
+    // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go#L2396
+    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+    case "Pending" => PENDING
+    case "Running" => RUNNING
+    case "Succeeded" => FINISHED
+    case "Failed" => FAILED
+    case "Error" => FAILED
+    case "Unknown" => NOT_FOUND
+    case _ => throw new IllegalStateException("Not support state: " + state)
+  }
 }

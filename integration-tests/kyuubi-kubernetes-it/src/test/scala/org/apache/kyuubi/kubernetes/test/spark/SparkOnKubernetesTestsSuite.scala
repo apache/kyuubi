@@ -28,6 +28,7 @@ import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.engine.{ApplicationOperation, KubernetesApplicationOperation}
+import org.apache.kyuubi.engine.ApplicationState.{FAILED, FINISHED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
@@ -151,10 +152,9 @@ class KyuubiOperationKubernetesClusterClientModeSuite
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val state = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-      assert(state.nonEmpty)
-      assert(state.contains("id"))
-      assert(state.contains("name"))
-      assert(state("state") === "RUNNING")
+      assert(state.id != null)
+      assert(state.name != null)
+      assert(state.state == RUNNING)
     }
 
     val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
@@ -162,9 +162,9 @@ class KyuubiOperationKubernetesClusterClientModeSuite
     assert(killResponse._2 startsWith "Succeeded to terminate:")
 
     val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-    assert(!appInfo.contains("id"))
-    assert(!appInfo.contains("name"))
-    assert(appInfo("state") === "FINISHED")
+    assert(appInfo.id == null)
+    assert(appInfo.name == null)
+    assert(appInfo.state == NOT_FOUND)
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
@@ -211,8 +211,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val state = batchJobSubmissionOp.currentApplicationState
       assert(state.nonEmpty)
-      assert(state.exists(_("state") == "Running"))
-      assert(state.exists(_("name").startsWith(driverPodNamePrefix)))
+      assert(state.exists(_.state == RUNNING))
+      assert(state.exists(_.name.startsWith(driverPodNamePrefix)))
     }
 
     val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
@@ -223,7 +223,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
       // We may kill engine start but not ready
       // An EOF Error occurred when the driver was starting
-      assert(appInfo("state") == "Error" || appInfo("state") == "FINISHED")
+      assert(appInfo.state == FAILED || appInfo.state == FINISHED)
     }
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)

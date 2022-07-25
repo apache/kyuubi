@@ -93,6 +93,7 @@ class JpsApplicationOperation extends ApplicationOperation {
     } else {
       ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND)
     }
+    // TODO check if the process is zombie
   }
 
   override def stop(): Unit = {}
