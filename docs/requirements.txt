@@ -22,3 +22,4 @@ sphinx-book-theme==0.3.2
 sphinx-markdown-tables==0.0.15
 recommonmark==0.7.1
 sphinx-notfound-page==0.8
+markdown==3.3.7
