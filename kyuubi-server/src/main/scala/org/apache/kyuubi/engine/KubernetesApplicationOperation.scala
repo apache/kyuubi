@@ -94,7 +94,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             // Can't get appId, get Pod UID instead.
             id = pod.getMetadata.getUid,
             name = pod.getMetadata.getName,
-            state = ApplicationState.withName(pod.getStatus.getPhase),
+            state = ApplicationState.fromName(pod.getStatus.getPhase),
             error = Option(pod.getStatus.getReason))
           debug(s"Successfully got application info by $tag: $info")
           info

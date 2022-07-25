@@ -64,6 +64,17 @@ trait ApplicationOperation {
 object ApplicationState extends Enumeration {
   type ApplicationState = Value
   val PENDING, RUNNING, FINISHED, KILLED, FAILED, NOT_FOUND = Value
+
+  def fromName(name: String): ApplicationState = name.toUpperCase match {
+    // k8s has some different status string
+    case "WAITING" => PENDING
+    case "DELETED" => KILLED
+    case "TERMINATED" => FINISHED
+    case "TERMINATING" => FINISHED
+    case "COMPLETED" => FINISHED
+    case "ERROR" => FAILED
+    case other => withName(other)
+  }
 }
 
 case class ApplicationInfo(

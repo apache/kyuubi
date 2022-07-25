@@ -84,7 +84,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
         val info = ApplicationInfo(
           id = report.getApplicationId.toString,
           name = report.getName,
-          state = ApplicationState.withName(report.getYarnApplicationState.toString),
+          state = ApplicationState.fromName(report.getYarnApplicationState.toString),
           url = Option(report.getTrackingUrl),
           error = Option(report.getDiagnostics))
         debug(s"Successfully got application info by $tag: $info")
