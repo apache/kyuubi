@@ -13,30 +13,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Connectors
-==========
-
-This section describes the connectors available for different kyuubi engines to access data from various data sources.
-
-.. note:: Is your connector missing?
-   `Report an feature request <https://kyuubi.apache.org/issue_tracking.html>`_ or help us document it.
+Connectors For Trino SQL Engine
+=====================================
 
 .. toctree::
     :maxdepth: 2
 
-    spark/index
-
-.. toctree::
-    :maxdepth: 2
-
-    flink/index
-
-.. toctree::
-    :maxdepth: 2
-
-    hive/index
-
-.. toctree::
-    :maxdepth: 2
-
-    trino/index
+    iceberg
