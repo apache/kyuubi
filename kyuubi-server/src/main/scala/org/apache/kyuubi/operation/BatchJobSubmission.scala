@@ -30,8 +30,7 @@ import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.{ApplicationOperation, KillResponse, ProcBuilder}
-import org.apache.kyuubi.engine.ApplicationOperation._
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -74,7 +73,7 @@ class BatchJobSubmission(
 
   private[kyuubi] val batchId: String = session.handle.identifier.toString
 
-  private var applicationStatus: Option[Map[String, String]] = None
+  private var applicationStatus: Option[ApplicationInfo] = None
 
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
@@ -99,7 +98,7 @@ class BatchJobSubmission(
     }
   }
 
-  private[kyuubi] def currentApplicationState: Option[Map[String, String]] = {
+  private[kyuubi] def currentApplicationState: Option[ApplicationInfo] = {
     applicationManager.getApplicationInfo(builder.clusterManager(), batchId)
   }
 
@@ -118,17 +117,18 @@ class BatchJobSubmission(
         0L
       }
 
-    val engineAppStatus = applicationStatus.getOrElse(Map.empty)
-    val metadataToUpdate = Metadata(
-      identifier = batchId,
-      state = state.toString,
-      engineId = engineAppStatus.get(APP_ID_KEY).orNull,
-      engineName = engineAppStatus.get(APP_NAME_KEY).orNull,
-      engineUrl = engineAppStatus.get(APP_URL_KEY).orNull,
-      engineState = engineAppStatus.get(APP_STATE_KEY).orNull,
-      engineError = engineAppStatus.get(APP_ERROR_KEY),
-      endTime = endTime)
-    session.sessionManager.updateMetadata(metadataToUpdate)
+    applicationStatus.foreach { status =>
+      val metadataToUpdate = Metadata(
+        identifier = batchId,
+        state = state.toString,
+        engineId = status.id,
+        engineName = status.name,
+        engineUrl = status.url.orNull,
+        engineState = status.state.toString,
+        engineError = status.error,
+        endTime = endTime)
+      session.sessionManager.updateMetadata(metadataToUpdate)
+    }
   }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
@@ -162,7 +162,7 @@ class BatchJobSubmission(
           recoveryMetadata.map { metadata =>
             if (metadata.state == OperationState.PENDING.toString) {
               applicationStatus = currentApplicationState
-              applicationStatus.map(_.get(APP_ID_KEY)).map {
+              Option(applicationStatus.map(_.id)).map {
                 case Some(appId) => monitorBatchJob(appId)
                 case None => submitAndMonitorBatchJob()
               }
@@ -211,14 +211,14 @@ class BatchJobSubmission(
 
       if (applicationFailed(applicationStatus)) {
         process.destroyForcibly()
-        throw new RuntimeException("Batch job failed:" + applicationStatus.get.mkString(","))
+        throw new RuntimeException(s"Batch job failed: $applicationStatus")
       } else {
         process.waitFor()
         if (process.exitValue() != 0) {
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
 
-        applicationStatus.map(_.get(APP_ID_KEY)).map {
+        Option(applicationStatus.map(_.id)).foreach {
           case Some(appId) => monitorBatchJob(appId)
           case _ =>
         }
@@ -239,8 +239,7 @@ class BatchJobSubmission(
     if (applicationStatus.isEmpty) {
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
     } else if (applicationFailed(applicationStatus)) {
-      throw new RuntimeException(s"$batchType batch[$batchId] job failed:" +
-        applicationStatus.get.mkString(","))
+      throw new RuntimeException(s"$batchType batch[$batchId] job failed: $applicationStatus")
     } else {
       updateBatchMetadata()
       // TODO: add limit for max batch job submission lifetime
@@ -249,14 +248,12 @@ class BatchJobSubmission(
         val newApplicationStatus = currentApplicationState
         if (newApplicationStatus != applicationStatus) {
           applicationStatus = newApplicationStatus
-          info(s"Batch report for $batchId" +
-            applicationStatus.map(_.mkString("(", ",", ")")).getOrElse("()"))
+          info(s"Batch report for $batchId, $applicationStatus")
         }
       }
 
       if (applicationFailed(applicationStatus)) {
-        throw new RuntimeException(s"$batchType batch[$batchId] job failed:" +
-          applicationStatus.get.mkString(","))
+        throw new RuntimeException(s"$batchType batch[$batchId] job failed: $applicationStatus")
       }
     }
   }
@@ -287,8 +284,9 @@ class BatchJobSubmission(
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     currentApplicationState.map { state =>
-      val tRow = new TRowSet(0, new JArrayList[TRow](state.size))
-      Seq(state.keys, state.values).map(_.toSeq.asJava).foreach { col =>
+      val tRow = new TRowSet(0, new JArrayList[TRow](state.productArity))
+
+      state.toKeyValueList.map(_.asJava).foreach { col =>
         val tCol = TColumn.stringVal(new TStringColumn(col, ByteBuffer.allocate(0)))
         tRow.addToColumns(tCol)
       }
@@ -337,13 +335,21 @@ class BatchJobSubmission(
 }
 
 object BatchJobSubmission {
-  def applicationFailed(applicationStatus: Option[Map[String, String]]): Boolean = {
-    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
-      s.contains("KILLED") || s.contains("FAILED"))
+  def applicationFailed(applicationStatus: Option[ApplicationInfo]): Boolean = {
+    applicationStatus.map(_.state).exists {
+      case ApplicationState.FAILED => true
+      case ApplicationState.KILLED => true
+      case _ => false
+    }
   }
 
-  def applicationTerminated(applicationStatus: Option[Map[String, String]]): Boolean = {
-    applicationStatus.map(_.get(ApplicationOperation.APP_STATE_KEY)).exists(s =>
-      s.contains("KILLED") || s.contains("FAILED") || s.contains("FINISHED"))
+  def applicationTerminated(applicationStatus: Option[ApplicationInfo]): Boolean = {
+    applicationStatus.map(_.state).exists {
+      case ApplicationState.FAILED => true
+      case ApplicationState.KILLED => true
+      case ApplicationState.FINISHED => true
+      case ApplicationState.NOT_FOUND => true
+      case _ => false
+    }
   }
 }

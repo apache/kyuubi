@@ -83,10 +83,10 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
 
   def getApplicationInfo(
       clusterManager: Option[String],
-      tag: String): Option[Map[String, String]] = {
+      tag: String): Option[ApplicationInfo] = {
     val operation = operations.find(_.isSupported(clusterManager))
     operation match {
-      case Some(op) => Option(op.getApplicationInfoByTag(tag))
+      case Some(op) => Some(op.getApplicationInfoByTag(tag))
       case None => None
     }
   }

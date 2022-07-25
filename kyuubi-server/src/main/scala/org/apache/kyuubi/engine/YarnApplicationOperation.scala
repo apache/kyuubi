@@ -72,23 +72,23 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  override def getApplicationInfoByTag(tag: String): Map[String, String] = {
+  override def getApplicationInfoByTag(tag: String): ApplicationInfo = {
     if (yarnClient != null) {
       debug(s"Getting application info from Yarn cluster by $tag tag")
       val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
       if (reports.isEmpty) {
         debug(s"Application with tag $tag not found")
-        null
+        ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND)
       } else {
         val report = reports.get(0)
-        val res = Map(
-          APP_ID_KEY -> report.getApplicationId.toString,
-          APP_NAME_KEY -> report.getName,
-          APP_STATE_KEY -> report.getYarnApplicationState.toString,
-          APP_URL_KEY -> report.getTrackingUrl,
-          APP_ERROR_KEY -> report.getDiagnostics)
-        debug(s"Successfully got application info by $tag: " + res.mkString(", "))
-        res
+        val info = ApplicationInfo(
+          id = report.getApplicationId.toString,
+          name = report.getName,
+          state = ApplicationState.withName(report.getYarnApplicationState.toString),
+          url = Option(report.getTrackingUrl),
+          error = Option(report.getDiagnostics))
+        debug(s"Successfully got application info by $tag: $info")
+        info
       }
     } else {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
