@@ -108,11 +108,11 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
       case RUNNING => startTime = System.currentTimeMillis()
       case ERROR | FINISHED | CANCELED | TIMEOUT =>
         completedTime = System.currentTimeMillis()
-        timeCost = s", time taken: ${(completedTime - startTime) / 1000.0} seconds"
+        timeCost = s"\ntime taken: ${(completedTime - startTime) / 1000.0} seconds"
       case _ =>
     }
     info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
-      s" statement: $redactedStatement$timeCost")
+      s" statement:\n$redactedStatement$timeCost")
     state = newState
     lastAccessTime = System.currentTimeMillis()
   }
