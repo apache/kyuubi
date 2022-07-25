@@ -50,16 +50,8 @@ class SparkBatchProcessBuilder(
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
     (batchKyuubiConf.getAll ++ sparkAppNameConf()).foreach { case (k, v) =>
-      val newKey = {
-        // convert the kyuubi config with `spark` prefix, so that spark could identify
-        if (k.startsWith("kyuubi.")) {
-          "spark." + k
-        } else {
-          k
-        }
-      }
       buffer += CONF
-      buffer += s"$newKey=$v"
+      buffer += s"${convertConfigKey(k)}=$v"
     }
 
     buffer += PROXY_USER
