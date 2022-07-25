@@ -18,7 +18,7 @@ CREATE TABLE metadata(
     engine_type varchar(1024) NOT NULL COMMENT 'the engine type',
     cluster_manager varchar(128) COMMENT 'the engine cluster manager',
     engine_id varchar(128) COMMENT 'the engine application id',
-    engine_name varchar(1024) COMMENT 'the engine application name',
+    engine_name mediumtext COMMENT 'the engine application name',
     engine_url varchar(1024) COMMENT 'the engine tracking url',
     engine_state varchar(128) COMMENT 'the engine application state',
     engine_error mediumtext COMMENT 'the engine application diagnose',
