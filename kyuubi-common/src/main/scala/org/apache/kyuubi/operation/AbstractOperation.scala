@@ -103,16 +103,18 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def setState(newState: OperationState): Unit = {
     OperationState.validateTransition(state, newState)
-    var timeCost = ""
     newState match {
-      case RUNNING => startTime = System.currentTimeMillis()
+      case RUNNING =>
+        info(s"Processing ${session.user}'s query[$statementId]: " +
+          s"${state.name} -> ${newState.name}, statement:\n$redactedStatement")
+        startTime = System.currentTimeMillis()
       case ERROR | FINISHED | CANCELED | TIMEOUT =>
         completedTime = System.currentTimeMillis()
-        timeCost = s"\ntime taken: ${(completedTime - startTime) / 1000.0} seconds"
+        val timeCost = s"\ntime taken: ${(completedTime - startTime) / 1000.0} seconds"
+        info(s"Processing ${session.user}'s query[$statementId]: " +
+          s"${state.name} -> ${newState.name}$timeCost")
       case _ =>
     }
-    info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
-      s" statement:\n$redactedStatement$timeCost")
     state = newState
     lastAccessTime = System.currentTimeMillis()
   }
