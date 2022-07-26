@@ -50,7 +50,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     // so we initialize it only when Kyuubi starts with the REST frontend.
     if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
         .contains(FrontendProtocols.REST)) {
-      Some(new MetadataManager())
+      Option(new MetadataManager())
     } else {
       None
     }
