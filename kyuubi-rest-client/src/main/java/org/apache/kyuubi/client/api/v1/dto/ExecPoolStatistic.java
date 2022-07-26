@@ -59,4 +59,14 @@ public class ExecPoolStatistic {
   public int hashCode() {
     return Objects.hash(getExecPoolSize(), getExecPoolActiveCount());
   }
+
+  @Override
+  public String toString() {
+    return "ExecPoolStatistic{"
+        + "execPoolSize="
+        + execPoolSize
+        + ", execPoolActiveCount="
+        + execPoolActiveCount
+        + '}';
+  }
 }

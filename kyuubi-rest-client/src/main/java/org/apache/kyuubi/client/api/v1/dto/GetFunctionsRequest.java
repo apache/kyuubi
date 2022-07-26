@@ -70,4 +70,19 @@ public class GetFunctionsRequest {
   public int hashCode() {
     return Objects.hash(getCatalogName(), getSchemaName(), getFunctionName());
   }
+
+  @Override
+  public String toString() {
+    return "GetFunctionsRequest{"
+        + "catalogName='"
+        + catalogName
+        + '\''
+        + ", schemaName='"
+        + schemaName
+        + '\''
+        + ", functionName='"
+        + functionName
+        + '\''
+        + '}';
+  }
 }

@@ -170,4 +170,44 @@ public class Batch {
   public int hashCode() {
     return Objects.hash(getId());
   }
+
+  @Override
+  public String toString() {
+    return "Batch{"
+        + "id='"
+        + id
+        + '\''
+        + ", user='"
+        + user
+        + '\''
+        + ", batchType='"
+        + batchType
+        + '\''
+        + ", name='"
+        + name
+        + '\''
+        + ", appId='"
+        + appId
+        + '\''
+        + ", appUrl='"
+        + appUrl
+        + '\''
+        + ", appState='"
+        + appState
+        + '\''
+        + ", appDiagnostic='"
+        + appDiagnostic
+        + '\''
+        + ", kyuubiInstance='"
+        + kyuubiInstance
+        + '\''
+        + ", state='"
+        + state
+        + '\''
+        + ", createTime="
+        + createTime
+        + ", endTime="
+        + endTime
+        + '}';
+  }
 }

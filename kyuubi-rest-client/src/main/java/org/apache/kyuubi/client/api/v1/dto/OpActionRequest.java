@@ -48,4 +48,9 @@ public class OpActionRequest {
   public int hashCode() {
     return Objects.hash(getAction());
   }
+
+  @Override
+  public String toString() {
+    return "OpActionRequest{" + "action='" + action + '\'' + '}';
+  }
 }

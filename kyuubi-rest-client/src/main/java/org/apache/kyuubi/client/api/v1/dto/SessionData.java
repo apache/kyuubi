@@ -120,4 +120,27 @@ public class SessionData {
   public int hashCode() {
     return Objects.hash(getIdentifier());
   }
+
+  @Override
+  public String toString() {
+    return "SessionData{"
+        + "identifier='"
+        + identifier
+        + '\''
+        + ", user='"
+        + user
+        + '\''
+        + ", ipAddr='"
+        + ipAddr
+        + '\''
+        + ", conf="
+        + conf
+        + ", createTime="
+        + createTime
+        + ", duration="
+        + duration
+        + ", idleTime="
+        + idleTime
+        + '}';
+  }
 }

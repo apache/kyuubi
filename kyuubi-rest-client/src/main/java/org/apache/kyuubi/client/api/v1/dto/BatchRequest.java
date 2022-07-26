@@ -128,4 +128,26 @@ public class BatchRequest {
     return Objects.hash(
         getBatchType(), getResource(), getClassName(), getName(), getConf(), getArgs());
   }
+
+  @Override
+  public String toString() {
+    return "BatchRequest{"
+        + "batchType='"
+        + batchType
+        + '\''
+        + ", resource='"
+        + resource
+        + '\''
+        + ", className='"
+        + className
+        + '\''
+        + ", name='"
+        + name
+        + '\''
+        + ", conf="
+        + conf
+        + ", args="
+        + args
+        + '}';
+  }
 }

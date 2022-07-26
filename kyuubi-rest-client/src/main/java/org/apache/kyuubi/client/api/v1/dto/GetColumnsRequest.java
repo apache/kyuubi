@@ -82,4 +82,22 @@ public class GetColumnsRequest {
   public int hashCode() {
     return Objects.hash(getCatalogName(), getSchemaName(), getTableName(), getColumnName());
   }
+
+  @Override
+  public String toString() {
+    return "GetColumnsRequest{"
+        + "catalogName='"
+        + catalogName
+        + '\''
+        + ", schemaName='"
+        + schemaName
+        + '\''
+        + ", tableName='"
+        + tableName
+        + '\''
+        + ", columnName='"
+        + columnName
+        + '\''
+        + '}';
+  }
 }

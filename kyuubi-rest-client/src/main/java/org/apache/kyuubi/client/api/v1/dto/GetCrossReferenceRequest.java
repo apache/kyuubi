@@ -115,4 +115,28 @@ public class GetCrossReferenceRequest {
         getForeignSchema(),
         getForeignTable());
   }
+
+  @Override
+  public String toString() {
+    return "GetCrossReferenceRequest{"
+        + "primaryCatalog='"
+        + primaryCatalog
+        + '\''
+        + ", primarySchema='"
+        + primarySchema
+        + '\''
+        + ", primaryTable='"
+        + primaryTable
+        + '\''
+        + ", foreignCatalog='"
+        + foreignCatalog
+        + '\''
+        + ", foreignSchema='"
+        + foreignSchema
+        + '\''
+        + ", foreignTable='"
+        + foreignTable
+        + '\''
+        + '}';
+  }
 }

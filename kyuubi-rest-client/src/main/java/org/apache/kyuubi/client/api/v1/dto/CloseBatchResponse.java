@@ -58,4 +58,9 @@ public class CloseBatchResponse {
   public int hashCode() {
     return Objects.hash(success, msg);
   }
+
+  @Override
+  public String toString() {
+    return "CloseBatchResponse{" + "success=" + success + ", msg='" + msg + '\'' + '}';
+  }
 }

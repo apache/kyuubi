@@ -64,4 +64,9 @@ public class OperationLog {
   public int hashCode() {
     return Objects.hash(getLogRowSet(), getRowCount());
   }
+
+  @Override
+  public String toString() {
+    return "OperationLog{" + "logRowSet=" + logRowSet + ", rowCount=" + rowCount + '}';
+  }
 }

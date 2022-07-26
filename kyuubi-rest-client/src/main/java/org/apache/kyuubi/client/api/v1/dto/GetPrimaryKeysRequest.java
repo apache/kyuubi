@@ -70,4 +70,19 @@ public class GetPrimaryKeysRequest {
   public int hashCode() {
     return Objects.hash(getCatalogName(), getSchemaName(), getTableName());
   }
+
+  @Override
+  public String toString() {
+    return "GetPrimaryKeysRequest{"
+        + "catalogName='"
+        + catalogName
+        + '\''
+        + ", schemaName='"
+        + schemaName
+        + '\''
+        + ", tableName='"
+        + tableName
+        + '\''
+        + '}';
+  }
 }

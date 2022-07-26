@@ -110,4 +110,25 @@ public class ColumnDesc {
     return Objects.hash(
         getColumnName(), getDataType(), getColumnIndex(), getPrecision(), getScale(), getComment());
   }
+
+  @Override
+  public String toString() {
+    return "ColumnDesc{"
+        + "columnName='"
+        + columnName
+        + '\''
+        + ", dataType='"
+        + dataType
+        + '\''
+        + ", columnIndex="
+        + columnIndex
+        + ", precision="
+        + precision
+        + ", scale="
+        + scale
+        + ", comment='"
+        + comment
+        + '\''
+        + '}';
+  }
 }

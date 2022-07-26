@@ -53,4 +53,9 @@ public class ResultSetMetaData {
   public int hashCode() {
     return Objects.hash(getColumns());
   }
+
+  @Override
+  public String toString() {
+    return "ResultSetMetaData{" + "columns=" + columns + '}';
+  }
 }

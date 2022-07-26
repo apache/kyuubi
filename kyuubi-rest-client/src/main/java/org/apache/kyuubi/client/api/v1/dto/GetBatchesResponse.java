@@ -75,4 +75,16 @@ public class GetBatchesResponse {
   public int hashCode() {
     return Objects.hash(getFrom(), getTotal(), getBatches());
   }
+
+  @Override
+  public String toString() {
+    return "GetBatchesResponse{"
+        + "from="
+        + from
+        + ", total="
+        + total
+        + ", batches="
+        + batches
+        + '}';
+  }
 }

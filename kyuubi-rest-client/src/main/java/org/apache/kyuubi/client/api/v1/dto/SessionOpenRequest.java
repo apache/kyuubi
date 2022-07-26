@@ -102,4 +102,23 @@ public class SessionOpenRequest {
   public int hashCode() {
     return Objects.hash(getProtocolVersion(), getUser(), getPassword(), getIpAddr(), getConfigs());
   }
+
+  @Override
+  public String toString() {
+    return "SessionOpenRequest{"
+        + "protocolVersion="
+        + protocolVersion
+        + ", user='"
+        + user
+        + '\''
+        + ", password='"
+        + password
+        + '\''
+        + ", ipAddr='"
+        + ipAddr
+        + '\''
+        + ", configs="
+        + configs
+        + '}';
+  }
 }

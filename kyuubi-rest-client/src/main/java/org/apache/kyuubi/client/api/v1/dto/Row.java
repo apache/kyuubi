@@ -53,4 +53,9 @@ public class Row {
   public int hashCode() {
     return Objects.hash(getFields());
   }
+
+  @Override
+  public String toString() {
+    return "Row{" + "fields=" + fields + '}';
+  }
 }

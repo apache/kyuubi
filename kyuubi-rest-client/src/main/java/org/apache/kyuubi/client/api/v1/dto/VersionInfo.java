@@ -48,4 +48,9 @@ public class VersionInfo {
   public int hashCode() {
     return Objects.hash(getVersion());
   }
+
+  @Override
+  public String toString() {
+    return "VersionInfo{" + "version='" + version + '\'' + '}';
+  }
 }

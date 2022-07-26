@@ -70,4 +70,17 @@ public class StatementRequest {
   public int hashCode() {
     return Objects.hash(getStatement(), isRunAsync(), getQueryTimeout());
   }
+
+  @Override
+  public String toString() {
+    return "StatementRequest{"
+        + "statement='"
+        + statement
+        + '\''
+        + ", runAsync="
+        + runAsync
+        + ", queryTimeout="
+        + queryTimeout
+        + '}';
+  }
 }

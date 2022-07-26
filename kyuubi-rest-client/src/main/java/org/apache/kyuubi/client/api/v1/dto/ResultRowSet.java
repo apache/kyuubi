@@ -63,4 +63,9 @@ public class ResultRowSet {
   public int hashCode() {
     return Objects.hash(getRows(), getRowCount());
   }
+
+  @Override
+  public String toString() {
+    return "ResultRowSet{" + "rows=" + rows + ", rowCount=" + rowCount + '}';
+  }
 }

@@ -48,4 +48,9 @@ public class SessionOpenCount {
   public int hashCode() {
     return Objects.hash(getOpenSessionCount());
   }
+
+  @Override
+  public String toString() {
+    return "SessionOpenCount{" + "openSessionCount=" + openSessionCount + '}';
+  }
 }

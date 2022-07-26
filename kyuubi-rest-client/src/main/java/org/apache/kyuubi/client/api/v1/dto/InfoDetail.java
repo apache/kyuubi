@@ -59,4 +59,16 @@ public class InfoDetail {
   public int hashCode() {
     return Objects.hash(getInfoType(), getInfoValue());
   }
+
+  @Override
+  public String toString() {
+    return "InfoDetail{"
+        + "infoType='"
+        + infoType
+        + '\''
+        + ", infoValue='"
+        + infoValue
+        + '\''
+        + '}';
+  }
 }

@@ -59,4 +59,16 @@ public class GetSchemasRequest {
   public int hashCode() {
     return Objects.hash(getCatalogName(), getSchemaName());
   }
+
+  @Override
+  public String toString() {
+    return "GetSchemasRequest{"
+        + "catalogName='"
+        + catalogName
+        + '\''
+        + ", schemaName='"
+        + schemaName
+        + '\''
+        + '}';
+  }
 }

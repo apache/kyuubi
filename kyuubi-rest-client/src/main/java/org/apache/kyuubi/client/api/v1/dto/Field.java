@@ -59,4 +59,9 @@ public class Field {
   public int hashCode() {
     return Objects.hash(getDataType(), getValue());
   }
+
+  @Override
+  public String toString() {
+    return "Field{" + "dataType='" + dataType + '\'' + ", value=" + value + '}';
+  }
 }

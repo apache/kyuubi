@@ -49,4 +49,9 @@ public class SessionHandle {
   public int hashCode() {
     return Objects.hash(getIdentifier());
   }
+
+  @Override
+  public String toString() {
+    return "SessionHandle{" + "identifier=" + identifier + '}';
+  }
 }

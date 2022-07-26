@@ -87,4 +87,21 @@ public class GetTablesRequest {
   public int hashCode() {
     return Objects.hash(getCatalogName(), getSchemaName(), getTableName(), getTableTypes());
   }
+
+  @Override
+  public String toString() {
+    return "GetTablesRequest{"
+        + "catalogName='"
+        + catalogName
+        + '\''
+        + ", schemaName='"
+        + schemaName
+        + '\''
+        + ", tableName='"
+        + tableName
+        + '\''
+        + ", tableTypes="
+        + tableTypes
+        + '}';
+  }
 }
