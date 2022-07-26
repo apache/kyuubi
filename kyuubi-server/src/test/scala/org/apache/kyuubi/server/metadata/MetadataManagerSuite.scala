@@ -29,10 +29,13 @@ import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
   val metadataManager = new MetadataManager()
+  val metricsSystem = new MetricsSystem()
   val conf = KyuubiConf().set(KyuubiConf.METADATA_REQUEST_RETRY_INTERVAL, 100L)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
     metadataManager.initialize(conf)
     metadataManager.start()
   }
@@ -42,6 +45,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       metadataManager.cleanupMetadataById(batch.getId)
     }
     metadataManager.stop()
+    metricsSystem.stop()
     super.afterAll()
   }
 
@@ -130,7 +134,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L) - retryingRequests === 0)
 
     val invalidMetadata = metadata.copy(kyuubiInstance = null)
-    metadataManager.insertMetadata(invalidMetadata, false)
+    intercept[Exception](metadataManager.insertMetadata(invalidMetadata, false))
     assert(
       MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_TOTAL).getOrElse(
         0L) - totalRequests === 2)
