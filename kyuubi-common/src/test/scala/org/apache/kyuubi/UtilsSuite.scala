@@ -210,4 +210,9 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(Utils.redact(secretKeys, Seq(("my.password", 12345))) ===
       Seq(("my.password", 12345)))
   }
+
+  test("test isCommandAvailable") {
+    assert(Utils.isCommandAvailable("java"))
+    assertResult(false)(Utils.isCommandAvailable("un_exist_cmd"))
+  }
 }

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_KEY;
+import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_TRUE;
 import static org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams.*;
 
 import java.io.*;
@@ -42,7 +44,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.Subject;
 import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
@@ -58,7 +59,6 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
@@ -68,7 +68,6 @@ import org.apache.kyuubi.jdbc.hive.auth.*;
 import org.apache.kyuubi.jdbc.hive.cli.FetchType;
 import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
-import org.apache.kyuubi.jdbc.hive.cli.SessionUtils;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -83,7 +82,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
   public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
-  public static final String HS2_CLIENT_TOKEN = "hiveserver2ClientToken";
   public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
 
   private String jdbcUriString;
@@ -92,7 +90,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private final Map<String, String> sessConfMap;
   private JdbcConnectionParams connParams;
   private TTransport transport;
-  private boolean assumeSubject;
   private TCLIService.Iface client;
   private boolean isClosed = true;
   private SQLWarning warningChain = null;
@@ -104,9 +101,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private String initFile = null;
   private String wmPool = null, wmApp = null;
   private Properties clientInfo;
-  private Subject loggedInSubject;
   private boolean initFileCompleted = false;
-
   private TOperationHandle launchEngineOpHandle = null;
   private Thread engineLogThread;
   private boolean engineLogInflight = true;
@@ -384,8 +379,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private void openTransport() throws Exception {
-    assumeSubject =
-        AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equals(sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
     transport = isHttpTransportMode() ? createHttpTransport() : createBinaryTransport();
     if (!transport.isOpen()) {
       transport.open();
@@ -425,9 +418,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     boolean isCookieEnabled = isCookieEnabled();
     String cookieName = sessConfMap.getOrDefault(COOKIE_NAME, DEFAULT_COOKIE_NAMES_HS2);
     CookieStore cookieStore = isCookieEnabled ? new BasicCookieStore() : null;
-    HttpClientBuilder httpClientBuilder;
     // Request interceptor for any request pre-processing logic
-    HttpRequestInterceptor requestInterceptor;
     Map<String, String> additionalHttpHeaders = new HashMap<>();
     Map<String, String> customCookies = new HashMap<>();
 
@@ -442,17 +433,27 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         customCookies.put(key.substring(HTTP_COOKIE_PREFIX.length()), entry.getValue());
       }
     }
-    // Configure http client for kerberos/password based authentication
-    if (isKerberosAuthMode()) {
-      if (assumeSubject) {
-        // With this option, we're assuming that the external application,
-        // using the JDBC driver has done a JAAS kerberos login already
-        AccessControlContext context = AccessController.getContext();
-        loggedInSubject = Subject.getSubject(context);
-        if (loggedInSubject == null) {
-          throw new KyuubiSQLException("The Subject is not set");
-        }
-      }
+
+    HttpRequestInterceptor requestInterceptor;
+    if (!isSaslAuthMode()) {
+      requestInterceptor = null;
+    } else if (isPlainSaslAuthMode()) {
+      /*
+       * Add an interceptor to pass username/password in the header. In https mode, the entire
+       * information is encrypted
+       */
+      requestInterceptor =
+          new HttpBasicAuthInterceptor(
+              getUserName(),
+              getPassword(),
+              cookieStore,
+              cookieName,
+              useSsl,
+              additionalHttpHeaders,
+              customCookies);
+    } else {
+      // Configure http client for kerberos-based authentication
+      Subject subject = createSubject();
       /*
        * Add an interceptor which sets the appropriate header in the request. It does the kerberos
        * authentication and get the final service ticket, for sending to the server before every
@@ -462,67 +463,39 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           new HttpKerberosRequestInterceptor(
               sessConfMap.get(AUTH_PRINCIPAL),
               host,
-              loggedInSubject,
+              subject,
               cookieStore,
               cookieName,
               useSsl,
               additionalHttpHeaders,
               customCookies);
-    } else {
-      // Check for delegation token, if present add it in the header
-      String tokenStr = getClientDelegationToken(sessConfMap);
-      if (tokenStr != null) {
-        requestInterceptor =
-            new HttpTokenAuthInterceptor(
-                tokenStr, cookieStore, cookieName, useSsl, additionalHttpHeaders, customCookies);
-      } else {
-        /*
-         * Add an interceptor to pass username/password in the header. In https mode, the entire
-         * information is encrypted
-         */
-        requestInterceptor =
-            new HttpBasicAuthInterceptor(
-                getUserName(),
-                getPassword(),
-                cookieStore,
-                cookieName,
-                useSsl,
-                additionalHttpHeaders,
-                customCookies);
-      }
     }
+    HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
     // Configure http client for cookie based authentication
     if (isCookieEnabled) {
       // Create a http client with a retry mechanism when the server returns a status code of 401.
-      httpClientBuilder =
-          HttpClients.custom()
-              .setServiceUnavailableRetryStrategy(
-                  new ServiceUnavailableRetryStrategy() {
-                    @Override
-                    public boolean retryRequest(
-                        final HttpResponse response,
-                        final int executionCount,
-                        final HttpContext context) {
-                      int statusCode = response.getStatusLine().getStatusCode();
-                      boolean ret = statusCode == 401 && executionCount <= 1;
+      httpClientBuilder.setServiceUnavailableRetryStrategy(
+          new ServiceUnavailableRetryStrategy() {
+            @Override
+            public boolean retryRequest(
+                final HttpResponse response, final int executionCount, final HttpContext context) {
+              int statusCode = response.getStatusLine().getStatusCode();
+              boolean ret = statusCode == 401 && executionCount <= 1;
 
-                      // Set the context attribute to true which will be interpreted by the request
-                      // interceptor
-                      if (ret) {
-                        context.setAttribute(
-                            Utils.HIVE_SERVER2_RETRY_KEY, Utils.HIVE_SERVER2_RETRY_TRUE);
-                      }
-                      return ret;
-                    }
+              // Set the context attribute to true which will be interpreted by the request
+              // interceptor
+              if (ret) {
+                context.setAttribute(HIVE_SERVER2_RETRY_KEY, HIVE_SERVER2_RETRY_TRUE);
+              }
+              return ret;
+            }
 
-                    @Override
-                    public long getRetryInterval() {
-                      // Immediate retry
-                      return 0;
-                    }
-                  });
-    } else {
-      httpClientBuilder = HttpClientBuilder.create();
+            @Override
+            public long getRetryInterval() {
+              // Immediate retry
+              return 0;
+            }
+          });
     }
     // In case the server's idletimeout is set to a lower value, it might close it's side of
     // connection. However we retry one more time on NoHttpResponseException
@@ -618,67 +591,55 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   /**
    * Create transport per the connection options Supported transport options are: - SASL based
-   * transports over + Kerberos + Delegation token + SSL + non-SSL - Raw (non-SASL) socket
+   * transports over + Kerberos + SSL + non-SSL - Raw (non-SASL) socket
    *
-   * <p>Kerberos and Delegation token supports SASL QOP configurations
+   * <p>Kerberos supports SASL QOP configurations
    *
    * @throws SQLException, TTransportException
    */
   private TTransport createBinaryTransport() throws SQLException, TTransportException {
     try {
       TTransport socketTransport = createUnderlyingTransport();
-      // handle secure connection if specified
-      if (!AUTH_SIMPLE.equals(sessConfMap.get(AUTH_TYPE))) {
-        // If Kerberos
-        Map<String, String> saslProps = new HashMap<>();
-        SaslQOP saslQOP = SaslQOP.AUTH;
-        if (sessConfMap.containsKey(AUTH_QOP)) {
-          try {
-            saslQOP = SaslQOP.fromString(sessConfMap.get(AUTH_QOP));
-          } catch (IllegalArgumentException e) {
-            throw new KyuubiSQLException(
-                "Invalid " + AUTH_QOP + " parameter. " + e.getMessage(), "42000", e);
-          }
-          saslProps.put(Sasl.QOP, saslQOP.toString());
-        } else {
-          // If the client did not specify qop then just negotiate the one supported by server
-          saslProps.put(Sasl.QOP, "auth-conf,auth-int,auth");
-        }
-        saslProps.put(Sasl.SERVER_AUTH, "true");
-        if (sessConfMap.containsKey(AUTH_PRINCIPAL)) {
-          transport =
-              KerberosSaslHelper.getKerberosTransport(
-                  sessConfMap.get(AUTH_PRINCIPAL), host, socketTransport, saslProps, assumeSubject);
-        } else {
-          // If there's a delegation token available then use token based connection
-          String tokenStr = getClientDelegationToken(sessConfMap);
-          if (tokenStr != null) {
-            transport =
-                KerberosSaslHelper.getTokenTransport(tokenStr, host, socketTransport, saslProps);
-          } else {
-            // we are using PLAIN Sasl connection with user/password
-            String userName = getUserName();
-            String passwd = getPassword();
-            // Overlay the SASL transport on top of the base socket transport (SSL or non-SSL)
-            transport = PlainSaslHelper.getPlainTransport(userName, passwd, socketTransport);
-          }
-        }
-      } else {
-        // Raw socket connection (non-sasl)
-        transport = socketTransport;
+      // Raw socket connection (non-sasl)
+      if (!isSaslAuthMode()) {
+        return socketTransport;
       }
-    } catch (SaslException e) {
+      // Use PLAIN Sasl connection with user/password
+      if (isPlainSaslAuthMode()) {
+        String userName = getUserName();
+        String passwd = getPassword();
+        // Overlay the SASL transport on top of the base socket transport (SSL or non-SSL)
+        return PlainSaslHelper.getPlainTransport(userName, passwd, socketTransport);
+      }
+
+      // Kerberos enabled
+      Map<String, String> saslProps = new HashMap<>();
+      saslProps.put(Sasl.SERVER_AUTH, "true");
+      // If the client did not specify qop then just negotiate the one supported by server
+      saslProps.put(Sasl.QOP, "auth-conf,auth-int,auth");
+      if (sessConfMap.containsKey(AUTH_QOP)) {
+        try {
+          SaslQOP saslQOP = SaslQOP.fromString(sessConfMap.get(AUTH_QOP));
+          saslProps.put(Sasl.QOP, saslQOP.toString());
+        } catch (IllegalArgumentException e) {
+          throw new KyuubiSQLException(
+              "Invalid " + AUTH_QOP + " parameter. " + e.getMessage(), "42000", e);
+        }
+      }
+
+      Subject subject = createSubject();
+      String serverPrincipal = sessConfMap.get(AUTH_PRINCIPAL);
+      return KerberosSaslHelper.createSubjectAssumedTransport(
+          subject, serverPrincipal, socketTransport, saslProps);
+    } catch (Exception e) {
       throw new KyuubiSQLException(
           "Could not create secure connection to " + jdbcUriString + ": " + e.getMessage(),
           "08S01",
           e);
     }
-    return transport;
   }
 
   SSLConnectionSocketFactory getTwoWaySSLSocketFactory() throws SQLException {
-    SSLConnectionSocketFactory socketFactory = null;
-
     try {
       KeyManagerFactory keyManagerFactory =
           KeyManagerFactory.getInstance(SUNX509_ALGORITHM_STRING, SUNJSSE_ALGORITHM_STRING);
@@ -715,25 +676,10 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           keyManagerFactory.getKeyManagers(),
           trustManagerFactory.getTrustManagers(),
           new SecureRandom());
-      socketFactory = new SSLConnectionSocketFactory(context);
+      return new SSLConnectionSocketFactory(context);
     } catch (Exception e) {
       throw new KyuubiSQLException("Error while initializing 2 way ssl socket factory ", e);
     }
-    return socketFactory;
-  }
-
-  // Lookup the delegation token. First in the connection URL, then Configuration
-  private String getClientDelegationToken(Map<String, String> jdbcConnConf) throws SQLException {
-    String tokenStr = null;
-    if (AUTH_TOKEN.equalsIgnoreCase(jdbcConnConf.get(AUTH_TYPE))) {
-      // check delegation token in job conf if any
-      try {
-        tokenStr = SessionUtils.getTokenStrForm(HS2_CLIENT_TOKEN);
-      } catch (IOException e) {
-        throw new KyuubiSQLException("Error reading token ", e);
-      }
-    }
-    return tokenStr;
   }
 
   private void openSession() throws SQLException {
@@ -841,9 +787,49 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return "true".equalsIgnoreCase(sessConfMap.get(USE_SSL));
   }
 
-  private boolean isKerberosAuthMode() {
-    return !AUTH_SIMPLE.equals(sessConfMap.get(AUTH_TYPE))
-        && sessConfMap.containsKey(AUTH_PRINCIPAL);
+  private boolean isSaslAuthMode() {
+    return !AUTH_SIMPLE.equalsIgnoreCase(sessConfMap.get(AUTH_TYPE));
+  }
+
+  private boolean isFromSubjectAuthMode() {
+    return isSaslAuthMode()
+        && hasSessionValue(AUTH_PRINCIPAL)
+        && AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
+            sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
+  }
+
+  private boolean isKeytabAuthMode() {
+    return isSaslAuthMode()
+        && hasSessionValue(AUTH_PRINCIPAL)
+        && hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
+        && hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB);
+  }
+
+  private boolean isTgtCacheAuthMode() {
+    return isSaslAuthMode()
+        && hasSessionValue(AUTH_PRINCIPAL)
+        && !hasSessionValue(AUTH_KYUUBI_CLIENT_PRINCIPAL)
+        && !hasSessionValue(AUTH_KYUUBI_CLIENT_KEYTAB);
+  }
+
+  private boolean isPlainSaslAuthMode() {
+    return isSaslAuthMode() && !hasSessionValue(AUTH_PRINCIPAL);
+  }
+
+  private Subject createSubject() {
+    if (isFromSubjectAuthMode()) {
+      AccessControlContext context = AccessController.getContext();
+      return Subject.getSubject(context);
+    } else if (isTgtCacheAuthMode()) {
+      return KerberosAuthenticationManager.getTgtCacheAuthentication().getSubject();
+    } else if (isKeytabAuthMode()) {
+      String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
+      String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
+      return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
+    } else {
+      // This should never happen
+      throw new IllegalArgumentException("Unsupported auth mode");
+    }
   }
 
   private boolean isHttpTransportMode() {
@@ -854,6 +840,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
       LOG.info(message);
     }
+  }
+
+  private boolean hasSessionValue(String varName) {
+    String varValue = sessConfMap.get(varName);
+    return !(varValue == null || varValue.isEmpty());
   }
 
   /** Lookup varName in sessConfMap, if its null or empty return the default value varDefault */
@@ -1129,7 +1120,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     try (KyuubiStatement stmt = createKyuubiStatement()) {
       stmt.executeSetCurrentCatalog("_SET_CATALOG", catalog);
     } catch (SQLException ignore) {
-
     }
   }
 
