@@ -24,6 +24,7 @@ import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.METADATA_MAX_AGE
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.AbstractService
@@ -76,9 +77,21 @@ class MetadataManager extends AbstractService("MetadataManager") {
     super.stop()
   }
 
+  private def withMetadataRequestMetrics[T](block: => T): T = {
+    try {
+      block
+    } catch {
+      case e: Throwable =>
+        MetricsSystem.tracing(_.markMeter(MetricsConstants.METADATA_REQUEST_FAIL))
+        throw e
+    } finally {
+      MetricsSystem.tracing(_.markMeter(MetricsConstants.METADATA_REQUEST_TOTAL))
+    }
+  }
+
   def insertMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
     try {
-      _metadataStore.insertMetadata(metadata)
+      withMetadataRequestMetrics(_metadataStore.insertMetadata(metadata))
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error inserting metadata for session ${metadata.identifier}", e)
@@ -91,7 +104,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
   }
 
   def getBatchSessionMetadata(batchId: String): Metadata = {
-    Option(_metadataStore.getMetadata(batchId, true)).filter(
+    Option(withMetadataRequestMetrics(_metadataStore.getMetadata(batchId, true))).filter(
       _.sessionType == SessionType.BATCH).orNull
   }
 
@@ -110,7 +123,8 @@ class MetadataManager extends AbstractService("MetadataManager") {
       state = batchState,
       createTime = createTime,
       endTime = endTime)
-    _metadataStore.getMetadataList(filter, from, size, true).map(buildBatch)
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, true)).map(
+      buildBatch)
   }
 
   def getBatchesRecoveryMetadata(
@@ -122,7 +136,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
       sessionType = SessionType.BATCH,
       state = state,
       kyuubiInstance = kyuubiInstance)
-    _metadataStore.getMetadataList(filter, from, size, false)
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, false))
   }
 
   def getPeerInstanceClosedBatchesMetadata(
@@ -135,12 +149,12 @@ class MetadataManager extends AbstractService("MetadataManager") {
       state = state,
       kyuubiInstance = kyuubiInstance,
       peerInstanceClosed = true)
-    _metadataStore.getMetadataList(filter, from, size, true)
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, true))
   }
 
   def updateMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
     try {
-      _metadataStore.updateMetadata(metadata)
+      withMetadataRequestMetrics(_metadataStore.updateMetadata(metadata))
     } catch {
       case e: Throwable if retryOnError =>
         error(s"Error updating metadata for session ${metadata.identifier}", e)
@@ -149,7 +163,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
   }
 
   def cleanupMetadataById(batchId: String): Unit = {
-    _metadataStore.cleanupMetadataByIdentifier(batchId)
+    withMetadataRequestMetrics(_metadataStore.cleanupMetadataByIdentifier(batchId))
   }
 
   private def startMetadataCleaner(): Unit = {
@@ -160,7 +174,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
       val interval = conf.get(KyuubiConf.METADATA_CLEANER_INTERVAL)
       val cleanerTask: Runnable = () => {
         try {
-          _metadataStore.cleanupMetadataByAge(stateMaxAge)
+          withMetadataRequestMetrics(_metadataStore.cleanupMetadataByAge(stateMaxAge))
         } catch {
           case e: Throwable => error("Error cleaning up the metadata by age", e)
         }
@@ -190,6 +204,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
       })
     ref.addRetryingMetadataRequest(request)
     identifierRequestsRetryRefs.putIfAbsent(identifier, ref)
+    MetricsSystem.tracing(_.markMeter(MetricsConstants.METADATA_REQUEST_RETRYING))
   }
 
   def getMetadataRequestsRetryRef(identifier: String): MetadataRequestsRetryRef = {
@@ -230,6 +245,9 @@ class MetadataManager extends AbstractService("MetadataManager") {
                         case _ =>
                       }
                       ref.metadataRequests.remove(request)
+                      MetricsSystem.tracing(_.markMeter(
+                        MetricsConstants.METADATA_REQUEST_RETRYING,
+                        -1L))
                       request = ref.metadataRequests.peek()
                     }
                   } catch {
