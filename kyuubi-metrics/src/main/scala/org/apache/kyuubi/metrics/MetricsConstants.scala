@@ -74,4 +74,8 @@ object MetricsConstants {
   final val BS_GET_RESULT_SET_METADATA = BACKEND_SERVICE + "get_result_set_metadata"
   final val BS_FETCH_RESULTS = BACKEND_SERVICE + "fetch_results"
 
+  final private val METADATA_REQUEST = KYUUBI + "metadata_request."
+  final val METADATA_REQUEST_TOTAL = METADATA_REQUEST + "total"
+  final val METADATA_REQUEST_RETRYING = METADATA_REQUEST + "retrying"
+  final val METADATA_REQUEST_FAIL = METADATA_REQUEST + "failed"
 }
