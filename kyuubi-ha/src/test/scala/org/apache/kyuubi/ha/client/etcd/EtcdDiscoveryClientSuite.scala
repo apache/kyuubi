@@ -21,8 +21,7 @@ import java.nio.charset.StandardCharsets
 
 import scala.collection.JavaConverters._
 
-import io.etcd.jetcd.launcher.Etcd
-import io.etcd.jetcd.launcher.EtcdCluster
+import io.etcd.jetcd.launcher.{Etcd, EtcdCluster}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_CLIENT_CLASS
@@ -32,7 +31,7 @@ import org.apache.kyuubi.service.NoopTBinaryFrontendServer
 
 class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
 
-  val etcdVersion = "3.5.2"
+  val etcdVersion = "3.5.4"
 
   private var etcdCluster: EtcdCluster = _
   var engineServer: NoopTBinaryFrontendServer = _
@@ -48,7 +47,7 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
 
   override def beforeAll(): Unit = {
     etcdCluster = new Etcd.Builder()
-      .withImage(s"pachyderm/etcd:v$etcdVersion")
+      .withImage(s"gcr.io/etcd-development/etcd:v$etcdVersion")
       .withNodes(2)
       .build()
     etcdCluster.start()
