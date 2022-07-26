@@ -576,7 +576,10 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
       assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
     }
-    val originalCanceledCounter = getBatchJobSubmissionStateCounter(OperationState.CANCELED)
+
+    val originalTerminateCounter = getBatchJobSubmissionStateCounter(OperationState.CANCELED) +
+      getBatchJobSubmissionStateCounter(OperationState.FINISHED) +
+      getBatchJobSubmissionStateCounter(OperationState.ERROR)
 
     val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
 
@@ -584,24 +587,32 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
-    val batch = response.readEntity(classOf[Batch])
+    var batch = response.readEntity(classOf[Batch])
 
     assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) +
       getBatchJobSubmissionStateCounter(OperationState.PENDING) +
       getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
 
-    eventually(timeout(10.seconds)) {
+    while (batch.getState == OperationState.PENDING.toString ||
+      batch.getState == OperationState.RUNNING.toString) {
       val deleteResp = webTarget.path(s"api/v1/batches/${batch.getId}")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .delete()
       assert(200 == deleteResp.getStatus)
 
-      assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
-      assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
-      assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
-      assert(
-        getBatchJobSubmissionStateCounter(OperationState.CANCELED) - originalCanceledCounter === 1)
+      batch = webTarget.path(s"api/v1/batches/${batch.getId}")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .get().readEntity(classOf[Batch])
     }
+
+    assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
+    assert(getBatchJobSubmissionStateCounter(OperationState.PENDING) === 0)
+    assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 0)
+
+    val currentTeminateCount = getBatchJobSubmissionStateCounter(OperationState.CANCELED) +
+      getBatchJobSubmissionStateCounter(OperationState.FINISHED) +
+      getBatchJobSubmissionStateCounter(OperationState.ERROR)
+    assert(currentTeminateCount - originalTerminateCounter === 1)
   }
 
   private def getBatchJobSubmissionStateCounter(state: OperationState): Long = {
