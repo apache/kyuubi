@@ -76,6 +76,6 @@ object MetricsConstants {
 
   final private val METADATA_REQUEST = KYUUBI + "metadata_request."
   final val METADATA_REQUEST_TOTAL = METADATA_REQUEST + "total"
-  final val METADATA_REQUEST_RETRYING = METADATA_REQUEST + "retrying"
   final val METADATA_REQUEST_FAIL = METADATA_REQUEST + "failed"
+  final val METADATA_REQUEST_RETRYING = METADATA_REQUEST + "retrying"
 }

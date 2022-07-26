@@ -204,7 +204,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
       })
     ref.addRetryingMetadataRequest(request)
     identifierRequestsRetryRefs.putIfAbsent(identifier, ref)
-    MetricsSystem.tracing(_.markMeter(MetricsConstants.METADATA_REQUEST_RETRYING))
+    MetricsSystem.tracing(_.incCount(MetricsConstants.METADATA_REQUEST_RETRYING))
   }
 
   def getMetadataRequestsRetryRef(identifier: String): MetadataRequestsRetryRef = {
@@ -245,9 +245,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
                         case _ =>
                       }
                       ref.metadataRequests.remove(request)
-                      MetricsSystem.tracing(_.markMeter(
-                        MetricsConstants.METADATA_REQUEST_RETRYING,
-                        -1L))
+                      MetricsSystem.tracing(_.decCount(MetricsConstants.METADATA_REQUEST_RETRYING))
                       request = ref.metadataRequests.peek()
                     }
                   } catch {
