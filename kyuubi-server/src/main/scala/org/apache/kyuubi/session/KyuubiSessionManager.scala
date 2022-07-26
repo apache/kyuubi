@@ -54,12 +54,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(credentialsManager)
     // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
     // so we initialize it only when Kyuubi starts with the REST frontend.
-    metadataManager = if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
-      .contains(FrontendProtocols.REST)) {
-      Some(new MetadataManager())
-    } else {
-      None
-    }
+    metadataManager =
+      if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
+          .contains(FrontendProtocols.REST)) {
+        Some(new MetadataManager())
+      } else {
+        None
+      }
     metadataManager.foreach(addService)
 
     initSessionLimiter(conf)
