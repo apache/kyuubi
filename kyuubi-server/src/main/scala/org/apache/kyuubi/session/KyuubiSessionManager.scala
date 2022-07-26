@@ -45,22 +45,23 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   // this lazy is must be specified since the conf is null when the class initialization
   lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
-  private var metadataManager: Option[MetadataManager] = None
+  private lazy val metadataManager: Option[MetadataManager] = {
+    // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
+    // so we initialize it only when Kyuubi starts with the REST frontend.
+    if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
+      .contains(FrontendProtocols.REST)) {
+      Some(new MetadataManager())
+    } else {
+      None
+    }
+  }
 
   private var limiter: Option[SessionLimiter] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(applicationManager)
     addService(credentialsManager)
-    // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
-    // so we initialize it only when Kyuubi starts with the REST frontend.
-    metadataManager =
-      if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
-          .contains(FrontendProtocols.REST)) {
-        Some(new MetadataManager())
-      } else {
-        None
-      }
+    this.conf = conf
     metadataManager.foreach(addService)
 
     initSessionLimiter(conf)
