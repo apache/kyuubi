@@ -37,7 +37,6 @@ import java.security.SecureRandom;
 import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -51,6 +50,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.ServiceUnavailableRetryStrategy;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -95,7 +95,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private SQLWarning warningChain = null;
   private TSessionHandle sessHandle = null;
   private final List<TProtocolVersion> supportedProtocols = new LinkedList<>();
-  private int loginTimeout = 0;
+  private int connectTimeout = 0;
+  private int socketTimeout = 0;
   private TProtocolVersion protocol;
   private int fetchSize = KyuubiStatement.DEFAULT_FETCH_SIZE;
   private String initFile = null;
@@ -123,7 +124,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
-    setupLoginTimeout();
+    setupTimeout();
     try {
       connParams = Utils.parseURL(uri, info);
     } catch (ZooKeeperHiveClientException e) {
@@ -471,6 +472,15 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
               customCookies);
     }
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+
+    // Set timeout
+    RequestConfig config =
+        RequestConfig.custom()
+            .setConnectTimeout(connectTimeout)
+            .setSocketTimeout(socketTimeout)
+            .build();
+    httpClientBuilder.setDefaultRequestConfig(config);
+
     // Configure http client for cookie based authentication
     if (isCookieEnabled) {
       // Create a http client with a retry mechanism when the server returns a status code of 401.
@@ -576,15 +586,15 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       String sslTrustStorePassword = sessConfMap.get(SSL_TRUST_STORE_PASSWORD);
 
       if (sslTrustStore == null || sslTrustStore.isEmpty()) {
-        transport = ThriftUtils.getSSLSocket(host, port, loginTimeout);
+        transport = ThriftUtils.getSSLSocket(host, port, connectTimeout, socketTimeout);
       } else {
         transport =
             ThriftUtils.getSSLSocket(
-                host, port, loginTimeout, sslTrustStore, sslTrustStorePassword);
+                host, port, connectTimeout, socketTimeout, sslTrustStore, sslTrustStorePassword);
       }
     } else {
       // get non-SSL socket transport
-      transport = ThriftUtils.getSocketTransport(host, port, loginTimeout);
+      transport = ThriftUtils.getSocketTransport(host, port, connectTimeout, socketTimeout);
     }
     return transport;
   }
@@ -856,13 +866,26 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return varValue;
   }
 
-  // copy loginTimeout from driver manager. Thrift timeout needs to be in millis
-  private void setupLoginTimeout() {
-    long timeOut = TimeUnit.SECONDS.toMillis(DriverManager.getLoginTimeout());
-    if (timeOut > Integer.MAX_VALUE) {
-      loginTimeout = Integer.MAX_VALUE;
-    } else {
-      loginTimeout = (int) timeOut;
+  private void setupTimeout() {
+    if (sessConfMap.containsKey(CONNECT_TIMEOUT)) {
+      long connectTimeoutMs = 0;
+      String loginTimeoutStr = getSessionValue(CONNECT_TIMEOUT, "0");
+      try {
+        connectTimeoutMs = Long.parseLong(loginTimeoutStr);
+      } catch (NumberFormatException e) {
+        LOG.info("Failed to parse connectTimeout of value " + loginTimeoutStr);
+      }
+      connectTimeout = (int) Math.max(0, Math.min(connectTimeoutMs, Integer.MAX_VALUE));
+    }
+    if (sessConfMap.containsKey(SOCKET_TIMEOUT)) {
+      long socketTimeoutMs = 0;
+      String socketTimeoutStr = sessConfMap.get(SOCKET_TIMEOUT);
+      try {
+        socketTimeoutMs = Long.parseLong(socketTimeoutStr);
+      } catch (NumberFormatException e) {
+        LOG.info("Failed to parse socketTimeout of value " + socketTimeoutStr);
+      }
+      socketTimeout = (int) Math.max(0, Math.min(socketTimeoutMs, Integer.MAX_VALUE));
     }
   }
 

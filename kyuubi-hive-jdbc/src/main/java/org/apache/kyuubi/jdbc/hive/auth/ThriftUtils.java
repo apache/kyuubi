@@ -29,19 +29,26 @@ import org.apache.thrift.transport.TTransportException;
  * given configuration as well as helps with authenticating requests.
  */
 public class ThriftUtils {
-  public static TTransport getSocketTransport(String host, int port, int loginTimeout) {
-    return new TSocket(host, port, loginTimeout);
+  public static TTransport getSocketTransport(
+      String host, int port, int connectTimeout, int socketTimeout) {
+    return new TSocket(host, port, socketTimeout, connectTimeout);
   }
 
-  public static TTransport getSSLSocket(String host, int port, int loginTimeout)
-      throws TTransportException {
+  public static TTransport getSSLSocket(
+      String host, int port, int connectTimeout, int socketTimeout) throws TTransportException {
     // The underlying SSLSocket object is bound to host:port with the given SO_TIMEOUT
-    TSocket tSSLSocket = TSSLTransportFactory.getClientSocket(host, port, loginTimeout);
+    TSocket tSSLSocket = TSSLTransportFactory.getClientSocket(host, port, socketTimeout);
+    tSSLSocket.setConnectTimeout(connectTimeout);
     return getSSLSocketWithHttps(tSSLSocket);
   }
 
   public static TTransport getSSLSocket(
-      String host, int port, int loginTimeout, String trustStorePath, String trustStorePassWord)
+      String host,
+      int port,
+      int connectTimeout,
+      int socketTimeout,
+      String trustStorePath,
+      String trustStorePassWord)
       throws TTransportException {
     TSSLTransportFactory.TSSLTransportParameters params =
         new TSSLTransportFactory.TSSLTransportParameters();
@@ -49,7 +56,8 @@ public class ThriftUtils {
     params.requireClientAuth(true);
     // The underlying SSLSocket object is bound to host:port with the given SO_TIMEOUT and
     // SSLContext created with the given params
-    TSocket tSSLSocket = TSSLTransportFactory.getClientSocket(host, port, loginTimeout, params);
+    TSocket tSSLSocket = TSSLTransportFactory.getClientSocket(host, port, socketTimeout, params);
+    tSSLSocket.setConnectTimeout(connectTimeout);
     return getSSLSocketWithHttps(tSSLSocket);
   }
 
