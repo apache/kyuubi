@@ -19,6 +19,8 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
 import java.util.UUID;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class SessionHandle {
   private UUID identifier;
@@ -48,5 +50,10 @@ public class SessionHandle {
   @Override
   public int hashCode() {
     return Objects.hash(getIdentifier());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }
