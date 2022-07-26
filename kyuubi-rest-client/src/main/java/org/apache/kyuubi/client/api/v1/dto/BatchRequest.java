@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class BatchRequest {
   private String batchType;
@@ -131,23 +133,6 @@ public class BatchRequest {
 
   @Override
   public String toString() {
-    return "BatchRequest{"
-        + "batchType='"
-        + batchType
-        + '\''
-        + ", resource='"
-        + resource
-        + '\''
-        + ", className='"
-        + className
-        + '\''
-        + ", name='"
-        + name
-        + '\''
-        + ", conf="
-        + conf
-        + ", args="
-        + args
-        + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

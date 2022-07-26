@@ -20,6 +20,8 @@ package org.apache.kyuubi.client.api.v1.dto;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class SessionOpenRequest {
   private int protocolVersion;
@@ -105,20 +107,6 @@ public class SessionOpenRequest {
 
   @Override
   public String toString() {
-    return "SessionOpenRequest{"
-        + "protocolVersion="
-        + protocolVersion
-        + ", user='"
-        + user
-        + '\''
-        + ", password='"
-        + password
-        + '\''
-        + ", ipAddr='"
-        + ipAddr
-        + '\''
-        + ", configs="
-        + configs
-        + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

@@ -20,6 +20,8 @@ package org.apache.kyuubi.client.api.v1.dto;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class GetTablesRequest {
   private String catalogName;
@@ -90,18 +92,6 @@ public class GetTablesRequest {
 
   @Override
   public String toString() {
-    return "GetTablesRequest{"
-        + "catalogName='"
-        + catalogName
-        + '\''
-        + ", schemaName='"
-        + schemaName
-        + '\''
-        + ", tableName='"
-        + tableName
-        + '\''
-        + ", tableTypes="
-        + tableTypes
-        + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

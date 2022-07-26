@@ -18,6 +18,8 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class GetColumnsRequest {
   private String catalogName;
@@ -85,19 +87,6 @@ public class GetColumnsRequest {
 
   @Override
   public String toString() {
-    return "GetColumnsRequest{"
-        + "catalogName='"
-        + catalogName
-        + '\''
-        + ", schemaName='"
-        + schemaName
-        + '\''
-        + ", tableName='"
-        + tableName
-        + '\''
-        + ", columnName='"
-        + columnName
-        + '\''
-        + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

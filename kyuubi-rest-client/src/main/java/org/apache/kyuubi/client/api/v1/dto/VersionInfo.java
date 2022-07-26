@@ -18,6 +18,8 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class VersionInfo {
   private String version;
@@ -51,6 +53,6 @@ public class VersionInfo {
 
   @Override
   public String toString() {
-    return "VersionInfo{" + "version='" + version + '\'' + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

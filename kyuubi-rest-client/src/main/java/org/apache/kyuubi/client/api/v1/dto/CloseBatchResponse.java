@@ -18,6 +18,8 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class CloseBatchResponse {
   private boolean success = false;
@@ -61,6 +63,6 @@ public class CloseBatchResponse {
 
   @Override
   public String toString() {
-    return "CloseBatchResponse{" + "success=" + success + ", msg='" + msg + '\'' + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

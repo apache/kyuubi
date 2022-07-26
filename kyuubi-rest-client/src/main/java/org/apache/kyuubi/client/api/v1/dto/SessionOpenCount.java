@@ -18,6 +18,8 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class SessionOpenCount {
   private int openSessionCount;
@@ -51,6 +53,6 @@ public class SessionOpenCount {
 
   @Override
   public String toString() {
-    return "SessionOpenCount{" + "openSessionCount=" + openSessionCount + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

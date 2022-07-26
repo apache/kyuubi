@@ -18,6 +18,8 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class ColumnDesc {
   private String columnName;
@@ -113,22 +115,6 @@ public class ColumnDesc {
 
   @Override
   public String toString() {
-    return "ColumnDesc{"
-        + "columnName='"
-        + columnName
-        + '\''
-        + ", dataType='"
-        + dataType
-        + '\''
-        + ", columnIndex="
-        + columnIndex
-        + ", precision="
-        + precision
-        + ", scale="
-        + scale
-        + ", comment='"
-        + comment
-        + '\''
-        + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

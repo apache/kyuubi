@@ -18,6 +18,8 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class GetCrossReferenceRequest {
   private String primaryCatalog;
@@ -118,25 +120,6 @@ public class GetCrossReferenceRequest {
 
   @Override
   public String toString() {
-    return "GetCrossReferenceRequest{"
-        + "primaryCatalog='"
-        + primaryCatalog
-        + '\''
-        + ", primarySchema='"
-        + primarySchema
-        + '\''
-        + ", primaryTable='"
-        + primaryTable
-        + '\''
-        + ", foreignCatalog='"
-        + foreignCatalog
-        + '\''
-        + ", foreignSchema='"
-        + foreignSchema
-        + '\''
-        + ", foreignTable='"
-        + foreignTable
-        + '\''
-        + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

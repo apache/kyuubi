@@ -18,6 +18,8 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class Batch {
   private String id;
@@ -173,41 +175,6 @@ public class Batch {
 
   @Override
   public String toString() {
-    return "Batch{"
-        + "id='"
-        + id
-        + '\''
-        + ", user='"
-        + user
-        + '\''
-        + ", batchType='"
-        + batchType
-        + '\''
-        + ", name='"
-        + name
-        + '\''
-        + ", appId='"
-        + appId
-        + '\''
-        + ", appUrl='"
-        + appUrl
-        + '\''
-        + ", appState='"
-        + appState
-        + '\''
-        + ", appDiagnostic='"
-        + appDiagnostic
-        + '\''
-        + ", kyuubiInstance='"
-        + kyuubiInstance
-        + '\''
-        + ", state='"
-        + state
-        + '\''
-        + ", createTime="
-        + createTime
-        + ", endTime="
-        + endTime
-        + '}';
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }
