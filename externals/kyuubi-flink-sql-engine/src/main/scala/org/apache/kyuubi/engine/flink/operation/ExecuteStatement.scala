@@ -19,24 +19,21 @@ package org.apache.kyuubi.engine.flink.operation
 
 import java.time.LocalDate
 import java.util
-import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.calcite.rel.metadata.{JaninoRelMetadataProvider, RelMetadataQueryBase}
 import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.client.gateway.TypedResult
 import org.apache.flink.table.data.{GenericArrayData, GenericMapData, RowData}
 import org.apache.flink.table.data.binary.{BinaryArrayData, BinaryMapData}
 import org.apache.flink.table.operations.{Operation, QueryOperation}
 import org.apache.flink.table.operations.command._
-import org.apache.flink.table.planner.plan.metadata.FlinkDefaultRelMetadataProvider
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.engine.flink.schema.RowSet.toHiveString
 import org.apache.kyuubi.operation.OperationState
@@ -69,38 +66,12 @@ class ExecuteStatement(
 
   override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
-    if (shouldRunAsync) {
-      val asyncOperation = new Runnable {
-        override def run(): Unit = {
-          OperationLog.setCurrentOperationLog(operationLog)
-          executeStatement()
-        }
-      }
-
-      try {
-        val flinkSQLSessionManager = session.sessionManager
-        val backgroundHandle = flinkSQLSessionManager.submitBackgroundOperation(asyncOperation)
-        setBackgroundHandle(backgroundHandle)
-      } catch {
-        case rejected: RejectedExecutionException =>
-          setState(OperationState.ERROR)
-          val ke =
-            KyuubiSQLException("Error submitting query in background, query rejected", rejected)
-          setOperationException(ke)
-          throw ke
-      }
-    } else {
-      executeStatement()
-    }
+    executeStatement()
   }
 
   private def executeStatement(): Unit = {
     try {
       setState(OperationState.RUNNING)
-
-      // set the thread variable THREAD_PROVIDERS
-      RelMetadataQueryBase.THREAD_PROVIDERS.set(
-        JaninoRelMetadataProvider.of(FlinkDefaultRelMetadataProvider.INSTANCE))
       val operation = executor.parseStatement(sessionId, statement)
       operation match {
         case queryOperation: QueryOperation => runQueryOperation(queryOperation)

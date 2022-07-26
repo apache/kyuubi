@@ -63,7 +63,10 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
         resultMaxRowsDefault.toString).toInt
     val op = OperationModes.withName(mode.toUpperCase(Locale.ROOT)) match {
       case NONE =>
-        new ExecuteStatement(session, statement, runAsync, queryTimeout, resultMaxRows)
+        // FLINK-24427 seals calcite classes which required to access in async mode, considering
+        // there is no much benefit in async mode, here we just ignore `runAsync` and always run
+        // statement in sync mode as a workaround
+        new ExecuteStatement(session, statement, false, queryTimeout, resultMaxRows)
       case mode =>
         new PlanOnlyStatement(session, statement, mode)
     }
