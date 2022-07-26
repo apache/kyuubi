@@ -49,7 +49,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
     // so we initialize it only when Kyuubi starts with the REST frontend.
     if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
-      .contains(FrontendProtocols.REST)) {
+        .contains(FrontendProtocols.REST)) {
       Some(new MetadataManager())
     } else {
       None
