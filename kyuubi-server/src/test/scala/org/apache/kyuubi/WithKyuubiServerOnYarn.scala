@@ -24,6 +24,7 @@ import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
+import org.apache.kyuubi.engine.ApplicationState._
 import org.apache.kyuubi.engine.YarnApplicationOperation
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.operation.{FetchOrientation, HiveJDBCTestHelper, OperationState}
@@ -132,8 +133,8 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
       val state = batchJobSubmissionOp.currentApplicationState
       assert(state.nonEmpty)
-      assert(state.exists(_("id").startsWith("application_")))
-      assert(state.exists(_("name") == preDefinedAppName))
+      assert(state.exists(_.id.startsWith("application_")))
+      assert(state.exists(_.name == preDefinedAppName))
     }
 
     val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
@@ -142,7 +143,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
 
     val appInfo = yarnOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
 
-    assert(appInfo("state") === "KILLED")
+    assert(appInfo.state === KILLED)
 
     eventually(timeout(10.minutes), interval(50.milliseconds)) {
       assert(batchJobSubmissionOp.getStatus.state === ERROR)
@@ -161,11 +162,11 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     val appError = rows("error")
 
     val state2 = batchJobSubmissionOp.currentApplicationState.get
-    assert(appId === state2("id"))
-    assert(appName === state2("name"))
-    assert(appState === state2("state"))
-    assert(appUrl === state2("url"))
-    assert(appError === state2("error"))
+    assert(appId === state2.id)
+    assert(appName === state2.name)
+    assert(appState === state2.state.toString)
+    assert(appUrl === state2.url.orNull)
+    assert(appError === state2.error.orNull)
     sessionManager.closeSession(sessionHandle)
   }
 
