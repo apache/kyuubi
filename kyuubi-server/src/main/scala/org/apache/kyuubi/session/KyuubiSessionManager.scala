@@ -59,11 +59,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private var limiter: Option[SessionLimiter] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
+    this.conf = conf
     addService(applicationManager)
     addService(credentialsManager)
-    this.conf = conf
     metadataManager.foreach(addService)
-
     initSessionLimiter(conf)
     super.initialize(conf)
   }
