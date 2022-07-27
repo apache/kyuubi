@@ -17,12 +17,16 @@
 
 package org.apache.kyuubi
 
+import scala.util.control.NonFatal
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_ZK_AUTH_TYPE}
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.service.AbstractFrontendService
+import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 trait WithKyuubiServer extends KyuubiFunSuite {
@@ -36,7 +40,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
   protected var server: KyuubiServer = _
 
   override def beforeAll(): Unit = {
-    conf.set(FRONTEND_PROTOCOLS, frontendProtocols.map(_.toString))
+    conf.setIfMissing(FRONTEND_PROTOCOLS, frontendProtocols.map(_.toString))
     conf.set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(FRONTEND_REST_BIND_PORT, 0)
     conf.set(FRONTEND_MYSQL_BIND_PORT, 0)
@@ -52,6 +56,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
 
     conf.set("spark.ui.enabled", "false")
     conf.setIfMissing("spark.sql.catalogImplementation", "in-memory")
+    conf.setIfMissing("kyuubi.ha.zookeeper.connection.retry.policy", "ONE_TIME")
     conf.setIfMissing(ENGINE_CHECK_INTERVAL, 1000L)
     conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 5000L)
     server = KyuubiServer.startServer(conf)
@@ -59,6 +64,20 @@ trait WithKyuubiServer extends KyuubiFunSuite {
   }
 
   override def afterAll(): Unit = {
+    server.frontendServices.foreach {
+      case frontend: AbstractFrontendService =>
+        val sessionManager = frontend.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+        sessionManager.allSessions().foreach { session =>
+          logger.warn(s"found unclosed session ${session.handle}.")
+          try {
+            sessionManager.closeSession(session.handle)
+          } catch {
+            case NonFatal(e) =>
+              logger.warn(s"catching an error while closing the session ${session.handle}", e)
+          }
+        }
+      case _ =>
+    }
 
     if (server != null) {
       server.stop()

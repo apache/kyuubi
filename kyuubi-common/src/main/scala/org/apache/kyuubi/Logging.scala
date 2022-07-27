@@ -24,6 +24,8 @@ import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.bridge.SLF4JBridgeHandler
 import org.slf4j.impl.StaticLoggerBinder
 
+import org.apache.kyuubi.util.ClassUtils
+
 /**
  * Simple version of logging adopted from Apache Spark.
  */
@@ -93,9 +95,11 @@ trait Logging {
   }
 
   private def initializeLogging(isInterpreter: Boolean): Unit = {
-    // Handles configuring the JUL -> SLF4J bridge
-    SLF4JBridgeHandler.removeHandlersForRootLogger()
-    SLF4JBridgeHandler.install()
+    if (ClassUtils.classIsLoadable("org.slf4j.bridge.SLF4JBridgeHandler")) {
+      // Handles configuring the JUL -> SLF4J bridge
+      SLF4JBridgeHandler.removeHandlersForRootLogger()
+      SLF4JBridgeHandler.install()
+    }
 
     if (Logging.isLog4j2) {
       // scalastyle:off println

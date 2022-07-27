@@ -44,12 +44,6 @@
             <artifactId>jsr305</artifactId>
             <optional>true</optional>
         </dependency>
-
-        <!-- TODO: mark as optional once provide JAAS-based Kerberos authentication   -->
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-api</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
@@ -67,7 +61,6 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <excludes>
-                            <exclude>org.apache.hadoop:*</exclude>
                             <exclude>com.google.code.findbugs:jsr305</exclude>
                         </excludes>
                     </artifactSet>

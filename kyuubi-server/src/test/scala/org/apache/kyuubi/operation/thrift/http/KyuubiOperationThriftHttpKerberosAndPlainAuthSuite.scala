@@ -35,8 +35,8 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
   override protected val frontendProtocols: Seq[KyuubiConf.FrontendProtocols.Value] =
     FrontendProtocols.THRIFT_HTTP :: Nil
 
-  override protected def kerberosJdbcUrl: String =
-    jdbcUrl.stripSuffix(";") + s";principal=${testSpnegoPrincipal}"
+  override protected def kerberosTgtJdbcUrl: String =
+    jdbcUrl.stripSuffix(";") + s";principal=$testSpnegoPrincipal"
 
   override protected lazy val conf: KyuubiConf = {
     val config = new Configuration()

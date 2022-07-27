@@ -19,10 +19,12 @@ package org.apache.kyuubi.operation
 
 import java.sql.{DriverManager, SQLException}
 
+import scala.sys.process._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.{KerberizedTestHelper, WithKyuubiServer}
+import org.apache.kyuubi.{KerberizedTestHelper, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
@@ -32,7 +34,9 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
   private val customPasswd: String = "password"
 
   override protected def jdbcUrl: String = getJdbcUrl
-  protected def kerberosJdbcUrl: String = jdbcUrl.stripSuffix(";") + s";principal=${testPrincipal}"
+  protected def kerberosTgtJdbcUrl: String = jdbcUrl.stripSuffix(";") + s";principal=$testPrincipal"
+  protected def kerberosKeytabJdbcUrl: String = kerberosTgtJdbcUrl.stripSuffix(";") +
+    s";kyuubiClientPrincipal=$testPrincipal;kyuubiClientKeytab=$testKeytab"
   private val currentUser = UserGroupInformation.getCurrentUser
 
   override def beforeAll(): Unit = {
@@ -65,8 +69,30 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
   }
 
-  test("test with KERBEROS authentication") {
-    val conn = DriverManager.getConnection(jdbcUrlWithConf(kerberosJdbcUrl), user, "")
+  test("test with KERBEROS TGT cache authentication") {
+    assume(Utils.isCommandAvailable("kinit"))
+    // run kinit to generate tgt cache
+    val commands = Seq("kinit", "-kt", testKeytab, testPrincipal)
+    val kinitProc = new java.lang.ProcessBuilder(commands: _*).inheritIO()
+    kinitProc.environment().put("KRB5_CONFIG", krb5ConfPath)
+    val ret = kinitProc.start().waitFor()
+    assert(ret === 0, "kinit failed")
+
+    val conn = DriverManager.getConnection(jdbcUrlWithConf(kerberosTgtJdbcUrl), user, "")
+    try {
+      val statement = conn.createStatement()
+      val resultSet = statement.executeQuery("select engine_name()")
+      assert(resultSet.next())
+      assert(resultSet.getString(1).nonEmpty)
+    } finally {
+      conn.close()
+      "kdestroy".!
+    }
+  }
+
+  test("test with KERBEROS keytab authentication") {
+    val jdbcUrl = jdbcUrlWithConf(kerberosKeytabJdbcUrl)
+    val conn = DriverManager.getConnection(jdbcUrl, user, "")
     try {
       val statement = conn.createStatement()
       val resultSet = statement.executeQuery("select engine_name()")

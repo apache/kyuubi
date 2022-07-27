@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.util
 
+import scala.util.Try
+
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -48,5 +50,12 @@ object ClassUtils {
       case _ => throw new KyuubiException(
           s"$className must extend of ${expected.getName}")
     }
+  }
+
+  /** Determines whether the provided class is loadable. */
+  def classIsLoadable(
+      clazz: String,
+      cl: ClassLoader = Thread.currentThread().getContextClassLoader): Boolean = {
+    Try { Class.forName(clazz, false, cl) }.isSuccess
   }
 }

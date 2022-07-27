@@ -20,6 +20,8 @@ package org.apache.kyuubi.client.api.v1.dto;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class Row {
   private List<Field> fields;
@@ -52,5 +54,10 @@ public class Row {
   @Override
   public int hashCode() {
     return Objects.hash(getFields());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

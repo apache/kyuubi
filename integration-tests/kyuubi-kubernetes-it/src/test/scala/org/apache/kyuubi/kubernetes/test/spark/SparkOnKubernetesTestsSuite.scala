@@ -23,20 +23,18 @@ import scala.concurrent.duration._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
 
-import org.apache.kyuubi.{Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
-import org.apache.kyuubi.client.api.v1.dto.BatchRequest
+import org.apache.kyuubi.{BatchTestHelper, Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.engine.{ApplicationOperation, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, FINISHED, NOT_FOUND, RUNNING}
-import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
 
 abstract class SparkOnKubernetesSuiteBase
-  extends WithKyuubiServer with Logging {
+  extends WithKyuubiServer with Logging with BatchTestHelper {
   private val apiServerAddress = {
     MiniKube.getKubernetesClient.getMasterUrl.toString
   }
@@ -53,6 +51,7 @@ abstract class SparkOnKubernetesSuiteBase
       .set("spark.kubernetes.driver.request.cores", "250m")
       .set("spark.kubernetes.executor.request.cores", "250m")
       .set("kyuubi.kubernetes.context", "minikube")
+      .set("kyuubi.frontend.protocols", "THRIFT_BINARY,REST")
   }
 }
 
@@ -134,14 +133,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   test("Spark Client Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
-    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
-    val batchRequest = new BatchRequest(
-      "spark",
-      sparkProcessBuilder.mainResource.get,
-      sparkProcessBuilder.mainClass,
-      null,
-      conf.getAll.asJava,
-      Seq.empty[String].asJava)
+    val batchRequest = newSparkBatchRequest(conf.getAll)
 
     val sessionHandle = sessionManager.openBatchSession(
       "kyuubi",
@@ -189,14 +181,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       "spark.kubernetes.driver.pod.name",
       driverPodNamePrefix + "-" + System.currentTimeMillis())
 
-    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", conf)
-    val batchRequest = new BatchRequest(
-      "spark",
-      sparkProcessBuilder.mainResource.get,
-      sparkProcessBuilder.mainClass,
-      null,
-      conf.getAll.asJava,
-      Seq.empty[String].asJava)
+    val batchRequest = newSparkBatchRequest(conf.getAll)
 
     val sessionHandle = sessionManager.openBatchSession(
       "runner",

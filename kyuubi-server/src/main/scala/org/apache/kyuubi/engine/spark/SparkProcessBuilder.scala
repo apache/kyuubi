@@ -46,13 +46,29 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
-  private val sparkHome = getEngineHome(shortName)
+  private[kyuubi] val sparkHome = getEngineHome(shortName)
 
   override protected val executable: String = {
     Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toFile.getCanonicalPath
   }
 
   override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
+
+  /**
+   * Converts kyuubi config key so that Spark could identify.
+   * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
+   * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
+   * - Otherwise, the key will be added a `spark.` prefix
+   */
+  protected def convertConfigKey(key: String): String = {
+    if (key.startsWith("spark.")) {
+      key
+    } else if (key.startsWith("hadoop.")) {
+      "spark.hadoop." + key
+    } else {
+      "spark." + key
+    }
+  }
 
   override protected val commands: Array[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
@@ -69,23 +85,9 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
 
-    /**
-     * Converts kyuubi configs to configs that Spark could identify.
-     * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
-     * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
-     * - Otherwise, the key will be added a `spark.` prefix
-     */
     allConf.foreach { case (k, v) =>
-      val newKey =
-        if (k.startsWith("spark.")) {
-          k
-        } else if (k.startsWith("hadoop.")) {
-          "spark.hadoop." + k
-        } else {
-          "spark." + k
-        }
       buffer += CONF
-      buffer += s"$newKey=$v"
+      buffer += s"${convertConfigKey(k)}=$v"
     }
 
     // iff the keytab is specified, PROXY_USER is not supported

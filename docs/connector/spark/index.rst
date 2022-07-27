@@ -23,7 +23,7 @@ By default, it provides accessibility to hive warehouses with various file forma
 supported, such as parquet, orc, json, etc.
 
 Also，it can easily integrate with other third-party libraries, such as Hudi,
-Iceberg, Delta Lake, Kudu, HBase，Cassandra, etc.
+Iceberg, Delta Lake, Kudu, Flink Table Store, HBase，Cassandra, etc.
 
 We also provide sample data sources like TDC-DS, TPC-H for testing and benchmarking
 purpose.
@@ -36,6 +36,7 @@ purpose.
     hudi
     iceberg
     kudu
+    flink_table_store
     tispark
     tpcds
     tpch

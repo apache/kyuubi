@@ -35,7 +35,7 @@ import org.apache.kyuubi.service.ServiceState
 trait DiscoveryClientTests extends KyuubiFunSuite {
   protected val conf: KyuubiConf
 
-  protected def getConnectString(): String
+  protected def getConnectString: String
 
   test("publish instance to embedded zookeeper server") {
     val namespace = "kyuubiserver"
@@ -90,7 +90,7 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
       conf
         .unset(KyuubiConf.SERVER_KEYTAB)
         .unset(KyuubiConf.SERVER_PRINCIPAL)
-        .set(HA_ADDRESSES, getConnectString())
+        .set(HA_ADDRESSES, getConnectString)
         .set(HA_NAMESPACE, namespace)
         .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
         .set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)

@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class BatchRequest {
   private String batchType;
@@ -127,5 +129,10 @@ public class BatchRequest {
   public int hashCode() {
     return Objects.hash(
         getBatchType(), getResource(), getClassName(), getName(), getConf(), getArgs());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

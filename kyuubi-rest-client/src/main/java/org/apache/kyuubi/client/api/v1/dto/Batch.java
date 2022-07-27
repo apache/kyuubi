@@ -18,6 +18,8 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class Batch {
   private String id;
@@ -169,5 +171,10 @@ public class Batch {
   @Override
   public int hashCode() {
     return Objects.hash(getId());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

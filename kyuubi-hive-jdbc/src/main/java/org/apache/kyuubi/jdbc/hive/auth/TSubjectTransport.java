@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.jdbc.hive.auth;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import javax.security.auth.Subject;
@@ -26,35 +24,35 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 /**
- * This is used on the client side, where the API explicitly opens a transport to the server using
- * the Subject.doAs().
+ * This is used on the client side, where the API explicitly opens transport to the server using the
+ * Subject.doAs().
  */
-public class TSubjectAssumingTransport extends TFilterTransport {
+public class TSubjectTransport extends TFilterTransport {
 
-  public TSubjectAssumingTransport(TTransport wrapped) {
+  private final Subject subject;
+
+  public TSubjectTransport(TTransport wrapped, Subject subject) {
     super(wrapped);
+    this.subject = subject;
   }
 
   @Override
   public void open() throws TTransportException {
     try {
-      AccessControlContext context = AccessController.getContext();
-      Subject subject = Subject.getSubject(context);
       Subject.doAs(
           subject,
-          new PrivilegedExceptionAction<Void>() {
-            public Void run() {
-              try {
-                wrapped.open();
-              } catch (TTransportException tte) {
-                // Wrap the transport exception in an RTE, since Subject.doAs() then goes
-                // and unwraps this for us out of the doAs block. We then unwrap one
-                // more time in our catch clause to get back the TTE. (ugh)
-                throw new RuntimeException(tte);
-              }
-              return null;
-            }
-          });
+          (PrivilegedExceptionAction<Void>)
+              () -> {
+                try {
+                  wrapped.open();
+                } catch (TTransportException tte) {
+                  // Wrap the transport exception in an RTE, since Subject.doAs() then goes
+                  // and unwraps this for us out of the doAs block. We then unwrap one
+                  // more time in our catch clause to get back the TTE. (ugh)
+                  throw new RuntimeException(tte);
+                }
+                return null;
+              });
     } catch (PrivilegedActionException ioe) {
       throw new RuntimeException("Received an ioe we never threw!", ioe);
     } catch (RuntimeException rte) {

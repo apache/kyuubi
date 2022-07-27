@@ -18,6 +18,8 @@
 package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class Field {
   private String dataType;
@@ -58,5 +60,10 @@ public class Field {
   @Override
   public int hashCode() {
     return Objects.hash(getDataType(), getValue());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }
