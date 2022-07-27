@@ -169,7 +169,8 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      assert(batchJobSubmissionOp.currentApplicationState.isEmpty)
+      assert(batchJobSubmissionOp.currentApplicationState.isDefined)
+      assert(batchJobSubmissionOp.currentApplicationState.get.id == null)
       assert(batchJobSubmissionOp.getStatus.state === OperationState.ERROR)
     }
   }
