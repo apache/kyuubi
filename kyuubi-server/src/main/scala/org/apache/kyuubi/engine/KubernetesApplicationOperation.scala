@@ -143,8 +143,7 @@ object KubernetesApplicationOperation {
     case "Pending" => PENDING
     case "Running" => RUNNING
     case "Succeeded" => FINISHED
-    case "Failed" => FAILED
-    case "Error" => FAILED
+    case "Failed" | "Error" => FAILED
     case "Unknown" => NOT_FOUND
     case _ => throw new IllegalStateException("Not support state: " + state)
   }

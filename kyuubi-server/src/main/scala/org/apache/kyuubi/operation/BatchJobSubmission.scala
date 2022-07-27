@@ -162,9 +162,13 @@ class BatchJobSubmission(
           recoveryMetadata.map { metadata =>
             if (metadata.state == OperationState.PENDING.toString) {
               applicationStatus = currentApplicationState
-              Option(applicationStatus.map(_.id)).map {
-                case Some(appId) => monitorBatchJob(appId)
-                case None => submitAndMonitorBatchJob()
+              applicationStatus.map(_.id) match {
+                case Some(null) =>
+                  submitAndMonitorBatchJob()
+                case Some(appId) =>
+                  monitorBatchJob(appId)
+                case None =>
+                  submitAndMonitorBatchJob()
               }
             } else {
               monitorBatchJob(metadata.engineId)
@@ -283,10 +287,9 @@ class BatchJobSubmission(
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
-    currentApplicationState.map { state =>
-      val tRow = new TRowSet(0, new JArrayList[TRow](state.productArity))
-
-      state.toKeyValueList.map(_.asJava).foreach { col =>
+    currentApplicationState.map(_.toMap).map { state =>
+      val tRow = new TRowSet(0, new JArrayList[TRow](state.size))
+      Seq(state.keys, state.values).map(_.toSeq.asJava).foreach { col =>
         val tCol = TColumn.stringVal(new TStringColumn(col, ByteBuffer.allocate(0)))
         tRow.addToColumns(tCol)
       }

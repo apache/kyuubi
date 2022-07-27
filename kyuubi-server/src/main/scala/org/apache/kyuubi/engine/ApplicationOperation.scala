@@ -73,24 +73,13 @@ case class ApplicationInfo(
     url: Option[String] = None,
     error: Option[String] = None) {
 
-  def toKeyValueList: Seq[Seq[String]] = {
-    val values = new Iterator[String] {
-      private val original = productIterator
-      override def hasNext: Boolean = {
-        original.hasNext
-      }
-
-      override def next(): String = {
-        original.next() match {
-          case null => null
-          case None => null
-          case Some(v) => v.toString
-          case e: Enumeration => e.toString()
-          case other => other.toString
-        }
-      }
-    }
-    Seq(Seq("id", "name", "state", "url", "error"), values.toSeq)
+  def toMap: Map[String, String] = {
+    Map(
+      "id" -> id,
+      "name" -> name,
+      "state" -> state.toString,
+      "url" -> url.orNull,
+      "error" -> error.orNull)
   }
 }
 
