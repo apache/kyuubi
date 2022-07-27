@@ -31,8 +31,6 @@ import org.apache.kyuubi.service.NoopTBinaryFrontendServer
 
 class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
 
-  val etcdVersion = "3.5.4"
-
   private var etcdCluster: EtcdCluster = _
   var engineServer: NoopTBinaryFrontendServer = _
 
@@ -47,7 +45,7 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
 
   override def beforeAll(): Unit = {
     etcdCluster = new Etcd.Builder()
-      .withImage(s"gcr.io/etcd-development/etcd:v$etcdVersion")
+      .withImage("gcr.io/etcd-development/etcd:v3.5.4")
       .withNodes(2)
       .build()
     etcdCluster.start()
