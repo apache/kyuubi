@@ -18,6 +18,7 @@
 package org.apache.kyuubi.client;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
@@ -68,7 +69,9 @@ public class RestClientTestUtils {
             "spark",
             "/MySpace/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar",
             "org.apache.kyuubi.engine.spark.SparkSQLEngine",
-            "test_batch");
+            "test_batch",
+            Collections.singletonMap("spark.driver.memory", "16m"),
+            Collections.emptyList());
     return batchRequest;
   }
 
