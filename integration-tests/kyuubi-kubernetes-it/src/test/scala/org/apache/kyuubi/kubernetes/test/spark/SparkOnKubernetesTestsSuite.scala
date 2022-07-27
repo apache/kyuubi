@@ -208,7 +208,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
       // We may kill engine start but not ready
       // An EOF Error occurred when the driver was starting
-      assert(appInfo.state == FAILED || appInfo.state == FINISHED)
+      assert(appInfo.state == FAILED || appInfo.state == NOT_FOUND)
     }
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
