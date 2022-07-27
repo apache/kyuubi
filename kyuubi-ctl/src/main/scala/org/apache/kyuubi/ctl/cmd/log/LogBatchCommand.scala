@@ -22,11 +22,12 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, OperationLog}
+import org.apache.kyuubi.client.util.BatchUtils
 import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.CtlConf._
 import org.apache.kyuubi.ctl.RestClientFactory.{withKyuubiInstanceRestClient, withKyuubiRestClient}
 import org.apache.kyuubi.ctl.cmd.Command
-import org.apache.kyuubi.ctl.util.{BatchUtil, Render}
+import org.apache.kyuubi.ctl.util.Render
 
 class LogBatchCommand(
     cliConfig: CliConfig,
@@ -105,13 +106,13 @@ class LogBatchCommand(
     if (normalizedCliConfig.batchOpts.waitCompletion) {
       if (log == null || log.getLogRowSet.size == 0) {
         batch = batchRestApi.getBatchById(batchId)
-        if (BatchUtil.isTerminalState(batch.getState)) {
+        if (BatchUtils.isTerminalState(batch.getState)) {
           return (batch, true)
         }
       }
     } else {
       batch = batchRestApi.getBatchById(batchId)
-      if (!BatchUtil.isPendingState(batch.getState)) {
+      if (!BatchUtils.isPendingState(batch.getState)) {
         return (batch, true)
       }
     }
