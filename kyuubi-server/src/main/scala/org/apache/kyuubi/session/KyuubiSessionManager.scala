@@ -185,7 +185,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   def getMetadataRequestsRetryRef(identifier: String): Option[MetadataRequestsRetryRef] = {
-    metadataManager.map(_.getMetadataRequestsRetryRef(identifier))
+    Option(metadataManager.map(_.getMetadataRequestsRetryRef(identifier)).orNull)
   }
 
   def deRegisterMetadataRequestsRetryRef(identifier: String): Unit = {
@@ -206,7 +206,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       size: Int): Seq[Batch] = {
     metadataManager.map(
       _.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size))
-      .getOrElse(Seq.empty)
+      .orNull
   }
 
   def getBatchMetadata(batchId: String): Metadata = {
@@ -249,8 +249,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           metadata.requestConf,
           batchRequest,
           Some(metadata))
-      })
-        .getOrElse(Seq.empty)
+      }).orNull
     }
   }
 
@@ -260,8 +259,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         stateToKill.toString,
         kyuubiInstance,
         0,
-        Int.MaxValue))
-        .getOrElse(Seq.empty)
+        Int.MaxValue)).orNull
     }
   }
 
