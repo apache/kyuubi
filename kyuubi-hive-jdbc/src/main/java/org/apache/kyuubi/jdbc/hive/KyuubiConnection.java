@@ -124,7 +124,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
-    setupTimeout();
     try {
       connParams = Utils.parseURL(uri, info);
     } catch (ZooKeeperHiveClientException e) {
@@ -140,6 +139,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     host = Utils.getCanonicalHostName(connParams.getHost());
     port = connParams.getPort();
     sessConfMap = connParams.getSessionVars();
+    setupTimeout();
 
     if (sessConfMap.containsKey(FETCH_SIZE)) {
       fetchSize = Integer.parseInt(sessConfMap.get(FETCH_SIZE));
@@ -868,24 +868,22 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private void setupTimeout() {
     if (sessConfMap.containsKey(CONNECT_TIMEOUT)) {
-      long connectTimeoutMs = 0;
-      String loginTimeoutStr = getSessionValue(CONNECT_TIMEOUT, "0");
+      String loginTimeoutStr = sessConfMap.get(CONNECT_TIMEOUT);
       try {
-        connectTimeoutMs = Long.parseLong(loginTimeoutStr);
+        long connectTimeoutMs = Long.parseLong(loginTimeoutStr);
+        connectTimeout = (int) Math.max(0, Math.min(connectTimeoutMs, Integer.MAX_VALUE));
       } catch (NumberFormatException e) {
         LOG.info("Failed to parse connectTimeout of value " + loginTimeoutStr);
       }
-      connectTimeout = (int) Math.max(0, Math.min(connectTimeoutMs, Integer.MAX_VALUE));
     }
     if (sessConfMap.containsKey(SOCKET_TIMEOUT)) {
-      long socketTimeoutMs = 0;
       String socketTimeoutStr = sessConfMap.get(SOCKET_TIMEOUT);
       try {
-        socketTimeoutMs = Long.parseLong(socketTimeoutStr);
+        long socketTimeoutMs = Long.parseLong(socketTimeoutStr);
+        socketTimeout = (int) Math.max(0, Math.min(socketTimeoutMs, Integer.MAX_VALUE));
       } catch (NumberFormatException e) {
         LOG.info("Failed to parse socketTimeout of value " + socketTimeoutStr);
       }
-      socketTimeout = (int) Math.max(0, Math.min(socketTimeoutMs, Integer.MAX_VALUE));
     }
   }
 
