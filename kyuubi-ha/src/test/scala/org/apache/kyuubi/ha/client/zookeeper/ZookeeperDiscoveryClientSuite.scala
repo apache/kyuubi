@@ -44,7 +44,7 @@ class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests with Kerberized
   val zkServer = new EmbeddedZookeeper()
   override val conf: KyuubiConf = KyuubiConf()
 
-  override def getConnectString(): String = zkServer.getConnectString
+  override def getConnectString: String = zkServer.getConnectString
 
   override def beforeAll(): Unit = {
     conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
