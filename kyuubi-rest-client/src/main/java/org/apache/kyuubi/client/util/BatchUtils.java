@@ -22,34 +22,37 @@ import java.util.List;
 import java.util.Locale;
 
 public final class BatchUtils {
-    /**
-     * The lifecycle of batch state is:
-     *
-     *                        /  ERROR
-     * PENDING  ->  RUNNING  ->  FINISHED
-     *                        \  CANCELED
-     *
-     */
-    static String PENDING_STATE = "PENDING";
-    static String RUNNING_STATE = "RUNNING";
-    static String FINISHED_STATE = "FINISHED";
-    static String ERROR_STATE = "ERROR";
-    static String CANCELED_STATE = "CANCELED";
-    static List<String> terminalBatchStates = Arrays.asList(FINISHED_STATE, ERROR_STATE, CANCELED_STATE);
+  /** The batch has not been submitted to resource manager yet. */
+  public static String PENDING_STATE = "PENDING";
 
-    public static boolean isPendingState(String state) {
-        return PENDING_STATE.equalsIgnoreCase(state);
-    }
+  /** The batch has been submitted to resource manager and is running. */
+  public static String RUNNING_STATE = "RUNNING";
 
-    public static boolean isRunningState(String state) {
-        return RUNNING_STATE.equalsIgnoreCase(state);
-    }
+  /** The batch has been finished successfully. */
+  public static String FINISHED_STATE = "FINISHED";
 
-    public static boolean isFinishedState(String state) {
-        return FINISHED_STATE.equalsIgnoreCase(state);
-    }
+  /** The batch met some issue and failed. */
+  public static String ERROR_STATE = "ERROR";
 
-    public static boolean isTerminalState(String state) {
-        return state != null && terminalBatchStates.contains(state.toUpperCase(Locale.ROOT));
-    }
+  /** The batch was closed by `DELETE /batches/${batchId}` api. */
+  public static String CANCELED_STATE = "CANCELED";
+
+  public static List<String> terminalBatchStates =
+      Arrays.asList(FINISHED_STATE, ERROR_STATE, CANCELED_STATE);
+
+  public static boolean isPendingState(String state) {
+    return PENDING_STATE.equalsIgnoreCase(state);
+  }
+
+  public static boolean isRunningState(String state) {
+    return RUNNING_STATE.equalsIgnoreCase(state);
+  }
+
+  public static boolean isFinishedState(String state) {
+    return FINISHED_STATE.equalsIgnoreCase(state);
+  }
+
+  public static boolean isTerminalState(String state) {
+    return state != null && terminalBatchStates.contains(state.toUpperCase(Locale.ROOT));
+  }
 }
