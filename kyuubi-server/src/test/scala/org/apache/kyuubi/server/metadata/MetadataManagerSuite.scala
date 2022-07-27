@@ -104,7 +104,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     val failedRequests =
       MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_FAIL).getOrElse(0L)
     val retryingRequests =
-      MetricsSystem.counterValue(MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L)
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L)
 
     val metadata = Metadata(
       identifier = UUID.randomUUID().toString,
@@ -130,7 +130,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     assert(
       MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_FAIL).getOrElse(
         0L) - failedRequests === 0)
-    assert(MetricsSystem.counterValue(
+    assert(MetricsSystem.meterValue(
       MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L) - retryingRequests === 0)
 
     val invalidMetadata = metadata.copy(kyuubiInstance = null)
@@ -141,7 +141,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     assert(
       MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_FAIL).getOrElse(
         0L) - failedRequests === 1)
-    assert(MetricsSystem.counterValue(
+    assert(MetricsSystem.meterValue(
       MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L) - retryingRequests === 0)
 
     metadataManager.insertMetadata(invalidMetadata, true)
@@ -152,7 +152,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     assert(
       MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_FAIL).getOrElse(
         0L) - failedRequests === 2)
-    assert(MetricsSystem.counterValue(
+    assert(MetricsSystem.meterValue(
       MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L) - retryingRequests === 1)
   }
 }
