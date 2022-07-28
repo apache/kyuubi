@@ -37,6 +37,6 @@ purpose.
     iceberg
     kudu
     flink_table_store
-    tispark
+    tidb
     tpcds
     tpch

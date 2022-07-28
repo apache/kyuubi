@@ -13,37 +13,39 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-`TiSpark`_
+`TiDB`_
 ==========
 
+TiDB is an open-source NewSQL database that supports Hybrid Transactional and Analytical Processing
+(HTAP) workloads.
+
 TiSpark is a thin layer built for running Apache Spark on top of TiDB/TiKV to answer complex OLAP
-queries. It enjoys the merits of both the Spark platform and the distributed clusters of TiKV while
-seamlessly integrated to TiDB, a distributed OLTP database, to provide one-stop Hybrid
-Transactional/Analytical Processing (HTAP) solutions for online transactions and analyses.
+queries. It enjoys the merits of both the Spark platform and the distributed clusters
+of TiKV while seamlessly integrated to TiDB to provide one-stop HTAP solutions for online
+transactions and analyses.
 
 .. tip::
-   This article assumes that you have mastered the basic knowledge and operation of TiSpark.
-   For the knowledge about TiSpark not mentioned in this article,
-   you can obtain it from its `Official Documentation`_.
+   This article assumes that you have mastered the basic knowledge and operation of TiDB and TiSpark.
+   For the knowledge not mentioned in this article, you can obtain it from TiDB `Official Documentation`_.
 
-By using kyuubi, we can run SQL queries towards TiSpark which is more
+By using kyuubi, we can run SQL queries towards TiDB/TiKV which is more
 convenient, easy to understand, and easy to expand than directly using
-spark to manipulate TiSpark.
+spark to manipulate TiDB/TiKV.
 
-TiSpark Integration
+TiDB Integration
 -------------------
 
-To enable the integration of kyuubi spark sql engine and TiSpark through
+To enable the integration of kyuubi spark sql engine and TiDB through
 Apache Spark Datasource V2 and Catalog APIs, you need to:
 
-- Referencing the :ref:`dependencies`
+- Referencing the TiSpark :ref:`dependencies`
 - Setting the spark extension and catalog :ref:`configurations`
 
 .. _dependencies:
 
 Dependencies
 ************
-The classpath of kyuubi spark sql engine with TiSpark supported consists of
+The classpath of kyuubi spark sql engine with TiDB supported consists of
 
 1. kyuubi-spark-sql-engine-|release|.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution
@@ -77,7 +79,7 @@ allow you to put in multiple PD servers. Specify the port number for each of the
 For example, when you have multiple PD servers on `10.16.20.1,10.16.20.2,10.16.20.3` with the port `2379`,
 put it as `10.16.20.1:2379,10.16.20.2:2379,10.16.20.3:2379`.
 
-TiSpark Operations
+TiDB Operations
 ------------------
 
 Taking ``SELECT`` as a example,
@@ -93,9 +95,9 @@ Taking ``DELETE FROM`` as a example, Spark 3 added support for DELETE FROM queri
    DELETE FROM foo WHERE id >= 1 and id < 2;
 
 .. note::
-   As for now (TiSpark 3.0.1), TiSpark does not support ``CREATE TABLE``, ``INSERT INTO/OVERWRITE``` operations
+   As for now (TiSpark 3.0.1), TiSpark does not support ``CREATE TABLE``, ``INSERT INTO/OVERWRITE`` operations
    through Apache Spark Datasource V2 and Catalog APIs.
 
-.. _Official Documentation: https://docs.pingcap.com/tidb/stable/tispark-overview
+.. _Official Documentation: https://docs.pingcap.com/tidb/stable/overview
 .. _Maven Central: https://repo1.maven.org/maven2/com/pingcap/tispark/
 .. _Environment setup: https://docs.pingcap.com/tidb/stable/tispark-overview#environment-setup
