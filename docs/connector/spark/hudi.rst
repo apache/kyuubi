@@ -33,10 +33,10 @@ Hudi Integration
 To enable the integration of kyuubi spark sql engine and Hudi through
 Catalog APIs, you need to:
 
-- Referencing the Hudi :ref:`dependencies`
-- Setting the Spark extension and catalog :ref:`configurations`
+- Referencing the Hudi :ref:`dependencies<spark-hudi-deps>`
+- Setting the Spark extension and catalog :ref:`configurations<spark-hudi-conf>`
 
-.. _dependencies:
+.. _spark-hudi-deps:
 
 Dependencies
 ************
@@ -52,7 +52,7 @@ In order to make the Hudi packages visible for the runtime classpath of engines,
 1. Put the Hudi packages into ``$SPARK_HOME/jars`` directly
 2. Set ``spark.jars=/path/to/hudi-spark-bundle``
 
-.. _configurations:
+.. _spark-hudi-conf:
 
 Configurations
 **************

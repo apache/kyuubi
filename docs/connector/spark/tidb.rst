@@ -38,10 +38,10 @@ TiDB Integration
 To enable the integration of kyuubi spark sql engine and TiDB through
 Apache Spark Datasource V2 and Catalog APIs, you need to:
 
-- Referencing the TiSpark :ref:`dependencies`
-- Setting the spark extension and catalog :ref:`configurations`
+- Referencing the TiSpark :ref:`dependencies<spark-tidb-deps>`
+- Setting the spark extension and catalog :ref:`configurations<spark-tidb-conf>`
 
-.. _dependencies:
+.. _spark-tidb-deps:
 
 Dependencies
 ************
@@ -59,7 +59,7 @@ In order to make the TiSpark packages visible for the runtime classpath of engin
 .. warning::
    Please mind the compatibility of different TiDB, TiSpark and Spark versions, which can be confirmed on the page of `TiSpark Environment setup`_.
 
-.. _configurations:
+.. _spark-tidb-conf:
 
 Configurations
 **************

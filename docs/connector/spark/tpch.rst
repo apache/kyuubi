@@ -19,12 +19,12 @@ TPC-H
 TPC-DS Integration
 ------------------
 
-.. _dependencies:
+.. _spark-tpch-deps:
 
 Dependencies
 ************
 
-.. _configurations:
+.. _spark-tpch-conf:
 
 Configurations
 **************

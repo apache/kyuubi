@@ -34,10 +34,10 @@ Flink Table Store Integration
 To enable the integration of kyuubi spark sql engine and Flink Table Store through
 Apache Spark Datasource V2 and Catalog APIs, you need to:
 
-- Referencing the Flink Table Store :ref:`dependencies`
-- Setting the spark extension and catalog :ref:`configurations`
+- Referencing the Flink Table Store :ref:`dependencies<spark-flink-table-store-deps>`
+- Setting the spark extension and catalog :ref:`configurations<spark-flink-table-store-conf>`
 
-.. _dependencies:
+.. _spark-flink-table-store-deps:
 
 Dependencies
 ************
@@ -56,7 +56,7 @@ In order to make the Flink Table Store packages visible for the runtime classpat
 .. warning::
    Please mind the compatibility of different Flink Table Store and Spark versions, which can be confirmed on the page of `Flink Table Store multi engine support`_.
 
-.. _configurations:
+.. _spark-flink-table-store-conf:
 
 Configurations
 **************

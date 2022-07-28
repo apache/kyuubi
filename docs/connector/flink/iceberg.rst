@@ -34,9 +34,9 @@ Iceberg Integration
 
 To enable the integration of kyuubi flink sql engine and Iceberg through Catalog APIs, you need to:
 
-- Referencing the Iceberg :ref:`dependencies`
+- Referencing the Iceberg :ref:`dependencies<flink-iceberg-deps>`
 
-.. _dependencies:
+.. _flink-iceberg-deps:
 
 Dependencies
 ************
