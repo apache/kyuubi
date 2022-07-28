@@ -26,7 +26,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
-import org.apache.kyuubi.engine.YarnApplicationOperation.applicationStateMapping
+import org.apache.kyuubi.engine.YarnApplicationOperation.toApplicationState
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class YarnApplicationOperation extends ApplicationOperation with Logging {
@@ -87,7 +87,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
         val info = ApplicationInfo(
           id = report.getApplicationId.toString,
           name = report.getName,
-          state = applicationStateMapping(report.getYarnApplicationState),
+          state = toApplicationState(report.getYarnApplicationState),
           url = Option(report.getTrackingUrl),
           error = Option(report.getDiagnostics))
         debug(s"Successfully got application info by $tag: $info")
@@ -110,7 +110,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
 }
 
 object YarnApplicationOperation {
-  def applicationStateMapping(state: YarnApplicationState): ApplicationState = state match {
+  def toApplicationState(state: YarnApplicationState): ApplicationState = state match {
     case YarnApplicationState.NEW => ApplicationState.PENDING
     case YarnApplicationState.NEW_SAVING => ApplicationState.PENDING
     case YarnApplicationState.SUBMITTED => ApplicationState.PENDING

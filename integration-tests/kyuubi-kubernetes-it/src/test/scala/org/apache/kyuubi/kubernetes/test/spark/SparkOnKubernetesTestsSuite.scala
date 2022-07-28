@@ -26,7 +26,7 @@ import org.apache.hadoop.net.NetUtils
 import org.apache.kyuubi.{BatchTestHelper, Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
-import org.apache.kyuubi.engine.{ApplicationOperation, KubernetesApplicationOperation}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
@@ -154,9 +154,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
     assert(killResponse._2 startsWith "Succeeded to terminate:")
 
     val appInfo = k8sOperation.getApplicationInfoByTag(sessionHandle.identifier.toString)
-    assert(appInfo.id == null)
-    assert(appInfo.name == null)
-    assert(appInfo.state == NOT_FOUND)
+    assert(appInfo == ApplicationInfo(null, null, NOT_FOUND))
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
@@ -194,10 +192,10 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     val batchJobSubmissionOp = session.batchJobSubmissionOp
 
     eventually(timeout(3.minutes), interval(50.milliseconds)) {
-      val state = batchJobSubmissionOp.currentApplicationState
-      assert(state.nonEmpty)
-      assert(state.exists(_.state == RUNNING))
-      assert(state.exists(_.name.startsWith(driverPodNamePrefix)))
+      val appInfo = batchJobSubmissionOp.currentApplicationInfo
+      assert(appInfo.nonEmpty)
+      assert(appInfo.exists(_.state == RUNNING))
+      assert(appInfo.exists(_.name.startsWith(driverPodNamePrefix)))
     }
 
     val killResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)

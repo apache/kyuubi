@@ -73,7 +73,7 @@ class BatchJobSubmission(
 
   private[kyuubi] val batchId: String = session.handle.identifier.toString
 
-  private var applicationStatus: Option[ApplicationInfo] = None
+  private var applicationInfo: Option[ApplicationInfo] = None
 
   private var killMessage: KillResponse = (false, "UNKNOWN")
   def getKillMessage: KillResponse = killMessage
@@ -98,7 +98,7 @@ class BatchJobSubmission(
     }
   }
 
-  private[kyuubi] def currentApplicationState: Option[ApplicationInfo] = {
+  private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
     applicationManager.getApplicationInfo(builder.clusterManager(), batchId)
   }
 
@@ -117,7 +117,7 @@ class BatchJobSubmission(
         0L
       }
 
-    applicationStatus.foreach { status =>
+    applicationInfo.foreach { status =>
       val metadataToUpdate = Metadata(
         identifier = batchId,
         state = state.toString,
@@ -161,8 +161,8 @@ class BatchJobSubmission(
           // submitted batch application.
           recoveryMetadata.map { metadata =>
             if (metadata.state == OperationState.PENDING.toString) {
-              applicationStatus = currentApplicationState
-              applicationStatus.map(_.id) match {
+              applicationInfo = currentApplicationInfo
+              applicationInfo.map(_.id) match {
                 case Some(null) =>
                   submitAndMonitorBatchJob()
                 case Some(appId) =>
@@ -202,27 +202,27 @@ class BatchJobSubmission(
     try {
       info(s"Submitting $batchType batch[$batchId] job: $builder")
       val process = builder.start
-      applicationStatus = currentApplicationState
-      while (!applicationFailed(applicationStatus) && process.isAlive) {
-        if (!appStatusFirstUpdated && applicationStatus.isDefined) {
+      applicationInfo = currentApplicationInfo
+      while (!applicationFailed(applicationInfo) && process.isAlive) {
+        if (!appStatusFirstUpdated && applicationInfo.isDefined) {
           setStateIfNotCanceled(OperationState.RUNNING)
           updateBatchMetadata()
           appStatusFirstUpdated = true
         }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
-        applicationStatus = currentApplicationState
+        applicationInfo = currentApplicationInfo
       }
 
-      if (applicationFailed(applicationStatus)) {
+      if (applicationFailed(applicationInfo)) {
         process.destroyForcibly()
-        throw new RuntimeException(s"Batch job failed: $applicationStatus")
+        throw new RuntimeException(s"Batch job failed: $applicationInfo")
       } else {
         process.waitFor()
         if (process.exitValue() != 0) {
           throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
         }
 
-        Option(applicationStatus.map(_.id)).foreach {
+        Option(applicationInfo.map(_.id)).foreach {
           case Some(appId) => monitorBatchJob(appId)
           case _ =>
         }
@@ -234,30 +234,30 @@ class BatchJobSubmission(
 
   private def monitorBatchJob(appId: String): Unit = {
     info(s"Monitoring submitted $batchType batch[$batchId] job: $appId")
-    if (applicationStatus.isEmpty) {
-      applicationStatus = currentApplicationState
+    if (applicationInfo.isEmpty) {
+      applicationInfo = currentApplicationInfo
     }
     if (state == OperationState.PENDING) {
       setStateIfNotCanceled(OperationState.RUNNING)
     }
-    if (applicationStatus.isEmpty) {
+    if (applicationInfo.isEmpty) {
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
-    } else if (applicationFailed(applicationStatus)) {
-      throw new RuntimeException(s"$batchType batch[$batchId] job failed: $applicationStatus")
+    } else if (applicationFailed(applicationInfo)) {
+      throw new RuntimeException(s"$batchType batch[$batchId] job failed: $applicationInfo")
     } else {
       updateBatchMetadata()
       // TODO: add limit for max batch job submission lifetime
-      while (applicationStatus.isDefined && !applicationTerminated(applicationStatus)) {
+      while (applicationInfo.isDefined && !applicationTerminated(applicationInfo)) {
         Thread.sleep(applicationCheckInterval)
-        val newApplicationStatus = currentApplicationState
-        if (newApplicationStatus != applicationStatus) {
-          applicationStatus = newApplicationStatus
-          info(s"Batch report for $batchId, $applicationStatus")
+        val newApplicationStatus = currentApplicationInfo
+        if (newApplicationStatus != applicationInfo) {
+          applicationInfo = newApplicationStatus
+          info(s"Batch report for $batchId, $applicationInfo")
         }
       }
 
-      if (applicationFailed(applicationStatus)) {
-        throw new RuntimeException(s"$batchType batch[$batchId] job failed: $applicationStatus")
+      if (applicationFailed(applicationInfo)) {
+        throw new RuntimeException(s"$batchType batch[$batchId] job failed: $applicationInfo")
       }
     }
   }
@@ -287,7 +287,7 @@ class BatchJobSubmission(
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
-    currentApplicationState.map(_.toMap).map { state =>
+    currentApplicationInfo.map(_.toMap).map { state =>
       val tRow = new TRowSet(0, new JArrayList[TRow](state.size))
       Seq(state.keys, state.values).map(_.toSeq.asJava).foreach { col =>
         val tCol = TColumn.stringVal(new TStringColumn(col, ByteBuffer.allocate(0)))

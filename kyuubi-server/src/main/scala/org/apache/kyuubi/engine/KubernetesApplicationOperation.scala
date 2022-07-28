@@ -95,7 +95,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             // Can't get appId, get Pod UID instead.
             id = pod.getMetadata.getUid,
             name = pod.getMetadata.getName,
-            state = applicationStateMapping(pod.getStatus.getPhase),
+            state = toApplicationState(pod.getStatus.getPhase),
             error = Option(pod.getStatus.getReason))
           debug(s"Successfully got application info by $tag: $info")
           info
@@ -137,7 +137,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 object KubernetesApplicationOperation {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
 
-  def applicationStateMapping(state: String): ApplicationState = state match {
+  def toApplicationState(state: String): ApplicationState = state match {
     // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go#L2396
     // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
     case "Pending" => PENDING
