@@ -21,17 +21,17 @@ import org.apache.kyuubi.KyuubiFunSuite
 
 class TabulatorSuite extends KyuubiFunSuite {
   test("format rows have null") {
-    val rows: Array[Array[String]] = Array(Array("1", null), Array(null, "2"))
+    val rows: Array[Array[String]] = Array(Array("1", ""), Array(null, "2"))
     // scalastyle:off
     val expected =
       """
-        |╔════╤════╗
-        |║ c1 │ c2 ║
-        |╠════╪════╣
-        |║ 1  │    ║
-        |╟────┼────╢
-        |║    │ 2  ║
-        |╚════╧════╝
+        |╔══════╤════╗
+        |║ c1   │ c2 ║
+        |╠══════╪════╣
+        |║ 1    │    ║
+        |╟──────┼────╢
+        |║ null │ 2  ║
+        |╚══════╧════╝
         |""".stripMargin
     // scalastyle:on
     val result = Tabulator.format("test", Array("c1", "c2"), rows)
