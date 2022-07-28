@@ -205,7 +205,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       size: Int): Seq[Batch] = {
     metadataManager.map(
       _.getBatches(batchType, batchUser, batchState, createTime, endTime, from, size))
-      .orNull
+      .getOrElse(Seq.empty)
   }
 
   def getBatchMetadata(batchId: String): Metadata = {
@@ -248,7 +248,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           metadata.requestConf,
           batchRequest,
           Some(metadata))
-      }).orNull
+      }).getOrElse(Seq.empty)
     }
   }
 
@@ -258,7 +258,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         stateToKill.toString,
         kyuubiInstance,
         0,
-        Int.MaxValue)).orNull
+        Int.MaxValue)).getOrElse(Seq.empty)
     }
   }
 
