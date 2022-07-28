@@ -27,7 +27,7 @@ import org.apache.kyuubi.{BatchTestHelper, Logging, Utils, WithKyuubiServer, Wit
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.engine.{ApplicationOperation, KubernetesApplicationOperation}
-import org.apache.kyuubi.engine.ApplicationState.{FAILED, FINISHED, NOT_FOUND, RUNNING}
+import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
