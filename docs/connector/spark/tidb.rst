@@ -57,7 +57,7 @@ In order to make the TiSpark packages visible for the runtime classpath of engin
 2. Set ``spark.jars=/path/to/tispark-assembly``
 
 .. warning::
-   Please mind the compatibility of different TiDB, TiSpark and Spark versions, which can be confirmed on the page of `Environment setup`_.
+   Please mind the compatibility of different TiDB, TiSpark and Spark versions, which can be confirmed on the page of `TiSpark Environment setup`_.
 
 .. _configurations:
 
@@ -100,4 +100,4 @@ Taking ``DELETE FROM`` as a example, Spark 3 added support for DELETE FROM queri
 
 .. _Official Documentation: https://docs.pingcap.com/tidb/stable/overview
 .. _Maven Central: https://repo1.maven.org/maven2/com/pingcap/tispark/
-.. _Environment setup: https://docs.pingcap.com/tidb/stable/tispark-overview#environment-setup
+.. _TiSpark Environment setup: https://docs.pingcap.com/tidb/stable/tispark-overview#environment-setup
