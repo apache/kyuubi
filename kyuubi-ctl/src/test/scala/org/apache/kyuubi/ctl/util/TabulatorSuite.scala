@@ -25,13 +25,13 @@ class TabulatorSuite extends KyuubiFunSuite {
     // scalastyle:off
     val expected =
       """
-        |╔══════╤════╗
-        |║ c1   │ c2 ║
-        |╠══════╪════╣
-        |║ 1    │    ║
-        |╟──────┼────╢
-        |║ null │ 2  ║
-        |╚══════╧════╝
+        |╔═════╤════╗
+        |║ c1  │ c2 ║
+        |╠═════╪════╣
+        |║ 1   │    ║
+        |╟─────┼────╢
+        |║ N/A │ 2  ║
+        |╚═════╧════╝
         |""".stripMargin
     // scalastyle:on
     val result = Tabulator.format("test", Array("c1", "c2"), rows)
