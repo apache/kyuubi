@@ -25,7 +25,6 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KUBERNETES_CONTEXT
 import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, PENDING, RUNNING}
-import org.apache.kyuubi.engine.KubernetesApplicationOperation._
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
@@ -95,7 +94,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             // Can't get appId, get Pod UID instead.
             id = pod.getMetadata.getUid,
             name = pod.getMetadata.getName,
-            state = toApplicationState(pod.getStatus.getPhase),
+            state = KubernetesApplicationOperation.toApplicationState(pod.getStatus.getPhase),
             error = Option(pod.getStatus.getReason))
           debug(s"Successfully got application info by $tag: $info")
           info
@@ -115,7 +114,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private def findDriverPodByTag(tag: String): FilterWatchListDeletable[Pod, PodList] = {
     val operation = kubernetesClient.pods()
-      .withLabel(LABEL_KYUUBI_UNIQUE_KEY, tag)
+      .withLabel(KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY, tag)
     val size = operation.list().getItems.size()
     if (size != 1) {
       warn(s"Get Tag: ${tag} Driver Pod In Kubernetes size: ${size}, we expect 1")
