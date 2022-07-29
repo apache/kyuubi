@@ -33,9 +33,9 @@ Hudi Integration
 To enable the integration of kyuubi flink sql engine and Hudi through
 Catalog APIs, you need to:
 
-- Referencing the Hudi :ref:`dependencies`
+- Referencing the Hudi :ref:`dependencies<flink-hudi-deps>`
 
-.. _dependencies:
+.. _flink-hudi-deps:
 
 Dependencies
 ************
