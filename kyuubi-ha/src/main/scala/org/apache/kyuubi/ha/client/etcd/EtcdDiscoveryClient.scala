@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.ha.client.etcd
 
+import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.TimeUnit
 
@@ -36,6 +37,7 @@ import io.etcd.jetcd.options.GetOption
 import io.etcd.jetcd.options.PutOption
 import io.etcd.jetcd.watch.WatchEvent
 import io.etcd.jetcd.watch.WatchResponse
+import io.grpc.netty.GrpcSslContexts
 import io.grpc.stub.StreamObserver
 
 import org.apache.kyuubi.KYUUBI_VERSION
@@ -44,7 +46,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
 import org.apache.kyuubi.ha.HighAvailabilityConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ENGINE_REF_ID
+import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.DiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.ha.client.ServiceDiscovery
@@ -63,9 +65,32 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
   var leaseTTL: Long = _
 
+  private def buildClient(): Client = {
+    val endpoints = conf.get(HA_ADDRESSES).split(",")
+    val sslEnabled = conf.get(HA_ETCD_SSL_ENABLED)
+    if (!sslEnabled) {
+      Client.builder.endpoints(endpoints: _*).build
+    } else {
+      val caPath = conf.getOption(HA_ETCD_SSL_CA_PATH.key).getOrElse(
+        throw new IllegalArgumentException(s"${HA_ETCD_SSL_CA_PATH.key} is not defined"))
+      val crtPath = conf.getOption(HA_ETCD_SSL_CLINET_CRT_PATH.key).getOrElse(
+        throw new IllegalArgumentException(s"${HA_ETCD_SSL_CLINET_CRT_PATH.key} is not defined"))
+      val keyPath = conf.getOption(HA_ETCD_SSL_CLINET_KEY_PATH.key).getOrElse(
+        throw new IllegalArgumentException(s"${HA_ETCD_SSL_CLINET_KEY_PATH.key} is not defined"))
+
+      val context = GrpcSslContexts.forClient()
+        .trustManager(new File(caPath))
+        .keyManager(new File(crtPath), new File(keyPath))
+        .build()
+      Client.builder()
+        .endpoints(endpoints: _*)
+        .sslContext(context)
+        .build()
+    }
+  }
+
   def createClient(): Unit = {
-    val endpoints = conf.get(HighAvailabilityConf.HA_ADDRESSES).split(",")
-    client = Client.builder.endpoints(endpoints: _*).build
+    client = buildClient()
     kvClient = client.getKVClient()
     lockClient = client.getLockClient()
     leaseClient = client.getLeaseClient()
