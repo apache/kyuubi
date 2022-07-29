@@ -17,24 +17,24 @@
 
 package org.apache.kyuubi.ctl.util
 
-import com.jakewharton.fliptables.FlipTable
-import org.apache.commons.lang3.StringUtils
+import org.apache.kyuubi.KyuubiFunSuite
 
-private[kyuubi] object Tabulator {
-  def format(title: String, header: Array[String], rows: Array[Array[String]]): String = {
-    val textTable = formatTextTable(header, rows)
-    val footer = s"${rows.size} row(s)\n"
-    if (StringUtils.isBlank(title)) {
-      textTable + footer
-    } else {
-      val rowWidth = textTable.split("\n").head.size
-      val titleNewLine = "\n" + StringUtils.center(title, rowWidth) + "\n"
-      titleNewLine + textTable + footer
-    }
-  }
-
-  private def formatTextTable(header: Array[String], rows: Array[Array[String]]): String = {
-    val normalizedRows = rows.map(row => row.map(Option(_).getOrElse("N/A")))
-    FlipTable.of(header, normalizedRows)
+class TabulatorSuite extends KyuubiFunSuite {
+  test("format rows have null") {
+    val rows: Array[Array[String]] = Array(Array("1", ""), Array(null, "2"))
+    // scalastyle:off
+    val expected =
+      """
+        |╔═════╤════╗
+        |║ c1  │ c2 ║
+        |╠═════╪════╣
+        |║ 1   │    ║
+        |╟─────┼────╢
+        |║ N/A │ 2  ║
+        |╚═════╧════╝
+        |""".stripMargin
+    // scalastyle:on
+    val result = Tabulator.format("test", Array("c1", "c2"), rows)
+    assert(result.contains(expected))
   }
 }
