@@ -63,7 +63,7 @@ trait ApplicationOperation {
 
 object ApplicationState extends Enumeration {
   type ApplicationState = Value
-  val PENDING, RUNNING, FINISHED, KILLED, FAILED, ZOMBIE, NOT_FOUND = Value
+  val PENDING, RUNNING, FINISHED, KILLED, FAILED, ZOMBIE, NOT_FOUND, UNKNOWN = Value
 }
 
 case class ApplicationInfo(

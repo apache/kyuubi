@@ -134,7 +134,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 }
 
-object KubernetesApplicationOperation {
+object KubernetesApplicationOperation extends Logging {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
 
   def toApplicationState(state: String): ApplicationState = state match {
@@ -145,6 +145,8 @@ object KubernetesApplicationOperation {
     case "Succeeded" => FINISHED
     case "Failed" | "Error" => FAILED
     case "Unknown" => NOT_FOUND
-    case _ => throw new IllegalStateException("Not support state: " + state)
+    case _ =>
+      warn(s"Not support state: $state, using UNKNOWN")
+      ApplicationState.UNKNOWN
   }
 }

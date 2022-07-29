@@ -109,7 +109,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
   }
 }
 
-object YarnApplicationOperation {
+object YarnApplicationOperation extends Logging {
   def toApplicationState(state: YarnApplicationState): ApplicationState = state match {
     case YarnApplicationState.NEW => ApplicationState.PENDING
     case YarnApplicationState.NEW_SAVING => ApplicationState.PENDING
@@ -119,6 +119,8 @@ object YarnApplicationOperation {
     case YarnApplicationState.FINISHED => ApplicationState.FINISHED
     case YarnApplicationState.FAILED => ApplicationState.FAILED
     case YarnApplicationState.KILLED => ApplicationState.KILLED
-    case _ => throw new IllegalStateException("Not support state: " + state)
+    case _ =>
+      warn(s"Not support state: $state, using UNKNOWN")
+      ApplicationState.UNKNOWN
   }
 }
