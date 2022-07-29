@@ -120,7 +120,8 @@ object YarnApplicationOperation extends Logging {
     case YarnApplicationState.FAILED => ApplicationState.FAILED
     case YarnApplicationState.KILLED => ApplicationState.KILLED
     case _ =>
-      warn(s"Not support state: $state, using UNKNOWN")
+      warn(s"The yarn driver state: $state is not supported, " +
+        "mark the application state as UNKNOWN.")
       ApplicationState.UNKNOWN
   }
 }
