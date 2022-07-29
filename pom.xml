@@ -544,6 +544,12 @@
                 <groupId>io.trino</groupId>
                 <artifactId>trino-client</artifactId>
                 <version>${trino.client.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>net.jodah</groupId>
+                        <artifactId>failsafe</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
