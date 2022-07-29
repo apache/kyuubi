@@ -32,7 +32,7 @@ import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelpe
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.ApplicationOperation.{APP_ERROR_KEY, APP_ID_KEY, APP_NAME_KEY, APP_STATE_KEY, APP_URL_KEY}
+import org.apache.kyuubi.engine.ApplicationInfo
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
@@ -409,7 +409,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       None)
     sparkBatchProcessBuilder.start
 
-    var applicationStatus: Option[Map[String, String]] = None
+    var applicationStatus: Option[ApplicationInfo] = None
     eventually(timeout(5.seconds)) {
       applicationStatus = sessionManager.applicationManager.getApplicationInfo(None, batchId2)
       assert(applicationStatus.isDefined)
@@ -418,11 +418,11 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     val metadataToUpdate = Metadata(
       identifier = batchId2,
       state = OperationState.RUNNING.toString,
-      engineId = applicationStatus.get.get(APP_ID_KEY).orNull,
-      engineName = applicationStatus.get.get(APP_NAME_KEY).orNull,
-      engineUrl = applicationStatus.get.get(APP_URL_KEY).orNull,
-      engineState = applicationStatus.get.get(APP_STATE_KEY).orNull,
-      engineError = applicationStatus.get.get(APP_ERROR_KEY))
+      engineId = applicationStatus.get.id,
+      engineName = applicationStatus.get.name,
+      engineUrl = applicationStatus.get.url.orNull,
+      engineState = applicationStatus.get.state.toString,
+      engineError = applicationStatus.get.error)
     sessionManager.updateMetadata(metadataToUpdate)
 
     val restFe = fe.asInstanceOf[KyuubiRestFrontendService]
@@ -437,10 +437,12 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(session2.createTime === batchMetadata2.createTime)
 
     eventually(timeout(5.seconds)) {
-      assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING)
+      assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
+        session1.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
       assert(session1.batchJobSubmissionOp.builder.processLaunched)
 
-      assert(session2.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING)
+      assert(session2.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
+        session2.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
       assert(!session2.batchJobSubmissionOp.builder.processLaunched)
     }
 

@@ -34,7 +34,7 @@ import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
-import org.apache.kyuubi.engine.ApplicationOperation._
+import org.apache.kyuubi.engine.ApplicationInfo
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
@@ -68,19 +68,19 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private def buildBatch(session: KyuubiBatchSessionImpl): Batch = {
     val batchOp = session.batchJobSubmissionOp
     val batchOpStatus = batchOp.getStatus
-    val batchAppStatus = batchOp.currentApplicationState.getOrElse(Map.empty)
+    val batchAppStatus = batchOp.currentApplicationInfo
 
-    val name = Option(batchOp.batchName).getOrElse(batchAppStatus.get(APP_NAME_KEY).orNull)
+    val name = Option(batchOp.batchName).getOrElse(batchAppStatus.map(_.name).orNull)
     var appId: String = null
     var appUrl: String = null
     var appState: String = null
     var appDiagnostic: String = null
 
     if (batchAppStatus.nonEmpty) {
-      appId = batchAppStatus.get(APP_ID_KEY).orNull
-      appUrl = batchAppStatus.get(APP_URL_KEY).orNull
-      appState = batchAppStatus.get(APP_STATE_KEY).orNull
-      appDiagnostic = batchAppStatus.get(APP_ERROR_KEY).orNull
+      appId = batchAppStatus.get.id
+      appUrl = batchAppStatus.get.url.orNull
+      appState = batchAppStatus.get.state.toString
+      appDiagnostic = batchAppStatus.get.error.orNull
     } else {
       val metadata = sessionManager.getBatchMetadata(batchOp.batchId)
       appId = metadata.engineId
@@ -106,7 +106,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def buildBatch(
       metadata: Metadata,
-      batchAppStatus: Option[Map[String, String]]): Batch = {
+      batchAppStatus: Option[ApplicationInfo]): Batch = {
     batchAppStatus.map { appStatus =>
       val currentBatchState =
         if (BatchJobSubmission.applicationFailed(batchAppStatus)) {
@@ -119,11 +119,11 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           metadata.state
         }
 
-      val name = Option(metadata.requestName).getOrElse(appStatus.get(APP_NAME_KEY).orNull)
-      val appId = appStatus.get(APP_ID_KEY).orNull
-      val appUrl = appStatus.get(APP_URL_KEY).orNull
-      val appState = appStatus.get(APP_STATE_KEY).orNull
-      val appDiagnostic = appStatus.get(APP_ERROR_KEY).orNull
+      val name = Option(metadata.requestName).getOrElse(appStatus.name)
+      val appId = appStatus.id
+      val appUrl = appStatus.url.orNull
+      val appState = appStatus.state.toString
+      val appDiagnostic = appStatus.error.orNull
 
       new Batch(
         metadata.identifier,

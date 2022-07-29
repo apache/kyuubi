@@ -19,11 +19,14 @@ package org.apache.kyuubi.engine
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.client.api.YarnClient
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationOperation._
+import org.apache.kyuubi.engine.ApplicationState.ApplicationState
+import org.apache.kyuubi.engine.YarnApplicationOperation.toApplicationState
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class YarnApplicationOperation extends ApplicationOperation with Logging {
@@ -72,23 +75,23 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  override def getApplicationInfoByTag(tag: String): Map[String, String] = {
+  override def getApplicationInfoByTag(tag: String): ApplicationInfo = {
     if (yarnClient != null) {
       debug(s"Getting application info from Yarn cluster by $tag tag")
       val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
       if (reports.isEmpty) {
         debug(s"Application with tag $tag not found")
-        null
+        ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND)
       } else {
         val report = reports.get(0)
-        val res = Map(
-          APP_ID_KEY -> report.getApplicationId.toString,
-          APP_NAME_KEY -> report.getName,
-          APP_STATE_KEY -> report.getYarnApplicationState.toString,
-          APP_URL_KEY -> report.getTrackingUrl,
-          APP_ERROR_KEY -> report.getDiagnostics)
-        debug(s"Successfully got application info by $tag: " + res.mkString(", "))
-        res
+        val info = ApplicationInfo(
+          id = report.getApplicationId.toString,
+          name = report.getName,
+          state = toApplicationState(report.getYarnApplicationState),
+          url = Option(report.getTrackingUrl),
+          error = Option(report.getDiagnostics))
+        debug(s"Successfully got application info by $tag: $info")
+        info
       }
     } else {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
@@ -103,5 +106,22 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
         case e: Exception => error(e.getMessage)
       }
     }
+  }
+}
+
+object YarnApplicationOperation extends Logging {
+  def toApplicationState(state: YarnApplicationState): ApplicationState = state match {
+    case YarnApplicationState.NEW => ApplicationState.PENDING
+    case YarnApplicationState.NEW_SAVING => ApplicationState.PENDING
+    case YarnApplicationState.SUBMITTED => ApplicationState.PENDING
+    case YarnApplicationState.ACCEPTED => ApplicationState.PENDING
+    case YarnApplicationState.RUNNING => ApplicationState.RUNNING
+    case YarnApplicationState.FINISHED => ApplicationState.FINISHED
+    case YarnApplicationState.FAILED => ApplicationState.FAILED
+    case YarnApplicationState.KILLED => ApplicationState.KILLED
+    case _ =>
+      warn(s"The yarn driver state: $state is not supported, " +
+        "mark the application state as UNKNOWN.")
+      ApplicationState.UNKNOWN
   }
 }

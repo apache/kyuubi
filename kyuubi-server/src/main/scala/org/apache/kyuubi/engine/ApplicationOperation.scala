@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 
 trait ApplicationOperation {
 
@@ -55,21 +56,33 @@ trait ApplicationOperation {
    * Get the engine/application status by the unique application tag
    *
    * @param tag the unique application tag for engine instance.
-   * @return a map contains the application status
+   * @return [[ApplicationInfo]]
    */
-  def getApplicationInfoByTag(tag: String): Map[String, String]
+  def getApplicationInfoByTag(tag: String): ApplicationInfo
+}
+
+object ApplicationState extends Enumeration {
+  type ApplicationState = Value
+  val PENDING, RUNNING, FINISHED, KILLED, FAILED, ZOMBIE, NOT_FOUND, UNKNOWN = Value
+}
+
+case class ApplicationInfo(
+    id: String,
+    name: String,
+    state: ApplicationState,
+    url: Option[String] = None,
+    error: Option[String] = None) {
+
+  def toMap: Map[String, String] = {
+    Map(
+      "id" -> id,
+      "name" -> name,
+      "state" -> state.toString,
+      "url" -> url.orNull,
+      "error" -> error.orNull)
+  }
 }
 
 object ApplicationOperation {
-
-  /**
-   * identifier determined by cluster manager for the engine
-   */
-  val APP_ID_KEY = "id"
-  val APP_NAME_KEY = "name"
-  val APP_STATE_KEY = "state"
-  val APP_URL_KEY = "url"
-  val APP_ERROR_KEY = "error"
-
   val NOT_FOUND = "APPLICATION_NOT_FOUND"
 }

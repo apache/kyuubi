@@ -53,16 +53,16 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     }.start()
 
     val desc1 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
-    assert(desc1.contains("id"))
-    assert(desc1.contains("name"))
-    assert(desc1("state") === "RUNNING")
+    assert(desc1.id != null)
+    assert(desc1.name != null)
+    assert(desc1.state == ApplicationState.RUNNING)
 
     jps.killApplicationByTag("sun.tools.jstat.Jstat")
 
     val desc2 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
-    assert(!desc2.contains("id"))
-    assert(!desc2.contains("name"))
-    assert(desc2("state") === "FINISHED")
+    assert(desc2.id == null)
+    assert(desc2.name == null)
+    assert(desc2.state == ApplicationState.NOT_FOUND)
   }
 
   test("JpsApplicationOperation with spark local mode") {
@@ -78,9 +78,9 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     assert(jps.isSupported(builder.clusterManager()))
     eventually(Timeout(10.seconds)) {
       val desc1 = jps.getApplicationInfoByTag(id)
-      assert(desc1.contains("id"))
-      assert(desc1("name").contains(id))
-      assert(desc1("state") === "RUNNING")
+      assert(desc1.id != null)
+      assert(desc1.name != null)
+      assert(desc1.state == ApplicationState.RUNNING)
       val response = jps.killApplicationByTag(id)
       assert(response._1, response._2)
       assert(response._2 startsWith "Succeeded to terminate:")
@@ -88,9 +88,9 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
 
     eventually(Timeout(10.seconds)) {
       val desc2 = jps.getApplicationInfoByTag(id)
-      assert(!desc2.contains("id"))
-      assert(!desc2.contains("name"))
-      assert(desc2("state") === "FINISHED")
+      assert(desc2.id == null)
+      assert(desc2.name == null)
+      assert(desc2.state == ApplicationState.NOT_FOUND)
     }
 
     val response2 = jps.killApplicationByTag(id)

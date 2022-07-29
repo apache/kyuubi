@@ -24,8 +24,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KUBERNETES_CONTEXT
-import org.apache.kyuubi.engine.ApplicationOperation.{APP_ERROR_KEY, APP_ID_KEY, APP_NAME_KEY, APP_STATE_KEY}
-import org.apache.kyuubi.engine.KubernetesApplicationOperation._
+import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, PENDING, RUNNING}
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
@@ -83,7 +82,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  override def getApplicationInfoByTag(tag: String): Map[String, String] = {
+  override def getApplicationInfoByTag(tag: String): ApplicationInfo = {
     if (kubernetesClient != null) {
       debug(s"Getting application info from Kubernetes cluster by $tag tag")
       try {
@@ -91,14 +90,14 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val podList = operation.list().getItems
         if (podList.size() != 0) {
           val pod = podList.get(0)
-          val res = Map(
+          val info = ApplicationInfo(
             // Can't get appId, get Pod UID instead.
-            APP_ID_KEY -> pod.getMetadata.getUid,
-            APP_NAME_KEY -> pod.getMetadata.getName,
-            APP_STATE_KEY -> pod.getStatus.getPhase,
-            APP_ERROR_KEY -> pod.getStatus.getReason)
-          debug(s"Successfully got application info by $tag: " + res.mkString(", "))
-          res
+            id = pod.getMetadata.getUid,
+            name = pod.getMetadata.getName,
+            state = KubernetesApplicationOperation.toApplicationState(pod.getStatus.getPhase),
+            error = Option(pod.getStatus.getReason))
+          debug(s"Successfully got application info by $tag: $info")
+          info
         } else {
           // client mode
           jpsOperation.getApplicationInfoByTag(tag)
@@ -106,7 +105,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       } catch {
         case e: Exception =>
           error(s"Failed to get application with $tag, due to ${e.getMessage}")
-          null
+          ApplicationInfo(id = null, name = null, ApplicationState.NOT_FOUND)
       }
     } else {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
@@ -115,7 +114,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private def findDriverPodByTag(tag: String): FilterWatchListDeletable[Pod, PodList] = {
     val operation = kubernetesClient.pods()
-      .withLabel(LABEL_KYUUBI_UNIQUE_KEY, tag)
+      .withLabel(KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY, tag)
     val size = operation.list().getItems.size()
     if (size != 1) {
       warn(s"Get Tag: ${tag} Driver Pod In Kubernetes size: ${size}, we expect 1")
@@ -134,6 +133,20 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 }
 
-object KubernetesApplicationOperation {
+object KubernetesApplicationOperation extends Logging {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
+
+  def toApplicationState(state: String): ApplicationState = state match {
+    // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go#L2396
+    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+    case "Pending" => PENDING
+    case "Running" => RUNNING
+    case "Succeeded" => FINISHED
+    case "Failed" | "Error" => FAILED
+    case "Unknown" => ApplicationState.UNKNOWN
+    case _ =>
+      warn(s"The kubernetes driver pod state: $state is not supported, " +
+        "mark the application state as UNKNOWN.")
+      ApplicationState.UNKNOWN
+  }
 }
