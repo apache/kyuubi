@@ -144,7 +144,7 @@ object KubernetesApplicationOperation extends Logging {
     case "Running" => RUNNING
     case "Succeeded" => FINISHED
     case "Failed" | "Error" => FAILED
-    case "Unknown" => NOT_FOUND
+    case "Unknown" => ApplicationState.UNKNOWN
     case _ =>
       warn(s"Not support state: $state, using UNKNOWN")
       ApplicationState.UNKNOWN
