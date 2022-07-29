@@ -859,12 +859,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private void setupTimeout() {
     if (sessConfMap.containsKey(CONNECT_TIMEOUT)) {
-      String loginTimeoutStr = sessConfMap.get(CONNECT_TIMEOUT);
+      String connectTimeoutStr = sessConfMap.get(CONNECT_TIMEOUT);
       try {
-        long connectTimeoutMs = Long.parseLong(loginTimeoutStr);
+        long connectTimeoutMs = Long.parseLong(connectTimeoutStr);
         connectTimeout = (int) Math.max(0, Math.min(connectTimeoutMs, Integer.MAX_VALUE));
       } catch (NumberFormatException e) {
-        LOG.info("Failed to parse connectTimeout of value " + loginTimeoutStr);
+        LOG.info("Failed to parse connectTimeout of value " + connectTimeoutStr);
       }
     }
     if (sessConfMap.containsKey(SOCKET_TIMEOUT)) {
