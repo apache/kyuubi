@@ -19,12 +19,12 @@ TPC-DS
 TPC-DS Integration
 -------------------
 
-.. _dependencies:
+.. _spark-tpcds-deps:
 
 Dependencies
 ************
 
-.. _configurations:
+.. _spark-tpcds-conf:
 
 Configurations
 **************

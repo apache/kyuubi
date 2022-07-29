@@ -36,10 +36,10 @@ Delta Lake Integration
 To enable the integration of kyuubi spark sql engine and delta lake through
 Apache Spark Datasource V2 and Catalog APIs, you need to:
 
-- Referencing the delta lake :ref:`dependencies`
-- Setting the spark extension and catalog :ref:`configurations`
+- Referencing the delta lake :ref:`dependencies<spark-delta-lake-deps>`
+- Setting the spark extension and catalog :ref:`configurations<spark-delta-lake-conf>`
 
-.. _dependencies:
+.. _spark-delta-lake-deps:
 
 Dependencies
 ************
@@ -58,7 +58,7 @@ In order to make the delta packages visible for the runtime classpath of engines
 .. warning::
    Please mind the compatibility of different Delta Lake and Spark versions, which can be confirmed on the page of `delta release notes`_.
 
-.. _configurations:
+.. _spark-delta-lake-conf:
 
 Configurations
 **************
