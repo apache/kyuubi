@@ -24,7 +24,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KUBERNETES_CONTEXT
-import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING}
+import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, PENDING, RUNNING}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation._
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
