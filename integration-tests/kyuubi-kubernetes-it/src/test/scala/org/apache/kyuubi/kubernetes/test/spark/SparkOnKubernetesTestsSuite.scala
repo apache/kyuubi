@@ -31,6 +31,8 @@ import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionManager}
+import org.apache.kyuubi.util.Validator
+import org.apache.kyuubi.util.Validator.KUBERNETES_EXECUTOR_POD_NAME_PREFIX
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
 
 abstract class SparkOnKubernetesSuiteBase
@@ -172,6 +174,16 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
 
   private def sessionManager: KyuubiSessionManager =
     server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+
+  test("Check if spark.kubernetes.executor.podNamePrefix is invalid") {
+    Seq("_123", "spark_exec", "spark@", "a" * 238).foreach { invalid =>
+      conf.set(KUBERNETES_EXECUTOR_POD_NAME_PREFIX, invalid)
+      val e = intercept[IllegalArgumentException](Validator.validateConf(conf))
+      assert(e.getMessage === s"'$invalid' in spark.kubernetes.executor.podNamePrefix is" +
+        s" invalid. must conform https://kubernetes.io/docs/concepts/overview/" +
+        "working-with-objects/names/#dns-subdomain-names and the value length <= 237")
+    }
+  }
 
   test("Spark Cluster Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
     val driverPodNamePrefix = "kyuubi-spark-driver"
