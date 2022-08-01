@@ -575,7 +575,9 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.ARRAY)
       assert(resultSet.next())
-      assert(resultSet.getObject(1).toString == "[\"v1\",\"v2\",\"v3\"]")
+      // Adapt to Flink 1.15
+      assert(resultSet.getObject(1).toString == "[\"v1\",\"v2\",\"v3\"]" || resultSet.getObject(
+        1).toString == "[v1,v2,v3]")
     }
   }
 
@@ -596,7 +598,8 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         statement.executeQuery("select (1, '2', true)")
       assert(resultSet.next())
       assert(
-        resultSet.getString(1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:\"2\",BOOLEAN NOT NULL:true}")
+        resultSet.getString(1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:\"2\",BOOLEAN NOT NULL:true}" ||
+          resultSet.getString(1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:2,BOOLEAN NOT NULL:true}")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
     }
@@ -606,8 +609,9 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select encode('kyuubi', 'UTF-8')")
       assert(resultSet.next())
+      // Adapt to Flink 1.15
       assert(
-        resultSet.getString(1) == "kyuubi")
+        resultSet.getString(1) == "kyuubi" || resultSet.getString(1) == "k")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.BINARY)
     }
@@ -721,7 +725,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   test("execute statement - create/alter/drop table") {
     // TODO: validate table results after FLINK-25558 is resolved
     withJdbcStatement()({ statement =>
-      statement.executeQuery("create table tbl_a (a string)")
+      statement.executeQuery("create table tbl_a (a string) with ('connector' = 'blackhole')")
       assert(statement.execute("alter table tbl_a rename to tbl_b"))
       assert(statement.execute("drop table tbl_b"))
     })
