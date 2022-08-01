@@ -252,7 +252,7 @@
         <repository>
             <id>hadoop-staging</id>
             <name>Hadoop Staging Repository</name>
-            <url>https://repository.apache.org/content/repositories/orgapachehadoop-1356/</url>
+            <url>https://repository.apache.org/content/repositories/orgapachehadoop-1358/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
