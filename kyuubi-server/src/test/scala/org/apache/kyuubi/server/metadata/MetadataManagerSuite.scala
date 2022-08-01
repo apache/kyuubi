@@ -23,15 +23,19 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
   val metadataManager = new MetadataManager()
+  val metricsSystem = new MetricsSystem()
   val conf = KyuubiConf().set(KyuubiConf.METADATA_REQUEST_RETRY_INTERVAL, 100L)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
     metadataManager.initialize(conf)
     metadataManager.start()
   }
@@ -41,6 +45,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       metadataManager.cleanupMetadataById(batch.getId)
     }
     metadataManager.stop()
+    metricsSystem.stop()
     super.afterAll()
   }
 
@@ -91,5 +96,63 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       assert(!retryRef2.hasRemainingRequests())
       assert(metadataManager.getBatch(metadata2.identifier).getState === "RUNNING")
     }
+  }
+
+  test("metadata request metrics") {
+    val totalRequests =
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_TOTAL).getOrElse(0L)
+    val failedRequests =
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_FAIL).getOrElse(0L)
+    val retryingRequests =
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L)
+
+    val metadata = Metadata(
+      identifier = UUID.randomUUID().toString,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      ipAddress = "127.0.0.1",
+      kyuubiInstance = "localhost:10009",
+      state = "PENDING",
+      resource = "intern",
+      className = "org.apache.kyuubi.SparkWC",
+      requestName = "kyuubi_batch",
+      requestConf = Map("spark.master" -> "local"),
+      requestArgs = Seq("100"),
+      createTime = System.currentTimeMillis(),
+      engineType = "spark",
+      clusterManager = Some("local"))
+    metadataManager.insertMetadata(metadata)
+
+    assert(
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_TOTAL).getOrElse(
+        0L) - totalRequests === 1)
+    assert(
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_FAIL).getOrElse(
+        0L) - failedRequests === 0)
+    assert(MetricsSystem.meterValue(
+      MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L) - retryingRequests === 0)
+
+    val invalidMetadata = metadata.copy(kyuubiInstance = null)
+    intercept[Exception](metadataManager.insertMetadata(invalidMetadata, false))
+    assert(
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_TOTAL).getOrElse(
+        0L) - totalRequests === 2)
+    assert(
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_FAIL).getOrElse(
+        0L) - failedRequests === 1)
+    assert(MetricsSystem.meterValue(
+      MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L) - retryingRequests === 0)
+
+    metadataManager.insertMetadata(invalidMetadata, true)
+
+    assert(
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_TOTAL).getOrElse(
+        0L) - totalRequests === 3)
+    assert(
+      MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_FAIL).getOrElse(
+        0L) - failedRequests === 2)
+    assert(MetricsSystem.meterValue(
+      MetricsConstants.METADATA_REQUEST_RETRYING).getOrElse(0L) - retryingRequests === 1)
   }
 }
