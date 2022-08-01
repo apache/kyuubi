@@ -80,9 +80,9 @@ Metrics Prefix | Metrics Suffix | Type | Since | Description
 `kyuubi.backend_service.get_primary_keys`        | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `get_primary_keys` method execution time and rate </div>
 `kyuubi.backend_service.get_cross_reference`     | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `get_cross_reference` method execution time and rate </div>
 `kyuubi.operation.state` | `${operationType}`<br/>`.${state}` | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  The `${operationType}` with a particular `${state}` rate, e.g. `BatchJobSubmission.pending`, `BatchJobSubmission.finished`. Note that, the terminal states are cumulative, but the intermediate ones are not. </div>
-`kyuubi.metadata_request.total`                  | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests time and rate </div>
-`kyuubi.metadata_request.failed`                 | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests failure time and rate </div>
-`kyuubi.metadata_request.retrying`               | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> retrying metadata requests time and rate, it is not cumulative </div>
+`kyuubi.metadata.request.total`                  | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests time and rate </div>
+`kyuubi.metadata.request.failed`                 | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests failure time and rate </div>
+`kyuubi.metadata.request.retrying`               | | meter | 1.6.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> retrying metadata requests time and rate, it is not cumulative </div>
 
 Before v1.5.0, if you use these metrics:
 - `kyuubi.statement.total`
