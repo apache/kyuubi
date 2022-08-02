@@ -18,19 +18,23 @@ Inject Session Conf with Custom Config Advisor
 
 .. versionadded:: 1.5.0
 
-The step of inject session conf
--------------------
+Session Conf Advisor
+--------------------
 
-1. create a custom class which implements the `org.apache.kyuubi.plugin.SessionConfAdvisor`.
-2. adding configuration at `kyuubi-defaults.conf`:
+Kyuubi supports inject session configs with custom config advisor. It is usually used to append or overwrite session configs dynamically, so administrators of Kyuubi can have an ability to control the user specified configs.
+
+The steps of injecting session configs
+--------------------------------------
+
+1. create a custom class which implements the ``org.apache.kyuubi.plugin.SessionConfAdvisor``.
+2. compile and put the jar into ``$KYUUBI_HOME/jars``
+3. adding configuration at ``kyuubi-defaults.conf``:
 
    .. code-block:: java
 
       kyuubi.session.conf.advisor=${classname}
 
-3. compile and put the jar into `$KYUUBI_HOME/jars`
-
-The `org.apache.kyuubi.plugin.SessionConfAdvisor` has a zero-arg constructor and holds one method with user and session conf and return a new conf map back.
+The ``org.apache.kyuubi.plugin.SessionConfAdvisor`` has a zero-arg constructor, holds one method with user and session conf and returns a new conf map.
 
 .. code-block:: java
 
@@ -40,12 +44,12 @@ The `org.apache.kyuubi.plugin.SessionConfAdvisor` has a zero-arg constructor and
      }
    }
 
-Note that, the returned conf map will overwrite the original session conf.
+.. note:: The returned conf map will overwrite the original session conf.
 
 Example
--------------------
+-------
 
-We have a custom class `CustomSessionConfAdvisor`:
+We have a custom class ``CustomSessionConfAdvisor``:
 
 .. code-block:: java
 
@@ -60,10 +64,10 @@ We have a custom class `CustomSessionConfAdvisor`:
      }
    }
 
-If a user `uly` create a connection with
+If a user `uly` creates a connection with:
 
 .. code-block:: java
 
    jdbc:hive2://localhost:10009/;hive.server2.proxy.user=uly;#spark.driver.memory=2G
 
-the final Spark application will allocate `spark.driver.memory=1G` rather 2G.
+The final Spark application will allocate ``1G`` rather than ``2G`` for the driver jvm.
