@@ -108,14 +108,14 @@ jobs:
           - 11
         flink:
           - '1.14'
-          # - '1.15' FIXME
+          - '1.15'
         flink-archive: [ "" ]
         comment: [ "normal" ]
-        # include: FIXME
-        #   - java: 8
-        #     flink: '1.15'
-        #     flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.0 -Dspark.archive.name=flink-1.15.0-bin-scala_2.12.tgz'
-        #     comment: 'verify-flink-1.15'
+         include:
+           - java: 8
+             flink: '1.15'
+             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.0 -Dspark.archive.name=flink-1.15.0-bin-scala_2.12.tgz'
+             comment: 'verify-flink-1.15'
     steps:
       - uses: actions/checkout@v2
       - name: Tune Runner VM
