@@ -17,18 +17,19 @@
 
 package org.apache.kyuubi.util
 
+import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 
 object Validator {
 
   def validateConf(kyuubiConf: KyuubiConf): Unit = {
-    validateK8sConf(kyuubiConf)
+    validateSparkK8sConf(kyuubiConf)
   }
 
-  private def validateK8sConf(kyuubiConf: KyuubiConf): Unit = {
+  private def validateSparkK8sConf(kyuubiConf: KyuubiConf): Unit = {
     val prefix = kyuubiConf.getOption(KUBERNETES_EXECUTOR_POD_NAME_PREFIX).orNull
     if (prefix != null && !isValidExecutorPodNamePrefix(prefix)) {
-      throw new IllegalArgumentException(s"'$prefix' " +
+      throw new KyuubiException(s"'$prefix' " +
         s"in spark.kubernetes.executor.podNamePrefix is invalid." +
         s" must conform https://kubernetes.io/docs/concepts/overview/working-with-objects" +
         "/names/#dns-subdomain-names and the value length <= 237")

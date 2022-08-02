@@ -31,6 +31,7 @@ import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.Validator
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -164,6 +165,9 @@ class SparkProcessBuilder(
   override def clusterManager(): Option[String] = {
     conf.getOption(MASTER_KEY).orElse(defaultMaster)
   }
+
+  override def validateConf: Unit = Validator.validateConf(conf)
+
 }
 
 object SparkProcessBuilder {

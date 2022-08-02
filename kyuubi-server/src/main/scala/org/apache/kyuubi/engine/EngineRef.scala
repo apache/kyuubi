@@ -187,6 +187,7 @@ private[kyuubi] class EngineRef(
     try {
       val redactedCmd = builder.toString
       info(s"Launching engine:\n$redactedCmd")
+      builder.validateConf
       val process = builder.start
       var exitValue: Option[Int] = None
       while (engineRef.isEmpty) {
