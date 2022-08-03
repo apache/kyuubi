@@ -576,7 +576,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(metaData.getColumnType(1) === java.sql.Types.ARRAY)
       assert(resultSet.next())
       // Adapt to Flink 1.15
-      assert(resultSet.getObject(1).toString == "[\"v1\",\"v2\",\"v3\"]" || resultSet.getObject(
+      assert(resultSet.getObject(1).toString == """["v1","v2","v3"]""" || resultSet.getObject(
         1).toString == "[v1,v2,v3]")
     }
   }

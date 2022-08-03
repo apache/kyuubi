@@ -114,7 +114,7 @@ jobs:
          include:
            - java: 8
              flink: '1.15'
-             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.0 -Dspark.archive.name=flink-1.15.0-bin-scala_2.12.tgz'
+             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.1 -Dflink.archive.name=flink-1.15.1-bin-scala_2.12.tgz'
              comment: 'verify-flink-1.15'
     steps:
       - uses: actions/checkout@v2
