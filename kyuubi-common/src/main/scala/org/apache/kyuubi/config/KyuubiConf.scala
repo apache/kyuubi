@@ -51,7 +51,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   def set[T](entry: ConfigEntry[T], value: T): KyuubiConf = {
-    settings.put(entry.key, entry.strConverter(value))
+    if (settings.put(entry.key, entry.strConverter(value)) == null) {
+      logDeprecationWarning(entry.key)
+    }
     this
   }
 
@@ -63,19 +65,25 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   def set(key: String, value: String): KyuubiConf = {
     require(key != null)
     require(value != null)
-    settings.put(key, value)
+    if (settings.put(key, value) == null) {
+      logDeprecationWarning(key)
+    }
     this
   }
 
   def setIfMissing[T](entry: ConfigEntry[T], value: T): KyuubiConf = {
-    settings.putIfAbsent(entry.key, entry.strConverter(value))
+    if (settings.putIfAbsent(entry.key, entry.strConverter(value)) == null) {
+      logDeprecationWarning(entry.key)
+    }
     this
   }
 
   def setIfMissing(key: String, value: String): KyuubiConf = {
     require(key != null)
     require(value != null)
-    settings.putIfAbsent(key, value)
+    if (settings.putIfAbsent(key, value) == null) {
+      logDeprecationWarning(key)
+    }
     this
   }
 
@@ -87,6 +95,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
 
   /** unset a parameter from the configuration */
   def unset(key: String): KyuubiConf = {
+    logDeprecationWarning(key)
     settings.remove(key)
     this
   }
@@ -131,32 +140,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     cloned
   }
 
-  private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
-    FRONTEND_BIND_HOST,
-    FRONTEND_BIND_PORT,
-    FRONTEND_THRIFT_BINARY_BIND_HOST,
-    FRONTEND_THRIFT_BINARY_BIND_PORT,
-    FRONTEND_THRIFT_HTTP_BIND_HOST,
-    FRONTEND_THRIFT_HTTP_BIND_PORT,
-    FRONTEND_REST_BIND_HOST,
-    FRONTEND_REST_BIND_PORT,
-    FRONTEND_MYSQL_BIND_HOST,
-    FRONTEND_MYSQL_BIND_PORT,
-    AUTHENTICATION_METHOD,
-    KINIT_INTERVAL,
-    SERVER_KEYTAB,
-    SERVER_PRINCIPAL,
-    SERVER_SPNEGO_KEYTAB,
-    SERVER_SPNEGO_PRINCIPAL,
-    SERVER_EVENT_LOGGERS,
-    SERVER_EVENT_JSON_LOG_PATH,
-    SERVER_OPERATION_LOG_DIR_ROOT,
-    SERVER_NAME,
-    SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS,
-    SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS,
-    SERVER_LIMIT_CONNECTIONS_PER_USER,
-    SESSION_LOCAL_DIR_ALLOW_LIST)
-
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
 
@@ -169,6 +152,18 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     }
     serverOnlyConfEntries.foreach(cloned.unset)
     cloned
+  }
+
+  /**
+   * Logs a warning message if the given config key is deprecated.
+   */
+  private def logDeprecationWarning(key: String): Unit = {
+    KyuubiConf.deprecatedConfigs.get(key).foreach {
+      case DeprecatedConfig(configName, version, comment) =>
+        logger.warn(
+          s"The Kyuubi config '$configName' has been deprecated in Kyuubi v$version " +
+            s"and may be removed in the future. $comment")
+    }
   }
 }
 
@@ -350,7 +345,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_BIND_HOST)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_BINARY_BIND_PORT.key} instead", "1.4.0")
   val FRONTEND_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.bind.port")
     .doc("(deprecated) Port of the machine on which to run the thrift frontend service " +
       "via binary protocol.")
@@ -423,7 +417,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_MAX_MESSAGE_SIZE.key} instead", "1.4.0")
   val FRONTEND_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.max.message.size")
       .doc("(deprecated) Maximum message size in bytes a Kyuubi server will accept.")
@@ -437,7 +430,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_MAX_MESSAGE_SIZE)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_TIMEOUT.key} instead", "1.4.0")
   val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.login.timeout")
       .doc("(deprecated) Timeout for Thrift clients during login to the thrift frontend service.")
@@ -451,7 +443,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_LOGIN_TIMEOUT)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH.key} instead", "1.4.0")
   val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.backoff.slot.length")
       .doc("(deprecated) Time to back off during login to the thrift frontend service.")
@@ -898,7 +889,6 @@ object KyuubiConf {
     .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
     .createWithDefault(Duration.ofMinutes(5).toMillis)
 
-  @deprecated(s"using ${SESSION_IDLE_TIMEOUT.key} instead", "1.2.0")
   val SESSION_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.timeout")
     .doc("(deprecated)session timeout, it will be closed when it's not accessed for this duration")
     .version("1.0.0")
@@ -1211,7 +1201,6 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("server_operation_logs")
 
-  @deprecated(s"using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] =
     buildConf("kyuubi.session.engine.share.level")
       .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
@@ -1226,7 +1215,6 @@ object KyuubiConf {
   private val validZookeeperSubPath: Pattern = ("(?!^[\\u002e]{1,2}$)" +
     "(^[\\u0020-\\u002e\\u0030-\\u007e\\u00a0-\\ud7ff\\uf900-\\uffef]{1,}$)").r.pattern
 
-  @deprecated(s"using kyuubi.engine.share.level.subdomain instead", "1.4.0")
   val ENGINE_SHARE_LEVEL_SUB_DOMAIN: ConfigEntry[Option[String]] =
     buildConf("kyuubi.engine.share.level.sub.domain")
       .doc("(deprecated) - Using kyuubi.engine.share.level.subdomain instead")
@@ -1246,7 +1234,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
 
-  @deprecated(s"using ${FRONTEND_CONNECTION_URL_USE_HOSTNAME.key} instead, 1.5.0")
   val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.connection.url.use.hostname")
       .doc("(deprecated) " +
@@ -1838,4 +1825,101 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createOptional
+
+  private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
+    FRONTEND_BIND_HOST,
+    FRONTEND_BIND_PORT,
+    FRONTEND_THRIFT_BINARY_BIND_HOST,
+    FRONTEND_THRIFT_BINARY_BIND_PORT,
+    FRONTEND_THRIFT_HTTP_BIND_HOST,
+    FRONTEND_THRIFT_HTTP_BIND_PORT,
+    FRONTEND_REST_BIND_HOST,
+    FRONTEND_REST_BIND_PORT,
+    FRONTEND_MYSQL_BIND_HOST,
+    FRONTEND_MYSQL_BIND_PORT,
+    AUTHENTICATION_METHOD,
+    KINIT_INTERVAL,
+    SERVER_KEYTAB,
+    SERVER_PRINCIPAL,
+    SERVER_SPNEGO_KEYTAB,
+    SERVER_SPNEGO_PRINCIPAL,
+    SERVER_EVENT_LOGGERS,
+    SERVER_EVENT_JSON_LOG_PATH,
+    SERVER_OPERATION_LOG_DIR_ROOT,
+    SERVER_NAME,
+    SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS,
+    SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS,
+    SERVER_LIMIT_CONNECTIONS_PER_USER,
+    SESSION_LOCAL_DIR_ALLOW_LIST)
+
+  /**
+   * Holds information about keys that have been deprecated.
+   *
+   * @param key The deprecated key.
+   * @param version Version of Kyuubi where key was deprecated.
+   * @param comment Additional info regarding to the removed config. For example,
+   *                reasons of config deprecation, what users should use instead of it.
+   */
+  case class DeprecatedConfig(key: String, version: String, comment: String)
+
+  private val deprecatedConfigs: Map[String, DeprecatedConfig] = {
+    val configs = Seq(
+      DeprecatedConfig(
+        FRONTEND_BIND_PORT.key,
+        "1.4.0",
+        s"Use ${FRONTEND_THRIFT_BINARY_BIND_PORT.key} instead"),
+      DeprecatedConfig(
+        FRONTEND_MAX_MESSAGE_SIZE.key,
+        "1.4.0",
+        s"Use ${FRONTEND_THRIFT_MAX_MESSAGE_SIZE.key} instead"),
+      DeprecatedConfig(
+        FRONTEND_LOGIN_TIMEOUT.key,
+        "1.4.0",
+        s"Use ${FRONTEND_THRIFT_LOGIN_TIMEOUT.key} instead"),
+      DeprecatedConfig(
+        FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH.key,
+        "1.4.0",
+        s"Use ${FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH.key} instead"),
+      DeprecatedConfig(
+        SESSION_TIMEOUT.key,
+        "1.2.0",
+        s"Use ${SESSION_IDLE_TIMEOUT.key} instead"),
+      DeprecatedConfig(
+        LEGACY_ENGINE_SHARE_LEVEL.key,
+        "1.2.0",
+        s"Use ${ENGINE_SHARE_LEVEL.key} instead"),
+      DeprecatedConfig(
+        ENGINE_SHARE_LEVEL_SUB_DOMAIN.key,
+        "1.4.0",
+        s"Use ${ENGINE_SHARE_LEVEL_SUBDOMAIN.key} instead"),
+      DeprecatedConfig(
+        ENGINE_CONNECTION_URL_USE_HOSTNAME.key,
+        "1.5.0",
+        s"Use ${FRONTEND_CONNECTION_URL_USE_HOSTNAME.key} instead"),
+
+      // deprected configs of [[org.apache.kyuubi.zookeeper.ZookeeperConf]]
+      DeprecatedConfig(
+        "kyuubi.zookeeper.embedded.port",
+        "1.2.0",
+        "Use kyuubi.zookeeper.embedded.client.port instead"),
+      DeprecatedConfig(
+        "kyuubi.zookeeper.embedded.directory",
+        "1.2.0",
+        "Use kyuubi.zookeeper.embedded.data.dir instead"),
+
+      // deprected configs of [[org.apache.kyuubi.ha.HighAvailabilityConf]]
+      DeprecatedConfig(
+        "kyuubi.ha.zookeeper.quorum",
+        "1.6.0",
+        "Use kyuubi.ha.addresses instead"),
+      DeprecatedConfig(
+        "kyuubi.ha.zookeeper.namespace",
+        "1.6.0",
+        "Use kyuubi.ha.namespace instead"),
+      DeprecatedConfig(
+        "kyuubi.ha.zookeeper.acl.enabled",
+        "1.3.2",
+        "Use kyuubi.ha.zookeeper.auth.type instead"))
+    Map(configs.map { cfg => cfg.key -> cfg }: _*)
+  }
 }
