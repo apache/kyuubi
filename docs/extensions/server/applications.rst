@@ -20,7 +20,21 @@ Manage Applications against Extra Cluster Managers
 
 .. caution:: unstable
 
-Kyuubi supports configuring custom ``org.apache.kyuubi.engine.ApplicationOperation`` for extra cluster manager which provides an ability to control application, including getting information, killing.
+Inside Kyuubi, the Kyuubi server uses the ``ApplicationManager`` module to manage all applications launched by itself, including different kinds of Kyuubi engines and self-contained applications.
+
+The ``ApplicationManager`` leverages methods provided by application operation implementations derived from ``org.apache.kyuubi.engine.ApplicationOperation`` to monitor the status of those applications and kill abnormal applications in case they get orphaned and may introduce more methods in the future.
+
+An ``ApplicationOperation`` implementation is usually built upon clients or APIs provided by cluster managers, such as Hadoop YARN, Kubernetes, etc.
+
+For now, Kyuubi has already supported serval built-in application operations:
+
+- ``JpsApplicationOperation``: an operation that can manage apps with a local process, e.g. a local mode spark application
+- ``YarnApplicationOperation``: an operation that can manage apps with a Hadoop Yarn cluster, e.g. a spark on yarn application
+- ``KubernetesApplicationOperation``: an operation that can manage apps with a k8s cluster, e.g. a spark on k8s application
+
+Besides those built-in ones, Kyuubi also supports loading custom ``ApplicationOperation``s through the Java `ServiceLoader`(SPI) for extra cluster managers.
+
+The rest of this article will show you the specifications and steps to build and enable a custom operation.
 
    .. code-block:: scala
 
@@ -65,10 +79,16 @@ Kyuubi supports configuring custom ``org.apache.kyuubi.engine.ApplicationOperati
         def getApplicationInfoByTag(tag: String): ApplicationInfo
       }
 
+   .. code-block:: scala
+
       /**
         * (killed or not, hint message)
         */
       type KillResponse = (Boolean, String)
+
+An ``ApplicationInfo`` is used to represented the application information, including application id, name, state, url address and error message.
+
+   .. code-block:: scala
 
       object ApplicationState extends Enumeration {
         type ApplicationState = Value
