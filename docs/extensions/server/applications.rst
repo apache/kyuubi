@@ -20,7 +20,7 @@ Manage Applications against Extra Cluster Managers
 
 .. caution:: unstable
 
-Kyuubi supports configuring custom ``ApplicationOperation`` for certain extra cluster manager which provides an ability to control application, including getting information, killing.
+Kyuubi supports configuring custom ``org.apache.kyuubi.engine.ApplicationOperation`` for extra cluster manager which provides an ability to control application, including getting information, killing.
 
    .. code-block:: scala
 
@@ -117,12 +117,7 @@ Build A Custom Application Operation
 
 - create a custom class which implements the ``org.apache.kyuubi.engine.ApplicationOperation``.
 
-Enable Custom Application Operation
------------------------------------
-
-.. note:: Kyuubi uses Java SPI to load the custom Application Operation
-
-1. create a directory META-INF.services and a file with the fully-qualified name of the interface ``ApplicationOperation``:
+- create a directory META-INF.services and a file with ``org.apache.kyuubi.engine.ApplicationOperation``:
 
    .. code-block:: java
 
@@ -130,6 +125,12 @@ Enable Custom Application Operation
 
    then add your fully-qualified name of custom application operation into the file.
 
-2. compile and put the jar into ``$KYUUBI_HOME/jars``
+
+Enable Custom Application Operation
+-----------------------------------
+
+.. note:: Kyuubi uses Java SPI to load the custom Application Operation
+
+- compile and put the jar into ``$KYUUBI_HOME/jars``
 
 For now, Kyuubi has already supported three built-in application operations: ``JpsApplicationOperation``, ``YarnApplicationOperation`` and ``KubernetesApplicationOperation``.
