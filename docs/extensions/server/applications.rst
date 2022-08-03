@@ -20,38 +20,7 @@ Manage Applications against Extra Cluster Managers
 
 .. caution:: unstable
 
-Build A Custom Application Operation
----------------------
-
 Kyuubi supports configuring custom ``ApplicationOperation`` for certain extra cluster manager which provides an ability to control application, including getting information, killing.
-
-The steps of adding a custom Application Operation
--------------------------------------------------------
-
-1. reference kyuubi-server
-
-   .. code-block:: xml
-
-      <dependency>
-         <groupId>org.apache.kyuubi</groupId>
-         <artifactId>kyuubi-server_2.12</artifactId>
-         <version>1.5.2-incubating</version>
-         <scope>provided</scope>
-      </dependency>
-
-2. create a custom class which implements the ``org.apache.kyuubi.engine.ApplicationOperation``.
-
-.. note:: Kyuubi uses Java SPI to load the custom Application Operation
-
-3. create a directory META-INF.services and a file with the fully-qualified name of the interface ``ApplicationOperation``:
-
-   .. code-block:: java
-
-      META-INF.services/org.apache.kyuubi.engine.ApplicationOperation
-
-   then add your fully-qualified name of custom application operation into the file.
-
-4. compile and put the jar into ``$KYUUBI_HOME/jars``
 
    .. code-block:: scala
 
@@ -112,5 +81,55 @@ The steps of adding a custom Application Operation
           state: ApplicationState,
           url: Option[String] = None,
           error: Option[String] = None)
+
+For application state mapping, you can reference the implementation of yarn:
+
+   .. code-block:: scala
+
+      def toApplicationState(state: YarnApplicationState): ApplicationState = state match {
+        case YarnApplicationState.NEW => ApplicationState.PENDING
+        case YarnApplicationState.NEW_SAVING => ApplicationState.PENDING
+        case YarnApplicationState.SUBMITTED => ApplicationState.PENDING
+        case YarnApplicationState.ACCEPTED => ApplicationState.PENDING
+        case YarnApplicationState.RUNNING => ApplicationState.RUNNING
+        case YarnApplicationState.FINISHED => ApplicationState.FINISHED
+        case YarnApplicationState.FAILED => ApplicationState.FAILED
+        case YarnApplicationState.KILLED => ApplicationState.KILLED
+        case _ =>
+          warn(s"The yarn driver state: $state is not supported, " +
+            "mark the application state as UNKNOWN.")
+          ApplicationState.UNKNOWN
+      }
+
+Build A Custom Application Operation
+------------------------------------
+
+- reference kyuubi-server
+
+   .. code-block:: xml
+
+      <dependency>
+         <groupId>org.apache.kyuubi</groupId>
+         <artifactId>kyuubi-server_2.12</artifactId>
+         <version>1.5.2-incubating</version>
+         <scope>provided</scope>
+      </dependency>
+
+- create a custom class which implements the ``org.apache.kyuubi.engine.ApplicationOperation``.
+
+Enable Custom Application Operation
+-----------------------------------
+
+.. note:: Kyuubi uses Java SPI to load the custom Application Operation
+
+1. create a directory META-INF.services and a file with the fully-qualified name of the interface ``ApplicationOperation``:
+
+   .. code-block:: java
+
+      META-INF.services/org.apache.kyuubi.engine.ApplicationOperation
+
+   then add your fully-qualified name of custom application operation into the file.
+
+2. compile and put the jar into ``$KYUUBI_HOME/jars``
 
 For now, Kyuubi has already supported three built-in application operations: ``JpsApplicationOperation``, ``YarnApplicationOperation`` and ``KubernetesApplicationOperation``.
