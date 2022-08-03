@@ -345,6 +345,7 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_BIND_HOST)
 
+  @deprecated("using kyuubi.frontend.thrift.binary.bind.port instead", "1.4.0")
   val FRONTEND_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.bind.port")
     .doc("(deprecated) Port of the machine on which to run the thrift frontend service " +
       "via binary protocol.")
@@ -417,6 +418,7 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
+  @deprecated("using kyuubi.frontend.thrift.max.message.size instead", "1.4.0")
   val FRONTEND_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.max.message.size")
       .doc("(deprecated) Maximum message size in bytes a Kyuubi server will accept.")
@@ -430,6 +432,7 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_MAX_MESSAGE_SIZE)
 
+  @deprecated("using kyuubi.frontend.thrift.login.timeout instead", "1.4.0")
   val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.login.timeout")
       .doc("(deprecated) Timeout for Thrift clients during login to the thrift frontend service.")
@@ -443,6 +446,7 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_LOGIN_TIMEOUT)
 
+  @deprecated("using kyuubi.frontend.thrift.backoff.slot.length instead", "1.4.0")
   val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.backoff.slot.length")
       .doc("(deprecated) Time to back off during login to the thrift frontend service.")
@@ -889,6 +893,7 @@ object KyuubiConf {
     .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
     .createWithDefault(Duration.ofMinutes(5).toMillis)
 
+  @deprecated("using kyuubi.session.idle.timeout instead", "1.2.0")
   val SESSION_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.timeout")
     .doc("(deprecated)session timeout, it will be closed when it's not accessed for this duration")
     .version("1.0.0")
@@ -1201,6 +1206,7 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("server_operation_logs")
 
+  @deprecated("using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] =
     buildConf("kyuubi.session.engine.share.level")
       .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
@@ -1215,6 +1221,7 @@ object KyuubiConf {
   private val validZookeeperSubPath: Pattern = ("(?!^[\\u002e]{1,2}$)" +
     "(^[\\u0020-\\u002e\\u0030-\\u007e\\u00a0-\\ud7ff\\uf900-\\uffef]{1,}$)").r.pattern
 
+  @deprecated("using kyuubi.engine.share.level.subdomain instead", "1.4.0")
   val ENGINE_SHARE_LEVEL_SUB_DOMAIN: ConfigEntry[Option[String]] =
     buildConf("kyuubi.engine.share.level.sub.domain")
       .doc("(deprecated) - Using kyuubi.engine.share.level.subdomain instead")
@@ -1234,6 +1241,7 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
 
+  @deprecated("using kyuubi.frontend.connection.url.use.hostname instead, 1.5.0")
   val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.connection.url.use.hostname")
       .doc("(deprecated) " +
@@ -1919,7 +1927,7 @@ object KyuubiConf {
       DeprecatedConfig(
         "kyuubi.ha.zookeeper.acl.enabled",
         "1.3.2",
-        "Use kyuubi.ha.zookeeper.auth.type instead"))
+        "Use kyuubi.ha.zookeeper.auth.type and kyuubi.ha.zookeeper.engine.auth.type instead"))
     Map(configs.map { cfg => cfg.key -> cfg }: _*)
   }
 }

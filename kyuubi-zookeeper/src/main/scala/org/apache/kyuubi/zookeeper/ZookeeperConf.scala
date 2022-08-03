@@ -23,12 +23,14 @@ object ZookeeperConf {
 
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
+  @deprecated("using kyuubi.zookeeper.embedded.client.port instead", since = "1.2.0")
   val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("kyuubi.zookeeper.embedded.port")
     .doc("The port of the embedded zookeeper server")
     .version("1.0.0")
     .intConf
     .createWithDefault(2181)
 
+  @deprecated("using kyuubi.zookeeper.embedded.data.dir instead", since = "1.2.0")
   val EMBEDDED_ZK_TEMP_DIR: ConfigEntry[String] = buildConf("kyuubi.zookeeper.embedded.directory")
     .doc("The temporary directory for the embedded zookeeper server")
     .version("1.0.0")
