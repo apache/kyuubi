@@ -18,12 +18,14 @@ Manage Applications against Extra Cluster Managers
 
 .. versionadded:: 1.6.0
 
-Application Operation
+.. caution:: unstable
+
+Build A Custom Application Operation
 ---------------------
 
-Kyuubi supports configure custom ``ApplicationOperation`` for certain cluster manager which provides an ability to control application, includes get application info and kill application.
+Kyuubi supports configuring custom ``ApplicationOperation`` for certain extra cluster manager which provides an ability to control application, including getting information, killing.
 
-The steps of adding custom Application Operation
+The steps of adding a custom Application Operation
 -------------------------------------------------------
 
 1. reference kyuubi-server
@@ -38,51 +40,77 @@ The steps of adding custom Application Operation
       </dependency>
 
 2. create a custom class which implements the ``org.apache.kyuubi.engine.ApplicationOperation``.
-3. compile and put the jar into ``$KYUUBI_HOME/jars``
-
-.. code-block:: scala
-
-   trait ApplicationOperation {
-
-     /**
-      * Step for initializing the instance.
-      */
-     def initialize(conf: KyuubiConf): Unit
-
-     /**
-      * Step to clean up the instance
-      */
-     def stop(): Unit
-
-     /**
-      * Called before other method to do a quick skip
-      *
-      * @param clusterManager the underlying cluster manager or just local instance
-      */
-     def isSupported(clusterManager: Option[String]): Boolean
-
-     /**
-      * Kill the app/engine by the unique application tag
-      *
-      * @param tag the unique application tag for engine instance.
-      *            For example,
-      *            if the Hadoop Yarn is used, for spark applications,
-      *            the tag will be preset via spark.yarn.tags
-      * @return a message contains response describing how the kill process.
-      *
-      * @note For implementations, please suppress exceptions and always return KillResponse
-      */
-     def killApplicationByTag(tag: String): KillResponse
-
-     /**
-      * Get the engine/application status by the unique application tag
-      *
-      * @param tag the unique application tag for engine instance.
-      * @return [[ApplicationInfo]]
-      */
-     def getApplicationInfoByTag(tag: String): ApplicationInfo
-   }
 
 .. note:: Kyuubi uses Java SPI to load the custom Application Operation
 
-For now, Kyuubi has already supported three built-in Application Operations: ``JpsApplicationOperation``, ``YarnApplicationOperation`` and ``KubernetesApplicationOperation``.
+3. create a directory META-INF.services and a file with the fully-qualified name of the interface ``ApplicationOperation``:
+
+   .. code-block:: java
+
+      META-INF.services/org.apache.kyuubi.engine.ApplicationOperation
+
+   then add your fully-qualified name of custom application operation into the file.
+
+4. compile and put the jar into ``$KYUUBI_HOME/jars``
+
+   .. code-block:: scala
+
+      trait ApplicationOperation {
+
+        /**
+         * Step for initializing the instance.
+         */
+        def initialize(conf: KyuubiConf): Unit
+
+        /**
+         * Step to clean up the instance
+         */
+        def stop(): Unit
+
+        /**
+         * Called before other method to do a quick skip
+         *
+         * @param clusterManager the underlying cluster manager or just local instance
+         */
+        def isSupported(clusterManager: Option[String]): Boolean
+
+        /**
+         * Kill the app/engine by the unique application tag
+         *
+         * @param tag the unique application tag for engine instance.
+         *            For example,
+         *            if the Hadoop Yarn is used, for spark applications,
+         *            the tag will be preset via spark.yarn.tags
+         * @return a message contains response describing how the kill process.
+         *
+         * @note For implementations, please suppress exceptions and always return KillResponse
+         */
+        def killApplicationByTag(tag: String): KillResponse
+
+        /**
+         * Get the engine/application status by the unique application tag
+         *
+         * @param tag the unique application tag for engine instance.
+         * @return [[ApplicationInfo]]
+         */
+        def getApplicationInfoByTag(tag: String): ApplicationInfo
+      }
+
+      /**
+        * (killed or not, hint message)
+        */
+      type KillResponse = (Boolean, String)
+
+      object ApplicationState extends Enumeration {
+        type ApplicationState = Value
+        val PENDING, RUNNING, FINISHED, KILLED, FAILED, ZOMBIE, NOT_FOUND, UNKNOWN = Value
+      }
+
+      case class ApplicationInfo(
+          id: String,
+          name: String,
+          state: ApplicationState,
+          url: Option[String] = None,
+          error: Option[String] = None)
+
+For now, Kyuubi has already supported three built-in application operations: ``JpsApplicationOperation``, ``YarnApplicationOperation`` and ``KubernetesApplicationOperation``.
