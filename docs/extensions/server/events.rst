@@ -18,5 +18,47 @@ Handle Events with Custom Event Handler
 
 .. caution:: unstable
 
-.. warning::
-   This page is still in-progress.
+Custom Event Handler
+--------------------
+
+Kyuubi supports custom event handler. It is usually used to write Kyuubi events to some external systems. For example, Kafka, ElasticSearch, etc.
+
+The steps of injecting custom event handler
+--------------------------------------
+
+1. create a custom class which implements the ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider``, and add a file named org.apache.kyuubi.events.handler.CustomEventHandlerProvider in the src/main/resources/META-INF/services folder of jar, its content is the custom class name.
+2. compile and put the jar into ``$KYUUBI_HOME/jars``.
+3. adding configuration at ``kyuubi-defaults.conf``:
+
+   .. code-block:: java
+
+      kyuubi.engine.event.loggers=CUSTOM
+
+The ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider`` has a zero-arg constructor, it can create a custom EventHandler.
+
+.. code-block:: java
+
+   trait CustomEventHandlerProvider {
+     def create(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent]
+   }
+
+Example
+-------
+
+We have a custom class ``Fake1EventHandlerProvider``:
+
+.. code-block:: java
+
+   class Fake1EventHandlerProvider extends CustomEventHandlerProvider {
+     override def create(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
+       new Fake1EventHandler(kyuubiConf)
+     }
+   }
+
+   class Fake1EventHandler(kyuubiConf: KyuubiConf) extends EventHandler[KyuubiEvent] {
+     override def apply(kyuubiEvent: KyuubiEvent): Unit = {
+       // sending events to external system.
+     }
+   }
+
+You can send each KyuubiEvent to an external system by ``Fake1EventHandler``.
