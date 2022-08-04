@@ -24,8 +24,6 @@ import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-import org.apache.kyuubi.engine.ComponentVersion
-
 private[authz] object AuthZUtils {
 
   /**
