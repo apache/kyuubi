@@ -25,7 +25,7 @@ class ComponentVersion(versionString: String) {
   val (majorVersion, minorVersion, patchVersion) =
     """^(\d+)\.(\d+)\.(.*?)$""".r.findFirstMatchIn(versionString) match {
       case Some(m) =>
-        (m.group(1).toInt, m.group(2).toInt, m.group(3).toInt)
+        (m.group(1).toInt, m.group(2).toInt, m.group(3))
       case None =>
         throw new IllegalArgumentException(s"Tried to parse '$versionString' as a project" +
           s" version string, but it could not find the major, minor and patch version numbers.")
