@@ -32,7 +32,7 @@ For now, Kyuubi has already supported serval built-in application operations:
 - ``YarnApplicationOperation``: an operation that can manage apps with a Hadoop Yarn cluster, e.g. a spark on yarn application
 - ``KubernetesApplicationOperation``: an operation that can manage apps with a k8s cluster, e.g. a spark on k8s application
 
-Besides those built-in ones, Kyuubi also supports loading custom ``ApplicationOperation``s through the Java `ServiceLoader`(SPI) for extra cluster managers.
+Besides those built-in ones, Kyuubi also supports loading custom ``ApplicationOperation`` through the Java `ServiceLoader` (SPI) for extra cluster managers.
 
 The rest of this article will show you the specifications and steps to build and enable a custom operation.
 
@@ -152,5 +152,3 @@ Enable Custom Application Operation
 .. note:: Kyuubi uses Java SPI to load the custom Application Operation
 
 - compile and put the jar into ``$KYUUBI_HOME/jars``
-
-For now, Kyuubi has already supported three built-in application operations: ``JpsApplicationOperation``, ``YarnApplicationOperation`` and ``KubernetesApplicationOperation``.
