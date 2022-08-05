@@ -18,64 +18,92 @@
 package org.apache.kyuubi.plugin.spark.authz.util
 
 /**
- * Encapsulate a component (Kyuubi/Spark/Hive/Flink) version for the convenience of version checks.
+ * Encapsulate a component Spark version for the convenience of version checks.
  * Copy from org.apache.kyuubi.engine.ComponentVersion
  */
-class ComponentVersion(versionString: String) {
+case class ComponentVersion(majorVersion: Int, minorVersion: Int) {
 
-  val (majorVersion, minorVersion, patchVersion) =
-    """^(\d+)\.(\d+)\.(.*?)$""".r.findFirstMatchIn(versionString) match {
-      case Some(m) =>
-        (m.group(1).toInt, m.group(2).toInt, m.group(3))
-      case None =>
-        throw new IllegalArgumentException(s"Tried to parse '$versionString' as a project" +
-          s" version string, but it could not find the major, minor and patch version numbers.")
-    }
+  def isVersionAtMost(targetVersionString: String): Boolean = {
+    this.compareVersion(targetVersionString, ComponentVersion.atMost)
+  }
+
+  def isVersionAtLeast(targetVersionString: String): Boolean = {
+    this.compareVersion(targetVersionString, ComponentVersion.atLeast)
+  }
+
+  def isVersionEqualTo(targetVersionString: String): Boolean = {
+    this.compareVersion(targetVersionString, ComponentVersion.equalTo)
+  }
+
+  def compareVersion(
+      targetVersionString: String,
+      callback: (Int, Int, Int, Int) => Boolean): Boolean = {
+    val targetVersion = ComponentVersion(targetVersionString)
+    val targetMajor = targetVersion.majorVersion
+    val targetMinor = targetVersion.minorVersion
+    callback(targetMajor, targetMinor, this.majorVersion, this.minorVersion)
+  }
 }
 
 object ComponentVersion {
+
+  def apply(versionString: String): ComponentVersion = {
+    """^(\d+)\.(\d+)(\..*)?$""".r.findFirstMatchIn(versionString) match {
+      case Some(m) =>
+        ComponentVersion(m.group(1).toInt, m.group(2).toInt)
+      case None =>
+        throw new IllegalArgumentException(s"Tried to parse '$versionString' as a project" +
+          s" version string, but it could not find the major and minor version numbers.")
+    }
+  }
 
   def isVersionAtMost(targetVersionString: String, runtimeVersionString: String): Boolean = {
     compareVersion(
       targetVersionString,
       runtimeVersionString,
-      (targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int) => {
-        (runtimeMajor < targetMajor) || {
-          runtimeMajor == targetMajor && runtimeMinor <= targetMinor
-        }
-      })
+      atMost)
   }
 
   def isVersionAtLeast(targetVersionString: String, runtimeVersionString: String): Boolean = {
     compareVersion(
       targetVersionString,
       runtimeVersionString,
-      (targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int) => {
-        (runtimeMajor > targetMajor) || {
-          runtimeMajor == targetMajor && runtimeMinor >= targetMinor
-        }
-      })
+      atLeast)
   }
 
   def isVersionEqualTo(targetVersionString: String, runtimeVersionString: String): Boolean = {
     compareVersion(
       targetVersionString,
       runtimeVersionString,
-      (targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int) => {
-        runtimeMajor == targetMajor && runtimeMinor == targetMinor
-      })
+      equalTo)
   }
 
   def compareVersion(
       targetVersionString: String,
       runtimeVersionString: String,
       callback: (Int, Int, Int, Int) => Boolean): Boolean = {
-    val runtimeVersion = new ComponentVersion(runtimeVersionString)
-    val targetVersion = new ComponentVersion(targetVersionString)
+    val runtimeVersion = ComponentVersion(runtimeVersionString)
+    val targetVersion = ComponentVersion(targetVersionString)
     val runtimeMajor = runtimeVersion.majorVersion
     val runtimeMinor = runtimeVersion.minorVersion
     val targetMajor = targetVersion.majorVersion
     val targetMinor = targetVersion.minorVersion
     callback(targetMajor, targetMinor, runtimeMajor, runtimeMinor)
+  }
+
+  def atMost(targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int): Boolean = {
+    (runtimeMajor < targetMajor) || {
+      runtimeMajor == targetMajor && runtimeMinor <= targetMinor
+    }
+  }
+
+  def atLeast(targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int): Boolean = {
+    (runtimeMajor > targetMajor) || {
+      runtimeMajor == targetMajor && runtimeMinor >= targetMinor
+    }
+  }
+
+  def equalTo(targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int): Boolean = {
+    runtimeMajor == targetMajor && runtimeMinor == targetMinor
   }
 }

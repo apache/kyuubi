@@ -21,7 +21,8 @@ import java.sql.{DatabaseMetaData, ResultSet, SQLException, SQLFeatureNotSupport
 
 import scala.util.Random
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException}
+import org.apache.kyuubi.engine.ComponentVersion
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 // For both `in-memory` and `hive` external catalog
@@ -408,8 +409,9 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
       assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
       assert(metaData.getDriverName === "Kyuubi Project Hive JDBC Shaded Client")
       assert(metaData.getDriverVersion === KYUUBI_VERSION)
-      assert(metaData.getDatabaseMajorVersion === Utils.majorVersion(KYUUBI_VERSION))
-      assert(metaData.getDatabaseMinorVersion === Utils.minorVersion(KYUUBI_VERSION))
+      val ver = ComponentVersion(KYUUBI_VERSION)
+      assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
+      assert(metaData.getDatabaseMinorVersion === ver.minorVersion)
       assert(
         metaData.getIdentifierQuoteString === " ",
         "This method returns a space \" \" if identifier quoting is not supported")

@@ -21,58 +21,15 @@ import org.apache.spark.SPARK_VERSION
 
 object SparkUtils {
 
-  /**
-   * Given a Kyuubi/Spark/Hive version string,
-   * return the (major version number, minor version number).
-   * E.g., for 2.0.1-SNAPSHOT, return (2, 0).
-   */
-  def majorMinorVersion(version: String): (Int, Int) = {
-    """^(\d+)\.(\d+)(\..*)?$""".r.findFirstMatchIn(version) match {
-      case Some(m) =>
-        (m.group(1).toInt, m.group(2).toInt)
-      case None =>
-        throw new IllegalArgumentException(s"Tried to parse '$version' as a project" +
-          s" version string, but it could not find the major and minor version numbers.")
-    }
+  def isSparkVersionAtMost(targetVersionString: String): Boolean = {
+    ComponentVersion.isVersionAtMost(targetVersionString, SPARK_VERSION)
   }
 
-  /**
-   * Given a Kyuubi/Spark/Hive version string, return the major version number.
-   * E.g., for 2.0.1-SNAPSHOT, return 2.
-   */
-  def majorVersion(version: String): Int = majorMinorVersion(version)._1
-
-  /**
-   * Given a Kyuubi/Spark/Hive version string, return the minor version number.
-   * E.g., for 2.0.1-SNAPSHOT, return 0.
-   */
-  def minorVersion(version: String): Int = majorMinorVersion(version)._2
-
-  def isSparkVersionAtMost(ver: String): Boolean = {
-    val runtimeMajor = majorVersion(SPARK_VERSION)
-    val targetMajor = majorVersion(ver)
-    (runtimeMajor < targetMajor) || {
-      val runtimeMinor = minorVersion(SPARK_VERSION)
-      val targetMinor = minorVersion(ver)
-      runtimeMajor == targetMajor && runtimeMinor <= targetMinor
-    }
+  def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
+    ComponentVersion.isVersionAtLeast(targetVersionString, SPARK_VERSION)
   }
 
-  def isSparkVersionAtLeast(ver: String): Boolean = {
-    val runtimeMajor = majorVersion(SPARK_VERSION)
-    val targetMajor = majorVersion(ver)
-    (runtimeMajor > targetMajor) || {
-      val runtimeMinor = minorVersion(SPARK_VERSION)
-      val targetMinor = minorVersion(ver)
-      runtimeMajor == targetMajor && runtimeMinor >= targetMinor
-    }
-  }
-
-  def isSparkVersionEqualTo(ver: String): Boolean = {
-    val runtimeMajor = majorVersion(SPARK_VERSION)
-    val targetMajor = majorVersion(ver)
-    val runtimeMinor = minorVersion(SPARK_VERSION)
-    val targetMinor = minorVersion(ver)
-    runtimeMajor == targetMajor && runtimeMinor == targetMinor
+  def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
+    ComponentVersion.isVersionEqualTo(targetVersionString, SPARK_VERSION)
   }
 }

@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.spark.connector.common
 
 /**
- * Encapsulate a component (Kyuubi/Spark/Hive/Flink etc.) version
- * for the convenience of version checks.
+ * Encapsulate a component Spark version for the convenience of version checks.
+ * Copy from org.apache.kyuubi.engine.ComponentVersion
  */
 case class ComponentVersion(majorVersion: Int, minorVersion: Int) {
 

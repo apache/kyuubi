@@ -22,16 +22,77 @@ import org.apache.kyuubi.KyuubiFunSuite
 class ComponentVersionSuite extends KyuubiFunSuite {
 
   test("parse normal version") {
-    val version = new ComponentVersion("1.12.4")
+    val version = ComponentVersion("1.12.4")
     assert(version.majorVersion === 1)
     assert(version.minorVersion === 12)
-    assert(version.patchVersion === "4")
   }
 
   test("parse snapshot version") {
-    val version = new ComponentVersion("2.14.8-SNAPSHOT")
+    val version = ComponentVersion("2.14.8-SNAPSHOT")
     assert(version.majorVersion === 2)
     assert(version.minorVersion === 14)
-    assert(version.patchVersion === "8-SNAPSHOT")
+  }
+
+  test("parse binary version") {
+    val version = ComponentVersion("0.9")
+    assert(version.majorVersion === 0)
+    assert(version.minorVersion === 9)
+  }
+
+  test("companion object compare version at most") {
+    assert(ComponentVersion.isVersionAtMost("2.8.8-SNAPSHOT", "1.12.4"))
+    assert(ComponentVersion.isVersionAtMost("1.14.4-SNAPSHOT", "1.12.4"))
+    assert(ComponentVersion.isVersionAtMost("1.12.4-SNAPSHOT", "1.12.4"))
+    assert(ComponentVersion.isVersionAtMost("1.12.3-SNAPSHOT", "1.12.4"))
+    assert(!ComponentVersion.isVersionAtMost("1.10.4-SNAPSHOT", "1.12.4"))
+    assert(!ComponentVersion.isVersionAtMost("0.14.4-SNAPSHOT", "1.12.4"))
+  }
+
+  test("companion class compare version at most") {
+    val runtimeVersion = ComponentVersion("1.12.4")
+    assert(runtimeVersion.isVersionAtMost("2.8.8-SNAPSHOT"))
+    assert(runtimeVersion.isVersionAtMost("1.14.4-SNAPSHOT"))
+    assert(runtimeVersion.isVersionAtMost("1.12.4-SNAPSHOT"))
+    assert(runtimeVersion.isVersionAtMost("1.12.3-SNAPSHOT"))
+    assert(!runtimeVersion.isVersionAtMost("1.10.4-SNAPSHOT"))
+    assert(!runtimeVersion.isVersionAtMost("0.14.4-SNAPSHOT"))
+  }
+
+  test("companion object compare version at least") {
+    assert(ComponentVersion.isVersionAtLeast("1.10.4-SNAPSHOT", "1.12.4"))
+    assert(ComponentVersion.isVersionAtLeast("0.14.4-SNAPSHOT", "1.12.4"))
+    assert(ComponentVersion.isVersionAtLeast("1.12.4-SNAPSHOT", "1.12.4"))
+    assert(ComponentVersion.isVersionAtLeast("1.12.5-SNAPSHOT", "1.12.4"))
+    assert(!ComponentVersion.isVersionAtLeast("1.14.4-SNAPSHOT", "1.12.4"))
+    assert(!ComponentVersion.isVersionAtLeast("2.8.8-SNAPSHOT", "1.12.4"))
+  }
+
+  test("companion class compare version at least") {
+    val runtimeVersion = ComponentVersion("1.12.4")
+    assert(runtimeVersion.isVersionAtLeast("1.10.4-SNAPSHOT"))
+    assert(runtimeVersion.isVersionAtLeast("0.14.4-SNAPSHOT"))
+    assert(runtimeVersion.isVersionAtLeast("1.12.4-SNAPSHOT"))
+    assert(runtimeVersion.isVersionAtLeast("1.12.5-SNAPSHOT"))
+    assert(!runtimeVersion.isVersionAtLeast("1.14.4-SNAPSHOT"))
+    assert(!runtimeVersion.isVersionAtLeast("2.8.8-SNAPSHOT"))
+  }
+
+  test("companion object compare version equal to") {
+    assert(ComponentVersion.isVersionEqualTo("1.12.4", "1.12.4"))
+    assert(ComponentVersion.isVersionEqualTo("1.12.5-SNAPSHOT", "1.12.4"))
+    assert(ComponentVersion.isVersionEqualTo("1.12.4-SNAPSHOT", "1.12.4"))
+    assert(ComponentVersion.isVersionEqualTo("1.12.3-SNAPSHOT", "1.12.4"))
+    assert(!ComponentVersion.isVersionEqualTo("1.10.4", "1.12.4"))
+    assert(!ComponentVersion.isVersionEqualTo("2.12.8", "1.12.8"))
+  }
+
+  test("companion class compare version equal to") {
+    val runtimeVersion = ComponentVersion("1.12.4")
+    assert(runtimeVersion.isVersionEqualTo("1.12.4"))
+    assert(runtimeVersion.isVersionEqualTo("1.12.5-SNAPSHOT"))
+    assert(runtimeVersion.isVersionEqualTo("1.12.4-SNAPSHOT"))
+    assert(runtimeVersion.isVersionEqualTo("1.12.3-SNAPSHOT"))
+    assert(!runtimeVersion.isVersionEqualTo("1.10.4"))
+    assert(!runtimeVersion.isVersionEqualTo("2.12.8"))
   }
 }

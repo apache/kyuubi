@@ -21,8 +21,9 @@ import java.security.Security
 
 import org.apache.thrift.transport.{TSaslServerTransport, TSocket}
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.ComponentVersion
 import org.apache.kyuubi.service.{NoopTBinaryFrontendServer, TBinaryFrontendService}
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
 
@@ -62,8 +63,8 @@ class PlainSASLHelperSuite extends KyuubiFunSuite {
     assert(saslPlainProvider.containsKey("SaslServerFactory.PLAIN"))
     assert(saslPlainProvider.getName === "KyuubiSaslPlain")
     val version: Double = {
-      val (major, minor) = Utils.majorMinorVersion(KYUUBI_VERSION)
-      major + minor.toDouble / 10
+      val ver = ComponentVersion(KYUUBI_VERSION)
+      ver.majorVersion + ver.minorVersion.toDouble / 10
     }
     assert(saslPlainProvider.getVersion === version)
   }
