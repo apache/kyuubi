@@ -45,7 +45,6 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
 
   override def beforeAll(): Unit = {
     etcdCluster = new Etcd.Builder()
-      .withImage("gcr.io/etcd-development/etcd:v3.5.4")
       .withNodes(2)
       .build()
     etcdCluster.start()
