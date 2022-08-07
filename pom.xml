@@ -248,18 +248,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-
-        <repository>
-            <id>hadoop-staging</id>
-            <name>Hadoop Staging Repository</name>
-            <url>https://repository.apache.org/content/repositories/orgapachehadoop-1358/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
     </repositories>
 
     <pluginRepositories>
