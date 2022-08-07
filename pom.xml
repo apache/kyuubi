@@ -151,7 +151,7 @@
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
-        <log4j.version>2.17.2</log4j.version>
+        <log4j.version>2.18.0</log4j.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
         <netty.version>4.1.73.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
