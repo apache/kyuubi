@@ -24,7 +24,7 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin {
 
   def isSparkVersionAtLeast(ver: String): Boolean = {
-    SemanticVersion.isVersionAtLeast(ver, SPARK_COMPILE_VERSION)
+    SemanticVersion(SPARK_COMPILE_VERSION).isVersionAtLeast(ver)
   }
 
   test("get catalogs") {

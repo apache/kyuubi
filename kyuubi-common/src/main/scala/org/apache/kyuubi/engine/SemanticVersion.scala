@@ -24,15 +24,28 @@ package org.apache.kyuubi.engine
 case class SemanticVersion(majorVersion: Int, minorVersion: Int) {
 
   def isVersionAtMost(targetVersionString: String): Boolean = {
-    this.compareVersion(targetVersionString, SemanticVersion.atMost)
+    this.compareVersion(
+      targetVersionString,
+      (targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int) =>
+        (runtimeMajor < targetMajor) || {
+          runtimeMajor == targetMajor && runtimeMinor <= targetMinor
+        })
   }
 
   def isVersionAtLeast(targetVersionString: String): Boolean = {
-    this.compareVersion(targetVersionString, SemanticVersion.atLeast)
+    this.compareVersion(
+      targetVersionString,
+      (targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int) =>
+        (runtimeMajor > targetMajor) || {
+          runtimeMajor == targetMajor && runtimeMinor >= targetMinor
+        })
   }
 
   def isVersionEqualTo(targetVersionString: String): Boolean = {
-    this.compareVersion(targetVersionString, SemanticVersion.equalTo)
+    this.compareVersion(
+      targetVersionString,
+      (targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int) =>
+        runtimeMajor == targetMajor && runtimeMinor == targetMinor)
   }
 
   def compareVersion(
@@ -55,55 +68,5 @@ object SemanticVersion {
         throw new IllegalArgumentException(s"Tried to parse '$versionString' as a project" +
           s" version string, but it could not find the major and minor version numbers.")
     }
-  }
-
-  def isVersionAtMost(targetVersionString: String, runtimeVersionString: String): Boolean = {
-    compareVersion(
-      targetVersionString,
-      runtimeVersionString,
-      atMost)
-  }
-
-  def isVersionAtLeast(targetVersionString: String, runtimeVersionString: String): Boolean = {
-    compareVersion(
-      targetVersionString,
-      runtimeVersionString,
-      atLeast)
-  }
-
-  def isVersionEqualTo(targetVersionString: String, runtimeVersionString: String): Boolean = {
-    compareVersion(
-      targetVersionString,
-      runtimeVersionString,
-      equalTo)
-  }
-
-  def compareVersion(
-      targetVersionString: String,
-      runtimeVersionString: String,
-      callback: (Int, Int, Int, Int) => Boolean): Boolean = {
-    val runtimeVersion = SemanticVersion(runtimeVersionString)
-    val targetVersion = SemanticVersion(targetVersionString)
-    val runtimeMajor = runtimeVersion.majorVersion
-    val runtimeMinor = runtimeVersion.minorVersion
-    val targetMajor = targetVersion.majorVersion
-    val targetMinor = targetVersion.minorVersion
-    callback(targetMajor, targetMinor, runtimeMajor, runtimeMinor)
-  }
-
-  def atMost(targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int): Boolean = {
-    (runtimeMajor < targetMajor) || {
-      runtimeMajor == targetMajor && runtimeMinor <= targetMinor
-    }
-  }
-
-  def atLeast(targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int): Boolean = {
-    (runtimeMajor > targetMajor) || {
-      runtimeMajor == targetMajor && runtimeMinor >= targetMinor
-    }
-  }
-
-  def equalTo(targetMajor: Int, targetMinor: Int, runtimeMajor: Int, runtimeMinor: Int): Boolean = {
-    runtimeMajor == targetMajor && runtimeMinor == targetMinor
   }
 }

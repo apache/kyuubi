@@ -84,14 +84,14 @@ private[authz] object AuthZUtils {
   }
 
   def isSparkVersionAtMost(targetVersionString: String): Boolean = {
-    SemanticVersion.isVersionAtMost(targetVersionString, SPARK_VERSION)
+    SemanticVersion(SPARK_VERSION).isVersionAtMost(targetVersionString)
   }
 
   def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
-    SemanticVersion.isVersionAtLeast(targetVersionString, SPARK_VERSION)
+    SemanticVersion(SPARK_VERSION).isVersionAtLeast(targetVersionString)
   }
 
   def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
-    SemanticVersion.isVersionEqualTo(targetVersionString, SPARK_VERSION)
+    SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
   }
 }
