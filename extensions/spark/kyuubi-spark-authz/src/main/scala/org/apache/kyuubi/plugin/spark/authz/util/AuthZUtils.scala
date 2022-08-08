@@ -24,7 +24,7 @@ import org.apache.spark.SPARK_VERSION
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.connector.catalog.Table
+import org.apache.spark.sql.connector.catalog.{Identifier, Table}
 
 private[authz] object AuthZUtils {
 
@@ -89,8 +89,8 @@ private[authz] object AuthZUtils {
     plan.nodeName == "DataSourceV2Relation" && plan.resolved
   }
 
-  def getDatasourceV2Table(plan: LogicalPlan): Table = {
-    getFieldVal[Table](plan, "table")
+  def getDatasourceV2Identifier(plan: LogicalPlan): Option[Identifier] = {
+    getFieldVal[Option[Identifier]](plan, "identifier")
   }
 
   /**

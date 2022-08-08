@@ -45,13 +45,14 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
           applyFilterAndMasking(logicalRelation, table.get.identifier, spark)
         }
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
-        val table = getDatasourceV2Table(datasourceV2Relation)
-        val catalogDbTable = table.name.split("\\.")
-        if (catalogDbTable.length != 3) {
+        val identifier = getDatasourceV2Identifier(datasourceV2Relation)
+        if (identifier.isEmpty) {
           return datasourceV2Relation
+        } else {
+          val tableIdentifier = TableIdentifier(identifier.get.name,
+            Option(identifier.get.namespace.mkString(".")))
+          applyFilterAndMasking(datasourceV2Relation, tableIdentifier, spark)
         }
-        val tableIdentifier = TableIdentifier(catalogDbTable(2), Option(catalogDbTable(1)))
-        applyFilterAndMasking(datasourceV2Relation, tableIdentifier, spark)
       case other => apply(other)
     }
   }
