@@ -39,7 +39,6 @@ trait WithEtcdCluster extends KyuubiFunSuite {
 
   override def beforeAll(): Unit = {
     etcdCluster = new Etcd.Builder()
-      .withImage("gcr.io/etcd-development/etcd:v3.5.4")
       .withNodes(1)
       .build()
     etcdCluster.start()
