@@ -89,8 +89,8 @@ private[authz] object AuthZUtils {
     plan.nodeName == "DataSourceV2Relation" && plan.resolved
   }
 
-  def getDatasourceV2Table(plan: LogicalPlan): Option[Table] = {
-    getFieldVal[Option[Table]](plan, "table")
+  def getDatasourceV2Table(plan: LogicalPlan): Table = {
+    getFieldVal[Table](plan, "table")
   }
 
   /**

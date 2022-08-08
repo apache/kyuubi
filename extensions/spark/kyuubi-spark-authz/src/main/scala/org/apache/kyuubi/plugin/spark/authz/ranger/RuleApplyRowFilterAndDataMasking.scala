@@ -46,10 +46,10 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         }
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val table = getDatasourceV2Table(datasourceV2Relation)
-        if (table.isEmpty) {
+        if (table == null) {
           datasourceV2Relation
         } else {
-          val catalogDbTable = table.get.name.split("\\.")
+          val catalogDbTable = table.name.split("\\.")
           if (catalogDbTable.length != 3) {
             return datasourceV2Relation
           }
