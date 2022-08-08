@@ -47,7 +47,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val identifier = getDatasourceV2Identifier(datasourceV2Relation)
         if (identifier.isEmpty) {
-          return datasourceV2Relation
+          datasourceV2Relation
         } else {
           val tableIdentifier = TableIdentifier(identifier.get.name,
             Option(identifier.get.namespace.mkString(".")))
