@@ -29,14 +29,14 @@ object HighAvailabilityConf {
 
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
-  @deprecated(s"using ${HA_ADDRESSES.key} instead", "1.6.0")
+  @deprecated("using kyuubi.ha.addresses instead", "1.6.0")
   val HA_ZK_QUORUM: ConfigEntry[String] = buildConf("kyuubi.ha.zookeeper.quorum")
     .doc("(deprecated) The connection string for the zookeeper ensemble")
     .version("1.0.0")
     .stringConf
     .createWithDefault("")
 
-  @deprecated(s"using ${HA_NAMESPACE.key} instead", "1.6.0")
+  @deprecated("using kyuubi.ha.namespace instead", "1.6.0")
   val HA_ZK_NAMESPACE: ConfigEntry[String] = buildConf("kyuubi.ha.zookeeper.namespace")
     .doc("(deprecated) The root directory for the service to deploy its instance uri")
     .version("1.0.0")
@@ -64,7 +64,9 @@ object HighAvailabilityConf {
       .checkValue(_.nonEmpty, "must not be empty")
       .createWithDefault("org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient")
 
-  @deprecated(s"using ${HA_ZK_AUTH_TYPE.key} and ${HA_ZK_ENGINE_AUTH_TYPE.key} instead", "1.3.2")
+  @deprecated(
+    "using kyuubi.ha.zookeeper.auth.type and kyuubi.ha.zookeeper.engine.auth.type instead",
+    "1.3.2")
   val HA_ZK_ACL_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.ha.zookeeper.acl.enabled")
       .doc("Set to true if the zookeeper ensemble is kerberized")
