@@ -25,7 +25,7 @@ import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
-import org.apache.kyuubi.spark.connector.tpcds.TPCDSBatchScanConf.{MAX_PARTITION_BYTES_CONF, TPCDS_CONNECTOR_READ_CONF_PREFIX}
+import org.apache.kyuubi.spark.connector.tpcds.TPCDSConf._
 
 class TPCDSTableSuite extends KyuubiFunSuite {
 
@@ -144,7 +144,7 @@ class TPCDSTableSuite extends KyuubiFunSuite {
       assert(scan.isDefined)
       val expected =
         (TPCDSStatisticsUtils.sizeInBytes(table, scale) / maxPartitionBytes).ceil.toInt
-      assert(scan.get.planInputPartitions.size == expected)
+      assert(scan.get.planInputPartitions.length == expected)
     }
   }
 }
