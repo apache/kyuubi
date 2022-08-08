@@ -62,9 +62,8 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
 
   private def applyFilterAndMasking(
       plan: LogicalPlan,
-      table: CatalogTable,
+      identifier: TableIdentifier,
       spark: SparkSession): LogicalPlan = {
-    val identifier = table.identifier
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = OperationType(plan.nodeName)
     val parse = spark.sessionState.sqlParser.parseExpression _
