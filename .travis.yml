@@ -26,9 +26,7 @@ branches:
   only:
     - master
 
-language: scala
-scala:
-  - 2.12.15
+language: java
 jdk:
   - openjdk8
 
@@ -56,10 +54,10 @@ cache:
     - $HOME/.m2
 
 install:
+  - jdk_switcher use openjdk8
   - ./build/mvn --version
 
 before_script:
-  - export JAVA_HOME="$(realpath -Pm "$(which javac)/../../")"
   - export MVN_ARGS="-Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -V -B -ntp -Dorg.slf4j.simpleLogger.defaultLogLevel=warn"
   - ./build/mvn clean install -DskipTests $MVN_ARGS
 
