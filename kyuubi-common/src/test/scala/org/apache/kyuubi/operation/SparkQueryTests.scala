@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
-import org.apache.kyuubi.engine.ComponentVersion
+import org.apache.kyuubi.engine.SemanticVersion
 
 trait SparkQueryTests extends HiveJDBCTestHelper {
 
@@ -683,7 +683,7 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       sparkRuntimeVer = result.getString(1)
       assert(!result.next())
     }
-    val ver = ComponentVersion(sparkRuntimeVer)
+    val ver = SemanticVersion(sparkRuntimeVer)
     (ver.majorVersion, ver.minorVersion)
   }
 }

@@ -21,36 +21,36 @@ package org.apache.kyuubi.plugin.spark.authz.util
  * Encapsulate a component Spark version for the convenience of version checks.
  * Copy from org.apache.kyuubi.engine.ComponentVersion
  */
-case class ComponentVersion(majorVersion: Int, minorVersion: Int) {
+case class SemanticVersion(majorVersion: Int, minorVersion: Int) {
 
   def isVersionAtMost(targetVersionString: String): Boolean = {
-    this.compareVersion(targetVersionString, ComponentVersion.atMost)
+    this.compareVersion(targetVersionString, SemanticVersion.atMost)
   }
 
   def isVersionAtLeast(targetVersionString: String): Boolean = {
-    this.compareVersion(targetVersionString, ComponentVersion.atLeast)
+    this.compareVersion(targetVersionString, SemanticVersion.atLeast)
   }
 
   def isVersionEqualTo(targetVersionString: String): Boolean = {
-    this.compareVersion(targetVersionString, ComponentVersion.equalTo)
+    this.compareVersion(targetVersionString, SemanticVersion.equalTo)
   }
 
   def compareVersion(
       targetVersionString: String,
       callback: (Int, Int, Int, Int) => Boolean): Boolean = {
-    val targetVersion = ComponentVersion(targetVersionString)
+    val targetVersion = SemanticVersion(targetVersionString)
     val targetMajor = targetVersion.majorVersion
     val targetMinor = targetVersion.minorVersion
     callback(targetMajor, targetMinor, this.majorVersion, this.minorVersion)
   }
 }
 
-object ComponentVersion {
+object SemanticVersion {
 
-  def apply(versionString: String): ComponentVersion = {
+  def apply(versionString: String): SemanticVersion = {
     """^(\d+)\.(\d+)(\..*)?$""".r.findFirstMatchIn(versionString) match {
       case Some(m) =>
-        ComponentVersion(m.group(1).toInt, m.group(2).toInt)
+        SemanticVersion(m.group(1).toInt, m.group(2).toInt)
       case None =>
         throw new IllegalArgumentException(s"Tried to parse '$versionString' as a project" +
           s" version string, but it could not find the major and minor version numbers.")
@@ -82,8 +82,8 @@ object ComponentVersion {
       targetVersionString: String,
       runtimeVersionString: String,
       callback: (Int, Int, Int, Int) => Boolean): Boolean = {
-    val runtimeVersion = ComponentVersion(runtimeVersionString)
-    val targetVersion = ComponentVersion(targetVersionString)
+    val runtimeVersion = SemanticVersion(runtimeVersionString)
+    val targetVersion = SemanticVersion(targetVersionString)
     val runtimeMajor = runtimeVersion.majorVersion
     val runtimeMinor = runtimeVersion.minorVersion
     val targetMajor = targetVersion.majorVersion

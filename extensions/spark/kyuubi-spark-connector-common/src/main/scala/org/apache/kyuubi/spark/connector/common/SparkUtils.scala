@@ -22,14 +22,14 @@ import org.apache.spark.SPARK_VERSION
 object SparkUtils {
 
   def isSparkVersionAtMost(targetVersionString: String): Boolean = {
-    ComponentVersion.isVersionAtMost(targetVersionString, SPARK_VERSION)
+    SemanticVersion.isVersionAtMost(targetVersionString, SPARK_VERSION)
   }
 
   def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
-    ComponentVersion.isVersionAtLeast(targetVersionString, SPARK_VERSION)
+    SemanticVersion.isVersionAtLeast(targetVersionString, SPARK_VERSION)
   }
 
   def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
-    ComponentVersion.isVersionEqualTo(targetVersionString, SPARK_VERSION)
+    SemanticVersion.isVersionEqualTo(targetVersionString, SPARK_VERSION)
   }
 }

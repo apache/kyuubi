@@ -32,7 +32,7 @@ import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.flink.table.client.gateway.local.LocalExecutor
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.ComponentVersion
+import org.apache.kyuubi.engine.SemanticVersion
 
 object FlinkEngineUtils extends Logging {
 
@@ -41,8 +41,8 @@ object FlinkEngineUtils extends Logging {
 
   def checkFlinkVersion(): Unit = {
     val flinkVersion = EnvironmentInformation.getVersion
-    ComponentVersion(flinkVersion) match {
-      case ComponentVersion(1, 14 | 15) =>
+    SemanticVersion(flinkVersion) match {
+      case SemanticVersion(1, 14 | 15) =>
         logger.info(s"The current Flink version is $flinkVersion")
       case _ =>
         throw new UnsupportedOperationException(

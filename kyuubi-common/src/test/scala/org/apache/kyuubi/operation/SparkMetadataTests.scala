@@ -22,7 +22,7 @@ import java.sql.{DatabaseMetaData, ResultSet, SQLException, SQLFeatureNotSupport
 import scala.util.Random
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException}
-import org.apache.kyuubi.engine.ComponentVersion
+import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 // For both `in-memory` and `hive` external catalog
@@ -409,7 +409,7 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
       assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
       assert(metaData.getDriverName === "Kyuubi Project Hive JDBC Shaded Client")
       assert(metaData.getDriverVersion === KYUUBI_VERSION)
-      val ver = ComponentVersion(KYUUBI_VERSION)
+      val ver = SemanticVersion(KYUUBI_VERSION)
       assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
       assert(metaData.getDatabaseMinorVersion === ver.minorVersion)
       assert(
