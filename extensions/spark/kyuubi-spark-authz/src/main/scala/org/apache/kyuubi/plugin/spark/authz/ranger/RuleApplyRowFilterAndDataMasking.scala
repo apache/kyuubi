@@ -18,7 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -36,13 +36,25 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
-        applyFilterAndMasking(hiveTableRelation, table, spark)
+        applyFilterAndMasking(hiveTableRelation, table.identifier, spark)
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         val table = getDatasourceTable(logicalRelation)
         if (table.isEmpty) {
           logicalRelation
         } else {
-          applyFilterAndMasking(logicalRelation, table.get, spark)
+          applyFilterAndMasking(logicalRelation, table.get.identifier, spark)
+        }
+      case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
+        val table = getDatasourceV2Table(datasourceV2Relation)
+        if (table.isEmpty) {
+          datasourceV2Relation
+        } else {
+          val catalogDbTable = table.get.name.split("\\.")
+          if (catalogDbTable.length != 3) {
+            return datasourceV2Relation
+          }
+          val tableIdentifier = TableIdentifier(catalogDbTable(2), Option(catalogDbTable(1)))
+          applyFilterAndMasking(datasourceV2Relation, tableIdentifier, spark)
         }
       case other => apply(other)
     }
