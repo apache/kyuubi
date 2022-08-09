@@ -35,7 +35,6 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
   }
 
   override def afterAll(): Unit = {
-    ldapServer.close()
     super.afterAll()
   }
 
