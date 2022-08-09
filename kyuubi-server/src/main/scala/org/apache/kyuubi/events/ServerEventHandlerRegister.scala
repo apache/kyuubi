@@ -26,7 +26,7 @@ import org.apache.kyuubi.util.KyuubiHadoopUtils
 object ServerEventHandlerRegister extends EventHandlerRegister {
 
   override protected def createJsonEventHandler(kyuubiConf: KyuubiConf)
-      : Option[EventHandler[KyuubiEvent]] = {
+      : EventHandler[KyuubiEvent] = {
     val hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val handler = ServerJsonLoggingEventHandler(
@@ -34,6 +34,6 @@ object ServerEventHandlerRegister extends EventHandlerRegister {
       SERVER_EVENT_JSON_LOG_PATH,
       hadoopConf,
       kyuubiConf)
-    Option.apply(handler)
+    handler
   }
 }

@@ -29,7 +29,7 @@ trait EventHandlerRegister extends Logging {
     register(loggers, conf)
   }
 
-  def registerServiceEventLoggers(conf: KyuubiConf): Unit = {
+  def registerServerEventLoggers(conf: KyuubiConf): Unit = {
     val loggers = conf.get(SERVER_EVENT_LOGGERS)
     register(loggers, conf)
   }
@@ -37,30 +37,26 @@ trait EventHandlerRegister extends Logging {
   private def register(loggers: Seq[String], conf: KyuubiConf): Unit = {
     loggers
       .map(EventLoggerType.withName)
-      .foreach {
-        loadEventHandler(_, conf)
-          .foreach(EventBus.register)
+      .foreach { logger =>
+        EventBus.register(loadEventHandler(logger, conf))
       }
   }
 
-  protected def createSparkEventHandler(kyuubiConf: KyuubiConf)
-      : Option[EventHandler[KyuubiEvent]] = {
-    throw new KyuubiException(s"unsupported spark event logger.")
+  protected def createSparkEventHandler(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
+    throw new KyuubiException(s"Unsupported spark event logger.")
   }
 
-  protected def createJsonEventHandler(kyuubiConf: KyuubiConf)
-      : Option[EventHandler[KyuubiEvent]] = {
+  protected def createJsonEventHandler(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
     throw new KyuubiException(s"Unsupported json event logger.")
   }
 
-  protected def createJdbcEventHandler(kyuubiConf: KyuubiConf)
-      : Option[EventHandler[KyuubiEvent]] = {
+  protected def createJdbcEventHandler(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
     throw new KyuubiException(s"Unsupported jdbc event logger.")
   }
 
   private def loadEventHandler(
       eventLoggerType: EventLoggerType,
-      kyuubiConf: KyuubiConf): Option[EventHandler[KyuubiEvent]] = {
+      kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
     eventLoggerType match {
       case EventLoggerType.SPARK =>
         createSparkEventHandler(kyuubiConf)

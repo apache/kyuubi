@@ -27,13 +27,13 @@ import org.apache.kyuubi.events.handler.EventHandler
 class SparkEventHandlerRegister(spark: SparkSession) extends EventHandlerRegister {
 
   override protected def createSparkEventHandler(kyuubiConf: KyuubiConf)
-      : Option[EventHandler[KyuubiEvent]] = {
+      : EventHandler[KyuubiEvent] = {
     val sparkHistoryLoggingEventHandler = new SparkHistoryLoggingEventHandler(spark.sparkContext)
-    Option.apply(sparkHistoryLoggingEventHandler)
+    sparkHistoryLoggingEventHandler
   }
 
   override protected def createJsonEventHandler(kyuubiConf: KyuubiConf)
-      : Option[EventHandler[KyuubiEvent]] = {
+      : EventHandler[KyuubiEvent] = {
     val handler = SparkJsonLoggingEventHandler(
       spark.sparkContext.applicationAttemptId
         .map(id => s"${spark.sparkContext.applicationId}_$id")
@@ -41,7 +41,7 @@ class SparkEventHandlerRegister(spark: SparkSession) extends EventHandlerRegiste
       ENGINE_EVENT_JSON_LOG_PATH,
       spark.sparkContext.hadoopConfiguration,
       kyuubiConf)
-    Option.apply(handler)
+    handler
   }
 
 }
