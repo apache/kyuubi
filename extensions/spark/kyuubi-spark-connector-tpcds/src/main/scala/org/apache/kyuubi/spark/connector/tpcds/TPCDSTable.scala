@@ -32,14 +32,10 @@ import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
+class TPCDSTable(tbl: String, scale: Double, tpcdsConf: TPCDSConf)
   extends SparkTable with SupportsRead {
 
   val tpcdsTable: Table = Table.getTable(tbl)
-
-  lazy val spark: SparkSession = SparkSession.active
-
-  lazy val tpcdsConf: TPCDSConf = TPCDSConf(spark, options);
 
   override def name: String = s"${TPCDSSchemaUtils.dbName(scale)}.$tbl"
 
@@ -72,7 +68,7 @@ class TPCDSTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
     Set(TableCapability.BATCH_READ).asJava
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
-    val scanConf = TPCDSBatchScanConf(spark, this, options)
+    val scanConf = TPCDSReadConf(SparkSession.active, this, options)
     new TPCDSBatchScan(tpcdsTable, scale, schema, scanConf)
   }
 

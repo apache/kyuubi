@@ -37,7 +37,7 @@ class TPCDSBatchScan(
     @transient table: Table,
     scale: Double,
     schema: StructType,
-    scanConf: TPCDSBatchScanConf) extends ScanBuilder
+    readConf: TPCDSReadConf) extends ScanBuilder
   with SupportsReportStatistics with Batch with Serializable {
 
   private val _sizeInBytes: Long = TPCDSStatisticsUtils.sizeInBytes(table, scale)
@@ -49,7 +49,7 @@ class TPCDSBatchScan(
     if (table.isSmall) 1
     else math.max(
       SparkSession.active.sparkContext.defaultParallelism,
-      (_sizeInBytes / scanConf.maxPartitionBytes).ceil.toInt)
+      (_sizeInBytes / readConf.maxPartitionBytes).ceil.toInt)
 
   override def build: Scan = this
 

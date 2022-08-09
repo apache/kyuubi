@@ -21,10 +21,11 @@ import scala.concurrent.duration._
 
 import org.apache.spark.benchmark.Benchmark
 import org.apache.spark.kyuubi.benchmark.KyuubiBenchmarkBase
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.spark.connector.tpcds.{TPCDSPartitionReader, TPCDSSchemaUtils, TPCDSStatisticsUtils, TPCDSTable}
+import org.apache.kyuubi.spark.connector.tpcds._
 
 /**
  * Benchmark to measure the performance of generate TPCDSTable.
@@ -67,7 +68,10 @@ class TPCDSTableGenerateBenchmark extends KyuubiFunSuite with KyuubiBenchmarkBas
   }
 
   private def generateTable(tableName: String, rowCount: Long): Unit = {
-    val table = new TPCDSTable(tableName, scale, CaseInsensitiveStringMap.empty())
+    val table = new TPCDSTable(
+      tableName,
+      scale,
+      TPCDSConf(SparkSession.active, CaseInsensitiveStringMap.empty()))
     val reader = new TPCDSPartitionReader(
       tableName,
       scale,
