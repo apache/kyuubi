@@ -92,16 +92,20 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       foreignTable: String): Operation
   def getQueryId(operation: Operation): String
 
-  final def addOperation(operation: Operation): Operation = synchronized {
+  def addOperation(operation: Operation): Operation = synchronized {
     handleToOperation.put(operation.getHandle, operation)
     operation
   }
 
   @throws[KyuubiSQLException]
-  final def getOperation(opHandle: OperationHandle): Operation = {
+  final def getOperationOption(opHandle: OperationHandle): Option[Operation] = {
     val operation = synchronized { handleToOperation.get(opHandle) }
-    if (operation == null) throw KyuubiSQLException(s"Invalid $opHandle")
-    operation
+    Option(operation)
+  }
+
+  @throws[KyuubiSQLException]
+  def getOperation(opHandle: OperationHandle): Operation = {
+    getOperationOption(opHandle).getOrElse(throw KyuubiSQLException(s"Invalid $opHandle"))
   }
 
   @throws[KyuubiSQLException]

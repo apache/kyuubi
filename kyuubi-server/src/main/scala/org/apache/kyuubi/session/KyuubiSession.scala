@@ -18,6 +18,7 @@ package org.apache.kyuubi.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.session.SessionType.SessionType
 
@@ -35,6 +36,10 @@ abstract class KyuubiSession(
   def getSessionEvent: Option[KyuubiSessionEvent]
 
   def checkSessionAccessPathURIs(): Unit
+
+  def client: KyuubiSyncThriftClient = _
+
+  def appUser: String = _
 
   private[kyuubi] def handleSessionException(f: => Unit): Unit = {
     try {

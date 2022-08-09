@@ -142,6 +142,8 @@ private[kyuubi] class EngineRef(
     }
   }
 
+  def getEngineSpace(): String = engineSpace
+
   /**
    * The distributed lock path used to ensure only once engine being created for non-CONNECTION
    * share level.

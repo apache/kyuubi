@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.UUID
 
-import org.apache.hive.service.rpc.thrift.TOperationHandle
+import org.apache.hive.service.rpc.thrift.{TOperationHandle, TOperationType}
 
 import org.apache.kyuubi.cli.Handle
 
@@ -32,6 +32,7 @@ case class OperationHandle(identifier: UUID) {
   def toTOperationHandle: TOperationHandle = {
     val tOperationHandle = new TOperationHandle
     tOperationHandle.setOperationId(Handle.toTHandleIdentifier(identifier))
+    tOperationHandle.setOperationType(TOperationType.UNKNOWN)
     tOperationHandle.setHasResultSet(_hasResultSet)
     tOperationHandle
   }

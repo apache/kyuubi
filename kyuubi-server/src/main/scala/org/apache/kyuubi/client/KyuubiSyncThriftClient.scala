@@ -412,6 +412,10 @@ class KyuubiSyncThriftClient private (
       case e: Exception => warn(s"$req failed on engine side", e)
     }
   }
+
+  def setRemoteSessionHandle(remoteSessionHandle: SessionHandle): Unit = {
+    _remoteSessionHandle = remoteSessionHandle.toTSessionHandle
+  }
 }
 
 private[kyuubi] object KyuubiSyncThriftClient extends Logging {

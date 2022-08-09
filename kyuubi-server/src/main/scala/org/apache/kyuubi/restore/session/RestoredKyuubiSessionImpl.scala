@@ -15,37 +15,43 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.restore.session
 
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
-import org.apache.hive.service.rpc.thrift._
+import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SECURITY_ENABLED, ENGINE_SHARE_LEVEL, ENGINE_TYPE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
-import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{KyuubiApplicationManager, ShareLevel}
+import org.apache.kyuubi.engine.ShareLevel.{GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
-import org.apache.kyuubi.metrics.MetricsConstants._
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
+import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
+import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, SessionHandle, SessionType}
 import org.apache.kyuubi.session.SessionType.SessionType
 
-class KyuubiSessionImpl(
+class RestoredKyuubiSessionImpl(
     protocol: TProtocolVersion,
     user: String,
     password: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
-    sessionConf: KyuubiConf)
+    sessionConf: KyuubiConf,
+    engineSpace: String,
+    engineSessionHandle: String,
+    sessionHandle: String)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  override val handle: SessionHandle = SessionHandle.fromUUID(sessionHandle)
 
   override val sessionType: SessionType = SessionType.SQL
 
@@ -68,12 +74,16 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
+  private var _client: KyuubiSyncThriftClient = _
+  override def client: KyuubiSyncThriftClient = _client
+
+  private val _engineSessionHandle: SessionHandle = SessionHandle.fromUUID(engineSessionHandle)
+
   private lazy val engineCredentials = renewEngineCredentials()
 
-  lazy val engine: EngineRef =
-    new EngineRef(sessionConf, user, handle.identifier.toString, sessionManager.applicationManager)
-  private[kyuubi] val launchEngineOp = sessionManager.operationManager
-    .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
+  override def open(): Unit = {
+    throw new UnsupportedOperationException("Can not open restored session.")
+  }
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
@@ -89,14 +99,19 @@ class KyuubiSessionImpl(
       sessionManager.getConf)
   }
 
-  private var _client: KyuubiSyncThriftClient = _
-  override def client: KyuubiSyncThriftClient = _client
+  override def close(): Unit = {
+    super.close()
+    sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
+    try {
+      if (_client != null) _client.closeSession()
+    } finally {
+      sessionEvent.endTime = System.currentTimeMillis()
+      EventBus.post(sessionEvent)
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
+    }
+  }
 
-  private var _engineSessionHandle: SessionHandle = _
-
-  def engineSessionHandle: SessionHandle = _engineSessionHandle
-
-  override def open(): Unit = {
+  private[restore] def reopen(): Unit = {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
@@ -107,10 +122,6 @@ class KyuubiSessionImpl(
     // we should call super.open before running launch engine operation
     super.open()
 
-    runOperation(launchEngineOp)
-  }
-
-  private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
       var openEngineSessionConf = optimizedConf
       if (engineCredentials.nonEmpty) {
@@ -118,7 +129,9 @@ class KyuubiSessionImpl(
         openEngineSessionConf =
           optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
       }
-      val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
+      val (host, port) = discoveryClient.getServerHost(engineSpace).getOrElse {
+        throw KyuubiSQLException(s"Engine [$engineSpace] server host not found.")
+      }
       val passwd =
         if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
           InternalSecurityAccessor.get().issueToken()
@@ -127,58 +140,36 @@ class KyuubiSessionImpl(
         }
       try {
         _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
-        _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
+        _client.setRemoteSessionHandle(_engineSessionHandle)
       } catch {
         case e: Throwable =>
-          error(
-            s"Opening engine [${engine.defaultEngineName} $host:$port]" +
-              s" for $user session failed",
-            e)
+          error(s"Opening engine [$host:$port]  for $user session failed", e)
           throw e
       }
-      logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
-        s" with ${_engineSessionHandle}]")
-      sessionEvent.openedTime = System.currentTimeMillis()
-      sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
-      _client.engineId.foreach(e => sessionEvent.engineId = e)
-      sessionManager.saveSessionToExternal(this)
-      EventBus.post(sessionEvent)
+      logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}]")
     }
   }
 
-  override protected def runOperation(operation: Operation): OperationHandle = {
-    if (operation != launchEngineOp) {
-      waitForEngineLaunched()
-      sessionEvent.totalOperations += 1
-    }
-    super.runOperation(operation)
-  }
+  // Share level of the engine
+  private val shareLevel: ShareLevel = ShareLevel.withName(sessionConf.get(ENGINE_SHARE_LEVEL))
 
-  @volatile private var engineLaunched: Boolean = false
-
-  private def waitForEngineLaunched(): Unit = {
-    if (!engineLaunched) {
-      Option(launchEngineOp).foreach { op =>
-        val waitingStartTime = System.currentTimeMillis()
-        logSessionInfo(s"Starting to wait the launch engine operation finished")
-
-        op.getBackgroundHandle.get()
-
-        val elapsedTime = System.currentTimeMillis() - waitingStartTime
-        logSessionInfo(s"Engine has been launched, elapsed time: ${elapsedTime / 1000} s")
-
-        if (_engineSessionHandle == null) {
-          val ex = op.getStatus.exception.getOrElse(
-            KyuubiSQLException(s"Failed to launch engine for $handle"))
-          throw ex
-        }
-
-        engineLaunched = true
+  // Launcher of the engine
+  val _appUser: String = shareLevel match {
+    case SERVER => Utils.currentUser
+    case GROUP =>
+      val clientUGI = UserGroupInformation.createRemoteUser(user)
+      // Similar to `clientUGI.getPrimaryGroupName` (avoid IOE) to get the Primary GroupName of
+      // the client user mapping to
+      clientUGI.getGroupNames.headOption match {
+        case Some(primaryGroup) => primaryGroup
+        case None =>
+          warn(s"There is no primary group for $user, use the client user name as group directly")
+          user
       }
-    }
+    case _ => user
   }
 
-  override def appUser: String = engine.appUser
+  override def appUser: String = _appUser
 
   private def renewEngineCredentials(): String = {
     try {
@@ -187,29 +178,6 @@ class KyuubiSessionImpl(
       case e: Exception =>
         error(s"Failed to renew engine credentials for $handle", e)
         ""
-    }
-  }
-
-  override def close(): Unit = {
-    super.close()
-    sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
-    try {
-      if (_client != null) _client.closeSession()
-    } finally {
-      if (engine != null) engine.close()
-      sessionEvent.endTime = System.currentTimeMillis()
-      EventBus.post(sessionEvent)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
-    }
-  }
-
-  override def getInfo(infoType: TGetInfoType): TGetInfoValue = {
-    if (client != null) {
-      withAcquireRelease() {
-        client.getInfo(infoType).getInfoValue
-      }
-    } else {
-      super.getInfo(infoType)
     }
   }
 }

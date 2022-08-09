@@ -596,13 +596,14 @@ abstract class TFrontendService(name: String)
     override def deleteContext(context: ServerContext, in: TProtocol, out: TProtocol): Unit = {
       val handle = context.getSessionHandle
       if (handle != null) {
-        info(s"Session [$handle] disconnected without closing properly, close it now")
-        try {
-          be.closeSession(handle)
-        } catch {
-          case e: KyuubiSQLException =>
-            error("Failed closing session", e)
-        }
+        // TODO
+//        info(s"Session [$handle] disconnected without closing properly, close it now")
+//        try {
+//          be.closeSession(handle)
+//        } catch {
+//          case e: KyuubiSQLException =>
+//            error("Failed closing session", e)
+//        }
       }
     }
 

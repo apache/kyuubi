@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.zookeeper.KeeperException.NoNodeException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
@@ -33,12 +34,17 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.restore.{OperationExternalStore, SessionExternalStore}
+import org.apache.kyuubi.restore.kvstore.{KVStore, ZookeeperKVStore}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.Metadata
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def this() = this(classOf[KyuubiSessionManager].getSimpleName)
+
+  private var kvStore: Option[KVStore] = None
+  private var sessionExternalStore: Option[SessionExternalStore] = None
 
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
@@ -64,6 +70,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(credentialsManager)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
+    initExternalStore(conf)
     super.initialize(conf)
   }
 
@@ -270,6 +277,35 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
     if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
       limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
+    }
+  }
+
+  override def getSession(sessionHandle: SessionHandle): Session = {
+    super.getSessionOption(sessionHandle).orElse {
+      try {
+        sessionExternalStore.flatMap(_.get(sessionHandle.identifier.toString))
+      } catch {
+        case _: NoNodeException => None
+        case e: Exception =>
+          warn("Get session from external failed.", e)
+          None
+      }
+    }.getOrElse(throw KyuubiSQLException(s"Invalid $sessionHandle"))
+  }
+
+  private def initExternalStore(conf: KyuubiConf): Unit = {
+    // TODO make configurable
+    val kvStore = ZookeeperKVStore(conf)
+    this.kvStore = Some(kvStore)
+    this.sessionExternalStore = Some(new SessionExternalStore(kvStore, this))
+    this.operationManager.setExternalStore(new OperationExternalStore(kvStore, this))
+  }
+
+  def saveSessionToExternal(session: KyuubiSession): Unit = {
+    try {
+      this.sessionExternalStore.foreach(_.set(session.handle.identifier.toString, session))
+    } catch {
+      case e: Exception => warn("Save session to external failed.", e)
     }
   }
 }

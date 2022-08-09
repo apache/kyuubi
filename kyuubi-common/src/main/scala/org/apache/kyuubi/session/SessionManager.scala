@@ -150,7 +150,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     getSessionOption(sessionHandle).getOrElse(throw KyuubiSQLException(s"Invalid $sessionHandle"))
   }
 
-  final protected def setSession(sessionHandle: SessionHandle, session: Session): Unit = {
+  def setSession(sessionHandle: SessionHandle, session: Session): Unit = {
     handleToSession.put(sessionHandle, session)
   }
 

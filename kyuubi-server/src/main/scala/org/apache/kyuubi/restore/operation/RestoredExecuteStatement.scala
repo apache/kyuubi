@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi.restore.operation
 
 import scala.collection.JavaConverters._
 
@@ -23,20 +23,28 @@ import org.apache.hive.service.rpc.thrift.{TGetOperationStatusResp, TProtocolVer
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
-import org.apache.kyuubi.operation.OperationState.OperationState
+import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, Session}
+import org.apache.kyuubi.restore.session.RestoredKyuubiSessionImpl
+import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Session}
 
-class ExecuteStatement(
+class RestoredExecuteStatement(
     session: Session,
-    override val statement: String,
-    confOverlay: Map[String, String],
-    override val shouldRunAsync: Boolean,
-    queryTimeout: Long)
-  extends KyuubiOperation(session) {
-  EventBus.post(KyuubiOperationEvent(this))
+    operationHandle: String,
+    remoteOperationHandle: String,
+    shouldRunAsync: Boolean)
+  extends RestoredKyuubiOperation(session, operationHandle, remoteOperationHandle) {
+
+  override def reopen(): Unit = {
+    super.reopen()
+    val asyncOperation: Runnable = () => waitStatementComplete()
+    try {
+      val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
+      setBackgroundHandle(opHandle)
+    } catch onError("submitting query in background, query rejected")
+    if (!shouldRunAsync) getBackgroundHandle.get()
+  }
 
   final private val _operationLog: OperationLog =
     if (shouldRunAsync) {
@@ -55,18 +63,6 @@ class ExecuteStatement(
 
   override protected def afterRun(): Unit = {
     OperationLog.removeCurrentOperationLog()
-    session.sessionManager.operationManager.asInstanceOf[KyuubiOperationManager]
-      .saveOperationToExternal(this)
-  }
-
-  private def executeStatement(): Unit = {
-    try {
-      // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
-      // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
-      // engine crash without response before socket read timeout.
-      _remoteOpHandle = client.executeStatement(statement, confOverlay, true, queryTimeout)
-      setHasResultSet(_remoteOpHandle.isHasResultSet)
-    } catch onError()
   }
 
   private def waitStatementComplete(): Unit =
@@ -130,7 +126,10 @@ class ExecuteStatement(
     } catch onError()
 
   private def sendCredentialsIfNeeded(): Unit = {
-    val appUser = session.asInstanceOf[KyuubiSession].appUser
+    val appUser = session match {
+      case s: KyuubiSessionImpl => s.engine.appUser
+      case r: RestoredKyuubiSessionImpl => r.appUser
+    }
     val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
     sessionManager.credentialsManager.sendCredentialsIfNeeded(
       session.handle.identifier.toString,
@@ -148,22 +147,5 @@ class ExecuteStatement(
         case _: Exception => // do nothing
       }
     }
-  }
-
-  override protected def runInternal(): Unit = {
-    executeStatement()
-    val sessionManager = session.sessionManager
-    val asyncOperation: Runnable = () => waitStatementComplete()
-    try {
-      val opHandle = sessionManager.submitBackgroundOperation(asyncOperation)
-      setBackgroundHandle(opHandle)
-    } catch onError("submitting query in background, query rejected")
-
-    if (!shouldRunAsync) getBackgroundHandle.get()
-  }
-
-  override def setState(newState: OperationState): Unit = {
-    super.setState(newState)
-    EventBus.post(KyuubiOperationEvent(this))
   }
 }

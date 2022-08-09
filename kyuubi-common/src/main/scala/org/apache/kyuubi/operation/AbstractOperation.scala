@@ -39,7 +39,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }
 
-  final private[kyuubi] val statementId = handle.identifier.toString
+  final private[kyuubi] def statementId = getHandle.identifier.toString
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
@@ -90,7 +90,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def setHasResultSet(hasResultSet: Boolean): Unit = {
     this.hasResultSet = hasResultSet
-    handle.setHasResultSet(hasResultSet)
+    getHandle.setHasResultSet(hasResultSet)
   }
 
   protected def setOperationException(opEx: KyuubiSQLException): Unit = {

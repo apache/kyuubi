@@ -20,6 +20,7 @@ package org.apache.kyuubi.operation
 import java.util.concurrent.TimeUnit
 
 import org.apache.hive.service.rpc.thrift.TRowSet
+import org.apache.zookeeper.KeeperException.NoNodeException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
@@ -27,6 +28,8 @@ import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.restore.OperationExternalStore
+import org.apache.kyuubi.restore.operation.RestoredKyuubiOperation
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.{KyuubiBatchSessionImpl, KyuubiSessionImpl, Session}
 import org.apache.kyuubi.util.ThriftUtils
@@ -34,6 +37,8 @@ import org.apache.kyuubi.util.ThriftUtils
 class KyuubiOperationManager private (name: String) extends OperationManager(name) {
 
   def this() = this(classOf[KyuubiOperationManager].getSimpleName)
+
+  private var externalStore: Option[OperationExternalStore] = None
 
   private var queryTimeout: Option[Long] = None
 
@@ -223,5 +228,37 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   override def start(): Unit = synchronized {
     MetricsSystem.tracing(_.registerGauge(OPERATION_OPEN, getOperationCount, 0))
     super.start()
+  }
+
+  override def getOperation(opHandle: OperationHandle): Operation = {
+    super.getOperationOption(opHandle).orElse {
+      try {
+        externalStore.flatMap(_.get(opHandle.identifier.toString))
+      } catch {
+        case _: NoNodeException => None
+        case e: Exception =>
+          warn("Get operation from external failed.", e)
+          None
+      }
+    }.getOrElse(throw KyuubiSQLException(s"Invalid $opHandle"))
+  }
+
+  def setExternalStore(externalStore: OperationExternalStore): Unit = {
+    this.externalStore = Some(externalStore)
+  }
+
+  def saveOperationToExternal(operation: KyuubiOperation): Unit = {
+    try {
+      operation match {
+        case o: KyuubiOperation
+            if !o.isInstanceOf[BatchJobSubmission] &&
+              !o.isInstanceOf[RestoredKyuubiOperation] &&
+              !o.isInstanceOf[LaunchEngine] =>
+          externalStore.foreach(_.set(operation.getHandle.identifier.toString, operation))
+        case _ =>
+      }
+    } catch {
+      case e: Exception => warn("Save operation to external failed.", e)
+    }
   }
 }
