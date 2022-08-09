@@ -113,9 +113,9 @@ jobs:
         comment: [ "normal" ]
         include:
           - java: 8
-            flink: '1.15'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.15.1 -Dflink.archive.name=flink-1.15.1-bin-scala_2.12.tgz'
-            comment: 'verify-flink-1.15'
+            flink: '1.14'
+            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.14.5 -Dflink.archive.name=flink-1.14.5-bin-scala_2.12.tgz'
+            comment: 'verify-flink-1.14'
     steps:
       - uses: actions/checkout@v2
       - name: Tune Runner VM
