@@ -23,6 +23,7 @@ import java.util.UUID
 
 import scala.collection.JavaConverters._
 
+import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -30,6 +31,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.OperationModes.NONE
+import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
@@ -43,6 +45,8 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
+
+  val runtimeVersion = SemanticVersion(EnvironmentInformation.getVersion)
 
   ignore("release session if shared level is CONNECTION") {
     logger.info(s"jdbc url is $jdbcUrl")
@@ -569,15 +573,18 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("execute statement - select array") {
+    assume(runtimeVersion.isVersionAtLeast("1.14"))
     withJdbcStatement() { statement =>
       val resultSet =
         statement.executeQuery("select array ['v1', 'v2', 'v3']")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.ARRAY)
       assert(resultSet.next())
-      // Adapt to Flink 1.15
-      assert(resultSet.getObject(1).toString == """["v1","v2","v3"]""" || resultSet.getObject(
-        1).toString == "[v1,v2,v3]")
+      runtimeVersion.minorVersion match {
+        case 14 =>
+          assert(resultSet.getObject(1).toString == """["v1","v2","v3"]""")
+        case _ => assert(resultSet.getObject(1).toString == "[v1,v2,v3]")
+      }
     }
   }
 
@@ -606,12 +613,16 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("execute statement - select binary") {
+    assume(runtimeVersion.isVersionAtLeast("1.14"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select encode('kyuubi', 'UTF-8')")
       assert(resultSet.next())
-      // Adapt to Flink 1.15
-      assert(
-        resultSet.getString(1) == "kyuubi" || resultSet.getString(1) == "k")
+      runtimeVersion.minorVersion match {
+        case 14 => assert(resultSet.getString(1) == "kyuubi")
+        case _ =>
+          // TODO: validate table results after FLINK-28882 is resolved
+          assert(resultSet.getString(1) == "k")
+      }
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.BINARY)
     }
