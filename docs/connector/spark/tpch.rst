@@ -16,19 +16,76 @@
 TPC-H
 =====
 
-TPC-DS Integration
+The TPC-H is a decision support benchmark. It consists of a suite of business oriented ad-hoc queries and concurrent
+data modifications. The queries and the data populating the database have been chosen to have broad industry-wide
+relevance.
+
+.. tip::
+   This article assumes that you have mastered the basic knowledge and operation of `TPC-H`_.
+   For the knowledge about TPC-H not mentioned in this article, you can obtain it from its `Official Documentation`_.
+
+This connector can be used to test the capabilities and query syntax of Spark without configuring access to an external
+data source. When you query a TPC-H table, the connector generates the data on the fly using a deterministic algorithm.
+
+TPC-H Integration
 ------------------
+
+To enable the integration of kyuubi spark sql engine and TPC-H through
+Apache Spark Datasource V2 and Catalog APIs, you need to:
+
+- Referencing the TPC-H connector :ref:`dependencies<spark-tpch-deps>`
+- Setting the spark catalog :ref:`configurations<spark-tpch-conf>`
 
 .. _spark-tpch-deps:
 
 Dependencies
 ************
 
+The **classpath** of kyuubi spark sql engine with TiDB supported consists of
+
+1. kyuubi-spark-sql-engine-|release|_2.12.jar, the engine jar deployed with Kyuubi distributions
+2. a copy of spark distribution
+3. kyuubi-spark-connector-tpch-|release|_2.12.jar, which can be found in the `Maven Central`_
+
+In order to make the TPC-H connector package visible for the runtime classpath of engines, we can use one of these methods:
+
+1. Put the TPC-H connector package into ``$SPARK_HOME/jars`` directly
+2. Set ``spark.jars=kyuubi-spark-connector-tpch-|release|_2.12.jar``
+
 .. _spark-tpch-conf:
 
 Configurations
 **************
 
+To add TPC-H tables as a catalog, we can set the following configurations:
+
+.. code-block:: properties
+
+   spark.sql.catalog.tpch=org.apache.kyuubi.spark.connector.tpch.TPCHCatalog
+   spark.sql.catalog.tpch.excludeDatabases=sf10000,sf30000  # optional Exclude database list from the catalog
+   spark.sql.catalog.tpch.useAnsiStringType=false           # optional When true, use CHAR VARCHAR; otherwise use STRING
+   spark.sql.catalog.tpch.read.maxPartitionBytes=134217728  # optional Max data split size in bytes per task
+
+Consider to reduce `spark.sql.catalog.tpch.read.maxPartitionBytes` if you want a higher parallelism.
 
 TPC-H Operations
 ----------------
+
+Listing databases under `tpch` catalog.
+
+.. code-block:: sql
+    SHOW DATABASES IN tpch;
+
+Listing tables under `tpch.sf1` database.
+
+.. code-block:: sql
+    SHOW TABLES IN tpch.sf1;
+
+Switch current database to `tpch.sf1` and run a query against it.
+
+.. code-block:: sql
+    USE tpch.sf1;
+    SELECT * FROM orders;
+
+.. _Official Documentation: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-h_v3.0.1.pdf
+.. _Maven Central: https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-spark-connector-tpch_2.12/
