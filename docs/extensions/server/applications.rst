@@ -26,7 +26,7 @@ The ``ApplicationManager`` leverages methods provided by application operation i
 
 An ``ApplicationOperation`` implementation is usually built upon clients or APIs provided by cluster managers, such as Hadoop YARN, Kubernetes, etc.
 
-For now, Kyuubi has already supported serval built-in application operations:
+For now, Kyuubi has already supported several built-in application operations:
 
 - ``JpsApplicationOperation``: an operation that can manage apps with a local process, e.g. a local mode spark application
 - ``YarnApplicationOperation``: an operation that can manage apps with a Hadoop Yarn cluster, e.g. a spark on yarn application
