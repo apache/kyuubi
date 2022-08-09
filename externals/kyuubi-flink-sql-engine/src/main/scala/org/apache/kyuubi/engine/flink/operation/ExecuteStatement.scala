@@ -229,8 +229,12 @@ class ExecuteStatement(
         case _: DoubleType =>
           row.setField(i, r.getDouble(i))
         case t: RowType =>
-          val v = r.getRow(i, t.getFieldCount)
-          row.setField(i, v)
+          val clazz = Class.forName("org.apache.flink.table.types.DataType")
+          val fieldDataTypes = clazz.getDeclaredMethod("getFieldDataTypes", classOf[DataType])
+            .invoke(null, dataType).asInstanceOf[java.util.List[DataType]]
+          val internalRowData = r.getRow(i, t.getFieldCount)
+          val internalRow = convertToRow(internalRowData, fieldDataTypes.asScala.toList)
+          row.setField(i, internalRow)
         case t =>
           val hiveString = toHiveString((row.getField(i), t))
           row.setField(i, hiveString)
