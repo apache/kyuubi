@@ -43,7 +43,7 @@ Dependencies
 
 The **classpath** of kyuubi spark sql engine with Hudi supported consists of
 
-1. kyuubi-spark-sql-engine-|release|.jar, the engine jar deployed with Kyuubi distributions
+1. kyuubi-spark-sql-engine-|release|_2.12.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution
 3. hudi-spark<spark.version>-bundle_<scala.version>-<hudi.version>.jar (example: hudi-spark3.2-bundle_2.12-0.11.1.jar), which can be found in the `Maven Central`_
 
