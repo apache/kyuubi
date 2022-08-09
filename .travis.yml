@@ -27,8 +27,6 @@ branches:
     - master
 
 language: java
-jdk:
-  - openjdk8
 
 matrix:
   include:
@@ -54,7 +52,10 @@ cache:
     - $HOME/.m2
 
 install:
-  - jdk_switcher use openjdk8
+  - sudo apt update
+  - sudo apt install -y openjdk-8-jdk
+  - export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-${TRAVIS_CPU_ARCH}"
+  - export PATH="$JAVA_HOME/bin:/usr/share/maven/bin:$PATH"
   - ./build/mvn --version
 
 before_script:

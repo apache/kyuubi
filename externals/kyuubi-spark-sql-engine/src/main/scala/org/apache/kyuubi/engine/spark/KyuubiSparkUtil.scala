@@ -25,7 +25,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.kvstore.KVIndex
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.engine.SemanticVersion
 
 object KyuubiSparkUtil extends Logging {
 
@@ -88,6 +89,7 @@ object KyuubiSparkUtil extends Logging {
 
   lazy val sparkMajorMinorVersion: (Int, Int) = {
     val runtimeSparkVer = org.apache.spark.SPARK_VERSION
-    Utils.majorMinorVersion(runtimeSparkVer)
+    val runtimeVersion = SemanticVersion(runtimeSparkVer)
+    (runtimeVersion.majorVersion, runtimeVersion.minorVersion)
   }
 }
