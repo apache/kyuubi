@@ -573,7 +573,6 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("execute statement - select array") {
-    assume(runtimeVersion.isVersionAtLeast("1.14"))
     withJdbcStatement() { statement =>
       val resultSet =
         statement.executeQuery("select array ['v1', 'v2', 'v3']")
@@ -604,16 +603,19 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val resultSet =
         statement.executeQuery("select (1, '2', true)")
       assert(resultSet.next())
-      assert(
-        resultSet.getString(1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:\"2\",BOOLEAN NOT NULL:true}" ||
-          resultSet.getString(1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:2,BOOLEAN NOT NULL:true}")
+      runtimeVersion.minorVersion match {
+        case 14 => assert(resultSet.getString(
+            1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:\"2\",BOOLEAN NOT NULL:true}")
+        case _ =>
+          assert(
+            resultSet.getString(1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:2,BOOLEAN NOT NULL:true}")
+      }
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
     }
   }
 
   test("execute statement - select binary") {
-    assume(runtimeVersion.isVersionAtLeast("1.14"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select encode('kyuubi', 'UTF-8')")
       assert(resultSet.next())
