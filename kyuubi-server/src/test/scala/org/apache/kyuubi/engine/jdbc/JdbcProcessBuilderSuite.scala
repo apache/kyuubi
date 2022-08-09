@@ -18,19 +18,22 @@ package org.apache.kyuubi.engine.jdbc
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
 
 class JdbcProcessBuilderSuite extends KyuubiFunSuite {
 
   test("jdbc process builder") {
     val conf = KyuubiConf().set("kyuubi.on", "off")
       .set(ENGINE_JDBC_CONNECTION_URL.key, "")
+      .set(ENGINE_JDBC_CONNECTION_PASSWORD.key, "123456")
     val builder = new JdbcProcessBuilder("kyuubi", conf)
     val commands = builder.toString.split("\n")
     assert(commands.head.endsWith("bin/java"), "wrong exec")
     assert(builder.toString.contains("--conf\nkyuubi.session.user=kyuubi"))
     assert(commands.exists(ss => ss.contains("kyuubi-jdbc-engine")), "wrong classpath")
     assert(builder.toString.contains("--conf\nkyuubi.on=off"))
+    assert(builder.toString.contains(
+      "--conf\nkyuubi.engine.jdbc.connection.password=*********(redacted)"))
   }
 
   test("capture error from jdbc process builder") {

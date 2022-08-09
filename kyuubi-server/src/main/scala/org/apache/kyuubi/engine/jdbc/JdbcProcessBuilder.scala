@@ -26,8 +26,9 @@ import scala.collection.mutable.ArrayBuffer
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Utils.REDACTION_REPLACEMENT_TEXT
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.operation.log.OperationLog
@@ -90,5 +91,15 @@ class JdbcProcessBuilder(
     buffer.toArray
   }
 
-  override def toString: String = Utils.redactCommandLineArgs(conf, commands).mkString("\n")
+  override def toString: String = {
+    if (commands == null) {
+      super.toString()
+    } else {
+      Utils.redactCommandLineArgs(conf, commands).map {
+        case arg if arg.contains(ENGINE_JDBC_CONNECTION_PASSWORD.key) =>
+          s"${ENGINE_JDBC_CONNECTION_PASSWORD.key}=$REDACTION_REPLACEMENT_TEXT"
+        case arg => arg
+      }.mkString("\n")
+    }
+  }
 }
