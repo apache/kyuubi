@@ -64,7 +64,7 @@ object KyuubiSessionEvent {
     assert(KyuubiServer.kyuubiServer != null)
     val serverIP = KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
     KyuubiSessionEvent(
-      session.handle.toString,
+      session.handle.identifier.toString,
       session.protocol.getValue,
       session.sessionType.toString,
       session.name.getOrElse(""),
