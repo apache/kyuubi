@@ -23,7 +23,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 
-import org.apache.kyuubi.{FLINK_COMPILE_VERSION, KyuubiException, KyuubiFunSuite, SCALA_COMPILE_VERSION}
+import org.apache.kyuubi.{FLINK_COMPILE_VERSION, KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
@@ -79,7 +79,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
 
   private val javaPath = s"${envDefault("JAVA_HOME")}${File.separator}bin${File.separator}java"
   private val flinkSqlClientJarPathSuffix = s"${File.separator}opt${File.separator}" +
-    s"flink-sql-client_$SCALA_COMPILE_VERSION-$FLINK_COMPILE_VERSION.jar"
+    s"flink-sql-client-$FLINK_COMPILE_VERSION.jar"
   private val flinkLibPathSuffix = s"${File.separator}lib${File.separator}*"
   private val flinkConfPathSuffix = s"${File.separator}conf"
   private val mainClassStr = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
