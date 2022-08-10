@@ -645,6 +645,22 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("uid")
 
+  val AUTHENTICATION_LDAP_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.bindnpw")
+      .doc("The password of the LDAP bind user " +
+        "is used to search for the full name of the authenticated user.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_ATTRIBUTES: ConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.attrs")
+      .doc("Specifies part of the search as an attribute returned by LDAP. " +
+        "For example:mail,name.")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("name")
+
   val DELEGATION_KEY_UPDATE_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.delegation.key.update.interval")
       .doc("unused yet")
