@@ -27,6 +27,8 @@ relevance.
 This connector can be used to test the capabilities and query syntax of Spark without configuring access to an external
 data source. When you query a TPC-H table, the connector generates the data on the fly using a deterministic algorithm.
 
+Goto `Try Kyuubi`_ to explore TPC-H data instantly!
+
 TPC-H Integration
 ------------------
 
@@ -43,14 +45,14 @@ Dependencies
 
 The **classpath** of kyuubi spark sql engine with TiDB supported consists of
 
-1. kyuubi-spark-sql-engine-|release|_2.12.jar, the engine jar deployed with Kyuubi distributions
+1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution
-3. kyuubi-spark-connector-tpch-|release|_2.12.jar, which can be found in the `Maven Central`_
+3. kyuubi-spark-connector-tpch-\ |release|\ _2.12.jar, which can be found in the `Maven Central`_
 
 In order to make the TPC-H connector package visible for the runtime classpath of engines, we can use one of these methods:
 
 1. Put the TPC-H connector package into ``$SPARK_HOME/jars`` directly
-2. Set ``spark.jars=kyuubi-spark-connector-tpch-|release|_2.12.jar``
+2. Set spark.jars=kyuubi-spark-connector-tpch-\ |release|\ _2.12.jar
 
 .. _spark-tpch-conf:
 
@@ -64,9 +66,7 @@ To add TPC-H tables as a catalog, we can set the following configurations:
    spark.sql.catalog.tpch=org.apache.kyuubi.spark.connector.tpch.TPCHCatalog
    spark.sql.catalog.tpch.excludeDatabases=sf10000,sf30000  # optional Exclude database list from the catalog
    spark.sql.catalog.tpch.useAnsiStringType=false           # optional When true, use CHAR VARCHAR; otherwise use STRING
-   spark.sql.catalog.tpch.read.maxPartitionBytes=134217728  # optional Max data split size in bytes per task
-
-Consider to reduce `spark.sql.catalog.tpch.read.maxPartitionBytes` if you want a higher parallelism.
+   spark.sql.catalog.tpch.read.maxPartitionBytes=134217728  # optional Max data split size in bytes per task, consider to reduce it if you want a higher parallelism.
 
 TPC-H Operations
 ----------------
@@ -74,18 +74,22 @@ TPC-H Operations
 Listing databases under `tpch` catalog.
 
 .. code-block:: sql
-    SHOW DATABASES IN tpch;
+
+   SHOW DATABASES IN tpch;
 
 Listing tables under `tpch.sf1` database.
 
 .. code-block:: sql
-    SHOW TABLES IN tpch.sf1;
+
+   SHOW TABLES IN tpch.sf1;
 
 Switch current database to `tpch.sf1` and run a query against it.
 
 .. code-block:: sql
-    USE tpch.sf1;
-    SELECT * FROM orders;
+
+   USE tpch.sf1;
+   SELECT * FROM orders;
 
 .. _Official Documentation: https://www.tpc.org/tpch/
+.. _Try Kyuubi: https://try.kyuubi.cloud/
 .. _Maven Central: https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-spark-connector-tpch_2.12/
