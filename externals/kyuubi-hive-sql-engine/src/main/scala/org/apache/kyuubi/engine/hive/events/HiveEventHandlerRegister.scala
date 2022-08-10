@@ -31,11 +31,10 @@ object HiveEventHandlerRegister extends EventHandlerRegister {
       kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
     val hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
-    val handler = HiveJsonLoggingEventHandler(
+    HiveJsonLoggingEventHandler(
       s"Hive-$hostName",
       ENGINE_EVENT_JSON_LOG_PATH,
       hadoopConf,
       kyuubiConf)
-    handler
   }
 }

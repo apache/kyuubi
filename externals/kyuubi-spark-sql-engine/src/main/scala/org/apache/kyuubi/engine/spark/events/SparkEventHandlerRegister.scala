@@ -28,20 +28,18 @@ class SparkEventHandlerRegister(spark: SparkSession) extends EventHandlerRegiste
 
   override protected def createSparkEventHandler(kyuubiConf: KyuubiConf)
       : EventHandler[KyuubiEvent] = {
-    val sparkHistoryLoggingEventHandler = new SparkHistoryLoggingEventHandler(spark.sparkContext)
-    sparkHistoryLoggingEventHandler
+    new SparkHistoryLoggingEventHandler(spark.sparkContext)
   }
 
   override protected def createJsonEventHandler(kyuubiConf: KyuubiConf)
       : EventHandler[KyuubiEvent] = {
-    val handler = SparkJsonLoggingEventHandler(
+    SparkJsonLoggingEventHandler(
       spark.sparkContext.applicationAttemptId
         .map(id => s"${spark.sparkContext.applicationId}_$id")
         .getOrElse(spark.sparkContext.applicationId),
       ENGINE_EVENT_JSON_LOG_PATH,
       spark.sparkContext.hadoopConfiguration,
       kyuubiConf)
-    handler
   }
 
 }

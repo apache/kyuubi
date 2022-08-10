@@ -31,11 +31,10 @@ object TrinoEventHandlerRegister extends EventHandlerRegister {
       : EventHandler[KyuubiEvent] = {
     val hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
-    val handler = TrinoJsonLoggingEventHandler(
+    TrinoJsonLoggingEventHandler(
       s"Trino-$hostName",
       ENGINE_EVENT_JSON_LOG_PATH,
       hadoopConf,
       kyuubiConf)
-    handler
   }
 }
