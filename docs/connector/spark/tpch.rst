@@ -87,5 +87,5 @@ Switch current database to `tpch.sf1` and run a query against it.
     USE tpch.sf1;
     SELECT * FROM orders;
 
-.. _Official Documentation: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-h_v3.0.1.pdf
+.. _Official Documentation: https://www.tpc.org/tpch/
 .. _Maven Central: https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-spark-connector-tpch_2.12/
