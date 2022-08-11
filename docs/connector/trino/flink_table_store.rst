@@ -63,8 +63,8 @@ Configurations
 
 To activate functionality of Flink Table Store, we can set the following configurations:
 
-Catalogs are registered by creating a catalog properties file in the etc/catalog directory.
-For example, create etc/catalog/tablestore.properties with the following contents to mount the tablestore connector as the tablestore catalog:
+Catalogs are registered by creating a catalog properties file in the $TRINO_SERVER_HOME/etc/catalog directory.
+For example, create $TRINO_SERVER_HOME/etc/catalog/tablestore.properties with the following contents to mount the tablestore connector as the tablestore catalog:
 
 .. code-block:: properties
 
@@ -85,10 +85,10 @@ and then use kyuubi trino sql engine to query the table with the following SQL `
    SELECT * FROM tablestore.default.t1
 
 
-.. _Flink Table Store: https://flink.apache.org/
-.. _Flink Table Store Quick Start: https://nightlies.apache.org/flink/flink-table-store-docs-master/docs/try-table-store/quick-start/
-.. _Official Documentation: https://nightlies.apache.org/flink/flink-table-store-docs-master/
+.. _Flink Table Store: https://nightlies.apache.org/flink/flink-table-store-docs-stable/
+.. _Flink Table Store Quick Start: https://nightlies.apache.org/flink/flink-table-store-docs-stable/docs/try-table-store/quick-start/
+.. _Official Documentation: https://nightlies.apache.org/flink/flink-table-store-docs-stable/
 .. _Source Code: https://github.com/JingsongLi/flink-table-store-trino
-.. _Flink Table Store multi engine support: https://nightlies.apache.org/flink/flink-table-store-docs-master/docs/engines/overview/
+.. _Flink Table Store multi engine support: https://nightlies.apache.org/flink/flink-table-store-docs-stable/docs/engines/overview/
 .. _Pre-bundled Hadoop 2.8.3: https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.8.3-10.0/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar
 .. _Flink Table Store Trino README: https://github.com/JingsongLi/flink-table-store-trino#readme
