@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.util
-import java.util.Locale
 
 import scala.collection.JavaConverters._
 
@@ -54,25 +53,15 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
         return catalogDatabaseOperation
       }
     }
-    val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
+    val mode = OperationModes(flinkSession.sessionContext.getConfigMap.getOrDefault(
       OPERATION_PLAN_ONLY_MODE.key,
-      operationModeDefault)
+      operationModeDefault))
+    flinkSession.sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.toString)
     val resultMaxRows =
       flinkSession.normalizedConf.getOrElse(
         ENGINE_FLINK_MAX_ROWS.key,
         resultMaxRowsDefault.toString).toInt
-    val finalMode =
-      if (!OperationModes.values.exists(x => x.toString.equalsIgnoreCase(mode))) {
-        warn(s"Unsupported operation mode: $mode," +
-          s" set ${OPERATION_PLAN_ONLY_MODE.key} to ${OperationModes.UNKNOWN.toString}")
-        flinkSession.sessionContext.set(
-          OPERATION_PLAN_ONLY_MODE.key,
-          OperationModes.UNKNOWN.toString)
-        UNKNOWN.toString
-      } else {
-        mode
-      }
-    val op = OperationModes.withName(finalMode.toUpperCase(Locale.ROOT)) match {
+    val op = mode match {
       case NONE =>
         // FLINK-24427 seals calcite classes which required to access in async mode, considering
         // there is no much benefit in async mode, here we just ignore `runAsync` and always run

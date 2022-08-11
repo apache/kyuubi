@@ -68,17 +68,10 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     val operation =
       OperationLanguages.withName(lang.toUpperCase(Locale.ROOT)) match {
         case OperationLanguages.SQL =>
-          val mode = spark.conf.get(OPERATION_PLAN_ONLY_MODE.key, operationModeDefault)
-          val finalMode =
-            if (!OperationModes.values.exists(_.toString.equalsIgnoreCase(mode))) {
-              warn(s"Unsupported operation mode: $mode," +
-                s" set ${OPERATION_PLAN_ONLY_MODE.key} to ${OperationModes.UNKNOWN.toString}")
-              spark.conf.set(OPERATION_PLAN_ONLY_MODE.key, OperationModes.UNKNOWN.toString)
-              UNKNOWN.toString
-            } else {
-              mode
-            }
-          OperationModes.withName(finalMode.toUpperCase(Locale.ROOT)) match {
+          val mode =
+            OperationModes(spark.conf.get(OPERATION_PLAN_ONLY_MODE.key, operationModeDefault))
+          spark.conf.set(OPERATION_PLAN_ONLY_MODE.key, mode.toString)
+          mode match {
             case NONE =>
               val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)
                 .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)

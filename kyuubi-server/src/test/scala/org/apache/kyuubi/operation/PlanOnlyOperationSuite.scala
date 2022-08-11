@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.Statement
+import java.sql.{SQLException, Statement}
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
@@ -118,12 +118,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "parse"))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=parser")
-        try {
-          statement.executeQuery("select 1")
-        } catch {
-          case e: Exception =>
-            assert(e.getMessage.contains("The operation mode UNKNOWN doesn't support"))
-        }
+        val e = intercept[SQLException](statement.executeQuery("select 1"))
+        assert(e.getMessage.contains("The operation mode UNKNOWN doesn't support"))
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=parse")
         val result = statement.executeQuery("select 1")
         assert(result.next())
