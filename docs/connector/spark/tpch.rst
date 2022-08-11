@@ -70,7 +70,7 @@ To add TPC-H tables as a catalog, we can set the following configurations in ``$
    #            sf0, tiny, sf1, sf10, sf30, sf100, sf300, sf1000, sf3000, sf10000, sf30000, sf100000.
    spark.sql.catalog.tpch.excludeDatabases=sf10000,sf30000
 
-   # (optional) When true, use CHAR/VARCHAR, otherwise use STRING. It affects the output of the table schema output,
+   # (optional) When true, use CHAR/VARCHAR, otherwise use STRING. It affects output of the table schema,
    #            e.g. `SHOW CREATE TABLE <table>`, `DESC <table>`.
    spark.sql.catalog.tpch.useAnsiStringType=false
 
