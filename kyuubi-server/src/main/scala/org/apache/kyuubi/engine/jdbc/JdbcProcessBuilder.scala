@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.jdbc
 
 import java.io.File
+import java.nio.file.Paths
 import java.util
 
 import scala.collection.JavaConverters._
@@ -25,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.Utils.REDACTION_REPLACEMENT_TEXT
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
@@ -76,6 +77,20 @@ class JdbcProcessBuilder(
     buffer += "-cp"
     val classpathEntries = new util.LinkedHashSet[String]
     mainResource.foreach(classpathEntries.add)
+    mainResource.foreach { path =>
+      val parent = Paths.get(path).getParent
+      if (Utils.isTesting) {
+        // add dev classpath
+        val jdbcDeps = parent
+          .resolve(s"scala-$SCALA_COMPILE_VERSION")
+          .resolve("jars")
+        classpathEntries.add(s"$jdbcDeps${File.separator}*")
+      } else {
+        // add prod classpath
+        classpathEntries.add(s"$parent${File.separator}*")
+      }
+    }
+
     val extraCp = conf.get(ENGINE_JDBC_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
     buffer += classpathEntries.asScala.mkString(File.pathSeparator)
