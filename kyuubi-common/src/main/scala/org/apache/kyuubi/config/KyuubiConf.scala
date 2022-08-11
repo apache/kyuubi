@@ -1567,7 +1567,7 @@ object KyuubiConf {
 
   object OperationModes extends Enumeration {
     type OperationMode = Value
-    val PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION, NONE = Value
+    val PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION, NONE, UNKNOWN = Value
   }
 
   val OPERATION_PLAN_ONLY_MODE: ConfigEntry[String] =

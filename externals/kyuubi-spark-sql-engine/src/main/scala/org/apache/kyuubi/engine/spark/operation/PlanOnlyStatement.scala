@@ -21,6 +21,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_PLAN_ONLY_EXCLUDES
 import org.apache.kyuubi.config.KyuubiConf.OperationModes._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator}
@@ -77,6 +78,9 @@ class PlanOnlyStatement(
               case EXECUTION =>
                 val executed = spark.sql(statement).queryExecution.executedPlan
                 iter = new IterableFetchIterator(Seq(Row(executed.toString())))
+              case UNKNOWN =>
+                throw KyuubiSQLException(s"The operation mode $mode" +
+                  s" doesn't support in Spark SQL engine.")
             }
         }
       }

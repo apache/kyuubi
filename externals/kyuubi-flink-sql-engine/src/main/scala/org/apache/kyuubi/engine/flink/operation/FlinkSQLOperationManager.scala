@@ -61,7 +61,18 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       flinkSession.normalizedConf.getOrElse(
         ENGINE_FLINK_MAX_ROWS.key,
         resultMaxRowsDefault.toString).toInt
-    val op = OperationModes.withName(mode.toUpperCase(Locale.ROOT)) match {
+    val finalMode =
+      if (!OperationModes.values.exists(x => x.toString.equalsIgnoreCase(mode))) {
+        warn(s"Unsupported operation mode: $mode," +
+          s" set ${OPERATION_PLAN_ONLY_MODE.key} to ${OperationModes.UNKNOWN.toString}")
+        flinkSession.sessionContext.set(
+          OPERATION_PLAN_ONLY_MODE.key,
+          OperationModes.UNKNOWN.toString)
+        UNKNOWN.toString
+      } else {
+        mode
+      }
+    val op = OperationModes.withName(finalMode.toUpperCase(Locale.ROOT)) match {
       case NONE =>
         // FLINK-24427 seals calcite classes which required to access in async mode, considering
         // there is no much benefit in async mode, here we just ignore `runAsync` and always run
