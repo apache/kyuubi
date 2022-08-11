@@ -59,7 +59,7 @@ In order to make the TPC-H connector package visible for the runtime classpath o
 Configurations
 **************
 
-To add TPC-H tables as a catalog, we can set the following configurations:
+To add TPC-H tables as a catalog, we can set the following configurations in ``$SPARK_HOME/conf/spark-defaults.conf``:
 
 .. code-block:: properties
 
