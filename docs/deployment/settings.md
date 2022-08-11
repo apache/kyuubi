@@ -231,6 +231,9 @@ kyuubi.engine.jdbc.connection.provider|&lt;undefined&gt;|The connection provider
 kyuubi.engine.jdbc.connection.url|&lt;undefined&gt;|The server url that engine will connect to|string|1.6.0
 kyuubi.engine.jdbc.connection.user|&lt;undefined&gt;|The user is used for connecting to server|string|1.6.0
 kyuubi.engine.jdbc.driver.class|&lt;undefined&gt;|The driver class for jdbc engine connection|string|1.6.0
+kyuubi.engine.jdbc.extra.classpath|&lt;undefined&gt;|The extra classpath for the jdbc query engine, for configuring location of jdbc driver, etc|string|1.6.0
+kyuubi.engine.jdbc.java.options|&lt;undefined&gt;|The extra java options for the jdbc query engine|string|1.6.0
+kyuubi.engine.jdbc.memory|1g|The heap memory for the jdbc query engine|string|1.6.0
 kyuubi.engine.jdbc.type|&lt;undefined&gt;|The short name of jdbc type|string|1.6.0
 kyuubi.engine.operation.convert.catalog.database.enabled|true|When set to true, The engine converts the JDBC methods of set/get Catalog and set/get Schema to the implementation of different engines|boolean|1.6.0
 kyuubi.engine.operation.log.dir.root|engine_operation_logs|Root directory for query operation log at engine-side.|string|1.4.0
