@@ -63,10 +63,16 @@ To add TPC-H tables as a catalog, we can set the following configurations in ``$
 
 .. code-block:: properties
 
+   # (required) Register a catalog named `tpch` for the spark engine.
    spark.sql.catalog.tpch=org.apache.kyuubi.spark.connector.tpch.TPCHCatalog
-   spark.sql.catalog.tpch.excludeDatabases=sf10000,sf30000  # optional Exclude database list from the catalog
-   spark.sql.catalog.tpch.useAnsiStringType=false           # optional When true, use CHAR VARCHAR; otherwise use STRING
-   spark.sql.catalog.tpch.read.maxPartitionBytes=134217728  # optional Max data split size in bytes per task, consider to reduce it if you want a higher parallelism.
+   # (optional) Excluded database list from the catalog, all available databases are:
+   #            sf0, tiny, sf1, sf10, sf30, sf100, sf300, sf1000, sf3000, sf10000, sf30000, sf100000.
+   spark.sql.catalog.tpch.excludeDatabases=sf10000,sf30000
+   # (optional) When true, use CHAR/VARCHAR, otherwise use STRING. It affects the output of the table schema output,
+   #            e.g. `SHOW CREATE TABLE <table>`, `DESC <table>`.
+   spark.sql.catalog.tpch.useAnsiStringType=false
+   # (optional) Maximum bytes per task, consider reducing it if you want higher parallelism.
+   spark.sql.catalog.tpch.read.maxPartitionBytes=134217728
 
 TPC-H Operations
 ----------------
