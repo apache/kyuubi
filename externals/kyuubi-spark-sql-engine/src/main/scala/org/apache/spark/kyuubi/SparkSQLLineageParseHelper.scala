@@ -23,7 +23,7 @@ import scala.util.{Failure, Success, Try}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, TableCatalog}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -36,53 +36,78 @@ import org.apache.kyuubi.engine.spark.events.Lineage
 trait LineageParser {
   def sparkSession: SparkSession
 
+  type AttributeMap[A] = ListMap[Attribute, A]
+
   def parse(plan: LogicalPlan): Lineage = {
-    val ret = {
-      extractColumnsLineage(plan, ListMap()).toList.collect {
-        case (k, columns) =>
-          k.split('#').head -> columns.map(_.split('#').head)
+    val columnsLineage =
+      extractColumnsLineage(plan, ListMap[Attribute, AttributeSet]()).toList.collect {
+        case (k, attrs) =>
+          k.name -> attrs.map(_.name).toSet
       }
-    }
-    val (inputTables, outputTables) = ret.foldLeft((List[String](), List[String]())) {
+    val (inputTables, outputTables) = columnsLineage.foldLeft((List[String](), List[String]())) {
       case ((inputs, outputs), (out, in)) =>
         val x = (inputs ++ in.map(_.split('.').init.mkString("."))).filter(_.nonEmpty)
         val y = outputs ++ List(out.split('.').init.mkString(".")).filter(_.nonEmpty)
         (x, y)
     }
-    Lineage(inputTables.distinct, outputTables.distinct, ret)
+    Lineage(inputTables.distinct, outputTables.distinct, columnsLineage)
   }
 
   private def mergeColumnsLineage(
-      left: ListMap[String, List[String]],
-      right: ListMap[String, List[String]]): ListMap[String, List[String]] = {
-    if (left.isEmpty || right.isEmpty) left ++ right
-    else {
-      val head =
-        ListMap(left.head._1 -> (left.head._2 ++ right.getOrElse(left.head._1, List.empty)))
-      head ++ mergeColumnsLineage(left.tail, right - left.head._1)
+      left: AttributeMap[AttributeSet],
+      right: AttributeMap[AttributeSet]): AttributeMap[AttributeSet] = {
+    left ++ right.map {
+      case (k, attrs) =>
+        k -> (attrs ++ left.getOrElse(k, AttributeSet.empty))
     }
   }
 
   private def joinColumnsLineage(
-      parent: ListMap[String, List[String]],
-      child: ListMap[String, List[String]]): ListMap[String, List[String]] = {
+      parent: AttributeMap[AttributeSet],
+      child: AttributeMap[AttributeSet]): AttributeMap[AttributeSet] = {
     if (parent.isEmpty) child
     else {
-      val childTmp = child.map { case (k, v) => (k.split('#').last, v) }
-      parent.map { case (k, columns) =>
-        k -> {
-          columns.flatMap {
-            case col if childTmp.contains(col.split('#').last) => childTmp(col.split('#').last)
-            case _ => List()
-          }
-        }
+      val childMap = child.map { case (k, attrs) => (k.exprId, attrs) }
+      parent.map { case (k, attrs) =>
+        k -> AttributeSet(attrs.flatMap(attr =>
+          childMap.getOrElse(attr.exprId, AttributeSet.empty)))
       }
+    }
+  }
+
+  private def getSelectColumnLineage(
+      named: Seq[NamedExpression]): AttributeMap[AttributeSet] = {
+    val exps = named.map {
+      case a: Alias => a.toAttribute -> a.references
+      case a: Attribute => a -> a.references
+    }
+    ListMap(exps: _*)
+  }
+
+  private def joinRelationColumnLineage(
+      parent: AttributeMap[AttributeSet],
+      relationAttrs: Seq[Attribute],
+      tableName: String = ""): AttributeMap[AttributeSet] = {
+    val relationAttrSet = AttributeSet(relationAttrs)
+    if (parent.nonEmpty) {
+      parent.map { case (k, attrs) =>
+        k -> AttributeSet(attrs.collect {
+          case attr if relationAttrSet.contains(attr) =>
+            attr.withName(Seq(tableName, attr.name).filter(_.nonEmpty).mkString("."))
+        })
+      }
+    } else {
+      ListMap(relationAttrs.map { attr =>
+        (
+          attr,
+          AttributeSet(attr.withName(Seq(tableName, attr.name).filter(_.nonEmpty).mkString("."))))
+      }: _*)
     }
   }
 
   private def extractColumnsLineage(
       plan: LogicalPlan,
-      parentColumnsLineage: ListMap[String, List[String]]): ListMap[String, List[String]] = {
+      parentColumnsLineage: AttributeMap[AttributeSet]): AttributeMap[AttributeSet] = {
 
     def getPlanField[T](field: String): T = {
       getFieldVal[T](plan, field)
@@ -106,7 +131,7 @@ trait LineageParser {
         val analyzed = sparkSession.sessionState.analyzer.execute(getQuery)
         val view = getPlanField[TableIdentifier]("name").unquotedString
         extractColumnsLineage(analyzed, parentColumnsLineage).map { case (k, v) =>
-          (s"$view.$k", v)
+          k.withName(s"$view.${k.name}") -> v
         }
 
       case p if p.nodeName == "CreateViewCommand" =>
@@ -121,15 +146,15 @@ trait LineageParser {
           }
         val analyzed = sparkSession.sessionState.analyzer.execute(query)
         extractColumnsLineage(analyzed, parentColumnsLineage).zipWithIndex.map {
-          case (x, i) if outputCols.nonEmpty => s"$view.${outputCols(i)}" -> x._2
-          case ((k, v), _) => s"$view.$k" -> v
+          case ((k, v), i) if outputCols.nonEmpty => k.withName(s"$view.${outputCols(i)}") -> v
+          case ((k, v), _) => k.withName(s"$view.${k.name}") -> v
         }
 
       case p if p.nodeName == "CreateDataSourceTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("table").qualifiedName
         val analyzed = sparkSession.sessionState.analyzer.execute(getQuery)
         extractColumnsLineage(analyzed, parentColumnsLineage).map { case (k, v) =>
-          s"$table.$k" -> v
+          k.withName(s"$table.${k.name}") -> v
         }
 
       case p
@@ -137,7 +162,7 @@ trait LineageParser {
             p.nodeName == "OptimizedCreateHiveTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("tableDesc").qualifiedName
         extractColumnsLineage(getQuery, parentColumnsLineage).map { case (k, v) =>
-          s"$table.$k" -> v
+          k.withName(s"$table.${k.name}") -> v
         }
 
       case p
@@ -158,21 +183,21 @@ trait LineageParser {
                 "catalog").name())
           }
         extractColumnsLineage(getQuery, parentColumnsLineage).map { case (k, v) =>
-          s"$catalog.$namespace.$table.$k" -> v
+          k.withName(s"$catalog.$namespace.$table.${k.name}") -> v
         }
 
       case p if p.nodeName == "InsertIntoDataSourceCommand" =>
         val logicalRelation = getPlanField[LogicalRelation]("logicalRelation")
         val table = logicalRelation.catalogTable.map(_.qualifiedName).getOrElse("")
         extractColumnsLineage(getQuery, parentColumnsLineage).map { case (k, v) =>
-          s"$table.$k" -> v
+          k.withName(s"$table.${k.name}") -> v
         }
 
       case p if p.nodeName == "InsertIntoHadoopFsRelationCommand" =>
         val table =
           getPlanField[Option[CatalogTable]]("catalogTable").map(_.qualifiedName).getOrElse("")
         extractColumnsLineage(getQuery, parentColumnsLineage).map { case (k, v) =>
-          s"$table.$k" -> v
+          k.withName(s"$table.${k.name}") -> v
         }
 
       case p
@@ -181,17 +206,16 @@ trait LineageParser {
         val dir =
           getPlanField[CatalogStorageFormat]("storage").locationUri.map(_.toString).getOrElse("")
         extractColumnsLineage(getQuery, parentColumnsLineage).map { case (k, v) =>
-          s"`$dir`.$k" -> v
+          k.withName(s"`$dir`.${k.name}") -> v
         }
 
       case p if p.nodeName == "InsertIntoHiveTable" =>
         val table = getPlanField[CatalogTable]("table").qualifiedName
         extractColumnsLineage(getQuery, parentColumnsLineage).map { case (k, v) =>
-          s"$table.$k" -> v
+          k.withName(s"$table.${k.name}") -> v
         }
 
       case p if p.nodeName == "SaveIntoDataSourceCommand" =>
-        // TODO: Should get the table via datasource options?
         extractColumnsLineage(getQuery, parentColumnsLineage)
 
       // For query
@@ -208,119 +232,38 @@ trait LineageParser {
       case p: Union =>
         // merge all children in to one derivedColumns
         val childrenUnion =
-          p.children.map(extractColumnsLineage(_, ListMap())).map(_.values).reduce {
+          p.children.map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]())).map(
+            _.values).reduce {
             (left, right) =>
-              left.zip(right).map(col => (col._1 ++ col._2).distinct)
+              left.zip(right).map(attr => attr._1 ++ attr._2)
           }
-        val childrenColumnsLineage =
-          ListMap(p.output.map(a => s"${a.name}#${a.exprId.id}").toList.zip(childrenUnion): _*)
+        val childrenColumnsLineage = ListMap(p.output.zip(childrenUnion): _*)
         joinColumnsLineage(parentColumnsLineage, childrenColumnsLineage)
-
-      case p: SubqueryAlias =>
-        extractColumnsLineage(p.child, parentColumnsLineage)
 
       case p: LogicalRelation if p.catalogTable.nonEmpty =>
         val tableName = p.catalogTable.get.qualifiedName
-        val dataColIds = p.output.map(_.exprId.id.toString).toSet
-        val dataColNames = p.output.map(_.name)
-        if (parentColumnsLineage.nonEmpty) {
-          parentColumnsLineage.map {
-            case (k, columns) =>
-              k -> columns.collect {
-                case col if dataColIds.contains(col.split('#').last) => s"$tableName.$col"
-              }
-          }
-        } else {
-          val colPair = dataColNames.map { col =>
-            col -> List(s"$tableName.$col")
-          }
-          ListMap(colPair: _*)
-        }
+        joinRelationColumnLineage(parentColumnsLineage, p.output, tableName)
 
       case p: HiveTableRelation =>
         val tableName = p.tableMeta.qualifiedName
-        val dataCols = p.dataCols.map(_.exprId.id.toString).toSet
-        val dataColNames = p.output.map(_.name)
-        if (parentColumnsLineage.nonEmpty) {
-          parentColumnsLineage.map { case (k, columns) =>
-            k -> columns.collect {
-              case col if dataCols.contains(col.split('#').last) => s"$tableName.$col"
-            }
-          }
-        } else {
-          val colPair = dataColNames.map { col =>
-            col -> List(s"$tableName.$col")
-          }
-          ListMap(colPair: _*)
-        }
+        joinRelationColumnLineage(parentColumnsLineage, p.output, tableName)
 
       case p: DataSourceV2Relation =>
         val tableName = p.name
-        val dataCols = p.output.map(_.exprId.id.toString).toSet
-        val dataColNames = p.output.map(_.name)
-        if (parentColumnsLineage.nonEmpty) {
-          parentColumnsLineage.map { case (k, columns) =>
-            k -> columns.collect {
-              case col if dataCols.contains(col.split('#').last) => s"$tableName.$col"
-            }
-          }
-        } else {
-          val colPair = dataColNames.map { col =>
-            col -> List(s"$tableName.$col")
-          }
-          ListMap(colPair: _*)
-        }
+        joinRelationColumnLineage(parentColumnsLineage, p.output, tableName)
 
       case p: DataSourceV2ScanRelation =>
         val tableName = p.name
-        val dataCols = p.output.map(_.exprId.id.toString).toSet
-        val dataColNames = p.output.map(_.name)
-        if (parentColumnsLineage.nonEmpty) {
-          parentColumnsLineage.map { case (k, columns) =>
-            k -> columns.collect {
-              case col if dataCols.contains(col.split('#').last) => s"$tableName.$col"
-            }
-          }
-        } else {
-          val colPair = dataColNames.map { col =>
-            col -> List(s"$tableName.$col")
-          }
-          ListMap(colPair: _*)
-        }
+        joinRelationColumnLineage(parentColumnsLineage, p.output, tableName)
 
       case p: LocalRelation =>
-        val dataCols = p.output.map(_.exprId.id.toString).toSet
-        val dataColNames = p.output.map(_.name)
-        if (parentColumnsLineage.nonEmpty) {
-          parentColumnsLineage.map { case (k, columns) =>
-            k -> columns.collect {
-              case col if dataCols.contains(col.split('#').last) => col
-            }
-          }
-        } else {
-          val colPair = dataColNames.map { col =>
-            col -> List(col)
-          }
-          ListMap(colPair: _*)
-        }
+        joinRelationColumnLineage(parentColumnsLineage, p.output)
 
-      case p if p.children.isEmpty => ListMap.empty
+      case p if p.children.isEmpty => ListMap[Attribute, AttributeSet]()
+
       case p =>
         p.children.map(extractColumnsLineage(_, parentColumnsLineage)).reduce(mergeColumnsLineage)
     }
-  }
-
-  private def getSelectColumnLineage(exps: Seq[NamedExpression]): ListMap[String, List[String]] = {
-    val result = exps.map { exp =>
-      val derivedColumns = exp.references.map(e => s"${e.name}#${e.exprId.id}").toList
-      exp match {
-        case e: Alias =>
-          (s"${e.name}#${e.exprId.id}" -> derivedColumns)
-        case _ =>
-          (exp.toString -> derivedColumns)
-      }
-    }.toList
-    ListMap(result: _*)
   }
 
   private def getFieldVal[T](o: Any, name: String): T = {

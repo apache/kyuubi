@@ -73,7 +73,7 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
     assert(ret0 == Lineage(
       List("test_db0.test_table0"),
       List("default.alterviewascommand"),
-      List(("default.alterviewascommand.key", List("test_db0.test_table0.key")))))
+      List(("default.alterviewascommand.key", Set("test_db0.test_table0.key")))))
 
     spark.sql(s"create view alterviewascommand1 as select * from test_db0.test_table0")
     val ret1 =
@@ -82,8 +82,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("default.alterviewascommand1"),
       List(
-        ("default.alterviewascommand1.key", List("test_db0.test_table0.key")),
-        ("default.alterviewascommand1.value", List("test_db0.test_table0.value")))))
+        ("default.alterviewascommand1.key", Set("test_db0.test_table0.key")),
+        ("default.alterviewascommand1.value", Set("test_db0.test_table0.value")))))
   }
 
   test("columns lineage extract - CreateViewCommand") {
@@ -93,8 +93,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("default.createviewcommand"),
       List(
-        ("default.createviewcommand.a", List("test_db0.test_table0.key")),
-        ("default.createviewcommand.b", List("test_db0.test_table0.value")))))
+        ("default.createviewcommand.a", Set("test_db0.test_table0.key")),
+        ("default.createviewcommand.b", Set("test_db0.test_table0.value")))))
 
     val ret1 = exectractLineage(
       "create view createviewcommand1 as select key, value from test_db0.test_table0")
@@ -102,8 +102,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("default.createviewcommand1"),
       List(
-        ("default.createviewcommand1.key", List("test_db0.test_table0.key")),
-        ("default.createviewcommand1.value", List("test_db0.test_table0.value")))))
+        ("default.createviewcommand1.key", Set("test_db0.test_table0.key")),
+        ("default.createviewcommand1.value", Set("test_db0.test_table0.value")))))
 
     val ret2 = exectractLineage(
       "create view createviewcommand2 as select * from test_db0.test_table0")
@@ -111,8 +111,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("default.createviewcommand2"),
       List(
-        ("default.createviewcommand2.key", List("test_db0.test_table0.key")),
-        ("default.createviewcommand2.value", List("test_db0.test_table0.value")))))
+        ("default.createviewcommand2.key", Set("test_db0.test_table0.key")),
+        ("default.createviewcommand2.value", Set("test_db0.test_table0.value")))))
   }
 
   test("columns lineage extract - CreateDataSourceTableAsSelectCommand") {
@@ -122,10 +122,10 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("default.createdatasourcetableasselectcommand"),
       List(
-        ("default.createdatasourcetableasselectcommand.key", List("test_db0.test_table0.key")),
+        ("default.createdatasourcetableasselectcommand.key", Set("test_db0.test_table0.key")),
         (
           "default.createdatasourcetableasselectcommand.value",
-          List("test_db0.test_table0.value")))))
+          Set("test_db0.test_table0.value")))))
 
     val ret1 = exectractLineage("create table createdatasourcetableasselectcommand1 using parquet" +
       s" AS SELECT * FROM test_db0.test_table0")
@@ -133,10 +133,10 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("default.createdatasourcetableasselectcommand1"),
       List(
-        ("default.createdatasourcetableasselectcommand1.key", List("test_db0.test_table0.key")),
+        ("default.createdatasourcetableasselectcommand1.key", Set("test_db0.test_table0.key")),
         (
           "default.createdatasourcetableasselectcommand1.value",
-          List("test_db0.test_table0.value")))))
+          Set("test_db0.test_table0.value")))))
   }
 
   test("columns lineage extract - CreateHiveTableAsSelectCommand") {
@@ -146,8 +146,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("default.createhivetableasselectcommand"),
       List(
-        ("default.createhivetableasselectcommand.key", List("test_db0.test_table0.key")),
-        ("default.createhivetableasselectcommand.value", List("test_db0.test_table0.value")))))
+        ("default.createhivetableasselectcommand.key", Set("test_db0.test_table0.key")),
+        ("default.createhivetableasselectcommand.value", Set("test_db0.test_table0.value")))))
 
     val ret1 = exectractLineage("create table createhivetableasselectcommand1 using hive" +
       s" as select * from test_db0.test_table0")
@@ -155,8 +155,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("default.createhivetableasselectcommand1"),
       List(
-        ("default.createhivetableasselectcommand1.key", List("test_db0.test_table0.key")),
-        ("default.createhivetableasselectcommand1.value", List("test_db0.test_table0.value")))))
+        ("default.createhivetableasselectcommand1.key", Set("test_db0.test_table0.key")),
+        ("default.createhivetableasselectcommand1.value", Set("test_db0.test_table0.value")))))
   }
 
   test("columns lineage extract - OptimizedCreateHiveTableAsSelectCommand") {
@@ -168,10 +168,10 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("default.optimizedcreatehivetableasselectcommand"),
       List(
-        ("default.optimizedcreatehivetableasselectcommand.key", List("test_db0.test_table0.key")),
+        ("default.optimizedcreatehivetableasselectcommand.key", Set("test_db0.test_table0.key")),
         (
           "default.optimizedcreatehivetableasselectcommand.value",
-          List("test_db0.test_table0.value")))))
+          Set("test_db0.test_table0.value")))))
   }
 
   test("columns lineage extract - CreateTableAsSelect") {
@@ -181,10 +181,10 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("v2_catalog.db.createhivetableasselectcommand"),
       List(
-        ("v2_catalog.db.createhivetableasselectcommand.key", List("test_db0.test_table0.key")),
+        ("v2_catalog.db.createhivetableasselectcommand.key", Set("test_db0.test_table0.key")),
         (
           "v2_catalog.db.createhivetableasselectcommand.value",
-          List("test_db0.test_table0.value")))))
+          Set("test_db0.test_table0.value")))))
 
     val ret1 = exectractLineage("create table v2_catalog.db.createhivetableasselectcommand1" +
       s" as select * from test_db0.test_table0")
@@ -192,10 +192,10 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List("v2_catalog.db.createhivetableasselectcommand1"),
       List(
-        ("v2_catalog.db.createhivetableasselectcommand1.key", List("test_db0.test_table0.key")),
+        ("v2_catalog.db.createhivetableasselectcommand1.key", Set("test_db0.test_table0.key")),
         (
           "v2_catalog.db.createhivetableasselectcommand1.value",
-          List("test_db0.test_table0.value")))))
+          Set("test_db0.test_table0.value")))))
   }
 
   test("columns lineage extract - InsertIntoDataSourceCommand") {
@@ -225,8 +225,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         List("test_db0.test_table0"),
         List("default.insertintodatasourcecommand"),
         List(
-          ("default.insertintodatasourcecommand.a", List("test_db0.test_table0.key")),
-          ("default.insertintodatasourcecommand.b", List("test_db0.test_table0.value")))))
+          ("default.insertintodatasourcecommand.a", Set("test_db0.test_table0.key")),
+          ("default.insertintodatasourcecommand.b", Set("test_db0.test_table0.value")))))
 
       val ret1 =
         exectractLineage(
@@ -235,8 +235,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         List("test_db0.test_table0"),
         List("default.insertintodatasourcecommand"),
         List(
-          ("default.insertintodatasourcecommand.a", List("test_db0.test_table0.key")),
-          ("default.insertintodatasourcecommand.b", List("test_db0.test_table0.value")))))
+          ("default.insertintodatasourcecommand.a", Set("test_db0.test_table0.key")),
+          ("default.insertintodatasourcecommand.b", Set("test_db0.test_table0.value")))))
 
     }
   }
@@ -253,8 +253,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         List("test_db0.test_table0"),
         List("default.insertintohadoopfsrelationcommand"),
         List(
-          ("default.insertintohadoopfsrelationcommand.a", List("test_db0.test_table0.key")),
-          ("default.insertintohadoopfsrelationcommand.b", List("test_db0.test_table0.value")))))
+          ("default.insertintohadoopfsrelationcommand.a", Set("test_db0.test_table0.key")),
+          ("default.insertintohadoopfsrelationcommand.b", Set("test_db0.test_table0.value")))))
     }
 
   }
@@ -270,9 +270,9 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table_part0"),
       List(s"""`$directory.path`"""),
       List(
-        (s"""`$directory.path`.key""", List("test_db0.test_table_part0.key")),
-        (s"""`$directory.path`.value""", List("test_db0.test_table_part0.value")),
-        (s"""`$directory.path`.pid""", List("test_db0.test_table_part0.pid")))))
+        (s"""`$directory.path`.key""", Set("test_db0.test_table_part0.key")),
+        (s"""`$directory.path`.value""", Set("test_db0.test_table_part0.value")),
+        (s"""`$directory.path`.pid""", Set("test_db0.test_table_part0.pid")))))
   }
 
   test("columns lineage extract - InsertIntoHiveDirCommand") {
@@ -286,9 +286,9 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table_part0"),
       List(s"""`$directory.path`"""),
       List(
-        (s"""`$directory.path`.key""", List("test_db0.test_table_part0.key")),
-        (s"""`$directory.path`.value""", List("test_db0.test_table_part0.value")),
-        (s"""`$directory.path`.pid""", List("test_db0.test_table_part0.pid")))))
+        (s"""`$directory.path`.key""", Set("test_db0.test_table_part0.key")),
+        (s"""`$directory.path`.value""", Set("test_db0.test_table_part0.value")),
+        (s"""`$directory.path`.pid""", Set("test_db0.test_table_part0.pid")))))
   }
 
   test("columns lineage extract - InsertIntoHiveTable") {
@@ -303,8 +303,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         List("test_db0.test_table0"),
         List(s"default.$tableName"),
         List(
-          (s"default.$tableName.a", List("test_db0.test_table0.key")),
-          (s"default.$tableName.b", List("test_db0.test_table0.value")))))
+          (s"default.$tableName.a", Set("test_db0.test_table0.key")),
+          (s"default.$tableName.b", Set("test_db0.test_table0.value")))))
     }
 
   }
@@ -315,17 +315,17 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db0.test_table0"),
       List(),
       List(
-        ("key", List("test_db0.test_table0.key")),
-        ("value", List("test_db0.test_table0.value")))))
+        ("key", Set("test_db0.test_table0.key")),
+        ("value", Set("test_db0.test_table0.value")))))
 
     val ret1 = exectractLineage("select * from test_db0.test_table_part0")
     assert(ret1 == Lineage(
       List("test_db0.test_table_part0"),
       List(),
       List(
-        ("key", List("test_db0.test_table_part0.key")),
-        ("value", List("test_db0.test_table_part0.value")),
-        ("pid", List("test_db0.test_table_part0.pid")))))
+        ("key", Set("test_db0.test_table_part0.key")),
+        ("value", Set("test_db0.test_table_part0.value")),
+        ("pid", Set("test_db0.test_table_part0.pid")))))
 
   }
 
@@ -347,21 +347,21 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
     assert(ret0 == Lineage(
       List("v2_catalog.db.tb"),
       List(),
-      List("col1" -> List("v2_catalog.db.tb.col1"))))
+      List("col1" -> Set("v2_catalog.db.tb.col1"))))
 
     val sql1 = "select col1, hash(hash(col1)) as col2 from v2_catalog.db.tb"
     val ret1 = exectractLineage(sql1)
     assert(ret1 == Lineage(
       List("v2_catalog.db.tb"),
       List(),
-      List("col1" -> List("v2_catalog.db.tb.col1"), "col2" -> List("v2_catalog.db.tb.col1"))))
+      List("col1" -> Set("v2_catalog.db.tb.col1"), "col2" -> Set("v2_catalog.db.tb.col1"))))
 
     val sql2 = "select col1, case col1 when '1' then 's1' else col1 end col2 from v2_catalog.db.tb"
     val ret2 = exectractLineage(sql2)
     assert(ret2 == Lineage(
       List("v2_catalog.db.tb"),
       List(),
-      List("col1" -> List("v2_catalog.db.tb.col1"), "col2" -> List("v2_catalog.db.tb.col1"))))
+      List("col1" -> Set("v2_catalog.db.tb.col1"), "col2" -> Set("v2_catalog.db.tb.col1"))))
 
     val sql3 =
       "select col1 as col2, 'col2' as col2, 'col2', col3 as col2 " +
@@ -371,10 +371,10 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("v2_catalog.db.tb"),
       List(),
       List(
-        ("col2", List("v2_catalog.db.tb.col1")),
-        ("col2", List()),
-        ("col2", List()),
-        ("col2", List("v2_catalog.db.tb.col3")))))
+        ("col2", Set("v2_catalog.db.tb.col1")),
+        ("col2", Set()),
+        ("col2", Set()),
+        ("col2", Set("v2_catalog.db.tb.col3")))))
 
     val sql4 =
       "select col1 as col2, sum(hash(col1) + hash(hash(col1))) from v2_catalog.db.tb group by col1"
@@ -383,8 +383,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("v2_catalog.db.tb"),
       List(),
       List(
-        ("col2", List("v2_catalog.db.tb.col1")),
-        ("sum((hash(col1) + hash(hash(col1))))", List("v2_catalog.db.tb.col1")))))
+        ("col2", Set("v2_catalog.db.tb.col1")),
+        ("sum((hash(col1) + hash(hash(col1))))", Set("v2_catalog.db.tb.col1")))))
     val sql5 =
       s"""
          | select t1.col2, count(t2.col3)
@@ -399,8 +399,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("v2_catalog.db.tb"),
       List(),
       List(
-        ("col2", List("v2_catalog.db.tb.col1")),
-        ("count(col3)", List("v2_catalog.db.tb.col1")))))
+        ("col2", Set("v2_catalog.db.tb.col1")),
+        ("count(col3)", Set("v2_catalog.db.tb.col1")))))
   }
 
   test("columns lineage extract - base sql") {
@@ -421,8 +421,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("default.tmp0", "default.tmp1"),
       List(),
       List(
-        "a0" -> List("default.tmp0.tmp0_0"),
-        "a1" -> List("default.tmp1.tmp1_0")))
+        "a0" -> Set("default.tmp0.tmp0_0"),
+        "a1" -> Set("default.tmp1.tmp1_0")))
 
     val sql1 =
       """
@@ -432,8 +432,8 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("default.tmp1"),
       List(),
       List(
-        "cnt" -> List("default.tmp1.tmp1_0"),
-        "tmp1_1" -> List("default.tmp1.tmp1_1")))
+        "cnt" -> Set("default.tmp1.tmp1_0"),
+        "tmp1_1" -> Set("default.tmp1.tmp1_1")))
 
     val ret0 = exectractLineage(sql0)
     assert(ret0 == sql0ExpectResult)
@@ -502,12 +502,12 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         "v2_catalog.test_db_v2.mall_icon"),
       List(),
       List(
-        ("goods_id", List("test_db.goods_detail0.goods_id")),
-        ("cate_grory", List("test_db.goods_detail0.cat_id")),
-        ("cat_id", List("v2_catalog.test_db_v2.goods_detail1.cat_id")),
-        ("product_id", List("v2_catalog.test_db_v2.goods_detail1.product_id")),
-        ("start_time", List("v2_catalog.test_db_v2.mall_icon_schedule.start_time")),
-        ("end_time", List("v2_catalog.test_db_v2.mall_icon.end_time")))))
+        ("goods_id", Set("test_db.goods_detail0.goods_id")),
+        ("cate_grory", Set("test_db.goods_detail0.cat_id")),
+        ("cat_id", Set("v2_catalog.test_db_v2.goods_detail1.cat_id")),
+        ("product_id", Set("v2_catalog.test_db_v2.goods_detail1.product_id")),
+        ("start_time", Set("v2_catalog.test_db_v2.mall_icon_schedule.start_time")),
+        ("end_time", Set("v2_catalog.test_db_v2.mall_icon.end_time")))))
   }
 
   test("columns lineage extract - join sql ") {
@@ -532,12 +532,12 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
         List(),
         List(
-          ("a1", List("v2_catalog.db.tb1.col1")),
-          ("b1", List("v2_catalog.db.tb2.col1")),
-          ("ab1", List("v2_catalog.db.tb1.col1", "v2_catalog.db.tb2.col1")),
+          ("a1", Set("v2_catalog.db.tb1.col1")),
+          ("b1", Set("v2_catalog.db.tb2.col1")),
+          ("ab1", Set("v2_catalog.db.tb1.col1", "v2_catalog.db.tb2.col1")),
           (
             "ab2",
-            List(
+            Set(
               "v2_catalog.db.tb1.col1",
               "v2_catalog.db.tb1.col2",
               "v2_catalog.db.tb2.col2",
@@ -565,9 +565,9 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db.test_table0", "test_db.test_table1"),
       List(),
       List(
-        ("a", List("test_db.test_table0.a", "test_db.test_table1.a")),
-        ("b", List("test_db.test_table0.b", "test_db.test_table1.b")),
-        ("c", List("test_db.test_table0.b", "test_db.test_table1.c")))))
+        ("a", Set("test_db.test_table0.a", "test_db.test_table1.a")),
+        ("b", Set("test_db.test_table0.b", "test_db.test_table1.b")),
+        ("c", Set("test_db.test_table0.b", "test_db.test_table1.c")))))
   }
 
   test("columns lineage extract - agg and union sql") {
@@ -603,16 +603,16 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List("test_db.test_order_item"),
       List(),
       List(
-        ("stat_date", List("test_db.test_order_item.stat_date")),
-        ("channel_id", List("test_db.test_order_item.channel_id")),
-        ("sub_channel_id", List("test_db.test_order_item.sub_channel_id")),
-        ("user_type", List("test_db.test_order_item.user_type")),
-        ("country_name", List("test_db.test_order_item.country_name")),
-        ("get_count0", List("test_db.test_order_item.order_id")),
+        ("stat_date", Set("test_db.test_order_item.stat_date")),
+        ("channel_id", Set("test_db.test_order_item.channel_id")),
+        ("sub_channel_id", Set("test_db.test_order_item.sub_channel_id")),
+        ("user_type", Set("test_db.test_order_item.user_type")),
+        ("country_name", Set("test_db.test_order_item.country_name")),
+        ("get_count0", Set("test_db.test_order_item.order_id")),
         (
           "get_amount0",
-          List("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
-        ("add_time", List()))))
+          Set("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
+        ("add_time", Set()))))
     val sql1 =
       """
         |SELECT channel_id, sub_channel_id, country_name, SUM(get_count) AS get_count0
@@ -643,20 +643,20 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
       List(
         (
           "channel_id",
-          List("test_db.test_order_item.channel_id", "test_db.test_p0_order_item.channel_id")),
+          Set("test_db.test_order_item.channel_id", "test_db.test_p0_order_item.channel_id")),
         (
           "sub_channel_id",
-          List(
+          Set(
             "test_db.test_order_item.sub_channel_id",
             "test_db.test_p0_order_item.sub_channel_id")),
         (
           "country_name",
-          List("test_db.test_order_item.country_name", "test_db.test_p0_order_item.country_name")),
-        ("get_count0", List("test_db.test_order_item.order_id")),
+          Set("test_db.test_order_item.country_name", "test_db.test_p0_order_item.country_name")),
+        ("get_count0", Set("test_db.test_order_item.order_id")),
         (
           "get_amount0",
-          List("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
-        ("add_time", List()))))
+          Set("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
+        ("add_time", Set()))))
   }
 
   private def exectractLineage(sql: String): Lineage = {

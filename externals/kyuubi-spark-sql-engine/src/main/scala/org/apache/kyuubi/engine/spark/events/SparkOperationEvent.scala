@@ -82,7 +82,7 @@ case class SparkOperationEvent(
 case class Lineage(
     inputTables: List[String],
     outputTables: List[String],
-    columnLineage: List[(String, List[String])])
+    columnLineage: List[(String, Set[String])])
 
 object SparkOperationEvent {
   def apply(
