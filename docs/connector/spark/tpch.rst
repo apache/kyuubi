@@ -43,7 +43,7 @@ Apache Spark Datasource V2 and Catalog APIs, you need to:
 Dependencies
 ************
 
-The **classpath** of kyuubi spark sql engine with TiDB supported consists of
+The **classpath** of kyuubi spark sql engine with TPC-H supported consists of
 
 1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution
