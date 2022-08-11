@@ -70,9 +70,7 @@ class JdbcProcessBuilder(
     buffer += s"-Xmx$memory"
 
     val javaOptions = conf.get(ENGINE_JDBC_JAVA_OPTIONS)
-    if (javaOptions.isDefined) {
-      buffer += javaOptions.get
-    }
+    javaOptions.foreach(buffer += _)
 
     buffer += "-cp"
     val classpathEntries = new util.LinkedHashSet[String]
