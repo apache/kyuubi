@@ -21,8 +21,10 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, Da
 import java.util.{Base64, Map => JMap}
 
 import scala.collection.JavaConverters._
+import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
@@ -89,6 +91,17 @@ object KyuubiHadoopUtils {
     token.decodeIdentifier() match {
       case tokenIdent: AbstractDelegationTokenIdentifier =>
         Some(tokenIdent.getIssueDate)
+      case null =>
+        // TokenIdentifiers not found in ServiceLoader
+        val tokenIdentifier = new DelegationTokenIdentifier
+        val buf = new ByteArrayInputStream(token.getIdentifier)
+        val in = new DataInputStream(buf)
+        Try(tokenIdentifier.readFields(in)) match {
+          case Success(_) =>
+            Some(tokenIdentifier.getIssueDate)
+          case Failure(_) =>
+            None
+        }
       case _ =>
         None
     }
