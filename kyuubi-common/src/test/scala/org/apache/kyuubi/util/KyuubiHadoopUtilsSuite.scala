@@ -17,13 +17,16 @@
 
 package org.apache.kyuubi.util
 
+import java.io.{DataInput, DataOutput}
 import java.util.stream.StreamSupport
 
 import scala.util.Random
 
+import org.apache.hadoop.hdfs.security.token.delegation.{DelegationTokenIdentifier => HDFSTokenIdent}
 import org.apache.hadoop.io.Text
-import org.apache.hadoop.security.Credentials
-import org.apache.hadoop.security.token.Token
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.hadoop.security.token.{Token, TokenIdentifier}
+import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
@@ -75,4 +78,53 @@ class KyuubiHadoopUtilsSuite extends KyuubiFunSuite {
     assert(StreamSupport.stream(hadoopConf.spliterator(), false)
       .noneMatch(entry => entry.getKey.startsWith("hadoop") || entry.getKey.startsWith("fs")))
   }
+
+  test("get token issue date") {
+    val issueDate = System.currentTimeMillis()
+
+    // Typical DelegationTokenIdentifier
+    val hdfsTokenIdent = new HDFSTokenIdent()
+    hdfsTokenIdent.setIssueDate(issueDate)
+    val hdfsToken = new Token[HDFSTokenIdent]()
+    hdfsToken.setKind(hdfsTokenIdent.getKind)
+    hdfsToken.setID(hdfsTokenIdent.getBytes)
+    assert(KyuubiHadoopUtils.getTokenIssueDate(hdfsToken).get == issueDate)
+
+    // DelegationTokenIdentifier with overridden `write` method
+    val testTokenIdent = new TestDelegationTokenIdentifier()
+    testTokenIdent.setIssueDate(issueDate)
+    val testToken = new Token[TestDelegationTokenIdentifier]()
+    testToken.setKind(testTokenIdent.getKind)
+    testToken.setID(testTokenIdent.getBytes)
+    assert(KyuubiHadoopUtils.getTokenIssueDate(testToken).get == issueDate)
+
+    // TokenIdentifier with no issue date
+    val testSimpleTokenIdent = new TestSimpleTokenIdentifier()
+    val testSimpleToken = new Token[TestSimpleTokenIdentifier]()
+    testSimpleToken.setKind(testSimpleTokenIdent.getKind)
+    testSimpleToken.setID(testSimpleTokenIdent.getBytes)
+    assert(KyuubiHadoopUtils.getTokenIssueDate(testSimpleToken).isEmpty)
+  }
+}
+
+private class TestDelegationTokenIdentifier extends AbstractDelegationTokenIdentifier {
+  override def getKind: Text = new Text("KYUUBI_TEST_GET_ISSUE_DATE")
+
+  override def write(out: DataOutput): Unit = {
+    out.writeLong(getIssueDate)
+  }
+
+  override def readFields(in: DataInput): Unit = {
+    setIssueDate(in.readLong())
+  }
+}
+
+private class TestSimpleTokenIdentifier extends TokenIdentifier {
+  override def getKind: Text = new Text("KYUUBI_TEST_SIMPLE")
+
+  override def getUser: UserGroupInformation = UserGroupInformation.getCurrentUser
+
+  override def write(dataOutput: DataOutput): Unit = {}
+
+  override def readFields(dataInput: DataInput): Unit = {}
 }

@@ -23,10 +23,10 @@ import java.util.{Base64, Map => JMap}
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
+import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -85,13 +85,12 @@ object KyuubiHadoopUtils {
       .toMap
   }
 
-  def getTokenIssueDate(token: Token[_ <: TokenIdentifier]): Long = {
-    // It is safe to deserialize any token identifier to hdfs `DelegationTokenIdentifier`
-    // as all token identifiers have the same binary format.
-    val tokenIdentifier = new DelegationTokenIdentifier
-    val buf = new ByteArrayInputStream(token.getIdentifier)
-    val in = new DataInputStream(buf)
-    tokenIdentifier.readFields(in)
-    tokenIdentifier.getIssueDate
+  def getTokenIssueDate(token: Token[_ <: TokenIdentifier]): Option[Long] = {
+    token.decodeIdentifier() match {
+      case tokenIdent: AbstractDelegationTokenIdentifier =>
+        Some(tokenIdent.getIssueDate)
+      case _ =>
+        None
+    }
   }
 }
