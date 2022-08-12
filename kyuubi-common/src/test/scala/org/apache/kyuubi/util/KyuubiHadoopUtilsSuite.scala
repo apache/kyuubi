@@ -22,9 +22,10 @@ import java.util.stream.StreamSupport
 
 import scala.util.Random
 
+import org.apache.hadoop.hdfs.security.token.block.BlockTokenIdentifier
 import org.apache.hadoop.hdfs.security.token.delegation.{DelegationTokenIdentifier => HDFSTokenIdent}
 import org.apache.hadoop.io.Text
-import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.hadoop.security.Credentials
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 
@@ -95,6 +96,10 @@ class KyuubiHadoopUtilsSuite extends KyuubiFunSuite {
     hdfsTokenIdent.setIssueDate(issueDate)
     checkIssueDate(hdfsTokenIdent, Some(issueDate))
 
+    // TokenIdentifier with no issue date found in ServiceLoader
+    val blockTokenIdent = new BlockTokenIdentifier()
+    checkIssueDate(blockTokenIdent, None)
+
     // DelegationTokenIdentifier not found in ServiceLoader
     // Such as HIVE_DELEGATION_TOKEN
     val testTokenIdent = new TestDelegationTokenIdentifier()
@@ -105,10 +110,6 @@ class KyuubiHadoopUtilsSuite extends KyuubiFunSuite {
     val testTokenIdent2 = new TestDelegationTokenIdentifier2()
     testTokenIdent2.setIssueDate(issueDate)
     checkIssueDate(testTokenIdent2, None)
-
-    // TokenIdentifier with no issue date
-    val testSimpleTokenIdent = new TestSimpleTokenIdentifier()
-    checkIssueDate(testSimpleTokenIdent, None)
   }
 }
 
@@ -126,14 +127,4 @@ private class TestDelegationTokenIdentifier2 extends AbstractDelegationTokenIden
   override def readFields(in: DataInput): Unit = {
     setIssueDate(in.readLong())
   }
-}
-
-private class TestSimpleTokenIdentifier extends TokenIdentifier {
-  override def getKind: Text = new Text("KYUUBI_TOKEN_SIMPLE")
-
-  override def getUser: UserGroupInformation = UserGroupInformation.getCurrentUser
-
-  override def write(dataOutput: DataOutput): Unit = {}
-
-  override def readFields(dataInput: DataInput): Unit = {}
 }
