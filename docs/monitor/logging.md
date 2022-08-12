@@ -18,7 +18,7 @@
 
 # Monitoring Kyuubi - Logging System
 
-Kyuubi uses [Apache Log4j2](https://logging.apache.org/log4j/2.x/) for logging.
+Kyuubi uses [Apache Log4j2](https://logging.apache.org/log4j/2.x/) since v1.6.0, for logging.
 
 In general, there are mainly three components in the Kyuubi architecture that will produce component-oriented logs to help you trace breadcrumbs for SQL workloads against Kyuubi.
 
