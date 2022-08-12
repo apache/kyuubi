@@ -83,8 +83,8 @@ and then use kyuubi spark sql engine to query the table with the following SQL `
 
 
 
-.. _Flink Table Store: https://flink.apache.org/
-.. _Flink Table Store Quick Start: https://nightlies.apache.org/flink/flink-table-store-docs-master/docs/try-table-store/quick-start/
-.. _Official Documentation: https://nightlies.apache.org/flink/flink-table-store-docs-master/
+.. _Flink Table Store: https://nightlies.apache.org/flink/flink-table-store-docs-stable/
+.. _Flink Table Store Quick Start: https://nightlies.apache.org/flink/flink-table-store-docs-stable/docs/try-table-store/quick-start/
+.. _Official Documentation: https://nightlies.apache.org/flink/flink-table-store-docs-stable/
 .. _Maven Central: https://mvnrepository.com/artifact/org.apache.flink
-.. _Flink Table Store multi engine support: https://nightlies.apache.org/flink/flink-table-store-docs-master/docs/engines/overview/
+.. _Flink Table Store multi engine support: https://nightlies.apache.org/flink/flink-table-store-docs-stable/docs/engines/overview/
