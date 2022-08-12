@@ -41,9 +41,10 @@ class KyuubiHistoryServerPlugin extends AppHistoryServerPlugin {
   }
 
   override def setupUI(ui: SparkUI): Unit = {
-    val kyuubiConf = mergedKyuubiConf(ui.conf)
     val store = new EngineEventsStore(ui.store.store)
     if (store.getSessionCount > 0) {
+      val kyuubiConf = mergedKyuubiConf(ui.conf)
+      kyuubiConf.set(KyuubiConf.ENGINE_UI_STOP_ENABLED, false)
       EngineTab(
         None,
         Some(ui),
