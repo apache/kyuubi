@@ -58,144 +58,169 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
     super.afterAll()
   }
 
-  protected def withTable(t: String)(f: String => Unit): Unit = {
+  protected def withTable(t: String*)(f: Seq[String] => Unit): Unit = {
     try {
       f(t)
     } finally {
-      spark.sql(s"DROP TABLE IF EXISTS $t")
+      t.foreach(x => spark.sql(s"DROP TABLE IF EXISTS $x"))
+    }
+  }
+
+  protected def withView(t: String*)(f: Seq[String] => Unit): Unit = {
+    try {
+      f(t)
+    } finally {
+      t.foreach(x => spark.sql(s"DROP VIEW IF EXISTS $x"))
     }
   }
 
   test("columns lineage extract - AlterViewAsCommand") {
-    spark.sql(s"create view alterviewascommand as select key from test_db0.test_table0")
-    val ret0 =
-      exectractLineage(s"alter view alterviewascommand as select key from test_db0.test_table0")
-    assert(ret0 == Lineage(
-      List("test_db0.test_table0"),
-      List("default.alterviewascommand"),
-      List(("default.alterviewascommand.key", Set("test_db0.test_table0.key")))))
+    withView("alterviewascommand", "alterviewascommand1") { _ =>
+      spark.sql(s"create view alterviewascommand as select key from test_db0.test_table0")
+      val ret0 =
+        exectractLineage(s"alter view alterviewascommand as select key from test_db0.test_table0")
+      assert(ret0 == Lineage(
+        List("test_db0.test_table0"),
+        List("default.alterviewascommand"),
+        List(("default.alterviewascommand.key", Set("test_db0.test_table0.key")))))
 
-    spark.sql(s"create view alterviewascommand1 as select * from test_db0.test_table0")
-    val ret1 =
-      exectractLineage(s"alter view alterviewascommand1 as select * from test_db0.test_table0")
-    assert(ret1 == Lineage(
-      List("test_db0.test_table0"),
-      List("default.alterviewascommand1"),
-      List(
-        ("default.alterviewascommand1.key", Set("test_db0.test_table0.key")),
-        ("default.alterviewascommand1.value", Set("test_db0.test_table0.value")))))
+      spark.sql(s"create view alterviewascommand1 as select * from test_db0.test_table0")
+      val ret1 =
+        exectractLineage(s"alter view alterviewascommand1 as select * from test_db0.test_table0")
+      assert(ret1 == Lineage(
+        List("test_db0.test_table0"),
+        List("default.alterviewascommand1"),
+        List(
+          ("default.alterviewascommand1.key", Set("test_db0.test_table0.key")),
+          ("default.alterviewascommand1.value", Set("test_db0.test_table0.value")))))
+    }
   }
 
   test("columns lineage extract - CreateViewCommand") {
-    val ret0 = exectractLineage(
-      "create view createviewcommand(a, b) as select key, value from test_db0.test_table0")
-    assert(ret0 == Lineage(
-      List("test_db0.test_table0"),
-      List("default.createviewcommand"),
-      List(
-        ("default.createviewcommand.a", Set("test_db0.test_table0.key")),
-        ("default.createviewcommand.b", Set("test_db0.test_table0.value")))))
+    withView("createviewcommand", "createviewcommand1", "createviewcommand2") { _ =>
+      val ret0 = exectractLineage(
+        "create view createviewcommand(a, b) as select key, value from test_db0.test_table0")
+      assert(ret0 == Lineage(
+        List("test_db0.test_table0"),
+        List("default.createviewcommand"),
+        List(
+          ("default.createviewcommand.a", Set("test_db0.test_table0.key")),
+          ("default.createviewcommand.b", Set("test_db0.test_table0.value")))))
 
-    val ret1 = exectractLineage(
-      "create view createviewcommand1 as select key, value from test_db0.test_table0")
-    assert(ret1 == Lineage(
-      List("test_db0.test_table0"),
-      List("default.createviewcommand1"),
-      List(
-        ("default.createviewcommand1.key", Set("test_db0.test_table0.key")),
-        ("default.createviewcommand1.value", Set("test_db0.test_table0.value")))))
+      val ret1 = exectractLineage(
+        "create view createviewcommand1 as select key, value from test_db0.test_table0")
+      assert(ret1 == Lineage(
+        List("test_db0.test_table0"),
+        List("default.createviewcommand1"),
+        List(
+          ("default.createviewcommand1.key", Set("test_db0.test_table0.key")),
+          ("default.createviewcommand1.value", Set("test_db0.test_table0.value")))))
 
-    val ret2 = exectractLineage(
-      "create view createviewcommand2 as select * from test_db0.test_table0")
-    assert(ret2 == Lineage(
-      List("test_db0.test_table0"),
-      List("default.createviewcommand2"),
-      List(
-        ("default.createviewcommand2.key", Set("test_db0.test_table0.key")),
-        ("default.createviewcommand2.value", Set("test_db0.test_table0.value")))))
+      val ret2 = exectractLineage(
+        "create view createviewcommand2 as select * from test_db0.test_table0")
+      assert(ret2 == Lineage(
+        List("test_db0.test_table0"),
+        List("default.createviewcommand2"),
+        List(
+          ("default.createviewcommand2.key", Set("test_db0.test_table0.key")),
+          ("default.createviewcommand2.value", Set("test_db0.test_table0.value")))))
+    }
   }
 
   test("columns lineage extract - CreateDataSourceTableAsSelectCommand") {
-    val ret0 = exectractLineage("create table createdatasourcetableasselectcommand using parquet" +
-      s" AS SELECT key, value FROM test_db0.test_table0")
-    assert(ret0 == Lineage(
-      List("test_db0.test_table0"),
-      List("default.createdatasourcetableasselectcommand"),
-      List(
-        ("default.createdatasourcetableasselectcommand.key", Set("test_db0.test_table0.key")),
-        (
-          "default.createdatasourcetableasselectcommand.value",
-          Set("test_db0.test_table0.value")))))
+    withTable("createdatasourcetableasselectcommand", "createdatasourcetableasselectcommand1") {
+      _ =>
+        val ret0 =
+          exectractLineage("create table createdatasourcetableasselectcommand using parquet" +
+            s" AS SELECT key, value FROM test_db0.test_table0")
+        assert(ret0 == Lineage(
+          List("test_db0.test_table0"),
+          List("default.createdatasourcetableasselectcommand"),
+          List(
+            ("default.createdatasourcetableasselectcommand.key", Set("test_db0.test_table0.key")),
+            (
+              "default.createdatasourcetableasselectcommand.value",
+              Set("test_db0.test_table0.value")))))
 
-    val ret1 = exectractLineage("create table createdatasourcetableasselectcommand1 using parquet" +
-      s" AS SELECT * FROM test_db0.test_table0")
-    assert(ret1 == Lineage(
-      List("test_db0.test_table0"),
-      List("default.createdatasourcetableasselectcommand1"),
-      List(
-        ("default.createdatasourcetableasselectcommand1.key", Set("test_db0.test_table0.key")),
-        (
-          "default.createdatasourcetableasselectcommand1.value",
-          Set("test_db0.test_table0.value")))))
+        val ret1 =
+          exectractLineage("create table createdatasourcetableasselectcommand1 using parquet" +
+            s" AS SELECT * FROM test_db0.test_table0")
+        assert(ret1 == Lineage(
+          List("test_db0.test_table0"),
+          List("default.createdatasourcetableasselectcommand1"),
+          List(
+            ("default.createdatasourcetableasselectcommand1.key", Set("test_db0.test_table0.key")),
+            (
+              "default.createdatasourcetableasselectcommand1.value",
+              Set("test_db0.test_table0.value")))))
+    }
   }
 
   test("columns lineage extract - CreateHiveTableAsSelectCommand") {
-    val ret0 = exectractLineage("create table createhivetableasselectcommand using hive" +
-      s" as select key, value from test_db0.test_table0")
-    assert(ret0 == Lineage(
-      List("test_db0.test_table0"),
-      List("default.createhivetableasselectcommand"),
-      List(
-        ("default.createhivetableasselectcommand.key", Set("test_db0.test_table0.key")),
-        ("default.createhivetableasselectcommand.value", Set("test_db0.test_table0.value")))))
+    withTable("createhivetableasselectcommand", "createhivetableasselectcommand1") { _ =>
+      val ret0 = exectractLineage("create table createhivetableasselectcommand using hive" +
+        s" as select key, value from test_db0.test_table0")
+      assert(ret0 == Lineage(
+        List("test_db0.test_table0"),
+        List("default.createhivetableasselectcommand"),
+        List(
+          ("default.createhivetableasselectcommand.key", Set("test_db0.test_table0.key")),
+          ("default.createhivetableasselectcommand.value", Set("test_db0.test_table0.value")))))
 
-    val ret1 = exectractLineage("create table createhivetableasselectcommand1 using hive" +
-      s" as select * from test_db0.test_table0")
-    assert(ret1 == Lineage(
-      List("test_db0.test_table0"),
-      List("default.createhivetableasselectcommand1"),
-      List(
-        ("default.createhivetableasselectcommand1.key", Set("test_db0.test_table0.key")),
-        ("default.createhivetableasselectcommand1.value", Set("test_db0.test_table0.value")))))
+      val ret1 = exectractLineage("create table createhivetableasselectcommand1 using hive" +
+        s" as select * from test_db0.test_table0")
+      assert(ret1 == Lineage(
+        List("test_db0.test_table0"),
+        List("default.createhivetableasselectcommand1"),
+        List(
+          ("default.createhivetableasselectcommand1.key", Set("test_db0.test_table0.key")),
+          ("default.createhivetableasselectcommand1.value", Set("test_db0.test_table0.value")))))
+    }
   }
 
   test("columns lineage extract - OptimizedCreateHiveTableAsSelectCommand") {
-    val ret =
-      exectractLineage(
-        "create table optimizedcreatehivetableasselectcommand stored as parquet " +
-          "as select * from test_db0.test_table0")
-    assert(ret == Lineage(
-      List("test_db0.test_table0"),
-      List("default.optimizedcreatehivetableasselectcommand"),
-      List(
-        ("default.optimizedcreatehivetableasselectcommand.key", Set("test_db0.test_table0.key")),
-        (
-          "default.optimizedcreatehivetableasselectcommand.value",
-          Set("test_db0.test_table0.value")))))
+    withTable("optimizedcreatehivetableasselectcommand") { _ =>
+      val ret =
+        exectractLineage(
+          "create table optimizedcreatehivetableasselectcommand stored as parquet " +
+            "as select * from test_db0.test_table0")
+      assert(ret == Lineage(
+        List("test_db0.test_table0"),
+        List("default.optimizedcreatehivetableasselectcommand"),
+        List(
+          ("default.optimizedcreatehivetableasselectcommand.key", Set("test_db0.test_table0.key")),
+          (
+            "default.optimizedcreatehivetableasselectcommand.value",
+            Set("test_db0.test_table0.value")))))
+    }
   }
 
   test("columns lineage extract - CreateTableAsSelect") {
-    val ret0 = exectractLineage("create table v2_catalog.db.createhivetableasselectcommand" +
-      s" as select key, value from test_db0.test_table0")
-    assert(ret0 == Lineage(
-      List("test_db0.test_table0"),
-      List("v2_catalog.db.createhivetableasselectcommand"),
-      List(
-        ("v2_catalog.db.createhivetableasselectcommand.key", Set("test_db0.test_table0.key")),
-        (
-          "v2_catalog.db.createhivetableasselectcommand.value",
-          Set("test_db0.test_table0.value")))))
+    withTable(
+      "v2_catalog.db.createhivetableasselectcommand",
+      "v2_catalog.db.createhivetableasselectcommand1") { _ =>
+      val ret0 = exectractLineage("create table v2_catalog.db.createhivetableasselectcommand" +
+        s" as select key, value from test_db0.test_table0")
+      assert(ret0 == Lineage(
+        List("test_db0.test_table0"),
+        List("v2_catalog.db.createhivetableasselectcommand"),
+        List(
+          ("v2_catalog.db.createhivetableasselectcommand.key", Set("test_db0.test_table0.key")),
+          (
+            "v2_catalog.db.createhivetableasselectcommand.value",
+            Set("test_db0.test_table0.value")))))
 
-    val ret1 = exectractLineage("create table v2_catalog.db.createhivetableasselectcommand1" +
-      s" as select * from test_db0.test_table0")
-    assert(ret1 == Lineage(
-      List("test_db0.test_table0"),
-      List("v2_catalog.db.createhivetableasselectcommand1"),
-      List(
-        ("v2_catalog.db.createhivetableasselectcommand1.key", Set("test_db0.test_table0.key")),
-        (
-          "v2_catalog.db.createhivetableasselectcommand1.value",
-          Set("test_db0.test_table0.value")))))
+      val ret1 = exectractLineage("create table v2_catalog.db.createhivetableasselectcommand1" +
+        s" as select * from test_db0.test_table0")
+      assert(ret1 == Lineage(
+        List("test_db0.test_table0"),
+        List("v2_catalog.db.createhivetableasselectcommand1"),
+        List(
+          ("v2_catalog.db.createhivetableasselectcommand1.key", Set("test_db0.test_table0.key")),
+          (
+            "v2_catalog.db.createhivetableasselectcommand1.value",
+            Set("test_db0.test_table0.value")))))
+    }
   }
 
   test("columns lineage extract - InsertIntoDataSourceCommand") {
@@ -341,66 +366,69 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         |""".stripMargin
 
     ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withTable("v2_catalog.db.tb") { _ =>
+      val sql0 = "select col1 from v2_catalog.db.tb"
+      val ret0 = exectractLineage(sql0)
+      assert(ret0 == Lineage(
+        List("v2_catalog.db.tb"),
+        List(),
+        List("col1" -> Set("v2_catalog.db.tb.col1"))))
 
-    val sql0 = "select col1 from v2_catalog.db.tb"
-    val ret0 = exectractLineage(sql0)
-    assert(ret0 == Lineage(
-      List("v2_catalog.db.tb"),
-      List(),
-      List("col1" -> Set("v2_catalog.db.tb.col1"))))
+      val sql1 = "select col1, hash(hash(col1)) as col2 from v2_catalog.db.tb"
+      val ret1 = exectractLineage(sql1)
+      assert(ret1 == Lineage(
+        List("v2_catalog.db.tb"),
+        List(),
+        List("col1" -> Set("v2_catalog.db.tb.col1"), "col2" -> Set("v2_catalog.db.tb.col1"))))
 
-    val sql1 = "select col1, hash(hash(col1)) as col2 from v2_catalog.db.tb"
-    val ret1 = exectractLineage(sql1)
-    assert(ret1 == Lineage(
-      List("v2_catalog.db.tb"),
-      List(),
-      List("col1" -> Set("v2_catalog.db.tb.col1"), "col2" -> Set("v2_catalog.db.tb.col1"))))
+      val sql2 =
+        "select col1, case col1 when '1' then 's1' else col1 end col2 from v2_catalog.db.tb"
+      val ret2 = exectractLineage(sql2)
+      assert(ret2 == Lineage(
+        List("v2_catalog.db.tb"),
+        List(),
+        List("col1" -> Set("v2_catalog.db.tb.col1"), "col2" -> Set("v2_catalog.db.tb.col1"))))
 
-    val sql2 = "select col1, case col1 when '1' then 's1' else col1 end col2 from v2_catalog.db.tb"
-    val ret2 = exectractLineage(sql2)
-    assert(ret2 == Lineage(
-      List("v2_catalog.db.tb"),
-      List(),
-      List("col1" -> Set("v2_catalog.db.tb.col1"), "col2" -> Set("v2_catalog.db.tb.col1"))))
+      val sql3 =
+        "select col1 as col2, 'col2' as col2, 'col2', col3 as col2 " +
+          "from v2_catalog.db.tb group by col1"
+      val ret3 = exectractLineage(sql3)
+      assert(ret3 == Lineage(
+        List("v2_catalog.db.tb"),
+        List(),
+        List(
+          ("col2", Set("v2_catalog.db.tb.col1")),
+          ("col2", Set()),
+          ("col2", Set()),
+          ("col2", Set("v2_catalog.db.tb.col3")))))
 
-    val sql3 =
-      "select col1 as col2, 'col2' as col2, 'col2', col3 as col2 " +
-        "from v2_catalog.db.tb group by col1"
-    val ret3 = exectractLineage(sql3)
-    assert(ret3 == Lineage(
-      List("v2_catalog.db.tb"),
-      List(),
-      List(
-        ("col2", Set("v2_catalog.db.tb.col1")),
-        ("col2", Set()),
-        ("col2", Set()),
-        ("col2", Set("v2_catalog.db.tb.col3")))))
-
-    val sql4 =
-      "select col1 as col2, sum(hash(col1) + hash(hash(col1))) from v2_catalog.db.tb group by col1"
-    val ret4 = exectractLineage(sql4)
-    assert(ret4 == Lineage(
-      List("v2_catalog.db.tb"),
-      List(),
-      List(
-        ("col2", Set("v2_catalog.db.tb.col1")),
-        ("sum((hash(col1) + hash(hash(col1))))", Set("v2_catalog.db.tb.col1")))))
-    val sql5 =
-      s"""
-         | select t1.col2, count(t2.col3)
-         | from
-         | (select col1 as col2 from v2_catalog.db.tb) t1 join
-         | (select col1 as col3 from v2_catalog.db.tb) t2
-         |  on t1.col2 = t2.col3
-         |  group by 1
-         |""".stripMargin
-    val ret5 = exectractLineage(sql5)
-    assert(ret5 == Lineage(
-      List("v2_catalog.db.tb"),
-      List(),
-      List(
-        ("col2", Set("v2_catalog.db.tb.col1")),
-        ("count(col3)", Set("v2_catalog.db.tb.col1")))))
+      val sql4 =
+        "select col1 as col2, sum(hash(col1) + hash(hash(col1))) " +
+          "from v2_catalog.db.tb group by col1"
+      val ret4 = exectractLineage(sql4)
+      assert(ret4 == Lineage(
+        List("v2_catalog.db.tb"),
+        List(),
+        List(
+          ("col2", Set("v2_catalog.db.tb.col1")),
+          ("sum((hash(col1) + hash(hash(col1))))", Set("v2_catalog.db.tb.col1")))))
+      val sql5 =
+        s"""
+           | select t1.col2, count(t2.col3)
+           | from
+           | (select col1 as col2 from v2_catalog.db.tb) t1 join
+           | (select col1 as col3 from v2_catalog.db.tb) t2
+           |  on t1.col2 = t2.col3
+           |  group by 1
+           |""".stripMargin
+      val ret5 = exectractLineage(sql5)
+      assert(ret5 == Lineage(
+        List("v2_catalog.db.tb"),
+        List(),
+        List(
+          ("col2", Set("v2_catalog.db.tb.col1")),
+          ("count(col3)", Set("v2_catalog.db.tb.col1")))))
+    }
   }
 
   test("columns lineage extract - base sql") {
@@ -413,32 +441,34 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
 
     ddls.foreach(spark.sql(_).collect())
 
-    val sql0 =
-      """
-        |select tmp0_0 as a0, tmp1_0 as a1 from tmp0 join tmp1 where tmp1_0 = tmp0_0
-        |""".stripMargin
-    val sql0ExpectResult = Lineage(
-      List("default.tmp0", "default.tmp1"),
-      List(),
-      List(
-        "a0" -> Set("default.tmp0.tmp0_0"),
-        "a1" -> Set("default.tmp1.tmp1_0")))
+    withTable("tmp0", "tmp1") { _ =>
+      val sql0 =
+        """
+          |select tmp0_0 as a0, tmp1_0 as a1 from tmp0 join tmp1 where tmp1_0 = tmp0_0
+          |""".stripMargin
+      val sql0ExpectResult = Lineage(
+        List("default.tmp0", "default.tmp1"),
+        List(),
+        List(
+          "a0" -> Set("default.tmp0.tmp0_0"),
+          "a1" -> Set("default.tmp1.tmp1_0")))
 
-    val sql1 =
-      """
-        |select count(tmp1_0) as cnt, tmp1_1 from tmp1 group by tmp1_1
-        |""".stripMargin
-    val sql1ExpectResult = Lineage(
-      List("default.tmp1"),
-      List(),
-      List(
-        "cnt" -> Set("default.tmp1.tmp1_0"),
-        "tmp1_1" -> Set("default.tmp1.tmp1_1")))
+      val sql1 =
+        """
+          |select count(tmp1_0) as cnt, tmp1_1 from tmp1 group by tmp1_1
+          |""".stripMargin
+      val sql1ExpectResult = Lineage(
+        List("default.tmp1"),
+        List(),
+        List(
+          "cnt" -> Set("default.tmp1.tmp1_0"),
+          "tmp1_1" -> Set("default.tmp1.tmp1_1")))
 
-    val ret0 = exectractLineage(sql0)
-    assert(ret0 == sql0ExpectResult)
-    val ret1 = exectractLineage(sql1)
-    assert(ret1 == sql1ExpectResult)
+      val ret0 = exectractLineage(sql0)
+      assert(ret0 == sql0ExpectResult)
+      val ret1 = exectractLineage(sql1)
+      assert(ret1 == sql1ExpectResult)
+    }
   }
 
   test("columns lineage extract - CTE sql") {
@@ -454,60 +484,65 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         "create table v2_catalog.test_db_v2.mall_icon" +
           "(id string, name string, is_enabled string, start_time date, end_time date)")
     ddls.foreach(spark.sql(_).collect())
+    withTable(
+      "test_db.goods_detail0",
+      "v2_catalog.test_db_v2.goods_detail1",
+      "v2_catalog.test_db_v2.mall_icon_schedule",
+      "v2_catalog.test_db_v2.mall_icon") { _ =>
+      val sql0 =
+        """WITH base_goods_detail AS (
+          |SELECT goods_id
+          |, CASE
+          |WHEN cat_id = 1 THEN 'car'
+          |ELSE 'other'
+          |END AS cate_grory
+          |FROM test_db.goods_detail0
+          |GROUP BY goods_id, CASE
+          |WHEN cat_id = 1 THEN 'car'
+          |ELSE 'other'
+          |END
+          |),
+          |goods_cat AS (
+          |SELECT t1.goods_id, t1.cat_id, t1.product_id, t2.start_time, t2.end_time
+          |FROM v2_catalog.test_db_v2.goods_detail1 t1
+          |JOIN (
+          |SELECT t1.relation_id, t1.start_time AS start_time,
+          |t2.end_time AS end_time, t2.id, t2.is_enabled
+          |FROM  v2_catalog.test_db_v2.mall_icon_schedule t1
+          |JOIN v2_catalog.test_db_v2.mall_icon t2 ON t1.icon_id = t2.id
+          |WHERE t2.name LIKE '%test%'
+          |AND t2.is_enabled = 'Y'
+          |AND t1.icon_type = 'short'
+          |AND t1.is_enabled = 'Y'
+          |) t2
+          |ON t1.product_id = t2.relation_id
+          |),
+          |goods_cat_new AS (
+          |SELECT t1.goods_id, t1.cate_grory, t2.cat_id, t2.product_id, t2.start_time
+          |, t2.end_time
+          |FROM base_goods_detail t1
+          |JOIN goods_cat t2 ON t1.goods_id = t2.goods_id
+          |)
+          |SELECT *
+          |FROM goods_cat_new
+          |LIMIT 10""".stripMargin
 
-    val sql0 =
-      """WITH base_goods_detail AS (
-        |SELECT goods_id
-        |, CASE
-        |WHEN cat_id = 1 THEN 'car'
-        |ELSE 'other'
-        |END AS cate_grory
-        |FROM test_db.goods_detail0
-        |GROUP BY goods_id, CASE
-        |WHEN cat_id = 1 THEN 'car'
-        |ELSE 'other'
-        |END
-        |),
-        |goods_cat AS (
-        |SELECT t1.goods_id, t1.cat_id, t1.product_id, t2.start_time, t2.end_time
-        |FROM v2_catalog.test_db_v2.goods_detail1 t1
-        |JOIN (
-        |SELECT t1.relation_id, t1.start_time AS start_time,
-        |t2.end_time AS end_time, t2.id, t2.is_enabled
-        |FROM  v2_catalog.test_db_v2.mall_icon_schedule t1
-        |JOIN v2_catalog.test_db_v2.mall_icon t2 ON t1.icon_id = t2.id
-        |WHERE t2.name LIKE '%test%'
-        |AND t2.is_enabled = 'Y'
-        |AND t1.icon_type = 'short'
-        |AND t1.is_enabled = 'Y'
-        |) t2
-        |ON t1.product_id = t2.relation_id
-        |),
-        |goods_cat_new AS (
-        |SELECT t1.goods_id, t1.cate_grory, t2.cat_id, t2.product_id, t2.start_time
-        |, t2.end_time
-        |FROM base_goods_detail t1
-        |JOIN goods_cat t2 ON t1.goods_id = t2.goods_id
-        |)
-        |SELECT *
-        |FROM goods_cat_new
-        |LIMIT 10""".stripMargin
-
-    val ret0 = exectractLineage(sql0)
-    assert(ret0 == Lineage(
-      List(
-        "test_db.goods_detail0",
-        "v2_catalog.test_db_v2.goods_detail1",
-        "v2_catalog.test_db_v2.mall_icon_schedule",
-        "v2_catalog.test_db_v2.mall_icon"),
-      List(),
-      List(
-        ("goods_id", Set("test_db.goods_detail0.goods_id")),
-        ("cate_grory", Set("test_db.goods_detail0.cat_id")),
-        ("cat_id", Set("v2_catalog.test_db_v2.goods_detail1.cat_id")),
-        ("product_id", Set("v2_catalog.test_db_v2.goods_detail1.product_id")),
-        ("start_time", Set("v2_catalog.test_db_v2.mall_icon_schedule.start_time")),
-        ("end_time", Set("v2_catalog.test_db_v2.mall_icon.end_time")))))
+      val ret0 = exectractLineage(sql0)
+      assert(ret0 == Lineage(
+        List(
+          "test_db.goods_detail0",
+          "v2_catalog.test_db_v2.goods_detail1",
+          "v2_catalog.test_db_v2.mall_icon_schedule",
+          "v2_catalog.test_db_v2.mall_icon"),
+        List(),
+        List(
+          ("goods_id", Set("test_db.goods_detail0.goods_id")),
+          ("cate_grory", Set("test_db.goods_detail0.cat_id")),
+          ("cat_id", Set("v2_catalog.test_db_v2.goods_detail1.cat_id")),
+          ("product_id", Set("v2_catalog.test_db_v2.goods_detail1.product_id")),
+          ("start_time", Set("v2_catalog.test_db_v2.mall_icon_schedule.start_time")),
+          ("end_time", Set("v2_catalog.test_db_v2.mall_icon.end_time")))))
+    }
   }
 
   test("columns lineage extract - join sql ") {
@@ -517,31 +552,32 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         |create table v2_catalog.db.tb2(col1 string, col2 string, col3 string)
         |""".stripMargin
     ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withTable("v2_catalog.db.tb1", "v2_catalog.db.tb2") { _ =>
+      val sql0 =
+        """
+          |select t1.col1 as a1, t2.col1 as b1, concat(t1.col1, t2.col1) as ab1,
+          |concat(concat(t1.col1, t2.col2), concat(t1.col2, t2.col3)) as ab2
+          |from v2_catalog.db.tb1 t1 join v2_catalog.db.tb2 t2
+          |on t1.col1 = t2.col1
+          |""".stripMargin
 
-    val sql0 =
-      """
-        |select t1.col1 as a1, t2.col1 as b1, concat(t1.col1, t2.col1) as ab1,
-        |concat(concat(t1.col1, t2.col2), concat(t1.col2, t2.col3)) as ab2
-        |from v2_catalog.db.tb1 t1 join v2_catalog.db.tb2 t2
-        |on t1.col1 = t2.col1
-        |""".stripMargin
-
-    val ret0 = exectractLineage(sql0)
-    assert(
-      ret0 == Lineage(
-        List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
-        List(),
-        List(
-          ("a1", Set("v2_catalog.db.tb1.col1")),
-          ("b1", Set("v2_catalog.db.tb2.col1")),
-          ("ab1", Set("v2_catalog.db.tb1.col1", "v2_catalog.db.tb2.col1")),
-          (
-            "ab2",
-            Set(
-              "v2_catalog.db.tb1.col1",
-              "v2_catalog.db.tb1.col2",
-              "v2_catalog.db.tb2.col2",
-              "v2_catalog.db.tb2.col3")))))
+      val ret0 = exectractLineage(sql0)
+      assert(
+        ret0 == Lineage(
+          List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+          List(),
+          List(
+            ("a1", Set("v2_catalog.db.tb1.col1")),
+            ("b1", Set("v2_catalog.db.tb2.col1")),
+            ("ab1", Set("v2_catalog.db.tb1.col1", "v2_catalog.db.tb2.col1")),
+            (
+              "ab2",
+              Set(
+                "v2_catalog.db.tb1.col1",
+                "v2_catalog.db.tb1.col2",
+                "v2_catalog.db.tb2.col2",
+                "v2_catalog.db.tb2.col3")))))
+    }
   }
 
   test("columns lineage extract - union sql") {
@@ -552,22 +588,24 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
         |create table test_db.test_table1(a int, b string, c string)
         |""".stripMargin
     ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
-    val sql0 =
-      """
-        |select a, b, c from (
-        |select a, b, b as c from test_db.test_table0
-        |union
-        |select a, b, c as c from test_db.test_table1
-        |) a
-        |""".stripMargin
-    val ret0 = exectractLineage(sql0)
-    assert(ret0 == Lineage(
-      List("test_db.test_table0", "test_db.test_table1"),
-      List(),
-      List(
-        ("a", Set("test_db.test_table0.a", "test_db.test_table1.a")),
-        ("b", Set("test_db.test_table0.b", "test_db.test_table1.b")),
-        ("c", Set("test_db.test_table0.b", "test_db.test_table1.c")))))
+    withTable("test_db.test_table0", "test_db.test_table1") { _ =>
+      val sql0 =
+        """
+          |select a, b, c from (
+          |select a, b, b as c from test_db.test_table0
+          |union
+          |select a, b, c as c from test_db.test_table1
+          |) a
+          |""".stripMargin
+      val ret0 = exectractLineage(sql0)
+      assert(ret0 == Lineage(
+        List("test_db.test_table0", "test_db.test_table1"),
+        List(),
+        List(
+          ("a", Set("test_db.test_table0.a", "test_db.test_table1.a")),
+          ("b", Set("test_db.test_table0.b", "test_db.test_table1.b")),
+          ("c", Set("test_db.test_table0.b", "test_db.test_table1.c")))))
+    }
   }
 
   test("columns lineage extract - agg and union sql") {
@@ -582,87 +620,90 @@ class SparkSQLLineageParserHelperSuite extends WithSparkSQLEngine with KyuubiFun
           "channel_id string, sub_channel_id string," +
           "user_type string, country_name string, is_valid_item int)")
     ddls.foreach(spark.sql(_).collect())
-    val sql0 =
-      """
-        |SELECT stat_date, channel_id, sub_channel_id
-        |, user_type, country_name, SUM(get_count) AS get_count0
-        |, SUM(get_amount) as get_amount0,
-        |cast(unix_timestamp() as bigint) AS add_time
-        |FROM (
-        |SELECT stat_date, channel_id, sub_channel_id, user_type
-        |,country_name, COUNT(DISTINCT order_id) AS get_count
-        |, SUM(goods_count * shop_price) AS get_amount
-        |FROM test_db.test_order_item
-        |WHERE 1 = 1 AND is_valid_order = 1
-        |GROUP BY
-        |channel_id, sub_channel_id, country_name
-        |) a
-        |""".stripMargin
-    val ret0 = exectractLineage(sql0)
-    assert(ret0 == Lineage(
-      List("test_db.test_order_item"),
-      List(),
-      List(
-        ("stat_date", Set("test_db.test_order_item.stat_date")),
-        ("channel_id", Set("test_db.test_order_item.channel_id")),
-        ("sub_channel_id", Set("test_db.test_order_item.sub_channel_id")),
-        ("user_type", Set("test_db.test_order_item.user_type")),
-        ("country_name", Set("test_db.test_order_item.country_name")),
-        ("get_count0", Set("test_db.test_order_item.order_id")),
-        (
-          "get_amount0",
-          Set("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
-        ("add_time", Set()))))
-    val sql1 =
-      """
-        |SELECT channel_id, sub_channel_id, country_name, SUM(get_count) AS get_count0
-        |, SUM(get_amount) as get_amount0, cast(unix_timestamp() as bigint) AS add_time
-        |FROM (
-        |SELECT
-        |channel_id, sub_channel_id, country_name, COUNT(DISTINCT order_id) AS get_count,
-        |SUM(goods_count * shop_price) AS get_amount
-        |FROM test_db.test_order_item
-        |WHERE 1 = 1 AND is_valid_order = 1
-        |GROUP BY
-        |channel_id, sub_channel_id, country_name
-        |UNION ALL
-        |SELECT
-        |channel_id, sub_channel_id, country_name, 0 AS get_count, 0 AS get_amount
-        |FROM test_db.test_p0_order_item
-        |WHERE 1 = 1
-        |AND is_valid_item = 1
-        |GROUP BY
-        |channel_id, sub_channel_id, country_name
-        |) a
-        |GROUP BY a.channel_id, a.sub_channel_id, a.country_name
-        |""".stripMargin
-    val ret1 = exectractLineage(sql1)
-    assert(ret1 == Lineage(
-      List("test_db.test_order_item", "test_db.test_p0_order_item"),
-      List(),
-      List(
-        (
-          "channel_id",
-          Set("test_db.test_order_item.channel_id", "test_db.test_p0_order_item.channel_id")),
-        (
-          "sub_channel_id",
-          Set(
-            "test_db.test_order_item.sub_channel_id",
-            "test_db.test_p0_order_item.sub_channel_id")),
-        (
-          "country_name",
-          Set("test_db.test_order_item.country_name", "test_db.test_p0_order_item.country_name")),
-        ("get_count0", Set("test_db.test_order_item.order_id")),
-        (
-          "get_amount0",
-          Set("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
-        ("add_time", Set()))))
+    withTable("test_db.test_order_item", "test_db.test_p0_order_item") { _ =>
+      val sql0 =
+        """
+          |SELECT stat_date, channel_id, sub_channel_id
+          |, user_type, country_name, SUM(get_count) AS get_count0
+          |, SUM(get_amount) as get_amount0,
+          |cast(unix_timestamp() as bigint) AS add_time
+          |FROM (
+          |SELECT stat_date, channel_id, sub_channel_id, user_type
+          |,country_name, COUNT(DISTINCT order_id) AS get_count
+          |, SUM(goods_count * shop_price) AS get_amount
+          |FROM test_db.test_order_item
+          |WHERE 1 = 1 AND is_valid_order = 1
+          |GROUP BY
+          |channel_id, sub_channel_id, country_name
+          |) a
+          |""".stripMargin
+      val ret0 = exectractLineage(sql0)
+      assert(ret0 == Lineage(
+        List("test_db.test_order_item"),
+        List(),
+        List(
+          ("stat_date", Set("test_db.test_order_item.stat_date")),
+          ("channel_id", Set("test_db.test_order_item.channel_id")),
+          ("sub_channel_id", Set("test_db.test_order_item.sub_channel_id")),
+          ("user_type", Set("test_db.test_order_item.user_type")),
+          ("country_name", Set("test_db.test_order_item.country_name")),
+          ("get_count0", Set("test_db.test_order_item.order_id")),
+          (
+            "get_amount0",
+            Set("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
+          ("add_time", Set()))))
+      val sql1 =
+        """
+          |SELECT channel_id, sub_channel_id, country_name, SUM(get_count) AS get_count0
+          |, SUM(get_amount) as get_amount0, cast(unix_timestamp() as bigint) AS add_time
+          |FROM (
+          |SELECT
+          |channel_id, sub_channel_id, country_name, COUNT(DISTINCT order_id) AS get_count,
+          |SUM(goods_count * shop_price) AS get_amount
+          |FROM test_db.test_order_item
+          |WHERE 1 = 1 AND is_valid_order = 1
+          |GROUP BY
+          |channel_id, sub_channel_id, country_name
+          |UNION ALL
+          |SELECT
+          |channel_id, sub_channel_id, country_name, 0 AS get_count, 0 AS get_amount
+          |FROM test_db.test_p0_order_item
+          |WHERE 1 = 1
+          |AND is_valid_item = 1
+          |GROUP BY
+          |channel_id, sub_channel_id, country_name
+          |) a
+          |GROUP BY a.channel_id, a.sub_channel_id, a.country_name
+          |""".stripMargin
+      val ret1 = exectractLineage(sql1)
+      assert(ret1 == Lineage(
+        List("test_db.test_order_item", "test_db.test_p0_order_item"),
+        List(),
+        List(
+          (
+            "channel_id",
+            Set("test_db.test_order_item.channel_id", "test_db.test_p0_order_item.channel_id")),
+          (
+            "sub_channel_id",
+            Set(
+              "test_db.test_order_item.sub_channel_id",
+              "test_db.test_p0_order_item.sub_channel_id")),
+          (
+            "country_name",
+            Set("test_db.test_order_item.country_name", "test_db.test_p0_order_item.country_name")),
+          ("get_count0", Set("test_db.test_order_item.order_id")),
+          (
+            "get_amount0",
+            Set("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
+          ("add_time", Set()))))
+    }
   }
 
   private def exectractLineage(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
     val optimized = spark.sessionState.optimizer.execute(analyzed)
+
     SparkSQLLineageParseHelper(spark).transformToLineage("", optimized).get
   }
 
