@@ -51,6 +51,15 @@ object FlinkEngineUtils extends Logging {
     }
   }
 
+  def isFlinkVersionAtMost(targetVersionString: String): Boolean =
+    SemanticVersion(EnvironmentInformation.getVersion).isVersionAtMost(targetVersionString)
+
+  def isFlinkVersionAtLeast(targetVersionString: String): Boolean =
+    SemanticVersion(EnvironmentInformation.getVersion).isVersionAtLeast(targetVersionString)
+
+  def isFlinkVersionEqualTo(targetVersionString: String): Boolean =
+    SemanticVersion(EnvironmentInformation.getVersion).isVersionEqualTo(targetVersionString)
+
   def parseCliOptions(args: Array[String]): CliOptions = {
     val (mode, modeArgs) =
       if (args.isEmpty || args(0).startsWith("-")) (MODE_EMBEDDED, args)
