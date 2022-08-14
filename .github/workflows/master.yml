@@ -129,18 +129,18 @@ jobs:
           check-latest: false
       - name: Build Flink with maven w/o linters
         run: |
-          ENGINE_MODULE=externals/kyuubi-flink-sql-engine
-          IT_MODULE=integration-tests/kyuubi-flink-it
-          TEST_MODULES="${ENGINE_MODULE},${IT_MODULE}"
+          TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} -am  clean install -DskipTests
       - name: Test Flink
         if: matrix.flink-archive == ''
         run: |
+          TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
       - name: Cross-version test Flink
         if: matrix.flink-archive != ''
         run: |
           IT_FLINK=`echo "${{ matrix.flink-archive }}" | grep -E 'flink\-([0-9]+\.[0-9]+.[0-9]+)\-bin' -o | grep -E '[0-9]+\.[0-9]+' -o`
+          IT_MODULE="integration-tests/kyuubi-flink-it"
           ./build/mvn ${MVN_OPT} -pl ${IT_MODULE} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} test
       - name: Upload test logs
         if: failure()
