@@ -141,7 +141,6 @@ jobs:
         if: matrix.flink-archive != ''
         run: |
           IT_FLINK=`echo "${{ matrix.flink-archive }}" | grep -E 'flink\-([0-9]+\.[0-9]+.[0-9]+)\-bin' -o | grep -E '[0-9]+\.[0-9]+' -o`
-          ./build/mvn ${MVN_OPT} -pl ${ENGINE_MODULE} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
           ./build/mvn ${MVN_OPT} -pl ${IT_MODULE} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} test
       - name: Upload test logs
         if: failure()
