@@ -134,7 +134,7 @@ jobs:
           TEST_MODULES="${ENGINE_MODULE},${IT_MODULE}"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} -am  clean install -DskipTests
       - name: Test Flink
-        if: matrix.flink-archive != ''
+        if: matrix.flink-archive == ''
         run: |
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
       - name: Cross-version test Flink
