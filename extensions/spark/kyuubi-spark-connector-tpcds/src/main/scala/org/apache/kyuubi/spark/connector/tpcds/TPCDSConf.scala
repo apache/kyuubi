@@ -62,7 +62,7 @@ case class TPCDSReadConf(
   private val confParser: SparkConfParser =
     SparkConfParser(options, spark.conf, table.properties)
 
-  lazy val maxPartitionBytes: Long = confParser.longConf()
+  lazy val maxPartitionBytes: Long = confParser.bytesConf()
     .option(MAX_PARTITION_BYTES_CONF)
     .sessionConf(s"$TPCDS_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF")
     .tableProperty(s"$TPCDS_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF")

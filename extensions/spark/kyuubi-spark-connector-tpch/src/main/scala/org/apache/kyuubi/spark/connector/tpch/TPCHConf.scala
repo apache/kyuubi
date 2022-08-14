@@ -50,7 +50,7 @@ case class TPCHReadConf(
   private val confParser: SparkConfParser =
     SparkConfParser(options, spark.conf, table.properties)
 
-  lazy val maxPartitionBytes: Long = confParser.longConf()
+  lazy val maxPartitionBytes: Long = confParser.bytesConf()
     .option(MAX_PARTITION_BYTES_CONF)
     .sessionConf(s"$TPCH_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF")
     .tableProperty(s"$TPCH_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF")
