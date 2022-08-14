@@ -38,6 +38,8 @@ case class SparkConfParser(
   def longConf(): LongConfParser = new LongConfParser()
   def doubleConf(): DoubleConfParser = new DoubleConfParser()
   def stringConf(): StringConfParser = new StringConfParser()
+  def bytesConf(): BytesConfParser = new BytesConfParser()
+  def timeConf(): TimeConfParser = new TimeConfParser()
 
   class BooleanConfParser extends ConfParser[Boolean] {
     override protected def conversion(value: String): Boolean = value.toBoolean
@@ -59,11 +61,19 @@ case class SparkConfParser(
     override protected def conversion(value: String): String = value
   }
 
+  class BytesConfParser extends ConfParser[Long] {
+    override protected def conversion(value: String): Long = JavaUtils.byteStringAsBytes(value)
+  }
+
+  class TimeConfParser extends ConfParser[Long] {
+    override protected def conversion(value: String): Long = JavaUtils.timeStringAsMs(value)
+  }
+
   abstract class ConfParser[T]() {
     private var optionName: Option[String] = None
     private var sessionConfName: Option[String] = None
     private var tablePropertyName: Option[String] = None
-    private var defaultValue: Option[T] = None
+    private var defaultValue: Option[String] = None
 
     def option(name: String): ConfParser[T] = {
       this.optionName = Some(name)
@@ -80,7 +90,7 @@ case class SparkConfParser(
       this
     }
 
-    def defaultValue(value: T): ConfParser[T] = {
+    def defaultValue(value: String): ConfParser[T] = {
       this.defaultValue = Some(value)
       this
     }
@@ -96,12 +106,7 @@ case class SparkConfParser(
       if (valueOpt.isEmpty && properties != null) {
         valueOpt = tablePropertyName.flatMap(name => Option(properties.get(name)))
       }
-      valueOpt = valueOpt.filter(_ != null)
-      if (valueOpt.isDefined) {
-        valueOpt.map(conversion(_))
-      } else {
-        defaultValue
-      }
+      valueOpt.orElse(defaultValue).map(conversion)
     }
 
     protected def conversion(value: String): T

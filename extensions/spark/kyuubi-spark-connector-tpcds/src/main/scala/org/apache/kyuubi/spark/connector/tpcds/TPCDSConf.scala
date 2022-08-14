@@ -75,11 +75,11 @@ object TPCDSConf {
 
   val TPCDS_CONNECTOR_CONF_PREFIX = "spark.connector.tpcds"
   val USE_ANSI_STRING_TYPE = "useAnsiStringType"
-  val USE_ANSI_STRING_TYPE_DEFAULT = false
+  val USE_ANSI_STRING_TYPE_DEFAULT = "false"
   val USE_TABLE_SCHEMA_2_6 = "useTableSchema_2_6"
-  val USE_TABLE_SCHEMA_2_6_DEFAULT = true
+  val USE_TABLE_SCHEMA_2_6_DEFAULT = "true"
 
   val TPCDS_CONNECTOR_READ_CONF_PREFIX = s"$TPCDS_CONNECTOR_CONF_PREFIX.read"
   val MAX_PARTITION_BYTES_CONF = "maxPartitionBytes"
-  val MAX_PARTITION_BYTES_DEFAULT: Long = 128 * 1024 * 1024L
+  val MAX_PARTITION_BYTES_DEFAULT = "128m"
 }

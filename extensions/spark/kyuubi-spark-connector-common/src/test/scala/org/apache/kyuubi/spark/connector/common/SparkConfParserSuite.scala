@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.spark.connector.common
 
-// scalastyle:off anyfunsuite
 import scala.collection.JavaConverters._
 
+// scalastyle:off anyfunsuite
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
@@ -27,39 +27,41 @@ import org.scalatest.funsuite.AnyFunSuite
 class SparkConfParserSuite extends AnyFunSuite with BeforeAndAfterAll {
 // scalastyle:on anyfunsuite
 
-  test("parse options config") {
-    assert(confParser.stringConf().option("optKey1").defaultValue("test").parse() === "optValue1")
-    assert(confParser.booleanConf().option("booleanKey").defaultValue(true).parse() === false)
-    assert(confParser.intConf().option("intKey").defaultValue(0).parse() === 10)
-    assert(confParser.longConf().option("longKey").defaultValue(0).parse() === Long.MaxValue)
-    assert(confParser.doubleConf().option("doubleKey").defaultValue(0.0).parse() === 1.1)
-  }
-
-  test("parse properties config") {
-    assert(confParser.intConf().option("key1")
-      .tableProperty("key1")
-      .defaultValue(0).parse() === 111)
-    assert(confParser.stringConf()
-      .option("propertyKey1")
-      .tableProperty("propertyKey1")
-      .defaultValue("test").parse() === "propertyValue1")
-  }
-
-  private var confParser: SparkConfParser = null
+  private var confParser: SparkConfParser = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val options = new CaseInsensitiveStringMap(Map(
       "key1" -> "111",
-      "optKey1" -> "optValue1",
       "booleanKey" -> "false",
       "intKey" -> "10",
       "longKey" -> String.valueOf(Long.MaxValue),
-      "doubleKey" -> "1.1").asJava)
+      "doubleKey" -> "1.1",
+      "bytesKey" -> "1k",
+      "timeKey" -> "1s").asJava)
     val properties = Map(
       "key1" -> "333",
       "propertyKey1" -> "propertyValue1")
     confParser = SparkConfParser(options, null, properties.asJava)
   }
 
+  test("parse options config") {
+    assert(confParser.stringConf().option("optKey1").defaultValue("test").parse() === "test")
+    assert(confParser.booleanConf().option("booleanKey").defaultValue("true").parse() === false)
+    assert(confParser.intConf().option("intKey").defaultValue("0").parse() === 10)
+    assert(confParser.longConf().option("longKey").defaultValue("0").parse() === Long.MaxValue)
+    assert(confParser.doubleConf().option("doubleKey").defaultValue("0.0").parse() === 1.1)
+    assert(confParser.bytesConf().option("bytesKey").defaultValue("0k").parse() === 1024L)
+    assert(confParser.timeConf().option("timeKey").defaultValue("0s").parse() === 1000L)
+  }
+
+  test("parse properties config") {
+    assert(confParser.intConf().option("key1")
+      .tableProperty("key1")
+      .defaultValue("0").parse() === 111)
+    assert(confParser.stringConf()
+      .option("propertyKey1")
+      .tableProperty("propertyKey1")
+      .defaultValue("test").parse() === "propertyValue1")
+  }
 }
