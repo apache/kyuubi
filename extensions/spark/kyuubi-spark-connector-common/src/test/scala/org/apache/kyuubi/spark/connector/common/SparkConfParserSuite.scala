@@ -19,13 +19,10 @@ package org.apache.kyuubi.spark.connector.common
 
 import scala.collection.JavaConverters._
 
-// scalastyle:off anyfunsuite
+import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.funsuite.AnyFunSuite
 
-class SparkConfParserSuite extends AnyFunSuite with BeforeAndAfterAll {
-// scalastyle:on anyfunsuite
+class SparkConfParserSuite extends SparkFunSuite {
 
   private var confParser: SparkConfParser = _
 
