@@ -22,6 +22,7 @@ package org.apache.kyuubi.reflection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/** Copied from iceberg-common */
 public class DynClasses {
 
   private DynClasses() {}
