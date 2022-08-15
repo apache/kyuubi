@@ -159,9 +159,9 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
    * @return
    */
   private def getAndPrepareStatement(
-                                      connection: Connection,
-                                      user: String,
-                                      password: String): PreparedStatement = {
+      connection: Connection,
+      user: String,
+      password: String): PreparedStatement = {
     // Replace placeholders by "?" and prepare the statement
     val stmt = connection.prepareStatement(getPreparedSql(querySql.get))
 
