@@ -31,9 +31,10 @@ import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
-object KyuubiHadoopUtils {
+object KyuubiHadoopUtils extends Logging {
 
   private val subjectField =
     classOf[UserGroupInformation].getDeclaredField("subject")
@@ -99,10 +100,12 @@ object KyuubiHadoopUtils {
         Try(tokenIdentifier.readFields(in)) match {
           case Success(_) =>
             Some(tokenIdentifier.getIssueDate)
-          case Failure(_) =>
+          case Failure(e) =>
+            warn(s"Can not decode identifier of token $token", e)
             None
         }
-      case _ =>
+      case tokenIdent =>
+        debug(s"Unsupported TokenIdentifier kind: ${tokenIdent.getKind}")
         None
     }
   }
