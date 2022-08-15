@@ -23,7 +23,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
+abstract class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
   test("doris - get tables") {
     case class Table(catalog: String, schema: String, tableName: String, tableType: String)
 
@@ -258,6 +258,4 @@ class DorisOperationSuite extends WithDorisEngine with HiveJDBCTestHelper {
       statement.execute("drop database db2")
     }
   }
-
-  override protected def jdbcUrl: String = getJdbcUrl
 }
