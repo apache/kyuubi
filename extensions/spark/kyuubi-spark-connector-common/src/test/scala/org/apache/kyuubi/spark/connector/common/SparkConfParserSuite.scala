@@ -43,22 +43,22 @@ class SparkConfParserSuite extends SparkFunSuite {
   }
 
   test("parse options config") {
-    assert(confParser.stringConf().option("optKey1").defaultValue("test").parse() === "test")
-    assert(confParser.booleanConf().option("booleanKey").defaultValue("true").parse() === false)
-    assert(confParser.intConf().option("intKey").defaultValue("0").parse() === 10)
-    assert(confParser.longConf().option("longKey").defaultValue("0").parse() === Long.MaxValue)
-    assert(confParser.doubleConf().option("doubleKey").defaultValue("0.0").parse() === 1.1)
-    assert(confParser.bytesConf().option("bytesKey").defaultValue("0k").parse() === 1024L)
-    assert(confParser.timeConf().option("timeKey").defaultValue("0s").parse() === 1000L)
+    assert(confParser.stringConf().option("optKey1").defaultStringValue("test").parse() === "test")
+    assert(confParser.booleanConf().option("booleanKey").defaultStringValue("true").parse() === false)
+    assert(confParser.intConf().option("intKey").defaultStringValue("0").parse() === 10)
+    assert(confParser.longConf().option("longKey").defaultStringValue("0").parse() === Long.MaxValue)
+    assert(confParser.doubleConf().option("doubleKey").defaultStringValue("0.0").parse() === 1.1)
+    assert(confParser.bytesConf().option("bytesKey").defaultStringValue("0k").parse() === 1024L)
+    assert(confParser.timeConf().option("timeKey").defaultStringValue("0s").parse() === 1000L)
   }
 
   test("parse properties config") {
     assert(confParser.intConf().option("key1")
       .tableProperty("key1")
-      .defaultValue("0").parse() === 111)
+      .defaultStringValue("0").parse() === 111)
     assert(confParser.stringConf()
       .option("propertyKey1")
       .tableProperty("propertyKey1")
-      .defaultValue("test").parse() === "propertyValue1")
+      .defaultStringValue("test").parse() === "propertyValue1")
   }
 }

@@ -73,7 +73,7 @@ case class SparkConfParser(
     private var optionName: Option[String] = None
     private var sessionConfName: Option[String] = None
     private var tablePropertyName: Option[String] = None
-    private var defaultValue: Option[String] = None
+    private var defaultStringValue: Option[String] = None
 
     def option(name: String): ConfParser[T] = {
       this.optionName = Some(name)
@@ -90,8 +90,8 @@ case class SparkConfParser(
       this
     }
 
-    def defaultValue(value: String): ConfParser[T] = {
-      this.defaultValue = Some(value)
+    def defaultStringValue(value: String): ConfParser[T] = {
+      this.defaultStringValue = Some(value)
       this
     }
 
@@ -106,13 +106,13 @@ case class SparkConfParser(
       if (valueOpt.isEmpty && properties != null) {
         valueOpt = tablePropertyName.flatMap(name => Option(properties.get(name)))
       }
-      valueOpt.orElse(defaultValue).map(conversion)
+      valueOpt.orElse(defaultStringValue).map(conversion)
     }
 
     protected def conversion(value: String): T
 
     def parse(): T = {
-      assert(defaultValue.isDefined, "Default value cannot be empty.")
+      assert(defaultStringValue.isDefined, "Default value cannot be empty.")
       parseOptional().get
     }
 
