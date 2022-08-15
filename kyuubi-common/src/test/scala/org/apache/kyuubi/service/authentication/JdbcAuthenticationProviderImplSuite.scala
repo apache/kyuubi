@@ -17,14 +17,14 @@
 
 package org.apache.kyuubi.service.authentication
 
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
-
 import java.nio.file.Path
 import java.sql.{Connection, DriverManager}
 import java.util.Properties
 import javax.security.sasl.AuthenticationException
+
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val authUser: String = "liangtiancheng"
