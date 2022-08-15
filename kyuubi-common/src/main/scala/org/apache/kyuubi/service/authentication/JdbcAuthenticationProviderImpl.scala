@@ -18,7 +18,7 @@
 package org.apache.kyuubi.service.authentication
 
 
-import java.sql.{Connection, DriverManager, PreparedStatement, ResultSet, Statement}
+import java.sql.{Connection, DriverManager, PreparedStatement, Statement}
 import javax.security.sasl.AuthenticationException
 
 import org.apache.commons.lang3.StringUtils
@@ -62,6 +62,47 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
         s" or contains blank space")
     }
 
+    checkConfigs
+
+    // Load Driver Class
+    try {
+      Class.forName(dbDriver)
+    } catch {
+      case e: ClassNotFoundException =>
+        error(s"Driver class not found: $dbDriver")
+        throw e;
+    }
+
+    var connection: Connection = null
+    var queryStatement: PreparedStatement = null
+
+    try {
+      connection = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)
+
+      queryStatement = getAndPrepareStatement(connection, user, password)
+
+      val resultSet = queryStatement.executeQuery()
+
+      if (resultSet == null || !resultSet.next()) {
+        // Auth failed
+        throw new AuthenticationException(s"Password does not match or no such user. user:" +
+          s" $user , password length: ${password.length}")
+      }
+
+      // Auth passed
+
+    } catch {
+      case e: AuthenticationException =>
+        throw e
+      case e: Exception =>
+        error("Cannot get user info", e);
+        throw e
+    } finally {
+      closeDbConnection(connection, queryStatement)
+    }
+  }
+
+  private def checkConfigs: Unit = {
     def configLog(config: String, value: String): String = s"JDBCAuthConfig: $config = '$value'"
 
     debug(configLog("Driver Class", dbDriver))
@@ -88,62 +129,6 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       error("Query SQL must start with \"select\"!")
       throw new IllegalArgumentException("Query SQL must start with \"select\"!");
     }
-
-    // Load Driver Class
-    try {
-      Class.forName(dbDriver)
-    } catch {
-      case e: ClassNotFoundException =>
-        error(s"Driver class not found: $dbDriver")
-        throw e;
-    }
-
-    var connection: Connection = null
-    var queryStatement: PreparedStatement = null
-
-    try {
-      connection = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)
-
-      // Replace placeholders by "?" and prepare the statement
-      queryStatement = connection.prepareStatement(getPreparedSql(querySql))
-
-      // Extract placeholder list and use its order to pass parameters
-      val placeholderList: List[String] = getPlaceholderList(querySql)
-      for (i <- placeholderList.indices) {
-        val param = placeholderList(i) match {
-          case USERNAME_SQL_PLACEHOLDER => user
-          case PASSWORD_SQL_PLACEHOLDER => password
-          case otherPlaceholder =>
-            error(s"Unrecognized Placeholder In Query SQL: $otherPlaceholder")
-            throw new IllegalStateException(
-              s"Unrecognized Placeholder In Query SQL: $otherPlaceholder")
-        }
-
-        queryStatement.setString(i + 1, param)
-      }
-
-      // Client side limit 1
-      queryStatement.setMaxRows(1)
-
-      val resultSet = queryStatement.executeQuery()
-
-      if (resultSet == null || !resultSet.next()) {
-        // Auth failed
-        throw new AuthenticationException(s"Password does not match or no such user. user:" +
-          s" $user , password length: ${password.length}")
-      }
-
-      // Auth passed
-
-    } catch {
-      case e: AuthenticationException =>
-        throw e
-      case e: Exception =>
-        error("Cannot get user info", e);
-        throw e
-    } finally {
-      closeDbConnection(connection, queryStatement)
-    }
   }
 
   /**
@@ -169,11 +154,46 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   }
 
   /**
+   * prepare the final query statement
+   * by replacing placeholder in query sql with user and password
+   *
+   * @param connection
+   * @param user
+   * @param password
+   * @return
+   */
+  private def getAndPrepareStatement(connection: Connection,
+                                     user: String,
+                                     password: String): PreparedStatement = {
+    // Replace placeholders by "?" and prepare the statement
+    val stmt = connection.prepareStatement(getPreparedSql(querySql))
+
+    // Extract placeholder list and use its order to pass parameters
+    val placeholderList: List[String] = getPlaceholderList(querySql)
+    for (i <- placeholderList.indices) {
+      val param = placeholderList(i) match {
+        case USERNAME_SQL_PLACEHOLDER => user
+        case PASSWORD_SQL_PLACEHOLDER => password
+        case otherPlaceholder =>
+          error(s"Unrecognized Placeholder In Query SQL: $otherPlaceholder")
+          throw new IllegalStateException(
+            s"Unrecognized Placeholder In Query SQL: $otherPlaceholder")
+      }
+
+      stmt.setString(i + 1, param)
+    }
+
+    // Client side limit 1
+    stmt.setMaxRows(1)
+
+    stmt
+  }
+
+  /**
    * Gracefully close DB connection
    *
    * @param connection
    * @param statement
-   * @param rs
    */
   private def closeDbConnection(connection: Connection, statement: Statement): Unit = {
     // Close statement
