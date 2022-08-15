@@ -34,7 +34,7 @@ import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.engine.flink.schema.RowSet.toHiveString
 import org.apache.kyuubi.operation.OperationState
@@ -122,10 +122,10 @@ class ExecuteStatement(
                   .impl(executor.getClass, classOf[String], classOf[Int])
                   .build(executor)
                 val _page = Integer.valueOf(page)
-                if (FlinkEngineUtils.isFlinkVersionEqualTo("1.14")) {
+                if (isFlinkVersionEqualTo("1.14")) {
                   val result = retrieveResultPage.invoke[util.List[Row]](resultId, _page)
                   rows ++= result.asScala
-                } else if (FlinkEngineUtils.isFlinkVersionAtLeast("1.15")) {
+                } else if (isFlinkVersionAtLeast("1.15")) {
                   val result = retrieveResultPage.invoke[util.List[RowData]](resultId, _page)
                   rows ++= result.asScala.map(r => convertToRow(r, dataTypes))
                 }
