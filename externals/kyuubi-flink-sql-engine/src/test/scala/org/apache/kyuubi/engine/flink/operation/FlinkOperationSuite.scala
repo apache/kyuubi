@@ -23,7 +23,6 @@ import java.util.UUID
 
 import scala.collection.JavaConverters._
 
-import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -31,7 +30,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.OperationModes.NONE
-import org.apache.kyuubi.engine.SemanticVersion
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
@@ -45,8 +44,6 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
-
-  val runtimeVersion = SemanticVersion(EnvironmentInformation.getVersion)
 
   ignore("release session if shared level is CONNECTION") {
     logger.info(s"jdbc url is $jdbcUrl")
@@ -579,10 +576,13 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.ARRAY)
       assert(resultSet.next())
-      runtimeVersion.minorVersion match {
-        case 14 =>
-          assert(resultSet.getObject(1).toString == """["v1","v2","v3"]""")
-        case _ => assert(resultSet.getObject(1).toString == "[v1,v2,v3]")
+      if (isFlinkVersionEqualTo("1.14")) {
+        val expected = """["v1","v2","v3"]"""
+        assert(resultSet.getObject(1).toString == expected)
+      }
+      if (isFlinkVersionAtLeast("1.15")) {
+        val expected = "[v1,v2,v3]"
+        assert(resultSet.getObject(1).toString == expected)
       }
     }
   }
@@ -603,12 +603,13 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val resultSet =
         statement.executeQuery("select (1, '2', true)")
       assert(resultSet.next())
-      runtimeVersion.minorVersion match {
-        case 14 => assert(resultSet.getString(
-            1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:\"2\",BOOLEAN NOT NULL:true}")
-        case _ =>
-          assert(
-            resultSet.getString(1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:2,BOOLEAN NOT NULL:true}")
+      if (isFlinkVersionEqualTo("1.14")) {
+        val expected = """{INT NOT NULL:1,CHAR(1) NOT NULL:"2",BOOLEAN NOT NULL:true}"""
+        assert(resultSet.getString(1) == expected)
+      }
+      if (isFlinkVersionAtLeast("1.15")) {
+        val expected = """{INT NOT NULL:1,CHAR(1) NOT NULL:2,BOOLEAN NOT NULL:true}"""
+        assert(resultSet.getString(1) == expected)
       }
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
@@ -619,11 +620,12 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select encode('kyuubi', 'UTF-8')")
       assert(resultSet.next())
-      runtimeVersion.minorVersion match {
-        case 14 => assert(resultSet.getString(1) == "kyuubi")
-        case _ =>
-          // TODO: validate table results after FLINK-28882 is resolved
-          assert(resultSet.getString(1) == "k")
+      if (isFlinkVersionEqualTo("1.14")) {
+        assert(resultSet.getString(1) == "kyuubi")
+      }
+      if (isFlinkVersionAtLeast("1.15")) {
+        // TODO: validate table results after FLINK-28882 is resolved
+        assert(resultSet.getString(1) == "k")
       }
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.BINARY)
