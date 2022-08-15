@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.service.authentication
 
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+
+import java.nio.file.Path
 import java.sql.{Connection, DriverManager}
 import java.util.Properties
 import javax.security.sasl.AuthenticationException
-
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
 
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val authUser: String = "liangtiancheng"
@@ -36,21 +37,24 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
   private val conf = new KyuubiConf()
   var conn: Connection = _
+  var authDb: Path = _
 
   override def beforeAll(): Unit = {
     val datasourceProperties = new Properties()
     datasourceProperties.put("user", dbUser)
     datasourceProperties.put("password", dbPasswd)
 
-    val protocol = "jdbc:derby:"
-    jdbcUrl = protocol + "derbyAuthDB;create=true"
+    authDb = Utils.createTempDir(namePrefix = getClass.getSimpleName)
+    authDb.toFile.delete()
+
+    jdbcUrl = s"jdbc:derby:;databaseName=$authDb;create=true"
     conn = DriverManager.getConnection(
       jdbcUrl
         + ";user=" + dbUser
         + ";password=" + dbPasswd,
       datasourceProperties)
 
-    conn.prepareStatement("drop TABLE user_auth ").execute();
+    conn.prepareStatement("create schema " + dbUser).execute();
 
     conn.prepareStatement("CREATE TABLE user_auth (" +
       "username CHAR(64) NOT NULL PRIMARY KEY, " +
@@ -76,8 +80,11 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
   override def afterAll(): Unit = {
     // shutdown derby database
-    conn.close()
-    DriverManager.getConnection("jdbc:derby:;shutdown=true")
+    try {
+      DriverManager.getConnection(s"jdbc:derby:;databaseName=$authDb;shutdown=true")
+    } catch {
+      case e: Throwable =>
+    }
   }
 
   test("authenticate tests") {
