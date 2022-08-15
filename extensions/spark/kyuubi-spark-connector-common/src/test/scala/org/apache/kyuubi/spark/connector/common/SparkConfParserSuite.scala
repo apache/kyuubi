@@ -44,9 +44,11 @@ class SparkConfParserSuite extends SparkFunSuite {
 
   test("parse options config") {
     assert(confParser.stringConf().option("optKey1").defaultStringValue("test").parse() === "test")
-    assert(confParser.booleanConf().option("booleanKey").defaultStringValue("true").parse() === false)
+    assert(
+      confParser.booleanConf().option("booleanKey").defaultStringValue("true").parse() === false)
     assert(confParser.intConf().option("intKey").defaultStringValue("0").parse() === 10)
-    assert(confParser.longConf().option("longKey").defaultStringValue("0").parse() === Long.MaxValue)
+    assert(
+      confParser.longConf().option("longKey").defaultStringValue("0").parse() === Long.MaxValue)
     assert(confParser.doubleConf().option("doubleKey").defaultStringValue("0.0").parse() === 1.1)
     assert(confParser.bytesConf().option("bytesKey").defaultStringValue("0k").parse() === 1024L)
     assert(confParser.timeConf().option("timeKey").defaultStringValue("0s").parse() === 1000L)
