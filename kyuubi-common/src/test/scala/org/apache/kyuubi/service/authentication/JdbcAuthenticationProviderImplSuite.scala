@@ -39,8 +39,6 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   var conn: Connection = _
 
   override def beforeAll(): Unit = {
-    // todo start derby database
-    // todo run ddl、dml for demo user and password
     val datasourceProperties = new Properties()
     datasourceProperties.put("user", dbUser)
     datasourceProperties.put("password", dbPasswd)
