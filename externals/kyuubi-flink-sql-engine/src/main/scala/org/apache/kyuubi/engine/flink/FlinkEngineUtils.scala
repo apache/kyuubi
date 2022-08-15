@@ -46,8 +46,8 @@ object FlinkEngineUtils extends Logging {
         logger.info(s"The current Flink version is $flinkVersion")
       case _ =>
         throw new UnsupportedOperationException(
-          s"The current Flink version is $flinkVersion, " +
-            s"Only Flink 1.14.x and 1.15 are supported, not supported in other versions")
+          s"You are using unsupported Flink version $flinkVersion, " +
+            s"only Flink 1.14 and 1.15 are supported now.")
     }
   }
 

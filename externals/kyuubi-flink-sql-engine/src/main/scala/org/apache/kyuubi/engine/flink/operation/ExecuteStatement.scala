@@ -231,7 +231,7 @@ class ExecuteStatement(
           row.setField(i, r.getDouble(i))
         case t: RowType =>
           val fieldDataTypes = DynMethods.builder("getFieldDataTypes")
-            .impl("org.apache.flink.table.types.DataType", classOf[DataType])
+            .impl(classOf[DataType], classOf[DataType])
             .buildStatic
             .invoke[util.List[DataType]](dataType)
             .asScala.toList
