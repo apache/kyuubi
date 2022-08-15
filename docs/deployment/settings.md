@@ -138,14 +138,15 @@ Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
 kyuubi.authentication|NONE|A comma separated list of client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>CUSTOM: User-defined authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul> Note that: For KERBEROS, it is SASL/GSSAPI mechanism, and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism. If only NOSASL is specified, the authentication will be NOSASL. For SASL authentication, KERBEROS and PLAIN auth type are supported at the same time, and only the first specified PLAIN auth type is valid.|seq|1.0.0
 kyuubi.authentication.custom.class|&lt;undefined&gt;|User-defined authentication implementation of org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider|string|1.3.0
+kyuubi.authentication.jdbc.driver.class|&lt;undefined&gt;|Driver class name for JDBC Password Authentication Provider.|string|1.6.0
+kyuubi.authentication.jdbc.password|&lt;undefined&gt;|Database password for JDBC Password Authentication Provider.|string|1.6.0
+kyuubi.authentication.jdbc.query|&lt;undefined&gt;|Query SQL template with placeholders for JDBC Password Authentication Provider to execute.Available placeholders are: <ul><li>${username}</li><li>${password}</li></ul>Don't quote the placeholders, query will be processed as prepared statement, while username and password will be passed as parameters.For example: SELECT 1 FROM auth_table WHERE user=${username} AND passwd=MD5(CONCAT(salt,${password})); Will be prepared as: SELECT 1 FROM auth_table WHERE user=? AND passwd=MD5(CONCAT(salt,?)); |string|1.6.0
+kyuubi.authentication.jdbc.url|&lt;undefined&gt;|JDBC URL for JDBC Password Authentication Provider.|string|1.6.0
+kyuubi.authentication.jdbc.username|&lt;undefined&gt;|Database username for JDBC Password Authentication Provider.|string|1.6.0
 kyuubi.authentication.ldap.base.dn|&lt;undefined&gt;|LDAP base DN.|string|1.0.0
 kyuubi.authentication.ldap.domain|&lt;undefined&gt;|LDAP domain.|string|1.0.0
 kyuubi.authentication.ldap.guidKey|uid|LDAP attribute name whose values are unique in this LDAP server.For example:uid or cn.|string|1.2.0
 kyuubi.authentication.ldap.url|&lt;undefined&gt;|SPACE character separated LDAP connection URL(s).|string|1.0.0
-kyuubi.authentication.jdbc.url|&lt;undefined&gt;|JDBC URL to database for authentication.|string|1.6.0
-kyuubi.authentication.jdbc.user|&lt;undefined&gt;|JDBC user to databse for authentication.|string|1.6.0
-kyuubi.authentication.jdbc.password|&lt;undefined&gt;|JDBC password to database for authentication|string|1.6.0
-kyuubi.authentication.jdbc.query|&lt;undefined&gt;|JDBC query sql to database for authentication. Query SQL template with placeholders  for JDBC Password Authentication Provider to execute. Available placeholders are: <ul> <li>`${username}`</li> <li>`${password}`</li></ul> Don't quote the placeholders, query will be processed as prepared statement,  while username and password will be passed as parameters. For example: `SELECT 1 FROM auth_table WHERE user=${username} AND  passwd=MD5(CONCAT(salt,${password}));`  Will be prepared as: `SELECT 1 FROM auth_table  WHERE user=? AND passwd=MD5(CONCAT(salt,?));` |string|1.6.0
 kyuubi.authentication.sasl.qop|auth|Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul>|string|1.0.0
 
 
