@@ -20,5 +20,5 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelper {
 
-  override protected def jdbcUrl: String = getJdbcUrl
+  override protected def jdbcUrl: String = jdbcConnectionUrl
 }
