@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vue-tsc --noEmit && vite build --mode production",
     "preview": "vite preview",
     "lint": "eslint --ext .ts,vue --ignore-path .gitignore .",
     "lint-fix": "eslint --fix --ext .ts,vue --ignore-path .gitignore .",
-    "format": "prettier -w -u ."
+    "prettier": "prettier -w -u ."
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.9",
