@@ -79,6 +79,7 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(channel: SocketChannel): Unit = channel.pipeline
           .addLast(new LoggingHandler("org.apache.kyuubi.server.mysql.codec", LogLevel.TRACE))
+          .addLast(new MySQLConnectionMetricsHandler)
           .addLast(new MySQLFrameDelimiter)
           .addLast(new MySQLPacketEncoder)
           .addLast(new MySQLAuthHandler)

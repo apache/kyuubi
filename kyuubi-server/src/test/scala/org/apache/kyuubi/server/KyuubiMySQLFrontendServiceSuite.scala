@@ -19,12 +19,18 @@ package org.apache.kyuubi.server
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.service.NoopMySQLFrontendServer
 import org.apache.kyuubi.service.ServiceState._
 
 class KyuubiMySQLFrontendServiceSuite extends KyuubiFunSuite {
 
   test("Kyuubi MySQL frontend service basic") {
+    val totalConnections =
+      MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_TOTAL).getOrElse(0L)
+    val openConnections =
+      MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_OPEN).getOrElse(0L)
+
     val server = new NoopMySQLFrontendServer
     server.stop()
     val conf = KyuubiConf()

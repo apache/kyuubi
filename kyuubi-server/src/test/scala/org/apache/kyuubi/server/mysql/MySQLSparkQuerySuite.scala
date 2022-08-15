@@ -20,10 +20,12 @@ package org.apache.kyuubi.server.mysql
 import java.sql._
 
 import org.apache.commons.lang3.StringUtils
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KYUUBI_VERSION, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 
 class MySQLSparkQuerySuite extends WithKyuubiServer with MySQLJDBCTestHelper {
 
@@ -296,5 +298,58 @@ class MySQLSparkQuerySuite extends WithKyuubiServer with MySQLJDBCTestHelper {
       assert(rs.next())
       assert(StringUtils.isNotBlank(rs.getString(1)))
     }
+  }
+
+  test("mysql frontend connection metrics") {
+    val totalConnections =
+      MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_TOTAL).getOrElse(0L)
+    val failedConnections =
+      MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_FAIL).getOrElse(0L)
+
+    withJdbcStatement() { _ =>
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.MYSQL_CONN_TOTAL).getOrElse(0L) - totalConnections === 1)
+      assert(MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_OPEN).getOrElse(0L) === 1)
+
+      withJdbcStatement() { _ =>
+        assert(MetricsSystem.counterValue(
+          MetricsConstants.MYSQL_CONN_TOTAL).getOrElse(0L) - totalConnections === 2)
+        assert(MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_OPEN).getOrElse(0L) === 2)
+      }
+
+      eventually(timeout(3.seconds), interval(200.milliseconds)) {
+        assert(MetricsSystem.counterValue(
+          MetricsConstants.MYSQL_CONN_TOTAL).getOrElse(0L) - totalConnections
+          === 2)
+        assert(MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_OPEN).getOrElse(0L) === 1)
+      }
+
+    }
+
+    eventually(timeout(3.seconds), interval(200.milliseconds)) {
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.MYSQL_CONN_TOTAL).getOrElse(0L) - totalConnections
+        === 2)
+      assert(MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_OPEN).getOrElse(0L) === 0)
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.MYSQL_CONN_FAIL).getOrElse(0L) - failedConnections === 0)
+    }
+  }
+
+  test("mysql frontend failure connection metric") {
+    val totalConnections =
+      MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_TOTAL).getOrElse(0L)
+    val failedConnections =
+      MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_FAIL).getOrElse(0L)
+
+    password = "fake"
+    assertJDBCConnectionFail()
+
+    assert(MetricsSystem.counterValue(
+      MetricsConstants.MYSQL_CONN_TOTAL).getOrElse(0L) - totalConnections
+      === 1)
+    assert(MetricsSystem.counterValue(MetricsConstants.MYSQL_CONN_OPEN).getOrElse(0L) === 0)
+    assert(MetricsSystem.counterValue(
+      MetricsConstants.MYSQL_CONN_FAIL).getOrElse(0L) - failedConnections === 1)
   }
 }

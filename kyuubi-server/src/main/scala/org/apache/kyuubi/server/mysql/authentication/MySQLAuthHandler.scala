@@ -21,6 +21,8 @@ import io.netty.buffer.ByteBuf
 import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.metrics.MetricsConstants.MYSQL_CONN_FAIL
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.mysql.MySQLErrPacket
 import org.apache.kyuubi.server.mysql.constant.MySQLCapabilityFlag
 import org.apache.kyuubi.server.mysql.constant.MySQLCtxAttrKey._
@@ -58,6 +60,8 @@ class MySQLAuthHandler extends SimpleChannelInboundHandler[ByteBuf] with Logging
       }
     } catch {
       case cause: Exception =>
+        MetricsSystem.tracing(_.incCount(MYSQL_CONN_FAIL))
+
         error("Exception occur: ", cause)
         ctx.writeAndFlush(MySQLErrPacket(cause))
         ctx.close

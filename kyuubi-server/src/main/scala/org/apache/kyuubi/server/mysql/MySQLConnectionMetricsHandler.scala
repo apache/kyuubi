@@ -17,33 +17,30 @@
 
 package org.apache.kyuubi.server.mysql
 
-import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.JDBCTestHelper
+import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandlerAdapter}
+import io.netty.channel.ChannelHandler.Sharable
 
-trait MySQLJDBCTestHelper extends JDBCTestHelper {
+import org.apache.kyuubi.metrics.MetricsConstants._
+import org.apache.kyuubi.metrics.MetricsSystem
 
-  override def jdbcDriverClass: String = "com.mysql.jdbc.Driver"
+@Sharable
+class MySQLConnectionMetricsHandler extends ChannelInboundHandlerAdapter {
 
-  protected lazy val user: String = Utils.currentUser
+  override def channelActive(ctx: ChannelHandlerContext): Unit = {
+    MetricsSystem.tracing { ms =>
+      ms.incCount(MYSQL_CONN_TOTAL)
+      ms.incCount(MYSQL_CONN_OPEN)
+    }
 
-  protected var password: String = "kyuubi"
-
-  private val _jdbcConfigs: Map[String, String] = Map(
-    "useSSL" -> "false")
-
-  override protected def sessionConfigs: Map[String, String] = Map.empty
-
-  override protected def jdbcConfigs: Map[String, String] = _jdbcConfigs
-
-  override protected def jdbcVars: Map[String, String] = Map.empty
-
-  protected def jdbcUrlWithConf(jdbcUrl: String): String = {
-    val jdbcConfStr =
-      if (jdbcConfigs.isEmpty) {
-        ""
-      } else {
-        "?" + jdbcConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
-      }
-    jdbcUrl + jdbcConfStr
+    super.channelActive(ctx)
   }
+
+  override def channelInactive(ctx: ChannelHandlerContext): Unit = {
+    MetricsSystem.tracing { ms =>
+      ms.decCount(MYSQL_CONN_OPEN)
+    }
+
+    super.channelInactive(ctx)
+  }
+
 }

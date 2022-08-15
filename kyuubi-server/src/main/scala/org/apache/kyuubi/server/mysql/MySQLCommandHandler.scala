@@ -27,6 +27,8 @@ import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.metrics.MetricsConstants.MYSQL_CONN_FAIL
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.mysql.MySQLCommandHandler._
@@ -53,6 +55,8 @@ class MySQLCommandHandler(be: BackendService, execPool: ThreadPoolExecutor)
 
   // handle process exception, generally should send error packet
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
+    MetricsSystem.tracing(_.incCount(MYSQL_CONN_FAIL))
+
     val connectionId = ctx.channel.attr(CONNECTION_ID).get
     val errPacket = MySQLErrPacket(cause)
     error(s"Connection: $connectionId, $errPacket")
