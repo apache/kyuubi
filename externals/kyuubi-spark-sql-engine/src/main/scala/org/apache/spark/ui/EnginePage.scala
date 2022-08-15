@@ -388,7 +388,9 @@ private class StatementStatsPagedTable(
       }
     }
       </td>
-      {if (event.exception.isDefined) errorMessageCell(event.exception.get.getMessage)}
+      {
+      if (event.exception.isDefined) errorMessageCell(event.exception.get.getMessage) else <td></td>
+    }
     </tr>
   }
 
