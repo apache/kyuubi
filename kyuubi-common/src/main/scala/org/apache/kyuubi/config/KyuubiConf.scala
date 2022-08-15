@@ -645,6 +645,51 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("uid")
 
+  val AUTHENTICATION_JDBC_PASSWORD_DRIVER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.driver.class")
+      .doc("Driver class name for JDBC Password Authentication Provider.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_JDBC_URL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.url")
+      .doc("JDBC URL for JDBC Password Authentication Provider.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_JDBC_PASSWORD_USERNAME: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.username")
+      .doc("Database username for JDBC Password Authentication Provider.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_JDBC_PASSWORD_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.password")
+      .doc("Database password for JDBC Password Authentication Provider.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_JDBC_PASSWORD_QUERY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.query")
+      .doc("Query SQL template with placeholders " +
+        "for JDBC Password Authentication Provider to execute." +
+        "Available placeholders are: <ul>" +
+        "<li>${username}</li>" +
+        "<li>${password}</li></ul>" +
+        "Don't quote the placeholders, query will be processed as prepared statement, " +
+        "while username and password will be passed as parameters." +
+        "For example: SELECT 1 FROM auth_table WHERE user=${username} AND " +
+        "passwd=MD5(CONCAT(salt,${password})); " +
+        "Will be prepared as: SELECT 1 FROM auth_table " +
+        "WHERE user=? AND passwd=MD5(CONCAT(salt,?)); ")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
   val DELEGATION_KEY_UPDATE_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.delegation.key.update.interval")
       .doc("unused yet")
