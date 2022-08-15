@@ -653,13 +653,14 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val AUTHENTICATION_LDAP_ATTRIBUTES: ConfigEntry[String] =
+  val AUTHENTICATION_LDAP_ATTRIBUTES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.authentication.ldap.attrs")
       .doc("Specifies part of the search as an attribute returned by LDAP. " +
-        "For example:mail,name.")
+        "For example, mail,name.")
       .version("1.6.0")
       .stringConf
-      .createWithDefault("name")
+      .toSequence()
+      .createWithDefault(Seq("mail"))
 
   val DELEGATION_KEY_UPDATE_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.delegation.key.update.interval")

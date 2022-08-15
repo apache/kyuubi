@@ -61,7 +61,7 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
     val baseDn = conf.get(AUTHENTICATION_LDAP_BASEDN).get
     val bindnPw = conf.get(AUTHENTICATION_LDAP_PASSWORD).get
-    val attrs = conf.get(AUTHENTICATION_LDAP_ATTRIBUTES).split(",")
+    val attrs = conf.get(AUTHENTICATION_LDAP_ATTRIBUTES).toArray
 
     env.put(Context.SECURITY_PRINCIPAL, guidKey)
     env.put(Context.SECURITY_CREDENTIALS, bindnPw)
