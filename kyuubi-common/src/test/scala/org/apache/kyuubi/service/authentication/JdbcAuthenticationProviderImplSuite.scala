@@ -25,7 +25,6 @@ import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
-
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val authUser: String = "liangtiancheng"
   protected val authPasswd: String = "liangtiancheng"
@@ -45,17 +44,17 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
     val protocol = "jdbc:derby:"
     jdbcUrl = protocol + "derbyAuthDB;create=true"
-    conn = DriverManager.getConnection(jdbcUrl
-      + ";user=" + dbUser
-      + ";password=" + dbPasswd
-      , datasourceProperties)
+    conn = DriverManager.getConnection(
+      jdbcUrl
+        + ";user=" + dbUser
+        + ";password=" + dbPasswd,
+      datasourceProperties)
 
     conn.prepareStatement("drop TABLE user_auth ").execute();
 
     conn.prepareStatement("CREATE TABLE user_auth (" +
       "username CHAR(64) NOT NULL PRIMARY KEY, " +
-      "passwd_hash CHAR(64))"
-    ).execute();
+      "passwd_hash CHAR(64))").execute();
 
     conn.prepareStatement("truncate TABLE user_auth ").execute();
 
@@ -65,12 +64,12 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     insertStmt.setString(2, authPasswd)
     insertStmt.execute();
 
-
     conf.set(AUTHENTICATION_JDBC_DRIVER, "org.apache.derby.jdbc.AutoloadedDriver")
     conf.set(AUTHENTICATION_JDBC_URL, jdbcUrl)
     conf.set(AUTHENTICATION_JDBC_USERNAME, dbUser)
     conf.set(AUTHENTICATION_JDBC_PASSWORD, dbPasswd)
-    conf.set(AUTHENTICATION_JDBC_QUERY,
+    conf.set(
+      AUTHENTICATION_JDBC_QUERY,
       "select 1 from user_auth " +
         "where username=${username} and passwd_hash=${password}")
   }
@@ -80,7 +79,6 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     conn.close()
     DriverManager.getConnection("jdbc:derby:;shutdown=true")
   }
-
 
   test("authenticate tests") {
     var providerImpl = new JdbcAuthenticationProviderImpl(conf)

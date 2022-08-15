@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.service.authentication
 
-
 import java.sql.{Connection, DriverManager, PreparedStatement, Statement}
 import javax.security.sasl.AuthenticationException
 
@@ -162,9 +161,10 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
    * @param password
    * @return
    */
-  private def getAndPrepareStatement(connection: Connection,
-                                     user: String,
-                                     password: String): PreparedStatement = {
+  private def getAndPrepareStatement(
+      connection: Connection,
+      user: String,
+      password: String): PreparedStatement = {
     // Replace placeholders by "?" and prepare the statement
     val stmt = connection.prepareStatement(getPreparedSql(querySql))
 
@@ -217,4 +217,3 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     }
   }
 }
-
