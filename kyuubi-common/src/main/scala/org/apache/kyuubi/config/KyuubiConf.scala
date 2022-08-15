@@ -645,7 +645,7 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("uid")
 
-  val AUTHENTICATION_JDBC_PASSWORD_DRIVER: OptionalConfigEntry[String] =
+  val AUTHENTICATION_JDBC_DRIVER: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.jdbc.driver.class")
       .doc("Driver class name for JDBC Password Authentication Provider.")
       .version("1.6.0")
@@ -659,21 +659,21 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val AUTHENTICATION_JDBC_PASSWORD_USERNAME: OptionalConfigEntry[String] =
+  val AUTHENTICATION_JDBC_USERNAME: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.jdbc.username")
       .doc("Database username for JDBC Password Authentication Provider.")
       .version("1.6.0")
       .stringConf
       .createOptional
 
-  val AUTHENTICATION_JDBC_PASSWORD_PASSWORD: OptionalConfigEntry[String] =
+  val AUTHENTICATION_JDBC_PASSWORD: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.jdbc.password")
       .doc("Database password for JDBC Password Authentication Provider.")
       .version("1.6.0")
       .stringConf
       .createOptional
 
-  val AUTHENTICATION_JDBC_PASSWORD_QUERY: OptionalConfigEntry[String] =
+  val AUTHENTICATION_JDBC_QUERY: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.jdbc.query")
       .doc("Query SQL template with placeholders " +
         "for JDBC Password Authentication Provider to execute." +

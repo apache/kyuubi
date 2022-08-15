@@ -30,11 +30,11 @@ import org.apache.kyuubi.config.KyuubiConf._
 class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider
   with Logging {
 
-  private val dbDriver = conf.get(AUTHENTICATION_JDBC_PASSWORD_DRIVER).map(s => s.trim).orNull
+  private val dbDriver = conf.get(AUTHENTICATION_JDBC_DRIVER).map(s => s.trim).orNull
   private val dbUrl = conf.get(AUTHENTICATION_JDBC_URL).map(s => s.trim).orNull
-  private val dbUserName = conf.get(AUTHENTICATION_JDBC_PASSWORD_USERNAME).map(s => s.trim).orNull
-  private val dbPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD_PASSWORD).map(s => s.trim).orNull
-  private val querySql = conf.get(AUTHENTICATION_JDBC_PASSWORD_QUERY).map(s => s.trim).orNull
+  private val dbUserName = conf.get(AUTHENTICATION_JDBC_USERNAME).map(s => s.trim).orNull
+  private val dbPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD).map(s => s.trim).orNull
+  private val querySql = conf.get(AUTHENTICATION_JDBC_QUERY).map(s => s.trim).orNull
 
   private val SQL_PLACEHOLDER_REGEX = """\$\{.+?}""".r
   private val USERNAME_SQL_PLACEHOLDER = "${username}"
