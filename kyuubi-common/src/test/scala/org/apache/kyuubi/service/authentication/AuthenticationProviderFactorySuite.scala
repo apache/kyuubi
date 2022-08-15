@@ -21,18 +21,29 @@ import javax.security.sasl.AuthenticationException
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_LDAP_ATTRIBUTES, AUTHENTICATION_LDAP_BASEDN, AUTHENTICATION_LDAP_DOMAIN, AUTHENTICATION_LDAP_GUIDKEY, AUTHENTICATION_LDAP_PASSWORD}
 
 class AuthenticationProviderFactorySuite extends KyuubiFunSuite {
 
   import AuthenticationProviderFactory._
 
+  private val conf = new KyuubiConf()
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    conf.set(AUTHENTICATION_LDAP_BASEDN, "test")
+    conf.set(AUTHENTICATION_LDAP_GUIDKEY, "test")
+    conf.set(AUTHENTICATION_LDAP_PASSWORD, "test")
+    conf.set(AUTHENTICATION_LDAP_DOMAIN, "test")
+    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("test"))
+  }
+
   test("get auth provider") {
-    val conf = KyuubiConf()
     val p1 = getAuthenticationProvider(AuthMethods.withName("NONE"), conf)
     p1.authenticate(Utils.currentUser, "")
     val p2 = getAuthenticationProvider(AuthMethods.withName("LDAP"), conf)
     val e1 = intercept[AuthenticationException](p2.authenticate("test", "test"))
-    assert(e1.getMessage.contains("Error validating LDAP user:"))
+    assert(e1.getMessage.contains("LDAP InitialLdapContext failed"))
     val e2 = intercept[AuthenticationException](
       AuthenticationProviderFactory.getAuthenticationProvider(null, conf))
     assert(e2.getMessage === "Not a valid authentication method")
