@@ -63,7 +63,7 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     conn.prepareStatement("truncate TABLE user_auth ").execute();
 
     val insertStmt = conn.prepareStatement("INSERT INTO user_auth " +
-      "(username, passwd_hash) VALUES (?,?)")
+      "(username, passwd) VALUES (?,?)")
     insertStmt.setString(1, authUser)
     insertStmt.setString(2, authPasswd)
     insertStmt.execute();
@@ -75,7 +75,7 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     conf.set(
       AUTHENTICATION_JDBC_QUERY,
       "select 1 from user_auth " +
-        "where username=${username} and passwd_hash=${password}")
+        "where username=${username} and passwd=${password}")
   }
 
   override def afterAll(): Unit = {

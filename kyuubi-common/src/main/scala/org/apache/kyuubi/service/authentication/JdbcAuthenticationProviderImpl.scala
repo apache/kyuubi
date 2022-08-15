@@ -29,11 +29,11 @@ import org.apache.kyuubi.config.KyuubiConf._
 class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider
   with Logging {
 
-  private val dbDriver = conf.get(AUTHENTICATION_JDBC_DRIVER).map(s => s.trim).orNull
-  private val dbUrl = conf.get(AUTHENTICATION_JDBC_URL).map(s => s.trim).orNull
-  private val dbUserName = conf.get(AUTHENTICATION_JDBC_USERNAME).map(s => s.trim).orNull
-  private val dbPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD).map(s => s.trim).orNull
-  private val querySql = conf.get(AUTHENTICATION_JDBC_QUERY).map(s => s.trim).orNull
+  private val dbDriver = conf.get(AUTHENTICATION_JDBC_DRIVER)
+  private val dbUrl = conf.get(AUTHENTICATION_JDBC_URL)
+  private val dbUserName = conf.get(AUTHENTICATION_JDBC_USERNAME)
+  private val dbPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD)
+  private val querySql = conf.get(AUTHENTICATION_JDBC_QUERY)
 
   private val SQL_PLACEHOLDER_REGEX = """\$\{.+?}""".r
   private val USERNAME_SQL_PLACEHOLDER = "${username}"
@@ -65,7 +65,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     // Load Driver Class
     try {
-      Class.forName(dbDriver)
+      Class.forName(dbDriver.get)
     } catch {
       case e: ClassNotFoundException =>
         error(s"Driver class not found: $dbDriver")
@@ -76,7 +76,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     var queryStatement: PreparedStatement = null
 
     try {
-      connection = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)
+      connection = DriverManager.getConnection(dbUrl.get, dbUserName.orNull, dbPassword.orNull)
 
       queryStatement = getAndPrepareStatement(connection, user, password)
 
@@ -104,27 +104,24 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   private def checkConfigs: Unit = {
     def configLog(config: String, value: String): String = s"JDBCAuthConfig: $config = '$value'"
 
-    debug(configLog("Driver Class", dbDriver))
-    debug(configLog("JDBC URL", dbUrl))
-    debug(configLog("Database Username", dbUserName))
-    debug(configLog("Database Password", dbPassword))
-    debug(configLog("Query SQL", querySql))
+    debug(configLog("Driver Class", dbDriver.orNull))
+    debug(configLog("JDBC URL", dbUrl.orNull))
+    debug(configLog("Database Username", dbUserName.orNull))
+    debug(configLog("Database Password", dbPassword.orNull))
+    debug(configLog("Query SQL", querySql.orNull))
 
     // Check if JDBC parameters valid
-    if (StringUtils.isBlank(dbDriver) ||
-      StringUtils.isBlank(dbUrl) ||
-      StringUtils.isBlank(dbUserName) ||
-      StringUtils.isBlank(dbPassword)) {
+    if (dbDriver.isEmpty || dbUrl.isEmpty || dbUserName.isEmpty || dbPassword.isEmpty) {
       error("User auth Database has not been configured!")
       throw new IllegalArgumentException("User auth Database has not been configured!")
     }
 
     // Check Query SQL
-    if (StringUtils.isBlank(querySql)) {
+    if (querySql.isEmpty) {
       error("Query SQL not configured!")
       throw new IllegalArgumentException("Query SQL not configured!")
     }
-    if (!querySql.toLowerCase().startsWith("select")) { // only allow select query sql
+    if (!querySql.get.trim.toLowerCase.startsWith("select")) { // only allow select query sql
       error("Query SQL must start with \"select\"!")
       throw new IllegalArgumentException("Query SQL must start with \"select\"!");
     }
@@ -162,14 +159,14 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
    * @return
    */
   private def getAndPrepareStatement(
-      connection: Connection,
-      user: String,
-      password: String): PreparedStatement = {
+                                      connection: Connection,
+                                      user: String,
+                                      password: String): PreparedStatement = {
     // Replace placeholders by "?" and prepare the statement
-    val stmt = connection.prepareStatement(getPreparedSql(querySql))
+    val stmt = connection.prepareStatement(getPreparedSql(querySql.get))
 
     // Extract placeholder list and use its order to pass parameters
-    val placeholderList: List[String] = getPlaceholderList(querySql)
+    val placeholderList: List[String] = getPlaceholderList(querySql.get)
     for (i <- placeholderList.indices) {
       val param = placeholderList(i) match {
         case USERNAME_SQL_PLACEHOLDER => user
