@@ -20,23 +20,68 @@ package org.apache.kyuubi.service.authentication
 import javax.naming.CommunicationException
 import javax.security.sasl.AuthenticationException
 
+import com.unboundid.ldap.listener.InMemoryDirectoryServer
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
 class LdapAuthenticationProviderImplSuite extends WithLdapServer {
   override protected val ldapUser: String = "kentyao"
   override protected val ldapUserPasswd: String = "kentyao"
+  override protected val ldapBaseDn = "dc=example,dc=com"
+  protected val ldapBaseUserDn = "ou=users,dc=example,dc=com"
+  protected val ldapDomain = "example"
 
   private val conf = new KyuubiConf()
 
   override def beforeAll(): Unit = {
     super.beforeAll()
+    addLdapUser(ldapServer, ldapBaseDn, ldapBaseUserDn, ldapDomain, ldapUser, ldapUserPasswd)
     conf.set(AUTHENTICATION_LDAP_URL, ldapUrl)
+    conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
+    conf.set(AUTHENTICATION_LDAP_GUIDKEY, ldapGuidKey)
+    conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindnpw)
+    conf.set(AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
+    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("mail"))
   }
 
   override def afterAll(): Unit = {
     ldapServer.close()
     super.afterAll()
+  }
+
+  def addLdapUser(
+      ldapServer: InMemoryDirectoryServer,
+      ldapBaseDn: String,
+      ldapBaseUserDn: String,
+      ldapDomain: String,
+      ldapUser: String,
+      ldapUserPasswd: String): Unit = {
+    ldapServer.add(
+      s"dn: $ldapBaseDn",
+      "objectClass: domain",
+      "objectClass: top",
+      "dc: example")
+    ldapServer.add(
+      s"dn: $ldapBaseUserDn",
+      "objectClass: top",
+      "objectClass: organizationalUnit",
+      "ou: users")
+    ldapServer.add(
+      s"dn: cn=$ldapUser,$ldapBaseUserDn",
+      s"cn: $ldapUser",
+      s"sn: $ldapUser",
+      s"userPassword: $ldapUserPasswd",
+      "objectClass: person")
+    ldapServer.add(
+      s"dn: uid=$ldapUser,cn=$ldapUser,$ldapBaseUserDn",
+      s"uid: $ldapUser",
+      s"mail: $ldapUser@$ldapDomain",
+      s"cn: $ldapUser",
+      s"sn: $ldapUser",
+      s"userPassword: $ldapUserPasswd",
+      "objectClass: person",
+      "objectClass: inetOrgPerson")
   }
 
   test("ldap server is started") {
@@ -50,31 +95,66 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     val e2 = intercept[AuthenticationException](providerImpl.authenticate("kyuubi", ""))
     assert(e2.getMessage.contains("password is null"))
 
-    val user = "uid=kentyao,ou=users"
-    providerImpl.authenticate(user, "kentyao")
+    providerImpl.authenticate(ldapUser, ldapUserPasswd)
+
+    conf.set(AUTHENTICATION_LDAP_BASEDN, "dc=com")
+    val providerImpl1 = new LdapAuthenticationProviderImpl(conf)
     val e3 = intercept[AuthenticationException](
-      providerImpl.authenticate(user, "kent"))
-    assert(e3.getMessage.contains(user))
-    assert(e3.getCause.isInstanceOf[javax.naming.AuthenticationException])
-
+      providerImpl1.authenticate(ldapUser, ldapUserPasswd))
+    assert(e3.getMessage contains (ldapUser))
+    assert(e3.getMessage startsWith "LDAP InitialLdapContext failed")
+    assert(e3.getCause.isInstanceOf[javax.naming.NameNotFoundException])
     conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
+
+    conf.set(
+      AUTHENTICATION_LDAP_GUIDKEY,
+      s"uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com")
+    conf.set(AUTHENTICATION_LDAP_PASSWORD, "adminPasswordTest")
     val providerImpl2 = new LdapAuthenticationProviderImpl(conf)
-    providerImpl2.authenticate("kentyao", "kentyao")
-
     val e4 = intercept[AuthenticationException](
-      providerImpl.authenticate("kentyao", "kent"))
-    assert(e4.getMessage.contains(user))
+      providerImpl2.authenticate(ldapUser, ldapUserPasswd))
+    assert(e4.getMessage contains (ldapUser))
+    assert(e4.getMessage startsWith "LDAP InitialLdapContext failed")
+    assert(e4.getCause.isInstanceOf[javax.naming.AuthenticationException])
+    conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindnpw)
 
-    conf.unset(AUTHENTICATION_LDAP_URL)
     val providerImpl3 = new LdapAuthenticationProviderImpl(conf)
     val e5 = intercept[AuthenticationException](
-      providerImpl3.authenticate("kentyao", "kentyao"))
+      providerImpl3.authenticate(ldapUser, "kent"))
+    assert(e5.getMessage contains (ldapUser))
+    assert(e5.getMessage startsWith "LDAP InitialDirContext failed")
+    assert(e5.getCause.isInstanceOf[javax.naming.AuthenticationException])
 
-    assert(e5.getMessage.contains(user))
-    assert(e5.getCause.isInstanceOf[CommunicationException])
+    val providerImpl4 = new LdapAuthenticationProviderImpl(conf)
+    val e6 = intercept[AuthenticationException](
+      providerImpl4.authenticate("kent", ldapUserPasswd))
+    assert(e6.getMessage contains ("kent"))
+    assert(e6.getMessage startsWith "LDAP InitialLdapContext search results are empty")
 
     conf.set(AUTHENTICATION_LDAP_DOMAIN, "kyuubi.com")
-    val providerImpl4 = new LdapAuthenticationProviderImpl(conf)
-    intercept[AuthenticationException](providerImpl4.authenticate("kentyao", "kentyao"))
+    val providerImpl5 = new LdapAuthenticationProviderImpl(conf)
+    val e7 =
+      intercept[AuthenticationException](providerImpl5.authenticate(ldapUser, ldapUserPasswd))
+    assert(e7.getMessage startsWith "LDAP InitialLdapContext search results are empty")
+    conf.set(AUTHENTICATION_LDAP_DOMAIN, "example")
+
+    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("cn"))
+    val providerImpl6 = new LdapAuthenticationProviderImpl(conf)
+    providerImpl6.authenticate(ldapUser, ldapUserPasswd)
+    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("mail"))
+
+    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("mobile"))
+    val providerImpl7 = new LdapAuthenticationProviderImpl(conf)
+    val e8 =
+      intercept[AuthenticationException](providerImpl7.authenticate(ldapUser, ldapUserPasswd))
+    assert(e8.getMessage startsWith "LDAP attributes are empty")
+    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("mail"))
+
+    conf.unset(AUTHENTICATION_LDAP_URL)
+    val providerImpl8 = new LdapAuthenticationProviderImpl(conf)
+    val e9 = intercept[AuthenticationException](
+      providerImpl8.authenticate(ldapUser, ldapUserPasswd))
+    assert(e9.getMessage.contains(ldapUser))
+    assert(e9.getCause.isInstanceOf[CommunicationException])
   }
 }

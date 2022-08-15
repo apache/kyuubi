@@ -23,15 +23,17 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 
 trait WithLdapServer extends KyuubiFunSuite {
   protected var ldapServer: InMemoryDirectoryServer = _
-  protected val ldapBaseDn = "ou=users"
+  protected val ldapBaseDn = "dc=example,dc=com"
   protected val ldapUser = Utils.currentUser
   protected val ldapUserPasswd = "ldapPassword"
+  protected val ldapGuidKey = "uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com"
+  protected val ldapBindnpw = "adminPassword"
 
   protected def ldapUrl = s"ldap://localhost:${ldapServer.getListenPort}"
 
   override def beforeAll(): Unit = {
     val config = new InMemoryDirectoryServerConfig(ldapBaseDn)
-    config.addAdditionalBindCredentials(s"uid=$ldapUser,ou=users", ldapUserPasswd)
+    config.addAdditionalBindCredentials(ldapGuidKey, ldapBindnpw)
     ldapServer = new InMemoryDirectoryServer(config)
     ldapServer.startListening()
     super.beforeAll()

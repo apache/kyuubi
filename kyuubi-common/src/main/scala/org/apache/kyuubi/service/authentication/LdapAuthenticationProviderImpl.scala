@@ -58,6 +58,8 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     conf.get(AUTHENTICATION_LDAP_URL).foreach(env.put(Context.PROVIDER_URL, _))
 
+    val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
+    val mail = getMail(user, domain.get)
     val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
     val baseDn = conf.get(AUTHENTICATION_LDAP_BASEDN).get
     val bindnPw = conf.get(AUTHENTICATION_LDAP_PASSWORD).get
@@ -72,7 +74,7 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       val sc = new SearchControls
       sc.setReturningAttributes(attrs)
       sc.setSearchScope(SearchControls.SUBTREE_SCOPE)
-      val searchFilter = String.format("(%s=%s)", "name", user)
+      val searchFilter = String.format("(%s=%s)", "mail", mail)
       nameEnuResults = ctx.search(baseDn, searchFilter, sc)
     } catch {
       case e: NamingException =>
@@ -82,25 +84,41 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
           e)
     }
     if (nameEnuResults != null && nameEnuResults.hasMore) {
-      val searchResult = nameEnuResults.next
-      val attrs = searchResult.getAttributes.getAll
-      while (attrs.hasMore) {
-        attrs.next
-        env.put(Context.SECURITY_PRINCIPAL, searchResult.getNameInNamespace)
-        env.put(Context.SECURITY_CREDENTIALS, password)
-        try {
+      try {
+        val searchResult = nameEnuResults.next
+        val attrs = searchResult.getAttributes.getAll
+        if (!attrs.hasMore) {
+          throw new AuthenticationException(
+            s"LDAP attributes are empty, please check config " +
+              s"kyuubi.authentication.ldap.attrs, LDAP user: $user.")
+        }
+        while (attrs.hasMore) {
+          attrs.next
+          env.put(Context.SECURITY_PRINCIPAL, searchResult.getNameInNamespace)
+          env.put(Context.SECURITY_CREDENTIALS, password)
           val ctx = new InitialDirContext(env)
           ctx.close()
-        } catch {
-          case e: NamingException =>
-            throw new AuthenticationException(
-              s"LDAP InitialDirContext failed, LDAP user: $user, " +
-                s"Error validating LDAP baseDn: $baseDn",
-              e)
         }
+      } catch {
+        case e: NamingException =>
+          throw new AuthenticationException(
+            s"LDAP InitialDirContext failed, LDAP user: $user, " +
+              s"Error validating LDAP baseDn: $baseDn",
+            e)
       }
+    } else {
+      throw new AuthenticationException(
+        s"LDAP InitialLdapContext search results are empty, LDAP user: $user.")
     }
 
+  }
+
+  private def getMail(userName: String, domain: String): String = {
+    if (!hasDomain(userName) && domain.nonEmpty) {
+      userName + "@" + domain
+    } else {
+      userName
+    }
   }
 
   private def hasDomain(userName: String): Boolean = ServiceUtils.indexOfDomainMatch(userName) > 0
