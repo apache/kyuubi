@@ -35,10 +35,3 @@ $--menus: (
     $menu: $--menus,
     // $button-padding-horizontal: ("default": 50px)
 );
-
-// 如果只是按需导入，则可以忽略以下内容。
-// 如果你想导入所有样式:
-// @use "element-plus/theme-chalk/src/index.scss" as *;
-
-// 您可以对其进行注释以隐藏调试信息
-// @debug $--colors;
