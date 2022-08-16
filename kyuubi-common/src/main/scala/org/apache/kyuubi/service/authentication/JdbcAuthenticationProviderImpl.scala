@@ -94,7 +94,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     }
   }
 
-  private def checkConfigs: Unit = {
+  private def checkConfigs(): Unit = {
     def configLog(config: String, value: String): String = s"JDBCAuthConfig: $config = '$value'"
 
     debug(configLog("Driver Class", dbDriver.orNull))
@@ -175,9 +175,9 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
    * @return
    */
   private def getAndPrepareStatement(
-      connection: Connection,
-      user: String,
-      password: String): PreparedStatement = {
+                                      connection: Connection,
+                                      user: String,
+                                      password: String): PreparedStatement = {
     // Replace placeholders by "?" and prepare the statement
     val stmt = connection.prepareStatement(getPreparedSql(querySql.get))
 
