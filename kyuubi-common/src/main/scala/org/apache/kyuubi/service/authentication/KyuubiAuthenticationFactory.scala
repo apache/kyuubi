@@ -20,7 +20,6 @@ package org.apache.kyuubi.service.authentication
 import java.io.IOException
 import javax.security.auth.login.LoginException
 import javax.security.sasl.Sasl
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authentication.util.KerberosName
@@ -28,11 +27,10 @@ import org.apache.hadoop.security.authorize.ProxyUsers
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TSaslServerTransport, TTransportException, TTransportFactory}
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
+import org.apache.kyuubi.service.authentication.AuthMethods.{AuthMethod, JDBC}
 import org.apache.kyuubi.service.authentication.AuthTypes._
 
 class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
@@ -140,6 +138,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     debug(authTypes)
     if (none) AuthMethods.NONE
     else if (authTypes.contains(LDAP)) AuthMethods.LDAP
+    else if (authTypes.contains(JDBC)) AuthMethods.JDBC
     else if (authTypes.contains(CUSTOM)) AuthMethods.CUSTOM
     else throw new IllegalArgumentException("No valid Password Auth detected")
   }
