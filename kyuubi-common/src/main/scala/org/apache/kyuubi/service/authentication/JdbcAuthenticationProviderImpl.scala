@@ -193,12 +193,6 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     stmt
   }
 
-  /**
-   * Gracefully close DB connection
-   *
-   * @param connection
-   * @param statement
-   */
   private def closeDbConnection(connection: Connection, statement: Statement): Unit = {
     // Close statement
     if (statement != null && !statement.isClosed) {
