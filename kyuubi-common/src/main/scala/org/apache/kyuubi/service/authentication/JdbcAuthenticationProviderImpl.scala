@@ -17,9 +17,11 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.sql.{Connection, DriverManager, PreparedStatement, Statement}
+import java.sql.{Connection, PreparedStatement, Statement}
+import java.util.Properties
 import javax.security.sasl.AuthenticationException
 
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.Logging
@@ -29,15 +31,19 @@ import org.apache.kyuubi.config.KyuubiConf._
 class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider
   with Logging {
 
-  private val dbDriver = conf.get(AUTHENTICATION_JDBC_DRIVER)
-  private val dbUrl = conf.get(AUTHENTICATION_JDBC_URL)
-  private val dbUserName = conf.get(AUTHENTICATION_JDBC_USERNAME)
-  private val dbPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD)
-  private val querySql = conf.get(AUTHENTICATION_JDBC_QUERY)
+  private val driverClass = conf.get(AUTHENTICATION_JDBC_DRIVER)
+  private val jdbcUrl = conf.get(AUTHENTICATION_JDBC_URL)
+  private val jdbcUsername = conf.get(AUTHENTICATION_JDBC_USERNAME)
+  private val jdbcUserPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD)
+  private val authQuerySql = conf.get(AUTHENTICATION_JDBC_QUERY)
 
   private val SQL_PLACEHOLDER_REGEX = """\$\{.+?}""".r
   private val USERNAME_SQL_PLACEHOLDER = "${username}"
   private val PASSWORD_SQL_PLACEHOLDER = "${password}"
+
+  checkJdbcConfigs()
+
+  private[kyuubi] val hikariDataSource = getHikariDataSource()
 
   /**
    * The authenticate method is called by the Kyuubi Server authentication layer
@@ -61,17 +67,13 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
         s" or contains blank space")
     }
 
-    checkConfigs
-
-    loadJdbcDriverClass
-
     var connection: Connection = null
     var queryStatement: PreparedStatement = null
 
     try {
-      connection = DriverManager.getConnection(dbUrl.get, dbUserName.orNull, dbPassword.orNull)
+      connection = hikariDataSource.getConnection
 
-      queryStatement = getAndPrepareStatement(connection, user, password)
+      queryStatement = getAndPrepareQueryStatement(connection, user, password)
 
       val resultSet = queryStatement.executeQuery()
 
@@ -94,33 +96,33 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     }
   }
 
-  private def checkConfigs(): Unit = {
+  private def checkJdbcConfigs(): Unit = {
     def configLog(config: String, value: String): String = s"JDBCAuthConfig: $config = '$value'"
 
-    debug(configLog("Driver Class", dbDriver.orNull))
-    debug(configLog("JDBC URL", dbUrl.orNull))
-    debug(configLog("Database username", dbUserName.orNull))
-    debug(configLog("Database password length", dbPassword.getOrElse("").length.toString))
-    debug(configLog("Query SQL", querySql.orNull))
+    debug(configLog("Driver Class", driverClass.orNull))
+    debug(configLog("JDBC URL", jdbcUrl.orNull))
+    debug(configLog("Database username", jdbcUsername.orNull))
+    debug(configLog("Database password length", jdbcUserPassword.getOrElse("").length.toString))
+    debug(configLog("Query SQL", authQuerySql.orNull))
 
     // Check if JDBC parameters valid
-    if (dbDriver.isEmpty) {
+    if (driverClass.isEmpty) {
       throw new IllegalArgumentException("JDBC driver class is not configured.")
     }
 
-    if (dbUrl.isEmpty) {
+    if (jdbcUrl.isEmpty) {
       throw new IllegalArgumentException("JDBC url is not configured")
     }
 
-    if (dbUserName.isEmpty || dbPassword.isEmpty) {
+    if (jdbcUsername.isEmpty || jdbcUserPassword.isEmpty) {
       throw new IllegalArgumentException("JDBC username or password is not configured")
     }
 
     // Check Query SQL
-    if (querySql.isEmpty) {
+    if (authQuerySql.isEmpty) {
       throw new IllegalArgumentException("Query SQL is not configured")
     }
-    val querySqlInLowerCase = querySql.get.trim.toLowerCase
+    val querySqlInLowerCase = authQuerySql.get.trim.toLowerCase
     if (!querySqlInLowerCase.startsWith("select")) { // allow select query sql only
       throw new IllegalArgumentException("Query SQL must start with \"SELECT\"");
     }
@@ -129,17 +131,6 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     }
     if (!querySqlInLowerCase.contains("${username}")) {
       warn("Query SQL does not contains \"${username}\" placeholder");
-    }
-  }
-
-  private def loadJdbcDriverClass: Unit = {
-    // Load Driver Class
-    try {
-      Class.forName(dbDriver.get)
-    } catch {
-      case e: ClassNotFoundException =>
-        error(s"JDBC Driver class not found: $dbDriver")
-        throw e;
     }
   }
 
@@ -174,15 +165,15 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
    * @param password
    * @return
    */
-  private def getAndPrepareStatement(
-                                      connection: Connection,
-                                      user: String,
-                                      password: String): PreparedStatement = {
+  private def getAndPrepareQueryStatement(
+      connection: Connection,
+      user: String,
+      password: String): PreparedStatement = {
     // Replace placeholders by "?" and prepare the statement
-    val stmt = connection.prepareStatement(getPreparedSql(querySql.get))
+    val stmt = connection.prepareStatement(getPreparedSql(authQuerySql.get))
 
     // Extract placeholder list and use its order to pass parameters
-    val placeholderList: List[String] = getPlaceholderList(querySql.get)
+    val placeholderList: List[String] = getPlaceholderList(authQuerySql.get)
     for (i <- placeholderList.indices) {
       val param = placeholderList(i) match {
         case USERNAME_SQL_PLACEHOLDER => user
@@ -228,5 +219,17 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
           error("Cannot close connection to auth database ", e)
       }
     }
+  }
+
+  private def getHikariDataSource(): HikariDataSource = {
+    val datasourceProperties = new Properties()
+    val hikariConfig = new HikariConfig(datasourceProperties)
+    hikariConfig.setDriverClassName(driverClass.orNull)
+    hikariConfig.setJdbcUrl(jdbcUrl.orNull)
+    hikariConfig.setUsername(jdbcUsername.orNull)
+    hikariConfig.setPassword(jdbcUserPassword.orNull)
+    hikariConfig.setPoolName("jdbc-auth-pool")
+
+    new HikariDataSource(hikariConfig)
   }
 }

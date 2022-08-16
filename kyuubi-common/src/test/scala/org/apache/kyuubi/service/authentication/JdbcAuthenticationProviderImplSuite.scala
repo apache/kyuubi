@@ -98,39 +98,33 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
     conf = genJdbcAuthConfigs
     conf.unset(AUTHENTICATION_JDBC_URL)
-    providerImpl = new JdbcAuthenticationProviderImpl(conf)
-    val e5 = intercept[IllegalArgumentException](providerImpl.authenticate(authUser, authPasswd))
+    val e5 = intercept[IllegalArgumentException](new JdbcAuthenticationProviderImpl(conf))
     assert(e5.getMessage.contains("JDBC url is not configured"))
 
     conf = genJdbcAuthConfigs
     conf.unset(AUTHENTICATION_JDBC_USERNAME)
-    providerImpl = new JdbcAuthenticationProviderImpl(conf)
-    val e6 = intercept[IllegalArgumentException](providerImpl.authenticate(authUser, authPasswd))
+    val e6 = intercept[IllegalArgumentException](new JdbcAuthenticationProviderImpl(conf))
     assert(e6.getMessage.contains("JDBC username or password is not configured"))
 
     conf = genJdbcAuthConfigs
     conf.unset(AUTHENTICATION_JDBC_PASSWORD)
-    providerImpl = new JdbcAuthenticationProviderImpl(conf)
-    val e7 = intercept[IllegalArgumentException](providerImpl.authenticate(authUser, authPasswd))
+    val e7 = intercept[IllegalArgumentException](new JdbcAuthenticationProviderImpl(conf))
     assert(e7.getMessage.contains("JDBC username or password is not configured"))
 
     conf = genJdbcAuthConfigs
     conf.unset(AUTHENTICATION_JDBC_QUERY)
-    providerImpl = new JdbcAuthenticationProviderImpl(conf)
-    val e8 = intercept[IllegalArgumentException](providerImpl.authenticate(authUser, authPasswd))
+    val e8 = intercept[IllegalArgumentException](new JdbcAuthenticationProviderImpl(conf))
     assert(e8.getMessage.contains("Query SQL is not configured"))
 
     conf.set(
       AUTHENTICATION_JDBC_QUERY,
       "INSERT INTO user_auth (username, password) " +
         " VALUES ('demouser','demopassword'); ")
-    providerImpl = new JdbcAuthenticationProviderImpl(conf)
-    val e9 = intercept[IllegalArgumentException](providerImpl.authenticate(authUser, authPasswd))
+    val e9 = intercept[IllegalArgumentException](new JdbcAuthenticationProviderImpl(conf))
     assert(e9.getMessage.contains("Query SQL must start with \"SELECT\""))
 
     conf.unset(AUTHENTICATION_JDBC_URL)
-    providerImpl = new JdbcAuthenticationProviderImpl(conf)
-    val e10 = intercept[IllegalArgumentException](providerImpl.authenticate(authUser, authPasswd))
+    val e10 = intercept[IllegalArgumentException](new JdbcAuthenticationProviderImpl(conf))
     assert(e10.getMessage.contains("JDBC url is not configured"))
   }
 
