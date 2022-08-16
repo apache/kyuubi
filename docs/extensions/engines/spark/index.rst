@@ -24,3 +24,4 @@ Extensions for Spark
     ../../../security/authorization/spark/index
     functions
     ../../../connector/spark/index
+    lineage
