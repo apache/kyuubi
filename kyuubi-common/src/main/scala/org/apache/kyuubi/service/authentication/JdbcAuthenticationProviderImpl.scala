@@ -99,8 +99,8 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     debug(configLog("Driver Class", dbDriver.orNull))
     debug(configLog("JDBC URL", dbUrl.orNull))
-    debug(configLog("Database Username", dbUserName.orNull))
-    debug(configLog("Database Password", dbPassword.orNull))
+    debug(configLog("Database username", dbUserName.orNull))
+    debug(configLog("Database password length", dbPassword.getOrElse("").length.toString))
     debug(configLog("Query SQL", querySql.orNull))
 
     // Check if JDBC parameters valid
