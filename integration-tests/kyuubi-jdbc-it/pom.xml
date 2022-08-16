@@ -26,6 +26,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-jdbc-it_2.12</artifactId>
+    <name>Kyuubi Test Jdbc IT</name>
+    <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
 
@@ -43,6 +45,12 @@
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-jdbc-engine_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
