@@ -57,10 +57,8 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     conn.prepareStatement("create schema " + dbUser).execute();
 
     conn.prepareStatement("CREATE TABLE user_auth (" +
-      "username CHAR(64) NOT NULL PRIMARY KEY, " +
-      "passwd_hash CHAR(64))").execute();
-
-    conn.prepareStatement("truncate TABLE user_auth ").execute();
+      "username VARCHAR(64) NOT NULL PRIMARY KEY, " +
+      "passwd VARCHAR(64))").execute();
 
     val insertStmt = conn.prepareStatement("INSERT INTO user_auth " +
       "(username, passwd) VALUES (?,?)")
