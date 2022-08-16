@@ -138,11 +138,11 @@ Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
 kyuubi.authentication|NONE|A comma separated list of client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>CUSTOM: User-defined authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul> Note that: For KERBEROS, it is SASL/GSSAPI mechanism, and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism. If only NOSASL is specified, the authentication will be NOSASL. For SASL authentication, KERBEROS and PLAIN auth type are supported at the same time, and only the first specified PLAIN auth type is valid.|seq|1.0.0
 kyuubi.authentication.custom.class|&lt;undefined&gt;|User-defined authentication implementation of org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider|string|1.3.0
+kyuubi.authentication.ldap.attrs|mail|Specifies part of the search as an attribute returned by LDAP. For example, mail,name.|seq|1.6.0
 kyuubi.authentication.ldap.base.dn|&lt;undefined&gt;|LDAP base DN.|string|1.0.0
+kyuubi.authentication.ldap.bindpw|&lt;undefined&gt;|The password for the bind user, to be used to search for the full name of the user being authenticated.|string|1.6.0
 kyuubi.authentication.ldap.domain|&lt;undefined&gt;|LDAP domain.|string|1.0.0
 kyuubi.authentication.ldap.guidKey|uid|LDAP attribute name whose values are unique in this LDAP server.For example:uid or cn.|string|1.2.0
-kyuubi.authentication.ldap.bindpw|&lt;undefined&gt;|The password for the bind user, to be used to search for the full name of the user being authenticated.|string|1.6.0
-kyuubi.authentication.ldap.attrs|mail|Specifies part of the search as an attribute returned by LDAP. For exampl, email,name.|string|1.6.0
 kyuubi.authentication.ldap.url|&lt;undefined&gt;|SPACE character separated LDAP connection URL(s).|string|1.0.0
 kyuubi.authentication.sasl.qop|auth|Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul>|string|1.0.0
 
