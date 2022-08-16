@@ -50,16 +50,16 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
     jdbcUrl = s"jdbc:derby:;databaseName=$authDb;create=true"
     conn = DriverManager.getConnection(
-      jdbcUrl
-        + ";user=" + dbUser
-        + ";password=" + dbPasswd,
+      s"$jdbcUrl;user=$dbUser;password=$dbPasswd",
       datasourceProperties)
 
-    conn.prepareStatement("CREATE SCHEMA " + dbUser).execute();
+    conn.prepareStatement(s"CREATE SCHEMA $dbUser").execute
 
-    conn.prepareStatement("CREATE TABLE user_auth (" +
-      "username VARCHAR(64) NOT NULL PRIMARY KEY, " +
-      "passwd VARCHAR(64))").execute();
+    conn.prepareStatement(
+      """CREATE TABLE user_auth (
+        |username VARCHAR(64) NOT NULL PRIMARY KEY,
+        |passwd VARCHAR(64))""".stripMargin
+    ).execute();
 
     val insertStmt = conn.prepareStatement("INSERT INTO user_auth " +
       "(username, passwd) VALUES (?,?)")
