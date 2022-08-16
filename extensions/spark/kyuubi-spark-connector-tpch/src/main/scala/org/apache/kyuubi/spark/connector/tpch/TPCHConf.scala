@@ -38,7 +38,7 @@ case class TPCHConf(spark: SparkSession, options: CaseInsensitiveStringMap) {
   lazy val useAnsiStringType: Boolean = confParser.booleanConf()
     .option(USE_ANSI_STRING_TYPE)
     .sessionConf(s"$TPCH_CONNECTOR_CONF_PREFIX.$USE_ANSI_STRING_TYPE")
-    .defaultValue(USE_ANSI_STRING_TYPE_DEFAULT)
+    .defaultStringValue(USE_ANSI_STRING_TYPE_DEFAULT)
     .parse()
 }
 
@@ -50,11 +50,11 @@ case class TPCHReadConf(
   private val confParser: SparkConfParser =
     SparkConfParser(options, spark.conf, table.properties)
 
-  lazy val maxPartitionBytes: Long = confParser.longConf()
+  lazy val maxPartitionBytes: Long = confParser.bytesConf()
     .option(MAX_PARTITION_BYTES_CONF)
     .sessionConf(s"$TPCH_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF")
     .tableProperty(s"$TPCH_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF")
-    .defaultValue(MAX_PARTITION_BYTES_DEFAULT)
+    .defaultStringValue(MAX_PARTITION_BYTES_DEFAULT)
     .parse()
 }
 
@@ -63,9 +63,9 @@ object TPCHConf {
 
   val TPCH_CONNECTOR_CONF_PREFIX = "spark.connector.tpch"
   val USE_ANSI_STRING_TYPE = "useAnsiStringType"
-  val USE_ANSI_STRING_TYPE_DEFAULT = false
+  val USE_ANSI_STRING_TYPE_DEFAULT = "false"
 
   val TPCH_CONNECTOR_READ_CONF_PREFIX = s"$TPCH_CONNECTOR_CONF_PREFIX.read"
   val MAX_PARTITION_BYTES_CONF = "maxPartitionBytes"
-  val MAX_PARTITION_BYTES_DEFAULT: Long = 128 * 1024 * 1024L
+  val MAX_PARTITION_BYTES_DEFAULT = "128m"
 }

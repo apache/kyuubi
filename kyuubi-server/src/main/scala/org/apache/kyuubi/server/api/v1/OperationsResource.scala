@@ -168,8 +168,9 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @Path("{operationHandle}/rowset")
   def getNextRowSet(
       @PathParam("operationHandle") operationHandleStr: String,
-      @QueryParam("maxrows") maxRows: Int,
-      @QueryParam("fetchorientation") fetchOrientation: String): ResultRowSet = {
+      @QueryParam("maxrows") @DefaultValue("100") maxRows: Int,
+      @QueryParam("fetchorientation") @DefaultValue("FETCH_NEXT")
+      fetchOrientation: String): ResultRowSet = {
     try {
       val rowSet = fe.be.fetchResults(
         OperationHandle(operationHandleStr),

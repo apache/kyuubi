@@ -75,7 +75,7 @@ To add TPC-H tables as a catalog, we can set the following configurations in ``$
    spark.sql.catalog.tpch.useAnsiStringType=false
 
    # (optional) Maximum bytes per task, consider reducing it if you want higher parallelism.
-   spark.sql.catalog.tpch.read.maxPartitionBytes=134217728
+   spark.sql.catalog.tpch.read.maxPartitionBytes=128m
 
 TPC-H Operations
 ----------------
