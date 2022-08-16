@@ -18,7 +18,6 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import static org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 import static org.apache.kyuubi.jdbc.hive.Utils.extractURLComponents;
 import static org.junit.Assert.assertEquals;
 
