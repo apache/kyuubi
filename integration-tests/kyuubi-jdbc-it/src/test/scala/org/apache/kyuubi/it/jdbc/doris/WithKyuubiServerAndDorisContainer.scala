@@ -19,7 +19,7 @@ package org.apache.kyuubi.it.jdbc.doris
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
 import org.apache.kyuubi.engine.jdbc.doris.WithDorisEngine
 
 trait WithKyuubiServerAndDorisContainer extends WithKyuubiServer with WithDorisEngine {
@@ -30,6 +30,10 @@ trait WithKyuubiServerAndDorisContainer extends WithKyuubiServer with WithDorisE
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(
+        ENGINE_JDBC_EXTRA_CLASSPATH,
+        getClass.getClassLoader.getResource(
+          "mysql/mysql-connector-java-8.0.30.jar").toURI.getPath)
   }
 
   override def beforeAll(): Unit = {
