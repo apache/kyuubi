@@ -17,16 +17,15 @@
 
 package org.apache.kyuubi.service.authentication
 
-import javax.naming.{Context, NamingException}
-import javax.naming.directory.{InitialDirContext, SearchControls, SearchResult}
-import javax.naming.ldap.InitialLdapContext
-import javax.security.sasl.AuthenticationException
-
 import org.apache.commons.lang3.StringUtils
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.ServiceUtils
+
+import javax.naming.directory.{InitialDirContext, SearchControls, SearchResult}
+import javax.naming.ldap.InitialLdapContext
+import javax.naming.{Context, NamingEnumeration, NamingException}
+import javax.security.sasl.AuthenticationException
 
 class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider {
 
@@ -59,15 +58,14 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     conf.get(AUTHENTICATION_LDAP_URL).foreach(env.put(Context.PROVIDER_URL, _))
 
     val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
-    val mail = getMail(user, domain.get)
+    val mail = if (!hasDomain(user) && domain.nonEmpty) (user + "@" + domain.get) else user
     val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
     val baseDn = conf.get(AUTHENTICATION_LDAP_BASEDN).get
-    val bindnPw = conf.get(AUTHENTICATION_LDAP_PASSWORD).get
+    val bindPw = conf.get(AUTHENTICATION_LDAP_PASSWORD).get
     val attrs = conf.get(AUTHENTICATION_LDAP_ATTRIBUTES).toArray
 
     env.put(Context.SECURITY_PRINCIPAL, guidKey)
-    env.put(Context.SECURITY_CREDENTIALS, bindnPw)
-    import javax.naming.NamingEnumeration
+    env.put(Context.SECURITY_CREDENTIALS, bindPw)
     var nameEnuResults: NamingEnumeration[SearchResult] = null
     try {
       val ctx = new InitialLdapContext(env, null)
@@ -90,7 +88,7 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
         if (!attrs.hasMore) {
           throw new AuthenticationException(
             s"LDAP attributes are empty, please check config " +
-              s"kyuubi.authentication.ldap.attrs, LDAP user: $user.")
+              s"AUTHENTICATION_LDAP_ATTRIBUTES.key, LDAP user: $user.")
         }
         while (attrs.hasMore) {
           attrs.next
@@ -111,14 +109,6 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
         s"LDAP InitialLdapContext search results are empty, LDAP user: $user.")
     }
 
-  }
-
-  private def getMail(userName: String, domain: String): String = {
-    if (!hasDomain(userName) && domain.nonEmpty) {
-      userName + "@" + domain
-    } else {
-      userName
-    }
   }
 
   private def hasDomain(userName: String): Boolean = ServiceUtils.indexOfDomainMatch(userName) > 0

@@ -27,7 +27,7 @@ trait WithLdapServer extends KyuubiFunSuite {
   protected val ldapUser = Utils.currentUser
   protected val ldapUserPasswd = "ldapPassword"
   protected val ldapGuidKey = "uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com"
-  protected val ldapBindnpw = "adminPassword"
+  protected val ldapBindpw = "adminPassword"
   protected val ldapBaseUserDn = "ou=users,dc=example,dc=com"
   protected val ldapDomain = "example"
   protected val ldapAttrs = Seq("mail")
@@ -36,7 +36,7 @@ trait WithLdapServer extends KyuubiFunSuite {
 
   override def beforeAll(): Unit = {
     val config = new InMemoryDirectoryServerConfig(ldapBaseDn)
-    config.addAdditionalBindCredentials(ldapGuidKey, ldapBindnpw)
+    config.addAdditionalBindCredentials(ldapGuidKey, ldapBindpw)
     ldapServer = new InMemoryDirectoryServer(config)
     ldapServer.startListening()
     addLdapUser(ldapServer, ldapBaseDn, ldapBaseUserDn, ldapDomain, ldapUser, ldapUserPasswd)

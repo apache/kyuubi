@@ -646,9 +646,9 @@ object KyuubiConf {
       .createWithDefault("uid")
 
   val AUTHENTICATION_LDAP_PASSWORD: OptionalConfigEntry[String] =
-    buildConf("kyuubi.authentication.ldap.bindnpw")
-      .doc("The password of the LDAP bind user " +
-        "is used to search for the full name of the authenticated user.")
+    buildConf("kyuubi.authentication.ldap.bindpw")
+      .doc("The password for the bind user," +
+        " to be used to search for the full name of the user being authenticated.")
       .version("1.6.0")
       .stringConf
       .createOptional

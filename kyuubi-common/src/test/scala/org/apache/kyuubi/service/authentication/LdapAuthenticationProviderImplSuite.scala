@@ -34,7 +34,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     conf.set(AUTHENTICATION_LDAP_URL, ldapUrl)
     conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
     conf.set(AUTHENTICATION_LDAP_GUIDKEY, ldapGuidKey)
-    conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindnpw)
+    conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
     conf.set(AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
     conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, ldapAttrs)
   }
@@ -76,7 +76,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     assert(e4.getMessage contains (ldapUser))
     assert(e4.getMessage startsWith "LDAP InitialLdapContext failed")
     assert(e4.getCause.isInstanceOf[javax.naming.AuthenticationException])
-    conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindnpw)
+    conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
 
     val providerImpl3 = new LdapAuthenticationProviderImpl(conf)
     val e5 = intercept[AuthenticationException](
