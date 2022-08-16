@@ -179,8 +179,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
         case USERNAME_SQL_PLACEHOLDER => user
         case PASSWORD_SQL_PLACEHOLDER => password
         case otherPlaceholder =>
-          error(s"Unrecognized Placeholder In Query SQL: $otherPlaceholder")
-          throw new IllegalStateException(
+          throw new IllegalArgumentException(
             s"Unrecognized Placeholder In Query SQL: $otherPlaceholder")
       }
 
