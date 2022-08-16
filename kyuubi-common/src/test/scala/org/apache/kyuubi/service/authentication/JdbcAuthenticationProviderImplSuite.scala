@@ -78,8 +78,9 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   }
 
   test("authenticate tests") {
-    var providerImpl = new JdbcAuthenticationProviderImpl(conf)
+    val unchangedConf = genJdbcAuthConfigs
 
+    val providerImpl = new JdbcAuthenticationProviderImpl(conf)
     providerImpl.authenticate(authUser, authPasswd)
 
     val e1 = intercept[AuthenticationException] {
@@ -97,22 +98,22 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     }
     assert(e4.isInstanceOf[AuthenticationException])
 
-    conf = genJdbcAuthConfigs
+    conf = unchangedConf.clone()
     conf.unset(AUTHENTICATION_JDBC_URL)
     val e5 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
     assert(e5.getMessage.contains("JDBC url is not configured"))
 
-    conf = genJdbcAuthConfigs
+    conf = unchangedConf.clone()
     conf.unset(AUTHENTICATION_JDBC_USERNAME)
     val e6 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
     assert(e6.getMessage.contains("JDBC username or password is not configured"))
 
-    conf = genJdbcAuthConfigs
+    conf = unchangedConf.clone()
     conf.unset(AUTHENTICATION_JDBC_PASSWORD)
     val e7 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
     assert(e7.getMessage.contains("JDBC username or password is not configured"))
 
-    conf = genJdbcAuthConfigs
+    conf = unchangedConf.clone()
     conf.unset(AUTHENTICATION_JDBC_QUERY)
     val e8 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
     assert(e8.getMessage.contains("Query SQL is not configured"))
