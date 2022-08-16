@@ -17,12 +17,11 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.nio.file.Path
 import java.sql.{Connection, DriverManager}
 import java.util.Properties
 import javax.security.sasl.AuthenticationException
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
@@ -36,19 +35,15 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
   protected var conf = new KyuubiConf()
   var conn: Connection = _
-  var authDb: Path = _
+  var authDbName: String = "auth_db"
 
   override def beforeAll(): Unit = {
-    super.beforeAll()
-
+    // init db
     val datasourceProperties = new Properties()
     datasourceProperties.put("user", dbUser)
     datasourceProperties.put("password", dbPasswd)
 
-    authDb = Utils.createTempDir(namePrefix = getClass.getSimpleName)
-    authDb.toFile.delete()
-
-    jdbcUrl = s"jdbc:derby:;databaseName=$authDb;create=true"
+    jdbcUrl = s"jdbc:derby:memory:$authDbName;create=true"
     conn = DriverManager.getConnection(
       s"$jdbcUrl;user=$dbUser;password=$dbPasswd",
       datasourceProperties)
@@ -58,8 +53,7 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     conn.prepareStatement(
       """CREATE TABLE user_auth (
         |username VARCHAR(64) NOT NULL PRIMARY KEY,
-        |passwd VARCHAR(64))""".stripMargin
-    ).execute();
+        |passwd VARCHAR(64))""".stripMargin).execute();
 
     val insertStmt = conn.prepareStatement("INSERT INTO user_auth " +
       "(username, passwd) VALUES (?,?)")
@@ -68,14 +62,16 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     insertStmt.execute();
 
     conf = genJdbcAuthConfigs
+
+    super.beforeAll()
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
 
-    // shutdown derby database
+    // cleanup db
     try {
-      DriverManager.getConnection(s"jdbc:derby:;databaseName=$authDb;shutdown=true")
+      DriverManager.getConnection(s"jdbc:derby:memory:$authDbName;shutdown=true")
     } catch {
       case e: Throwable =>
     }
