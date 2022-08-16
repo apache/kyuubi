@@ -81,19 +81,6 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     }
   }
 
-  def genJdbcAuthConfigs: KyuubiConf = {
-    conf = new KyuubiConf()
-    conf.set(AUTHENTICATION_JDBC_DRIVER, "org.apache.derby.jdbc.AutoloadedDriver")
-    conf.set(AUTHENTICATION_JDBC_URL, jdbcUrl)
-    conf.set(AUTHENTICATION_JDBC_USERNAME, dbUser)
-    conf.set(AUTHENTICATION_JDBC_PASSWORD, dbPasswd)
-    conf.set(
-      AUTHENTICATION_JDBC_QUERY,
-      "SELECT 1 FROM user_auth " +
-        " WHERE username=${username} and passwd=${password}")
-    conf
-  }
-
   test("authenticate tests") {
     var providerImpl = new JdbcAuthenticationProviderImpl(conf)
 
@@ -133,8 +120,10 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     val e8 = intercept[IllegalArgumentException](providerImpl.authenticate(authUser, authPasswd))
     assert(e8.getMessage.contains("Query SQL is not configured"))
 
-    conf.set(AUTHENTICATION_JDBC_QUERY, "INSERT INTO user_auth (username, password) " +
-      " VALUES ('demouser','demopassword'); ")
+    conf.set(
+      AUTHENTICATION_JDBC_QUERY,
+      "INSERT INTO user_auth (username, password) " +
+        " VALUES ('demouser','demopassword'); ")
     providerImpl = new JdbcAuthenticationProviderImpl(conf)
     val e9 = intercept[IllegalArgumentException](providerImpl.authenticate(authUser, authPasswd))
     assert(e9.getMessage.contains("Query SQL must start with \"SELECT\""))
@@ -143,5 +132,18 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     providerImpl = new JdbcAuthenticationProviderImpl(conf)
     val e10 = intercept[IllegalArgumentException](providerImpl.authenticate(authUser, authPasswd))
     assert(e10.getMessage.contains("JDBC url is not configured"))
+  }
+
+  private def genJdbcAuthConfigs: KyuubiConf = {
+    conf = new KyuubiConf()
+    conf.set(AUTHENTICATION_JDBC_DRIVER, "org.apache.derby.jdbc.AutoloadedDriver")
+    conf.set(AUTHENTICATION_JDBC_URL, jdbcUrl)
+    conf.set(AUTHENTICATION_JDBC_USERNAME, dbUser)
+    conf.set(AUTHENTICATION_JDBC_PASSWORD, dbPasswd)
+    conf.set(
+      AUTHENTICATION_JDBC_QUERY,
+      "SELECT 1 FROM user_auth " +
+        " WHERE username=${username} and passwd=${password}")
+    conf
   }
 }

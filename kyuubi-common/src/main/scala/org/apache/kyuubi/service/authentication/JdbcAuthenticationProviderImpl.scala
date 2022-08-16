@@ -63,14 +63,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     checkConfigs
 
-    // Load Driver Class
-    try {
-      Class.forName(dbDriver.get)
-    } catch {
-      case e: ClassNotFoundException =>
-        error(s"Driver class not found: $dbDriver")
-        throw e;
-    }
+    loadJdbcDriverClass
 
     var connection: Connection = null
     var queryStatement: PreparedStatement = null
@@ -127,8 +120,26 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     if (querySql.isEmpty) {
       throw new IllegalArgumentException("Query SQL is not configured")
     }
-    if (!querySql.get.trim.toLowerCase.startsWith("select")) { // only allow select query sql
+    val querySqlInLowerCase = querySql.get.trim.toLowerCase
+    if (!querySqlInLowerCase.startsWith("select")) { // allow select query sql only
       throw new IllegalArgumentException("Query SQL must start with \"SELECT\"");
+    }
+    if (!querySqlInLowerCase.contains("where")) {
+      warn("Query SQL does not contains \"WHERE\" keyword");
+    }
+    if (!querySqlInLowerCase.contains("${username}")) {
+      warn("Query SQL does not contains \"${username}\" placeholder");
+    }
+  }
+
+  private def loadJdbcDriverClass: Unit = {
+    // Load Driver Class
+    try {
+      Class.forName(dbDriver.get)
+    } catch {
+      case e: ClassNotFoundException =>
+        error(s"JDBC Driver class not found: $dbDriver")
+        throw e;
     }
   }
 
@@ -164,9 +175,9 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
    * @return
    */
   private def getAndPrepareStatement(
-                                      connection: Connection,
-                                      user: String,
-                                      password: String): PreparedStatement = {
+      connection: Connection,
+      user: String,
+      password: String): PreparedStatement = {
     // Replace placeholders by "?" and prepare the statement
     val stmt = connection.prepareStatement(getPreparedSql(querySql.get))
 
