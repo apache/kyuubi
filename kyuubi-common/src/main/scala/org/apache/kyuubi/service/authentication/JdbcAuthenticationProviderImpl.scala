@@ -111,19 +111,24 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     debug(configLog("Query SQL", querySql.orNull))
 
     // Check if JDBC parameters valid
-    if (dbDriver.isEmpty || dbUrl.isEmpty || dbUserName.isEmpty || dbPassword.isEmpty) {
-      error("User auth Database has not been configured!")
-      throw new IllegalArgumentException("User auth Database has not been configured!")
+    if (dbDriver.isEmpty) {
+      throw new IllegalArgumentException("JDBC driver class is not configured.")
+    }
+
+    if (dbUrl.isEmpty) {
+      throw new IllegalArgumentException("JDBC url is not configured")
+    }
+
+    if (dbUserName.isEmpty || dbPassword.isEmpty) {
+      throw new IllegalArgumentException("JDBC username or password is not configured")
     }
 
     // Check Query SQL
     if (querySql.isEmpty) {
-      error("Query SQL not configured!")
-      throw new IllegalArgumentException("Query SQL not configured!")
+      throw new IllegalArgumentException("Query SQL is not configured")
     }
     if (!querySql.get.trim.toLowerCase.startsWith("select")) { // only allow select query sql
-      error("Query SQL must start with \"select\"!")
-      throw new IllegalArgumentException("Query SQL must start with \"select\"!");
+      throw new IllegalArgumentException("Query SQL must start with \"SELECT\"");
     }
   }
 
@@ -159,9 +164,9 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
    * @return
    */
   private def getAndPrepareStatement(
-      connection: Connection,
-      user: String,
-      password: String): PreparedStatement = {
+                                      connection: Connection,
+                                      user: String,
+                                      password: String): PreparedStatement = {
     // Replace placeholders by "?" and prepare the statement
     val stmt = connection.prepareStatement(getPreparedSql(querySql.get))
 
