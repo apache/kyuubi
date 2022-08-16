@@ -28,6 +28,9 @@ trait WithLdapServer extends KyuubiFunSuite {
   protected val ldapUserPasswd = "ldapPassword"
   protected val ldapGuidKey = "uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com"
   protected val ldapBindnpw = "adminPassword"
+  protected val ldapBaseUserDn = "ou=users,dc=example,dc=com"
+  protected val ldapDomain = "example"
+  protected val ldapAttrs = Seq("mail")
 
   protected def ldapUrl = s"ldap://localhost:${ldapServer.getListenPort}"
 
@@ -36,11 +39,46 @@ trait WithLdapServer extends KyuubiFunSuite {
     config.addAdditionalBindCredentials(ldapGuidKey, ldapBindnpw)
     ldapServer = new InMemoryDirectoryServer(config)
     ldapServer.startListening()
+    addLdapUser(ldapServer, ldapBaseDn, ldapBaseUserDn, ldapDomain, ldapUser, ldapUserPasswd)
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
     ldapServer.close()
     super.afterAll()
+  }
+
+  def addLdapUser(
+      ldapServer: InMemoryDirectoryServer,
+      ldapBaseDn: String,
+      ldapBaseUserDn: String,
+      ldapDomain: String,
+      ldapUser: String,
+      ldapUserPasswd: String): Unit = {
+    ldapServer.add(
+      s"dn: $ldapBaseDn",
+      "objectClass: domain",
+      "objectClass: top",
+      "dc: example")
+    ldapServer.add(
+      s"dn: $ldapBaseUserDn",
+      "objectClass: top",
+      "objectClass: organizationalUnit",
+      "ou: users")
+    ldapServer.add(
+      s"dn: cn=$ldapUser,$ldapBaseUserDn",
+      s"cn: $ldapUser",
+      s"sn: $ldapUser",
+      s"userPassword: $ldapUserPasswd",
+      "objectClass: person")
+    ldapServer.add(
+      s"dn: uid=$ldapUser,cn=$ldapUser,$ldapBaseUserDn",
+      s"uid: $ldapUser",
+      s"mail: $ldapUser@$ldapDomain",
+      s"cn: $ldapUser",
+      s"sn: $ldapUser",
+      s"userPassword: $ldapUserPasswd",
+      "objectClass: person",
+      "objectClass: inetOrgPerson")
   }
 }

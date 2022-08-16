@@ -20,68 +20,28 @@ package org.apache.kyuubi.service.authentication
 import javax.naming.CommunicationException
 import javax.security.sasl.AuthenticationException
 
-import com.unboundid.ldap.listener.InMemoryDirectoryServer
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
 class LdapAuthenticationProviderImplSuite extends WithLdapServer {
   override protected val ldapUser: String = "kentyao"
   override protected val ldapUserPasswd: String = "kentyao"
-  override protected val ldapBaseDn = "dc=example,dc=com"
-  protected val ldapBaseUserDn = "ou=users,dc=example,dc=com"
-  protected val ldapDomain = "example"
 
   private val conf = new KyuubiConf()
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    addLdapUser(ldapServer, ldapBaseDn, ldapBaseUserDn, ldapDomain, ldapUser, ldapUserPasswd)
     conf.set(AUTHENTICATION_LDAP_URL, ldapUrl)
     conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
     conf.set(AUTHENTICATION_LDAP_GUIDKEY, ldapGuidKey)
     conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindnpw)
     conf.set(AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
-    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("mail"))
+    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, ldapAttrs)
   }
 
   override def afterAll(): Unit = {
     ldapServer.close()
     super.afterAll()
-  }
-
-  def addLdapUser(
-      ldapServer: InMemoryDirectoryServer,
-      ldapBaseDn: String,
-      ldapBaseUserDn: String,
-      ldapDomain: String,
-      ldapUser: String,
-      ldapUserPasswd: String): Unit = {
-    ldapServer.add(
-      s"dn: $ldapBaseDn",
-      "objectClass: domain",
-      "objectClass: top",
-      "dc: example")
-    ldapServer.add(
-      s"dn: $ldapBaseUserDn",
-      "objectClass: top",
-      "objectClass: organizationalUnit",
-      "ou: users")
-    ldapServer.add(
-      s"dn: cn=$ldapUser,$ldapBaseUserDn",
-      s"cn: $ldapUser",
-      s"sn: $ldapUser",
-      s"userPassword: $ldapUserPasswd",
-      "objectClass: person")
-    ldapServer.add(
-      s"dn: uid=$ldapUser,cn=$ldapUser,$ldapBaseUserDn",
-      s"uid: $ldapUser",
-      s"mail: $ldapUser@$ldapDomain",
-      s"cn: $ldapUser",
-      s"sn: $ldapUser",
-      s"userPassword: $ldapUserPasswd",
-      "objectClass: person",
-      "objectClass: inetOrgPerson")
   }
 
   test("ldap server is started") {

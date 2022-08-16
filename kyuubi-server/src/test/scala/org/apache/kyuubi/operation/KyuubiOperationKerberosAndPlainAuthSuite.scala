@@ -67,6 +67,10 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
       .set(
         KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_GUIDKEY, ldapGuidKey)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_PASSWORD, ldapBindnpw)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_ATTRIBUTES, ldapAttrs)
   }
 
   test("test with KERBEROS TGT cache authentication") {
