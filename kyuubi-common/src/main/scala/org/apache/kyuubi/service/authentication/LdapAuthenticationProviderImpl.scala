@@ -17,15 +17,16 @@
 
 package org.apache.kyuubi.service.authentication
 
+import javax.naming.{Context, NamingEnumeration, NamingException}
+import javax.naming.directory.{InitialDirContext, SearchControls, SearchResult}
+import javax.naming.ldap.InitialLdapContext
+import javax.security.sasl.AuthenticationException
+
 import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.ServiceUtils
-
-import javax.naming.directory.{InitialDirContext, SearchControls, SearchResult}
-import javax.naming.ldap.InitialLdapContext
-import javax.naming.{Context, NamingEnumeration, NamingException}
-import javax.security.sasl.AuthenticationException
 
 class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider {
 
