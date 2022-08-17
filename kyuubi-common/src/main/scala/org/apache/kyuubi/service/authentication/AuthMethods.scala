@@ -19,5 +19,5 @@ package org.apache.kyuubi.service.authentication
 
 object AuthMethods extends Enumeration {
   type AuthMethod = Value
-  val NONE, LDAP, CUSTOM = Value
+  val NONE, LDAP, JDBC, CUSTOM = Value
 }

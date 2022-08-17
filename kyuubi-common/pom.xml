@@ -115,6 +115,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-minikdc</artifactId>
             <scope>test</scope>
@@ -135,6 +140,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>failureaccess</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
