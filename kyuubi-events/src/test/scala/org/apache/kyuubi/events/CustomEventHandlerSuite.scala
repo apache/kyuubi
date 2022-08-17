@@ -19,7 +19,7 @@ package org.apache.kyuubi.events
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
-import org.apache.kyuubi.events.handler.EventHandlerLoader
+import org.apache.kyuubi.events.handler.{CustomEventHandlerProvider, EventHandler, EventHandlerLoader}
 
 class CustomEventHandlerSuite extends KyuubiFunSuite {
 
@@ -30,4 +30,26 @@ class CustomEventHandlerSuite extends KyuubiFunSuite {
     assert(providers.head.getClass === classOf[Fake1EventHandler])
     assert(providers(1).getClass === classOf[Fake2EventHandler])
   }
+}
+
+class Fake1EventHandlerProvider extends CustomEventHandlerProvider {
+  override def create(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
+    new Fake1EventHandler(kyuubiConf)
+  }
+}
+
+class Fake1EventHandler(kyuubiConf: KyuubiConf) extends EventHandler[KyuubiEvent] {
+
+  override def apply(kyuubiEvent: KyuubiEvent): Unit = {}
+}
+
+class Fake2EventHandlerProvider extends CustomEventHandlerProvider {
+  override def create(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
+    new Fake2EventHandler(kyuubiConf)
+  }
+}
+
+class Fake2EventHandler(kyuubiConf: KyuubiConf) extends EventHandler[KyuubiEvent] {
+
+  override def apply(kyuubiEvent: KyuubiEvent): Unit = {}
 }

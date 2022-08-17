@@ -57,16 +57,16 @@ trait EventHandlerRegister extends Logging {
 
   private def loadEventHandler(
       eventLoggerType: EventLoggerType,
-      kyuubiConf: KyuubiConf): List[EventHandler[KyuubiEvent]] = {
+      kyuubiConf: KyuubiConf): Seq[EventHandler[KyuubiEvent]] = {
     eventLoggerType match {
       case EventLoggerType.SPARK =>
-        List[EventHandler[KyuubiEvent]](createSparkEventHandler(kyuubiConf))
+        createSparkEventHandler(kyuubiConf) :: Nil
 
       case EventLoggerType.JSON =>
-        List[EventHandler[KyuubiEvent]](createJsonEventHandler(kyuubiConf))
+        createJsonEventHandler(kyuubiConf) :: Nil
 
       case EventLoggerType.JDBC =>
-        List[EventHandler[KyuubiEvent]](createJdbcEventHandler(kyuubiConf))
+        createJdbcEventHandler(kyuubiConf) :: Nil
 
       case EventLoggerType.CUSTOM =>
         EventHandlerLoader.loadCustom(kyuubiConf)
