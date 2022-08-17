@@ -25,16 +25,14 @@ import scala.collection.convert.ImplicitConversions.`list asScalaBuffer`
 
 import io.trino.tpch.{TpchColumnType, TpchEntity, TpchTable}
 import io.trino.tpch.TpchColumnType.Base._
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.{SupportsRead, Table => SparkTable, TableCapability}
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class TPCHTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
+class TPCHTable(tbl: String, scale: Double, tpchConf: TPCHConf)
   extends SparkTable with SupportsRead {
-
-  // When true, use CHAR VARCHAR; otherwise use STRING
-  val useAnsiStringType: Boolean = options.getBoolean("useAnsiStringType", false)
 
   val tpchTable: TpchTable[_] = TpchTable.getTable(tbl)
 
@@ -53,7 +51,7 @@ class TPCHTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
     Set(TableCapability.BATCH_READ).asJava
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
-    new TPCHBatchScan(tpchTable, scale, schema)
+    new TPCHBatchScan(tpchTable, scale, schema, TPCHReadConf(SparkSession.active, this, options))
   }
 
   def toSparkDataType(tpchType: TpchColumnType): DataType = {
@@ -63,7 +61,7 @@ class TPCHTable(tbl: String, scale: Double, options: CaseInsensitiveStringMap)
       case (DOUBLE, None, None) => DoubleType
       case (DATE, None, None) => DateType
       case (VARCHAR, Some(precision), None) =>
-        if (useAnsiStringType) VarcharType(precision.toInt) else StringType
+        if (tpchConf.useAnsiStringType) VarcharType(precision.toInt) else StringType
       case (t, po, so) =>
         throw new IllegalArgumentException(s"Unsupported TPC-H type: ($t, $po, $so)")
     }

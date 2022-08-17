@@ -192,6 +192,8 @@ trait ProcBuilder {
     file
   }
 
+  def validateConf: Unit = {}
+
   final def start: Process = synchronized {
     process = processBuilder.start()
     processLaunched = true

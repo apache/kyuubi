@@ -38,7 +38,7 @@ case class TPCDSConf(spark: SparkSession, options: CaseInsensitiveStringMap) {
   lazy val useAnsiStringType: Boolean = confParser.booleanConf()
     .option(USE_ANSI_STRING_TYPE)
     .sessionConf(s"$TPCDS_CONNECTOR_CONF_PREFIX.$USE_ANSI_STRING_TYPE")
-    .defaultValue(USE_ANSI_STRING_TYPE_DEFAULT)
+    .defaultStringValue(USE_ANSI_STRING_TYPE_DEFAULT)
     .parse()
 
   // 09-26-2017 v2.6.0
@@ -50,7 +50,7 @@ case class TPCDSConf(spark: SparkSession, options: CaseInsensitiveStringMap) {
   lazy val useTableSchema_2_6: Boolean = confParser.booleanConf()
     .option(USE_TABLE_SCHEMA_2_6)
     .sessionConf(s"$TPCDS_CONNECTOR_CONF_PREFIX.$USE_TABLE_SCHEMA_2_6")
-    .defaultValue(USE_TABLE_SCHEMA_2_6_DEFAULT)
+    .defaultStringValue(USE_TABLE_SCHEMA_2_6_DEFAULT)
     .parse()
 }
 
@@ -62,11 +62,11 @@ case class TPCDSReadConf(
   private val confParser: SparkConfParser =
     SparkConfParser(options, spark.conf, table.properties)
 
-  lazy val maxPartitionBytes: Long = confParser.longConf()
+  lazy val maxPartitionBytes: Long = confParser.bytesConf()
     .option(MAX_PARTITION_BYTES_CONF)
     .sessionConf(s"$TPCDS_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF")
     .tableProperty(s"$TPCDS_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF")
-    .defaultValue(MAX_PARTITION_BYTES_DEFAULT)
+    .defaultStringValue(MAX_PARTITION_BYTES_DEFAULT)
     .parse()
 }
 
@@ -75,11 +75,11 @@ object TPCDSConf {
 
   val TPCDS_CONNECTOR_CONF_PREFIX = "spark.connector.tpcds"
   val USE_ANSI_STRING_TYPE = "useAnsiStringType"
-  val USE_ANSI_STRING_TYPE_DEFAULT = false
+  val USE_ANSI_STRING_TYPE_DEFAULT = "false"
   val USE_TABLE_SCHEMA_2_6 = "useTableSchema_2_6"
-  val USE_TABLE_SCHEMA_2_6_DEFAULT = true
+  val USE_TABLE_SCHEMA_2_6_DEFAULT = "true"
 
   val TPCDS_CONNECTOR_READ_CONF_PREFIX = s"$TPCDS_CONNECTOR_CONF_PREFIX.read"
   val MAX_PARTITION_BYTES_CONF = "maxPartitionBytes"
-  val MAX_PARTITION_BYTES_DEFAULT: Long = 128 * 1024 * 1024L
+  val MAX_PARTITION_BYTES_DEFAULT = "128m"
 }

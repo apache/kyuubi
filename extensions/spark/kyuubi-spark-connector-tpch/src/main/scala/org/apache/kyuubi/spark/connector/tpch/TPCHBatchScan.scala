@@ -42,20 +42,19 @@ case class TPCHTableChuck(table: String, scale: Double, parallelism: Int, index:
 class TPCHBatchScan(
     @transient table: TpchTable[_],
     scale: Double,
-    schema: StructType) extends ScanBuilder
+    schema: StructType,
+    readConf: TPCHReadConf) extends ScanBuilder
   with SupportsReportStatistics with Batch with Serializable {
 
   private val _sizeInBytes: Long = TPCHStatisticsUtils.sizeInBytes(table, scale)
 
   private val _numRows: Long = TPCHStatisticsUtils.numRows(table, scale)
 
-  private val rowCountPerTask: Int = 1000000
-
   private val parallelism: Int =
     if (table.equals(TpchTable.NATION) || table.equals(TpchTable.REGION)) 1
     else math.max(
       SparkSession.active.sparkContext.defaultParallelism,
-      (_numRows / rowCountPerTask.toDouble).ceil.toInt)
+      (_numRows / readConf.maxPartitionBytes).ceil.toInt)
 
   override def build: Scan = this
 

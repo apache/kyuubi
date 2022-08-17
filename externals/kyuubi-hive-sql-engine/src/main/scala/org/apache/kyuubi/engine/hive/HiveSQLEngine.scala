@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.hive
 
-import java.net.InetAddress
 import java.security.PrivilegedExceptionAction
 
 import scala.util.control.NonFatal
@@ -27,15 +26,14 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
 import org.apache.kyuubi.engine.hive.HiveSQLEngine.currentEngine
-import org.apache.kyuubi.engine.hive.events.HiveEngineEvent
-import org.apache.kyuubi.engine.hive.events.handler.HiveJsonLoggingEventHandler
-import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
+import org.apache.kyuubi.engine.hive.events.{HiveEngineEvent, HiveEventHandlerRegister}
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
-import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
+import org.apache.kyuubi.util.SignalRegister
 
 class HiveSQLEngine extends Serverable("HiveSQLEngine") {
   override val backendService: AbstractBackendService = new HiveBackendService(this)
@@ -115,20 +113,7 @@ object HiveSQLEngine extends Logging {
   }
 
   private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
-    val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-    conf.get(ENGINE_EVENT_LOGGERS).map(EventLoggerType.withName).foreach {
-      case EventLoggerType.JSON =>
-        val hostName = InetAddress.getLocalHost.getCanonicalHostName
-        val handler = HiveJsonLoggingEventHandler(
-          s"Hive-$hostName",
-          ENGINE_EVENT_JSON_LOG_PATH,
-          hadoopConf,
-          conf)
-        EventBus.register[KyuubiEvent](handler)
-      case logger =>
-        throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
-
-    }
+    HiveEventHandlerRegister.registerEngineEventLoggers(conf)
   }
 
   def main(args: Array[String]): Unit = {

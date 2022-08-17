@@ -21,6 +21,7 @@ import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{SPARK_VERSION, SparkContext}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
@@ -83,6 +84,20 @@ private[authz] object AuthZUtils {
     getFieldVal[Option[CatalogTable]](plan, "catalogTable")
   }
 
+  def hasResolvedDatasourceV2Table(plan: LogicalPlan): Boolean = {
+    plan.nodeName == "DataSourceV2Relation" && plan.resolved
+  }
+
+  def getDatasourceV2Identifier(plan: LogicalPlan): Option[TableIdentifier] = {
+    // avoid importing DataSourceV2Relation for Spark version compatibility
+    val identifier = getFieldVal[Option[AnyRef]](plan, "identifier")
+    identifier.map { id =>
+      val namespaces = invoke(id, "namespace").asInstanceOf[Array[String]]
+      val table = invoke(id, "name").asInstanceOf[String]
+      TableIdentifier(table, Some(quote(namespaces)))
+    }
+  }
+
   def isSparkVersionAtMost(targetVersionString: String): Boolean = {
     SemanticVersion(SPARK_VERSION).isVersionAtMost(targetVersionString)
   }
@@ -93,5 +108,17 @@ private[authz] object AuthZUtils {
 
   def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
     SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
+  }
+
+  def quoteIfNeeded(part: String): String = {
+    if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
+      part
+    } else {
+      s"`${part.replace("`", "``")}`"
+    }
+  }
+
+  def quote(parts: Seq[String]): String = {
+    parts.map(quoteIfNeeded).mkString(".")
   }
 }

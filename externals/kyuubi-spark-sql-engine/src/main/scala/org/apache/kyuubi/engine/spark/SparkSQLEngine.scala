@@ -35,9 +35,8 @@ import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
-import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore}
-import org.apache.kyuubi.engine.spark.events.handler.{SparkHistoryLoggingEventHandler, SparkJsonLoggingEventHandler}
-import org.apache.kyuubi.events.{EventBus, EventLoggerType, KyuubiEvent}
+import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
@@ -235,27 +234,9 @@ object SparkSQLEngine extends Logging {
     }
 
     def initLoggerEventHandler(conf: KyuubiConf): Unit = {
-      conf.get(ENGINE_EVENT_LOGGERS)
-        .map(EventLoggerType.withName)
-        .foreach {
-          case EventLoggerType.SPARK =>
-            EventBus.register[KyuubiEvent](new SparkHistoryLoggingEventHandler(spark.sparkContext))
-          case EventLoggerType.JSON =>
-            val handler = SparkJsonLoggingEventHandler(
-              spark.sparkContext.applicationAttemptId
-                .map(id => s"${spark.sparkContext.applicationId}_$id")
-                .getOrElse(spark.sparkContext.applicationId),
-              ENGINE_EVENT_JSON_LOG_PATH,
-              spark.sparkContext.hadoopConfiguration,
-              conf)
-
-            // register JsonLogger as a event handler for default event bus
-            EventBus.register[KyuubiEvent](handler)
-          case _ =>
-        }
-
+      val sparkEventRegister = new SparkEventHandlerRegister(spark)
+      sparkEventRegister.registerEngineEventLoggers(conf)
     }
-
   }
 
   def main(args: Array[String]): Unit = {

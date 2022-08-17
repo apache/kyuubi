@@ -1944,4 +1944,26 @@ object KyuubiConf {
         "Use kyuubi.ha.zookeeper.auth.type and kyuubi.ha.zookeeper.engine.auth.type instead"))
     Map(configs.map { cfg => cfg.key -> cfg }: _*)
   }
+
+  val ENGINE_JDBC_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.memory")
+      .doc("The heap memory for the jdbc query engine")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_JDBC_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.java.options")
+      .doc("The extra java options for the jdbc query engine")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.extra.classpath")
+      .doc("The extra classpath for the jdbc query engine, for configuring location" +
+        " of jdbc driver, etc")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 }

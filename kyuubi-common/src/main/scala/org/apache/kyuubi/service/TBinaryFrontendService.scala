@@ -46,7 +46,7 @@ abstract class TBinaryFrontendService(name: String)
     conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
   final override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
 
-  private var server: Option[TServer] = None
+  protected var server: Option[TServer] = None
 
   // Removed OOM hook since Kyuubi #1800 to respect the hive server2 #2383
 

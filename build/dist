@@ -217,6 +217,7 @@ mkdir -p "$DISTDIR/externals/engines/flink"
 mkdir -p "$DISTDIR/externals/engines/spark"
 mkdir -p "$DISTDIR/externals/engines/trino"
 mkdir -p "$DISTDIR/externals/engines/hive"
+mkdir -p "$DISTDIR/externals/engines/jdbc"
 mkdir -p "$DISTDIR/beeline-jars"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
@@ -255,6 +256,10 @@ cp -r "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/scala-$SCALA_VERSION/ja
 
 # Copy hive engines
 cp "$KYUUBI_HOME/externals/kyuubi-hive-sql-engine/target/kyuubi-hive-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/hive"
+
+# Copy jdbc engines
+cp "$KYUUBI_HOME/externals/kyuubi-jdbc-engine/target/kyuubi-jdbc-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/jdbc"
+cp -r "$KYUUBI_HOME/externals/kyuubi-jdbc-engine/target/scala-$SCALA_VERSION/jars/" "$DISTDIR/externals/engines/jdbc"
 
 # Copy kyuubi tools
 if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" ]]; then

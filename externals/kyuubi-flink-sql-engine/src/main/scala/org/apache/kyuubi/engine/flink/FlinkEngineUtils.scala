@@ -39,17 +39,28 @@ object FlinkEngineUtils extends Logging {
   val MODE_EMBEDDED = "embedded"
   val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options);
 
+  val SUPPORTED_FLINK_VERSIONS: Array[SemanticVersion] =
+    Array("1.14", "1.15").map(SemanticVersion.apply)
+
   def checkFlinkVersion(): Unit = {
     val flinkVersion = EnvironmentInformation.getVersion
-    SemanticVersion(flinkVersion) match {
-      case SemanticVersion(1, 14 | 15) =>
-        logger.info(s"The current Flink version is $flinkVersion")
-      case _ =>
-        throw new UnsupportedOperationException(
-          s"The current Flink version is $flinkVersion, " +
-            s"Only Flink 1.14.x and 1.15 are supported, not supported in other versions")
+    if (SUPPORTED_FLINK_VERSIONS.contains(SemanticVersion(flinkVersion))) {
+      info(s"The current Flink version is $flinkVersion")
+    } else {
+      throw new UnsupportedOperationException(
+        s"You are using unsupported Flink version $flinkVersion, " +
+          s"only Flink ${SUPPORTED_FLINK_VERSIONS.mkString(", ")} are supported now.")
     }
   }
+
+  def isFlinkVersionAtMost(targetVersionString: String): Boolean =
+    SemanticVersion(EnvironmentInformation.getVersion).isVersionAtMost(targetVersionString)
+
+  def isFlinkVersionAtLeast(targetVersionString: String): Boolean =
+    SemanticVersion(EnvironmentInformation.getVersion).isVersionAtLeast(targetVersionString)
+
+  def isFlinkVersionEqualTo(targetVersionString: String): Boolean =
+    SemanticVersion(EnvironmentInformation.getVersion).isVersionEqualTo(targetVersionString)
 
   def parseCliOptions(args: Array[String]): CliOptions = {
     val (mode, modeArgs) =
