@@ -137,7 +137,7 @@ public class JdbcConnectionParams {
     this.suppliedURLAuthority = params.suppliedURLAuthority;
     this.zooKeeperEnsemble = params.zooKeeperEnsemble;
     this.currentHostZnodePath = params.currentHostZnodePath;
-    this.rejectedHostZnodePaths.addAll(rejectedHostZnodePaths);
+    this.rejectedHostZnodePaths.addAll(params.rejectedHostZnodePaths);
   }
 
   public String getHost() {
