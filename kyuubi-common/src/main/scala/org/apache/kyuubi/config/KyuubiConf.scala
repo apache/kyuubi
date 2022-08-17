@@ -1612,9 +1612,23 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  object OperationModes extends Enumeration {
+  object OperationModes extends Enumeration with Logging {
     type OperationMode = Value
-    val PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION, NONE = Value
+    val PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION, NONE, UNKNOWN = Value
+
+    def apply(mode: String): OperationMode = {
+      mode.toUpperCase(Locale.ROOT) match {
+        case "PARSE" => PARSE
+        case "ANALYZE" => ANALYZE
+        case "OPTIMIZE" => OPTIMIZE
+        case "PHYSICAL" => PHYSICAL
+        case "EXECUTION" => EXECUTION
+        case "NONE" => NONE
+        case other =>
+          warn(s"Unsupported operation mode: $mode, using UNKNOWN instead")
+          UNKNOWN
+      }
+    }
   }
 
   val OPERATION_PLAN_ONLY_MODE: ConfigEntry[String] =
