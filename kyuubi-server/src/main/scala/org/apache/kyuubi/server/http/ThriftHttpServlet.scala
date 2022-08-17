@@ -34,6 +34,8 @@ import org.apache.thrift.server.TServlet
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
+import org.apache.kyuubi.metrics.MetricsConstants.THRIFT_HTTP_CONN_FAIL
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
@@ -146,6 +148,7 @@ class ThriftHttpServlet(
       super.doPost(request, response)
     } catch {
       case e: AuthenticationException =>
+        MetricsSystem.tracing(_.incCount(THRIFT_HTTP_CONN_FAIL))
         error("Error: ", e)
         // Send a 401 to the client
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
@@ -154,6 +157,7 @@ class ThriftHttpServlet(
         response.getWriter.println("Authentication Error: " + e.getMessage)
       // scalastyle:on println
       case e: Throwable =>
+        MetricsSystem.tracing(_.incCount(THRIFT_HTTP_CONN_FAIL))
         error("Error: ", e)
         throw e
     } finally {

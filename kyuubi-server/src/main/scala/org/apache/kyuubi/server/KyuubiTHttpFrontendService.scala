@@ -20,13 +20,13 @@ package org.apache.kyuubi.server
 import java.net.ServerSocket
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 import javax.security.sasl.AuthenticationException
-import javax.servlet.{ServletContextEvent, ServletContextListener}
 
 import org.apache.commons.lang3.SystemUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.eclipse.jetty.http.HttpMethod
+import org.eclipse.jetty.io.{Connection, EndPoint}
 import org.eclipse.jetty.security.{ConstraintMapping, ConstraintSecurityHandler}
 import org.eclipse.jetty.server._
 import org.eclipse.jetty.server.handler.gzip.GzipHandler
@@ -38,7 +38,7 @@ import org.eclipse.jetty.util.thread.ExecutorThreadPool
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_HTTP_CONN_FAIL, THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL}
+import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.ThriftHttpServlet
 import org.apache.kyuubi.server.http.util.SessionManager
@@ -108,7 +108,26 @@ final class KyuubiTHttpFrontendService(
       val responseHeaderSize = conf.get(FRONTEND_THRIFT_HTTP_RESPONSE_HEADER_SIZE)
       httpConf.setRequestHeaderSize(requestHeaderSize)
       httpConf.setResponseHeaderSize(responseHeaderSize)
-      val connectionFactory = new HttpConnectionFactory(httpConf)
+      val connectionFactory = new HttpConnectionFactory(httpConf) {
+        override def newConnection(connector: Connector, endPoint: EndPoint): Connection = {
+          val connection = super.newConnection(connector, endPoint)
+          connection.addListener(new Connection.Listener() {
+            def onOpened(connection: Connection): Unit = {
+              MetricsSystem.tracing { ms =>
+                ms.incCount(THRIFT_HTTP_CONN_TOTAL)
+                ms.incCount(THRIFT_HTTP_CONN_OPEN)
+              }
+            }
+
+            def onClosed(connection: Connection): Unit = {
+              MetricsSystem.tracing { ms =>
+                ms.decCount(THRIFT_HTTP_CONN_OPEN)
+              }
+            }
+          })
+          connection
+        }
+      }
 
       val useSsl = conf.get(FRONTEND_THRIFT_HTTP_USE_SSL)
       val schemeName = if (useSsl) "https" else "http"
@@ -169,21 +188,6 @@ final class KyuubiTHttpFrontendService(
       val context = new ServletContextHandler(ServletContextHandler.SESSIONS)
       context.setContextPath("/")
 
-      context.addEventListener(new ServletContextListener() {
-        override def contextInitialized(servletContextEvent: ServletContextEvent): Unit = {
-          MetricsSystem.tracing { ms =>
-            ms.incCount(THRIFT_HTTP_CONN_TOTAL)
-            ms.incCount(THRIFT_HTTP_CONN_OPEN)
-          }
-        }
-
-        override def contextDestroyed(servletContextEvent: ServletContextEvent): Unit = {
-          MetricsSystem.tracing { ms =>
-            ms.decCount(THRIFT_HTTP_CONN_OPEN)
-          }
-        }
-      })
-
       val httpPath = getHttpPath(conf.get(FRONTEND_THRIFT_HTTP_PATH))
 
       if (conf.get(FRONTEND_THRIFT_HTTP_COMPRESSION_ENABLED)) {
@@ -203,7 +207,6 @@ final class KyuubiTHttpFrontendService(
         s"path=$httpPath with $minThreads ... $maxThreads threads")
     } catch {
       case e: Throwable =>
-        MetricsSystem.tracing(_.incCount(THRIFT_HTTP_CONN_FAIL))
         error(e)
         throw new KyuubiException(
           s"Failed to initialize frontend service on $serverAddr:$portNum.",

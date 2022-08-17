@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.operation.thrift.http
 
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.KyuubiOperationPerUserSuite
 
 class KyuubiOperationThriftHttpPerUserSuite extends KyuubiOperationPerUserSuite {
@@ -34,5 +37,40 @@ class KyuubiOperationThriftHttpPerUserSuite extends KyuubiOperationPerUserSuite 
     s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/;transportMode=http;" +
       s"httpPath=cliservice;"
 
-  override protected lazy val httpMode = true;
+  override protected lazy val httpMode = true
+
+  test("thrift http connection metric") {
+    val totalConnections =
+      MetricsSystem.counterValue(MetricsConstants.THRIFT_HTTP_CONN_TOTAL).getOrElse(0L)
+    val failedConnections =
+      MetricsSystem.counterValue(MetricsConstants.THRIFT_HTTP_CONN_FAIL).getOrElse(0L)
+
+    withJdbcStatement() { _ =>
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.THRIFT_HTTP_CONN_TOTAL).getOrElse(0L) - totalConnections === 1)
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.THRIFT_HTTP_CONN_OPEN).getOrElse(0L) === 1)
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.THRIFT_HTTP_CONN_FAIL).getOrElse(0L) - failedConnections === 0)
+
+      withJdbcStatement() { _ =>
+        assert(MetricsSystem.counterValue(
+          MetricsConstants.THRIFT_HTTP_CONN_TOTAL).getOrElse(0L) - totalConnections === 2)
+        assert(MetricsSystem.counterValue(
+          MetricsConstants.THRIFT_HTTP_CONN_OPEN).getOrElse(0L) === 2)
+        assert(MetricsSystem.counterValue(
+          MetricsConstants.THRIFT_HTTP_CONN_FAIL).getOrElse(0L) - failedConnections === 0)
+      }
+
+    }
+
+    eventually(timeout(10.seconds), interval(200.milliseconds)) {
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.THRIFT_HTTP_CONN_TOTAL).getOrElse(0L) - totalConnections === 2)
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.THRIFT_HTTP_CONN_OPEN).getOrElse(0L) === 0)
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.THRIFT_HTTP_CONN_FAIL).getOrElse(0L) - failedConnections === 0)
+    }
+  }
 }
