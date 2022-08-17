@@ -23,12 +23,22 @@ import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
 
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    eventually(timeout(10.seconds), interval(200.milliseconds)) {
+      assert(MetricsSystem.counterValue(MetricsConstants.REST_CONN_OPEN).getOrElse(0L) === 0)
+    }
+  }
 
   test("open/close and count session") {
     val requestObj = new SessionOpenRequest(
@@ -127,6 +137,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   test("get infoType") {
+    val totalConnections =
+      MetricsSystem.counterValue(MetricsConstants.REST_CONN_TOTAL).getOrElse(0L)
+    val failedConnections =
+      MetricsSystem.counterValue(MetricsConstants.REST_CONN_FAIL).getOrElse(0L)
+
     val requestObj = new SessionOpenRequest(
       1,
       "admin",
@@ -160,6 +175,14 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     response = webTarget.path(s"api/v1/sessions/$sessionHandle/info/str")
       .request().get()
     assert(404 == response.getStatus)
+
+    eventually(timeout(3.seconds), interval(200.milliseconds)) {
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections === 6)
+      assert(MetricsSystem.counterValue(MetricsConstants.REST_CONN_OPEN).getOrElse(0L) === 0)
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.REST_CONN_FAIL).getOrElse(0L) - failedConnections === 4)
+    }
   }
 
   test("submit operation and get operation handle") {
