@@ -66,6 +66,7 @@ Profile | Default  | Since
 --- | --- | --- 
 -Pspark-3.1 | No | 1.1.0
 -Pspark-3.2 | Yes | 1.4.0
+-Pspark-3.3 | No | 1.6.0
 
 
 ## Building with Apache dlcdn site

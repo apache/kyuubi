@@ -141,8 +141,7 @@ object SparkTBinaryFrontendService extends Logging {
         }
         .map(_._2)
       newToken.foreach { token =>
-        if (KyuubiHadoopUtils.getTokenIssueDate(token) >
-            KyuubiHadoopUtils.getTokenIssueDate(oldAliasAndToken.get._2)) {
+        if (compareIssueDate(token, oldAliasAndToken.get._2) > 0) {
           updateCreds.addToken(oldAliasAndToken.get._1, token)
         } else {
           warn(s"Ignore Hive token with earlier issue date: $token")
@@ -166,8 +165,7 @@ object SparkTBinaryFrontendService extends Logging {
     tokens.foreach { case (alias, newToken) =>
       val oldToken = oldCreds.getToken(alias)
       if (oldToken != null) {
-        if (KyuubiHadoopUtils.getTokenIssueDate(newToken) >
-            KyuubiHadoopUtils.getTokenIssueDate(oldToken)) {
+        if (compareIssueDate(newToken, oldToken) > 0) {
           updateCreds.addToken(alias, newToken)
         } else {
           warn(s"Ignore token with earlier issue date: $newToken")
@@ -175,6 +173,18 @@ object SparkTBinaryFrontendService extends Logging {
       } else {
         info(s"Ignore unknown token $newToken")
       }
+    }
+  }
+
+  private def compareIssueDate(
+      newToken: Token[_ <: TokenIdentifier],
+      oldToken: Token[_ <: TokenIdentifier]): Int = {
+    val newDate = KyuubiHadoopUtils.getTokenIssueDate(newToken)
+    val oldDate = KyuubiHadoopUtils.getTokenIssueDate(oldToken)
+    if (newDate.isDefined && oldDate.isDefined && newDate.get <= oldDate.get) {
+      -1
+    } else {
+      1
     }
   }
 }

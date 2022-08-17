@@ -136,8 +136,13 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-kyuubi.authentication|NONE|A comma separated list of client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>CUSTOM: User-defined authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul> Note that: For KERBEROS, it is SASL/GSSAPI mechanism, and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism. If only NOSASL is specified, the authentication will be NOSASL. For SASL authentication, KERBEROS and PLAIN auth type are supported at the same time, and only the first specified PLAIN auth type is valid.|seq|1.0.0
+kyuubi.authentication|NONE|A comma separated list of client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>CUSTOM: User-defined authentication.</li> <li>JDBC: JDBC query authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul> Note that: For KERBEROS, it is SASL/GSSAPI mechanism, and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism. If only NOSASL is specified, the authentication will be NOSASL. For SASL authentication, KERBEROS and PLAIN auth type are supported at the same time, and only the first specified PLAIN auth type is valid.|seq|1.0.0
 kyuubi.authentication.custom.class|&lt;undefined&gt;|User-defined authentication implementation of org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider|string|1.3.0
+kyuubi.authentication.jdbc.driver.class|&lt;undefined&gt;|Driver class name for JDBC Authentication Provider.|string|1.6.0
+kyuubi.authentication.jdbc.password|&lt;undefined&gt;|Database password for JDBC Authentication Provider.|string|1.6.0
+kyuubi.authentication.jdbc.query|&lt;undefined&gt;|Query SQL template with placeholders for JDBC Authentication Provider to execute. Authentication passes if at least one row fetched in the result set.Available placeholders are: <ul><li>`${username}`</li><li>`${password}`</li></ul>eg.: query sql `SELECT 1 FROM auth_table WHERE user=${username} AND passwd=MD5(CONCAT(salt,${password}));` will be prepared as: `SELECT 1 FROM auth_table WHERE user=? AND passwd=MD5(CONCAT(salt,?));` with value replacement of `username` and `password` in string type.|string|1.6.0
+kyuubi.authentication.jdbc.url|&lt;undefined&gt;|JDBC URL for JDBC Authentication Provider.|string|1.6.0
+kyuubi.authentication.jdbc.username|&lt;undefined&gt;|Database username for JDBC Authentication Provider.|string|1.6.0
 kyuubi.authentication.ldap.attrs|mail|Specifies part of the search as an attribute returned by LDAP. For example: mail,name.|seq|1.6.0
 kyuubi.authentication.ldap.base.dn|&lt;undefined&gt;|LDAP base DN.|string|1.0.0
 kyuubi.authentication.ldap.binddn|&lt;undefined&gt;|The user with which to bind to the LDAP server, and search for the full domain name of the user being authenticated. For example: uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com|string|1.6.0
@@ -234,6 +239,9 @@ kyuubi.engine.jdbc.connection.provider|&lt;undefined&gt;|The connection provider
 kyuubi.engine.jdbc.connection.url|&lt;undefined&gt;|The server url that engine will connect to|string|1.6.0
 kyuubi.engine.jdbc.connection.user|&lt;undefined&gt;|The user is used for connecting to server|string|1.6.0
 kyuubi.engine.jdbc.driver.class|&lt;undefined&gt;|The driver class for jdbc engine connection|string|1.6.0
+kyuubi.engine.jdbc.extra.classpath|&lt;undefined&gt;|The extra classpath for the jdbc query engine, for configuring location of jdbc driver, etc|string|1.6.0
+kyuubi.engine.jdbc.java.options|&lt;undefined&gt;|The extra java options for the jdbc query engine|string|1.6.0
+kyuubi.engine.jdbc.memory|1g|The heap memory for the jdbc query engine|string|1.6.0
 kyuubi.engine.jdbc.type|&lt;undefined&gt;|The short name of jdbc type|string|1.6.0
 kyuubi.engine.operation.convert.catalog.database.enabled|true|When set to true, The engine converts the JDBC methods of set/get Catalog and set/get Schema to the implementation of different engines|boolean|1.6.0
 kyuubi.engine.operation.log.dir.root|engine_operation_logs|Root directory for query operation log at engine-side.|string|1.4.0

@@ -56,6 +56,8 @@ case class SemanticVersion(majorVersion: Int, minorVersion: Int) {
     val targetMinor = targetVersion.minorVersion
     callback(targetMajor, targetMinor, this.majorVersion, this.minorVersion)
   }
+
+  override def toString: String = s"$majorVersion.$minorVersion"
 }
 
 object SemanticVersion {

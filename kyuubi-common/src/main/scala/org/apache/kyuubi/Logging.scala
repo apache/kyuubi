@@ -88,81 +88,10 @@ trait Logging {
     if (!Logging.initialized) {
       Logging.initLock.synchronized {
         if (!Logging.initialized) {
-          initializeLogging(isInterpreter)
+          Logging.initializeLogging(isInterpreter, loggerName, logger)
         }
       }
     }
-  }
-
-  private def initializeLogging(isInterpreter: Boolean): Unit = {
-    if (ClassUtils.classIsLoadable("org.slf4j.bridge.SLF4JBridgeHandler")) {
-      // Handles configuring the JUL -> SLF4J bridge
-      SLF4JBridgeHandler.removeHandlersForRootLogger()
-      SLF4JBridgeHandler.install()
-    }
-
-    if (Logging.isLog4j2) {
-      // scalastyle:off println
-      if (Logging.isLog4j2DefaultConfigured()) {
-        Logging.useDefault = true
-        val defaultLogProps = "log4j2-defaults.xml"
-        Option(Thread.currentThread().getContextClassLoader.getResource(defaultLogProps)) match {
-          case Some(url) =>
-            val context = LogManager.getContext(false).asInstanceOf[LoggerContext]
-            context.setConfigLocation(url.toURI)
-          case None =>
-            System.err.println(s"Missing $defaultLogProps")
-        }
-      }
-
-      val rootLogger = LogManager.getRootLogger
-        .asInstanceOf[org.apache.logging.log4j.core.Logger]
-      if (Logging.defaultRootLevel == null) {
-        Logging.defaultRootLevel = rootLogger.getLevel.toString
-      }
-
-      if (isInterpreter) {
-        // set kyuubi ctl log level, default ERROR
-        val ctlLogger = LogManager.getLogger(loggerName)
-          .asInstanceOf[org.apache.logging.log4j.core.Logger]
-        val ctlLevel = Option(ctlLogger.getLevel()).getOrElse(Level.ERROR)
-        rootLogger.setLevel(ctlLevel)
-      }
-      // scalastyle:on println
-    } else if (Logging.isLog4j12) {
-      val log4j12Initialized =
-        org.apache.log4j.LogManager.getRootLogger.getAllAppenders.hasMoreElements
-      // scalastyle:off println
-      if (!log4j12Initialized) {
-        Logging.useDefault = true
-        val defaultLogProps = "log4j-defaults.properties"
-        Option(Thread.currentThread().getContextClassLoader.getResource(defaultLogProps)) match {
-          case Some(url) =>
-            org.apache.log4j.PropertyConfigurator.configure(url)
-
-          case None =>
-            System.err.println(s"Missing $defaultLogProps")
-        }
-
-        val rootLogger = org.apache.log4j.LogManager.getRootLogger
-        if (Logging.defaultRootLevel == null) {
-          Logging.defaultRootLevel = rootLogger.getLevel.toString
-        }
-
-        if (isInterpreter) {
-          // set kyuubi ctl log level, default ERROR
-          val ctlLogger = org.apache.log4j.LogManager.getLogger(loggerName)
-          val ctlLevel = Option(ctlLogger.getLevel()).getOrElse(org.apache.log4j.Level.ERROR)
-          rootLogger.setLevel(ctlLevel)
-        }
-        // scalastyle:on println
-      }
-    }
-    Logging.initialized = true
-
-    // Force a call into slf4j to initialize it. Avoids this happening from multiple threads
-    // and triggering this: http://mailman.qos.ch/pipermail/slf4j-dev/2010-April/002956.html
-    logger
   }
 }
 
@@ -202,5 +131,79 @@ object Logging {
       rootLogger.getLevel == Level.ERROR &&
       LogManager.getContext.asInstanceOf[LoggerContext]
         .getConfiguration.isInstanceOf[DefaultConfiguration])
+  }
+
+  private def initializeLogging(
+      isInterpreter: Boolean,
+      loggerName: String,
+      logger: => Logger): Unit = {
+    if (ClassUtils.classIsLoadable("org.slf4j.bridge.SLF4JBridgeHandler")) {
+      // Handles configuring the JUL -> SLF4J bridge
+      SLF4JBridgeHandler.removeHandlersForRootLogger()
+      SLF4JBridgeHandler.install()
+    }
+
+    if (Logging.isLog4j2) {
+      // scalastyle:off println
+      if (Logging.isLog4j2DefaultConfigured()) {
+        Logging.useDefault = true
+        val defaultLogProps = "log4j2-defaults.xml"
+        Option(Thread.currentThread().getContextClassLoader.getResource(defaultLogProps)) match {
+          case Some(url) =>
+            val context = LogManager.getContext(false).asInstanceOf[LoggerContext]
+            context.setConfigLocation(url.toURI)
+          case None =>
+            System.err.println(s"Missing $defaultLogProps")
+        }
+      }
+
+      val rootLogger = LogManager.getRootLogger
+        .asInstanceOf[org.apache.logging.log4j.core.Logger]
+      if (Logging.defaultRootLevel == null) {
+        Logging.defaultRootLevel = rootLogger.getLevel.toString
+      }
+
+      if (isInterpreter) {
+        // set kyuubi ctl log level, default ERROR
+        val ctlLogger = LogManager.getLogger(loggerName)
+          .asInstanceOf[org.apache.logging.log4j.core.Logger]
+        val ctlLevel = Option(ctlLogger.getLevel).getOrElse(Level.ERROR)
+        rootLogger.setLevel(ctlLevel)
+      }
+      // scalastyle:on println
+    } else if (Logging.isLog4j12) {
+      val log4j12Initialized =
+        org.apache.log4j.LogManager.getRootLogger.getAllAppenders.hasMoreElements
+      // scalastyle:off println
+      if (!log4j12Initialized) {
+        Logging.useDefault = true
+        val defaultLogProps = "log4j-defaults.properties"
+        Option(Thread.currentThread().getContextClassLoader.getResource(defaultLogProps)) match {
+          case Some(url) =>
+            org.apache.log4j.PropertyConfigurator.configure(url)
+
+          case None =>
+            System.err.println(s"Missing $defaultLogProps")
+        }
+
+        val rootLogger = org.apache.log4j.LogManager.getRootLogger
+        if (Logging.defaultRootLevel == null) {
+          Logging.defaultRootLevel = rootLogger.getLevel.toString
+        }
+
+        if (isInterpreter) {
+          // set kyuubi ctl log level, default ERROR
+          val ctlLogger = org.apache.log4j.LogManager.getLogger(loggerName)
+          val ctlLevel = Option(ctlLogger.getLevel).getOrElse(org.apache.log4j.Level.ERROR)
+          rootLogger.setLevel(ctlLevel)
+        }
+        // scalastyle:on println
+      }
+    }
+    Logging.initialized = true
+
+    // Force a call into slf4j to initialize it. Avoids this happening from multiple threads
+    // and triggering this: http://mailman.qos.ch/pipermail/slf4j-dev/2010-April/002956.html
+    logger
   }
 }

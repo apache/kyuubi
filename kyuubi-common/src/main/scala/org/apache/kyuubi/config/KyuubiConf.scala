@@ -593,7 +593,9 @@ object KyuubiConf {
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
       " <li>CUSTOM: User-defined authentication.</li>" +
-      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>" +
+      " <li>JDBC: JDBC query authentication.</li>" +
+      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li>" +
+      "</ul>" +
       " Note that: For KERBEROS, it is SASL/GSSAPI mechanism," +
       " and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism." +
       " If only NOSASL is specified, the authentication will be NOSASL." +
@@ -670,6 +672,51 @@ object KyuubiConf {
       .stringConf
       .toSequence()
       .createWithDefault(Seq("mail"))
+
+  val AUTHENTICATION_JDBC_DRIVER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.driver.class")
+      .doc("Driver class name for JDBC Authentication Provider.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_JDBC_URL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.url")
+      .doc("JDBC URL for JDBC Authentication Provider.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_JDBC_USERNAME: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.username")
+      .doc("Database username for JDBC Authentication Provider.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_JDBC_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.password")
+      .doc("Database password for JDBC Authentication Provider.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_JDBC_QUERY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.query")
+      .doc("Query SQL template with placeholders " +
+        "for JDBC Authentication Provider to execute. " +
+        "Authentication passes if at least one row fetched in the result set." +
+        "Available placeholders are: <ul>" +
+        "<li>`${username}`</li>" +
+        "<li>`${password}`</li></ul>" +
+        "eg.: query sql `SELECT 1 FROM auth_table WHERE user=${username} AND " +
+        "passwd=MD5(CONCAT(salt,${password}));` " +
+        "will be prepared as: `SELECT 1 FROM auth_table " +
+        "WHERE user=? AND passwd=MD5(CONCAT(salt,?));`" +
+        " with value replacement of `username` and `password` in string type.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 
   val DELEGATION_KEY_UPDATE_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.delegation.key.update.interval")
@@ -1957,4 +2004,26 @@ object KyuubiConf {
         "Use kyuubi.ha.zookeeper.auth.type and kyuubi.ha.zookeeper.engine.auth.type instead"))
     Map(configs.map { cfg => cfg.key -> cfg }: _*)
   }
+
+  val ENGINE_JDBC_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.memory")
+      .doc("The heap memory for the jdbc query engine")
+      .version("1.6.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_JDBC_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.java.options")
+      .doc("The extra java options for the jdbc query engine")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_JDBC_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.extra.classpath")
+      .doc("The extra classpath for the jdbc query engine, for configuring location" +
+        " of jdbc driver, etc")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
 }

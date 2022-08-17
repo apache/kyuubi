@@ -29,10 +29,11 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
-import org.apache.kyuubi.engine.EngineType.{EngineType, FLINK_SQL, HIVE_SQL, SPARK_SQL, TRINO}
+import org.apache.kyuubi.engine.EngineType.{EngineType, FLINK_SQL, HIVE_SQL, JDBC, SPARK_SQL, TRINO}
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
+import org.apache.kyuubi.engine.jdbc.JdbcProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
@@ -181,12 +182,15 @@ private[kyuubi] class EngineRef(
         new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
         new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case JDBC =>
+        new JdbcProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
     }
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
       val redactedCmd = builder.toString
       info(s"Launching engine:\n$redactedCmd")
+      builder.validateConf
       val process = builder.start
       var exitValue: Option[Int] = None
       while (engineRef.isEmpty) {
