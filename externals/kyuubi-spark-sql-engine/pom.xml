@@ -224,7 +224,6 @@
                             <include>org.apache.curator:curator-recipes</include>
                             <include>org.apache.hive:hive-service-rpc</include>
                             <include>org.apache.thrift:*</include>
-                            <include>org.apache.logging.log4j:*</include>
                         </includes>
                     </artifactSet>
                     <filters>

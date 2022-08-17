@@ -80,7 +80,7 @@ class PlanOnlyStatement(
                 iter = new IterableFetchIterator(Seq(Row(executed.toString())))
               case UNKNOWN =>
                 throw KyuubiSQLException(s"The operation mode $mode" +
-                  s" doesn't support in Spark SQL engine.")
+                  " doesn't support in Spark SQL engine.")
             }
         }
       }
