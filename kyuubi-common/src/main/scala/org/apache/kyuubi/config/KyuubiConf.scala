@@ -639,6 +639,7 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  @deprecated(s"using kyuubi.authentication.ldap.binddn instead", "1.6.0")
   val AUTHENTICATION_LDAP_GUIDKEY: ConfigEntry[String] =
     buildConf("kyuubi.authentication.ldap.guidKey")
       .doc("LDAP attribute name whose values are unique in this LDAP server." +
