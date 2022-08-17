@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import static org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams.AUTH_PASSWD;
-import static org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams.AUTH_USER;
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_PASSWD;
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_USER;
 
 import java.sql.Connection;
 import java.sql.SQLException;

@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_KEY;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_TRUE;
-import static org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams.*;
 
 import java.io.*;
 import java.lang.reflect.InvocationHandler;
@@ -62,7 +62,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
-import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLConnection;
 import org.apache.kyuubi.jdbc.hive.auth.*;
 import org.apache.kyuubi.jdbc.hive.cli.FetchType;

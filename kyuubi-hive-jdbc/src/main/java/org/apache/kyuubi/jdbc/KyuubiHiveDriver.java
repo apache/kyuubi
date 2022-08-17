@@ -24,6 +24,7 @@ import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.logging.Logger;
+import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 import org.apache.kyuubi.jdbc.hive.KyuubiSQLException;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -125,7 +126,7 @@ public class KyuubiHiveDriver implements Driver {
       throw new KyuubiSQLException("Invalid connection url: " + url);
     }
 
-    Utils.JdbcConnectionParams params;
+    JdbcConnectionParams params;
     try {
       params = Utils.parseURL(url, defaults);
     } catch (Exception e) {
