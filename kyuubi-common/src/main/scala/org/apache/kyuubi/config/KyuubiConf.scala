@@ -1329,6 +1329,10 @@ object KyuubiConf {
       " all the capacity of the Apache Flink.</li>" +
       " <li>TRINO: specify this engine type will launch a Trino engine which can provide" +
       " all the capacity of the Trino.</li>" +
+      " <li>HIVE_SQL: specify this engine type will launch a Hive engine which can provide" +
+      " all the capacity of the Hive Server2.</li>" +
+      " <li>JDBC: specify this engine type will launch a JDBC engine which can provide" +
+      " a mysql protocol connector, for now we only support Doris dialect.</li>" +
       "</ul>")
     .version("1.4.0")
     .stringConf
