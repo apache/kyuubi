@@ -20,7 +20,7 @@ import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_LOGGERS, SERVER_EVENT_LOGGERS}
 import org.apache.kyuubi.events.EventLoggerType.EventLoggerType
-import org.apache.kyuubi.events.handler.EventHandler
+import org.apache.kyuubi.events.handler.{EventHandler, EventHandlerLoader}
 
 trait EventHandlerRegister extends Logging {
 
@@ -38,7 +38,8 @@ trait EventHandlerRegister extends Logging {
     loggers
       .map(EventLoggerType.withName)
       .foreach { logger =>
-        EventBus.register(loadEventHandler(logger, conf))
+        val handlers = loadEventHandler(logger, conf)
+        handlers.foreach(EventBus.register)
       }
   }
 
@@ -56,16 +57,19 @@ trait EventHandlerRegister extends Logging {
 
   private def loadEventHandler(
       eventLoggerType: EventLoggerType,
-      kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
+      kyuubiConf: KyuubiConf): List[EventHandler[KyuubiEvent]] = {
     eventLoggerType match {
       case EventLoggerType.SPARK =>
-        createSparkEventHandler(kyuubiConf)
+        List[EventHandler[KyuubiEvent]](createSparkEventHandler(kyuubiConf))
 
       case EventLoggerType.JSON =>
-        createJsonEventHandler(kyuubiConf)
+        List[EventHandler[KyuubiEvent]](createJsonEventHandler(kyuubiConf))
 
       case EventLoggerType.JDBC =>
-        createJdbcEventHandler(kyuubiConf)
+        List[EventHandler[KyuubiEvent]](createJdbcEventHandler(kyuubiConf))
+
+      case EventLoggerType.CUSTOM =>
+        EventHandlerLoader.loadCustom(kyuubiConf)
 
       case other =>
         throw new KyuubiException(s"Unsupported event logger: ${other.toString}")
