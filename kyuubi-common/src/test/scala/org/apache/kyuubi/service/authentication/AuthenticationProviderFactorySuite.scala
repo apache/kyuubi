@@ -21,7 +21,7 @@ import javax.security.sasl.AuthenticationException
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_LDAP_ATTRIBUTES, AUTHENTICATION_LDAP_BASEDN, AUTHENTICATION_LDAP_DOMAIN, AUTHENTICATION_LDAP_GUIDKEY, AUTHENTICATION_LDAP_PASSWORD}
+import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_LDAP_ATTRIBUTES, AUTHENTICATION_LDAP_BASEDN, AUTHENTICATION_LDAP_BINDDN, AUTHENTICATION_LDAP_DOMAIN, AUTHENTICATION_LDAP_GUIDKEY, AUTHENTICATION_LDAP_PASSWORD}
 
 class AuthenticationProviderFactorySuite extends KyuubiFunSuite {
 
@@ -33,6 +33,7 @@ class AuthenticationProviderFactorySuite extends KyuubiFunSuite {
     super.beforeAll()
     conf.set(AUTHENTICATION_LDAP_BASEDN, "test")
     conf.set(AUTHENTICATION_LDAP_GUIDKEY, "test")
+    conf.set(AUTHENTICATION_LDAP_BINDDN, "test")
     conf.set(AUTHENTICATION_LDAP_PASSWORD, "test")
     conf.set(AUTHENTICATION_LDAP_DOMAIN, "test")
     conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("test"))

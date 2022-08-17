@@ -60,12 +60,12 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
     val mail = if (!hasDomain(user) && domain.nonEmpty) (user + "@" + domain.get) else user
-    val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
+    val bindDn = conf.get(AUTHENTICATION_LDAP_BINDDN).getOrElse("")
     val baseDn = conf.get(AUTHENTICATION_LDAP_BASEDN).getOrElse("")
     val bindPw = conf.get(AUTHENTICATION_LDAP_PASSWORD).getOrElse("")
     val attrs = conf.get(AUTHENTICATION_LDAP_ATTRIBUTES).toArray
 
-    env.put(Context.SECURITY_PRINCIPAL, guidKey)
+    env.put(Context.SECURITY_PRINCIPAL, bindDn)
     env.put(Context.SECURITY_CREDENTIALS, bindPw)
     var nameEnuResults: NamingEnumeration[SearchResult] = null
     try {

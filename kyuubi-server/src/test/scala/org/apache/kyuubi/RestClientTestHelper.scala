@@ -57,6 +57,7 @@ trait RestClientTestHelper extends RestFrontendTestHelper with KerberizedTestHel
         KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
       .set(KyuubiConf.AUTHENTICATION_LDAP_GUIDKEY, ldapGuidKey)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_BINDDN, ldapBinddn)
       .set(KyuubiConf.AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
       .set(KyuubiConf.AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
       .set(KyuubiConf.AUTHENTICATION_LDAP_ATTRIBUTES, ldapAttrs)

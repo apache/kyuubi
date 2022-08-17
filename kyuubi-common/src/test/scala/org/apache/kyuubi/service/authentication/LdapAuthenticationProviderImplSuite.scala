@@ -34,6 +34,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     conf.set(AUTHENTICATION_LDAP_URL, ldapUrl)
     conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
     conf.set(AUTHENTICATION_LDAP_GUIDKEY, ldapGuidKey)
+    conf.set(AUTHENTICATION_LDAP_BINDDN, ldapBinddn)
     conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
     conf.set(AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
     conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, ldapAttrs)
@@ -67,7 +68,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
 
     conf.set(
-      AUTHENTICATION_LDAP_GUIDKEY,
+      AUTHENTICATION_LDAP_BINDDN,
       s"uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com")
     conf.set(AUTHENTICATION_LDAP_PASSWORD, "adminPasswordTest")
     val providerImpl2 = new LdapAuthenticationProviderImpl(conf)

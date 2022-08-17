@@ -645,6 +645,15 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("uid")
 
+  val AUTHENTICATION_LDAP_BINDDN: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.binddn")
+      .doc("The user with which to bind to the LDAP server, and search for the full domain name " +
+        "of the user being authenticated." +
+        " For example: uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
   val AUTHENTICATION_LDAP_PASSWORD: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.ldap.bindpw")
       .doc("The password for the bind user," +
@@ -655,8 +664,8 @@ object KyuubiConf {
 
   val AUTHENTICATION_LDAP_ATTRIBUTES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.authentication.ldap.attrs")
-      .doc("Specifies part of the search as an attribute returned by LDAP. " +
-        "For example, mail,name.")
+      .doc("Specifies part of the search as an attribute returned by LDAP." +
+        " For example: mail,name.")
       .version("1.6.0")
       .stringConf
       .toSequence()
