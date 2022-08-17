@@ -43,7 +43,7 @@ Dependencies
 
 The **classpath** of kyuubi trino sql engine with Flink Table Store supported consists of
 
-1. kyuubi-trino-sql-engine-|release|.jar, the engine jar deployed with Kyuubi distributions
+1. kyuubi-trino-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of trino distribution
 3. flink-table-store-trino-<version>.jar (example: flink-table-store-trino-0.2.jar), which code can be found in the `Source Code`_
 4. flink-shaded-hadoop-2-uber-2.8.3-10.0.jar, which code can be found in the `Pre-bundled Hadoop 2.8.3`_

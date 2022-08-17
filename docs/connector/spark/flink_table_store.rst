@@ -44,7 +44,7 @@ Dependencies
 
 The **classpath** of kyuubi spark sql engine with Flink Table Store supported consists of
 
-1. kyuubi-spark-sql-engine-|release|_2.12.jar, the engine jar deployed with Kyuubi distributions
+1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution
 3. flink-table-store-spark-<version>.jar (example: flink-table-store-spark-0.2.jar), which can be found in the `Maven Central`_
 

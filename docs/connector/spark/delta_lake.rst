@@ -46,7 +46,7 @@ Dependencies
 
 The **classpath** of kyuubi spark sql engine with delta lake supported consists of
 
-1. kyuubi-spark-sql-engine-|release|_2.12.jar, the engine jar deployed with kyuubi distributions
+1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with kyuubi distributions
 2. a copy of spark distribution
 3. delta-core & delta-storage, which can be found in the `Maven Central`_
 
