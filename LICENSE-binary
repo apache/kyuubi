@@ -297,6 +297,30 @@ org.scala-lang:scala-library
 com.zaxxer:HikariCP
 org.apache.derby:derby
 com.jakewharton.fliptables:fliptables
+com.google.android:annotations
+com.google.errorprone:error_prone_annotations
+net.jodah:failsafe
+io.grpc:grpc-api
+io.grpc:grpc-context
+io.grpc:grpc-grpclb
+io.grpc:grpc-netty
+io.grpc:grpc-protobuf-lite
+io.grpc:grpc-stub
+com.google.code.gson:gson
+com.google.j2objc:j2objc-annotations
+io.etcd:jetcd-api
+io.etcd:jetcd-common
+io.etcd:jetcd-grpc
+io.netty:netty-codec-dns
+io.netty:netty-codec-http
+io.netty:netty-codec-http2
+io.netty:netty-codec-socks
+io.netty:netty-handler-proxy
+io.netty:netty-resolver-dns
+io.perfmark:perfmark-api
+com.google.api.grpc:proto-google-common-protos
+io.vertx:vertx-core
+io.vertx:vertx-grpc
 
 
 kyuubi-server/src/main/resources/org/apache/kyuubi/ui/swagger/*
@@ -306,6 +330,8 @@ BSD
 jline:jline
 com.thoughtworks.paranamer:paranamer
 dk.brics.automaton:automaton
+com.google.protobuf:protobuf-java-util
+com.google.protobuf:protobuf-java
 
 Eclipse Distribution License - v 1.0
 ------------------------------------
@@ -328,6 +354,7 @@ MIT License
 -----------
 com.github.scopt:scopt_*
 io.github.classgraph:classgraph
+org.codehaus.mojo:animal-sniffer-annotations
 org.slf4j:slf4j-api
 org.slf4j:jcl-over-slf4j
 org.slf4j:jul-over-slf4j
