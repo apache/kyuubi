@@ -26,8 +26,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
-  protected val dbUser: String = "bowenliang123"
-  protected val dbPasswd: String = "bowenliang123"
+  protected val dbUser: String = "liangbowen"
+  protected val dbPasswd: String = "liangbowen"
   protected var jdbcUrl: String = _
 
   protected val authUser: String = "liangtiancheng"
@@ -89,12 +89,12 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     assert(e1.getMessage.contains("user is null"))
 
     val e2 = intercept[AuthenticationException] {
-      providerImpl.authenticate("kyuubi", "")
+      providerImpl.authenticate(authUser, "")
     }
     assert(e2.getMessage.contains("password is null"))
 
     val e4 = intercept[AuthenticationException] {
-      providerImpl.authenticate(authPasswd, "pass")
+      providerImpl.authenticate(authUser, "wrong_password")
     }
     assert(e4.isInstanceOf[AuthenticationException])
 

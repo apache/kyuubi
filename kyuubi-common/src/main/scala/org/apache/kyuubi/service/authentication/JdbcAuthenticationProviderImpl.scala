@@ -43,7 +43,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
   checkJdbcConfigs()
 
-  private[kyuubi] val hikariDataSource = getHikariDataSource()
+  private[kyuubi] val hikariDataSource = getHikariDataSource
 
   /**
    * The authenticate method is called by the Kyuubi Server authentication layer
@@ -78,12 +78,12 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       val resultSet = queryStatement.executeQuery()
 
       if (resultSet == null || !resultSet.next()) {
-        // Auth failed
+        // auth failed
         throw new AuthenticationException(s"Password does not match or no such user. user:" +
           s" $user , password length: ${password.length}")
       }
 
-      // Auth passed
+      // auth passed
 
     } catch {
       case e: AuthenticationException =>
@@ -134,45 +134,26 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     }
   }
 
-  /**
-   * Extract all placeholders from query and put them into a list.
-   *
-   * @param sql
-   * @return
-   */
   private def getPlaceholderList(sql: String): List[String] = {
     SQL_PLACEHOLDER_REGEX.findAllMatchIn(sql)
       .map(m => m.matched)
       .toList
   }
 
-  /**
-   * Replace all placeholders as "?"
-   *
-   * @param sql
-   * @return
-   */
-  private def getPreparedSql(sql: String): String = {
-    SQL_PLACEHOLDER_REGEX.replaceAllIn(sql, "?")
-  }
-
-  /**
-   * prepare the final query statement
-   * by replacing placeholder in query sql with user and password
-   *
-   * @param connection
-   * @param user
-   * @param password
-   * @return
-   */
   private def getAndPrepareQueryStatement(
       connection: Connection,
       user: String,
       password: String): PreparedStatement = {
-    // Replace placeholders by "?" and prepare the statement
-    val stmt = connection.prepareStatement(getPreparedSql(authQuerySql.get))
 
-    // Extract placeholder list and use its order to pass parameters
+    val preparedSql: String = {
+      SQL_PLACEHOLDER_REGEX.replaceAllIn(authQuerySql.get, "?")
+    }
+    debug(s"prepared auth query sql: $preparedSql")
+
+    val stmt = connection.prepareStatement(preparedSql)
+    stmt.setMaxRows(1) // minimum result size required for authentication
+
+    // Extract placeholder list and fill parameters to placeholders
     val placeholderList: List[String] = getPlaceholderList(authQuerySql.get)
     for (i <- placeholderList.indices) {
       val param = placeholderList(i) match {
@@ -186,14 +167,10 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       stmt.setString(i + 1, param)
     }
 
-    // Client side limit 1
-    stmt.setMaxRows(1)
-
     stmt
   }
 
   private def closeDbConnection(connection: Connection, statement: Statement): Unit = {
-    // Close statement
     if (statement != null && !statement.isClosed) {
       try {
         statement.close()
@@ -203,7 +180,6 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       }
     }
 
-    // Close connection
     if (connection != null && !connection.isClosed) {
       try {
         connection.close()
@@ -214,7 +190,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     }
   }
 
-  private def getHikariDataSource(): HikariDataSource = {
+  private def getHikariDataSource: HikariDataSource = {
     val datasourceProperties = new Properties()
     val hikariConfig = new HikariConfig(datasourceProperties)
     hikariConfig.setDriverClassName(driverClass.orNull)
