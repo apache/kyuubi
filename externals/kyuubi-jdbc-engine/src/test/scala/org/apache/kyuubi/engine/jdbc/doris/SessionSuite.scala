@@ -35,5 +35,5 @@ class SessionSuite extends WithDorisEngine with HiveJDBCTestHelper {
     }
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl
+  override protected def jdbcUrl: String = jdbcConnectionUrl
 }

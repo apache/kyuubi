@@ -208,7 +208,7 @@ jobs:
           check-latest: false
       - name: Build and test JDBC with maven w/o linters
         run: |
-          TEST_MODULES="externals/kyuubi-jdbc-engine" || echo 'TODO integration-tests/kyuubi-jdbc-it'
+          TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
       - name: Upload test logs

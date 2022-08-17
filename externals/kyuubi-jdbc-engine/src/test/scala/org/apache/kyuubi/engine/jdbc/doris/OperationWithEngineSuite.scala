@@ -16,17 +16,9 @@
  */
 package org.apache.kyuubi.engine.jdbc.doris
 
-import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-trait WithDorisEngine extends WithJdbcEngine with WithDorisContainer {
+class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelper {
 
-  override def withKyuubiConf: Map[String, String] = Map(
-    ENGINE_SHARE_LEVEL.key -> "SERVER",
-    ENGINE_JDBC_CONNECTION_URL.key -> s"jdbc:mysql://$feUrl",
-    ENGINE_JDBC_CONNECTION_USER.key -> "root",
-    ENGINE_JDBC_CONNECTION_PASSWORD.key -> "",
-    ENGINE_TYPE.key -> "jdbc",
-    ENGINE_JDBC_SHORT_NAME.key -> "doris",
-    ENGINE_JDBC_DRIVER_CLASS.key -> "com.mysql.cj.jdbc.Driver")
+  override protected def jdbcUrl: String = jdbcConnectionUrl
 }
