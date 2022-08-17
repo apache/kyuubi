@@ -47,7 +47,7 @@ Dependencies
 ************
 The classpath of kyuubi spark sql engine with TiDB supported consists of
 
-1. kyuubi-spark-sql-engine-|release|_2.12.jar, the engine jar deployed with Kyuubi distributions
+1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution
 3. tispark-assembly-<spark.version>_<scala.version>-<tispark.version>.jar (example: tispark-assembly-3.2_2.12-3.0.1.jar), which can be found in the `Maven Central`_
 
