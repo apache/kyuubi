@@ -26,13 +26,15 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
-import org.apache.spark.sql.catalyst.plans.logical.Statistics
+import org.apache.spark.sql.catalyst.plans.logical.{NoopCommand, Statistics}
+import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
+import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
@@ -57,6 +59,68 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       resource: String = "default/src",
       user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
+  }
+
+  test("[KYUUBI #3226] RuleAuthorization: Should check privileges once only.") {
+    val logicalPlan = NoopCommand("RuleAuthorization", Seq.empty)
+    val rule = new RuleAuthorization(spark)
+
+    (1 until 10).foreach { i =>
+      if (i == 1) {
+        assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).isEmpty)
+      } else {
+        assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+      }
+      rule.apply(logicalPlan)
+    }
+
+    assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+  }
+
+  test("[KYUUBI #3226]: Another session should also check even if the plan is cached.") {
+    val testTable = "mytable"
+    val create =
+      s"""
+         | CREATE TABLE IF NOT EXISTS $testTable
+         | (id string)
+         | using parquet
+         |""".stripMargin
+    val select = s"SELECT * FROM $testTable"
+    try {
+      // create tmp table
+      doAs(
+        "admin", {
+          sql(create)
+
+          // session1: first query, should auth once.[LogicalRelation]
+          val df = sql(select)
+          val plan1 = df.queryExecution.optimizedPlan
+          assert(plan1.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+
+          // cache
+          df.cache()
+
+          // session1: second query, should auth once.[InMemoryRelation]
+          // (don't need to check in again, but it's okay to check in once)
+          val plan2 = sql(select).queryExecution.optimizedPlan
+          assert(plan1 != plan2 && plan2.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+
+          // session2: should auth once.
+          val otherSessionDf = spark.newSession().sql(select)
+
+          // KYUUBI_AUTH_TAG is None
+          assert(otherSessionDf.queryExecution.logical.getTagValue(KYUUBI_AUTHZ_TAG).isEmpty)
+          val plan3 = otherSessionDf.queryExecution.optimizedPlan
+          // make sure it use cache.
+          assert(plan3.isInstanceOf[InMemoryRelation])
+          // auth once only.
+          assert(plan3.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
+        })
+
+    } finally {
+      // finally, drop tmp table
+      doAs("admin", sql(s"DROP TABLE IF EXISTS $testTable"))
+    }
   }
 
   test("auth: databases") {
