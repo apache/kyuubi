@@ -121,3 +121,6 @@ Its nine tails stand for end-to-end multi-tenancy support of this project.
 ## License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for details.
+
+## Community
+ Join in our [Slack](https://join.slack.com/t/apachekyuubi/shared_invite/zt-1e1qw68g4-yE5HJsVVDin~ABtZISyuxg) Channel !
