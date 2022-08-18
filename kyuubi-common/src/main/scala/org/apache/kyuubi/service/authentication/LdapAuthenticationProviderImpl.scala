@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.service.authentication
 
-import javax.naming.{Context, NamingException}
-import javax.naming.directory.InitialDirContext
+import javax.naming.{Context, NamingEnumeration, NamingException}
+import javax.naming.directory.{InitialDirContext, SearchControls, SearchResult}
+import javax.naming.ldap.InitialLdapContext
 import javax.security.sasl.AuthenticationException
 
 import org.apache.commons.lang3.StringUtils
@@ -58,29 +59,79 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     conf.get(AUTHENTICATION_LDAP_URL).foreach(env.put(Context.PROVIDER_URL, _))
 
     val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
-    val u =
-      if (!hasDomain(user) && domain.nonEmpty) {
-        user + "@" + domain.get
-      } else {
-        user
-      }
-
+    val mail = if (!hasDomain(user) && domain.nonEmpty) (user + "@" + domain.get) else user
+    var bindDn = conf.get(AUTHENTICATION_LDAP_BINDDN).getOrElse("")
     val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
-    val bindDn = conf.get(AUTHENTICATION_LDAP_BASEDN) match {
-      case Some(dn) => guidKey + "=" + u + "," + dn
-      case _ => u
+
+    if ("".equals(bindDn)) {
+      bindDn = conf.get(AUTHENTICATION_LDAP_BASEDN) match {
+        case Some(dn) => guidKey + "=" + mail + "," + dn
+        case _ => mail
+      }
+      env.put(Context.SECURITY_PRINCIPAL, bindDn)
+      env.put(Context.SECURITY_CREDENTIALS, password)
+      try {
+        val ctx = new InitialDirContext(env)
+        ctx.close()
+      } catch {
+        case e: NamingException =>
+          throw new AuthenticationException(
+            s"Error validating LDAP user: $user," +
+              s" bindDn: $bindDn.",
+            e)
+      }
+    } else {
+      val baseDn = conf.get(AUTHENTICATION_LDAP_BASEDN).getOrElse("")
+      val bindPw = conf.get(AUTHENTICATION_LDAP_PASSWORD).getOrElse("")
+      val attrs = conf.get(AUTHENTICATION_LDAP_ATTRIBUTES).toArray
+      env.put(Context.SECURITY_PRINCIPAL, bindDn)
+      env.put(Context.SECURITY_CREDENTIALS, bindPw)
+      var nameEnuResults: NamingEnumeration[SearchResult] = null
+      try {
+        val ctx = new InitialLdapContext(env, null)
+        val sc = new SearchControls
+        sc.setReturningAttributes(attrs)
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE)
+        val searchFilter = String.format("(%s=%s)", "mail", mail)
+        nameEnuResults = ctx.search(baseDn, searchFilter, sc)
+      } catch {
+        case e: NamingException =>
+          throw new AuthenticationException(
+            s"LDAP InitialLdapContext failed, Error validating LDAP user: $user," +
+              s" bindDn: $bindDn.",
+            e)
+      }
+      if (nameEnuResults != null && nameEnuResults.hasMore) {
+        try {
+          val searchResult = nameEnuResults.next
+          val attrs = searchResult.getAttributes.getAll
+          if (!attrs.hasMore) {
+            throw new AuthenticationException(
+              s"LDAP attributes are empty, please check config " +
+                s"AUTHENTICATION_LDAP_ATTRIBUTES.key, Error validating LDAP user: $user," +
+                s" bindDn: $bindDn.")
+          }
+          while (attrs.hasMore) {
+            attrs.next
+            env.put(Context.SECURITY_PRINCIPAL, searchResult.getNameInNamespace)
+            env.put(Context.SECURITY_CREDENTIALS, password)
+            val ctx = new InitialDirContext(env)
+            ctx.close()
+          }
+        } catch {
+          case e: NamingException =>
+            throw new AuthenticationException(
+              s"LDAP InitialDirContext failed, Error validating LDAP user: $user," +
+                s" bindDn: $bindDn.",
+              e)
+        }
+      } else {
+        throw new AuthenticationException(
+          s"LDAP InitialLdapContext search results are empty, Error validating LDAP user: $user," +
+            s" bindDn: $bindDn.")
+      }
     }
 
-    env.put(Context.SECURITY_PRINCIPAL, bindDn)
-    env.put(Context.SECURITY_CREDENTIALS, password)
-
-    try {
-      val ctx = new InitialDirContext(env)
-      ctx.close()
-    } catch {
-      case e: NamingException =>
-        throw new AuthenticationException(s"Error validating LDAP user: $bindDn", e)
-    }
   }
 
   private def hasDomain(userName: String): Boolean = ServiceUtils.indexOfDomainMatch(userName) > 0
