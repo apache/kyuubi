@@ -17,3 +17,4 @@
 
 org.apache.kyuubi.events.Fake1EventHandlerProvider
 org.apache.kyuubi.events.Fake2EventHandlerProvider
+org.apache.kyuubi.events.ExceptionEventHandlerProvider

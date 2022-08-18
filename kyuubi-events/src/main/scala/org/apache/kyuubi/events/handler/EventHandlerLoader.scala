@@ -20,13 +20,15 @@ import java.util.ServiceLoader
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+import scala.util.{Failure, Success, Try}
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiEvent
 
-object EventHandlerLoader {
+object EventHandlerLoader extends Logging {
 
-  def loadCustom(kyuubiConf: KyuubiConf): List[EventHandler[KyuubiEvent]] = {
+  def loadCustom(kyuubiConf: KyuubiConf): Seq[EventHandler[KyuubiEvent]] = {
     val providers = ArrayBuffer[CustomEventHandlerProvider]()
     ServiceLoader.load(
       classOf[CustomEventHandlerProvider],
@@ -35,6 +37,18 @@ object EventHandlerLoader {
       .asScala
       .foreach(provider => providers += provider)
 
-    providers.map(_.create(kyuubiConf)).toList
+    providers.map { provider =>
+      Try {
+        provider.create(kyuubiConf)
+      } match {
+        case Success(value) =>
+          value
+        case Failure(exception) =>
+          warn(
+            s"Failed to create an EventHandler by the ${provider.toString}, it will be ignored.",
+            exception)
+          null
+      }
+    }.filter(_ != null)
   }
 }

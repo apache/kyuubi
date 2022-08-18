@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.events
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
 import org.apache.kyuubi.events.handler.{CustomEventHandlerProvider, EventHandler, EventHandlerLoader}
@@ -52,4 +52,10 @@ class Fake2EventHandlerProvider extends CustomEventHandlerProvider {
 class Fake2EventHandler(kyuubiConf: KyuubiConf) extends EventHandler[KyuubiEvent] {
 
   override def apply(kyuubiEvent: KyuubiEvent): Unit = {}
+}
+
+class ExceptionEventHandlerProvider extends CustomEventHandlerProvider {
+  override def create(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
+    throw new KyuubiException("Testing exception.")
+  }
 }
