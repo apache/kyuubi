@@ -26,6 +26,8 @@ import org.eclipse.jetty.server.handler.HandlerWrapper
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, ENGINE_SECURITY_ENABLED}
+import org.apache.kyuubi.metrics.MetricsConstants.{REST_CONN_FAIL, REST_CONN_OPEN, REST_CONN_TOTAL}
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.KERBEROS
 
@@ -51,6 +53,10 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
             baseRequest: Request,
             request: HttpServletRequest,
             response: HttpServletResponse): Unit = {
+          MetricsSystem.tracing { ms =>
+            ms.incCount(REST_CONN_TOTAL)
+            ms.incCount(REST_CONN_OPEN)
+          }
           try {
             if (kerberosEnabled) {
               ugi.doAs(new PrivilegedAction[Unit] {
@@ -62,6 +68,15 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
               handler.handle(target, baseRequest, request, response)
             }
           } finally {
+            val statusCode = response.getStatus
+            if (statusCode < 200 || statusCode >= 300) {
+              MetricsSystem.tracing { ms =>
+                ms.incCount(REST_CONN_FAIL)
+              }
+            }
+            MetricsSystem.tracing { ms =>
+              ms.decCount(REST_CONN_OPEN)
+            }
             AuthenticationFilter.HTTP_CLIENT_USER_NAME.remove()
             AuthenticationFilter.HTTP_CLIENT_IP_ADDRESS.remove()
           }
