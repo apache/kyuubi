@@ -66,7 +66,7 @@ Enable Custom Authentication
 
 To enable the custom authentication method, we need to
 
-- put the jar package to ``$KYUUBI_HOME/jars`` directory to make it visible for
+- Put the jar package to ``$KYUUBI_HOME/jars`` directory to make it visible for
   the classpath of the kyuubi server.
 - Configure the following properties to ``$KYUUBI_HOME/conf/kyuubi-defaults.conf``
   on each node where kyuubi server is installed.
