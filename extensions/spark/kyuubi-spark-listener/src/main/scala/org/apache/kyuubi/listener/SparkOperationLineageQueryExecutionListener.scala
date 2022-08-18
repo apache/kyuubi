@@ -20,13 +20,12 @@ package org.apache.kyuubi.listener
 import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.util.QueryExecutionListener
 
-import org.apache.kyuubi.events.{EventBus, LineageEventHandlerRegister, OperationLineageEvent}
+import org.apache.kyuubi.events.{EventBus, OperationLineageEvent}
 import org.apache.kyuubi.helper.SparkSQLLineageParseHelper
 
 class SparkOperationLineageQueryExecutionListener extends QueryExecutionListener {
 
   override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
-    LineageEventHandlerRegister.register(qe.sparkSession)
     val lineage =
       SparkSQLLineageParseHelper(qe.sparkSession).transformToLineage(qe.id, qe.optimizedPlan)
     val eventTime = System.currentTimeMillis()

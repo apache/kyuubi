@@ -25,7 +25,6 @@ trait SparkListenerExtensionTest {
   protected val catalogImpl: String
   protected def format: String = if (catalogImpl == "hive") "hive" else "parquet"
 
-  protected val extension: SparkSessionExtensions => Unit = _ => Unit
   protected lazy val spark: SparkSession = {
     val metastore = {
       val path = Files.createTempDirectory("hms")
@@ -41,7 +40,6 @@ trait SparkListenerExtensionTest {
         "spark.sql.warehouse.dir",
         Files.createTempDirectory("spark-warehouse").toString)
       .config(sparkConf)
-      .withExtensions(extension)
       .getOrCreate()
   }
 

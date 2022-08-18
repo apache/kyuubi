@@ -162,12 +162,7 @@ spark.sql.queryExecutionListeners=org.apache.kyuubi.listener.SparkOperationLinea
 
 #### Lineage Logger Path
 The location of all the engine operation lineage events go for the builtin JSON logger.
-- Local Path: start with `file://`
-- HDFS Path: start with `hdfs://`
-
-```properties
-# default: file:///tmp/kyuubi/events 
-spark.sql.lineage.event.json.log.path={your_path}
-```
+All operation lineage events will be written in the unified event json logger path, which be setting with 
+`kyuubi.engine.event.json.log.path`
 
 

@@ -22,7 +22,7 @@
     <parent>
         <artifactId>kyuubi-parent</artifactId>
         <groupId>org.apache.kyuubi</groupId>
-        <version>1.6.0-SNAPSHOT</version>
+        <version>1.7.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
 
     </parent>
@@ -33,18 +33,7 @@
     <packaging>jar</packaging>
     <url>https://kyuubi.apache.org/</url>
 
-    <properties>
-        <gethostname4j.version>1.0.0</gethostname4j.version>
-        <jna.version>5.7.0</jna.version>
-    </properties>
-
     <dependencies>
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>

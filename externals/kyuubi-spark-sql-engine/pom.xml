@@ -47,6 +47,13 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-spark-listener_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-ha_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -226,6 +233,7 @@
                             <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-events_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
+                            <include>org.apache.kyuubi:kyuubi-spark-listener_${scala.binary.version}</include>
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
