@@ -23,9 +23,11 @@ import java.nio.file.{Files, Paths}
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{BatchTestHelper, RestClientTestHelper, Utils}
 import org.apache.kyuubi.ctl.TestPrematureExit
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.KyuubiSessionManager
 
 class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with BatchTestHelper {
@@ -74,6 +76,9 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
   }
 
   test("basic batch rest client") {
+    val totalConnections =
+      MetricsSystem.counterValue(MetricsConstants.REST_CONN_TOTAL).getOrElse(0L)
+
     val createArgs = Array(
       "create",
       "batch",
@@ -121,6 +126,12 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "--password",
       ldapUserPasswd)
     result = testPrematureExitForControlCli(deleteArgs, "\"success\":true")
+
+    eventually(timeout(3.seconds), interval(200.milliseconds)) {
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections === 5)
+      assert(MetricsSystem.counterValue(MetricsConstants.REST_CONN_OPEN).getOrElse(0L) === 0)
+    }
   }
 
   test("spnego batch rest client") {
