@@ -74,6 +74,25 @@ for pointing to the right Ranger admin server.
 
 </configuration>
 ```
+- Additional configs for using Marcos in row-level filter
+  - Macros are now supported for using user/group/tag in row-filter condition expression, introduced in [Ranger 2.3](https://cwiki.apache.org/confluence/display/RANGER/Apache+Ranger+2.3.0+-+Release+Notes). This feature helps significantly simplify the row-filter condition expression by replacing explicit condition query by using user/group/tag's attributes. 
+  - Consider user `bowenliang123` with an attribute `born_city` of value `Guangzhou `, the row filter condition as `city='${{USER.born_city}}'` will be transformed to `city='Guangzhou'` in execution plan.
+  - More supported marcros and usage refer to [RANGER-3605](https://issues.apache.org/jira/browse/RANGER-3605) and [RANGER-3550](https://issues.apache.org/jira/browse/RANGER-3550).
+  - Add the follow configs to `ranger-spark-security.xml` to enable UserStore Enricher which is required by macros and scripts.
+   
+```xml
+    <property>
+        <name>ranger.plugin.spark.enable.implicit.userstore.enricher</name>
+        <value>true</value>
+        <description>Enable UserStoreEnricher for fetching user and group attributes if using macros or scripts in row-filters since Ranger 2.3</description>
+    </property>
+
+    <property>
+        <name>ranger.plugin.hive.policy.cache.dir</name>
+        <value>./a ranger hive service name/policycache</value>
+        <description>policycache cache path of hive service def for caching UserStore, Tags, etc.</description>
+    </property>    
+```
 
 #### ranger-spark-audit.xml
 
