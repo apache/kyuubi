@@ -2191,7 +2191,7 @@
             <repositories>
                 <repository>
                     <id>staging-repo</id>
-                    <url> https://oss.sonatype.org/content/repositories/iodelta-1087/</url>
+                    <url>https://oss.sonatype.org/content/repositories/iodelta-1087/</url>
                 </repository>
             </repositories>
         </profile>
