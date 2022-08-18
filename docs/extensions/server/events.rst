@@ -26,13 +26,13 @@ Kyuubi supports custom event handler. It is usually used to write Kyuubi events 
 The steps of injecting custom event handler
 --------------------------------------
 
-1. create a custom class which implements the ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider``, and add a file named org.apache.kyuubi.events.handler.CustomEventHandlerProvider in the src/main/resources/META-INF/services folder of jar, its content is the custom class name.
+1. create a custom class which implements the ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider``, and add a file named org.apache.kyuubi.events.handler.CustomEventHandlerProvider in the src/main/resources/META-INF/services folder of project, its content is the custom class name.
 2. compile and put the jar into ``$KYUUBI_HOME/jars``.
 3. adding configuration at ``kyuubi-defaults.conf``:
 
    .. code-block:: java
 
-      kyuubi.engine.event.loggers=CUSTOM
+      kyuubi.backend.server.event.loggers=CUSTOM
 
 The ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider`` has a zero-arg constructor, it can create a custom EventHandler.
 
