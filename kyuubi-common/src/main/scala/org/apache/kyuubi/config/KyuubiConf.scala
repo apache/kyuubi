@@ -642,7 +642,7 @@ object KyuubiConf {
   @deprecated(s"using kyuubi.authentication.ldap.binddn instead", "1.6.0")
   val AUTHENTICATION_LDAP_GUIDKEY: ConfigEntry[String] =
     buildConf("kyuubi.authentication.ldap.guidKey")
-      .doc("LDAP attribute name whose values are unique in this LDAP server." +
+      .doc("(deprecated)LDAP attribute name whose values are unique in this LDAP server." +
         "For example:uid or cn.")
       .version("1.2.0")
       .stringConf
@@ -2002,7 +2002,11 @@ object KyuubiConf {
       DeprecatedConfig(
         "kyuubi.ha.zookeeper.acl.enabled",
         "1.3.2",
-        "Use kyuubi.ha.zookeeper.auth.type and kyuubi.ha.zookeeper.engine.auth.type instead"))
+        "Use kyuubi.ha.zookeeper.auth.type and kyuubi.ha.zookeeper.engine.auth.type instead"),
+      DeprecatedConfig(
+        AUTHENTICATION_LDAP_GUIDKEY.key,
+        "1.6.0",
+        s"using ${AUTHENTICATION_LDAP_BINDDN} instead"))
     Map(configs.map { cfg => cfg.key -> cfg }: _*)
   }
 

@@ -72,8 +72,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
       // get batch by id
       batchRestApi.getBatchById("1")
     }
-    assert(e.getCause.toString.contains(s"LDAP InitialLdapContext search results are empty," +
-      s" LDAP user: ${customUser}"))
+    assert(e.getCause.toString.contains(s"Error validating LDAP user: ${customUser}"))
 
     basicKyuubiRestClient.close()
   }

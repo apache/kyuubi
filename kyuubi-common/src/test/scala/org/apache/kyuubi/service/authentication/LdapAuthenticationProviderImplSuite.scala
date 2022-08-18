@@ -32,12 +32,6 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
   override def beforeAll(): Unit = {
     super.beforeAll()
     conf.set(AUTHENTICATION_LDAP_URL, ldapUrl)
-    conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
-    conf.set(AUTHENTICATION_LDAP_GUIDKEY, ldapGuidKey)
-    conf.set(AUTHENTICATION_LDAP_BINDDN, ldapBinddn)
-    conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
-    conf.set(AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
-    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, ldapAttrs)
   }
 
   override def afterAll(): Unit = {
@@ -48,7 +42,45 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     assert(ldapServer.getListenPort > 0)
   }
 
-  test("authenticate tests") {
+  test("Kyubbi ldap authenticate tests before 1.6.0") {
+    val providerImpl = new LdapAuthenticationProviderImpl(conf)
+    val e1 = intercept[AuthenticationException](providerImpl.authenticate("", ""))
+    assert(e1.getMessage.contains("user is null"))
+    val e2 = intercept[AuthenticationException](providerImpl.authenticate("kyuubi", ""))
+    assert(e2.getMessage.contains("password is null"))
+
+    val user = "uid=kentyao,dc=example,dc=com"
+    providerImpl.authenticate(user, "kentyao")
+    val e3 = intercept[AuthenticationException](
+      providerImpl.authenticate(user, "kent"))
+    assert(e3.getMessage.contains(user))
+    assert(e3.getCause.isInstanceOf[javax.naming.AuthenticationException])
+
+    conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
+    val providerImpl2 = new LdapAuthenticationProviderImpl(conf)
+    providerImpl2.authenticate("kentyao", "kentyao")
+
+    val e4 = intercept[AuthenticationException](
+      providerImpl.authenticate("kentyao", "kent"))
+    assert(e4.getMessage.contains(user))
+
+    conf.unset(AUTHENTICATION_LDAP_URL)
+    val providerImpl3 = new LdapAuthenticationProviderImpl(conf)
+    val e5 = intercept[AuthenticationException](
+      providerImpl3.authenticate("kentyao", "kentyao"))
+
+    assert(e5.getMessage.contains(user))
+    assert(e5.getCause.isInstanceOf[CommunicationException])
+
+    conf.set(AUTHENTICATION_LDAP_DOMAIN, "kyuubi.com")
+    val providerImpl4 = new LdapAuthenticationProviderImpl(conf)
+    intercept[AuthenticationException](providerImpl4.authenticate("kentyao", "kentyao"))
+  }
+
+  test("Kyubbi ldap authenticate tests since 1.6.0") {
+    conf.set(AUTHENTICATION_LDAP_BINDDN, ldapBinddn)
+    conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
+    conf.set(AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
     val providerImpl = new LdapAuthenticationProviderImpl(conf)
     val e1 = intercept[AuthenticationException](providerImpl.authenticate("", ""))
     assert(e1.getMessage.contains("user is null"))
@@ -62,7 +94,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     val e3 = intercept[AuthenticationException](
       providerImpl1.authenticate(ldapUser, ldapUserPasswd))
     assert(e3.getMessage contains (ldapUser))
-    assert(e3.getMessage startsWith "LDAP InitialLdapContext failed")
+    assert(e3.getMessage contains "Error validating LDAP user")
     assert(e3.getCause.isInstanceOf[javax.naming.NameNotFoundException])
     conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
 
@@ -74,7 +106,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     val e4 = intercept[AuthenticationException](
       providerImpl2.authenticate(ldapUser, ldapUserPasswd))
     assert(e4.getMessage contains (ldapUser))
-    assert(e4.getMessage startsWith "LDAP InitialLdapContext failed")
+    assert(e4.getMessage contains "Error validating LDAP user")
     assert(e4.getCause.isInstanceOf[javax.naming.AuthenticationException])
     conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
 
@@ -82,20 +114,20 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     val e5 = intercept[AuthenticationException](
       providerImpl3.authenticate(ldapUser, "kent"))
     assert(e5.getMessage contains (ldapUser))
-    assert(e5.getMessage startsWith "LDAP InitialDirContext failed")
+    assert(e5.getMessage contains "Error validating LDAP user")
     assert(e5.getCause.isInstanceOf[javax.naming.AuthenticationException])
 
     val providerImpl4 = new LdapAuthenticationProviderImpl(conf)
     val e6 = intercept[AuthenticationException](
       providerImpl4.authenticate("kent", ldapUserPasswd))
     assert(e6.getMessage contains ("kent"))
-    assert(e6.getMessage startsWith "LDAP InitialLdapContext search results are empty")
+    assert(e6.getMessage contains "Error validating LDAP user")
 
     conf.set(AUTHENTICATION_LDAP_DOMAIN, "kyuubi.com")
     val providerImpl5 = new LdapAuthenticationProviderImpl(conf)
     val e7 =
       intercept[AuthenticationException](providerImpl5.authenticate(ldapUser, ldapUserPasswd))
-    assert(e7.getMessage startsWith "LDAP InitialLdapContext search results are empty")
+    assert(e7.getMessage contains "Error validating LDAP user")
     conf.set(AUTHENTICATION_LDAP_DOMAIN, "example")
 
     conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("cn"))
@@ -107,7 +139,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     val providerImpl7 = new LdapAuthenticationProviderImpl(conf)
     val e8 =
       intercept[AuthenticationException](providerImpl7.authenticate(ldapUser, ldapUserPasswd))
-    assert(e8.getMessage startsWith "LDAP attributes are empty")
+    assert(e8.getMessage contains "Error validating LDAP user")
     conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("mail"))
 
     conf.unset(AUTHENTICATION_LDAP_URL)

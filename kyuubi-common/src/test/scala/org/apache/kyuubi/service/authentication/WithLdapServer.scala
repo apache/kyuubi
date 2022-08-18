@@ -26,7 +26,6 @@ trait WithLdapServer extends KyuubiFunSuite {
   protected val ldapBaseDn = "dc=example,dc=com"
   protected val ldapUser = Utils.currentUser
   protected val ldapUserPasswd = "ldapPassword"
-  protected val ldapGuidKey = "uid"
   protected val ldapBinddn = "uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com"
   protected val ldapBindpw = "adminPassword"
   protected val ldapBaseUserDn = "ou=users,dc=example,dc=com"
@@ -74,6 +73,15 @@ trait WithLdapServer extends KyuubiFunSuite {
       "objectClass: person")
     ldapServer.add(
       s"dn: uid=$ldapUser,cn=$ldapUser,$ldapBaseUserDn",
+      s"uid: $ldapUser",
+      s"mail: $ldapUser@$ldapDomain",
+      s"cn: $ldapUser",
+      s"sn: $ldapUser",
+      s"userPassword: $ldapUserPasswd",
+      "objectClass: person",
+      "objectClass: inetOrgPerson")
+    ldapServer.add(
+      s"dn: uid=$ldapUser,$ldapBaseDn",
       s"uid: $ldapUser",
       s"mail: $ldapUser@$ldapDomain",
       s"cn: $ldapUser",

@@ -17,11 +17,11 @@
 
 package org.apache.kyuubi.service.authentication
 
-import javax.security.sasl.AuthenticationException
-
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_LDAP_ATTRIBUTES, AUTHENTICATION_LDAP_BASEDN, AUTHENTICATION_LDAP_BINDDN, AUTHENTICATION_LDAP_DOMAIN, AUTHENTICATION_LDAP_GUIDKEY, AUTHENTICATION_LDAP_PASSWORD}
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+
+import javax.security.sasl.AuthenticationException
 
 class AuthenticationProviderFactorySuite extends KyuubiFunSuite {
 
@@ -31,20 +31,31 @@ class AuthenticationProviderFactorySuite extends KyuubiFunSuite {
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    conf.set(AUTHENTICATION_LDAP_BASEDN, "test")
-    conf.set(AUTHENTICATION_LDAP_GUIDKEY, "test")
-    conf.set(AUTHENTICATION_LDAP_BINDDN, "test")
-    conf.set(AUTHENTICATION_LDAP_PASSWORD, "test")
-    conf.set(AUTHENTICATION_LDAP_DOMAIN, "test")
-    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("test"))
   }
 
-  test("get auth provider") {
+  test("get auth provider before 1.6.0") {
+    conf.set(AUTHENTICATION_LDAP_BASEDN, "test")
     val p1 = getAuthenticationProvider(AuthMethods.withName("NONE"), conf)
     p1.authenticate(Utils.currentUser, "")
     val p2 = getAuthenticationProvider(AuthMethods.withName("LDAP"), conf)
     val e1 = intercept[AuthenticationException](p2.authenticate("test", "test"))
-    assert(e1.getMessage.contains("LDAP InitialLdapContext failed"))
+    assert(e1.getMessage.contains("Error validating LDAP user"))
+    val e2 = intercept[AuthenticationException](
+      AuthenticationProviderFactory.getAuthenticationProvider(null, conf))
+    assert(e2.getMessage === "Not a valid authentication method")
+  }
+
+  test("get auth provider on since 1.6.0") {
+    conf.set(AUTHENTICATION_LDAP_BASEDN, "test")
+    conf.set(AUTHENTICATION_LDAP_BINDDN, "test")
+    conf.set(AUTHENTICATION_LDAP_PASSWORD, "test")
+    conf.set(AUTHENTICATION_LDAP_DOMAIN, "test")
+    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("test"))
+    val p1 = getAuthenticationProvider(AuthMethods.withName("NONE"), conf)
+    p1.authenticate(Utils.currentUser, "")
+    val p2 = getAuthenticationProvider(AuthMethods.withName("LDAP"), conf)
+    val e1 = intercept[AuthenticationException](p2.authenticate("test", "test"))
+    assert(e1.getMessage.contains("Error validating LDAP user"))
     val e2 = intercept[AuthenticationException](
       AuthenticationProviderFactory.getAuthenticationProvider(null, conf))
     assert(e2.getMessage === "Not a valid authentication method")
