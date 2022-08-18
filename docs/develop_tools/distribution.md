@@ -18,22 +18,25 @@
 
 # Building a Runnable Distribution
 
-To create a Kyuubi distribution like those distributed by [Kyuubi Release Page](https://github.com/apache/incubator-kyuubi/releases),
+To create a Kyuubi distribution like those distributed by [Kyuubi Release Page](https://kyuubi.apache.org/releases.html),
 and that is laid out to be runnable, use `./build/dist` in the project root directory.
 
 For more information on usage, run `./build/dist --help`
 
 ```logtalk
-./build/dist - Tool for making binary distributions of Kyuubi Server
+./build/dist - Tool for making binary distributions of Kyuubi
 
 Usage:
-+--------------------------------------------------------------------------------------+
-| ./build/dist [--name <custom_name>] [--tgz] [--flink-provided] [--spark-provided] <maven build options> |
-+--------------------------------------------------------------------------------------+
++------------------------------------------------------------------------------------------------------+
+| ./build/dist [--name <custom_name>] [--tgz] [--flink-provided] [--spark-provided] [--hive-provided]  |
+|              [--mvn <maven_executable>] <maven build options>                                        |
++------------------------------------------------------------------------------------------------------+
 name:           -  custom binary name, using project version if undefined
 tgz:            -  whether to make a whole bundled package
 flink-provided: -  whether to make a package without Flink binary
 spark-provided: -  whether to make a package without Spark binary
+hive-provided:  -  whether to make a package without Hive binary
+mvn:            -  external maven executable location
 ```
 
 For instance,
@@ -42,12 +45,12 @@ For instance,
 ./build/dist --name custom-name --tgz
 ```
 
-This results in a Kyuubi distribution named `kyuubi-{version}-bin-custom-name.tgz` for you.
+This results in a Kyuubi distribution named `apache-kyuubi-{version}-bin-custom-name.tgz` for you.
 
-If you are planing to deploy Kyuubi where `spark`/`flink` is provided, in other word, it's not required to bundle spark/flink binary, use 
+If you are planing to deploy Kyuubi where `spark`/`flink`/`hive` is provided, in other word, it's not required to bundle spark/flink/hive binary, use 
 
 ```bash
-./build/dist --tgz --spark-provided --flink-provided
+./build/dist --tgz --spark-provided --flink-provided --hive-provided
 ```
 
-Then you will get a Kyuubi distribution without spark binary named `kyuubi-{version}-bin.tgz`.
+Then you will get a Kyuubi distribution without spark/flink/hive binary named `apache-kyuubi-{version}-bin.tgz`.
