@@ -26,7 +26,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
-import org.apache.spark.sql.catalyst.plans.logical.{NoopCommand, Statistics}
+import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
@@ -62,7 +62,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   }
 
   test("[KYUUBI #3226] RuleAuthorization: Should check privileges once only.") {
-    val logicalPlan = NoopCommand("RuleAuthorization", Seq.empty)
+    val logicalPlan = doAs("admin", sql("SHOW TABLES").queryExecution.logical)
     val rule = new RuleAuthorization(spark)
 
     (1 until 10).foreach { i =>
