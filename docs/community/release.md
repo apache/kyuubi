@@ -259,6 +259,20 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuub
 3. Follow [Build Document](../develop_tools/build_document.md) to build documents, then copy `apache/incubator-kyuubi`'s
    folder `docs/_build/html` to `apache/incubator-kyuubi-website`'s folder `content/docs/r{RELEASE_VERSION}`
 
+### Add news in status file
+
+```shell
+svn checkout --depth=files "https://svn.apache.org/repos/asf/incubator/public/trunk/content/projects"
+```
+
+Add the release news
+
+```shell
+svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update kyuubi.xml" kyuubi.xml
+```
+
+The [kyuubi status website](https://incubator.apache.org/projects/kyuubi.html) will be updated after a few minutes.
+
 ### Create an Announcement
 
 Once everything is working, create an announcement on the website and then send an e-mail to the mailing list.
