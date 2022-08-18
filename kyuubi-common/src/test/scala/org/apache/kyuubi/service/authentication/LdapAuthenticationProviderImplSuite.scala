@@ -68,6 +68,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     val providerImpl3 = new LdapAuthenticationProviderImpl(conf)
     val e5 = intercept[AuthenticationException](
       providerImpl3.authenticate("kentyao", "kentyao"))
+    conf.set(AUTHENTICATION_LDAP_URL, ldapUrl)
 
     assert(e5.getMessage.contains(user))
     assert(e5.getCause.isInstanceOf[CommunicationException])
@@ -78,6 +79,8 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
   }
 
   test("Kyubbi ldap authenticate tests since 1.6.0") {
+    conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
+    conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, ldapAttrs)
     conf.set(AUTHENTICATION_LDAP_BINDDN, ldapBinddn)
     conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
     conf.set(AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
