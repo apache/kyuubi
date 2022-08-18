@@ -13,52 +13,66 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Handle Events with Custom Event Handler
+Configure Kyuubi to use Custom EventHandler
 =======================================
 
-.. caution:: unstable
+Kyuubi provide event processing mechanism, it can help us to record some events. Beside the builtin ``JsonLoggingEventHandler``,
+Kyuubi supports custom event handler. It is usually used to write Kyuubi events to some external systems.
+For example, Kafka, ElasticSearch, etc. The ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider`` has a zero-arg constructor,
+it can help us to create a custom EventHandler.
 
-Custom Event Handler
---------------------
+.. code-block:: scala
 
-Kyuubi supports custom event handler. It is usually used to write Kyuubi events to some external systems. For example, Kafka, ElasticSearch, etc.
+   package org.apache.kyuubi.events.handler
 
-The steps of injecting custom event handler
---------------------------------------
-
-1. create a custom class which implements the ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider``, and add a file named org.apache.kyuubi.events.handler.CustomEventHandlerProvider in the src/main/resources/META-INF/services folder of project, its content is the custom class name.
-2. compile and put the jar into ``$KYUUBI_HOME/jars``.
-3. adding configuration at ``kyuubi-defaults.conf``:
-
-   .. code-block:: java
-
-      kyuubi.backend.server.event.loggers=CUSTOM
-
-The ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider`` has a zero-arg constructor, it can create a custom EventHandler.
-
-.. code-block:: java
+   import org.apache.kyuubi.config.KyuubiConf
+   import org.apache.kyuubi.events.KyuubiEvent
 
    trait CustomEventHandlerProvider {
+
+     /**
+      * The create method is called by the Server EventHandler register
+      * to create a custom event handler.
+      *
+      * @param kyuubiConf The conf can be used to read some configs.
+      *
+      * @return A custom handler to handle KyuubiEvent.
+     */
      def create(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent]
    }
 
-Example
--------
+Build A Custom EventHandler
+----------------------------
 
-We have a custom class ``Fake1EventHandlerProvider``:
+To create custom EventHandlerProvider class derived from the above interface, we need to:
 
-.. code-block:: java
+- Referencing the library
 
-   class Fake1EventHandlerProvider extends CustomEventHandlerProvider {
-     override def create(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
-       new Fake1EventHandler(kyuubiConf)
-     }
-   }
+.. code-block:: xml
 
-   class Fake1EventHandler(kyuubiConf: KyuubiConf) extends EventHandler[KyuubiEvent] {
-     override def apply(kyuubiEvent: KyuubiEvent): Unit = {
-       // sending events to external system.
-     }
-   }
+   <dependency>
+      <groupId>org.apache.kyuubi</groupId>
+      <artifactId>kyuubi-event_2.12</artifactId>
+      <version>1.7.0-incubating</version>
+      <scope>provided</scope>
+   </dependency>
 
-You can send each KyuubiEvent to an external system by ``Fake1EventHandler``.
+- Implement ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider``
+- Adding a file named ``org.apache.kyuubi.events.handler.CustomEventHandlerProvider`` in the src/main/resources/META-INF/services folder of project, its content is the custom class name.
+
+Enable Custom EventHandler
+----------------------------
+
+To enable the custom EventHandler, we need to
+
+- Put the jar package to ``$KYUUBI_HOME/jars`` directory to make it visible for
+    the classpath of the kyuubi server.
+- Configure the following properties to ``$KYUUBI_HOME/conf/kyuubi-defaults.conf``
+  on each node where kyuubi server is installed. If you need use other event handler, it can be appended after the ``CUSTOM``
+
+.. code-block:: property
+   :margin:
+
+   kyuubi.backend.server.event.loggers=CUSTOM
+
+- Restart all the kyuubi server instances
