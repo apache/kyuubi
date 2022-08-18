@@ -32,6 +32,7 @@ In the process of using Apache Kyuubi, if you have any questions, suggestions, o
 - Join the [Mailing Lists](https://kyuubi.apache.org/mailing_lists.html) - the best way to keep up-to-date with the community.
 - [Issue Tracker](https://kyuubi.apache.org/issue_tracking.html) - tracking bugs, ideas, plans, etc.
 - [Github Discussions](https://github.com/apache/incubator-kyuubi/discussions) - second to mailing list for anything else you want to share or ask
+- [Slack](https://join.slack.com/t/apachekyuubi/shared_invite/zt-1e1qw68g4-yE5HJsVVDin~ABtZISyuxg) - chat with our community User && Developer anytime!
 
 ## Contributing Guide
 
