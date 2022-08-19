@@ -18,7 +18,7 @@
 
 # Configure Kyuubi to use JDBC Authentication
 
-Kyuubi supports authentication via JDBC query with JDBC. A query is prepared with username/password value and sent to database configured in JDBC URL. The authentication passes if result set returns at least one row.
+Kyuubi supports authentication via JDBC query. A query is prepared with username/password value and sent to database configured in JDBC URL. The authentication passes if result set returns at least one row.
 
 The query sql must start with `SELECT`. Placeholders are supported for sql template:
 - `${username}`
