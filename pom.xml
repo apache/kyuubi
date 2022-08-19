@@ -202,7 +202,7 @@
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
-        <maven.plugin.spotless.version>2.17.4</maven.plugin.spotless.version>
+        <maven.plugin.spotless.version>2.24.1</maven.plugin.spotless.version>
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
@@ -1970,6 +1970,9 @@
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${maven.plugin.spotless.version}</version>
                     <configuration>
+                        <upToDateChecking>
+                            <enabled>true</enabled>
+                        </upToDateChecking>
                         <java>
                             <includes>
                                 <include>src/main/java/**/*.java</include>
@@ -1979,6 +1982,7 @@
                                 <version>1.7</version>
                                 <style>GOOGLE</style>
                             </googleJavaFormat>
+                            <removeUnusedImports />
                         </java>
                         <scala>
                             <includes>
