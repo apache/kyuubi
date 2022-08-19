@@ -17,10 +17,10 @@
 
 package org.apache.kyuubi.util
 
-import java.sql.{Connection, PreparedStatement, ResultSet, ResultSetMetaData}
-import java.util
+import java.sql.{Connection, PreparedStatement, ResultSet}
 import javax.sql.DataSource
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 
 import com.jakewharton.fliptables.FlipTable
@@ -108,24 +108,13 @@ object JdbcUtils extends Logging {
 
   private def renderResultSet(resultSet: ResultSet): String = {
     if (resultSet == null) throw new NullPointerException("resultSet == null")
-    val headers: util.List[String] = new util.ArrayList[String]
-    val resultSetMetaData: ResultSetMetaData = resultSet.getMetaData
+    val resultSetMetaData = resultSet.getMetaData
     val columnCount: Int = resultSetMetaData.getColumnCount
-    for (column <- 0 until columnCount) {
-      headers.add(resultSetMetaData.getColumnName(column + 1))
+    val headers = (1 to columnCount).map(resultSetMetaData.getColumnName).toArray
+    val data = ArrayBuffer.newBuilder[Array[String]]
+    while (resultSet.next) {
+      data += (1 to columnCount).map(resultSet.getString).toArray
     }
-    val data: util.List[Array[String]] = new util.ArrayList[Array[String]]
-    while ({
-      resultSet.next
-    }) {
-      val rowData: Array[String] = new Array[String](columnCount)
-      for (column <- 0 until columnCount) {
-        rowData(column) = resultSet.getString(column + 1)
-      }
-      data.add(rowData)
-    }
-    val headerArray: Array[String] = headers.toArray(new Array[String](headers.size))
-    val dataArray: Array[Array[String]] = data.toArray(new Array[Array[String]](data.size))
-    FlipTable.of(headerArray, dataArray)
+    FlipTable.of(headers, data.result().toArray)
   }
 }
