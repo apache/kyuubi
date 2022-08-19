@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.util
 
+import java.sql.DriverManager
 import java.util.Properties
 import javax.sql.DataSource
 
@@ -35,9 +36,9 @@ class JdbcUtilsSuite extends KyuubiFunSuite {
 
   case class Person(id: Int, name: String)
 
-  override def beforeAll(): Unit = {
-
-    super.beforeAll()
+  override def afterAll(): Unit = {
+    super.afterAll()
+    DriverManager.getConnection(shutdownUrl)
   }
 
   test("JdbcUtils methods") {
