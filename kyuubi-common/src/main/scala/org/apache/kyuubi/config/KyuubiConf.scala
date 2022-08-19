@@ -707,14 +707,7 @@ object KyuubiConf {
       .doc("Query SQL template with placeholders " +
         "for JDBC Authentication Provider to execute. " +
         "Authentication passes if at least one row fetched in the result set." +
-        "Available placeholders are: <ul>" +
-        "<li>`${username}`</li>" +
-        "<li>`${password}`</li></ul>" +
-        "eg.: query sql `SELECT 1 FROM auth_table WHERE user=${username} AND " +
-        "passwd=MD5(CONCAT(salt,${password}));` " +
-        "will be prepared as: `SELECT 1 FROM auth_table " +
-        "WHERE user=? AND passwd=MD5(CONCAT(salt,?));`" +
-        " with value replacement of `username` and `password` in string type.")
+        "Available placeholders are `${username}` and `${password}`.")
       .version("1.6.0")
       .stringConf
       .createOptional
