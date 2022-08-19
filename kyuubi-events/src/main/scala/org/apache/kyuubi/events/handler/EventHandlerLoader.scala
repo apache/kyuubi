@@ -45,7 +45,8 @@ object EventHandlerLoader extends Logging {
           value
         case Failure(exception) =>
           warn(
-            s"Failed to create an EventHandler by the ${provider.toString}, it will be ignored.",
+            s"Failed to create an EventHandler by the ${provider.getClass.getName}," +
+              s" it will be ignored.",
             exception)
           null
       }
