@@ -99,12 +99,8 @@ object JdbcUtils extends Logging {
     }
   }
 
-  def queryAndRenderResultSet(sql: String)(implicit ds: DataSource): String =
-    withConnection { conn =>
-      withCloseable(conn.prepareStatement(sql).executeQuery()) { rs =>
-        renderResultSet(rs)
-      }
-    }
+  def executeQueryAndRenderResultSet(sql: String)(implicit ds: DataSource): String =
+    executeQuery[String](sql)()(renderResultSet)
 
   private def renderResultSet(resultSet: ResultSet): String = {
     if (resultSet == null) throw new NullPointerException("resultSet == null")
