@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.helper
+package org.apache.kyuubi.plugin.lineage.helper
 
 import scala.collection.immutable.List
 import scala.reflect.io.File
@@ -28,8 +28,8 @@ import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRel
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.events.Lineage
-import org.apache.kyuubi.helper.SparkListenerHelper.isSparkVersionAtMost
+import org.apache.kyuubi.plugin.lineage.events.Lineage
+import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
 class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   with SparkListenerExtensionTest {
@@ -49,6 +49,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
 
   override def beforeAll(): Unit = {
     super.beforeAll()
+    spark.sql(s"create database if not exists test_db")
     spark.sql(s"create database if not exists test_db0")
     spark.sql(s"create table if not exists test_db0.test_table0" +
       s" (key int, value string) using parquet")
@@ -61,6 +62,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     Seq("test_db0.test_table0", "test_db0.test_table_part0").foreach { t =>
       spark.sql(s"drop table if exists $t")
     }
+    spark.sql(s"drop database if exists test_db")
     spark.sql(s"drop database if exists test_db0")
     spark.stop()
     super.afterAll()
@@ -466,7 +468,6 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   test("columns lineage extract - CTE sql") {
     val ddls =
       List(
-        "create database if not exists test_db",
         "create table test_db.goods_detail0(goods_id string, cat_id string)",
         "create table v2_catalog.test_db_v2.goods_detail1" +
           "(goods_id string, cat_id string, product_id string)",
@@ -575,7 +576,6 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   test("columns lineage extract - union sql") {
     val ddls =
       """
-        |create database if not exists test_db
         |create table test_db.test_table0(a int, b string, c string)
         |create table test_db.test_table1(a int, b string, c string)
         |""".stripMargin
@@ -603,7 +603,6 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   test("columns lineage extract - agg and union sql") {
     val ddls =
       List(
-        "create database if not exists test_db",
         "create table test_db.test_order_item(stat_date string, pay_time date," +
           "channel_id string, sub_channel_id string," +
           "user_type string, country_name string," +

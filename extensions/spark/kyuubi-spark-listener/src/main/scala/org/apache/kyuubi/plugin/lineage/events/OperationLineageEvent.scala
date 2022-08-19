@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.plugin.lineage.events
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.events.KyuubiEvent
 
 case class Lineage(
     inputTables: List[String],

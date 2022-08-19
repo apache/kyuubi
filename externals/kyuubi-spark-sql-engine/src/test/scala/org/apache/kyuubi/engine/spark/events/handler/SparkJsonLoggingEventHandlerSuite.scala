@@ -44,7 +44,7 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
     "spark.eventLog.enabled" -> "true",
     "spark.eventLog.dir" -> logRoot,
     "spark.sql.queryExecutionListeners" ->
-      "org.apache.kyuubi.listener.SparkOperationLineageQueryExecutionListener")
+      "org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener")
 
   override protected def jdbcUrl: String = getJdbcUrl
 

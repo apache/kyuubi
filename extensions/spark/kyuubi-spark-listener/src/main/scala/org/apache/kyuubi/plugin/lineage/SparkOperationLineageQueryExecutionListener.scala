@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.listener
+package org.apache.kyuubi.plugin.lineage
 
 import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.util.QueryExecutionListener
 
-import org.apache.kyuubi.events.{EventBus, OperationLineageEvent}
-import org.apache.kyuubi.helper.SparkSQLLineageParseHelper
+import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.plugin.lineage.events.OperationLineageEvent
+import org.apache.kyuubi.plugin.lineage.helper.SparkSQLLineageParseHelper
 
 class SparkOperationLineageQueryExecutionListener extends QueryExecutionListener {
 

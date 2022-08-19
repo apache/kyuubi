@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.helper
+package org.apache.kyuubi.plugin.lineage.helper
 
 import org.apache.spark.SPARK_VERSION
 

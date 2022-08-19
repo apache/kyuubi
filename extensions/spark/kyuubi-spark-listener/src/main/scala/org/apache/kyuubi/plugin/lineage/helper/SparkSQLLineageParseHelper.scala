@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.helper
+package org.apache.kyuubi.plugin.lineage.helper
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
@@ -30,8 +30,8 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.events.Lineage
-import org.apache.kyuubi.helper.SparkListenerHelper.isSparkVersionAtMost
+import org.apache.kyuubi.plugin.lineage.events.Lineage
+import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
 trait LineageParser {
   def sparkSession: SparkSession
