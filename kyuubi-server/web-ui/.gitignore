@@ -17,7 +17,6 @@
 node_modules
 /dist
 /coverage
-auto-imports.d.ts
 
 # local env files
 .env.local
