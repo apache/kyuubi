@@ -20,10 +20,7 @@ package org.apache.kyuubi.util
 import java.sql.{Connection, PreparedStatement, ResultSet}
 import javax.sql.DataSource
 
-import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
-
-import com.jakewharton.fliptables.FlipTable
 
 import org.apache.kyuubi.Logging
 
@@ -97,20 +94,5 @@ object JdbcUtils extends Logging {
         builder.result
       }
     }
-  }
-
-  def executeQueryAndRenderResultSet(sql: String)(implicit ds: DataSource): String =
-    executeQuery[String](sql)()(renderResultSet)
-
-  private def renderResultSet(resultSet: ResultSet): String = {
-    if (resultSet == null) throw new NullPointerException("resultSet == null")
-    val resultSetMetaData = resultSet.getMetaData
-    val columnCount: Int = resultSetMetaData.getColumnCount
-    val headers = (1 to columnCount).map(resultSetMetaData.getColumnName).toArray
-    val data = ArrayBuffer.newBuilder[Array[String]]
-    while (resultSet.next) {
-      data += (1 to columnCount).map(resultSet.getString).toArray
-    }
-    FlipTable.of(headers, data.result().toArray)
   }
 }

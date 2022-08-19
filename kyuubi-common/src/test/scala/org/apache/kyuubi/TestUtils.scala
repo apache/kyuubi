@@ -19,9 +19,11 @@ package org.apache.kyuubi
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardOpenOption}
+import java.sql.ResultSet
 
 import scala.collection.mutable.ArrayBuffer
 
+import com.jakewharton.fliptables.FlipTable
 import org.scalatest.Assertions.convertToEqualizer
 
 object TestUtils {
@@ -58,5 +60,19 @@ object TestUtils {
 
       newOutput.zip(expected).foreach { case (out, in) => assert(out === in, hint) }
     }
+  }
+
+  def displayResultSet(resultSet: ResultSet): Unit = {
+    if (resultSet == null) throw new NullPointerException("resultSet == null")
+    val resultSetMetaData = resultSet.getMetaData
+    val columnCount: Int = resultSetMetaData.getColumnCount
+    val headers = (1 to columnCount).map(resultSetMetaData.getColumnName).toArray
+    val data = ArrayBuffer.newBuilder[Array[String]]
+    while (resultSet.next) {
+      data += (1 to columnCount).map(resultSet.getString).toArray
+    }
+    // scalastyle:off println
+    println(FlipTable.of(headers, data.result().toArray))
+    // scalastyle:on println
   }
 }
