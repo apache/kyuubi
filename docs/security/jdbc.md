@@ -31,9 +31,9 @@ passwd=MD5(CONCAT(salt,${password}))` will be prepared as: `SELECT 1 FROM auth_d
 
 To enable the jdbc authentication method, we need to
 
-- put the JDBC driver jar package to ``$KYUUBI_HOME/jars`` directory to make it visible for
+- put the JDBC driver jar package to `$KYUUBI_HOME/jars` directory to make it visible for
   the classpath of the kyuubi server.
-- Configure the following properties to ``$KYUUBI_HOME/conf/kyuubi-defaults.conf``
+- Configure the following properties to `$KYUUBI_HOME/conf/kyuubi-defaults.conf`
   on each node where kyuubi server is installed.
 
 
