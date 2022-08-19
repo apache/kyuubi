@@ -19,7 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -401,10 +401,20 @@ object PrivilegesBuilder {
         buildQuery(getQuery, inputObjs)
 
       case "InsertIntoDataSourceDirCommand" |
-          "SaveIntoDataSourceCommand" |
-          "InsertIntoHadoopFsRelationCommand" |
           "InsertIntoHiveDirCommand" =>
+        buildQuery(getQuery, inputObjs)
+
+      case "SaveIntoDataSourceCommand" =>
         // TODO: Should get the table via datasource options?
+        buildQuery(getQuery, inputObjs)
+
+      case "InsertIntoHadoopFsRelationCommand" =>
+        getPlanField[Option[CatalogTable]]("catalogTable").map(opt => {
+          val table = opt.identifier
+          val saveMode: SaveMode = getPlanField[SaveMode]("mode")
+          val actionType = if (SaveMode.Overwrite == saveMode) INSERT_OVERWRITE else INSERT
+          outputObjs += tablePrivileges(table, actionType = actionType)
+        })
         buildQuery(getQuery, inputObjs)
 
       case "InsertIntoHiveTable" =>

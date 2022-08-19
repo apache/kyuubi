@@ -1493,7 +1493,16 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assert(accessType === AccessType.SELECT)
       }
 
-      assert(outputs.isEmpty)
+      assert(outputs.size == 1)
+      outputs.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.INSERT)
+        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.dbname equalsIgnoreCase "default")
+        assert(po.objectName equalsIgnoreCase tableName)
+        assert(po.columns.isEmpty)
+        val accessType = ranger.AccessType(po, operationType, isInput = false)
+        assert(accessType === AccessType.UPDATE)
+      }
     }
   }
 

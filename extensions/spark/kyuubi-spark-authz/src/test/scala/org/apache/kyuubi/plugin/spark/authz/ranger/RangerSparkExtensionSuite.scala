@@ -26,7 +26,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
-import org.apache.spark.sql.catalyst.plans.logical.Statistics
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Statistics}
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
@@ -60,6 +60,51 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       resource: String = "default/src",
       user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
+  }
+
+  private def getPlanField[T](plan: LogicalPlan, field: String): T = {
+    getFieldVal[T](plan, field)
+  }
+
+  test("[KYUUBI #3276] InsertIntoHadoopFsRelationCommand: Write tables should also be checked ") {
+    val db = "db"
+    val createDB = s"CREATE DATABASE IF NOT EXISTS $db"
+    val table = "employee"
+    val createTable = s"CREATE TABLE IF NOT EXISTS $db.$table (id string) USING PARQUET"
+    val insert = s"INSERT INTO $db.$table values('id1')"
+
+    try {
+      doAs(
+        "admin", {
+          sql(createDB)
+          sql(createTable)
+
+          // Command may be executed early, so it should be CommandResult, however,
+          // this does not affect the original `Command` authentication, this is due to
+          // `eagerlyExecuteCommands` first plans the original command, this includes the
+          // Optimizer phase (i.e., authenticates the original command as well).
+          val optimizedPlan = sql(insert).queryExecution.optimizedPlan
+          if (isSparkV32OrGreater) {
+            assert(optimizedPlan.nodeName == "CommandResult")
+            assert(getPlanField[LogicalPlan](optimizedPlan, "commandLogicalPlan").nodeName
+              == "InsertIntoHadoopFsRelationCommand")
+          } else {
+            assert(optimizedPlan.nodeName == "InsertIntoHadoopFsRelationCommand")
+          }
+        })
+
+      doAs(
+        "yi", {
+          val e = intercept[AccessControlException](sql(insert).count())
+          assert(e.getMessage === errorMessage("update", s"$db/$table"))
+        })
+    } finally {
+      doAs(
+        "admin", {
+          sql(s"DROP TABLE IF EXISTS $db.$table")
+          sql(s"DROP DATABASE IF EXISTS $db")
+        })
+    }
   }
 
   test("[KYUUBI #3226] RuleAuthorization: Should check privileges once only.") {
