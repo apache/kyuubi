@@ -45,5 +45,5 @@ kyuubi.authentication.jdbc.driver.class = com.mysql.jdbc.Driver
 kyuubi.authentication.jdbc.url = jdbc:mysql://127.0.0.1:3306/auth_db
 kyuubi.authentication.jdbc.username = bowenliang123
 kyuubi.authentication.jdbc.password = bowenliang123@kyuubi
-kyuubi.authentication.jdbc.query = SELECT 1 FROM auth_table WHERE user=? AND passwd=MD5(CONCAT(salt,?))
+kyuubi.authentication.jdbc.query = SELECT 1 FROM auth_table WHERE user=${username} AND passwd=MD5(CONCAT(salt,${password}))
 ```
