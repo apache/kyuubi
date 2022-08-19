@@ -1,10 +1,10 @@
 {
   "name": "kyuubi-ui",
   "private": true,
-  "version": "1.6.0-SNAPSHOT",
+  "version": "1.7.0-SNAPSHOT",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 8080",
+    "dev": "vite --port 9090",
     "build": "vue-tsc --noEmit && vite build --mode production",
     "build-check": "npm run lint && npm run build",
     "preview": "vite preview",
