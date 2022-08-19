@@ -49,7 +49,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
   checkJdbcConfigs()
 
-  implicit private[kyuubi] val ds: DataSource = {
+  implicit private[kyuubi] val ds: DataSource with AutoCloseable = {
     val datasourceProperties = new Properties()
     val hikariConfig = new HikariConfig(datasourceProperties)
     hikariConfig.setDriverClassName(driverClass.orNull)

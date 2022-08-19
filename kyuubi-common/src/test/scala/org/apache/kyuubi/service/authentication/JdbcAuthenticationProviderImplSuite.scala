@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.io.Closeable
 import java.sql.DriverManager
 import java.util.Properties
 import javax.security.sasl.AuthenticationException
@@ -36,7 +35,7 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val authDbName: String = "auth_db"
   protected val jdbcUrl: String = s"jdbc:derby:memory:$authDbName;create=true"
 
-  implicit private val ds: DataSource with Closeable = {
+  implicit private val ds: DataSource with AutoCloseable = {
     val datasourceProperties = new Properties()
     val hikariConfig = new HikariConfig(datasourceProperties)
     hikariConfig.setDriverClassName("org.apache.derby.jdbc.AutoloadedDriver")
