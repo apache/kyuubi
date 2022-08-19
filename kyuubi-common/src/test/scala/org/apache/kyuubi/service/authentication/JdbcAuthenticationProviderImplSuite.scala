@@ -22,9 +22,9 @@ import java.util.Properties
 import javax.security.sasl.AuthenticationException
 import javax.sql.DataSource
 
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.zaxxer.hikari.util.DriverDataSource
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.util.JdbcUtils
@@ -35,16 +35,12 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val authDbName: String = "auth_db"
   protected val jdbcUrl: String = s"jdbc:derby:memory:$authDbName;create=true"
 
-  implicit private val ds: DataSource with AutoCloseable = {
-    val datasourceProperties = new Properties()
-    val hikariConfig = new HikariConfig(datasourceProperties)
-    hikariConfig.setDriverClassName("org.apache.derby.jdbc.AutoloadedDriver")
-    hikariConfig.setJdbcUrl(jdbcUrl)
-    hikariConfig.setUsername(dbUser)
-    hikariConfig.setPassword(dbPasswd)
-    hikariConfig.setPoolName("test-jdbc-auth-pool")
-    new HikariDataSource(hikariConfig)
-  }
+  implicit private val ds: DataSource = new DriverDataSource(
+    jdbcUrl,
+    "org.apache.derby.jdbc.AutoloadedDriver",
+    new Properties,
+    dbUser,
+    dbPasswd)
 
   protected val authUser: String = "liangtiancheng"
   protected val authPasswd: String = "liangtiancheng"
@@ -78,11 +74,8 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     super.afterAll()
 
     // cleanup db
-    JdbcUtils.close(ds)
-    try {
+    Utils.tryLogNonFatalError {
       DriverManager.getConnection(s"jdbc:derby:memory:$authDbName;shutdown=true")
-    } catch {
-      case _: Throwable =>
     }
   }
 

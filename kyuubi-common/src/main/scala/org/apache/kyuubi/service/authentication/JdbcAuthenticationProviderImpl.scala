@@ -21,7 +21,7 @@ import java.util.Properties
 import javax.security.sasl.AuthenticationException
 import javax.sql.DataSource
 
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.zaxxer.hikari.util.DriverDataSource
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.Logging
@@ -49,16 +49,12 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
   checkJdbcConfigs()
 
-  implicit private[kyuubi] val ds: DataSource with AutoCloseable = {
-    val datasourceProperties = new Properties()
-    val hikariConfig = new HikariConfig(datasourceProperties)
-    hikariConfig.setDriverClassName(driverClass.orNull)
-    hikariConfig.setJdbcUrl(jdbcUrl.orNull)
-    hikariConfig.setUsername(username.orNull)
-    hikariConfig.setPassword(password.orNull)
-    hikariConfig.setPoolName("jdbc-auth-pool")
-    new HikariDataSource(hikariConfig)
-  }
+  implicit private[kyuubi] val ds: DataSource = new DriverDataSource(
+    jdbcUrl.orNull,
+    driverClass.orNull,
+    new Properties,
+    username.orNull,
+    password.orNull)
 
   /**
    * The authenticate method is called by the Kyuubi Server authentication layer
