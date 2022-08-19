@@ -56,8 +56,9 @@ class JdbcUtilsSuite extends KyuubiFunSuite {
     }
     assert(affected == 2)
 
-    val persons = JdbcUtils.executeQueryWithRowMapper(
-      "SELECT * FROM person WHERE id=?") { stmt =>
+    val persons = JdbcUtils.executeQueryWithRowMapper {
+      "SELECT * FROM person WHERE id=?"
+    } { stmt =>
       stmt.setInt(1, 9)
     } { rs =>
       Person(rs.getInt(1), rs.getString(2))
