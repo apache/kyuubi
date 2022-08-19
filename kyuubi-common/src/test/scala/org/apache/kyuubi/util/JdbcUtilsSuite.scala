@@ -36,11 +36,6 @@ class JdbcUtilsSuite extends KyuubiFunSuite {
 
   case class Person(id: Int, name: String)
 
-  override def afterAll(): Unit = {
-    super.afterAll()
-    DriverManager.getConnection(shutdownUrl)
-  }
-
   test("JdbcUtils methods") {
     JdbcUtils.execute(
       """CREATE TABLE person(
