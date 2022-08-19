@@ -73,8 +73,7 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
         val sc = new SearchControls
         sc.setReturningAttributes(attrs)
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE)
-        val searchFilter = String.format("(%s=%s)", "mail", mail)
-        nameEnuResults = ctx.search(baseDn, searchFilter, sc)
+        nameEnuResults = ctx.search(baseDn, s"(mail=$mail)", sc)
       } catch {
         case e: NamingException =>
           throw new AuthenticationException(
