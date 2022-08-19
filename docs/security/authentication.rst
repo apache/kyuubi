@@ -40,6 +40,7 @@ The related configurations can be found at `Authentication Configurations`_
     kerberos
     ../client/advanced/kerberos
     ldap
+    jdbc
     ../extensions/server/authentication
 
 .. _Authentication Configurations: ../deployment/settings.html#authentication
