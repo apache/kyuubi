@@ -60,27 +60,8 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
     val mail = if (!hasDomain(user) && domain.nonEmpty) (user + "@" + domain.get) else user
-    var bindDn = conf.get(AUTHENTICATION_LDAP_BINDDN).getOrElse("")
-    val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
 
-    if ("".equals(bindDn)) {
-      bindDn = conf.get(AUTHENTICATION_LDAP_BASEDN) match {
-        case Some(dn) => guidKey + "=" + mail + "," + dn
-        case _ => mail
-      }
-      env.put(Context.SECURITY_PRINCIPAL, bindDn)
-      env.put(Context.SECURITY_CREDENTIALS, password)
-      try {
-        val ctx = new InitialDirContext(env)
-        ctx.close()
-      } catch {
-        case e: NamingException =>
-          throw new AuthenticationException(
-            s"Error validating LDAP user: $user," +
-              s" bindDn: $bindDn.",
-            e)
-      }
-    } else {
+    conf.get(AUTHENTICATION_LDAP_BINDDN).map { bindDn =>
       val baseDn = conf.get(AUTHENTICATION_LDAP_BASEDN).getOrElse("")
       val bindPw = conf.get(AUTHENTICATION_LDAP_PASSWORD).getOrElse("")
       val attrs = conf.get(AUTHENTICATION_LDAP_ATTRIBUTES).toArray
@@ -130,8 +111,24 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
           s"LDAP InitialLdapContext search results are empty, Error validating LDAP user: $user," +
             s" bindDn: $bindDn.")
       }
+    }.getOrElse {
+      val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
+      val bindDn = conf.get(AUTHENTICATION_LDAP_BASEDN) match {
+        case Some(dn) => guidKey + "=" + mail + "," + dn
+        case _ => mail
+      }
+      env.put(Context.SECURITY_PRINCIPAL, bindDn)
+      env.put(Context.SECURITY_CREDENTIALS, password)
+      try {
+        val ctx = new InitialDirContext(env)
+        ctx.close()
+      } catch {
+        case e: NamingException =>
+          throw new AuthenticationException(
+            s"Error validating LDAP user: $user, bindDn: $bindDn.",
+            e)
+      }
     }
-
   }
 
   private def hasDomain(userName: String): Boolean = ServiceUtils.indexOfDomainMatch(userName) > 0
