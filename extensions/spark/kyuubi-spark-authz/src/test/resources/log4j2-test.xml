@@ -39,5 +39,9 @@
             <AppenderRef ref="stdout"/>
             <AppenderRef ref="file"/>
         </Root>
+        <!-- Note: The log level of org.apache.ranger cannot be `DEBUG` currently. otherwise, NPE will been thrown -->
+        <Logger name="org.apache.ranger" level="warn" additivity="false">
+            <AppenderRef ref="Console" />
+        </Logger>
     </Loggers>
 </Configuration>
