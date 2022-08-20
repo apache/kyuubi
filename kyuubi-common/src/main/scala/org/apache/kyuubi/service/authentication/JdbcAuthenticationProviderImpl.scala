@@ -42,8 +42,6 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   private val authDbPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD)
   private val authQuery = conf.get(AUTHENTICATION_JDBC_QUERY)
 
-
-
   checkJdbcConfigs()
 
   implicit private[kyuubi] val ds: DataSource = new DriverDataSource(

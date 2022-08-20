@@ -17,16 +17,17 @@
 
 package org.apache.kyuubi.service.authentication
 
-import com.zaxxer.hikari.util.DriverDataSource
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.util.JdbcUtils
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
-
 import java.sql.DriverManager
 import java.util.Properties
 import javax.security.sasl.AuthenticationException
 import javax.sql.DataSource
+
+import com.zaxxer.hikari.util.DriverDataSource
+
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.util.JdbcUtils
 
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val dbUser: String = "liangbowen"
