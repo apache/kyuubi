@@ -79,7 +79,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
               s"Unrecognized placeholder in Query SQL: $p")
         }
       } { resultSet =>
-        if (resultSet == null || !resultSet.next()) {
+        if (!resultSet.next()) {
           throw new AuthenticationException("Password does not match or no such user. " +
             s"user: $user, password: ${JdbcUtils.redactPassword(Some(password))}")
         }
