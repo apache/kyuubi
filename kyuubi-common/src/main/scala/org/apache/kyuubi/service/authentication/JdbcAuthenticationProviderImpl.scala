@@ -17,33 +17,44 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.sql.{Connection, PreparedStatement, Statement}
 import java.util.Properties
 import javax.security.sasl.AuthenticationException
+import javax.sql.DataSource
 
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.zaxxer.hikari.util.DriverDataSource
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.util.JdbcUtils
 
 class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider
   with Logging {
-
-  private val driverClass = conf.get(AUTHENTICATION_JDBC_DRIVER)
-  private val jdbcUrl = conf.get(AUTHENTICATION_JDBC_URL)
-  private val jdbcUsername = conf.get(AUTHENTICATION_JDBC_USERNAME)
-  private val jdbcUserPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD)
-  private val authQuerySql = conf.get(AUTHENTICATION_JDBC_QUERY)
 
   private val SQL_PLACEHOLDER_REGEX = """\$\{.+?}""".r
   private val USERNAME_SQL_PLACEHOLDER = "${username}"
   private val PASSWORD_SQL_PLACEHOLDER = "${password}"
 
+  private val driverClass = conf.get(AUTHENTICATION_JDBC_DRIVER)
+  private val jdbcUrl = conf.get(AUTHENTICATION_JDBC_URL)
+  private val username = conf.get(AUTHENTICATION_JDBC_USERNAME)
+  private val password = conf.get(AUTHENTICATION_JDBC_PASSWORD)
+  private val authQuery = conf.get(AUTHENTICATION_JDBC_QUERY)
+
+  private val redactedPasswd = password match {
+    case Some(s) if !StringUtils.isBlank(s) => s"${"*" * s.length}(length: ${s.length})"
+    case None => "(empty)"
+  }
+
   checkJdbcConfigs()
 
-  private[kyuubi] val hikariDataSource = getHikariDataSource
+  implicit private[kyuubi] val ds: DataSource = new DriverDataSource(
+    jdbcUrl.orNull,
+    driverClass.orNull,
+    new Properties,
+    username.orNull,
+    password.orNull)
 
   /**
    * The authenticate method is called by the Kyuubi Server authentication layer
@@ -62,37 +73,27 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
         s" or contains blank space")
     }
 
-    if (StringUtils.isBlank(password)) {
-      throw new AuthenticationException(s"Error validating, password is null" +
-        s" or contains blank space")
-    }
-
-    var connection: Connection = null
-    var queryStatement: PreparedStatement = null
-
     try {
-      connection = hikariDataSource.getConnection
-
-      queryStatement = getAndPrepareQueryStatement(connection, user, password)
-
-      val resultSet = queryStatement.executeQuery()
-
-      if (resultSet == null || !resultSet.next()) {
-        // auth failed
-        throw new AuthenticationException(s"Password does not match or no such user. user:" +
-          s" $user , password length: ${password.length}")
+      debug(s"prepared auth query: $preparedQuery")
+      JdbcUtils.executeQuery(preparedQuery) { stmt =>
+        stmt.setMaxRows(1) // minimum result size required for authentication
+        queryPlaceholders.zipWithIndex.foreach {
+          case (USERNAME_SQL_PLACEHOLDER, i) => stmt.setString(i + 1, user)
+          case (PASSWORD_SQL_PLACEHOLDER, i) => stmt.setString(i + 1, password)
+          case (p, _) => throw new IllegalArgumentException(
+              s"Unrecognized placeholder in Query SQL: $p")
+        }
+      } { resultSet =>
+        if (resultSet == null || !resultSet.next()) {
+          throw new AuthenticationException("Password does not match or no such user. " +
+            s"user: $user, password: $redactedPasswd")
+        }
       }
-
-      // auth passed
-
     } catch {
-      case e: AuthenticationException =>
-        throw e
-      case e: Exception =>
-        error("Cannot get user info", e);
-        throw e
-    } finally {
-      closeDbConnection(connection, queryStatement)
+      case rethrow: AuthenticationException =>
+        throw rethrow
+      case rethrow: Exception =>
+        throw new AuthenticationException("Cannot get user info", rethrow)
     }
   }
 
@@ -101,104 +102,34 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     debug(configLog("Driver Class", driverClass.orNull))
     debug(configLog("JDBC URL", jdbcUrl.orNull))
-    debug(configLog("Database username", jdbcUsername.orNull))
-    debug(configLog("Database password length", jdbcUserPassword.getOrElse("").length.toString))
-    debug(configLog("Query SQL", authQuerySql.orNull))
+    debug(configLog("Database username", username.orNull))
+    debug(configLog("Database password", redactedPasswd))
+    debug(configLog("Query SQL", authQuery.orNull))
 
     // Check if JDBC parameters valid
-    if (driverClass.isEmpty) {
-      throw new IllegalArgumentException("JDBC driver class is not configured.")
-    }
+    require(driverClass.nonEmpty, "JDBC driver class is not configured.")
+    require(jdbcUrl.nonEmpty, "JDBC url is not configured.")
+    require(username.nonEmpty, "JDBC username is not configured")
+    // allow empty password
+    require(authQuery.nonEmpty, "Query SQL is not configured")
 
-    if (jdbcUrl.isEmpty) {
-      throw new IllegalArgumentException("JDBC url is not configured")
+    val query = authQuery.get.trim.toLowerCase
+    // allow simple select query sql only, complex query like CTE is not allowed
+    require(query.startsWith("select"), "Query SQL must start with 'SELECT'")
+    if (!query.contains("where")) {
+      warn("Query SQL does not contains 'WHERE' keyword")
     }
-
-    if (jdbcUsername.isEmpty || jdbcUserPassword.isEmpty) {
-      throw new IllegalArgumentException("JDBC username or password is not configured")
+    if (!query.contains(USERNAME_SQL_PLACEHOLDER)) {
+      warn(s"Query SQL does not contains '$USERNAME_SQL_PLACEHOLDER' placeholder")
     }
-
-    // Check Query SQL
-    if (authQuerySql.isEmpty) {
-      throw new IllegalArgumentException("Query SQL is not configured")
-    }
-    val querySqlInLowerCase = authQuerySql.get.trim.toLowerCase
-    if (!querySqlInLowerCase.startsWith("select")) { // allow select query sql only
-      throw new IllegalArgumentException("Query SQL must start with \"SELECT\"");
-    }
-    if (!querySqlInLowerCase.contains("where")) {
-      warn("Query SQL does not contains \"WHERE\" keyword");
-    }
-    if (!querySqlInLowerCase.contains("${username}")) {
-      warn("Query SQL does not contains \"${username}\" placeholder");
+    if (!query.contains(PASSWORD_SQL_PLACEHOLDER)) {
+      warn(s"Query SQL does not contains '$PASSWORD_SQL_PLACEHOLDER' placeholder")
     }
   }
 
-  private def getPlaceholderList(sql: String): List[String] = {
-    SQL_PLACEHOLDER_REGEX.findAllMatchIn(sql)
-      .map(m => m.matched)
-      .toList
-  }
+  private def preparedQuery: String =
+    SQL_PLACEHOLDER_REGEX.replaceAllIn(authQuery.get, "?")
 
-  private def getAndPrepareQueryStatement(
-      connection: Connection,
-      user: String,
-      password: String): PreparedStatement = {
-
-    val preparedSql: String = {
-      SQL_PLACEHOLDER_REGEX.replaceAllIn(authQuerySql.get, "?")
-    }
-    debug(s"prepared auth query sql: $preparedSql")
-
-    val stmt = connection.prepareStatement(preparedSql)
-    stmt.setMaxRows(1) // minimum result size required for authentication
-
-    // Extract placeholder list and fill parameters to placeholders
-    val placeholderList: List[String] = getPlaceholderList(authQuerySql.get)
-    for (i <- placeholderList.indices) {
-      val param = placeholderList(i) match {
-        case USERNAME_SQL_PLACEHOLDER => user
-        case PASSWORD_SQL_PLACEHOLDER => password
-        case otherPlaceholder =>
-          throw new IllegalArgumentException(
-            s"Unrecognized Placeholder In Query SQL: $otherPlaceholder")
-      }
-
-      stmt.setString(i + 1, param)
-    }
-
-    stmt
-  }
-
-  private def closeDbConnection(connection: Connection, statement: Statement): Unit = {
-    if (statement != null && !statement.isClosed) {
-      try {
-        statement.close()
-      } catch {
-        case e: Exception =>
-          error("Cannot close PreparedStatement to auth database ", e)
-      }
-    }
-
-    if (connection != null && !connection.isClosed) {
-      try {
-        connection.close()
-      } catch {
-        case e: Exception =>
-          error("Cannot close connection to auth database ", e)
-      }
-    }
-  }
-
-  private def getHikariDataSource: HikariDataSource = {
-    val datasourceProperties = new Properties()
-    val hikariConfig = new HikariConfig(datasourceProperties)
-    hikariConfig.setDriverClassName(driverClass.orNull)
-    hikariConfig.setJdbcUrl(jdbcUrl.orNull)
-    hikariConfig.setUsername(jdbcUsername.orNull)
-    hikariConfig.setPassword(jdbcUserPassword.orNull)
-    hikariConfig.setPoolName("jdbc-auth-pool")
-
-    new HikariDataSource(hikariConfig)
-  }
+  private def queryPlaceholders: Iterator[String] =
+    SQL_PLACEHOLDER_REGEX.findAllMatchIn(authQuery.get).map(_.matched)
 }
