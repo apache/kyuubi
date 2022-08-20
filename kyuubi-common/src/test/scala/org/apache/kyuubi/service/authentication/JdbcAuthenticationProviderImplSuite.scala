@@ -132,5 +132,13 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
     _conf.set(AUTHENTICATION_JDBC_QUERY, "SELECT 1 FROM user_auth WHERE username=${user}")
     new JdbcAuthenticationProviderImpl(_conf)
+
+    _conf.set(AUTHENTICATION_JDBC_QUERY,
+      "SELECT 1 FROM user_auth WHERE user=${unknown_placeholder} and username=${user}")
+    val providerImpl2 = new JdbcAuthenticationProviderImpl(_conf)
+    val e11 = intercept[AuthenticationException] {
+      providerImpl2.authenticate(authUser, authPasswd)
+    }
+    assert(e11.getMessage.contains("Unrecognized placeholder in Query SQL: ${unknown_placeholder}"))
   }
 }
