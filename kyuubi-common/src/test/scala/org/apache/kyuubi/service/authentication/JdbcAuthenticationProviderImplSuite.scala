@@ -33,7 +33,8 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val dbUser: String = "liangbowen"
   protected val dbPasswd: String = "liangbowen"
   protected val authDbName: String = "auth_db"
-  protected val jdbcUrl: String = s"jdbc:derby:memory:$authDbName;create=true"
+  protected val dbUrl: String = s"jdbc:derby:memory:$authDbName"
+  protected val jdbcUrl: String = s"$dbUrl;create=true"
 
   implicit private val ds: DataSource = new DriverDataSource(
     jdbcUrl,
