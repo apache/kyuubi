@@ -17,51 +17,56 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.sql.{Connection, DriverManager}
+import java.sql.DriverManager
 import java.util.Properties
 import javax.security.sasl.AuthenticationException
+import javax.sql.DataSource
 
-import org.apache.kyuubi.KyuubiFunSuite
+import com.zaxxer.hikari.util.DriverDataSource
+
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.util.JdbcUtils
 
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val dbUser: String = "liangbowen"
   protected val dbPasswd: String = "liangbowen"
-  protected var jdbcUrl: String = _
+  protected val authDbName: String = "auth_db"
+  protected val dbUrl: String = s"jdbc:derby:memory:$authDbName"
+  protected val jdbcUrl: String = s"$dbUrl;create=true"
+
+  implicit private val ds: DataSource = new DriverDataSource(
+    jdbcUrl,
+    "org.apache.derby.jdbc.AutoloadedDriver",
+    new Properties,
+    dbUser,
+    dbPasswd)
 
   protected val authUser: String = "liangtiancheng"
   protected val authPasswd: String = "liangtiancheng"
 
-  protected var conf = new KyuubiConf()
-  var conn: Connection = _
-  var authDbName: String = "auth_db"
+  protected val conf: KyuubiConf = new KyuubiConf()
+    .set(AUTHENTICATION_JDBC_DRIVER, "org.apache.derby.jdbc.AutoloadedDriver")
+    .set(AUTHENTICATION_JDBC_URL, jdbcUrl)
+    .set(AUTHENTICATION_JDBC_USERNAME, dbUser)
+    .set(AUTHENTICATION_JDBC_PASSWORD, dbPasswd)
+    .set(
+      AUTHENTICATION_JDBC_QUERY,
+      "SELECT 1 FROM user_auth WHERE username=${username} and passwd=${password}")
 
   override def beforeAll(): Unit = {
     // init db
-    val datasourceProperties = new Properties()
-    datasourceProperties.put("user", dbUser)
-    datasourceProperties.put("password", dbPasswd)
-
-    jdbcUrl = s"jdbc:derby:memory:$authDbName;create=true"
-    conn = DriverManager.getConnection(
-      s"$jdbcUrl;user=$dbUser;password=$dbPasswd",
-      datasourceProperties)
-
-    conn.prepareStatement(s"CREATE SCHEMA $dbUser").execute
-
-    conn.prepareStatement(
+    JdbcUtils.execute(s"CREATE SCHEMA $dbUser")()
+    JdbcUtils.execute(
       """CREATE TABLE user_auth (
-        |username VARCHAR(64) NOT NULL PRIMARY KEY,
-        |passwd VARCHAR(64))""".stripMargin).execute();
-
-    val insertStmt = conn.prepareStatement("INSERT INTO user_auth " +
-      "(username, passwd) VALUES (?,?)")
-    insertStmt.setString(1, authUser)
-    insertStmt.setString(2, authPasswd)
-    insertStmt.execute();
-
-    conf = genJdbcAuthConfigs
+        |  username VARCHAR(64) NOT NULL PRIMARY KEY,
+        |  passwd   VARCHAR(64)
+        |)""".stripMargin)()
+    JdbcUtils.execute("INSERT INTO user_auth (username, passwd) VALUES (?, ?)") { stmt =>
+      stmt.setString(1, authUser)
+      stmt.setString(2, authPasswd)
+    }
 
     super.beforeAll()
   }
@@ -70,16 +75,12 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     super.afterAll()
 
     // cleanup db
-    try {
-      DriverManager.getConnection(s"jdbc:derby:memory:$authDbName;shutdown=true")
-    } catch {
-      case e: Throwable =>
+    Utils.tryLogNonFatalError {
+      DriverManager.getConnection(s"$dbUrl;shutdown=true")
     }
   }
 
   test("authenticate tests") {
-    val unchangedConf = genJdbcAuthConfigs
-
     val providerImpl = new JdbcAuthenticationProviderImpl(conf)
     providerImpl.authenticate(authUser, authPasswd)
 
@@ -88,58 +89,34 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     }
     assert(e1.getMessage.contains("user is null"))
 
-    val e2 = intercept[AuthenticationException] {
-      providerImpl.authenticate(authUser, "")
-    }
-    assert(e2.getMessage.contains("password is null"))
-
     val e4 = intercept[AuthenticationException] {
       providerImpl.authenticate(authUser, "wrong_password")
     }
     assert(e4.isInstanceOf[AuthenticationException])
 
-    conf = unchangedConf.clone()
-    conf.unset(AUTHENTICATION_JDBC_URL)
-    val e5 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
+    var _conf = conf.clone
+    _conf.unset(AUTHENTICATION_JDBC_URL)
+    val e5 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
     assert(e5.getMessage.contains("JDBC url is not configured"))
 
-    conf = unchangedConf.clone()
-    conf.unset(AUTHENTICATION_JDBC_USERNAME)
-    val e6 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
-    assert(e6.getMessage.contains("JDBC username or password is not configured"))
+    _conf = conf.clone
+    _conf.unset(AUTHENTICATION_JDBC_USERNAME)
+    val e6 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
+    assert(e6.getMessage.contains("JDBC username is not configured"))
 
-    conf = unchangedConf.clone()
-    conf.unset(AUTHENTICATION_JDBC_PASSWORD)
-    val e7 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
-    assert(e7.getMessage.contains("JDBC username or password is not configured"))
-
-    conf = unchangedConf.clone()
-    conf.unset(AUTHENTICATION_JDBC_QUERY)
-    val e8 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
+    _conf = conf.clone
+    _conf.unset(AUTHENTICATION_JDBC_QUERY)
+    val e8 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
     assert(e8.getMessage.contains("Query SQL is not configured"))
 
-    conf.set(
+    _conf.set(
       AUTHENTICATION_JDBC_QUERY,
-      "INSERT INTO user_auth (username, password) " +
-        " VALUES ('demouser','demopassword'); ")
-    val e9 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
-    assert(e9.getMessage.contains("Query SQL must start with \"SELECT\""))
+      "INSERT INTO user_auth (username, password) VALUES ('demouser','demopassword');")
+    val e9 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
+    assert(e9.getMessage.contains("Query SQL must start with 'SELECT'"))
 
-    conf.unset(AUTHENTICATION_JDBC_URL)
-    val e10 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(conf) }
+    _conf.unset(AUTHENTICATION_JDBC_URL)
+    val e10 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
     assert(e10.getMessage.contains("JDBC url is not configured"))
-  }
-
-  private def genJdbcAuthConfigs: KyuubiConf = {
-    conf = new KyuubiConf()
-    conf.set(AUTHENTICATION_JDBC_DRIVER, "org.apache.derby.jdbc.AutoloadedDriver")
-    conf.set(AUTHENTICATION_JDBC_URL, jdbcUrl)
-    conf.set(AUTHENTICATION_JDBC_USERNAME, dbUser)
-    conf.set(AUTHENTICATION_JDBC_PASSWORD, dbPasswd)
-    conf.set(
-      AUTHENTICATION_JDBC_QUERY,
-      "SELECT 1 FROM user_auth " +
-        " WHERE username=${username} and passwd=${password}")
-    conf
   }
 }
