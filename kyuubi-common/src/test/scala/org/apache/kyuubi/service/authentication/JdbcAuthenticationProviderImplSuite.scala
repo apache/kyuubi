@@ -96,7 +96,7 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     assert(e4.isInstanceOf[AuthenticationException])
     assert(e4.getMessage.contains(s"Password does not match or no such user. " +
       s"user: $authUser, " +
-      s"password: ${"*" * authPasswd.length}(length: ${authPasswd.length})"))
+      s"password: ${"*" * authPasswd.length}(length:${authPasswd.length})"))
 
     var _conf = conf.clone
     _conf.unset(AUTHENTICATION_JDBC_URL)
