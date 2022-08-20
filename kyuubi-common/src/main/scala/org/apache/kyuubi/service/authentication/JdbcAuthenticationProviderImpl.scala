@@ -71,11 +71,13 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     try {
       debug(s"prepared auth query: $preparedQuery")
       JdbcUtils.executeQuery(preparedQuery) { stmt =>
-        queryPlaceholders.zipWithIndex.foreach {
-          case (USER_SQL_PLACEHOLDER, i) => stmt.setString(i + 1, user)
-          case (PASSWORD_SQL_PLACEHOLDER, i) => stmt.setString(i + 1, password)
+        queryPlaceholders.zipWithIndex.map({
+          case (USER_SQL_PLACEHOLDER, i) => (user, i)
+          case (PASSWORD_SQL_PLACEHOLDER, i) => (password, i)
           case (p, _) => throw new IllegalArgumentException(
-              s"Unrecognized placeholder in Query SQL: $p")
+            s"Unrecognized placeholder in Query SQL: $p")
+        }).foreach {
+          case (value: String, i: Int) => stmt.setString(i + 1, value)
         }
         stmt.setMaxRows(1) // skipping more result rows to minimize I/O
       } { resultSet =>
