@@ -98,13 +98,16 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   }
 
   private def checkJdbcConfigs(): Unit = {
-    def configLog(config: String, value: String): String = s"JDBCAuthConfig: $config = '$value'"
+    val configLog = {
+      case (config: String, value: Option[String]) => s"JDBCAuthConfig: $config = '${value.orNull}'"
+      case (config: String, value: String) => s"JDBCAuthConfig: $config = '$value'"
+    }
 
-    debug(configLog("Driver Class", driverClass.orNull))
-    debug(configLog("JDBC URL", authDbJdbcUrl.orNull))
-    debug(configLog("Database user", authDbUser.orNull))
+    debug(configLog("Driver Class", driverClass))
+    debug(configLog("JDBC URL", authDbJdbcUrl))
+    debug(configLog("Database user", authDbUser))
     debug(configLog("Database password", JdbcUtils.redactPassword(authDbPassword)))
-    debug(configLog("Query SQL", authQuery.orNull))
+    debug(configLog("Query SQL", authQuery))
 
     // Check if JDBC parameters valid
     require(driverClass.nonEmpty, "JDBC driver class is not configured.")
