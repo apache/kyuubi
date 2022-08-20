@@ -35,6 +35,9 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   private val SQL_PLACEHOLDER_REGEX = """\$\{.+?}""".r
   private val USER_SQL_PLACEHOLDER = "${user}"
   private val PASSWORD_SQL_PLACEHOLDER = "${password}"
+  private val supportedPlaceholders = Set(
+    USER_SQL_PLACEHOLDER,
+    PASSWORD_SQL_PLACEHOLDER)
 
   private val driverClass = conf.get(AUTHENTICATION_JDBC_DRIVER)
   private val authDbJdbcUrl = conf.get(AUTHENTICATION_JDBC_URL)
@@ -75,7 +78,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
           case (USER_SQL_PLACEHOLDER, i) => (user, i)
           case (PASSWORD_SQL_PLACEHOLDER, i) => (password, i)
           case (p, _) => throw new IllegalArgumentException(
-            s"Unrecognized placeholder in Query SQL: $p")
+              s"Unrecognized placeholder in Query SQL: $p")
         }).foreach {
           case (value: String, i: Int) => pStmt.setString(i + 1, value)
         }
@@ -121,6 +124,12 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     }
     if (!query.contains(PASSWORD_SQL_PLACEHOLDER)) {
       warn(s"Query SQL does not contains '$PASSWORD_SQL_PLACEHOLDER' placeholder")
+    }
+
+    queryPlaceholders.foreach {
+      case unsupported if !supportedPlaceholders.contains(unsupported) =>
+        throw new IllegalArgumentException(s"Unsupported placeholder in Query SQL: $unsupported")
+      case _ =>
     }
   }
 

@@ -133,12 +133,22 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     _conf.set(AUTHENTICATION_JDBC_QUERY, "SELECT 1 FROM user_auth WHERE username=${user}")
     new JdbcAuthenticationProviderImpl(_conf)
 
-    _conf.set(AUTHENTICATION_JDBC_QUERY,
-      "SELECT 1 FROM user_auth WHERE user=${unknown_placeholder} and username=${user}")
+    // unknown placeholder
+    _conf.set(
+      AUTHENTICATION_JDBC_QUERY,
+      "SELECT 1 FROM user_auth WHERE user=${unsupported_placeholder} and username=${user}")
+    val e11 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
+    assert(e11.getMessage.contains(
+      "Unsupported placeholder in Query SQL: ${unsupported_placeholder}"))
+
+    // unknown field
+    _conf.set(
+      AUTHENTICATION_JDBC_QUERY,
+      "SELECT 1 FROM user_auth WHERE unknown_column=${user} and passwd=${password}")
     val providerImpl2 = new JdbcAuthenticationProviderImpl(_conf)
-    val e11 = intercept[AuthenticationException] {
+    val e12 = intercept[AuthenticationException] {
       providerImpl2.authenticate(authUser, authPasswd)
     }
-    assert(e11.getMessage.contains("Unrecognized placeholder in Query SQL: ${unknown_placeholder}"))
+    assert(e12.getCause.getMessage.contains("Column 'UNKNOWN_COLUMN' is either not in any table"))
   }
 }
