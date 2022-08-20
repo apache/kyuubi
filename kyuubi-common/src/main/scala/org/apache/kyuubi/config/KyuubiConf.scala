@@ -688,9 +688,9 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val AUTHENTICATION_JDBC_USERNAME: OptionalConfigEntry[String] =
-    buildConf("kyuubi.authentication.jdbc.username")
-      .doc("Database username for JDBC Authentication Provider.")
+  val AUTHENTICATION_JDBC_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.jdbc.user")
+      .doc("Database user for JDBC Authentication Provider.")
       .version("1.6.0")
       .stringConf
       .createOptional
@@ -706,8 +706,8 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.jdbc.query")
       .doc("Query SQL template with placeholders " +
         "for JDBC Authentication Provider to execute. " +
-        "Authentication passes if at least one row fetched in the result set." +
-        "Available placeholders are `${username}` and `${password}`.")
+        "Authentication passes if the result set is not empty." +
+        "Available placeholders are `${user}` and `${password}`.")
       .version("1.6.0")
       .stringConf
       .createOptional
