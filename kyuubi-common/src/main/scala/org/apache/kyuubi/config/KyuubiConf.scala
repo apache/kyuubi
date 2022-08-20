@@ -2042,4 +2042,18 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createOptional
+
+  val ENGINE_EVENT_POST_ASYNC: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.event.post.async")
+      .doc("When set to true, events will be posted to event handler async")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val SERVER_EVENT_POST_ASYNC: ConfigEntry[Boolean] =
+    buildConf("kyuubi.server.event.post.async")
+      .doc("When set to true, events will be posted to event handler async")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
 }

@@ -18,7 +18,7 @@ package org.apache.kyuubi.events
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_LOGGERS, SERVER_EVENT_LOGGERS}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_LOGGERS, ENGINE_EVENT_POST_ASYNC, SERVER_EVENT_LOGGERS, SERVER_EVENT_POST_ASYNC}
 import org.apache.kyuubi.events.EventLoggerType.EventLoggerType
 import org.apache.kyuubi.events.handler.EventHandler
 
@@ -26,19 +26,25 @@ trait EventHandlerRegister extends Logging {
 
   def registerEngineEventLoggers(conf: KyuubiConf): Unit = {
     val loggers = conf.get(ENGINE_EVENT_LOGGERS)
-    register(loggers, conf)
+    val postAsync = conf.get(ENGINE_EVENT_POST_ASYNC)
+    register(loggers, conf, postAsync)
   }
 
   def registerServerEventLoggers(conf: KyuubiConf): Unit = {
     val loggers = conf.get(SERVER_EVENT_LOGGERS)
-    register(loggers, conf)
+    val postAsync = conf.get(SERVER_EVENT_POST_ASYNC)
+    register(loggers, conf, postAsync)
   }
 
-  private def register(loggers: Seq[String], conf: KyuubiConf): Unit = {
+  private def register(loggers: Seq[String], conf: KyuubiConf, async: Boolean): Unit = {
     loggers
       .map(EventLoggerType.withName)
       .foreach { logger =>
-        EventBus.register(loadEventHandler(logger, conf))
+        if (async) {
+          EventBus.registerAsync(loadEventHandler(logger, conf))
+        } else {
+          EventBus.register(loadEventHandler(logger, conf))
+        }
       }
   }
 
