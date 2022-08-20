@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.util
 
-import java.sql.DriverManager
 import java.util.Properties
 import javax.sql.DataSource
 
