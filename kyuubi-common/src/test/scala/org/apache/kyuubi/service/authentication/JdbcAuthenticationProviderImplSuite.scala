@@ -17,17 +17,16 @@
 
 package org.apache.kyuubi.service.authentication
 
+import com.zaxxer.hikari.util.DriverDataSource
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.util.JdbcUtils
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+
 import java.sql.DriverManager
 import java.util.Properties
 import javax.security.sasl.AuthenticationException
 import javax.sql.DataSource
-
-import com.zaxxer.hikari.util.DriverDataSource
-
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.util.JdbcUtils
 
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
   protected val dbUser: String = "liangbowen"
@@ -94,6 +93,9 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
       providerImpl.authenticate(authUser, "wrong_password")
     }
     assert(e4.isInstanceOf[AuthenticationException])
+    assert(e4.getMessage.contains(s"Password does not match or no such user. " +
+      s"user: $authUser, " +
+      s"password: ${"*" * authPasswd.length}(length: ${authPasswd.length})"))
 
     var _conf = conf.clone
     _conf.unset(AUTHENTICATION_JDBC_URL)

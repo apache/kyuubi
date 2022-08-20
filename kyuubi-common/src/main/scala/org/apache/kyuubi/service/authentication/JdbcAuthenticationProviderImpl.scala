@@ -42,10 +42,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   private val authDbPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD)
   private val authQuery = conf.get(AUTHENTICATION_JDBC_QUERY)
 
-  private val redactedPasswd = authDbPassword match {
-    case Some(s) if !StringUtils.isBlank(s) => s"${"*" * s.length}(length: ${s.length})"
-    case None => "(empty)"
-  }
+
 
   checkJdbcConfigs()
 
@@ -85,8 +82,9 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
         }
       } { resultSet =>
         if (resultSet == null || !resultSet.next()) {
+          val redactedPassword = redactPassword(Some(password))
           throw new AuthenticationException("Password does not match or no such user. " +
-            s"user: $user, password: $redactedPasswd")
+            s"user: $user, password: $redactedPassword")
         }
       }
     } catch {
@@ -103,7 +101,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     debug(configLog("Driver Class", driverClass.orNull))
     debug(configLog("JDBC URL", authDbJdbcUrl.orNull))
     debug(configLog("Database user", authDbUser.orNull))
-    debug(configLog("Database password", redactedPasswd))
+    debug(configLog("Database password", redactPassword(authDbPassword)))
     debug(configLog("Query SQL", authQuery.orNull))
 
     // Check if JDBC parameters valid
@@ -132,4 +130,11 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
   private def queryPlaceholders: Iterator[String] =
     SQL_PLACEHOLDER_REGEX.findAllMatchIn(authQuery.get).map(_.matched)
+
+  private def redactPassword(password: Option[String]): String = {
+    password match {
+      case Some(s) if !StringUtils.isBlank(s) => s"${"*" * s.length}(length: ${s.length})"
+      case None => "(empty)"
+    }
+  }
 }
