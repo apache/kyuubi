@@ -100,8 +100,8 @@ object JdbcUtils extends Logging {
 
   def redactPassword(password: Option[String]): String = {
     password match {
-      case Some(s) if !StringUtils.isBlank(s) => s"${"*" * s.length}(length:${s.length})"
-      case None => "(empty)"
+      case Some(s) if StringUtils.isNotBlank(s) => s"${"*" * s.length}(length:${s.length})"
+      case _ => "(empty)"
     }
   }
 }

@@ -69,5 +69,15 @@ class JdbcUtilsSuite extends KyuubiFunSuite {
     assertResult("****************(length:16)") {
       JdbcUtils.redactPassword(Some("sample_pass_word"))
     }
+
+    assertResult("(empty)") {
+      JdbcUtils.redactPassword(Some(""))
+    }
+
+    assertResult("(empty)") {
+      JdbcUtils.redactPassword(None)
+    }
+
+
   }
 }
