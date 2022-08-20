@@ -76,7 +76,7 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
     // cleanup db
     Utils.tryLogNonFatalError {
-      DriverManager.getConnection(s"jdbc:derby:memory:$authDbName;shutdown=true")
+      DriverManager.getConnection(s"$dbUrl;shutdown=true")
     }
   }
 
