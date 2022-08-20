@@ -127,7 +127,8 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     }
 
     queryPlaceholders.foreach { placeholder =>
-      require(supportedPlaceholders.contains(placeholder),
+      require(
+        supportedPlaceholders.contains(placeholder),
         s"Unsupported placeholder in Query SQL: $placeholder")
     }
   }
