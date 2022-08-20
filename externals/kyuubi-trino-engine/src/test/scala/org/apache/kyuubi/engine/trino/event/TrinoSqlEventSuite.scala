@@ -25,7 +25,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataInputStream, Path}
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS, ENGINE_SHARE_LEVEL, ENGINE_TRINO_CONNECTION_CATALOG}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS, ENGINE_SHARE_LEVEL, ENGINE_TRINO_CONNECTION_CATALOG, ENGINE_TYPE}
+import org.apache.kyuubi.engine.EngineType
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
 import org.apache.kyuubi.events.{EventLoggerType, JsonProtocol}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -38,6 +39,7 @@ class TrinoSqlEventSuite extends WithTrinoEngine with HiveJDBCTestHelper {
   private val hostName = InetAddress.getLocalHost.getCanonicalHostName
 
   override def withKyuubiConf: Map[String, String] = Map(
+    ENGINE_TYPE.key -> EngineType.TRINO.toString,
     ENGINE_TRINO_CONNECTION_CATALOG.key -> "memory",
     ENGINE_SHARE_LEVEL.key -> "SERVER",
     ENGINE_EVENT_LOGGERS.key -> EventLoggerType.JSON.toString)

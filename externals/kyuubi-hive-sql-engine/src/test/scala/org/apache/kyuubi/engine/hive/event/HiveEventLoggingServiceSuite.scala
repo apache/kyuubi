@@ -25,8 +25,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataInputStream, Path}
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS, ENGINE_TYPE}
+import org.apache.kyuubi.engine.EngineType
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.engine.hive.events.{HiveEngineEvent, HiveOperationEvent, HiveSessionEvent}
 import org.apache.kyuubi.events.{EventLoggerType, JsonProtocol}
@@ -35,7 +35,8 @@ import org.apache.kyuubi.service.ServiceState
 
 class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
 
-  private val kyuubiConf = new KyuubiConf()
+  private val kyuubiConf = HiveSQLEngine.kyuubiConf
+    .set(ENGINE_TYPE.key, EngineType.HIVE_SQL.toString)
     .set(ENGINE_EVENT_LOGGERS.key, EventLoggerType.JSON.toString)
   private val logRoot = kyuubiConf.get(ENGINE_EVENT_JSON_LOG_PATH)
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
