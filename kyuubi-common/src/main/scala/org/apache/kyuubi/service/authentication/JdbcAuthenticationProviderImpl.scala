@@ -126,10 +126,9 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       warn(s"Query SQL does not contains '$PASSWORD_SQL_PLACEHOLDER' placeholder")
     }
 
-    queryPlaceholders.foreach {
-      case unsupported if !supportedPlaceholders.contains(unsupported) =>
-        throw new IllegalArgumentException(s"Unsupported placeholder in Query SQL: $unsupported")
-      case _ =>
+    queryPlaceholders.foreach { placeholder =>
+      require(supportedPlaceholders.contains(placeholder),
+        s"Unsupported placeholder in Query SQL: $placeholder")
     }
   }
 
