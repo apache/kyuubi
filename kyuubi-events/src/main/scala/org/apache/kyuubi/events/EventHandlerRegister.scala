@@ -18,14 +18,22 @@ package org.apache.kyuubi.events
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_LOGGERS, SERVER_EVENT_LOGGERS}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_LOGGERS, ENGINE_TYPE, SERVER_EVENT_LOGGERS}
+import org.apache.kyuubi.engine.EngineType
 import org.apache.kyuubi.events.EventLoggerType.EventLoggerType
 import org.apache.kyuubi.events.handler.EventHandler
 
 trait EventHandlerRegister extends Logging {
 
   def registerEngineEventLoggers(conf: KyuubiConf): Unit = {
-    val loggers = conf.get(ENGINE_EVENT_LOGGERS)
+    val engineType = conf.get(ENGINE_TYPE)
+    val loggers =
+      if (!EngineType.SPARK_SQL.toString.equalsIgnoreCase(engineType)) {
+        conf.get(ENGINE_EVENT_LOGGERS).filter(!EventLoggerType.SPARK.toString.equalsIgnoreCase(_))
+      } else {
+        conf.get(ENGINE_EVENT_LOGGERS)
+      }
+
     register(loggers, conf)
   }
 

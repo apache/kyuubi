@@ -26,7 +26,6 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
 import org.apache.kyuubi.engine.hive.HiveSQLEngine.currentEngine
 import org.apache.kyuubi.engine.hive.events.{HiveEngineEvent, HiveEventHandlerRegister}
 import org.apache.kyuubi.events.EventBus
@@ -66,7 +65,6 @@ object HiveSQLEngine extends Logging {
   var currentEngine: Option[HiveSQLEngine] = None
   val hiveConf = new HiveConf()
   val kyuubiConf = new KyuubiConf()
-  kyuubiConf.set(ENGINE_EVENT_LOGGERS.key, "JSON")
 
   def startEngine(): Unit = {
     try {
