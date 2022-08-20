@@ -707,6 +707,7 @@ object KyuubiConf {
       .doc("Query SQL template with placeholders " +
         "for JDBC Authentication Provider to execute. " +
         "Authentication passes if the result set is not empty." +
+        "The SQL statement must start with the SELECT clause. " +
         "Available placeholders are `${user}` and `${password}`.")
       .version("1.6.0")
       .stringConf
