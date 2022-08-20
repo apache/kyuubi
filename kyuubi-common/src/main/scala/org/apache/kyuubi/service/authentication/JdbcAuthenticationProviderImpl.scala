@@ -43,7 +43,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   private val authQuery = conf.get(AUTHENTICATION_JDBC_QUERY)
 
   private val redactedPasswd = password match {
-    case Some(value) => s"${"*" * value.length}(length: ${value.length})"
+    case Some(s) if !StringUtils.isBlank(s) => s"${"*" * s.length}(length: ${s.length})"
     case None => "(empty)"
   }
 
@@ -119,8 +119,11 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     if (!query.contains("where")) {
       warn("Query SQL does not contains 'WHERE' keyword")
     }
-    if (!query.contains("${username}")) {
-      warn("Query SQL does not contains '${username}' placeholder")
+    if (!query.contains(USERNAME_SQL_PLACEHOLDER)) {
+      warn(s"Query SQL does not contains '$USERNAME_SQL_PLACEHOLDER' placeholder")
+    }
+    if (!query.contains(PASSWORD_SQL_PLACEHOLDER)) {
+      warn(s"Query SQL does not contains '$PASSWORD_SQL_PLACEHOLDER' placeholder")
     }
   }
 
