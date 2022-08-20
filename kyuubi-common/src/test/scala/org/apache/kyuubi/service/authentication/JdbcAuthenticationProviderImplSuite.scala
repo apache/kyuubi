@@ -122,5 +122,15 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     _conf.unset(AUTHENTICATION_JDBC_URL)
     val e10 = intercept[IllegalArgumentException] { new JdbcAuthenticationProviderImpl(_conf) }
     assert(e10.getMessage.contains("JDBC url is not configured"))
+
+    _conf = conf.clone
+    _conf.set(AUTHENTICATION_JDBC_QUERY, "SELECT 1 FROM user_auth")
+    new JdbcAuthenticationProviderImpl(_conf)
+
+    _conf.set(AUTHENTICATION_JDBC_QUERY, "SELECT 1 FROM user_auth WHERE passwd=${password}")
+    new JdbcAuthenticationProviderImpl(_conf)
+
+    _conf.set(AUTHENTICATION_JDBC_QUERY, "SELECT 1 FROM user_auth WHERE username=${user}")
+    new JdbcAuthenticationProviderImpl(_conf)
   }
 }

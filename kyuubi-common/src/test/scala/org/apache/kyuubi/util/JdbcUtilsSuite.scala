@@ -78,6 +78,5 @@ class JdbcUtilsSuite extends KyuubiFunSuite {
       JdbcUtils.redactPassword(None)
     }
 
-
   }
 }
