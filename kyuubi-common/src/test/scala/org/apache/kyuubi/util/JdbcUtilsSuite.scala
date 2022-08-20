@@ -26,8 +26,9 @@ import org.apache.kyuubi.KyuubiFunSuite
 
 class JdbcUtilsSuite extends KyuubiFunSuite {
 
-  private val connUrl = s"jdbc:derby:memory:jdbc_utils_test;create=true"
-  private val shutdownUrl = s"jdbc:derby:memory:jdbc_utils_test;shutdown=true"
+  private val dbUrl = s"jdbc:derby:memory:jdbc_utils_test"
+  private val connUrl = s"$dbUrl;create=true"
+  private val shutdownUrl = s"$dbUrl;shutdown=true"
   private val driverClz = "org.apache.derby.jdbc.AutoloadedDriver"
 
   implicit private val ds: DataSource =
