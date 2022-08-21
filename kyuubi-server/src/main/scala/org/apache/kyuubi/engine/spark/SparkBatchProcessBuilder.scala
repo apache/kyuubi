@@ -49,10 +49,11 @@ class SparkBatchProcessBuilder(
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    (batchKyuubiConf.getAll ++ sparkAppNameConf()).foreach { case (k, v) =>
-      buffer += CONF
-      buffer += s"${convertConfigKey(k)}=$v"
-    }
+    (filterOtherEngineConfigs(batchKyuubiConf.getAll) ++ sparkAppNameConf())
+      .foreach { case (k, v) =>
+        buffer += CONF
+        buffer += s"${convertConfigKey(k)}=$v"
+      }
 
     buffer += PROXY_USER
     buffer += proxyUser

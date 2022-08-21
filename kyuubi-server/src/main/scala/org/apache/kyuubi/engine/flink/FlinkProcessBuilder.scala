@@ -117,7 +117,7 @@ class FlinkProcessBuilder(
     buffer += "--conf"
     buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
 
-    for ((k, v) <- conf.getAll) {
+    for ((k, v) <- filterOtherEngineConfigs(conf.getAll)) {
       buffer += "--conf"
       buffer += s"$k=$v"
     }

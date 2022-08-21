@@ -26,6 +26,7 @@ import scala.collection.JavaConverters._
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.EvictingQueue
+import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
 import org.apache.kyuubi._
@@ -333,6 +334,18 @@ trait ProcBuilder {
 
   def clusterManager(): Option[String] = None
 
+  protected def filterOtherEngineConfigs(configs: Map[String, String]): Map[String, String] = {
+    val otherEnginesShortName = Seq[String]("spark", "flink", "trino", "hive", "jdbc")
+      .filter(!shortName.equalsIgnoreCase(_))
+    configs.filter { config =>
+      val keys = otherEnginesShortName.map(shortName => s"kyuubi.engine.$shortName")
+      if (StringUtils.startsWithAny(config._1, keys: _*)) {
+        false
+      } else {
+        true
+      }
+    }
+  }
 }
 
 object ProcBuilder extends Logging {
