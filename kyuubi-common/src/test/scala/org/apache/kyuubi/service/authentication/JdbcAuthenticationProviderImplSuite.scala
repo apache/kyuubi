@@ -30,8 +30,8 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.util.JdbcUtils
 
 class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
-  protected val dbUser: String = "liangbowen"
-  protected val dbPasswd: String = "liangbowen"
+  protected val dbUser: String = "bowenliang123"
+  protected val dbPasswd: String = "bowenliang123@kyuubi"
   protected val authDbName: String = "auth_db"
   protected val dbUrl: String = s"jdbc:derby:memory:$authDbName"
   protected val jdbcUrl: String = s"$dbUrl;create=true"
@@ -44,8 +44,8 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     dbUser,
     dbPasswd)
 
-  protected val authUser: String = "liangtiancheng"
-  protected val authPasswd: String = "liangtiancheng"
+  protected val authUser: String = "kyuubiuser"
+  protected val authPasswd: String = "kyuubiuuserpassword"
 
   protected val conf: KyuubiConf = new KyuubiConf()
     .set(AUTHENTICATION_JDBC_DRIVER, authDbDriverClz)
@@ -90,13 +90,14 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     }
     assert(e1.getMessage.contains("user is null"))
 
+    val wrong_password = "wrong_password"
     val e4 = intercept[AuthenticationException] {
-      providerImpl.authenticate(authUser, "wrong_password")
+      providerImpl.authenticate(authUser, wrong_password)
     }
     assert(e4.isInstanceOf[AuthenticationException])
     assert(e4.getMessage.contains(s"Password does not match or no such user. " +
       s"user: $authUser, " +
-      s"password: ${"*" * authPasswd.length}(length:${authPasswd.length})"))
+      s"password: ${"*" * wrong_password.length}(length:${wrong_password.length})"))
 
     var _conf = conf.clone
     _conf.unset(AUTHENTICATION_JDBC_URL)
