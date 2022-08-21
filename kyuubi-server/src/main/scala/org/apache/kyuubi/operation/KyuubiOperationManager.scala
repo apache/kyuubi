@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit
 
 import org.apache.hive.service.rpc.thrift.TRowSet
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
@@ -87,19 +88,19 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
 
   // The server does not use these 4 operations
   override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
-    null
+    throw KyuubiSQLException.featureNotSupported()
   }
 
   override def newGetCurrentCatalogOperation(session: Session): Operation = {
-    null
+    throw KyuubiSQLException.featureNotSupported()
   }
 
   override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
-    null
+    throw KyuubiSQLException.featureNotSupported()
   }
 
   override def newGetCurrentDatabaseOperation(session: Session): Operation = {
-    null
+    throw KyuubiSQLException.featureNotSupported()
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
