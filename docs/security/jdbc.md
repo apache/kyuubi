@@ -25,7 +25,7 @@ The SQL statement must start with the `SELECT` clause. Placeholders are supporte
 - `${password}`
 
 For example, `SELECT 1 FROM auth_db.auth_table WHERE user=${user} AND 
-passwd=MD5(CONCAT(salt,${password}))` will be prepared as: `SELECT 1 FROM auth_db.auth_table WHERE user=? AND passwd=MD5(CONCAT(salt,?))` with value replacement of `user` and `password` in string type.
+passwd=MD5(CONCAT(salt,${password}))` will be prepared as `SELECT 1 FROM auth_db.auth_table WHERE user=? AND passwd=MD5(CONCAT(salt,?))` with value replacement of `user` and `password` in string type.
 
 ## Enable JDBC Authentication 
 
