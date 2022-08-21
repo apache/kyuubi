@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.net.URL
+import java.io.File
 
 import scala.tools.nsc.interpreter.Results.{Error, Incomplete, Success}
 
@@ -73,12 +73,12 @@ class ExecuteScala(
           if ("file".equals(jar.toURI.getScheme)) {
             repl.addUrlsToClassPath(jar)
           } else {
-            val fileName = new Path(jar.toURI.getPath).getName
-            val localJarUrl = new URL(SparkFiles.get(fileName))
-            repl.addUrlsToClassPath(localJarUrl)
+            spark.sparkContext.addFile(jar.toString)
+            val localJarFile = new File(SparkFiles.get(new Path(jar.toURI.getPath).getName))
+            repl.addUrlsToClassPath(localJarFile.toURI.toURL)
           }
         } catch {
-          case e: Throwable => error(s"Error adding $jar to class loader", e)
+          case e: Throwable => error(s"Error adding $jar to repl class path", e)
         }
       }
 

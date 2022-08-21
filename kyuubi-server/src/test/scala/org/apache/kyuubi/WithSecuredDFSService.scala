@@ -60,4 +60,5 @@ trait WithSecuredDFSService extends KerberizedTestHelper {
   }
 
   def getHadoopConf: Configuration = miniDFSService.getHadoopConf
+  def getHadoopConfDir: String = miniDFSService.getHadoopConfDir
 }
