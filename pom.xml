@@ -138,7 +138,7 @@
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.13</httpclient.version>
         <httpcore.version>4.4.15</httpcore.version>
-        <hudi.version>0.11.1</hudi.version>
+        <hudi.version>0.12.0</hudi.version>
         <iceberg.version>0.14.0</iceberg.version>
         <jackson.version>2.13.3</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
@@ -1239,8 +1239,8 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.curator</groupId>
@@ -1311,8 +1311,8 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -2165,10 +2165,6 @@
                 <spark.version>3.2.2</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
                 <delta.version>2.0.0</delta.version>
-                <!--
-                    See https://github.com/apache/incubator-kyuubi/pull/2576
-                    Hudi 0.11 requires hudi-spark3.2-bundle to execute UT
-                -->
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
