@@ -22,26 +22,19 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, _}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
-import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
-  override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-    case p if !plan.getTagValue(KYUUBI_AUTHZ_TAG).contains(true) =>
-      RuleAuthorization.checkPrivileges(spark, p)
-      p.setTagValue(KYUUBI_AUTHZ_TAG, true)
-      p
-    case p => p // do nothing if checked privileges already.
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    RuleAuthorization.checkPrivileges(spark, plan)
+    plan
   }
 }
 
 object RuleAuthorization {
-
-  val KYUUBI_AUTHZ_TAG = TreeNodeTag[Boolean]("__KYUUBI_AUTHZ_TAG")
 
   def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
     val auditHandler = new SparkRangerAuditHandler
