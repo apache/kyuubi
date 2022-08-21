@@ -17,8 +17,12 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.net.URL
+
 import scala.tools.nsc.interpreter.Results.{Error, Incomplete, Success}
 
+import org.apache.hadoop.fs.Path
+import org.apache.spark.SparkFiles
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
@@ -64,8 +68,19 @@ class ExecuteScala(
       if (legacyOutput.nonEmpty) {
         warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
       }
-      val jars = spark.sharedState.jarClassLoader.getURLs
-      repl.addUrlsToClassPath(jars: _*)
+      spark.sharedState.jarClassLoader.getURLs.foreach { jar =>
+        try {
+          if ("file".equals(jar.toURI.getScheme)) {
+            repl.addUrlsToClassPath(jar)
+          } else {
+            val fileName = new Path(jar.toURI.getPath).getName
+            val localJarUrl = new URL(SparkFiles.get(fileName))
+            repl.addUrlsToClassPath(localJarUrl)
+          }
+        } catch {
+          case e: Throwable => error(s"Error adding $jar to class loader", e)
+        }
+      }
 
       repl.interpretWithRedirectOutError(statement) match {
         case Success =>
