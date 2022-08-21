@@ -20,7 +20,7 @@
 
 Kyuubi supports authentication via JDBC query. A query is prepared with user/password value and sent to the database configured in JDBC URL. Authentication passes if the result set is not empty.
 
-The query sql must start with `SELECT`. The SQL statement must start with the SELECT clause. Placeholders are supported and listed below for substitution:
+The SQL statement must start with the `SELECT` clause. Placeholders are supported and listed below for substitution:
 - `${user}`
 - `${password}`
 

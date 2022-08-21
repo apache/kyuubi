@@ -140,7 +140,7 @@ kyuubi.authentication|NONE|A comma separated list of client authentication types
 kyuubi.authentication.custom.class|&lt;undefined&gt;|User-defined authentication implementation of org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider|string|1.3.0
 kyuubi.authentication.jdbc.driver.class|&lt;undefined&gt;|Driver class name for JDBC Authentication Provider.|string|1.6.0
 kyuubi.authentication.jdbc.password|&lt;undefined&gt;|Database password for JDBC Authentication Provider.|string|1.6.0
-kyuubi.authentication.jdbc.query|&lt;undefined&gt;|Query SQL template with placeholders for JDBC Authentication Provider to execute. Authentication passes if the result set is not empty.The SQL statement must start with the SELECT clause. Available placeholders are `${user}` and `${password}`.|string|1.6.0
+kyuubi.authentication.jdbc.query|&lt;undefined&gt;|Query SQL template with placeholders for JDBC Authentication Provider to execute. Authentication passes if the result set is not empty.The SQL statement must start with the `SELECT` clause. Available placeholders are `${user}` and `${password}`.|string|1.6.0
 kyuubi.authentication.jdbc.url|&lt;undefined&gt;|JDBC URL for JDBC Authentication Provider.|string|1.6.0
 kyuubi.authentication.jdbc.user|&lt;undefined&gt;|Database user for JDBC Authentication Provider.|string|1.6.0
 kyuubi.authentication.ldap.attrs|mail|Specifies part of the search as an attribute returned by LDAP. For example: mail,name.|seq|1.6.0
