@@ -146,9 +146,8 @@ class JdbcAuthenticationProviderImplSuite extends KyuubiFunSuite {
     _conf.set(
       AUTHENTICATION_JDBC_QUERY,
       "SELECT 1 FROM user_auth WHERE unknown_column=${user} and passwd=${password}")
-    val providerImpl2 = new JdbcAuthenticationProviderImpl(_conf)
     val e12 = intercept[AuthenticationException] {
-      providerImpl2.authenticate(authUser, authPasswd)
+      new JdbcAuthenticationProviderImpl(_conf).authenticate(authUser, authPasswd)
     }
     assert(e12.getCause.getMessage.contains("Column 'UNKNOWN_COLUMN' is either not in any table"))
   }
