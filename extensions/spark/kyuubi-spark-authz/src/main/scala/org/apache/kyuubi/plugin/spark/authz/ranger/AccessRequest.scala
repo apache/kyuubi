@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.util.Date
+import java.util.{Date, Set}
 
 import scala.collection.JavaConverters._
 
@@ -36,7 +36,36 @@ object AccessRequest {
       opType: OperationType,
       accessType: AccessType): AccessRequest = {
     val userName = user.getShortUserName
-    val groups = user.getGroupNames.toSet.asJava
+    val groups = {
+      try {
+        // todo get switch config from ranger plugin config or kyuubi config
+        val getUserStoreEnricher = SparkRangerAdminPlugin.getClass.getMethod(
+          "getUserStoreEnricher")
+        getUserStoreEnricher.setAccessible(true)
+        val storeEnricher = getUserStoreEnricher.invoke(SparkRangerAdminPlugin)
+
+        val getRangerUserStore = storeEnricher.getClass.getMethod("getRangerUserStore")
+        getRangerUserStore.setAccessible(true)
+        val userStore = getRangerUserStore.invoke(storeEnricher)
+
+        val getUserGroupMapping = userStore.getClass.getMethod("getRangerUserStore")
+        getUserGroupMapping.setAccessible(true)
+        val userGroupMappingMap: Map[String, Set[String]] =
+          getRangerUserStore.invoke(userStore).asInstanceOf[Map[String, Set[String]]]
+
+        val groupsFromUserStore = userGroupMappingMap.get(userName).orNull
+
+        if (groupsFromUserStore != null) {
+          groupsFromUserStore
+        } else {
+          user.getGroupNames.toSet.asJava
+        }
+      } catch {
+        case _: NoSuchMethodException =>
+          user.getGroupNames.toSet.asJava
+      }
+    }
+
     val req = new AccessRequest(accessType)
     req.setResource(resource)
     req.setUser(userName)
