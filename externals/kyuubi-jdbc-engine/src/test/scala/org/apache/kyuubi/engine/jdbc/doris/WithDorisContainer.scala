@@ -22,6 +22,7 @@ import java.time.Duration
 import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
 trait WithDorisContainer extends WithJdbcServerContainer {
@@ -37,7 +38,8 @@ trait WithDorisContainer extends WithJdbcServerContainer {
   override val container: DockerComposeContainer =
     DockerComposeContainer
       .Def(
-        composeFiles = new File(getClass.getClassLoader.getResource("doris-compose.yml").toURI),
+        composeFiles = new File(Utils.getContextOrKyuubiClassLoader
+          .getResource("doris-compose.yml").toURI),
         exposedServices = Seq[ExposedService](
           ExposedService(
             DORIS_FE_SERVICE_NAME,

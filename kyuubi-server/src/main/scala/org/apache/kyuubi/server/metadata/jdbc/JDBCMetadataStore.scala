@@ -77,7 +77,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   }
 
   private def initSchema(): Unit = {
-    val classLoader = getClass.getClassLoader
+    val classLoader = Utils.getContextOrKyuubiClassLoader
     val initSchemaStream: Option[InputStream] = dbType match {
       case DERBY =>
         Option(classLoader.getResourceAsStream("sql/derby/metadata-store-schema-derby.sql"))

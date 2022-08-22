@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.AbstractService
@@ -316,7 +316,9 @@ object HadoopCredentialsManager extends Logging {
 
   def loadProviders(kyuubiConf: KyuubiConf): Map[String, HadoopDelegationTokenProvider] = {
     val loader =
-      ServiceLoader.load(classOf[HadoopDelegationTokenProvider], getClass.getClassLoader)
+      ServiceLoader.load(
+        classOf[HadoopDelegationTokenProvider],
+        Utils.getContextOrKyuubiClassLoader)
     val providers = mutable.ArrayBuffer[HadoopDelegationTokenProvider]()
 
     val iterator = loader.iterator
