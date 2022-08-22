@@ -72,6 +72,16 @@ class PlanOnlyStatement(
                 spark.sessionState.analyzer.checkAnalysis(analyzed)
                 val optimized = spark.sessionState.optimizer.execute(analyzed)
                 iter = new IterableFetchIterator(Seq(Row(optimized.toString())))
+              case OPTIMIZE_WITH_STATS =>
+                val analyzed = spark.sessionState.analyzer.execute(plan)
+                spark.sessionState.analyzer.checkAnalysis(analyzed)
+                val optimized = spark.sessionState.optimizer.execute(analyzed)
+                optimized.stats
+                iter = new IterableFetchIterator(Seq(Row(optimized.treeString(
+                  verbose = true,
+                  addSuffix = true,
+                  SQLConf.get.maxToStringFields,
+                  printOperatorId = false))))
               case PHYSICAL =>
                 val physical = spark.sql(statement).queryExecution.sparkPlan
                 iter = new IterableFetchIterator(Seq(Row(physical.toString())))
