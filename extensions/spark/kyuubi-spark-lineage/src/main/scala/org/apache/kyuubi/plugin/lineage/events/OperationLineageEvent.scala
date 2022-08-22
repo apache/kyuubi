@@ -20,6 +20,12 @@ package org.apache.kyuubi.plugin.lineage.events
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.events.KyuubiEvent
 
+/**
+ * @param inputTables the tables of the operation will read
+ * @param outputTables the tables of the operation will write
+ * @param columnLineage the output columns are associated to columns of the real table's columns
+ */
+
 case class Lineage(
     inputTables: List[String],
     outputTables: List[String],

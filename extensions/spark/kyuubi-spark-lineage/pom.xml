@@ -28,8 +28,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-spark-listener_2.12</artifactId>
-    <name>Kyuubi Dev Spark Listener Extension</name>
+    <artifactId>kyuubi-spark-lineage_2.12</artifactId>
+    <name>Kyuubi Dev Spark Lineage Extension</name>
     <packaging>jar</packaging>
     <url>https://kyuubi.apache.org/</url>
 

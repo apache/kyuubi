@@ -89,13 +89,13 @@ Kyuubi Spark Lineage Listener Extension is built using [Apache Maven](http://mav
 To build it, `cd` to the root direct of kyuubi project and run:
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-listener_2.12 -DskipTests
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -DskipTests
 ```
 
 After a while, if everything goes well, you will get the plugin finally in two parts:
 
-- The main plugin jar, which is under `./extensions/spark/kyuubi-spark-listener/target/kyuubi-spark-listener_${scala.binary.version}-${project.version}.jar`
-- The least transitive dependencies needed, which are under `./extensions/spark/kyuubi-spark-listener/target/scala-${scala.binary.version}/jars`
+- The main plugin jar, which is under `./extensions/spark/kyuubi-spark-lineage/target/kyuubi-spark-lineage_${scala.binary.version}-${project.version}.jar`
+- The least transitive dependencies needed, which are under `./extensions/spark/kyuubi-spark-lineage/target/scala-${scala.binary.version}/jars`
 
 ### Build against Different Apache Spark Versions
 
@@ -106,7 +106,7 @@ Sometimes, it may be incompatible with other Spark distributions, then you may n
 For example,
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-listener_2.12 -DskipTests -Dspark.version=3.1.2
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -DskipTests -Dspark.version=3.1.2
 ```
 
 The available `spark.version`s are shown in the following table.
@@ -127,13 +127,13 @@ Currently, Spark released with Scala 2.12 are supported.
 If you omit `-DskipTests` option in the command above, you will also get all unit tests run.
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-listener_2.12
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12
 ```
 
 If any bug occurs and you want to debug the plugin yourself, you can configure `-DdebugForkedProcess=true` and `-DdebuggerPort=5005`(optional).
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-listener_2.12 -DdebugForkedProcess=true
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -DdebugForkedProcess=true
 ```
 
 The tests will suspend at startup and wait for a remote debugger to attach to the configured port.
@@ -144,7 +144,7 @@ We will appreciate if you can share the bug or the fix to the Kyuubi community.
 
 ## Installing
 
-With the `kyuubi-spark-listener_*.jar` and its transitive dependencies available for spark runtime classpath, such as
+With the `kyuubi-spark-lineage_*.jar` and its transitive dependencies available for spark runtime classpath, such as
 - Copied to `$SPARK_HOME/jars`, or
 - Specified to `spark.jars` configuration
 
@@ -152,10 +152,10 @@ With the `kyuubi-spark-listener_*.jar` and its transitive dependencies available
 
 ### Settings for Spark Listener Extensions
 
-Add `org.apache.kyuubi.listener.SparkOperationLineageQueryExecutionListener` to the spark configuration `spark.sql.queryExecutionListeners`.
+Add `org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener` to the spark configuration `spark.sql.queryExecutionListeners`.
 
 ```properties
-spark.sql.queryExecutionListeners=org.apache.kyuubi.listener.SparkOperationLineageQueryExecutionListener
+spark.sql.queryExecutionListeners=org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener
 ```
 
 ### Settings for Lineage Logger Path
@@ -163,6 +163,9 @@ spark.sql.queryExecutionListeners=org.apache.kyuubi.listener.SparkOperationLinea
 #### Lineage Logger Path
 The location of all the engine operation lineage events go for the builtin JSON logger.
 All operation lineage events will be written in the unified event json logger path, which be setting with 
-`kyuubi.engine.event.json.log.path`
+`kyuubi.engine.event.json.log.path`. We can get the lineage logger from the `operation_lineage` dir in the
+`kyuubi.engine.event.json.log.path`.
+
+
 
 

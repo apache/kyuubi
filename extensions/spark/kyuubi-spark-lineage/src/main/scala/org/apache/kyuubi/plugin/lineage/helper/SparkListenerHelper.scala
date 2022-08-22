@@ -19,10 +19,9 @@ package org.apache.kyuubi.plugin.lineage.helper
 
 import org.apache.spark.SPARK_VERSION
 
-import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.SemanticVersion
 
-object SparkListenerHelper extends Logging {
+object SparkListenerHelper {
 
   lazy val sparkMajorMinorVersion: (Int, Int) = {
     val runtimeSparkVer = org.apache.spark.SPARK_VERSION
