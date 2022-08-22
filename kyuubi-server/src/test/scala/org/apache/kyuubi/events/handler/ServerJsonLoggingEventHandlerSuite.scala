@@ -49,7 +49,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     KyuubiConf()
       .set(KyuubiConf.SERVER_EVENT_LOGGERS, Seq("JSON"))
       .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, serverLogRoot)
-      .set(KyuubiConf.ENGINE_EVENT_LOGGERS, Seq("JSON"))
+      .set(KyuubiConf.ENGINE_SPARK_EVENT_LOGGERS, Seq("JSON"))
       .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, engineLogRoot)
   }
 

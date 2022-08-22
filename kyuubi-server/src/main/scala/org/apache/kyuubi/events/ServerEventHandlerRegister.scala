@@ -19,7 +19,7 @@ package org.apache.kyuubi.events
 import java.net.InetAddress
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_JSON_LOG_PATH
+import org.apache.kyuubi.config.KyuubiConf.{SERVER_EVENT_JSON_LOG_PATH, SERVER_EVENT_LOGGERS}
 import org.apache.kyuubi.events.handler.{EventHandler, ServerJsonLoggingEventHandler}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
@@ -34,5 +34,9 @@ object ServerEventHandlerRegister extends EventHandlerRegister {
       SERVER_EVENT_JSON_LOG_PATH,
       hadoopConf,
       kyuubiConf)
+  }
+
+  override protected def getLoggers(conf: KyuubiConf): Seq[String] = {
+    conf.get(SERVER_EVENT_LOGGERS)
   }
 }

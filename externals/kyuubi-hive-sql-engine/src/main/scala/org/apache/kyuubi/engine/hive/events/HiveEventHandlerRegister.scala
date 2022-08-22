@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.hive.events
 import java.net.InetAddress
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_HIVE_EVENT_LOGGERS}
 import org.apache.kyuubi.engine.hive.events.handler.HiveJsonLoggingEventHandler
 import org.apache.kyuubi.events.{EventHandlerRegister, KyuubiEvent}
 import org.apache.kyuubi.events.handler.EventHandler
@@ -36,5 +36,9 @@ object HiveEventHandlerRegister extends EventHandlerRegister {
       ENGINE_EVENT_JSON_LOG_PATH,
       hadoopConf,
       kyuubiConf)
+  }
+
+  override protected def getLoggers(conf: KyuubiConf): Seq[String] = {
+    conf.get(ENGINE_HIVE_EVENT_LOGGERS)
   }
 }
