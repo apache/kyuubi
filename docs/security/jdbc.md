@@ -18,14 +18,14 @@
 
 # Configure Kyuubi to Use JDBC Authentication
 
-Kyuubi supports authentication via JDBC query. A query is prepared with username/password value and sent to the database configured in JDBC URL. The authentication passes if the result set is not empty.
+Kyuubi supports authentication via JDBC query. A query is prepared with user/password value and sent to the database configured in JDBC URL. Authentication passes if the result set is not empty.
 
-The query sql must start with `SELECT`. The SQL statement must start with the SELECT clause. Placeholders are supported and listed below for substitution:
-- `${username}`
+The SQL statement must start with the `SELECT` clause. Placeholders are supported and listed below for substitution:
+- `${user}`
 - `${password}`
 
-For example, `SELECT 1 FROM auth_db.auth_table WHERE user=${username} AND 
-passwd=MD5(CONCAT(salt,${password}))` will be prepared as: `SELECT 1 FROM auth_db.auth_table WHERE user=? AND passwd=MD5(CONCAT(salt,?))` with value replacement of `username` and `password` in string type.
+For example, `SELECT 1 FROM auth_db.auth_table WHERE user=${user} AND 
+passwd=MD5(CONCAT(salt,${password}))` will be prepared as `SELECT 1 FROM auth_db.auth_table WHERE user=? AND passwd=MD5(CONCAT(salt,?))` with value replacement of `user` and `password` in string type.
 
 ## Enable JDBC Authentication 
 
@@ -43,7 +43,7 @@ Configure the following properties to `$KYUUBI_HOME/conf/kyuubi-defaults.conf` o
 kyuubi.authentication=JDBC
 kyuubi.authentication.jdbc.driver.class = com.mysql.jdbc.Driver
 kyuubi.authentication.jdbc.url = jdbc:mysql://127.0.0.1:3306/auth_db
-kyuubi.authentication.jdbc.username = bowenliang123
+kyuubi.authentication.jdbc.user = bowenliang123
 kyuubi.authentication.jdbc.password = bowenliang123@kyuubi
-kyuubi.authentication.jdbc.query = SELECT 1 FROM auth_table WHERE user=${username} AND passwd=MD5(CONCAT(salt,${password}))
+kyuubi.authentication.jdbc.query = SELECT 1 FROM auth_table WHERE user=${user} AND passwd=MD5(CONCAT(salt,${password}))
 ```

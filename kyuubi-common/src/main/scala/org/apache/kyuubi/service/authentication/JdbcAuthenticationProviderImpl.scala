@@ -33,28 +33,26 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   with Logging {
 
   private val SQL_PLACEHOLDER_REGEX = """\$\{.+?}""".r
-  private val USERNAME_SQL_PLACEHOLDER = "${username}"
+  private val USER_SQL_PLACEHOLDER = "${user}"
   private val PASSWORD_SQL_PLACEHOLDER = "${password}"
+  private val supportedPlaceholders = Set(
+    USER_SQL_PLACEHOLDER,
+    PASSWORD_SQL_PLACEHOLDER)
 
   private val driverClass = conf.get(AUTHENTICATION_JDBC_DRIVER)
-  private val jdbcUrl = conf.get(AUTHENTICATION_JDBC_URL)
-  private val username = conf.get(AUTHENTICATION_JDBC_USERNAME)
-  private val password = conf.get(AUTHENTICATION_JDBC_PASSWORD)
+  private val authDbJdbcUrl = conf.get(AUTHENTICATION_JDBC_URL)
+  private val authDbUser = conf.get(AUTHENTICATION_JDBC_USER)
+  private val authDbPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD)
   private val authQuery = conf.get(AUTHENTICATION_JDBC_QUERY)
-
-  private val redactedPasswd = password match {
-    case Some(s) if !StringUtils.isBlank(s) => s"${"*" * s.length}(length: ${s.length})"
-    case None => "(empty)"
-  }
 
   checkJdbcConfigs()
 
   implicit private[kyuubi] val ds: DataSource = new DriverDataSource(
-    jdbcUrl.orNull,
+    authDbJdbcUrl.orNull,
     driverClass.orNull,
     new Properties,
-    username.orNull,
-    password.orNull)
+    authDbUser.orNull,
+    authDbPassword.orNull)
 
   /**
    * The authenticate method is called by the Kyuubi Server authentication layer
@@ -75,18 +73,18 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     try {
       debug(s"prepared auth query: $preparedQuery")
-      JdbcUtils.executeQuery(preparedQuery) { stmt =>
-        stmt.setMaxRows(1) // minimum result size required for authentication
+      JdbcUtils.executeQuery(preparedQuery) { pStmt =>
         queryPlaceholders.zipWithIndex.foreach {
-          case (USERNAME_SQL_PLACEHOLDER, i) => stmt.setString(i + 1, user)
-          case (PASSWORD_SQL_PLACEHOLDER, i) => stmt.setString(i + 1, password)
+          case (USER_SQL_PLACEHOLDER, i) => pStmt.setString(i + 1, user)
+          case (PASSWORD_SQL_PLACEHOLDER, i) => pStmt.setString(i + 1, password)
           case (p, _) => throw new IllegalArgumentException(
               s"Unrecognized placeholder in Query SQL: $p")
         }
+        pStmt.setMaxRows(1) // skipping more result rows to minimize I/O
       } { resultSet =>
-        if (resultSet == null || !resultSet.next()) {
+        if (!resultSet.next()) {
           throw new AuthenticationException("Password does not match or no such user. " +
-            s"user: $user, password: $redactedPasswd")
+            s"user: $user, password: ${JdbcUtils.redactPassword(Some(password))}")
         }
       }
     } catch {
@@ -98,19 +96,20 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   }
 
   private def checkJdbcConfigs(): Unit = {
-    def configLog(config: String, value: String): String = s"JDBCAuthConfig: $config = '$value'"
+    val configLog = (config: String, value: Option[String]) =>
+      s"JDBCAuthConfig: $config = '${value.orNull}'"
 
-    debug(configLog("Driver Class", driverClass.orNull))
-    debug(configLog("JDBC URL", jdbcUrl.orNull))
-    debug(configLog("Database username", username.orNull))
-    debug(configLog("Database password", redactedPasswd))
-    debug(configLog("Query SQL", authQuery.orNull))
+    debug(configLog("Driver Class", driverClass))
+    debug(configLog("JDBC URL", authDbJdbcUrl))
+    debug(configLog("Database user", authDbUser))
+    debug(configLog("Database password", Some(JdbcUtils.redactPassword(authDbPassword))))
+    debug(configLog("Query SQL", authQuery))
 
     // Check if JDBC parameters valid
     require(driverClass.nonEmpty, "JDBC driver class is not configured.")
-    require(jdbcUrl.nonEmpty, "JDBC url is not configured.")
-    require(username.nonEmpty, "JDBC username is not configured")
-    // allow empty password
+    require(authDbJdbcUrl.nonEmpty, "JDBC url is not configured.")
+    require(authDbUser.nonEmpty, "JDBC user is not configured.")
+    // allow empty auth db password
     require(authQuery.nonEmpty, "Query SQL is not configured")
 
     val query = authQuery.get.trim.toLowerCase
@@ -119,11 +118,17 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     if (!query.contains("where")) {
       warn("Query SQL does not contains 'WHERE' keyword")
     }
-    if (!query.contains(USERNAME_SQL_PLACEHOLDER)) {
-      warn(s"Query SQL does not contains '$USERNAME_SQL_PLACEHOLDER' placeholder")
+    if (!query.contains(USER_SQL_PLACEHOLDER)) {
+      warn(s"Query SQL does not contains '$USER_SQL_PLACEHOLDER' placeholder")
     }
     if (!query.contains(PASSWORD_SQL_PLACEHOLDER)) {
       warn(s"Query SQL does not contains '$PASSWORD_SQL_PLACEHOLDER' placeholder")
+    }
+
+    queryPlaceholders.foreach { placeholder =>
+      require(
+        supportedPlaceholders.contains(placeholder),
+        s"Unsupported placeholder in Query SQL: $placeholder")
     }
   }
 
