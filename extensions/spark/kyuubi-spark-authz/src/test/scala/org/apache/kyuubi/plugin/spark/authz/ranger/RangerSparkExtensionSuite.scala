@@ -35,6 +35,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
+import org.apache.kyuubi.plugin.spark.authz.util.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
@@ -129,14 +130,14 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val alter = s"ALTER DATABASE $testDb SET DBPROPERTIES (abc = '123')"
     val drop = s"DROP DATABASE IF EXISTS $testDb"
 
-    val e = intercept[RuntimeException](sql(create))
+    val e = intercept[AccessControlException](sql(create))
     assert(e.getMessage === errorMessage("create", "mydb"))
     try {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs("admin", assert(Try { sql(alter) }.isSuccess))
-      val e1 = intercept[RuntimeException](sql(alter))
+      val e1 = intercept[AccessControlException](sql(alter))
       assert(e1.getMessage === errorMessage("alter", "mydb"))
-      val e2 = intercept[RuntimeException](sql(drop))
+      val e2 = intercept[AccessControlException](sql(drop))
       assert(e2.getMessage === errorMessage("drop", "mydb"))
       doAs("kent", Try(sql("SHOW DATABASES")).isSuccess)
     } finally {
@@ -153,14 +154,14 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val alter0 = s"ALTER TABLE $db.$table SET TBLPROPERTIES(key='ak')"
     val drop0 = s"DROP TABLE IF EXISTS $db.$table"
     val select = s"SELECT * FROM $db.$table"
-    val e = intercept[RuntimeException](sql(create0))
+    val e = intercept[AccessControlException](sql(create0))
     assert(e.getMessage === errorMessage("create"))
 
     try {
       doAs("bob", assert(Try { sql(create0) }.isSuccess))
       doAs("bob", assert(Try { sql(alter0) }.isSuccess))
 
-      val e1 = intercept[RuntimeException](sql(drop0))
+      val e1 = intercept[AccessControlException](sql(drop0))
       assert(e1.getMessage === errorMessage("drop"))
       doAs("bob", assert(Try { sql(alter0) }.isSuccess))
       doAs("bob", assert(Try { sql(select).collect() }.isSuccess))
@@ -177,7 +178,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           doAs(
             "kent", {
               withClue(q) {
-                val e = intercept[RuntimeException](sql(q).collect())
+                val e = intercept[AccessControlException](sql(q).collect())
                 assert(e.getMessage === errorMessage("select", "default/src/value", "kent"))
               }
             })
@@ -193,7 +194,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
     doAs(
       "kent", {
-        val e = intercept[RuntimeException](sql(create0))
+        val e = intercept[AccessControlException](sql(create0))
         assert(e.getMessage === errorMessage("create", "default/func"))
       })
     doAs("admin", assert(Try(sql(create0)).isSuccess))

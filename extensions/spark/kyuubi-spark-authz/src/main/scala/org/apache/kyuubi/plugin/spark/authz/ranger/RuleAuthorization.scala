@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, _}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
+import org.apache.kyuubi.plugin.spark.authz.util.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
@@ -85,7 +86,7 @@ object RuleAuthorization {
   private def verify(req: AccessRequest, auditHandler: SparkRangerAuditHandler): Unit = {
     val ret = SparkRangerAdminPlugin.isAccessAllowed(req, auditHandler)
     if (ret != null && !ret.getIsAllowed) {
-      throw new RuntimeException(
+      throw new AccessControlException(
         s"Permission denied: user [${req.getUser}] does not have [${req.getAccessType}] privilege" +
           s" on [${req.getResource.getAsString}]")
     }
