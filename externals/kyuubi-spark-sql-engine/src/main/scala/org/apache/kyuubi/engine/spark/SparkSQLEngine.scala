@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
-import java.util.concurrent.{CountDownLatch, TimeUnit}
+import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.duration.Duration
@@ -49,8 +49,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   private val shutdown = new AtomicBoolean(false)
 
-  private val lifetimeTerminatingChecker =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-lifetime-checker")
+  private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -78,10 +77,12 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
     super.stop()
-    val shutdownTimeout = conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
-    ThreadUtils.shutdown(
-      lifetimeTerminatingChecker,
-      Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
+    lifetimeTerminatingChecker.foreach(checker => {
+      val shutdownTimeout = conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
+      ThreadUtils.shutdown(
+        checker,
+        Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
+    })
   }
 
   override protected def stopServer(): Unit = {
@@ -108,7 +109,9 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
           }
         }
       }
-      lifetimeTerminatingChecker.scheduleWithFixedDelay(
+      lifetimeTerminatingChecker =
+        Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-lifetime-checker"))
+      lifetimeTerminatingChecker.get.scheduleWithFixedDelay(
         checkTask,
         interval,
         interval,
