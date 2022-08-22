@@ -22,6 +22,8 @@ import javax.sql.DataSource
 
 import scala.util.control.NonFatal
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.Logging
 
 object JdbcUtils extends Logging {
@@ -93,6 +95,13 @@ object JdbcUtils extends Logging {
         while (rs.next()) builder += rowMapper(rs)
         builder.result
       }
+    }
+  }
+
+  def redactPassword(password: Option[String]): String = {
+    password match {
+      case Some(s) if StringUtils.isNotBlank(s) => s"${"*" * s.length}(length:${s.length})"
+      case _ => "(empty)"
     }
   }
 }
