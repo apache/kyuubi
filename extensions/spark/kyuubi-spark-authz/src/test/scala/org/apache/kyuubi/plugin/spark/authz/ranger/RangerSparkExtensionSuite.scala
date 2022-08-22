@@ -62,6 +62,20 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     s"Permission denied: user [$user] does not have [$privilege] privilege on [$resource]"
   }
 
+  protected def withCleanTmpResources[T](res: Seq[(String, String)])(f: => T): T = {
+    try {
+      f
+    } finally {
+      res.foreach {
+        case (t, "table") => doAs("admin", sql(s"DROP TABLE IF EXISTS $t"))
+        case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
+        case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
+        case (_, e) =>
+          throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
+      }
+    }
+  }
+
   test("[KYUUBI #3226] RuleAuthorization: Should check privileges once only.") {
     val logicalPlan = doAs("admin", sql("SHOW TABLES").queryExecution.logical)
     val rule = new RuleAuthorization(spark)
@@ -87,7 +101,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
          | using parquet
          |""".stripMargin
     val select = s"SELECT * FROM $testTable"
-    try {
+
+    withCleanTmpResources(Seq((testTable, "table"))) {
       // create tmp table
       doAs(
         "admin", {
@@ -117,10 +132,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           // auth once only.
           assert(plan3.getTagValue(KYUUBI_AUTHZ_TAG).getOrElse(false))
         })
-
-    } finally {
-      // finally, drop tmp table
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $testTable"))
     }
   }
 
@@ -132,7 +143,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
     val e = intercept[AccessControlException](sql(create))
     assert(e.getMessage === errorMessage("create", "mydb"))
-    try {
+    withCleanTmpResources(Seq((testDb, "database"))) {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs("admin", assert(Try { sql(alter) }.isSuccess))
       val e1 = intercept[AccessControlException](sql(alter))
@@ -140,8 +151,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       val e2 = intercept[AccessControlException](sql(drop))
       assert(e2.getMessage === errorMessage("drop", "mydb"))
       doAs("kent", Try(sql("SHOW DATABASES")).isSuccess)
-    } finally {
-      doAs("admin", sql(drop))
     }
   }
 
@@ -157,7 +166,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val e = intercept[AccessControlException](sql(create0))
     assert(e.getMessage === errorMessage("create"))
 
-    try {
+    withCleanTmpResources(Seq((s"$db.$table", "table"))) {
       doAs("bob", assert(Try { sql(create0) }.isSuccess))
       doAs("bob", assert(Try { sql(alter0) }.isSuccess))
 
@@ -183,8 +192,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
               }
             })
         }
-    } finally {
-      doAs("admin", sql(drop0))
     }
   }
 
@@ -205,7 +212,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val table = "src"
     val col = "key"
     val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
-    try {
+
+    withCleanTmpResources(Seq((s"$db.${table}2", "table"), (s"$db.$table", "table"))) {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
@@ -235,9 +243,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           sql(s"CREATE TABLE $db.src2 using $format AS SELECT value FROM $db.$table")
           assert(sql(s"SELECT value FROM $db.${table}2").collect() === Seq(Row(1)))
         })
-    } finally {
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}2"))
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
     }
   }
 
@@ -249,7 +254,10 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       s"CREATE TABLE IF NOT EXISTS $db.$table" +
         s" ($col int, value1 int, value2 string, value3 string, value4 timestamp, value5 string)" +
         s" USING $format"
-    try {
+
+    withCleanTmpResources(Seq(
+      (s"$db.${table}2", "table"),
+      (s"$db.$table", "table"))) {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs(
         "admin",
@@ -302,9 +310,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           assert(sql(s"SELECT value1 FROM $db.${table}2").collect() ===
             Seq(Row(DigestUtils.md5Hex("1"))))
         })
-    } finally {
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}2"))
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
     }
   }
 
@@ -313,7 +318,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val table = "src"
     val create =
       s"CREATE TABLE IF NOT EXISTS $db.$table (key int, value1 int) USING $format"
-    try {
+
+    withCleanTmpResources(Seq((s"$db.$table", "table"))) {
       doAs("admin", sql(create))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
       // scalastyle: off
@@ -323,15 +329,17 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
             Seq(Row(1, DigestUtils.md5Hex("1"))))
           assert(Try(sql(s"select * from $db.$table").show(1)).isSuccess)
         })
-    } finally {
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
     }
   }
 
   test("show tables") {
     val db = "default2"
     val table = "src"
-    try {
+    withCleanTmpResources(
+      Seq(
+        (s"$db.$table", "table"),
+        (s"$db.${table}for_show", "table"),
+        (s"$db", "database"))) {
       doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.$table (key int) USING $format"))
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.${table}for_show (key int) USING $format"))
@@ -339,16 +347,13 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs("admin", assert(sql(s"show tables from $db").collect().length === 2))
       doAs("bob", assert(sql(s"show tables from $db").collect().length === 0))
       doAs("i_am_invisible", assert(sql(s"show tables from $db").collect().length === 0))
-    } finally {
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}for_show"))
-      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
 
   test("show databases") {
     val db = "default2"
-    try {
+
+    withCleanTmpResources(Seq((db, "database"))) {
       doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
       doAs("admin", assert(sql(s"SHOW DATABASES").collect().length == 2))
       doAs("admin", assert(sql(s"SHOW DATABASES").collectAsList().get(0).getString(0) == "default"))
@@ -356,8 +361,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
       doAs("bob", assert(sql(s"SHOW DATABASES").collect().length == 1))
       doAs("bob", assert(sql(s"SHOW DATABASES").collectAsList().get(0).getString(0) == "default"))
-    } finally {
-      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
 
@@ -365,7 +368,11 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val default = "default"
     val db3 = "default3"
     val function1 = "function1"
-    try {
+
+    withCleanTmpResources(Seq(
+      (s"$default.$function1", "function"),
+      (s"$db3.$function1", "function"),
+      (db3, "database"))) {
       doAs("admin", sql(s"CREATE FUNCTION $function1 AS 'Function1'"))
       doAs("admin", assert(sql(s"show user functions $default.$function1").collect().length == 1))
       doAs("bob", assert(sql(s"show user functions $default.$function1").collect().length == 0))
@@ -382,10 +389,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       val adminSystemFunctionCount = doAs("admin", sql(s"show system functions").collect().length)
       val bobSystemFunctionCount = doAs("bob", sql(s"show system functions").collect().length)
       assert(adminSystemFunctionCount == bobSystemFunctionCount)
-    } finally {
-      doAs("admin", sql(s"DROP FUNCTION IF EXISTS $default.$function1"))
-      doAs("admin", sql(s"DROP FUNCTION IF EXISTS $db3.$function1"))
-      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db3"))
     }
   }
 
@@ -394,7 +397,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val table = "src"
     val col = "key"
     val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
-    try {
+
+    withCleanTmpResources(Seq((s"$db.$table", "table"))) {
       doAs("admin", sql(create))
 
       doAs("admin", assert(sql(s"SHOW COLUMNS IN $table").count() == 2))
@@ -404,15 +408,20 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs("kent", assert(sql(s"SHOW COLUMNS IN $table").count() == 1))
       doAs("kent", assert(sql(s"SHOW COLUMNS IN $db.$table").count() == 1))
       doAs("kent", assert(sql(s"SHOW COLUMNS IN $table IN $db").count() == 1))
-    } finally {
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.$table"))
     }
   }
 
   test("show table extended") {
     val db = "default_bob"
     val table = "table"
-    try {
+
+    withCleanTmpResources(Seq(
+      (s"$db.${table}_use1", "table"),
+      (s"$db.${table}_use2", "table"),
+      (s"$db.${table}_select1", "table"),
+      (s"$db.${table}_select2", "table"),
+      (s"$db.${table}_select3", "table"),
+      (s"$db", "database"))) {
       doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db"))
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.${table}_use1 (key int) USING $format"))
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db.${table}_use2 (key int) USING $format"))
@@ -432,13 +441,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs(
         "i_am_invisible",
         assert(sql(s"show table extended from $db like '$table*'").collect().length === 0))
-    } finally {
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_use1"))
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_use2"))
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_select1"))
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_select2"))
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $db.${table}_select3"))
-      doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
     }
   }
 }
@@ -452,7 +454,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
   test("table stats must be specified") {
     val table = "hive_src"
-    try {
+    withCleanTmpResources(Seq((table, "table"))) {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
       doAs(
         "admin", {
@@ -460,14 +462,12 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             .queryExecution.optimizedPlan.collectLeaves().head.asInstanceOf[HiveTableRelation]
           assert(getFieldVal[Option[Statistics]](hiveTableRelation, "tableStats").nonEmpty)
         })
-    } finally {
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $table"))
     }
   }
 
   test("HiveTableRelation should be able to be converted to LogicalRelation") {
     val table = "hive_src"
-    try {
+    withCleanTmpResources(Seq((table, "table"))) {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int) STORED AS PARQUET"))
       doAs(
         "admin", {
@@ -475,8 +475,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             .queryExecution.optimizedPlan.collectLeaves().head
           assert(relation.isInstanceOf[LogicalRelation])
         })
-    } finally {
-      doAs("admin", sql(s"DROP TABLE IF EXISTS $table"))
     }
   }
 
@@ -485,20 +483,20 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val table1 = "table1"
     val table2 = "table2"
 
-    doAs(
-      "admin",
-      try {
-        sql(s"CREATE DATABASE IF NOT EXISTS $db")
-        sql(s"CREATE TABLE IF NOT EXISTS $db.$table1(id int) STORED AS PARQUET")
-        sql(s"INSERT INTO $db.$table1 SELECT 1")
-        sql(s"CREATE TABLE IF NOT EXISTS $db.$table2(id int, name string) STORED AS PARQUET")
-        sql(s"INSERT INTO $db.$table2 SELECT 1, 'a'")
-        val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
-        assert(sql(join).collect().length == 1)
-      } finally {
-        sql(s"DROP TABLE IF EXISTS $db.$table2")
-        sql(s"DROP TABLE IF EXISTS $db.$table1")
-        sql(s"DROP DATABASE IF EXISTS $db")
-      })
+    withCleanTmpResources(Seq(
+      (s"$db.$table2", "table"),
+      (s"$db.$table1", "table"),
+      (s"$db", "database"))) {
+      doAs(
+        "admin", {
+          sql(s"CREATE DATABASE IF NOT EXISTS $db")
+          sql(s"CREATE TABLE IF NOT EXISTS $db.$table1(id int) STORED AS PARQUET")
+          sql(s"INSERT INTO $db.$table1 SELECT 1")
+          sql(s"CREATE TABLE IF NOT EXISTS $db.$table2(id int, name string) STORED AS PARQUET")
+          sql(s"INSERT INTO $db.$table2 SELECT 1, 'a'")
+          val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
+          assert(sql(join).collect().length == 1)
+        })
+    }
   }
 }
