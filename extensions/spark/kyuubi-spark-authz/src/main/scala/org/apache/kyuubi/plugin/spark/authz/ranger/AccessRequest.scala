@@ -38,7 +38,12 @@ object AccessRequest {
     val userName = user.getShortUserName
     val groups = {
       try {
-        // todo get switch config from ranger plugin config or kyuubi config
+        val enableUserGroupInUserStore = SparkRangerAdminPlugin.getConfig.get(
+          "kyuubi.authz.use.usergroup.in.userstore", "false");
+        if (enableUserGroupInUserStore == null || !enableUserGroupInUserStore.equals("true")) {
+          user.getGroupNames.toSet.asJava
+        }
+
         val getUserStoreEnricher = SparkRangerAdminPlugin.getClass.getMethod(
           "getUserStoreEnricher")
         getUserStoreEnricher.setAccessible(true)
