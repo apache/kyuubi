@@ -39,7 +39,8 @@ object AccessRequest {
     val groups = {
       try {
         val enableUserGroupInUserStore = SparkRangerAdminPlugin.getConfig.get(
-          "kyuubi.authz.use.usergroup.in.userstore", "false");
+          "kyuubi.authz.request.usergroup.from.userstore",
+          "false");
         if (enableUserGroupInUserStore == null || !enableUserGroupInUserStore.equals("true")) {
           user.getGroupNames.toSet.asJava
         }
