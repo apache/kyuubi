@@ -48,18 +48,16 @@ object AccessRequest {
         getRangerUserStore.setAccessible(true)
         val userStore = getRangerUserStore.invoke(storeEnricher)
 
-        val getUserGroupMapping = userStore.getClass.getMethod("getRangerUserStore")
+        val getUserGroupMapping = userStore.getClass.getMethod("getUserGroupMapping")
         getUserGroupMapping.setAccessible(true)
-        val userGroupMappingMap: Map[String, Set[String]] =
-          getRangerUserStore.invoke(userStore).asInstanceOf[Map[String, Set[String]]]
+        val value = getUserGroupMapping.invoke(userStore)
 
-        val groupsFromUserStore = userGroupMappingMap.get(userName).orNull
+        val userGroupsFromUserStore: scala.collection.mutable.Map[String, Set[String]] =
+          mapAsScalaMap(value.asInstanceOf[java.util.LinkedHashMap[String, java.util.Set[String]]])
 
-        if (groupsFromUserStore != null) {
-          groupsFromUserStore
-        } else {
-          user.getGroupNames.toSet.asJava
-        }
+        if (userGroupsFromUserStore != null) userGroupsFromUserStore
+        else user.getGroupNames.toSet.asJava
+
       } catch {
         case _: NoSuchMethodException =>
           user.getGroupNames.toSet.asJava
