@@ -208,6 +208,10 @@ private[kyuubi] class EngineRef(
 
         engineManager.getApplicationInfo(builder.clusterManager(), engineRefId).foreach { appInfo =>
           if (ApplicationState.isTerminated(appInfo.state)) {
+            MetricsSystem.tracing { ms =>
+              ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
+              ms.incCount(MetricRegistry.name(ENGINE_FAIL, "ENGINE_TERMINATE"))
+            }
             throw new KyuubiSQLException(
               s"""
                  |The engine application has been in terminate state. Please check the engine log.
