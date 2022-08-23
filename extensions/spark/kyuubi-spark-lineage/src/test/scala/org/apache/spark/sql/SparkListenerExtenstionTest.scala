@@ -17,28 +17,28 @@
 
 package org.apache.spark.sql
 
-import java.nio.file.Files
-
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.internal.StaticSQLConf
+import org.apache.spark.util.Utils
 
 trait SparkListenerExtensionTest {
+
   protected val catalogImpl: String
   protected def format: String = if (catalogImpl == "hive") "hive" else "parquet"
 
   protected lazy val spark: SparkSession = {
-    val metastore = {
-      val path = Files.createTempDirectory("hms")
-      Files.delete(path)
-      path
-    }
+    val basePath = Utils.createTempDir() + "/" + getClass.getCanonicalName
+    val metastorePath = basePath + "/metastore_db"
+    val warehousePath = basePath + "/warehouse"
     SparkSession.builder()
       .master("local")
       .config("spark.ui.enabled", "false")
-      .config("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
-      .config("spark.sql.catalogImplementation", catalogImpl)
       .config(
-        "spark.sql.warehouse.dir",
-        Files.createTempDirectory("spark-warehouse").toString)
+        ConfVars.METASTORECONNECTURLKEY.varname,
+        s"jdbc:derby:;databaseName=$metastorePath;create=true")
+      .config("spark.sql.catalogImplementation", catalogImpl)
+      .config(StaticSQLConf.WAREHOUSE_PATH.key, warehousePath)
       .config(sparkConf)
       .getOrCreate()
   }

@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.lineage.events
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.events.KyuubiEvent
 
-case class ColumnLineage(column: String, ordinal: Int, originalColumns: Set[String])
+case class ColumnLineage(column: String, originalColumns: Set[String])
 
 /**
  * @param inputTables the tables of the operation will read
@@ -48,9 +48,9 @@ object Lineage {
       inputTables: List[String],
       outputTables: List[String],
       columnLineage: List[(String, Set[String])]): Lineage = {
-    val newColumnLineage = columnLineage.zipWithIndex.map {
-      case ((column, originalColumns), index) =>
-        ColumnLineage(column, index, originalColumns)
+    val newColumnLineage = columnLineage.map {
+      case (column, originalColumns) =>
+        ColumnLineage(column, originalColumns)
     }
     new Lineage(inputTables, outputTables, newColumnLineage)
   }

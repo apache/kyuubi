@@ -49,38 +49,38 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    spark.sql(s"create database if not exists test_db")
-    spark.sql(s"create database if not exists test_db0")
-    spark.sql(s"create table if not exists test_db0.test_table0" +
-      s" (key int, value string) using parquet")
-    spark.sql(s"create table if not exists test_db0.test_table_part0" +
-      s" (key int, value string, pid string) using parquet" +
-      s"  partitioned by(pid)")
+    spark.sql("create database if not exists test_db")
+    spark.sql("create database if not exists test_db0")
+    spark.sql("create table if not exists test_db0.test_table0" +
+      " (key int, value string) using parquet")
+    spark.sql("create table if not exists test_db0.test_table_part0" +
+      " (key int, value string, pid string) using parquet" +
+      "  partitioned by(pid)")
   }
 
   override def afterAll(): Unit = {
     Seq("test_db0.test_table0", "test_db0.test_table_part0").foreach { t =>
       spark.sql(s"drop table if exists $t")
     }
-    spark.sql(s"drop database if exists test_db")
-    spark.sql(s"drop database if exists test_db0")
+    spark.sql("drop database if exists test_db")
+    spark.sql("drop database if exists test_db0")
     spark.stop()
     super.afterAll()
   }
 
   test("columns lineage extract - AlterViewAsCommand") {
     withView("alterviewascommand", "alterviewascommand1") { _ =>
-      spark.sql(s"create view alterviewascommand as select key from test_db0.test_table0")
+      spark.sql("create view alterviewascommand as select key from test_db0.test_table0")
       val ret0 =
-        exectractLineage(s"alter view alterviewascommand as select key from test_db0.test_table0")
+        exectractLineage("alter view alterviewascommand as select key from test_db0.test_table0")
       assert(ret0 == Lineage(
         List("test_db0.test_table0"),
         List("default.alterviewascommand"),
         List(("default.alterviewascommand.key", Set("test_db0.test_table0.key")))))
 
-      spark.sql(s"create view alterviewascommand1 as select * from test_db0.test_table0")
+      spark.sql("create view alterviewascommand1 as select * from test_db0.test_table0")
       val ret1 =
-        exectractLineage(s"alter view alterviewascommand1 as select * from test_db0.test_table0")
+        exectractLineage("alter view alterviewascommand1 as select * from test_db0.test_table0")
       assert(ret1 == Lineage(
         List("test_db0.test_table0"),
         List("default.alterviewascommand1"),
@@ -126,7 +126,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       _ =>
         val ret0 =
           exectractLineage("create table createdatasourcetableasselectcommand using parquet" +
-            s" AS SELECT key, value FROM test_db0.test_table0")
+            " AS SELECT key, value FROM test_db0.test_table0")
         assert(ret0 == Lineage(
           List("test_db0.test_table0"),
           List("default.createdatasourcetableasselectcommand"),
@@ -138,7 +138,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
 
         val ret1 =
           exectractLineage("create table createdatasourcetableasselectcommand1 using parquet" +
-            s" AS SELECT * FROM test_db0.test_table0")
+            " AS SELECT * FROM test_db0.test_table0")
         assert(ret1 == Lineage(
           List("test_db0.test_table0"),
           List("default.createdatasourcetableasselectcommand1"),
@@ -153,7 +153,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   test("columns lineage extract - CreateHiveTableAsSelectCommand") {
     withTable("createhivetableasselectcommand", "createhivetableasselectcommand1") { _ =>
       val ret0 = exectractLineage("create table createhivetableasselectcommand using hive" +
-        s" as select key, value from test_db0.test_table0")
+        " as select key, value from test_db0.test_table0")
       assert(ret0 == Lineage(
         List("test_db0.test_table0"),
         List("default.createhivetableasselectcommand"),
@@ -162,7 +162,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           ("default.createhivetableasselectcommand.value", Set("test_db0.test_table0.value")))))
 
       val ret1 = exectractLineage("create table createhivetableasselectcommand1 using hive" +
-        s" as select * from test_db0.test_table0")
+        " as select * from test_db0.test_table0")
       assert(ret1 == Lineage(
         List("test_db0.test_table0"),
         List("default.createhivetableasselectcommand1"),
@@ -194,7 +194,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       "v2_catalog.db.createhivetableasselectcommand",
       "v2_catalog.db.createhivetableasselectcommand1") { _ =>
       val ret0 = exectractLineage("create table v2_catalog.db.createhivetableasselectcommand" +
-        s" as select key, value from test_db0.test_table0")
+        " as select key, value from test_db0.test_table0")
       assert(ret0 == Lineage(
         List("test_db0.test_table0"),
         List("v2_catalog.db.createhivetableasselectcommand"),
@@ -205,7 +205,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
             Set("test_db0.test_table0.value")))))
 
       val ret1 = exectractLineage("create table v2_catalog.db.createhivetableasselectcommand1" +
-        s" as select * from test_db0.test_table0")
+        " as select * from test_db0.test_table0")
       assert(ret1 == Lineage(
         List("test_db0.test_table0"),
         List("v2_catalog.db.createhivetableasselectcommand1"),

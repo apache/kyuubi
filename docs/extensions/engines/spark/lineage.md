@@ -46,11 +46,9 @@ The lineage of this SQL:
    "outputTables": [],
    "columnLineage": [{
       "column": "col0",
-      "ordinal": 0,
       "originalColumns": ["default.test_table0.a"]
    }, {
       "column": "col1",
-      "ordinal": 1,
       "originalColumns": ["default.test_table0.b"]
    }]
 }
