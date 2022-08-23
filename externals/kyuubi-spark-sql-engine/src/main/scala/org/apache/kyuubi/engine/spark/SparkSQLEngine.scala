@@ -49,7 +49,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   private val shutdown = new AtomicBoolean(false)
 
-  private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
+  @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
