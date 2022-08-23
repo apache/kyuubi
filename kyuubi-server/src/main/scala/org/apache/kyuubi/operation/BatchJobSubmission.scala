@@ -339,10 +339,20 @@ class BatchJobSubmission(
 
 object BatchJobSubmission {
   def applicationFailed(applicationStatus: Option[ApplicationInfo]): Boolean = {
-    applicationStatus.map(_.state).exists(ApplicationState.isFailed)
+    applicationStatus.map(_.state).exists {
+      case ApplicationState.FAILED => true
+      case ApplicationState.KILLED => true
+      case _ => false
+    }
   }
 
   def applicationTerminated(applicationStatus: Option[ApplicationInfo]): Boolean = {
-    applicationStatus.map(_.state).exists(ApplicationState.isTerminated)
+    applicationStatus.map(_.state).exists {
+      case ApplicationState.FAILED => true
+      case ApplicationState.KILLED => true
+      case ApplicationState.FINISHED => true
+      case ApplicationState.NOT_FOUND => true
+      case _ => false
+    }
   }
 }
