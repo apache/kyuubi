@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiEvent
 
@@ -32,7 +32,7 @@ object EventHandlerLoader extends Logging {
     val providers = ArrayBuffer[CustomEventHandlerProvider]()
     ServiceLoader.load(
       classOf[CustomEventHandlerProvider],
-      Thread.currentThread().getContextClassLoader)
+      Utils.getContextOrKyuubiClassLoader)
       .iterator()
       .asScala
       .foreach(provider => providers += provider)

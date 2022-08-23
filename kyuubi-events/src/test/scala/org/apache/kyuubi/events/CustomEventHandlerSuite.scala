@@ -29,6 +29,7 @@ class CustomEventHandlerSuite extends KyuubiFunSuite {
     val providers = EventHandlerLoader.loadCustom(kyuubiConf)
     assert(providers.head.getClass === classOf[Fake1EventHandler])
     assert(providers(1).getClass === classOf[Fake2EventHandler])
+    assert(providers.size == 2)
   }
 }
 
