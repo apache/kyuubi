@@ -32,7 +32,7 @@ trait WithKyuubiServerAndDorisContainer extends WithKyuubiServer with WithDorisE
       .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
       .set(
         ENGINE_JDBC_EXTRA_CLASSPATH,
-        getClass.getClassLoader.getResource(
+        Utils.getContextOrKyuubiClassLoader.getResource(
           "mysql/mysql-connector-java-8.0.30.jar").toURI.getPath)
   }
 

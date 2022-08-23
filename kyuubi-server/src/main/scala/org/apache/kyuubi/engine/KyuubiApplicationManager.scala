@@ -24,7 +24,7 @@ import java.util.{Locale, ServiceLoader}
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
-import org.apache.kyuubi.KyuubiException
+import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
@@ -35,7 +35,7 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
 
   // TODO: maybe add a configuration is better
   private val operations = {
-    ServiceLoader.load(classOf[ApplicationOperation], getClass.getClassLoader)
+    ServiceLoader.load(classOf[ApplicationOperation], Utils.getContextOrKyuubiClassLoader)
       .iterator().asScala.toSeq
   }
 

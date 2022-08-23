@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.tpcds.benchmark
 
-import scala.io.{Codec, Source}
-
 /**
  * This implements the official TPCDS v2.4 queries with only cosmetic modifications.
  */
@@ -133,7 +131,7 @@ trait TPCDS_2_4_Queries extends Benchmark {
     "ss_max")
 
   val tpcds2_4Queries: Seq[Query] = queryNames.map { queryName =>
-    val in = getClass.getClassLoader.getResourceAsStream(s"tpcds_2_4/$queryName.sql")
+    val in = Utils.getContextOrKyuubiClassLoader.getResourceAsStream(s"tpcds_2_4/$queryName.sql")
     val queryContent: String = Source.fromInputStream(in)(Codec.UTF8).mkString
     in.close()
 
