@@ -176,6 +176,19 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
   }
 
   test("fast fail the kyuubi connection on engine terminated") {
-
+    withSessionConf(Map.empty)(Map(
+      "spark.master" -> "yarn",
+      "spark.submit.deployMode" -> "cluster",
+      "spark.sql.defaultCatalog=spark_catalog" -> "spark_catalog",
+      "spark.sql.catalog.spark_catalog.type" -> "invalid_type",
+      "kyuubi.session.engine.initialize.timeout" -> "PT10m"))(Map.empty) {
+      val startTime = System.currentTimeMillis()
+      val exception = intercept[Exception] {
+        withJdbcStatement() { _ => }
+      }
+      val elapsedTime = System.currentTimeMillis() - startTime
+      assert(elapsedTime < 60 * 1000)
+      assert(exception.getMessage contains "The engine application has been in terminate state.")
+    }
   }
 }

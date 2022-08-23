@@ -65,18 +65,17 @@ object ApplicationState extends Enumeration {
   type ApplicationState = Value
   val PENDING, RUNNING, FINISHED, KILLED, FAILED, ZOMBIE, NOT_FOUND, UNKNOWN = Value
 
-  def applicationFailed(state: ApplicationState): Boolean = state match {
+  def isFailed(state: ApplicationState): Boolean = state match {
     case FAILED => true
     case KILLED => true
     case _ => false
   }
 
-  def applicationTerminated(state: ApplicationState): Boolean = {
+  def isTerminated(state: ApplicationState): Boolean = {
     state match {
       case FAILED => true
       case KILLED => true
       case FINISHED => true
-      case NOT_FOUND => true
       case _ => false
     }
   }

@@ -207,7 +207,7 @@ private[kyuubi] class EngineRef(
         }
 
         engineManager.getApplicationInfo(builder.clusterManager(), engineRefId).foreach { appInfo =>
-          if (ApplicationState.applicationTerminated(appInfo.state)) {
+          if (ApplicationState.isTerminated(appInfo.state)) {
             engineRef = discoveryClient.getEngineByRefId(engineSpace, engineRefId)
             if (engineRef.isEmpty) {
               throw new KyuubiSQLException(
