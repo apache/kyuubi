@@ -208,15 +208,12 @@ private[kyuubi] class EngineRef(
 
         engineManager.getApplicationInfo(builder.clusterManager(), engineRefId).foreach { appInfo =>
           if (ApplicationState.isTerminated(appInfo.state)) {
-            engineRef = discoveryClient.getEngineByRefId(engineSpace, engineRefId)
-            if (engineRef.isEmpty) {
-              throw new KyuubiSQLException(
-                s"""
-                   |The engine application has been in terminate state. Please check the engine log.
-                   |FYI: ${appInfo.toMap.mkString("(\n", ",\n", "\n)")}
-                   |""".stripMargin,
-                builder.getError)
-            }
+            throw new KyuubiSQLException(
+              s"""
+                 |The engine application has been in terminate state. Please check the engine log.
+                 |FYI: ${appInfo.toMap.mkString("(\n", ",\n", "\n)")}
+                 |""".stripMargin,
+              builder.getError)
           }
         }
 
