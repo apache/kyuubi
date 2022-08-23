@@ -48,3 +48,4 @@ build/scala-*/**
 **/org/apache/kyuubi/ui/swagger/**
 **/org.apache.spark.status.AppHistoryServerPlugin
 **/metadata-store-schema*.sql
+**/pnpm-lock.yaml
