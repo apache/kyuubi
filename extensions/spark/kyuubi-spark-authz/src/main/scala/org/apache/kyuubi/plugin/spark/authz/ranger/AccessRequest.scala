@@ -55,10 +55,12 @@ object AccessRequest {
 
         val getUserGroupMapping = userStore.getClass.getMethod("getUserGroupMapping")
         getUserGroupMapping.setAccessible(true)
-        val value = getUserGroupMapping.invoke(userStore)
 
-        val userGroupsFromUserStore: scala.collection.mutable.Map[String, Set[String]] =
-          mapAsScalaMap(value.asInstanceOf[java.util.LinkedHashMap[String, java.util.Set[String]]])
+        val userGroupMappingMap: scala.collection.mutable.Map[String, Set[String]] =
+          mapAsScalaMap(getUserGroupMapping.invoke(userStore)
+            .asInstanceOf[java.util.LinkedHashMap[String, java.util.Set[String]]])
+
+        val userGroupsFromUserStore = userGroupMappingMap.get(userName).orNull
 
         if (userGroupsFromUserStore != null) userGroupsFromUserStore
         else user.getGroupNames.toSet.asJava
