@@ -146,15 +146,14 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
       s"day=$currentDate",
       spark.sparkContext.applicationId + ".json")
     val table = statementEventPath.getParent
-
     withTable("test_table0") { _ =>
       spark.sql("create table test_table0(a string, b string)")
       spark.sql("select a as col0, b as col1 from test_table0").collect()
 
       val result = spark.sql(s"select * from `json`.`$table`")
       val expected =
-        "WrappedArray(WrappedArray(col0, [\"default.test_table0.a\"]), " +
-          "WrappedArray(col1, [\"default.test_table0.b\"]))"
+        "WrappedArray([col0,0,WrappedArray(default.test_table0.a)]," +
+          " [col1,1,WrappedArray(default.test_table0.b)])"
 
       assert(result.select("lineage")
         .collect().last

@@ -20,16 +20,41 @@ package org.apache.kyuubi.plugin.lineage.events
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.events.KyuubiEvent
 
+case class ColumnLineage(column: String, ordinal: Int, originalColumns: Set[String])
+
 /**
  * @param inputTables the tables of the operation will read
  * @param outputTables the tables of the operation will write
  * @param columnLineage the output columns are associated to columns of the real table's columns
  */
 
-case class Lineage(
-    inputTables: List[String],
-    outputTables: List[String],
-    columnLineage: List[(String, Set[String])])
+class Lineage(
+    val inputTables: List[String],
+    val outputTables: List[String],
+    val columnLineage: List[ColumnLineage]) {
+
+  override def equals(other: Any): Boolean = other match {
+    case otherLineage: Lineage =>
+      otherLineage.inputTables == inputTables && otherLineage.outputTables == outputTables &&
+        otherLineage.columnLineage == columnLineage
+    case _ => false
+  }
+
+  override def hashCode(): Int = super.hashCode()
+}
+
+object Lineage {
+  def apply(
+      inputTables: List[String],
+      outputTables: List[String],
+      columnLineage: List[(String, Set[String])]): Lineage = {
+    val newColumnLineage = columnLineage.zipWithIndex.map {
+      case ((column, originalColumns), index) =>
+        ColumnLineage(column, index, originalColumns)
+    }
+    new Lineage(inputTables, outputTables, newColumnLineage)
+  }
+}
 
 case class OperationLineageEvent(
     executionId: Long,
@@ -39,5 +64,4 @@ case class OperationLineageEvent(
 
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(eventTime)) :: Nil
-
 }

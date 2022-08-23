@@ -350,7 +350,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
 
   test("columns lineage extract - not generate lineage sql") {
     val ret0 = exectractLineage("create table test_table1(a string, b string, c string)")
-    assert(ret0 == Lineage(List(), List(), List()))
+    assert(ret0 == Lineage(List[String](), List[String](), List[(String, Set[String])]()))
   }
 
   test("columns lineage extract - data source V2 sql") {
@@ -389,11 +389,11 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       val ret3 = exectractLineage(sql3)
       assert(ret3 == Lineage(
         List("v2_catalog.db.tb"),
-        List(),
+        List[String](),
         List(
           ("col2", Set("v2_catalog.db.tb.col1")),
-          ("col2", Set()),
-          ("col2", Set()),
+          ("col2", Set[String]()),
+          ("col2", Set[String]()),
           ("col2", Set("v2_catalog.db.tb.col3")))))
 
       val sql4 =
@@ -642,7 +642,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           (
             "get_amount0",
             Set("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
-          ("add_time", Set()))))
+          ("add_time", Set[String]()))))
       val sql1 =
         """
           |SELECT channel_id, sub_channel_id, country_name, SUM(get_count) AS get_count0
@@ -686,7 +686,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           (
             "get_amount0",
             Set("test_db.test_order_item.goods_count", "test_db.test_order_item.shop_price")),
-          ("add_time", Set()))))
+          ("add_time", Set[String]()))))
     }
   }
 

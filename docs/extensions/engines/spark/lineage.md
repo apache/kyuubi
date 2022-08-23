@@ -33,31 +33,26 @@ The current lineage parsing functionality is implemented as a plugin by extendin
 
 When the following SQL is executed:
 ```sql
+## table
+create table test_table0(a string, b string)
+
+## query
 select a as col0, b as col1 from test_table0
 ```
 The lineage of this SQL:
 ```json
 {
-   "inputTables":[
-      "default.test_table0"
-   ],
-   "outputTables":[
-      
-   ],
-   "columnLineage":[
-      [
-         "col0",
-         [
-            "default.test_table0.a"
-         ]
-      ],
-      [
-         "col1",
-         [
-            "default.test_table0.b"
-         ]
-      ]
-   ]
+   "inputTables": ["default.test_table0"],
+   "outputTables": [],
+   "columnLineage": [{
+      "column": "col0",
+      "ordinal": 0,
+      "originalColumns": ["default.test_table0.a"]
+   }, {
+      "column": "col1",
+      "ordinal": 1,
+      "originalColumns": ["default.test_table0.b"]
+   }]
 }
 ```
 
@@ -158,10 +153,11 @@ Add `org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListene
 spark.sql.queryExecutionListeners=org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener
 ```
 
-### Settings for Lineage Logger Path
+### Settings for Lineage Logger and Path
 
 #### Lineage Logger Path
 The location of all the engine operation lineage events go for the builtin JSON logger.
+We first need set `kyuubi.engine.event.loggers` to `JSON`.
 All operation lineage events will be written in the unified event json logger path, which be setting with 
 `kyuubi.engine.event.json.log.path`. We can get the lineage logger from the `operation_lineage` dir in the
 `kyuubi.engine.event.json.log.path`.
