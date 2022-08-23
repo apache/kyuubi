@@ -174,4 +174,8 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       assert(batchJobSubmissionOp.getStatus.state === OperationState.ERROR)
     }
   }
+
+  test("fast fail the kyuubi connection on engine terminated") {
+
+  }
 }

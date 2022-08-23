@@ -205,6 +205,21 @@ private[kyuubi] class EngineRef(
             throw error
           }
         }
+
+        engineManager.getApplicationInfo(builder.clusterManager(), engineRefId).foreach { appInfo =>
+          if (ApplicationState.applicationTerminated(appInfo.state)) {
+            engineRef = discoveryClient.getEngineByRefId(engineSpace, engineRefId)
+            if (engineRef.isEmpty) {
+              throw new KyuubiSQLException(
+                s"""
+                   |The engine application has been in terminate state. Please check the engine log.
+                   |FYI: ${appInfo.toMap.mkString("(\n", ",\n", "\n)")}
+                   |""".stripMargin,
+                builder.getError)
+            }
+          }
+        }
+
         if (started + timeout <= System.currentTimeMillis()) {
           val killMessage = engineManager.killApplication(builder.clusterManager(), engineRefId)
           process.destroyForcibly()
