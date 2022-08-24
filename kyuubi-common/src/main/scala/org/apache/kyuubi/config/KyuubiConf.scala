@@ -2018,7 +2018,7 @@ object KyuubiConf {
       DeprecatedConfig(
         AUTHENTICATION_LDAP_GUIDKEY.key,
         "1.6.0",
-        s"using ${AUTHENTICATION_LDAP_BINDDN.key} instead"))
+        s"using ${AUTHENTICATION_LDAP_BINDDN} instead"))
     Map(configs.map { cfg => cfg.key -> cfg }: _*)
   }
 
