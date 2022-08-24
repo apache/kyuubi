@@ -29,9 +29,11 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
+import org.apache.kyuubi.engine.ApplicationState
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection
 import org.apache.kyuubi.plugin.SessionConfAdvisor
+import org.apache.kyuubi.session.KyuubiSessionManager
 
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
@@ -208,6 +210,27 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val kyuubiConnection = new KyuubiConnection(jdbcUrlWithConf, prop)
       intercept[SQLException](kyuubiConnection.waitLaunchEngineToComplete())
       assert(kyuubiConnection.isClosed)
+    }
+  }
+
+  test("transfer the TGetInfoReq to kyuubi engine side to verify the connection valid") {
+    withSessionConf(Map.empty)(Map(KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))() {
+      withJdbcStatement() { statement =>
+        val conn = statement.getConnection.asInstanceOf[KyuubiConnection]
+        assert(conn.isValid(3000))
+        val sessionManager = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+        eventually(timeout(10.seconds)) {
+          assert(sessionManager.allSessions().size === 1)
+        }
+        val engineId = sessionManager.allSessions().head.handle.identifier.toString
+        // kill the engine application and wait the engine terminate
+        sessionManager.applicationManager.killApplication(None, engineId)
+        eventually(timeout(30.seconds), interval(100.milliseconds)) {
+          assert(sessionManager.applicationManager.getApplicationInfo(None, engineId)
+            .exists(_.state == ApplicationState.NOT_FOUND))
+        }
+        assert(!conn.isValid(3000))
+      }
     }
   }
 }
