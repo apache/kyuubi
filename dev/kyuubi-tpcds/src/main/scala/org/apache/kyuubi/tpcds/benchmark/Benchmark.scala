@@ -17,6 +17,13 @@
 
 package org.apache.kyuubi.tpcds.benchmark
 
+import scala.concurrent._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
+import scala.language.implicitConversions
+import scala.util.{Failure => SFailure, Success, Try}
+import scala.util.control.NonFatal
+
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
 // scalastyle:off
@@ -36,7 +43,7 @@ abstract class Benchmark(
   implicit protected def toOption[A](a: A): Option[A] = Option(a)
 
   val buildInfo: Map[String, String] =
-    Try(Utils.getContextOrKyuubiClassLoader.loadClass("org.apache.spark.BuildInfo")).map { cls =>
+    Try(getClass.getClassLoader.loadClass("org.apache.spark.BuildInfo")).map { cls =>
       cls.getMethods
         .filter(_.getReturnType == classOf[String])
         .filterNot(_.getName == "toString")
