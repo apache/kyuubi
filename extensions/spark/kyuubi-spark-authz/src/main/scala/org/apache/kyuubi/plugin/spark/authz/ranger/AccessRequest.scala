@@ -17,9 +17,11 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.util.{Date, Set}
+import java.util
+import java.util.Date
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPolicyEngine}
@@ -36,41 +38,7 @@ object AccessRequest {
       opType: OperationType,
       accessType: AccessType): AccessRequest = {
     val userName = user.getShortUserName
-    val groups = {
-      try {
-        val enableOverrideUserGroupFromUserStore = SparkRangerAdminPlugin.getConfig.getBoolean(
-          s"ranger.plugin.${SparkRangerAdminPlugin.getConfig.getServiceType}" +
-            s".enable.override.usergroup.from.userstore", false);
-        if (!enableOverrideUserGroupFromUserStore) {
-          user.getGroupNames.toSet.asJava
-        }
-
-        val getUserStoreEnricher = SparkRangerAdminPlugin.getClass.getMethod(
-          "getUserStoreEnricher")
-        getUserStoreEnricher.setAccessible(true)
-        val storeEnricher = getUserStoreEnricher.invoke(SparkRangerAdminPlugin)
-
-        val getRangerUserStore = storeEnricher.getClass.getMethod("getRangerUserStore")
-        getRangerUserStore.setAccessible(true)
-        val userStore = getRangerUserStore.invoke(storeEnricher)
-
-        val getUserGroupMapping = userStore.getClass.getMethod("getUserGroupMapping")
-        getUserGroupMapping.setAccessible(true)
-
-        val userGroupMappingMap: scala.collection.mutable.Map[String, java.util.Set[String]] =
-          mapAsScalaMap(getUserGroupMapping.invoke(userStore)
-            .asInstanceOf[java.util.LinkedHashMap[String, java.util.Set[String]]])
-
-        val userGroupsFromUserStore = userGroupMappingMap.get(userName).orNull
-
-        if (userGroupsFromUserStore != null) userGroupsFromUserStore
-        else user.getGroupNames.toSet.asJava
-
-      } catch {
-        case _: NoSuchMethodException =>
-          user.getGroupNames.toSet.asJava
-      }
-    }
+    val groups = getUserGroups(user, userName)
 
     val req = new AccessRequest(accessType)
     req.setResource(resource)
@@ -106,5 +74,44 @@ object AccessRequest {
       case _: NoSuchMethodException =>
     }
     req
+  }
+
+  private def getUserGroups(user: UserGroupInformation, userName: String): util.Set[String] = {
+    val enableOverrideUserGroupFromUserStore = SparkRangerAdminPlugin.getConfig.getBoolean(
+      s"ranger.plugin.${SparkRangerAdminPlugin.getConfig.getServiceType}" +
+        ".enable.override.usergroup.from.userstore",
+      false);
+    if (!enableOverrideUserGroupFromUserStore) {
+      user.getGroupNames.toSet.asJava
+    }
+
+    try {
+      val userGroupsFromUserStore: util.Set[String] = {
+        val getUserStoreEnricher = SparkRangerAdminPlugin.getClass.getMethod(
+          "getUserStoreEnricher")
+        getUserStoreEnricher.setAccessible(true)
+        val storeEnricher = getUserStoreEnricher.invoke(SparkRangerAdminPlugin)
+
+        val getRangerUserStore = storeEnricher.getClass.getMethod("getRangerUserStore")
+        getRangerUserStore.setAccessible(true)
+        val userStore = getRangerUserStore.invoke(storeEnricher)
+
+        val getUserGroupMapping = userStore.getClass.getMethod("getUserGroupMapping")
+        getUserGroupMapping.setAccessible(true)
+
+        val userGroupMappingMap: mutable.Map[String, util.Set[String]] =
+          mapAsScalaMap(getUserGroupMapping.invoke(userStore)
+            .asInstanceOf[util.LinkedHashMap[String, util.Set[String]]])
+
+        userGroupMappingMap.get(userName).orNull
+      }
+
+      if (userGroupsFromUserStore != null) userGroupsFromUserStore
+      else user.getGroupNames.toSet.asJava
+
+    } catch {
+      case _: NoSuchMethodException =>
+        user.getGroupNames.toSet.asJava
+    }
   }
 }
