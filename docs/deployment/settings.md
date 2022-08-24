@@ -143,12 +143,9 @@ kyuubi.authentication.jdbc.password|&lt;undefined&gt;|Database password for JDBC
 kyuubi.authentication.jdbc.query|&lt;undefined&gt;|Query SQL template with placeholders for JDBC Authentication Provider to execute. Authentication passes if the result set is not empty.The SQL statement must start with the `SELECT` clause. Available placeholders are `${user}` and `${password}`.|string|1.6.0
 kyuubi.authentication.jdbc.url|&lt;undefined&gt;|JDBC URL for JDBC Authentication Provider.|string|1.6.0
 kyuubi.authentication.jdbc.user|&lt;undefined&gt;|Database user for JDBC Authentication Provider.|string|1.6.0
-kyuubi.authentication.ldap.attrs|mail|Specifies part of the search as an attribute returned by LDAP. For example: mail,name.|seq|1.6.0
 kyuubi.authentication.ldap.base.dn|&lt;undefined&gt;|LDAP base DN.|string|1.0.0
-kyuubi.authentication.ldap.binddn|&lt;undefined&gt;|The user with which to bind to the LDAP server, and search for the full domain name of the user being authenticated. For example: uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com|string|1.6.0
-kyuubi.authentication.ldap.bindpw|&lt;undefined&gt;|The password for the bind user, to be used to search for the full name of the user being authenticated.|string|1.6.0
 kyuubi.authentication.ldap.domain|&lt;undefined&gt;|LDAP domain.|string|1.0.0
-kyuubi.authentication.ldap.guidKey|uid|(deprecated)LDAP attribute name whose values are unique in this LDAP server.For example:uid or cn.|string|1.2.0
+kyuubi.authentication.ldap.guidKey|uid|LDAP attribute name whose values are unique in this LDAP server.For example:uid or cn.|string|1.2.0
 kyuubi.authentication.ldap.url|&lt;undefined&gt;|SPACE character separated LDAP connection URL(s).|string|1.0.0
 kyuubi.authentication.sasl.qop|auth|Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul>|string|1.0.0
 

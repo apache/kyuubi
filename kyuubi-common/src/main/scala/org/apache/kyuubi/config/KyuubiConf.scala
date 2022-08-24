@@ -639,40 +639,13 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  @deprecated(s"using kyuubi.authentication.ldap.binddn instead", "1.6.0")
   val AUTHENTICATION_LDAP_GUIDKEY: ConfigEntry[String] =
     buildConf("kyuubi.authentication.ldap.guidKey")
-      .doc("(deprecated)LDAP attribute name whose values are unique in this LDAP server." +
+      .doc("LDAP attribute name whose values are unique in this LDAP server." +
         "For example:uid or cn.")
       .version("1.2.0")
       .stringConf
       .createWithDefault("uid")
-
-  val AUTHENTICATION_LDAP_BINDDN: OptionalConfigEntry[String] =
-    buildConf("kyuubi.authentication.ldap.binddn")
-      .doc("The user with which to bind to the LDAP server, and search for the full domain name " +
-        "of the user being authenticated." +
-        " For example: uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
-
-  val AUTHENTICATION_LDAP_PASSWORD: OptionalConfigEntry[String] =
-    buildConf("kyuubi.authentication.ldap.bindpw")
-      .doc("The password for the bind user," +
-        " to be used to search for the full name of the user being authenticated.")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
-
-  val AUTHENTICATION_LDAP_ATTRIBUTES: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.authentication.ldap.attrs")
-      .doc("Specifies part of the search as an attribute returned by LDAP." +
-        " For example: mail,name.")
-      .version("1.6.0")
-      .stringConf
-      .toSequence()
-      .createWithDefault(Seq("mail"))
 
   val AUTHENTICATION_JDBC_DRIVER: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.jdbc.driver.class")
@@ -1944,8 +1917,7 @@ object KyuubiConf {
     SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS,
     SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS,
     SERVER_LIMIT_CONNECTIONS_PER_USER,
-    SESSION_LOCAL_DIR_ALLOW_LIST,
-    AUTHENTICATION_LDAP_PASSWORD)
+    SESSION_LOCAL_DIR_ALLOW_LIST)
 
   /**
    * Holds information about keys that have been deprecated.
@@ -2014,11 +1986,7 @@ object KyuubiConf {
       DeprecatedConfig(
         "kyuubi.ha.zookeeper.acl.enabled",
         "1.3.2",
-        "Use kyuubi.ha.zookeeper.auth.type and kyuubi.ha.zookeeper.engine.auth.type instead"),
-      DeprecatedConfig(
-        AUTHENTICATION_LDAP_GUIDKEY.key,
-        "1.6.0",
-        s"using ${AUTHENTICATION_LDAP_BINDDN} instead"))
+        "Use kyuubi.ha.zookeeper.auth.type and kyuubi.ha.zookeeper.engine.auth.type instead"))
     Map(configs.map { cfg => cfg.key -> cfg }: _*)
   }
 

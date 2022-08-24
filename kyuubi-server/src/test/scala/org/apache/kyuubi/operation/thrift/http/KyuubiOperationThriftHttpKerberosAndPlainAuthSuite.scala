@@ -56,10 +56,6 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
       .set(KyuubiConf.SERVER_SPNEGO_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testSpnegoPrincipal)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_BINDDN, ldapBinddn)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_ATTRIBUTES, ldapAttrs)
   }
 
   override protected def getJdbcUrl: String =
