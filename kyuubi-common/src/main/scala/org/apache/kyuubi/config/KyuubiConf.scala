@@ -1639,13 +1639,14 @@ object KyuubiConf {
 
   object OperationModes extends Enumeration with Logging {
     type OperationMode = Value
-    val PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION, NONE, UNKNOWN = Value
+    val PARSE, ANALYZE, OPTIMIZE, OPTIMIZE_WITH_STATS, PHYSICAL, EXECUTION, NONE, UNKNOWN = Value
 
     def apply(mode: String): OperationMode = {
       mode.toUpperCase(Locale.ROOT) match {
         case "PARSE" => PARSE
         case "ANALYZE" => ANALYZE
         case "OPTIMIZE" => OPTIMIZE
+        case "OPTIMIZE_WITH_STATS" => OPTIMIZE_WITH_STATS
         case "PHYSICAL" => PHYSICAL
         case "EXECUTION" => EXECUTION
         case "NONE" => NONE
@@ -1658,9 +1659,9 @@ object KyuubiConf {
 
   val OPERATION_PLAN_ONLY_MODE: ConfigEntry[String] =
     buildConf("kyuubi.operation.plan.only.mode")
-      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE, PHYSICAL, EXECUTION " +
-        "only way without executing the query. When it is NONE, the statement will be fully " +
-        "executed")
+      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE, OPTIMIZE_WITH_STATS," +
+        " PHYSICAL, EXECUTION only way without executing the query. When it is NONE, " +
+        "the statement will be fully executed")
       .version("1.4.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))

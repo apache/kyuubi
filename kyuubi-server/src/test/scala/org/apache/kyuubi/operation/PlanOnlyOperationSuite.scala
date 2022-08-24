@@ -114,6 +114,20 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("KYUUBI #3128: Support CostMode for PlanOnlyStatement") {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> OPTIMIZE_WITH_STATS.toString))(
+      Map.empty) {
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(
+          "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1")
+        assert(resultSet.next())
+        val operationPlan = resultSet.getString(1)
+        assert(operationPlan.startsWith("RepartitionByExpression")
+          && operationPlan.contains("Statistics"))
+      }
+    }
+  }
+
   test("kyuubi #3214: Plan only mode with an incorrect value") {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "parse"))(Map.empty) {
       withJdbcStatement() { statement =>
