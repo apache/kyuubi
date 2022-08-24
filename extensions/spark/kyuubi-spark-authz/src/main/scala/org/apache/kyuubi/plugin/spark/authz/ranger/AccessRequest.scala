@@ -39,7 +39,6 @@ object AccessRequest {
       accessType: AccessType): AccessRequest = {
     val userName = user.getShortUserName
     val groups = getUserGroups(user, userName)
-
     val req = new AccessRequest(accessType)
     req.setResource(resource)
     req.setUser(userName)
