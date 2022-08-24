@@ -227,6 +227,13 @@ class KyuubiSyncThriftClient private (
     resp.getOperationHandle
   }
 
+  def getInfo(infoType: TGetInfoType): TGetInfoResp = {
+    val req = new TGetInfoReq(_remoteSessionHandle, infoType)
+    val resp = withLockAcquiredAsyncRequest(GetInfo(req))
+    ThriftUtils.verifyTStatus(resp.getStatus)
+    resp
+  }
+
   def getTypeInfo: TOperationHandle = {
     val req = new TGetTypeInfoReq(_remoteSessionHandle)
     val resp = withLockAcquiredAsyncRequest(GetTypeInfo(req))
