@@ -84,6 +84,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     conf.set(AUTHENTICATION_LDAP_BINDDN, ldapBinddn)
     conf.set(AUTHENTICATION_LDAP_PASSWORD, ldapBindpw)
     conf.set(AUTHENTICATION_LDAP_DOMAIN, ldapDomain)
+    conf.set(AUTHENTICATION_LDAP_FILTER, ldapFilter)
     val providerImpl = new LdapAuthenticationProviderImpl(conf)
     val e1 = intercept[AuthenticationException](providerImpl.authenticate("", ""))
     assert(e1.getMessage.contains("user is null"))
@@ -120,6 +121,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     assert(e5.getMessage contains "Error validating LDAP user")
     assert(e5.getCause.isInstanceOf[javax.naming.AuthenticationException])
 
+    conf.set(AUTHENTICATION_LDAP_FILTER, "(mail=user@example)")
     val providerImpl4 = new LdapAuthenticationProviderImpl(conf)
     val e6 = intercept[AuthenticationException](
       providerImpl4.authenticate("kent", ldapUserPasswd))
@@ -134,6 +136,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     conf.set(AUTHENTICATION_LDAP_DOMAIN, "example")
 
     conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("cn"))
+    conf.set(AUTHENTICATION_LDAP_FILTER, "(mail=kentyao@example)")
     val providerImpl6 = new LdapAuthenticationProviderImpl(conf)
     providerImpl6.authenticate(ldapUser, ldapUserPasswd)
     conf.set(AUTHENTICATION_LDAP_ATTRIBUTES, Seq("mail"))

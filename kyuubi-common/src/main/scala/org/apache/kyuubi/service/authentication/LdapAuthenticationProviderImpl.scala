@@ -70,45 +70,41 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       var nameEnuResults: NamingEnumeration[SearchResult] = null
       try {
         val ctx = new InitialLdapContext(env, null)
-        val sc = new SearchControls
-        sc.setReturningAttributes(attrs)
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE)
-        nameEnuResults = ctx.search(baseDn, s"(mail=$mail)", sc)
+        val filter = conf.get(AUTHENTICATION_LDAP_FILTER).getOrElse("")
+        if (filter.nonEmpty) {
+          val sc = new SearchControls
+          sc.setReturningAttributes(attrs)
+          sc.setSearchScope(SearchControls.SUBTREE_SCOPE)
+          nameEnuResults = ctx.search(baseDn, filter, sc)
+          if (nameEnuResults != null && nameEnuResults.hasMore) {
+            val searchResult = nameEnuResults.next
+            val attrs = searchResult.getAttributes.getAll
+            if (!attrs.hasMore) {
+              throw new AuthenticationException(
+                s"LDAP attributes are empty, please check config " +
+                  s"AUTHENTICATION_LDAP_ATTRIBUTES.key, Error validating LDAP user: $user," +
+                  s" bindDn: $bindDn.")
+            }
+            while (attrs.hasMore) {
+              attrs.next
+              env.put(Context.SECURITY_PRINCIPAL, searchResult.getNameInNamespace)
+              env.put(Context.SECURITY_CREDENTIALS, password)
+              val ctx = new InitialDirContext(env)
+              ctx.close()
+            }
+          } else {
+            throw new AuthenticationException(
+              s"LDAP InitialLdapContext search results are empty, " +
+                s"Error validating LDAP user: $user, bindDn: $bindDn.")
+          }
+        }
+        ctx.close()
       } catch {
         case e: NamingException =>
           throw new AuthenticationException(
             s"LDAP InitialLdapContext failed, Error validating LDAP user: $user," +
               s" bindDn: $bindDn.",
             e)
-      }
-      if (nameEnuResults != null && nameEnuResults.hasMore) {
-        try {
-          val searchResult = nameEnuResults.next
-          val attrs = searchResult.getAttributes.getAll
-          if (!attrs.hasMore) {
-            throw new AuthenticationException(
-              s"LDAP attributes are empty, please check config " +
-                s"AUTHENTICATION_LDAP_ATTRIBUTES.key, Error validating LDAP user: $user," +
-                s" bindDn: $bindDn.")
-          }
-          while (attrs.hasMore) {
-            attrs.next
-            env.put(Context.SECURITY_PRINCIPAL, searchResult.getNameInNamespace)
-            env.put(Context.SECURITY_CREDENTIALS, password)
-            val ctx = new InitialDirContext(env)
-            ctx.close()
-          }
-        } catch {
-          case e: NamingException =>
-            throw new AuthenticationException(
-              s"LDAP InitialDirContext failed, Error validating LDAP user: $user," +
-                s" bindDn: $bindDn.",
-              e)
-        }
-      } else {
-        throw new AuthenticationException(
-          s"LDAP InitialLdapContext search results are empty, Error validating LDAP user: $user," +
-            s" bindDn: $bindDn.")
       }
     }.getOrElse {
       val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)

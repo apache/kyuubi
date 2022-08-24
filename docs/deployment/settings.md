@@ -148,6 +148,7 @@ kyuubi.authentication.ldap.base.dn|&lt;undefined&gt;|LDAP base DN.|string|1.0.0
 kyuubi.authentication.ldap.binddn|&lt;undefined&gt;|The user with which to bind to the LDAP server, and search for the full domain name of the user being authenticated. For example: uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com|string|1.6.0
 kyuubi.authentication.ldap.bindpw|&lt;undefined&gt;|The password for the bind user, to be used to search for the full name of the user being authenticated.|string|1.6.0
 kyuubi.authentication.ldap.domain|&lt;undefined&gt;|LDAP domain.|string|1.0.0
+kyuubi.authentication.ldap.filter|&lt;undefined&gt;|A full LDAP query that LDAP Atn provider uses to execute against LDAP Server.If this query returns a null resultset, the LDAP Provider fails the Authenticationrequest, succeeds if the user is part of the resultset.For example: (mail=user@example)|string|1.6.0
 kyuubi.authentication.ldap.guidKey|uid|(deprecated)LDAP attribute name whose values are unique in this LDAP server.For example:uid or cn.|string|1.2.0
 kyuubi.authentication.ldap.url|&lt;undefined&gt;|SPACE character separated LDAP connection URL(s).|string|1.0.0
 kyuubi.authentication.sasl.qop|auth|Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul>|string|1.0.0

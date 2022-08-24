@@ -674,6 +674,16 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Seq("mail"))
 
+  val AUTHENTICATION_LDAP_FILTER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.filter")
+      .doc("A full LDAP query that LDAP Atn provider uses to execute against LDAP Server." +
+        "If this query returns a null resultset, the LDAP Provider fails the Authentication" +
+        "request, succeeds if the user is part of the resultset." +
+        "For example: (mail=user@example)")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
   val AUTHENTICATION_JDBC_DRIVER: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.jdbc.driver.class")
       .doc("Driver class name for JDBC Authentication Provider.")

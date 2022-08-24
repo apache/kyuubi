@@ -31,6 +31,7 @@ trait WithLdapServer extends KyuubiFunSuite {
   protected val ldapBaseUserDn = "ou=users,dc=example,dc=com"
   protected val ldapDomain = "example"
   protected val ldapAttrs = Seq("mail")
+  protected val ldapFilter = "(mail=kentyao@example)"
 
   protected def ldapUrl = s"ldap://localhost:${ldapServer.getListenPort}"
 
