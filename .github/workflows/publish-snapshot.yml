@@ -30,13 +30,15 @@ jobs:
       matrix:
         branch:
           - master
+          - branch-1.6
           - branch-1.5
-          - branch-1.4
         profiles:
           - -Pflink-provided,spark-provided,hive-provided,spark-3.1
           - -Pflink-provided,spark-provided,hive-provided,spark-3.2,tpcds
         include:
           - branch: master
+            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.3
+          - branch: branch-1.6
             profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.3
     steps:
     - name: Checkout repository
