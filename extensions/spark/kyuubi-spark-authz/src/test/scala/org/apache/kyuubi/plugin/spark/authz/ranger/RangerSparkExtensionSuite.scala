@@ -499,4 +499,16 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         })
     }
   }
+
+  test("Permanent View privilege checks") {
+    val table = "hive_src"
+    withCleanTmpResources(Seq((table, "table"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
+      val view = "temp_view"
+      doAs("admin", sql(s"CREATE VIEW $view  AS select * from $table"))
+      val e1 = intercept[AccessControlException](
+        doAs("someone", sql(s"SELECT * FROM $view").queryExecution.optimizedPlan))
+      assert(e1.getMessage.contains(s"does not have [select] privilege on [default/$view]"))
+    }
+  }
 }
