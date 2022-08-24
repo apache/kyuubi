@@ -31,6 +31,7 @@ import org.apache.spark.sql.types.StructField
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 
 object PrivilegesBuilder {
 
@@ -128,6 +129,9 @@ object PrivilegesBuilder {
         val parts = tableNameM.invoke(u).asInstanceOf[String].split("\\.")
         val db = quote(parts.init)
         privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
+
+      case permanentViewMarker: PermanentViewMarker =>
+        privilegeObjects += tablePrivileges(permanentViewMarker.catalogTable.identifier)
 
       case p =>
         for (child <- p.children) {

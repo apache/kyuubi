@@ -23,7 +23,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 
 private[authz] object AuthZUtils {
 
@@ -95,6 +95,15 @@ private[authz] object AuthZUtils {
       val namespaces = invoke(id, "namespace").asInstanceOf[Array[String]]
       val table = invoke(id, "name").asInstanceOf[String]
       TableIdentifier(table, Some(quote(namespaces)))
+    }
+  }
+
+  def isPermanentView(plan: LogicalPlan): Boolean = {
+    plan match {
+      case view: View =>
+        !view.isTempView
+      case _ =>
+        false
     }
   }
 
