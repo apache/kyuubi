@@ -101,11 +101,7 @@ private[authz] object AuthZUtils {
   def isPermanentView(plan: LogicalPlan): Boolean = {
     plan match {
       case view: View if isSparkVersionAtLeast("3.1.0") =>
-        try {
-          !getFieldVal[Boolean](view, "isTempView")
-        } catch {
-          case _: RuntimeException => false
-        }
+        !getFieldVal[Boolean](view, "isTempView")
       case _ =>
         false
     }
