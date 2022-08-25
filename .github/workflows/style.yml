@@ -62,6 +62,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
+      - name: Web UI Style with node
         run: ｜
           cd ./kyuubi-server/web-ui
           npm run lint
