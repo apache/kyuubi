@@ -96,6 +96,9 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       assert(!retryRef2.hasRemainingRequests())
       assert(metadataManager.getBatch(metadata2.identifier).getState === "RUNNING")
     }
+    metadataManager.deRegisterRequestsRetryRef(metadata.identifier)
+    metadataManager.deRegisterRequestsRetryRef(metadata2.identifier)
+    Thread.sleep(conf.get(KyuubiConf.METADATA_REQUEST_RETRY_INTERVAL) * 2)
   }
 
   test("metadata request metrics") {
