@@ -35,7 +35,7 @@ class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan mapChildren {
       case p: PermanentViewMarker => p
-      case permanentView: View if isPermanentView(permanentView) =>
+      case permanentView: View if hasResolvedPermanentView(permanentView) =>
         PermanentViewMarker(permanentView, permanentView.desc)
       case other => apply(other)
     }
