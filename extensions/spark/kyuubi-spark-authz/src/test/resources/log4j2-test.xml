@@ -39,8 +39,7 @@
             <AppenderRef ref="stdout"/>
             <AppenderRef ref="file"/>
         </Root>
-        <!-- Note: The log level of org.apache.ranger cannot be `DEBUG` currently,
-         otherwise, NPE will been thrown, detail see https://github.com/apache/incubator-kyuubi/pull/3282#discussion_r953735945 -->
+        <!-- RANGER-3108: fail w/ NPE when DEBUG level is enabled -->
         <Logger name="org.apache.ranger.plugin.policyengine.RangerPolicyRepository" level="WARN" additivity="false">
             <AppenderRef ref="stdout"/>
             <AppenderRef ref="file"/>
