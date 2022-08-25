@@ -4,7 +4,7 @@
   "version": "1.7.0-SNAPSHOT",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 9090",
+    "dev": "vue-tsc --noEmit && vite --port 9090",
     "build": "vue-tsc --noEmit && vite build --mode production",
     "build-check": "npm run lint && npm run build",
     "preview": "vite preview",
