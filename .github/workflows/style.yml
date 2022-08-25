@@ -58,3 +58,17 @@ jobs:
           done
       - name: JavaStyle with maven
         run: build/mvn spotless:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
+      - name: setup npm
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+        run: ｜
+          npm run lint
+          echo "---------------------------------------Notice------------------------------------"
+          echo "If this style check fail, you should follow these commands for a tentative fix"
+          echo "* cd ${KYUUBI_HOME}/kyuubi-server/web-ui"
+          echo "* npm run lint-fix"
+          echo "Following the above steps can solve many style problems. "
+          echo "If there is a problem that cannot be fixed by the command, "
+          echo "you need to manually fix it by following the information told by the command above"
+          echo "---------------------------------------------------------------------------------"

@@ -404,18 +404,3 @@ jobs:
           path: |
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
-  web-ui:
-    name: Kyuubi Web UI check
-    runs-on: ubuntu-22.04
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      # from https://github.com/marketplace/actions/setup-node-js-environment
-      - name: setup npm
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-      - name: npm run coverage & build-check
-        run: |
-          npm run coverage
-          npm run build-check
