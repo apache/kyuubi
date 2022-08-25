@@ -20,6 +20,9 @@ package org.apache.kyuubi.plugin.spark.authz.util
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
+/**
+ * Transforming up [[org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker]]
+ */
 class RuleEliminateViewMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transformUp { case pvm: PermanentViewMarker => pvm.child }

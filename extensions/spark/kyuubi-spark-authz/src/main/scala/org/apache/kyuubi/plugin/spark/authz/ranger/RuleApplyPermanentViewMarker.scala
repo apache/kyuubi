@@ -23,7 +23,14 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 
-class ViewAccessAnalysis extends Rule[LogicalPlan] {
+/**
+ * Adding [[org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker]] for permanent views
+ * for marking catalogTable of views used by privilege checking
+ * in [[org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization]].
+ * [[org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker]] must be transformed up later
+ * in [[org.apache.kyuubi.plugin.spark.authz.util.RuleEliminateViewMarker]] optimizer.
+ */
+class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan mapChildren {

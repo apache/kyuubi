@@ -509,9 +509,11 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       val e1 = intercept[AccessControlException](
         doAs("someone", sql(s"SELECT * FROM $view").queryExecution.optimizedPlan))
-      if (isSparkV31OrGreater) { // isTempView of View since Spark 3.1
+      if (isSparkV31OrGreater) {
+        // isTempView of View since Spark 3.1
         assert(e1.getMessage.contains(s"does not have [select] privilege on [default/$view]"))
-      } else { // fallback to column check
+      } else {
+        // fallback to column level privilege check
         assert(e1.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
       }
     }
