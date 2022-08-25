@@ -29,11 +29,9 @@ class ViewAccessAnalysis extends Rule[LogicalPlan] {
   val LOG = LogManager.getLogger(classOf[ViewAccessAnalysis])
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    LOG.debug(s"ViewAccessAnalysis apply $plan")
     plan mapChildren {
       case p: PermanentViewMarker => p
       case permanentView if isPermanentView(permanentView) =>
-        LOG.debug(s"isPermanentView yes, :$permanentView")
         applyPermanentViewMarker(permanentView)
       case other => apply(other)
     }

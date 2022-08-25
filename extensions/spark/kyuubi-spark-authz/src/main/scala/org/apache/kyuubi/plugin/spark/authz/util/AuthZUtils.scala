@@ -101,7 +101,12 @@ private[authz] object AuthZUtils {
   def isPermanentView(plan: LogicalPlan): Boolean = {
     plan match {
       case view: View =>
-        !view.isTempView
+        // isTempView as field of View since Spark 3.1.0
+        try {
+          !getFieldVal[Boolean](view, "isTempView")
+        } catch {
+          case _: RuntimeException => false
+        }
       case _ =>
         false
     }
