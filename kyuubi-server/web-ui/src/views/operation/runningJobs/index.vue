@@ -20,7 +20,7 @@
   <main>Running jobs page</main>
 </template>
 
-<script>
+<script lang="ts">
   export default {
     name: 'OperationRunningJobsIndex'
   }
