@@ -63,6 +63,7 @@ jobs:
         with:
           node-version: 16
         run: ｜
+          cd ./kyuubi-server/web-ui
           npm run lint
           echo "---------------------------------------Notice------------------------------------"
           echo "If this style check fail, you should follow these commands for a tentative fix"
