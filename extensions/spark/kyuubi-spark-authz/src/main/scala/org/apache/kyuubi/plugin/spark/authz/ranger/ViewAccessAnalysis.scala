@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import org.apache.logging.log4j.LogManager
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -26,19 +25,12 @@ import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 
 class ViewAccessAnalysis extends Rule[LogicalPlan] {
 
-  val LOG = LogManager.getLogger(classOf[ViewAccessAnalysis])
-
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan mapChildren {
       case p: PermanentViewMarker => p
       case permanentView if isPermanentView(permanentView) =>
-        applyPermanentViewMarker(permanentView)
+        PermanentViewMarker(plan, plan.asInstanceOf[View].desc)
       case other => apply(other)
     }
-  }
-
-  private def applyPermanentViewMarker(
-      plan: LogicalPlan): LogicalPlan = {
-    PermanentViewMarker(plan, plan.asInstanceOf[View].desc)
   }
 }
