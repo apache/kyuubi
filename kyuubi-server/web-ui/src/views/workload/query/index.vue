@@ -20,7 +20,7 @@
   <main>Query page</main>
 </template>
 
-<script>
+<script lang="ts">
   export default {
     name: 'WorkloadQueryIndex'
   }

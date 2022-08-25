@@ -20,7 +20,7 @@
   <main>Session page</main>
 </template>
 
-<script>
+<script lang="ts">
   export default {
     name: 'WorkloadSessionIndex'
   }

@@ -20,7 +20,7 @@
   <main>Completed jobs page</main>
 </template>
 
-<script>
+<script lang="ts">
   export default {
     name: 'OperationCompletedJobsIndex'
   }
