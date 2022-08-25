@@ -131,7 +131,7 @@ object PrivilegesBuilder {
         privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
 
       case permanentViewMarker: PermanentViewMarker =>
-        privilegeObjects += tablePrivileges(permanentViewMarker.catalogTable.identifier)
+        mergeProjection(permanentViewMarker.catalogTable, plan)
 
       case p =>
         for (child <- p.children) {

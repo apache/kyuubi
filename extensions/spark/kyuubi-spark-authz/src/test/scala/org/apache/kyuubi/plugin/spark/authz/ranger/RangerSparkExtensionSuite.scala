@@ -511,7 +511,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs("someone", sql(s"SELECT * FROM $view").queryExecution.optimizedPlan))
       if (isSparkV31OrGreater) {
         // isTempView of View since Spark 3.1
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [default/$view]"))
+        assert(e1.getMessage.contains(s"does not have [select] privilege on [default/$view/id]"))
       } else {
         // fallback to column level privilege check
         assert(e1.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
