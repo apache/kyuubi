@@ -19,6 +19,11 @@ HikariCP/4.0.3//HikariCP-4.0.3.jar
 animal-sniffer-annotations/1.21//animal-sniffer-annotations-1.21.jar
 annotations/4.1.1.4//annotations-4.1.1.4.jar
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
+arrow-format/9.0.0//arrow-format-9.0.0.jar
+arrow-jdbc/9.0.0//arrow-jdbc-9.0.0.jar
+arrow-memory-core/9.0.0//arrow-memory-core-9.0.0.jar
+arrow-memory-netty/9.0.0//arrow-memory-netty-9.0.0.jar
+arrow-vector/9.0.0//arrow-vector-9.0.0.jar
 automaton/1.11-8//automaton-1.11-8.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
 commons-codec/1.15//commons-codec-1.15.jar
@@ -32,6 +37,10 @@ curator-recipes/2.12.0//curator-recipes-2.12.0.jar
 derby/10.14.2.0//derby-10.14.2.0.jar
 error_prone_annotations/2.14.0//error_prone_annotations-2.14.0.jar
 failsafe/2.4.4//failsafe-2.4.4.jar
+flatbuffers-java/1.12.0//flatbuffers-java-1.12.0.jar
+flight-core/9.0.0//flight-core-9.0.0.jar
+flight-grpc/9.0.0//flight-grpc-9.0.0.jar
+flight-sql/9.0.0//flight-sql-9.0.0.jar
 fliptables/1.0.2//fliptables-1.0.2.jar
 generex/1.0.2//generex-1.0.2.jar
 grpc-api/1.48.0//grpc-api-1.48.0.jar
@@ -142,6 +151,12 @@ netty-handler-proxy/4.1.73.Final//netty-handler-proxy-4.1.73.Final.jar
 netty-handler/4.1.73.Final//netty-handler-4.1.73.Final.jar
 netty-resolver-dns/4.1.73.Final//netty-resolver-dns-4.1.73.Final.jar
 netty-resolver/4.1.73.Final//netty-resolver-4.1.73.Final.jar
+netty-tcnative-boringssl-static/2.0.53.Final//netty-tcnative-boringssl-static-2.0.53.Final.jar
+netty-tcnative-boringssl-static/2.0.53.Final/linux-aarch_64/netty-tcnative-boringssl-static-2.0.53.Final-linux-aarch_64.jar
+netty-tcnative-boringssl-static/2.0.53.Final/linux-x86_64/netty-tcnative-boringssl-static-2.0.53.Final-linux-x86_64.jar
+netty-tcnative-boringssl-static/2.0.53.Final/osx-aarch_64/netty-tcnative-boringssl-static-2.0.53.Final-osx-aarch_64.jar
+netty-tcnative-boringssl-static/2.0.53.Final/osx-x86_64/netty-tcnative-boringssl-static-2.0.53.Final-osx-x86_64.jar
+netty-tcnative-boringssl-static/2.0.53.Final/windows-x86_64/netty-tcnative-boringssl-static-2.0.53.Final-windows-x86_64.jar
 netty-tcnative-classes/2.0.46.Final//netty-tcnative-classes-2.0.46.Final.jar
 netty-transport-classes-epoll/4.1.73.Final//netty-transport-classes-epoll-4.1.73.Final.jar
 netty-transport-native-epoll/4.1.73.Final/linux-aarch_64/netty-transport-native-epoll-4.1.73.Final-linux-aarch_64.jar

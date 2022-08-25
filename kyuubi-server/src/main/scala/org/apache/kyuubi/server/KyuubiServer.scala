@@ -120,6 +120,9 @@ class KyuubiServer(name: String) extends Serverable(name) {
       case MYSQL =>
         warn("MYSQL frontend protocol is experimental.")
         new KyuubiMySQLFrontendService(this)
+      case FLIGHT_SQL =>
+        warn("FLIGHT_SQL frontend protocol is experimental.")
+        new KyuubiFlightSQLFrontendService(this)
       case other =>
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
