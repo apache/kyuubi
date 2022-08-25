@@ -195,6 +195,13 @@
             <artifactId>jetcd-launcher</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+            <version>1.5.2-incubating</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -254,7 +261,8 @@
                         </relocation>
                         <relocation>
                             <pattern>org.apache.hive.service.rpc.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift
+                            </shadedPattern>
                             <includes>
                                 <include>org.apache.hive.service.rpc.thrift.**</include>
                             </includes>
