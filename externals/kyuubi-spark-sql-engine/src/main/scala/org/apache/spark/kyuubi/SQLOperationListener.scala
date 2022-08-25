@@ -45,16 +45,15 @@ class SQLOperationListener(
 
   private val operationId: String = operation.getHandle.identifier.toString
   private lazy val activeJobs = new java.util.HashSet[Int]()
-  private lazy val activeStages = new java.util.HashSet[Int]()
+  private lazy val activeStages = new ConcurrentHashMap[StageAttempt, StageInfo]()
   private var executionId: Option[Long] = None
-  private lazy val liveStages = new ConcurrentHashMap[StageAttempt, StageInfo]()
 
   private val conf: KyuubiConf = operation.getSession.sessionManager.getConf
   private lazy val consoleProgressBar =
     if (conf.get(ENGINE_SPARK_SHOW_PROGRESS)) {
       Some(new SparkConsoleProgressBar(
         operation,
-        liveStages,
+        activeStages,
         conf.get(ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL),
         conf.get(ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT)))
     } else {
@@ -120,13 +119,14 @@ class SQLOperationListener(
       if (sameGroupId(stageSubmitted.properties)) {
         val stageInfo = stageSubmitted.stageInfo
         val stageId = stageInfo.stageId
-        activeStages.add(stageId)
-        liveStages.put(
-          StageAttempt(stageId, stageInfo.attemptNumber()),
+        val attemptNumber = stageInfo.attemptNumber()
+        val stageAttempt = StageAttempt(stageId, attemptNumber)
+        activeStages.put(
+          stageAttempt,
           new StageInfo(stageId, stageInfo.numTasks))
         withOperationLog {
-          info(s"Query [$operationId]: Stage $stageId started with ${stageInfo.numTasks} tasks," +
-            s" ${activeStages.size()} active stages running")
+          info(s"Query [$operationId]: Stage $stageId.$attemptNumber started " +
+            s"with ${stageInfo.numTasks} tasks, ${activeStages.size()} active stages running")
         }
       }
     }
@@ -134,27 +134,28 @@ class SQLOperationListener(
 
   override def onStageCompleted(stageCompleted: SparkListenerStageCompleted): Unit = {
     val stageInfo = stageCompleted.stageInfo
-    val stageId = stageInfo.stageId
+    val stageAttempt = StageAttempt(stageInfo.stageId, stageInfo.attemptNumber())
     activeStages.synchronized {
-      if (activeStages.remove(stageId)) {
-        liveStages.remove(StageAttempt(stageId, stageInfo.attemptNumber()))
+      if (activeStages.remove(stageAttempt) != null) {
         withOperationLog(super.onStageCompleted(stageCompleted))
       }
     }
   }
 
   override def onTaskStart(taskStart: SparkListenerTaskStart): Unit = activeStages.synchronized {
-    if (activeStages.contains(taskStart.stageId)) {
-      liveStages.get(StageAttempt(taskStart.stageId, taskStart.stageAttemptId)).numActiveTasks += 1
+    val stageAttempt = StageAttempt(taskStart.stageId, taskStart.stageAttemptId)
+    if (activeStages.contains(stageAttempt)) {
+      activeStages.get(stageAttempt).numActiveTasks += 1
       super.onTaskStart(taskStart)
     }
   }
 
   override def onTaskEnd(taskEnd: SparkListenerTaskEnd): Unit = activeStages.synchronized {
-    if (activeStages.contains(taskEnd.stageId)) {
-      liveStages.get(StageAttempt(taskEnd.stageId, taskEnd.stageAttemptId)).numActiveTasks -= 1
+    val stageAttempt = StageAttempt(taskEnd.stageId, taskEnd.stageAttemptId)
+    if (activeStages.contains(stageAttempt)) {
+      activeStages.get(stageAttempt).numActiveTasks -= 1
       if (taskEnd.reason == org.apache.spark.Success) {
-        liveStages.get(StageAttempt(taskEnd.stageId, taskEnd.stageAttemptId)).numCompleteTasks += 1
+        activeStages.get(stageAttempt).numCompleteTasks += 1
       }
       super.onTaskEnd(taskEnd)
     }
