@@ -94,7 +94,7 @@ class BatchJobSubmission(
     }
   }
 
-  private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
+  override private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
     applicationManager.getApplicationInfo(builder.clusterManager(), batchId)
   }
 

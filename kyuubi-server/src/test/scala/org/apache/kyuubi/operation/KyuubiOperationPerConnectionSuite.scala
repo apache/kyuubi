@@ -128,13 +128,14 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
 
   test("open session with KyuubiConnection") {
     withSessionConf(Map.empty)(Map.empty)(Map(
-      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true")) {
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true",
+      "spark.ui.enabled" -> "true")) {
       val driver = new KyuubiHiveDriver()
       val connection = driver.connect(jdbcUrlWithConf, new Properties())
         .asInstanceOf[KyuubiConnection]
       assert(connection.getEngineId.startsWith("local-"))
       assert(connection.getEngineName.startsWith("kyuubi"))
-      assert(connection.getEngineUrl.isEmpty)
+      assert(connection.getEngineUrl.nonEmpty)
       val stmt = connection.createStatement()
       try {
         stmt.execute("select engine_name()")

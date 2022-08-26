@@ -50,9 +50,10 @@ abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperat
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     currentApplicationInfo.map(_.toMap).map { state =>
       val tRow = new TRowSet(0, new JArrayList[TRow](state.size))
-      Seq(state.keys, state.values).map(_.toSeq.asJava).foreach { col =>
-        val tCol = TColumn.stringVal(new TStringColumn(col, ByteBuffer.allocate(0)))
-        tRow.addToColumns(tCol)
+      Seq(state.keys, state.values.map(Option(_).getOrElse(""))).map(_.toSeq.asJava).foreach {
+        col =>
+          val tCol = TColumn.stringVal(new TStringColumn(col, ByteBuffer.allocate(0)))
+          tRow.addToColumns(tCol)
       }
       tRow
     }.getOrElse(ThriftUtils.EMPTY_ROW_SET)
