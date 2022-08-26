@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.spark.authz.util
+package org.apache.kyuubi.plugin.spark.authz
 
 /**
  * This exception is thrown by the Kyuubi AuthZ module to indicate
