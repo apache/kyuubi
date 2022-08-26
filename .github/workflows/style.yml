@@ -64,13 +64,13 @@ jobs:
           node-version: 16
       - name: Web UI Style with node
         run: >-
-          cd ./kyuubi-server/web-ui
-          npm run lint
-          echo "---------------------------------------Notice------------------------------------"
-          echo "If this style check fail, you should follow these commands for a tentative fix"
-          echo "* cd ${KYUUBI_HOME}/kyuubi-server/web-ui"
-          echo "* npm run lint-fix"
-          echo "Following the above steps can solve many style problems. "
-          echo "If there is a problem that cannot be fixed by the command, "
-          echo "you need to manually fix it by following the information told by the command above"
-          echo "---------------------------------------------------------------------------------"
+          cd ./kyuubi-server/web-ui &&
+          npm run lint &&
+          echo "---------------------------------------Notice------------------------------------" &&
+          echo "If this style check fail, you should follow these commands for a tentative fix" &&
+          echo "* cd ${KYUUBI_HOME}/kyuubi-server/web-ui" &&
+          echo "* npm run lint-fix" &&
+          echo "Following the above steps can solve many style problems. " &&
+          echo "If there is a problem that cannot be fixed by the command, " &&
+          echo "you need to manually fix it by following the information told by the command above" &&
+          echo "---------------------------------------------------------------------------------" &&
