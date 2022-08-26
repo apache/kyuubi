@@ -136,6 +136,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
 
         assert(resp1.getStatus.getErrorMessage === "Asked to fail")
 
+        client.CloseSession(new TCloseSessionReq(handle))
     }
   }
 
