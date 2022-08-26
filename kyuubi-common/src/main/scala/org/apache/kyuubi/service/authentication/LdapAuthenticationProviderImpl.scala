@@ -76,7 +76,6 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     try {
       val ctx = new InitialDirContext(env)
-      ctx.close()
     } catch {
       case e: NamingException =>
         throw new AuthenticationException(s"Error validating LDAP user: $bindDn", e)
