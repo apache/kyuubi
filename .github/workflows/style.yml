@@ -73,4 +73,4 @@ jobs:
           echo "Following the above steps can solve many style problems. " &&
           echo "If there is a problem that cannot be fixed by the command, " &&
           echo "you need to manually fix it by following the information told by the command above" &&
-          echo "---------------------------------------------------------------------------------" &&
+          echo "---------------------------------------------------------------------------------"

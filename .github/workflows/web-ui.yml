@@ -30,4 +30,4 @@ jobs:
         run: >-
           cd ./kyuubi-server/web-ui &&
           npm run coverage &&
-          npm run build &&
+          npm run build
