@@ -130,6 +130,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       throw new KyuubiSQLException(e);
     }
     jdbcUriString = connParams.getJdbcUriString();
+    sessConfMap = connParams.getSessionVars();
     // JDBC URL: jdbc:hive2://<host>:<port>/dbName;sess_var_list?hive_conf_list#hive_var_list
     // each list: <key1>=<val1>;<key2>=<val2> and so on
     // sess_var_list -> sessConfMap
@@ -141,7 +142,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       host = connParams.getHost();
     }
     port = connParams.getPort();
-    sessConfMap = connParams.getSessionVars();
 
     setupTimeout();
 
