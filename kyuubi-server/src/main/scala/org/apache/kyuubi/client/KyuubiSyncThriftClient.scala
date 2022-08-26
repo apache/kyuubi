@@ -150,8 +150,8 @@ class KyuubiSyncThriftClient private (
   }
 
   def engineId: Option[String] = _engineId
-  def engineUrl: Option[String] = _engineUrl
   def engineName: Option[String] = _engineName
+  def engineUrl: Option[String] = _engineUrl
 
   /**
    * Return the engine SessionHandle for kyuubi session so that we can get the same session id
@@ -171,12 +171,12 @@ class KyuubiSyncThriftClient private (
     _engineId = Option(resp.getConfiguration)
       .filter(_.containsKey(KYUUBI_ENGINE_ID))
       .map(_.get(KYUUBI_ENGINE_ID))
-    _engineUrl = Option(resp.getConfiguration)
-      .filter(_.containsKey(KYUUBI_ENGINE_URL))
-      .map(_.get(KYUUBI_ENGINE_URL))
     _engineName = Option(resp.getConfiguration)
       .filter(_.containsKey(KYUUBI_ENGINE_NAME))
       .map(_.get(KYUUBI_ENGINE_NAME))
+    _engineUrl = Option(resp.getConfiguration)
+      .filter(_.containsKey(KYUUBI_ENGINE_URL))
+      .map(_.get(KYUUBI_ENGINE_URL))
 
     engineAliveProbeClient.foreach { aliveProbeClient =>
       val sessionName = SessionHandle.apply(_remoteSessionHandle).identifier + "_aliveness_probe"

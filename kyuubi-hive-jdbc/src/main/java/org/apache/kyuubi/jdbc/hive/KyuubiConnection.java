@@ -106,6 +106,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private Thread engineLogThread;
   private boolean engineLogInflight = true;
   private volatile boolean launchEngineOpCompleted = false;
+  private String engineId = "";
+  private String engineName = "";
+  private String engineUrl = "";
 
   private boolean isBeeLineMode;
 
@@ -1273,8 +1276,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         Utils.verifySuccessWithInfo(statusResp.getStatus());
         if (statusResp.isSetOperationState()) {
           switch (statusResp.getOperationState()) {
-            case CLOSED_STATE:
             case FINISHED_STATE:
+              getLaunchEngineResult();
+            case CLOSED_STATE:
               launchEngineOpCompleted = true;
               engineLogInflight = false;
               break;
@@ -1307,5 +1311,42 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         }
       }
     }
+  }
+
+  private void getLaunchEngineResult() {
+    if (launchEngineOpHandle == null) return;
+
+    TFetchResultsReq resultsReq =
+        new TFetchResultsReq(
+            launchEngineOpHandle, TFetchOrientation.FETCH_NEXT, KyuubiStatement.DEFAULT_FETCH_SIZE);
+
+    try {
+      TFetchResultsResp resultsResp = client.FetchResults(resultsReq);
+      List<TRow> rows = resultsResp.getResults().getRows();
+      for (TRow row : rows) {
+        List<TColumnValue> columnValues = row.getColVals();
+        if ("id".equals(columnValues.get(0).getStringVal().getValue())) {
+          engineId = columnValues.get(1).getStringVal().getValue();
+        } else if ("name".equals(columnValues.get(0).getStringVal().getValue())) {
+          engineName = columnValues.get(1).getStringVal().getValue();
+        } else if ("url".equals(columnValues.get(0).getStringVal().getValue())) {
+          engineUrl = columnValues.get(1).getStringVal().getValue();
+        }
+      }
+    } catch (Exception e) {
+      LOG.error("Error fetching launch engine result", e);
+    }
+  }
+
+  public String getEngineId() {
+    return engineId;
+  }
+
+  public String getEngineName() {
+    return engineName;
+  }
+
+  public String getEngineUrl() {
+    return engineUrl;
   }
 }
