@@ -17,8 +17,12 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import java.util
+
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -72,22 +76,40 @@ object RuleAuthorization {
       val resource = request.getResource.asInstanceOf[AccessResource]
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
+          val reqs = ArrayBuffer[AccessRequest]()
           resource.getColumns.foreach { col =>
             val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
             val req = AccessRequest(cr, ugi, opType, request.accessType)
-            verify(req, auditHandler)
+            reqs += req
           }
+          batchVerify(reqs.toList, auditHandler)
         case _ => verify(request, auditHandler)
       }
     }
   }
 
   private def verify(req: AccessRequest, auditHandler: SparkRangerAuditHandler): Unit = {
-    val ret = SparkRangerAdminPlugin.isAccessAllowed(req, auditHandler)
-    if (ret != null && !ret.getIsAllowed) {
-      throw new AccessControlException(
-        s"Permission denied: user [${req.getUser}] does not have [${req.getAccessType}] privilege" +
-          s" on [${req.getResource.getAsString}]")
+    batchVerify(List(req), auditHandler)
+  }
+
+  private def batchVerify(
+      reqList: List[AccessRequest],
+      auditHandler: SparkRangerAuditHandler): Unit = {
+    val rets = SparkRangerAdminPlugin.isAccessAllowed(
+      reqList.asJava.asInstanceOf[util.Collection[RangerAccessRequest]],
+      auditHandler)
+      .asScala.toList
+
+    reqList.zipWithIndex.map { case (req, idx) => (req, rets(idx)) }
+      .find { case (_, ret) => !ret.getIsAllowed }.orNull match {
+      case (req, _) =>
+        throw new AccessControlException(
+          s"""
+             |Permission denied: user [${req.getUser}]
+             | does not have [${req.getAccessType}] privilege
+             | on [${req.getResource.getAsString}]
+             |""".stripMargin.replaceAll("\n", ""))
+      case _ =>
     }
   }
 }
