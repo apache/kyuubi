@@ -130,14 +130,18 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       throw new KyuubiSQLException(e);
     }
     jdbcUriString = connParams.getJdbcUriString();
+    sessConfMap = connParams.getSessionVars();
     // JDBC URL: jdbc:hive2://<host>:<port>/dbName;sess_var_list?hive_conf_list#hive_var_list
     // each list: <key1>=<val1>;<key2>=<val2> and so on
     // sess_var_list -> sessConfMap
     // hive_conf_list -> hiveConfMap
     // hive_var_list -> hiveVarMap
-    host = Utils.getCanonicalHostName(connParams.getHost());
+    if (isKerberosAuthMode()) {
+      host = Utils.getCanonicalHostName(connParams.getHost());
+    } else {
+      host = connParams.getHost();
+    }
     port = connParams.getPort();
-    sessConfMap = connParams.getSessionVars();
 
     setupTimeout();
 
@@ -200,7 +204,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           }
           // Update with new values
           jdbcUriString = connParams.getJdbcUriString();
-          host = Utils.getCanonicalHostName(connParams.getHost());
+          if (isKerberosAuthMode()) {
+            host = Utils.getCanonicalHostName(connParams.getHost());
+          } else {
+            host = connParams.getHost();
+          }
           port = connParams.getPort();
         } else {
           errMsg = warnMsg;
@@ -814,6 +822,10 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isPlainSaslAuthMode() {
     return isSaslAuthMode() && !hasSessionValue(AUTH_PRINCIPAL);
+  }
+
+  private boolean isKerberosAuthMode() {
+    return isSaslAuthMode() && hasSessionValue(AUTH_PRINCIPAL);
   }
 
   private Subject createSubject() {
