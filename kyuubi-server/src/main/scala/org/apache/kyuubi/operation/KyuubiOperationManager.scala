@@ -261,4 +261,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       case e: Exception => warn("Save operation to external failed.", e)
     }
   }
+
+  def isHoldOperation(operation: KyuubiOperation): Boolean = {
+    this.externalStore.forall(_.isHold(operation.getHandle.identifier.toString))
+  }
 }

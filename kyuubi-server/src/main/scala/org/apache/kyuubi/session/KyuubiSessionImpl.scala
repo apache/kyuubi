@@ -194,7 +194,7 @@ class KyuubiSessionImpl(
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
-      if (_client != null) _client.closeSession()
+      if (_client != null && sessionManager.isHoldSession(this)) _client.closeSession()
     } finally {
       if (engine != null) engine.close()
       sessionEvent.endTime = System.currentTimeMillis()

@@ -126,7 +126,9 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
       } catch {
         case e: IOException => error(e.getMessage, e)
       }
-      if (_remoteOpHandle != null) {
+      val isHold = session.sessionManager.operationManager
+        .asInstanceOf[KyuubiOperationManager].isHoldOperation(this)
+      if (_remoteOpHandle != null && isHold) {
         try {
           client.closeOperation(_remoteOpHandle)
         } catch {

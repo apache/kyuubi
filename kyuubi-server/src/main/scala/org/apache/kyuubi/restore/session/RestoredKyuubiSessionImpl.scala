@@ -103,7 +103,7 @@ class RestoredKyuubiSessionImpl(
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
-      if (_client != null) _client.closeSession()
+      if (_client != null && sessionManager.isHoldSession(this)) _client.closeSession()
     } finally {
       sessionEvent.endTime = System.currentTimeMillis()
       EventBus.post(sessionEvent)

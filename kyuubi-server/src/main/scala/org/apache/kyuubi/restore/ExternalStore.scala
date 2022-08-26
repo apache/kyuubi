@@ -30,19 +30,40 @@ import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl, KyuubiSessio
 abstract class ExternalStore[T, E <: StoreEntity](store: KVStore) {
 
   def get(key: String)(implicit tag: ClassTag[E]): Option[T] = {
-    store.get[E](key, tag.runtimeClass.asInstanceOf[Class[E]]).map(restore(key, _))
+    val value = store.get[E](key, tag.runtimeClass.asInstanceOf[Class[E]]).map(restore(key, _))
+    if (value.isDefined) {
+      markHoldServer(key)
+    }
+    value
   }
 
   def set(key: String, value: T): Unit = {
     store.set(key, entity(value))
+    markHoldServer(key)
   }
 
-  def remove(key: String): Unit = store.remove(key)
+  def remove(key: String): Unit = {
+    store.remove(key)
+    store.remove(s"${key}__HANDLER_SERVER__")
+  }
 
   protected def entity(value: T): E
 
   protected def restore(key: String, e: E): T
 
+  private lazy val handlerServerId: String = {
+    // TODO get server instance
+    ""
+  }
+
+  def isHold(key: String): Boolean = {
+    val handler = store.get[String](s"${key}__HANDLER_SERVER__", classOf[String])
+    handler.isEmpty || handler.get.equals(handlerServerId)
+  }
+
+  private def markHoldServer(key: String): Unit = {
+    store.set(s"${key}__HANDLER_SERVER__", handlerServerId)
+  }
 }
 
 class OperationExternalStore(store: KVStore, sessionManager: KyuubiSessionManager)

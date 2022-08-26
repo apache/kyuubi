@@ -308,4 +308,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       case e: Exception => warn("Save session to external failed.", e)
     }
   }
+
+  def isHoldSession(session: KyuubiSession): Boolean = {
+    this.sessionExternalStore.forall(_.isHold(session.handle.identifier.toString))
+  }
 }

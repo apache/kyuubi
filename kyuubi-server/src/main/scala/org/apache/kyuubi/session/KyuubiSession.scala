@@ -37,9 +37,9 @@ abstract class KyuubiSession(
 
   def checkSessionAccessPathURIs(): Unit
 
-  def client: KyuubiSyncThriftClient = _
+  def client: KyuubiSyncThriftClient = null
 
-  def appUser: String = _
+  def appUser: String = null
 
   private[kyuubi] def handleSessionException(f: => Unit): Unit = {
     try {
