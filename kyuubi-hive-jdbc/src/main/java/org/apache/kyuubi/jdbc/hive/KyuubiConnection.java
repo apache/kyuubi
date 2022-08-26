@@ -630,7 +630,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       Subject subject = createSubject();
       String serverPrincipal = sessConfMap.get(AUTH_PRINCIPAL);
       return KerberosSaslHelper.createSubjectAssumedTransport(
-          subject, serverPrincipal, socketTransport, saslProps);
+          subject, serverPrincipal, host, socketTransport, saslProps);
     } catch (Exception e) {
       throw new KyuubiSQLException(
           "Could not create secure connection to " + jdbcUriString + ": " + e.getMessage(),

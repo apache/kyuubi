@@ -31,10 +31,12 @@ public final class KerberosSaslHelper {
   public static TTransport createSubjectAssumedTransport(
       Subject subject,
       String serverPrincipal,
+      String host,
       TTransport underlyingTransport,
       Map<String, String> saslProps)
       throws SaslException {
-    String[] names = KerberosUtils.splitPrincipal(serverPrincipal);
+    String resolvedPrincipal = KerberosUtils.canonicalPrincipal(serverPrincipal, host);
+    String[] names = KerberosUtils.splitPrincipal(resolvedPrincipal);
     TTransport saslTransport =
         new TSaslClientTransport(
             "GSSAPI", null, names[0], names[1], saslProps, null, underlyingTransport);
