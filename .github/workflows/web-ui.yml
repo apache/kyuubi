@@ -29,5 +29,6 @@ jobs:
       - name: npm run coverage & build
         run: >-
           cd ./kyuubi-server/web-ui &&
+          npm install &&
           npm run coverage &&
           npm run build
