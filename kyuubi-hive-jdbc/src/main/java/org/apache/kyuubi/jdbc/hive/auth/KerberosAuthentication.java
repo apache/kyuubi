@@ -89,7 +89,7 @@ public class KerberosAuthentication {
   private static KerberosPrincipal createKerberosPrincipal(String principal) {
     try {
       return new KerberosPrincipal(
-          KerberosUtils.canonicalPrincipal(
+          KerberosUtils.canonicalClientPrincipal(
               principal, InetAddress.getLocalHost().getCanonicalHostName()));
     } catch (IOException e) {
       throw new UncheckedIOException(e);

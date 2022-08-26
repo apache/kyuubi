@@ -46,6 +46,15 @@ public final class KerberosUtils {
     return format("%s/%s@%s", names[0], hostname.toLowerCase(ENGLISH), names[2]);
   }
 
+  public static String canonicalClientPrincipal(String principal, String hostname) {
+    String[] components = splitPrincipal(principal);
+    if (components.length != 3 || !components[1].equals(HOSTNAME_PATTERN)) {
+      return principal;
+    } else {
+      return canonicalPrincipal(principal, hostname);
+    }
+  }
+
   public static KerberosTicket getTgt(Subject subject) {
     Set<KerberosTicket> tickets = subject.getPrivateCredentials(KerberosTicket.class);
     for (KerberosTicket ticket : tickets) {
