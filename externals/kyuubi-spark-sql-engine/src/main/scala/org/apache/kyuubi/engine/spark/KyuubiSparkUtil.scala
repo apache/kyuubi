@@ -53,6 +53,10 @@ object KyuubiSparkUtil extends Logging {
   }
 
   def engineId: String = globalSparkContext.applicationId
+  def engineName: String = globalSparkContext.appName
+  def engineUrl: String = globalSparkContext.getConf.getOption(
+    "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
+    .orElse(globalSparkContext.uiWebUrl).getOrElse("")
 
   lazy val diagnostics: String = {
     val sc = globalSparkContext
@@ -62,9 +66,9 @@ object KyuubiSparkUtil extends Logging {
     // scalastyle:off line.size.limit
     // format: off
     s"""
-       |           Spark application name: ${sc.appName}
+       |           Spark application name: $engineName
        |                 application ID: $engineId
-       |                 application web UI: $webUrl
+       |                 application web UI: $engineUrl
        |                 master: ${sc.master}
        |                 deploy mode: ${sc.deployMode}
        |                 version: ${sc.version}

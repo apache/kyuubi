@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean)
-  extends KyuubiOperation(session) {
+  extends KyuubiApplicationOperation(session) {
 
   private lazy val _operationLog: OperationLog =
     if (shouldRunAsync) {
@@ -31,6 +32,16 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
       null
     }
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
+
+  override private[kyuubi] def currentApplicationInfo = {
+    Option(client).map { cli =>
+      ApplicationInfo(
+        cli.engineId.orNull,
+        cli.engineName.orNull,
+        ApplicationState.RUNNING,
+        cli.engineUrl)
+    }
+  }
 
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(_operationLog)

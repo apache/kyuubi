@@ -62,7 +62,7 @@ class BatchJobSubmission(
     batchConf: Map[String, String],
     batchArgs: Seq[String],
     recoveryMetadata: Option[Metadata])
-  extends KyuubiOperation(session) {
+  extends KyuubiApplicationOperation(session) {
   import BatchJobSubmission._
 
   override def shouldRunAsync: Boolean = true
@@ -270,31 +270,6 @@ class BatchJobSubmission(
     operationLog.map(_.read(from, size)).getOrElse {
       throw KyuubiSQLException(s"Batch ID: $batchId, failed to generate operation log")
     }
-  }
-
-  override val getResultSetSchema: TTableSchema = {
-    val schema = new TTableSchema()
-    Seq("key", "value").zipWithIndex.foreach { case (colName, position) =>
-      val tColumnDesc = new TColumnDesc()
-      tColumnDesc.setColumnName(colName)
-      val tTypeDesc = new TTypeDesc()
-      tTypeDesc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(TTypeId.STRING_TYPE)))
-      tColumnDesc.setTypeDesc(tTypeDesc)
-      tColumnDesc.setPosition(position)
-      schema.addToColumns(tColumnDesc)
-    }
-    schema
-  }
-
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
-    currentApplicationInfo.map(_.toMap).map { state =>
-      val tRow = new TRowSet(0, new JArrayList[TRow](state.size))
-      Seq(state.keys, state.values).map(_.toSeq.asJava).foreach { col =>
-        val tCol = TColumn.stringVal(new TStringColumn(col, ByteBuffer.allocate(0)))
-        tRow.addToColumns(tCol)
-      }
-      tRow
-    }.getOrElse(ThriftUtils.EMPTY_ROW_SET)
   }
 
   override def close(): Unit = state.synchronized {

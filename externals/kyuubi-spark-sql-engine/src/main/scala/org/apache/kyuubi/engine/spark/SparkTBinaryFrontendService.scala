@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
@@ -25,6 +27,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
@@ -60,8 +63,10 @@ class SparkTBinaryFrontendService(
     info("Client protocol version: " + req.getClient_protocol)
     val resp = new TOpenSessionResp
     try {
-      val respConfiguration =
-        java.util.Collections.singletonMap("kyuubi.engine.id", sc.applicationId)
+      val respConfiguration = Map(
+        KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
+        KYUUBI_ENGINE_NAME -> KyuubiSparkUtil.engineName,
+        KYUUBI_ENGINE_URL -> KyuubiSparkUtil.engineUrl).asJava
 
       if (req.getConfiguration != null) {
         val credentials = req.getConfiguration.remove(KYUUBI_ENGINE_CREDENTIALS_KEY)
