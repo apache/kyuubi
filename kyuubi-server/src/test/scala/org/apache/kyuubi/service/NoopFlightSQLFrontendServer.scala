@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.arrow
+package org.apache.kyuubi.service
 
-import org.apache.arrow.memory.RootAllocator
+import org.apache.kyuubi.server.KyuubiFlightSQLFrontendService
 
-object ArrowUtils {
-  val rootAllocator = new RootAllocator
+class NoopFlightSQLFrontendServer extends AbstractNoopServer("NoopFlightSQLFrontendServer") {
+
+  override val frontendServices = Seq(new KyuubiFlightSQLFrontendService(this))
 }

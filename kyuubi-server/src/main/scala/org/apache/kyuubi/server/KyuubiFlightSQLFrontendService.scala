@@ -24,7 +24,7 @@ import org.apache.arrow.flight.{FlightServer, Location}
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.server.arrow.{ArrowUtils, KyuubiFlightSQLProducer}
+import org.apache.kyuubi.server.filght.{ArrowUtils, KyuubiFlightSQLProducer}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 import org.apache.kyuubi.util.NamedThreadFactory
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.arrow
+package org.apache.kyuubi.server.filght
 
 import org.apache.arrow.flight._
 import org.apache.arrow.flight.sql.FlightSqlProducer
