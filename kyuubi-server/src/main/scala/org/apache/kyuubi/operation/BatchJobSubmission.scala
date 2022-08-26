@@ -18,11 +18,8 @@
 package org.apache.kyuubi.operation
 
 import java.io.IOException
-import java.nio.ByteBuffer
-import java.util.{ArrayList => JArrayList, Locale}
+import java.util.Locale
 import java.util.concurrent.TimeUnit
-
-import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
@@ -39,7 +36,6 @@ import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
-import org.apache.kyuubi.util.ThriftUtils
 
 /**
  * The state of batch operation is special. In general, the lifecycle of state is:

@@ -78,8 +78,8 @@ case class ApplicationInfo(
       "id" -> id,
       "name" -> name,
       "state" -> state.toString,
-      "url" -> url.orNull,
-      "error" -> error.orNull)
+      "url" -> url.getOrElse(""),
+      "error" -> error.getOrElse(""))
   }
 }
 

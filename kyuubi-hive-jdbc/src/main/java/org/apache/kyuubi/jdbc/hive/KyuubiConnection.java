@@ -1277,7 +1277,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         if (statusResp.isSetOperationState()) {
           switch (statusResp.getOperationState()) {
             case FINISHED_STATE:
-              getLaunchEngineResult();
+              fetchLaunchEngineResult();
             case CLOSED_STATE:
               launchEngineOpCompleted = true;
               engineLogInflight = false;
@@ -1313,24 +1313,25 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
   }
 
-  private void getLaunchEngineResult() {
+  private void fetchLaunchEngineResult() {
     if (launchEngineOpHandle == null) return;
 
-    TFetchResultsReq resultsReq =
+    TFetchResultsReq tFetchResultsReq =
         new TFetchResultsReq(
             launchEngineOpHandle, TFetchOrientation.FETCH_NEXT, KyuubiStatement.DEFAULT_FETCH_SIZE);
 
     try {
-      TFetchResultsResp resultsResp = client.FetchResults(resultsReq);
-      List<TRow> rows = resultsResp.getResults().getRows();
-      for (TRow row : rows) {
-        List<TColumnValue> columnValues = row.getColVals();
-        if ("id".equals(columnValues.get(0).getStringVal().getValue())) {
-          engineId = columnValues.get(1).getStringVal().getValue();
-        } else if ("name".equals(columnValues.get(0).getStringVal().getValue())) {
-          engineName = columnValues.get(1).getStringVal().getValue();
-        } else if ("url".equals(columnValues.get(0).getStringVal().getValue())) {
-          engineUrl = columnValues.get(1).getStringVal().getValue();
+      TFetchResultsResp tFetchResultsResp = client.FetchResults(tFetchResultsReq);
+      RowSet rowSet = RowSetFactory.create(tFetchResultsResp.getResults(), this.getProtocol());
+      for (Object[] row : rowSet) {
+        String key = String.valueOf(row[0]);
+        String value = String.valueOf(row[1]);
+        if ("id".equals(key)) {
+          engineId = value;
+        } else if ("name".equals(key)) {
+          engineName = value;
+        } else if ("url".equals(key)) {
+          engineUrl = value;
         }
       }
     } catch (Exception e) {
