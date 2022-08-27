@@ -26,7 +26,7 @@ import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
@@ -41,7 +41,8 @@ class ExecuteStatement(
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
-    incrementalCollect: Boolean)
+    incrementalCollect: Boolean,
+    multipleStatements: Boolean)
   extends SparkOperation(session) with Logging {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
@@ -91,7 +92,15 @@ class ExecuteStatement(
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       operationListener.foreach(spark.sparkContext.addSparkListener(_))
-      result = spark.sql(statement)
+      if (multipleStatements) {
+        val statements = Utils.splitQueriesBySemiColon(statement)
+        statements.dropRight(1).foreach { stmt =>
+          spark.sql(stmt).show()
+        }
+        result = spark.sql(statements.last)
+      } else {
+        result = spark.sql(statement)
+      }
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")

@@ -400,6 +400,19 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     return resultSet;
   }
 
+  /**
+   * @param queries a semiColon separated list of queries.
+   * @return the result set of the last query
+   * @throws SQLException
+   */
+  public ResultSet executeQueries(String queries) throws SQLException {
+    if (!executeWithConfOverlay(
+        queries, Collections.singletonMap("kyuubi.operation.execute.statements", ""))) {
+      throw new KyuubiSQLException("The query did not generate a result set!");
+    }
+    return resultSet;
+  }
+
   public ResultSet executeScala(String code) throws SQLException {
     if (!executeWithConfOverlay(
         code, Collections.singletonMap("kyuubi.operation.language", "SCALA"))) {
