@@ -34,26 +34,23 @@ import org.slf4j.LoggerFactory;
 
 /** KyuubiStatement. */
 public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
-  public static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
+  private static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
   public static final int DEFAULT_FETCH_SIZE = 1000;
-  private final KyuubiConnection connection;
-  private TCLIService.Iface client;
+  protected final KyuubiConnection connection;
+  protected TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
-  private final TSessionHandle sessHandle;
+  protected final TSessionHandle sessHandle;
   Map<String, String> sessConf = new HashMap<>();
   private int fetchSize = DEFAULT_FETCH_SIZE;
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
-  private List<String> commands = new ArrayList<>();
-  private Queue<ResultSet> resultSets = new LinkedList<>();
-  private List<ResultSet> openResults = new ArrayList<>();
   /**
    * We need to keep a reference to the result set to support the following: <code>
    * statement.execute(String sql);
    * statement.getResultSet();
    * </code>.
    */
-  private ResultSet currResultSet = null;
+  private ResultSet resultSet = null;
 
   /**
    * Sets the limit for the maximum number of rows that any ResultSet object produced by this
@@ -66,7 +63,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private SQLWarning warningChain = null;
 
   /** Keep state so we can fail certain calls made after close(). */
-  private boolean isClosed = false;
+  protected boolean isClosed = false;
 
   /** Keep state so we can fail certain calls made after cancel(). */
   private boolean isCancelled = false;
@@ -181,24 +178,9 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     }
     closeClientOperation();
     client = null;
-    if (currResultSet != null) {
-      currResultSet.close();
-      currResultSet = null;
-    }
-    // Close any remaining open result set
-    if (resultSets.size() > 0 || this.openResults.size() > 0) {
-      LOG.info("Closing " + (resultSets.size() + openResults.size()) + " open result sets");
-
-      while ((!resultSets.isEmpty())) {
-        // Null is safe.
-        try (ResultSet resultSet = this.resultSets.poll()) {}
-      }
-      // Close open result set
-      for (ResultSet resultSet : this.openResults) {
-        resultSet.close();
-      }
-      this.openResults.clear();
-      LOG.info("All open result sets are closed");
+    if (resultSet != null) {
+      resultSet.close();
+      resultSet = null;
     }
     isClosed = true;
   }
@@ -217,7 +199,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet() && !stmtHandle.isHasResultSet()) {
       return false;
     }
-    currResultSet =
+    resultSet =
         new KyuubiQueryResultSet.Builder(this)
             .setClient(client)
             .setSessionHandle(sessHandle)
@@ -249,7 +231,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet()) {
       return false;
     }
-    currResultSet =
+    resultSet =
         new KyuubiQueryResultSet.Builder(this)
             .setClient(client)
             .setSessionHandle(sessHandle)
@@ -415,20 +397,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!execute(sql)) {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
-    return currResultSet;
-  }
-
-  /**
-   * @param queries a semiColon separated list of queries.
-   * @return the result set of the last query
-   * @throws SQLException
-   */
-  public ResultSet executeQueries(String queries) throws SQLException {
-    if (!executeWithConfOverlay(
-        queries, Collections.singletonMap("kyuubi.operation.execute.statements", ""))) {
-      throw new KyuubiSQLException("The query did not generate a result set!");
-    }
-    return currResultSet;
+    return resultSet;
   }
 
   public ResultSet executeScala(String code) throws SQLException {
@@ -436,13 +405,13 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         code, Collections.singletonMap("kyuubi.operation.language", "SCALA"))) {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
-    return currResultSet;
+    return resultSet;
   }
 
   public void executeSetCurrentCatalog(String sql, String catalog) throws SQLException {
     if (executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.set.current.catalog", catalog))) {
-      currResultSet.close();
+      resultSet.close();
     }
   }
 
@@ -451,13 +420,13 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         sql, Collections.singletonMap("kyuubi.operation.get.current.catalog", ""))) {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
-    return currResultSet;
+    return resultSet;
   }
 
   public void executeSetCurrentDatabase(String sql, String database) throws SQLException {
     if (executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.set.current.database", database))) {
-      currResultSet.close();
+      resultSet.close();
     }
   }
 
@@ -466,7 +435,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         sql, Collections.singletonMap("kyuubi.operation.get.current.database", ""))) {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
-    return currResultSet;
+    return resultSet;
   }
 
   @Override
@@ -500,6 +469,11 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   }
 
   @Override
+  public boolean getMoreResults() throws SQLException {
+    return false;
+  }
+
+  @Override
   public int getQueryTimeout() throws SQLException {
     checkConnection("getQueryTimeout");
     return 0;
@@ -508,7 +482,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   @Override
   public ResultSet getResultSet() throws SQLException {
     checkConnection("getResultSet");
-    return currResultSet;
+    return resultSet;
   }
 
   @Override
@@ -736,84 +710,5 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
    */
   public void setInPlaceUpdateStream(InPlaceUpdateStream stream) {
     this.inPlaceUpdateStream = stream;
-  }
-
-  @Override
-  public void addBatch(String sql) throws SQLException {
-    this.commands.add(sql);
-  }
-
-  @Override
-  public void clearBatch() throws SQLException {
-    this.commands.clear();
-  }
-
-  @Override
-  public final int[] executeBatch() throws SQLException {
-    // Issue warning where appropriate
-    if (commands.size() > 1) {
-      LOG.warn("Executing the batch of commands " + String.join(";\n", commands));
-    }
-
-    int[] rets = new int[commands.size()];
-    ResultSet curr = this.currResultSet;
-    for (int i = 0; i < commands.size(); i++) {
-      if (this.execute(commands.get(i))) {
-        this.resultSets.add(this.getResultSet());
-        this.currResultSet = null;
-        rets[i] = Statement.SUCCESS_NO_INFO;
-      } else {
-        // Need to add a null to getMoreResults() to produce correct
-        // behavior across subsequent calls to getMoreResults()
-        this.resultSets.add(null);
-        rets[i] = this.getUpdateCount();
-      }
-    }
-    this.currResultSet = curr;
-    // Make the next available results the current results if there
-    // are no current results
-    if (this.currResultSet == null && !this.resultSets.isEmpty()) {
-      this.currResultSet = this.resultSets.poll();
-    }
-    return rets;
-  }
-
-  @Override
-  public boolean getMoreResults() throws SQLException {
-    if (this.currResultSet != null) {
-      this.currResultSet.close();
-      this.currResultSet = null;
-    }
-    if (!this.resultSets.isEmpty()) {
-      this.currResultSet = this.resultSets.poll();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  @Override
-  public boolean getMoreResults(int current) throws SQLException {
-    switch (current) {
-      case Statement.CLOSE_CURRENT_RESULT:
-        return this.getMoreResults();
-      case Statement.CLOSE_ALL_RESULTS:
-        for (ResultSet resultSet : openResults) {
-          resultSet.close();
-        }
-        this.openResults.clear();
-        return this.getMoreResults();
-      case Statement.KEEP_CURRENT_RESULT:
-        if (this.currResultSet != null) {
-          this.openResults.add(this.currResultSet);
-          this.currResultSet = null;
-        }
-        return this.getMoreResults();
-      default:
-        throw new SQLFeatureNotSupportedException(
-            "Unsupported mode for dealing with current results,"
-                + " only Statement.CLOSE_CURRENT_RESULT, Statement.CLOSE_ALL_RESULTS"
-                + " and Statement.KEEP_CURRENT_RESULT are supported");
-    }
   }
 }

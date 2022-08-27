@@ -983,6 +983,13 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return ((KyuubiStatement) createStatement());
   }
 
+  public Statement createBatchStatement() throws SQLException {
+    if (isClosed) {
+      throw new KyuubiSQLException("Can't create Statement, connection is closed");
+    }
+    return new KyuubiBatchStatement(this, client, sessHandle, fetchSize);
+  }
+
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency)
       throws SQLException {

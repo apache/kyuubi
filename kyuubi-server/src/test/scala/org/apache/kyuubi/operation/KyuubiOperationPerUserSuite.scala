@@ -22,6 +22,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 
 class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests {
@@ -198,6 +199,33 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
           assert(session.client.asyncRequestInterrupted)
         }
       }
+    }
+  }
+
+  test("support executeBatch with KyuubiBatchStatement") {
+    withJdbcStatement() { statement =>
+      val connection = statement.getConnection.asInstanceOf[KyuubiConnection]
+      val batchStatement = connection.createBatchStatement()
+      batchStatement.addBatch("select 1")
+      batchStatement.addBatch("select 2")
+      batchStatement.addBatch("select 3")
+      batchStatement.executeBatch()
+      var resultSet = batchStatement.getResultSet
+      assert(resultSet.next())
+      assert(resultSet.getInt(1) === 1)
+      assert(!resultSet.next())
+      assert(batchStatement.getMoreResults)
+      resultSet = batchStatement.getResultSet
+      assert(resultSet.next())
+      assert(resultSet.getInt(1) === 2)
+      assert(!resultSet.next())
+      assert(batchStatement.getMoreResults)
+      resultSet = batchStatement.getResultSet
+      assert(resultSet.next())
+      assert(resultSet.getInt(1) === 3)
+      assert(!resultSet.next())
+      assert(!batchStatement.getMoreResults)
+      assert(batchStatement.getResultSet === null)
     }
   }
 }
