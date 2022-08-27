@@ -45,7 +45,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
   private List<String> commands = new ArrayList<>();
-  private Queue<ResultSet> results = new LinkedList<>();
+  private Queue<ResultSet> resultSets = new LinkedList<>();
   private List<ResultSet> openResults = new ArrayList<>();
   /**
    * We need to keep a reference to the result set to support the following: <code>
@@ -186,11 +186,11 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       currResultSet = null;
     }
     // Close any remaining open result set
-    if (results.size() > 0 || this.openResults.size() > 0) {
-      LOG.info("Closing " + (results.size() + openResults.size()) + " open result sets");
+    if (resultSets.size() > 0 || this.openResults.size() > 0) {
+      LOG.info("Closing " + (resultSets.size() + openResults.size()) + " open result sets");
 
-      while ((!results.isEmpty())) {
-        try (ResultSet resultSet = this.results.poll()) {}
+      while ((!resultSets.isEmpty())) {
+        try (ResultSet resultSet = this.resultSets.poll()) {}
       }
       // Close open result set
       for (ResultSet resultSet : this.openResults) {
@@ -758,21 +758,21 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     ResultSet curr = this.currResultSet;
     for (int i = 0; i < commands.size(); i++) {
       if (this.execute(commands.get(i))) {
-        this.results.add(this.getResultSet());
+        this.resultSets.add(this.getResultSet());
         this.currResultSet = null;
         rets[i] = Statement.SUCCESS_NO_INFO;
       } else {
         // Need to add a null to getMoreResults() to produce correct
         // behavior across subsequent calls to getMoreResults()
-        this.results.add(null);
+        this.resultSets.add(null);
         rets[i] = this.getUpdateCount();
       }
     }
     this.currResultSet = curr;
     // Make the next available results the current results if there
     // are no current results
-    if (this.currResultSet == null && !this.results.isEmpty()) {
-      this.currResultSet = this.results.poll();
+    if (this.currResultSet == null && !this.resultSets.isEmpty()) {
+      this.currResultSet = this.resultSets.poll();
     }
     return rets;
   }
@@ -783,8 +783,8 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       this.currResultSet.close();
       this.currResultSet = null;
     }
-    if (!this.results.isEmpty()) {
-      this.currResultSet = this.results.poll();
+    if (!this.resultSets.isEmpty()) {
+      this.currResultSet = this.resultSets.poll();
       return true;
     } else {
       return false;

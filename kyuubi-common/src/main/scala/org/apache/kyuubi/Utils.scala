@@ -21,7 +21,7 @@ import java.io._
 import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.util.{ArrayList => JArrayList, Properties, TimeZone, UUID}
+import java.util.{Properties, TimeZone, UUID}
 
 import scala.collection.JavaConverters._
 import scala.sys.process._
