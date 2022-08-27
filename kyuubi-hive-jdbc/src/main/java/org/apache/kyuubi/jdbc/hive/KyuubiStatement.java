@@ -190,6 +190,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       LOG.info("Closing " + (resultSets.size() + openResults.size()) + " open result sets");
 
       while ((!resultSets.isEmpty())) {
+        // Null is safe.
         try (ResultSet resultSet = this.resultSets.poll()) {}
       }
       // Close open result set
