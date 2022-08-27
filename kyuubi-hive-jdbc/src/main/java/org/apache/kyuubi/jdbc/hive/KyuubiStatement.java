@@ -810,7 +810,9 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         return this.getMoreResults();
       default:
         throw new SQLFeatureNotSupportedException(
-            "Unsupported mode for dealing with current results, only Statement.CLOSE_CURRENT_RESULT, Statement.CLOSE_ALL_RESULTS and Statement.KEEP_CURRENT_RESULT are supported");
+            "Unsupported mode for dealing with current results,"
+                + " only Statement.CLOSE_CURRENT_RESULT, Statement.CLOSE_ALL_RESULTS"
+                + " and Statement.KEEP_CURRENT_RESULT are supported");
     }
   }
 }
