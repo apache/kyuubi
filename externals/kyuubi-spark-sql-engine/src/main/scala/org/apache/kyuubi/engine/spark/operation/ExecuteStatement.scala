@@ -94,8 +94,8 @@ class ExecuteStatement(
       operationListener.foreach(spark.sparkContext.addSparkListener(_))
       if (multipleStatements) {
         val statements = Utils.splitQueriesBySemiColon(statement)
-        statements.dropRight(1).foreach { stmt =>
-          spark.sql(stmt).show()
+        statements.dropRight(1).foreach {
+          spark.sql(_).show()
         }
         result = spark.sql(statements.last)
       } else {
