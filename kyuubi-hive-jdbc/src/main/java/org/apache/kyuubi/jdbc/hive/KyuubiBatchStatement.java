@@ -56,7 +56,8 @@ public class KyuubiBatchStatement extends KyuubiStatement {
 
   @Override
   public void addBatch(String sql) throws SQLException {
-    this.commands.add(sql);
+    List<String> queries = splitSemiColon(sql);
+    this.commands.addAll(queries);
   }
 
   @Override
@@ -146,5 +147,117 @@ public class KyuubiBatchStatement extends KyuubiStatement {
       closeStatementSilently(statement);
     }
     isClosed = true;
+  }
+
+  /**
+   * Copied from Apache Spark SparkSQLCLIDriver::splitSemiColon.
+   *
+   * @param queries the queries seperated by SemiColon
+   * @return the query list
+   */
+  public static List<String> splitSemiColon(String queries) {
+    boolean insideSingleQuote = false;
+    boolean insideDoubleQuote = false;
+    boolean insideSimpleComment = false;
+    int bracketedCommentLevel = 0;
+    boolean escape = false;
+    int beginIndex = 0;
+    boolean leavingBracketedComment = false;
+    boolean isStatement = false;
+    ArrayList<String> ret = new ArrayList<>();
+
+    for (int index = 0; index < queries.length(); index++) {
+      // Checks if we need to decrement a bracketed comment level; the last character '/' of
+      // bracketed comments is still inside the comment, so `insideBracketedComment` must keep true
+      // in the previous loop and we decrement the level here if needed.
+      if (leavingBracketedComment) {
+        bracketedCommentLevel -= 1;
+        leavingBracketedComment = false;
+      }
+
+      if (queries.charAt(index) == '\'' && !(insideSimpleComment || bracketedCommentLevel > 0)) {
+        // take a look to see if it is escaped
+        // See the comment above about SPARK-31595
+        if (!escape && !insideDoubleQuote) {
+          // flip the boolean variable
+          insideSingleQuote = !insideSingleQuote;
+        }
+      } else if (queries.charAt(index) == '\"'
+          && !(insideSimpleComment || bracketedCommentLevel > 0)) {
+        // take a look to see if it is escaped
+        // See the comment above about SPARK-31595
+        if (!escape && !insideSingleQuote) {
+          // flip the boolean variable
+          insideDoubleQuote = !insideDoubleQuote;
+        }
+      } else if (queries.charAt(index) == '-') {
+        boolean hasNext = index + 1 < queries.length();
+        if (insideDoubleQuote
+            || insideSingleQuote
+            || (insideSimpleComment || bracketedCommentLevel > 0)) {
+          // Ignores '-' in any case of quotes or comment.
+          // Avoids to start a comment(--) within a quoted segment or already in a comment.
+          // Sample query: select "quoted value --"
+          //                                    ^^ avoids starting a comment if it's inside quotes.
+        } else if (hasNext && queries.charAt(index + 1) == '-') {
+          // ignore quotes and ; in simple comment
+          insideSimpleComment = true;
+        }
+      } else if (queries.charAt(index) == ';') {
+        if (insideSingleQuote
+            || insideDoubleQuote
+            || (insideSimpleComment || bracketedCommentLevel > 0)) {
+          // do not split
+        } else {
+          if (isStatement) {
+            // split, do not include ; itself
+            ret.add(queries.substring(beginIndex, index));
+          }
+          beginIndex = index + 1;
+          isStatement = false;
+        }
+      } else if (queries.charAt(index) == '\n') {
+        // with a new line the inline simple comment should end.
+        if (!escape) {
+          insideSimpleComment = false;
+        }
+      } else if (queries.charAt(index) == '/' && !insideSimpleComment) {
+        boolean hasNext = index + 1 < queries.length();
+        if (insideSingleQuote || insideDoubleQuote) {
+          // Ignores '/' in any case of quotes
+        } else if ((bracketedCommentLevel > 0) && queries.charAt(index - 1) == '*') {
+          // Decrements `bracketedCommentLevel` at the beginning of the next loop
+          leavingBracketedComment = true;
+        } else if (hasNext && queries.charAt(index + 1) == '*') {
+          bracketedCommentLevel += 1;
+        }
+      }
+      // set the escape
+      if (escape) {
+        escape = false;
+      } else if (queries.charAt(index) == '\\') {
+        escape = true;
+      }
+
+      isStatement =
+          isStatement
+              || (!(insideSimpleComment || bracketedCommentLevel > 0)
+                  && index > beginIndex
+                  && !("" + queries.charAt(index)).trim().isEmpty());
+    }
+    // Check the last char is end of nested bracketed comment.
+    boolean endOfBracketedComment = leavingBracketedComment && bracketedCommentLevel == 1;
+    // Spark SQL support simple comment and nested bracketed comment in query body.
+    // But if Spark SQL receives a comment alone, it will throw parser exception.
+    // In Spark SQL CLI, if there is a completed comment in the end of whole query,
+    // since Spark SQL CLL use `;` to split the query, CLI will pass the comment
+    // to the backend engine and throw exception. CLI should ignore this comment,
+    // If there is an uncompleted statement or an uncompleted bracketed comment in the end,
+    // CLI should also pass this part to the backend engine, which may throw an exception
+    // with clear error message.
+    if (!endOfBracketedComment && (isStatement || (bracketedCommentLevel > 0))) {
+      ret.add(queries.substring(beginIndex));
+    }
+    return ret;
   }
 }
