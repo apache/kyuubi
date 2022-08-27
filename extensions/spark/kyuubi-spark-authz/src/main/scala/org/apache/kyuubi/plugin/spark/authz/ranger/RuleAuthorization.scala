@@ -76,13 +76,11 @@ object RuleAuthorization {
       val resource = request.getResource.asInstanceOf[AccessResource]
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
-          val reqs = ArrayBuffer[AccessRequest]()
-          resource.getColumns.foreach { col =>
+          val reqs = resource.getColumns.map { col =>
             val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
-            val req = AccessRequest(cr, ugi, opType, request.accessType)
-            reqs += req
-          }
-          batchVerify(reqs.toList, auditHandler)
+            AccessRequest(cr, ugi, opType, request.accessType)
+          }.toList
+          batchVerify(reqs, auditHandler)
         case _ => verify(request, auditHandler)
       }
     }
