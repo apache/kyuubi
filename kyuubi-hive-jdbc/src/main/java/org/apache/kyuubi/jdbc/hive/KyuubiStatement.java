@@ -44,6 +44,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private int fetchSize = DEFAULT_FETCH_SIZE;
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
+  private List<String> commands = new ArrayList<>();
   /**
    * We need to keep a reference to the result set to support the following: <code>
    * statement.execute(String sql);
@@ -398,6 +399,33 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
     return resultSet;
+  }
+
+  @Override
+  public void addBatch(String sql) throws SQLException {
+    commands.add(sql);
+  }
+
+  @Override
+  public void clearBatch() throws SQLException {
+    commands.clear();
+  }
+
+  @Override
+  public int[] executeBatch() throws SQLException {
+    if (commands.isEmpty()) {
+      LOG.error("No commands to execute, please addBatch before this.");
+      return new int[0];
+    }
+    String statements = String.join(";", commands);
+    int[] res = new int[1];
+    if (executeWithConfOverlay(
+        statements, Collections.singletonMap("kyuubi.operation.execute.statements", ""))) {
+      res[0] = getUpdateCount();
+    } else {
+      res[0] = Statement.SUCCESS_NO_INFO;
+    }
+    return res;
   }
 
   public ResultSet executeScala(String code) throws SQLException {

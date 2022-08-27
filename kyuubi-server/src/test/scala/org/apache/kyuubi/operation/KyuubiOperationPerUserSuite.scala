@@ -200,4 +200,25 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
       }
     }
   }
+
+  test("support to execute multiple statements one time") {
+    withJdbcStatement() { statement =>
+      statement.addBatch("select 1")
+      statement.addBatch("select 2")
+      statement.addBatch("select 3")
+      statement.executeBatch()
+      var rs = statement.getResultSet
+      assert(rs.next())
+      assert(rs.getInt(1) === 3)
+      assert(!rs.next())
+      statement.clearBatch()
+
+      statement.addBatch("select 3;select 2; select 1")
+      statement.executeBatch()
+      rs = statement.getResultSet
+      assert(rs.next())
+      assert(rs.getInt(1) === 1)
+      assert(!rs.next())
+    }
+  }
 }

@@ -473,7 +473,7 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
       assert(!metaData.getIndexInfo("", "default", "src", true, true).next())
 
       assert(metaData.supportsResultSetType(new Random().nextInt()))
-      assert(!metaData.supportsBatchUpdates)
+      assert(metaData.supportsBatchUpdates)
       assert(!metaData.getUDTs(",", "%", "%", null).next())
       assert(!metaData.supportsSavepoints)
       assert(!metaData.supportsResultSetHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT))

@@ -202,4 +202,16 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(Utils.isCommandAvailable("java"))
     assertResult(false)(Utils.isCommandAvailable("un_exist_cmd"))
   }
+
+  test("splitQueriesBySemiColon") {
+    val expected = Seq("select 1", "select 2", "select 3")
+    assert(Utils.splitQueriesBySemiColon("select 1; select 2; select 3") === expected)
+    assert(Utils.splitQueriesBySemiColon("select 1; select 2; select 3;") === expected)
+    assert(Utils.splitQueriesBySemiColon("select 1; select 2;;; select 3") === expected)
+    assert(
+      Utils.splitQueriesBySemiColon("select 1 /** ;*/\n--;\n; select 2;;; select 3;") === expected)
+
+    val expected2 = Seq("select ';', 1", "select \";\", 2", "select 3")
+    assert("select ';', 1 /** ;*/\n--;\n; select \";\", 2;;; select 3;" === expected2)
+  }
 }

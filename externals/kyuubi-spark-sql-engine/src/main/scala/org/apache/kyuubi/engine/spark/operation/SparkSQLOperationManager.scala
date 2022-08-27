@@ -25,6 +25,7 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.OperationModes._
+import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
@@ -75,7 +76,15 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
             case NONE =>
               val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)
                 .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)
-              new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
+              val executeMultipleStatements =
+                confOverlay.contains(KyuubiReservedKeys.KYUUBI_OPERATION_EXECUTE_STATEMENTS)
+              new ExecuteStatement(
+                session,
+                statement,
+                runAsync,
+                queryTimeout,
+                incrementalCollect,
+                executeMultipleStatements)
             case mode =>
               new PlanOnlyStatement(session, statement, mode)
           }
