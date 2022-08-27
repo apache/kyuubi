@@ -773,7 +773,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   @Override
   public boolean supportsBatchUpdates() throws SQLException {
-    return false;
+    return true;
   }
 
   @Override

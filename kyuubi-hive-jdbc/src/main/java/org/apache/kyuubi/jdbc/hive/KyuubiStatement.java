@@ -44,13 +44,16 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private int fetchSize = DEFAULT_FETCH_SIZE;
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
+  private List<String> commands = new ArrayList<>();
+  private Queue<ResultSet> results = new LinkedList<>();
+  private List<ResultSet> openResults = new ArrayList<>();
   /**
    * We need to keep a reference to the result set to support the following: <code>
    * statement.execute(String sql);
    * statement.getResultSet();
    * </code>.
    */
-  private ResultSet resultSet = null;
+  private ResultSet currResultSet = null;
 
   /**
    * Sets the limit for the maximum number of rows that any ResultSet object produced by this
@@ -178,9 +181,23 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     }
     closeClientOperation();
     client = null;
-    if (resultSet != null) {
-      resultSet.close();
-      resultSet = null;
+    if (currResultSet != null) {
+      currResultSet.close();
+      currResultSet = null;
+    }
+    // Close any remaining open result set
+    if (results.size() > 0 || this.openResults.size() > 0) {
+      LOG.info("Closing " + (results.size() + openResults.size()) + " open result sets");
+
+      while ((!results.isEmpty())) {
+        try (ResultSet resultSet = this.results.poll()) {}
+      }
+      // Close open result set
+      for (ResultSet resultSet : this.openResults) {
+        resultSet.close();
+      }
+      this.openResults.clear();
+      LOG.info("All open result sets are closed");
     }
     isClosed = true;
   }
@@ -199,7 +216,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet() && !stmtHandle.isHasResultSet()) {
       return false;
     }
-    resultSet =
+    currResultSet =
         new KyuubiQueryResultSet.Builder(this)
             .setClient(client)
             .setSessionHandle(sessHandle)
@@ -231,7 +248,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet()) {
       return false;
     }
-    resultSet =
+    currResultSet =
         new KyuubiQueryResultSet.Builder(this)
             .setClient(client)
             .setSessionHandle(sessHandle)
@@ -397,7 +414,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!execute(sql)) {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
-    return resultSet;
+    return currResultSet;
   }
 
   /**
@@ -410,7 +427,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         queries, Collections.singletonMap("kyuubi.operation.execute.statements", ""))) {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
-    return resultSet;
+    return currResultSet;
   }
 
   public ResultSet executeScala(String code) throws SQLException {
@@ -418,13 +435,13 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         code, Collections.singletonMap("kyuubi.operation.language", "SCALA"))) {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
-    return resultSet;
+    return currResultSet;
   }
 
   public void executeSetCurrentCatalog(String sql, String catalog) throws SQLException {
     if (executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.set.current.catalog", catalog))) {
-      resultSet.close();
+      currResultSet.close();
     }
   }
 
@@ -433,13 +450,13 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         sql, Collections.singletonMap("kyuubi.operation.get.current.catalog", ""))) {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
-    return resultSet;
+    return currResultSet;
   }
 
   public void executeSetCurrentDatabase(String sql, String database) throws SQLException {
     if (executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.set.current.database", database))) {
-      resultSet.close();
+      currResultSet.close();
     }
   }
 
@@ -448,7 +465,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         sql, Collections.singletonMap("kyuubi.operation.get.current.database", ""))) {
       throw new KyuubiSQLException("The query did not generate a result set!");
     }
-    return resultSet;
+    return currResultSet;
   }
 
   @Override
@@ -482,11 +499,6 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   }
 
   @Override
-  public boolean getMoreResults() throws SQLException {
-    return false;
-  }
-
-  @Override
   public int getQueryTimeout() throws SQLException {
     checkConnection("getQueryTimeout");
     return 0;
@@ -495,7 +507,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   @Override
   public ResultSet getResultSet() throws SQLException {
     checkConnection("getResultSet");
-    return resultSet;
+    return currResultSet;
   }
 
   @Override
@@ -723,5 +735,82 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
    */
   public void setInPlaceUpdateStream(InPlaceUpdateStream stream) {
     this.inPlaceUpdateStream = stream;
+  }
+
+  @Override
+  public void addBatch(String sql) throws SQLException {
+    this.commands.add(sql);
+  }
+
+  @Override
+  public void clearBatch() throws SQLException {
+    this.commands.clear();
+  }
+
+  @Override
+  public final int[] executeBatch() throws SQLException {
+    // Issue warning where appropriate
+    if (commands.size() > 1) {
+      LOG.warn("Executing the batch of commands " + String.join(";\n", commands));
+    }
+
+    int[] rets = new int[commands.size()];
+    ResultSet curr = this.currResultSet;
+    for (int i = 0; i < commands.size(); i++) {
+      if (this.execute(commands.get(i))) {
+        this.results.add(this.getResultSet());
+        this.currResultSet = null;
+        rets[i] = Statement.SUCCESS_NO_INFO;
+      } else {
+        // Need to add a null to getMoreResults() to produce correct
+        // behavior across subsequent calls to getMoreResults()
+        this.results.add(null);
+        rets[i] = this.getUpdateCount();
+      }
+    }
+    this.currResultSet = curr;
+    // Make the next available results the current results if there
+    // are no current results
+    if (this.currResultSet == null && !this.results.isEmpty()) {
+      this.currResultSet = this.results.poll();
+    }
+    return rets;
+  }
+
+  @Override
+  public boolean getMoreResults() throws SQLException {
+    if (this.currResultSet != null) {
+      this.currResultSet.close();
+      this.currResultSet = null;
+    }
+    if (!this.results.isEmpty()) {
+      this.currResultSet = this.results.poll();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  @Override
+  public boolean getMoreResults(int current) throws SQLException {
+    switch (current) {
+      case Statement.CLOSE_CURRENT_RESULT:
+        return this.getMoreResults();
+      case Statement.CLOSE_ALL_RESULTS:
+        for (ResultSet resultSet : openResults) {
+          resultSet.close();
+        }
+        this.openResults.clear();
+        return this.getMoreResults();
+      case Statement.KEEP_CURRENT_RESULT:
+        if (this.currResultSet != null) {
+          this.openResults.add(this.currResultSet);
+          this.currResultSet = null;
+        }
+        return this.getMoreResults();
+      default:
+        throw new SQLFeatureNotSupportedException(
+            "Unsupported mode for dealing with current results, only Statement.CLOSE_CURRENT_RESULT, Statement.CLOSE_ALL_RESULTS and Statement.KEEP_CURRENT_RESULT are supported");
+    }
   }
 }

@@ -22,6 +22,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 
 class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests {
@@ -198,6 +199,20 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
           assert(session.client.asyncRequestInterrupted)
         }
       }
+    }
+  }
+
+  test("support to execute multiple statements") {
+    withJdbcStatement("ta") { statement =>
+      val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
+      val resultSet = kyuubiStatement.executeQueries(
+        s"""
+           |create table ta(id int) using parquet;
+           |insert overwrite ta select 1;
+           |select * from ta
+           |""".stripMargin)
+      assert(resultSet.next())
+      assert(resultSet.getInt(1) === 1)
     }
   }
 }

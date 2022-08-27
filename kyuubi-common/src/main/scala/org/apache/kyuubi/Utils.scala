@@ -334,7 +334,7 @@ object Utils extends Logging {
    * Get the query list that separated by SemiColon.
    * Copied from Apache Spark project SparkSQLCLIDriver::splitSemiColon.
    */
-  private[hive] def splitQueriesBySemiColon(queries: String): Seq[String] = {
+  def splitQueriesBySemiColon(queries: String): Seq[String] = {
     var insideSingleQuote = false
     var insideDoubleQuote = false
     var insideSimpleComment = false
