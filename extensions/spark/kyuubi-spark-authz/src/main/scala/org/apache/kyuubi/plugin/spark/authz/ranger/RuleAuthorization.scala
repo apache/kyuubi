@@ -93,13 +93,14 @@ object RuleAuthorization {
   private def batchVerify(
       reqList: List[AccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
-    val rets = SparkRangerAdminPlugin.isAccessAllowed(
+    val results = SparkRangerAdminPlugin.isAccessAllowed(
       reqList.asJava.asInstanceOf[util.Collection[RangerAccessRequest]],
       auditHandler)
       .asScala.toList
 
-    reqList.zipWithIndex.map { case (req, idx) => (req, rets(idx)) }
-      .find { case (_, ret) => !ret.getIsAllowed }.orNull match {
+    reqList.zipWithIndex.map { case (req, idx) => (req, results(idx)) }
+      .find { case (_, r) => r != null && !r.getIsAllowed }
+      .orNull match {
       case (req, _) =>
         throw new AccessControlException(
           s"""
