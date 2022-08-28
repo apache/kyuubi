@@ -17,13 +17,20 @@
 
 package org.apache.kyuubi.server.filght
 
+import java.util
+import java.util.Collections.singletonList
+
+import com.google.protobuf.Any.pack
+import com.google.protobuf.Message
 import org.apache.arrow.flight._
-import org.apache.arrow.flight.sql.FlightSqlProducer
+import org.apache.arrow.flight.sql.{FlightSqlProducer, SqlInfoBuilder}
+import org.apache.arrow.flight.sql.FlightSqlProducer.Schemas
 import org.apache.arrow.flight.sql.impl.FlightSql
+import org.apache.arrow.vector.types.pojo.Schema
 
 import org.apache.kyuubi.Logging
 
-class KyuubiFlightSQLProducer extends FlightSqlProducer with Logging {
+class KyuubiFlightSQLProducer(location: Location) extends FlightSqlProducer with Logging {
 
   override def createPreparedStatement(
       request: FlightSql.ActionCreatePreparedStatementRequest,
@@ -91,14 +98,18 @@ class KyuubiFlightSQLProducer extends FlightSqlProducer with Logging {
   override def getFlightInfoSqlInfo(
       request: FlightSql.CommandGetSqlInfo,
       context: FlightProducer.CallContext,
-      descriptor: FlightDescriptor): FlightInfo =
-    throw CallStatus.UNIMPLEMENTED.withDescription("DoExchange is unimplemented").toRuntimeException
+      descriptor: FlightDescriptor): FlightInfo = {
+    getFlightInfoForSchema(request, descriptor, Schemas.GET_SQL_INFO_SCHEMA)
+  }
 
   override def getStreamSqlInfo(
       command: FlightSql.CommandGetSqlInfo,
       context: FlightProducer.CallContext,
-      listener: FlightProducer.ServerStreamListener): Unit =
-    throw CallStatus.UNIMPLEMENTED.withDescription("DoExchange is unimplemented").toRuntimeException
+      listener: FlightProducer.ServerStreamListener): Unit = {
+    val sqlInfoBuilder = new SqlInfoBuilder()
+      .withFlightSqlServerName("Apache Kyuubi (Incubating)")
+    sqlInfoBuilder.send(command.getInfoList, listener)
+  }
 
   override def getFlightInfoTypeInfo(
       request: FlightSql.CommandGetXdbcTypeInfo,
@@ -213,4 +224,13 @@ class KyuubiFlightSQLProducer extends FlightSqlProducer with Logging {
     throw CallStatus.UNIMPLEMENTED.withDescription("DoExchange is unimplemented").toRuntimeException
 
   override def close(): Unit = {}
+
+  private def getFlightInfoForSchema[T <: Message](
+      request: T,
+      descriptor: FlightDescriptor,
+      schema: Schema): FlightInfo = {
+    val ticket: Ticket = new Ticket(pack(request).toByteArray)
+    val endpoints: util.List[FlightEndpoint] = singletonList(new FlightEndpoint(ticket, location))
+    new FlightInfo(schema, descriptor, endpoints, -1, -1)
+  }
 }

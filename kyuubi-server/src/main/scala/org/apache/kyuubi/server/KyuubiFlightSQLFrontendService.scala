@@ -57,10 +57,11 @@ class KyuubiFlightSQLFrontendService(override val serverable: Serverable)
       new SynchronousQueue[Runnable](),
       new NamedThreadFactory("flight-sql-exec-pool", false))
 
+    val location = Location.forGrpcInsecure(host, port)
     flightServer = FlightServer.builder()
-      .location(Location.forGrpcInsecure(host, port))
+      .location(location)
       .allocator(allocator)
-      .producer(new KyuubiFlightSQLProducer)
+      .producer(new KyuubiFlightSQLProducer(location))
       .executor(execPool)
       .build()
     super.initialize(conf)
@@ -90,6 +91,7 @@ class KyuubiFlightSQLFrontendService(override val serverable: Serverable)
   override def stop(): Unit = synchronized {
     if (isStarted) {
       flightServer.shutdown()
+      allocator.close()
       isStarted = false
     }
     super.stop()
