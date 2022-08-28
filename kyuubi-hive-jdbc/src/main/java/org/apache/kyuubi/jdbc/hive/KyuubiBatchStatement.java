@@ -20,10 +20,7 @@ package org.apache.kyuubi.jdbc.hive;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import org.apache.hive.service.rpc.thrift.TCLIService;
 import org.apache.hive.service.rpc.thrift.TSessionHandle;
 import org.slf4j.Logger;
@@ -33,7 +30,7 @@ public class KyuubiBatchStatement extends KyuubiStatement {
   private static final Logger LOG = LoggerFactory.getLogger(KyuubiBatchStatement.class.getName());
 
   private List<String> commands = new ArrayList<>();
-  private ResultSet currResultSet = null;
+  private ResultSet currentResultSet = null;
   private KyuubiStatement currentStatement = null;
   private Queue<KyuubiStatement> statements = new LinkedList<>();
 
@@ -47,7 +44,7 @@ public class KyuubiBatchStatement extends KyuubiStatement {
 
   @Override
   public ResultSet getResultSet() throws SQLException {
-    return currResultSet;
+    return currentResultSet;
   }
 
   public KyuubiStatement getCurrentSubStatement() {
@@ -67,33 +64,31 @@ public class KyuubiBatchStatement extends KyuubiStatement {
 
   @Override
   public final int[] executeBatch() throws SQLException {
-    // Issue warning where appropriate
-    if (commands.size() > 1) {
-      LOG.warn("Executing the batch of commands " + String.join(";\n", commands));
+    if (commands.isEmpty()) {
+      LOG.error("No commands to execute, please addBatch before this.");
+      return new int[0];
     }
     int[] rets = new int[commands.size()];
-    ResultSet curRs = this.currResultSet;
-    KyuubiStatement curStmt = this.currentStatement;
+    ResultSet currRs = this.currentResultSet;
+    KyuubiStatement currStmt = this.currentStatement;
     for (int i = 0; i < commands.size(); i++) {
       KyuubiStatement statement = new KyuubiStatement(connection, client, sessHandle);
       if (statement.execute(commands.get(i))) {
         this.statements.add(statement);
-        this.currResultSet = null;
+        this.currentResultSet = null;
         rets[i] = Statement.SUCCESS_NO_INFO;
       } else {
-        // Need to add a null to getMoreResults() to produce correct
-        // behavior across subsequent calls to getMoreResults()
         this.statements.add(statement);
         rets[i] = this.getUpdateCount();
       }
     }
-    this.currResultSet = curRs;
-    this.currentStatement = curStmt;
+    this.currentResultSet = currRs;
+    this.currentStatement = currStmt;
     // Make the next available results the current results if there
     // are no current results
-    if (this.currResultSet == null && !this.statements.isEmpty()) {
+    if (this.currentResultSet == null && !this.statements.isEmpty()) {
       KyuubiStatement statement = statements.poll();
-      this.currResultSet = statement.getResultSet();
+      this.currentResultSet = statement.getResultSet();
       this.currentStatement = statement;
     }
     clearBatch();
@@ -104,17 +99,20 @@ public class KyuubiBatchStatement extends KyuubiStatement {
   public boolean getMoreResults() throws SQLException {
     if (this.currentStatement != null) {
       closeStatementSilently(this.currentStatement);
-      this.currResultSet = null;
+      this.currentResultSet = null;
       this.currentStatement = null;
     }
-    if (!this.statements.isEmpty()) {
+    while (!statements.isEmpty()) {
       KyuubiStatement statement = statements.poll();
-      this.currResultSet = statement.getResultSet();
-      this.currentStatement = statement;
-      return true;
-    } else {
-      return false;
+      if (statement.getResultSet() != null) {
+        this.currentStatement = statement;
+        this.currentResultSet = statement.getResultSet();
+        return true;
+      } else {
+        closeStatementSilently(statement);
+      }
     }
+    return false;
   }
 
   private void closeStatementSilently(KyuubiStatement statement) {
@@ -130,22 +128,18 @@ public class KyuubiBatchStatement extends KyuubiStatement {
     if (isClosed) {
       return;
     }
-    closeClientOperation();
-    client = null;
-    try {
-      if (currentStatement != null) {
-        closeStatementSilently(currentStatement);
-        this.currResultSet = null;
-        this.currentStatement = null;
-      }
-    } catch (Exception e) {
-
+    if (currentStatement != null) {
+      closeStatementSilently(currentStatement);
+      this.currentResultSet = null;
+      this.currentStatement = null;
     }
 
     while (!this.statements.isEmpty()) {
       KyuubiStatement statement = statements.poll();
       closeStatementSilently(statement);
     }
+    closeClientOperation();
+    client = null;
     isClosed = true;
   }
 

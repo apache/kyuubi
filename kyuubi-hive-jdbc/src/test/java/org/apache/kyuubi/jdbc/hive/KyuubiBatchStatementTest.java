@@ -18,25 +18,24 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.List;
+import org.junit.Test;
 
 public class KyuubiBatchStatementTest {
-    @Test
-    public void testSplitSemiColon() {
-        List<String> expected = Arrays.asList("select 1", "select 2", "select 3");
-        String queries = "select 1; select 2; select 3";
-        assert KyuubiBatchStatement.splitSemiColon(queries).retainAll(expected);
-        queries = "select 1; select 2; select 3;";
-        assert KyuubiBatchStatement.splitSemiColon(queries).retainAll(expected);
-        queries = "select 1; select 2;;; select 3;";
-        assert KyuubiBatchStatement.splitSemiColon(queries).retainAll(expected);
-        queries = "select 1 /** ;*/\n--;\n; select 2;;; select 3;";
-        assert KyuubiBatchStatement.splitSemiColon(queries).retainAll(expected);
-        List<String> expected2 = Arrays.asList("select ';', 1", "select \";\", 2", "select 3");
-        String queries2 = "select ';', 1 /** ;*/\n--;\n; select \";\", 2;;; select 3;";
-        assert KyuubiBatchStatement.splitSemiColon(queries2).retainAll(expected2);
-    }
+  @Test
+  public void testSplitSemiColon() {
+    List<String> expected = Arrays.asList("select 1", "select 2", "select 3");
+    String queries = "select 1; select 2; select 3";
+    assert KyuubiBatchStatement.splitSemiColon(queries).retainAll(expected);
+    queries = "select 1; select 2; select 3;";
+    assert KyuubiBatchStatement.splitSemiColon(queries).retainAll(expected);
+    queries = "select 1; select 2;;; select 3;";
+    assert KyuubiBatchStatement.splitSemiColon(queries).retainAll(expected);
+    queries = "select 1 /** ;*/\n--;\n; select 2;;; select 3;";
+    assert KyuubiBatchStatement.splitSemiColon(queries).retainAll(expected);
+    List<String> expected2 = Arrays.asList("select ';', 1", "select \";\", 2", "select 3");
+    String queries2 = "select ';', 1 /** ;*/\n--;\n; select \";\", 2;;; select 3;";
+    assert KyuubiBatchStatement.splitSemiColon(queries2).retainAll(expected2);
+  }
 }
