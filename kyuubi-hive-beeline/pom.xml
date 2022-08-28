@@ -118,6 +118,11 @@
         </dependency>
 
         <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>jline</groupId>
             <artifactId>jline</artifactId>
             <version>${hive.client.jline.version}</version>
