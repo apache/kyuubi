@@ -206,7 +206,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
     withJdbcStatement() { statement =>
       val connection = statement.getConnection.asInstanceOf[KyuubiConnection]
       val batchStatement = connection.createBatchStatement()
-      batchStatement.addBatch("select 1;select 2;select 3")
+      batchStatement.addBatch("select 1;select 2;clear cache;select 3")
       batchStatement.executeBatch()
       var resultSet = batchStatement.getResultSet
       assert(resultSet.next())
@@ -216,6 +216,9 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
       resultSet = batchStatement.getResultSet
       assert(resultSet.next())
       assert(resultSet.getInt(1) === 2)
+      assert(!resultSet.next())
+      assert(batchStatement.getMoreResults)
+      resultSet = batchStatement.getResultSet
       assert(!resultSet.next())
       assert(batchStatement.getMoreResults)
       resultSet = batchStatement.getResultSet

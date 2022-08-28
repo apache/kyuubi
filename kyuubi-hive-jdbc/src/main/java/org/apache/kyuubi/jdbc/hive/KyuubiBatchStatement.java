@@ -110,6 +110,8 @@ public class KyuubiBatchStatement extends KyuubiStatement {
         return true;
       } else {
         closeStatementSilently(statement);
+        this.currentStatement = null;
+        this.currentResultSet = null;
       }
     }
     return false;
