@@ -22,6 +22,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.commons.collections.CollectionUtils
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -86,11 +87,16 @@ object RuleAuthorization {
     }
   }
 
+  @throws[AccessControlException]
   private def verify(
       requests: util.List[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
+    if (CollectionUtils.isEmpty(requests)) {
+      return
+    }
+
     val results = SparkRangerAdminPlugin.isAccessAllowed(requests, auditHandler)
-    if (results != null && !results.isEmpty) {
+    if (CollectionUtils.isNotEmpty(results)) {
       requests.asScala.zip(results.asScala).foreach {
         case (req, result) =>
           if (result != null && !result.getIsAllowed) {
