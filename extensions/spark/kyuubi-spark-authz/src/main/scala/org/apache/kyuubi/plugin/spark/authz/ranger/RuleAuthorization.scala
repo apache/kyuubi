@@ -78,37 +78,27 @@ object RuleAuthorization {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
           val reqs = resource.getColumns.map { col =>
             val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
-            AccessRequest(cr, ugi, opType, request.accessType)
-          }.toList
-          batchVerify(reqs, auditHandler)
-        case _ => verify(request, auditHandler)
+            AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
+          }.asJava
+          verify(reqs, auditHandler)
+        case _ => verify(util.Collections.singletonList(request), auditHandler)
       }
     }
   }
 
-  private def verify(req: AccessRequest, auditHandler: SparkRangerAuditHandler): Unit = {
-    batchVerify(List(req), auditHandler)
-  }
-
-  private def batchVerify(
-      reqList: List[AccessRequest],
+  private def verify(
+      requests: util.List[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
-    val results = SparkRangerAdminPlugin.isAccessAllowed(
-      reqList.asJava.asInstanceOf[util.Collection[RangerAccessRequest]],
-      auditHandler)
-      .asScala.toList
-
-    reqList.zipWithIndex.map { case (req, idx) => (req, results(idx)) }
-      .find { case (_, r) => r != null && !r.getIsAllowed }
-      .orNull match {
-      case (req, _) =>
-        throw new AccessControlException(
-          s"""
-             |Permission denied: user [${req.getUser}]
-             | does not have [${req.getAccessType}] privilege
-             | on [${req.getResource.getAsString}]
-             |""".stripMargin.replaceAll("\n", ""))
-      case _ =>
+    val results = SparkRangerAdminPlugin.isAccessAllowed(requests, auditHandler)
+    if (results != null && !results.isEmpty) {
+      requests.asScala.zip(results.asScala).foreach {
+        case (req, result) =>
+          if (result != null && !result.getIsAllowed) {
+            throw new AccessControlException(
+              s"Permission denied: user [${req.getUser}] does not have [${req.getAccessType}]" +
+                s" privilege on [${req.getResource.getAsString}]")
+          }
+      }
     }
   }
 }
