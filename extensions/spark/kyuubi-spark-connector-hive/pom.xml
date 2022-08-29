@@ -27,7 +27,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-spark-connector-hive</artifactId>
+    <artifactId>kyuubi-spark-connector-hive_2.12</artifactId>
     <name>Kyuubi Spark Hive Connector</name>
     <description>A Kyuubi hive connector based on Spark V2 DataSource</description>
     <packaging>jar</packaging>
