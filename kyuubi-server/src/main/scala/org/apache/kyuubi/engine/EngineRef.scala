@@ -216,7 +216,7 @@ private[kyuubi] class EngineRef(
                 }
                 throw new KyuubiSQLException(
                   s"""
-                     |The engine application has been in terminate state. Please check the engine log.
+                     |The engine application has been terminated. Please check the engine log.
                      |FYI: ${appInfo.toMap.mkString("(\n", ",\n", "\n)")}
                      |""".stripMargin,
                   builder.getError)

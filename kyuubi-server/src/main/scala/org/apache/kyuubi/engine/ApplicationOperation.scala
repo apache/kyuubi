@@ -76,6 +76,7 @@ object ApplicationState extends Enumeration {
       case FAILED => true
       case KILLED => true
       case FINISHED => true
+      case NOT_FOUND => true
       case _ => false
     }
   }
