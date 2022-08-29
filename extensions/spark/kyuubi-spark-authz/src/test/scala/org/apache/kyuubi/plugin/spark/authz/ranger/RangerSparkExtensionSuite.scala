@@ -70,6 +70,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         case (t, "table") => doAs("admin", sql(s"DROP TABLE IF EXISTS $t"))
         case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
         case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
+        case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
         case (_, e) =>
           throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
       }
@@ -526,12 +527,16 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
   test("[KYUUBI #3343] check persisted view creation") {
     val table = "hive_src"
+    val adminPermView = "admin_perm_view"
     val permView = "perm_view"
 
-    withCleanTmpResources(Seq((table, "table"))) {
+    withCleanTmpResources(Seq(
+      (adminPermView, "view"),
+      (permView, "view"),
+      (table, "table"))) {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
 
-      doAs("admin", sql(s"CREATE VIEW admin_perm_view AS SELECT * FROM $table"))
+      doAs("admin", sql(s"CREATE VIEW ${adminPermView} AS SELECT * FROM $table"))
 
       val e1 = intercept[AccessControlException](
         doAs("someone", sql(s"CREATE VIEW $permView AS SELECT 1 as a")))
@@ -550,15 +555,21 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   test("[KYUUBI #3326] check persisted view and skip shadowed table") {
     val table = "hive_src"
     val permView = "perm_view"
+    val db1 = "default"
+    val db2 = "db2"
 
-    withCleanTmpResources(Seq((table, "table"))) {
-      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
+    withCleanTmpResources(Seq(
+      (s"$db1.$table", "table"),
+      (s"$db2.$permView", "view"),
+      (db2, "database"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $db1.$table (id int)"))
 
-      doAs("admin", sql(s"CREATE VIEW default.$permView AS SELECT * FROM $table"))
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $db2"))
+      doAs("admin", sql(s"CREATE VIEW $db2.$permView AS SELECT * FROM $table"))
 
       val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"select * from default.$permView")))
-      assert(e1.getMessage.contains(s"does not have [select] privilege on [default/$permView]"))
+        doAs("someone", sql(s"select * from $db2.$permView")).show(0))
+      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db2/$permView/id]"))
     }
   }
 }
