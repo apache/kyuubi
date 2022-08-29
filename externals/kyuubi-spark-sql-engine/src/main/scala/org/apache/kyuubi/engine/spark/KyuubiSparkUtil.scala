@@ -60,9 +60,6 @@ object KyuubiSparkUtil extends Logging {
 
   lazy val diagnostics: String = {
     val sc = globalSparkContext
-    val webUrl = sc.getConf.getOption(
-      "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
-      .orElse(sc.uiWebUrl).getOrElse("")
     // scalastyle:off line.size.limit
     // format: off
     s"""
