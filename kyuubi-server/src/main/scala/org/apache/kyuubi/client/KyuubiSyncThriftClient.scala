@@ -33,6 +33,7 @@ import org.apache.thrift.transport.TSocket
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOGIN_TIMEOUT
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -48,6 +49,8 @@ class KyuubiSyncThriftClient private (
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
   @volatile private var _engineId: Option[String] = _
+  @volatile private var _engineUrl: Option[String] = _
+  @volatile private var _engineName: Option[String] = _
 
   private val lock = new ReentrantLock()
 
@@ -147,6 +150,8 @@ class KyuubiSyncThriftClient private (
   }
 
   def engineId: Option[String] = _engineId
+  def engineName: Option[String] = _engineName
+  def engineUrl: Option[String] = _engineUrl
 
   /**
    * Return the engine SessionHandle for kyuubi session so that we can get the same session id
@@ -164,8 +169,14 @@ class KyuubiSyncThriftClient private (
     ThriftUtils.verifyTStatus(resp.getStatus)
     _remoteSessionHandle = resp.getSessionHandle
     _engineId = Option(resp.getConfiguration)
-      .filter(_.containsKey("kyuubi.engine.id"))
-      .map(_.get("kyuubi.engine.id"))
+      .filter(_.containsKey(KYUUBI_ENGINE_ID))
+      .map(_.get(KYUUBI_ENGINE_ID))
+    _engineName = Option(resp.getConfiguration)
+      .filter(_.containsKey(KYUUBI_ENGINE_NAME))
+      .map(_.get(KYUUBI_ENGINE_NAME))
+    _engineUrl = Option(resp.getConfiguration)
+      .filter(_.containsKey(KYUUBI_ENGINE_URL))
+      .map(_.get(KYUUBI_ENGINE_URL))
 
     engineAliveProbeClient.foreach { aliveProbeClient =>
       val sessionName = SessionHandle.apply(_remoteSessionHandle).identifier + "_aliveness_probe"

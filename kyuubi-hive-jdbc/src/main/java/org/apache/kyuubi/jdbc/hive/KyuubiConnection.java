@@ -106,6 +106,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private Thread engineLogThread;
   private boolean engineLogInflight = true;
   private volatile boolean launchEngineOpCompleted = false;
+  private String engineId = "";
+  private String engineName = "";
+  private String engineUrl = "";
 
   private boolean isBeeLineMode;
 
@@ -1285,8 +1288,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         Utils.verifySuccessWithInfo(statusResp.getStatus());
         if (statusResp.isSetOperationState()) {
           switch (statusResp.getOperationState()) {
-            case CLOSED_STATE:
             case FINISHED_STATE:
+              fetchLaunchEngineResult();
+            case CLOSED_STATE:
               launchEngineOpCompleted = true;
               engineLogInflight = false;
               break;
@@ -1319,5 +1323,43 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         }
       }
     }
+  }
+
+  private void fetchLaunchEngineResult() {
+    if (launchEngineOpHandle == null) return;
+
+    TFetchResultsReq tFetchResultsReq =
+        new TFetchResultsReq(
+            launchEngineOpHandle, TFetchOrientation.FETCH_NEXT, KyuubiStatement.DEFAULT_FETCH_SIZE);
+
+    try {
+      TFetchResultsResp tFetchResultsResp = client.FetchResults(tFetchResultsReq);
+      RowSet rowSet = RowSetFactory.create(tFetchResultsResp.getResults(), this.getProtocol());
+      for (Object[] row : rowSet) {
+        String key = String.valueOf(row[0]);
+        String value = String.valueOf(row[1]);
+        if ("id".equals(key)) {
+          engineId = value;
+        } else if ("name".equals(key)) {
+          engineName = value;
+        } else if ("url".equals(key)) {
+          engineUrl = value;
+        }
+      }
+    } catch (Exception e) {
+      LOG.error("Error fetching launch engine result", e);
+    }
+  }
+
+  public String getEngineId() {
+    return engineId;
+  }
+
+  public String getEngineName() {
+    return engineName;
+  }
+
+  public String getEngineUrl() {
+    return engineUrl;
   }
 }

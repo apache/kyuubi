@@ -18,11 +18,8 @@
 package org.apache.kyuubi.operation
 
 import java.io.IOException
-import java.nio.ByteBuffer
-import java.util.{ArrayList => JArrayList, Locale}
+import java.util.Locale
 import java.util.concurrent.TimeUnit
-
-import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
@@ -39,7 +36,6 @@ import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
-import org.apache.kyuubi.util.ThriftUtils
 
 /**
  * The state of batch operation is special. In general, the lifecycle of state is:
@@ -62,7 +58,7 @@ class BatchJobSubmission(
     batchConf: Map[String, String],
     batchArgs: Seq[String],
     recoveryMetadata: Option[Metadata])
-  extends KyuubiOperation(session) {
+  extends KyuubiApplicationOperation(session) {
   import BatchJobSubmission._
 
   override def shouldRunAsync: Boolean = true
@@ -98,7 +94,7 @@ class BatchJobSubmission(
     }
   }
 
-  private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
+  override private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
     applicationManager.getApplicationInfo(builder.clusterManager(), batchId)
   }
 
@@ -270,31 +266,6 @@ class BatchJobSubmission(
     operationLog.map(_.read(from, size)).getOrElse {
       throw KyuubiSQLException(s"Batch ID: $batchId, failed to generate operation log")
     }
-  }
-
-  override val getResultSetSchema: TTableSchema = {
-    val schema = new TTableSchema()
-    Seq("key", "value").zipWithIndex.foreach { case (colName, position) =>
-      val tColumnDesc = new TColumnDesc()
-      tColumnDesc.setColumnName(colName)
-      val tTypeDesc = new TTypeDesc()
-      tTypeDesc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(TTypeId.STRING_TYPE)))
-      tColumnDesc.setTypeDesc(tTypeDesc)
-      tColumnDesc.setPosition(position)
-      schema.addToColumns(tColumnDesc)
-    }
-    schema
-  }
-
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
-    currentApplicationInfo.map(_.toMap).map { state =>
-      val tRow = new TRowSet(0, new JArrayList[TRow](state.size))
-      Seq(state.keys, state.values).map(_.toSeq.asJava).foreach { col =>
-        val tCol = TColumn.stringVal(new TStringColumn(col, ByteBuffer.allocate(0)))
-        tRow.addToColumns(tCol)
-      }
-      tRow
-    }.getOrElse(ThriftUtils.EMPTY_ROW_SET)
   }
 
   override def close(): Unit = state.synchronized {
