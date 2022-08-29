@@ -546,4 +546,19 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("[KYUUBI #3326] check persisted view and skip shadowed table") {
+    val table = "hive_src"
+    val permView = "perm_view"
+
+    withCleanTmpResources(Seq((table, "table"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
+
+      doAs("admin", sql(s"CREATE VIEW default.$permView AS SELECT * FROM $table"))
+
+      val e1 = intercept[AccessControlException](
+        doAs("someone", sql(s"select * from default.$permView")))
+      assert(e1.getMessage.contains(s"does not have [select] privilege on [default/$permView]"))
+    }
+  }
 }
