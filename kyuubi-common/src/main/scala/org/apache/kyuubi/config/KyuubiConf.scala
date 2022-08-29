@@ -1659,13 +1659,20 @@ object KyuubiConf {
 
   val OPERATION_PLAN_ONLY_MODE: ConfigEntry[String] =
     buildConf("kyuubi.operation.plan.only.mode")
-      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE, OPTIMIZE_WITH_STATS," +
-        " PHYSICAL, EXECUTION only way without executing the query. When it is NONE, " +
-        "the statement will be fully executed")
+      .doc("Configures the statement performed mode, The value can be 'parse', 'analyze', " +
+        "'optimize', 'optimize_with_stats', 'physical', 'execution', or 'none', " +
+        "when it is 'none', indicate to the statement will be fully executed, otherwise " +
+        "only way without executing the query. different engines currently support different " +
+        "modes, the Spark engine supports all modes, and the Flink engine supports 'parse', " +
+        "'physical', and 'execution', other engines do not support planOnly currently.")
       .version("1.4.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
-      .checkValues(OperationModes.values.map(_.toString))
+      .checkValue(
+        mode => OperationModes.values.map(_.toString).contains(mode),
+        "Invalid value for 'kyuubi.operation.plan.only.mode'. Valid values are" +
+          "'parse', 'analyze', 'optimize', 'optimize_with_stats', 'physical', 'execution' " +
+          "and 'none'.")
       .createWithDefault(OperationModes.NONE.toString)
 
   val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Seq[String]] =
