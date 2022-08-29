@@ -108,6 +108,7 @@ jobs:
           - 11
         spark:
           - '3.0.3'
+          - '3.3.0'
         comment: ["normal"]
     env:
       SPARK_LOCAL_IP: localhost
