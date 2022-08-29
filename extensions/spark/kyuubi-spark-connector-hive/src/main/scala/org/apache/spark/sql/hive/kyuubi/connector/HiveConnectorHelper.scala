@@ -22,18 +22,24 @@ import scala.collection.mutable
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.InputFileBlockHolder
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, ExternalCatalogEvent}
+import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Literal}
 import org.apache.spark.sql.connector.catalog.CatalogV2Util
 import org.apache.spark.sql.connector.expressions.{BucketTransform, FieldReference, IdentityTransform, LogicalExpressions, Transform}
+import org.apache.spark.sql.connector.expressions.LogicalExpressions.{bucket, reference}
 import org.apache.spark.sql.hive.{HadoopTableReader, HiveShim, HiveTableUtil}
 import org.apache.spark.sql.hive.client.HiveClientImpl
+import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StructType}
 
 object HiveConnectorHelper {
-
   type HiveSessionCatalog = org.apache.spark.sql.hive.HiveSessionCatalog
   type HiveMetastoreCatalog = org.apache.spark.sql.hive.HiveMetastoreCatalog
   type HiveExternalCatalog = org.apache.spark.sql.hive.HiveExternalCatalog
-  type BucketSpecHelper = org.apache.spark.sql.connector.catalog.CatalogV2Implicits.BucketSpecHelper
   type NextIterator[U] = org.apache.spark.util.NextIterator[U]
+  type FileSinkDesc = org.apache.spark.sql.hive.HiveShim.ShimFileSinkDesc
+  type HiveVersion = org.apache.spark.sql.hive.client.HiveVersion
+  type InsertIntoHiveTable = org.apache.spark.sql.hive.execution.InsertIntoHiveTable
+
+  val hive = org.apache.spark.sql.hive.client.hive
   val logicalExpressions: LogicalExpressions.type = LogicalExpressions
   val hiveClientImpl: HiveClientImpl.type = HiveClientImpl
   val catalogV2Util: CatalogV2Util.type = CatalogV2Util
@@ -75,6 +81,37 @@ object HiveConnectorHelper {
 
       (identityCols.toSeq, bucketSpec)
     }
+  }
+
+  implicit class BucketSpecHelper(spec: BucketSpec) {
+    def asTransform: Transform = {
+      val references = spec.bucketColumnNames.map(col => reference(Seq(col)))
+      if (spec.sortColumnNames.nonEmpty) {
+        val sortedCol = spec.sortColumnNames.map(col => reference(Seq(col)))
+        bucket(spec.numBuckets, references.toArray, sortedCol.toArray)
+      } else {
+        bucket(spec.numBuckets, references.toArray)
+      }
+    }
+  }
+
+  implicit class StructTypeHelper(structType: StructType) {
+    def toAttributes: Seq[AttributeReference] = structType.toAttributes
+  }
+
+  def toSQLValue(v: Any, t: DataType): String = Literal.create(v, t) match {
+    case Literal(null, _) => "NULL"
+    case Literal(v: Float, FloatType) =>
+      if (v.isNaN) "NaN"
+      else if (v.isPosInfinity) "Infinity"
+      else if (v.isNegInfinity) "-Infinity"
+      else v.toString
+    case l @ Literal(v: Double, DoubleType) =>
+      if (v.isNaN) "NaN"
+      else if (v.isPosInfinity) "Infinity"
+      else if (v.isNegInfinity) "-Infinity"
+      else l.sql
+    case l => l.sql
   }
 
 }
