@@ -88,7 +88,7 @@ class PlanOnlyStatement(
               case EXECUTION =>
                 val executed = spark.sql(statement).queryExecution.executedPlan
                 iter = new IterableFetchIterator(Seq(Row(executed.toString())))
-              case UNKNOWN =>
+              case _ =>
                 throw KyuubiSQLException(s"The operation mode $mode" +
                   " doesn't support in Spark SQL engine.")
             }

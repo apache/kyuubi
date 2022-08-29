@@ -21,6 +21,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
+import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
@@ -299,8 +300,10 @@ object PrivilegesBuilder {
         outputObjs += databasePrivileges(quote(databases))
 
       case "CreateViewCommand" =>
-        val view = getPlanField[TableIdentifier]("name")
-        outputObjs += tablePrivileges(view)
+        if (getPlanField[ViewType]("viewType") == PersistedView) {
+          val view = getPlanField[TableIdentifier]("name")
+          outputObjs += tablePrivileges(view)
+        }
         val query =
           if (isSparkVersionAtMost("3.1")) {
             getPlanField[LogicalPlan]("child")

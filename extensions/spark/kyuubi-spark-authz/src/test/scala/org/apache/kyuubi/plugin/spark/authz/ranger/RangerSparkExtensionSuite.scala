@@ -500,22 +500,49 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("Permanent View privilege checks") {
+  test("[KYUUBI #3343] pass temporary view creation") {
+    val table = "hive_src"
+    val tempView = "temp_view"
+    val globalTempView = "global_temp_view"
+
+    withCleanTmpResources(Seq((table, "table"))) {
+      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
+
+      doAs("admin", sql(s"CREATE TEMPORARY VIEW $tempView AS select * from $table"))
+
+      doAs(
+        "admin",
+        sql(s"CREATE OR REPLACE TEMPORARY VIEW $tempView" +
+          s" AS select * from $table"))
+
+      doAs("admin", sql(s"CREATE GLOBAL TEMPORARY VIEW $globalTempView AS SELECT * FROM $table"))
+
+      doAs(
+        "admin",
+        sql(s"CREATE OR REPLACE GLOBAL TEMPORARY VIEW $globalTempView" +
+          s" AS select * from $table"))
+    }
+  }
+
+  test("[KYUUBI #3343] check persisted view creation") {
     val table = "hive_src"
     val permView = "perm_view"
 
     withCleanTmpResources(Seq((table, "table"))) {
       doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
-      doAs("admin", sql(s"CREATE VIEW $permView AS select * from $table"))
+
+      doAs("admin", sql(s"CREATE VIEW admin_perm_view AS SELECT * FROM $table"))
 
       val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"SELECT * FROM $permView").queryExecution.optimizedPlan))
-      if (isSparkV31OrGreater) {
-        // View.isTempView since Spark 3.1
-        assert(e1.getMessage.contains(
-          s"does not have [select] privilege on [default/$permView/id]"))
+        doAs("someone", sql(s"CREATE VIEW $permView AS SELECT 1 as a")))
+      assert(e1.getMessage.contains(s"does not have [create] privilege on [default/$permView]"))
+
+      val e2 = intercept[AccessControlException](
+        doAs("someone", sql(s"CREATE VIEW $permView AS SELECT * FROM $table")))
+      if (isSparkV32OrGreater) {
+        assert(e2.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
       } else {
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
+        assert(e2.getMessage.contains(s"does not have [select] privilege on [$table]"))
       }
     }
   }
