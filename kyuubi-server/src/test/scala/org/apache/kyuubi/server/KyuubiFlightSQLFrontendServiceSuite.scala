@@ -38,7 +38,7 @@ class KyuubiFlightSQLFrontendServiceSuite extends KyuubiFunSuite {
     assert(server.getServiceState === INITIALIZED)
     val frontendService = server.frontendServices.head
     assert(frontendService.getServiceState == INITIALIZED)
-    assert(server.frontendServices.head.connectionUrl.split(":").length === 2)
+    assert(server.frontendServices.head.connectionUrl.split(":").length === 3)
     assert(server.getConf === conf)
     assert(server.getStartTime === 0)
     server.stop()
