@@ -205,6 +205,28 @@ private[kyuubi] class EngineRef(
             throw error
           }
         }
+
+        // even the submit process succeeds, the application might meet failure when initializing,
+        // check the engine application state from engine manager and fast fail on engine terminate
+        if (exitValue == Some(0)) {
+          Option(engineManager).foreach { engineMgr =>
+            engineMgr.getApplicationInfo(builder.clusterManager(), engineRefId).foreach { appInfo =>
+              if (ApplicationState.isTerminated(appInfo.state)) {
+                MetricsSystem.tracing { ms =>
+                  ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
+                  ms.incCount(MetricRegistry.name(ENGINE_FAIL, "ENGINE_TERMINATE"))
+                }
+                throw new KyuubiSQLException(
+                  s"""
+                     |The engine application has been terminated. Please check the engine log.
+                     |ApplicationInfo: ${appInfo.toMap.mkString("(\n", ",\n", "\n)")}
+                     |""".stripMargin,
+                  builder.getError)
+              }
+            }
+          }
+        }
+
         if (started + timeout <= System.currentTimeMillis()) {
           val killMessage = engineManager.killApplication(builder.clusterManager(), engineRefId)
           process.destroyForcibly()
