@@ -29,6 +29,7 @@ import scala.util.matching.Regex
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
+import org.apache.kyuubi.operation.{NoneMode, PlainStyle}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
@@ -1637,26 +1638,6 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  object OperationModes extends Enumeration with Logging {
-    type OperationMode = Value
-    val PARSE, ANALYZE, OPTIMIZE, OPTIMIZE_WITH_STATS, PHYSICAL, EXECUTION, NONE, UNKNOWN = Value
-
-    def apply(mode: String): OperationMode = {
-      mode.toUpperCase(Locale.ROOT) match {
-        case "PARSE" => PARSE
-        case "ANALYZE" => ANALYZE
-        case "OPTIMIZE" => OPTIMIZE
-        case "OPTIMIZE_WITH_STATS" => OPTIMIZE_WITH_STATS
-        case "PHYSICAL" => PHYSICAL
-        case "EXECUTION" => EXECUTION
-        case "NONE" => NONE
-        case other =>
-          warn(s"Unsupported operation mode: $mode, using UNKNOWN instead")
-          UNKNOWN
-      }
-    }
-  }
-
   val OPERATION_PLAN_ONLY_MODE: ConfigEntry[String] =
     buildConf("kyuubi.operation.plan.only.mode")
       .doc("Configures the statement performed mode, The value can be 'parse', 'analyze', " +
@@ -1669,26 +1650,19 @@ object KyuubiConf {
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValue(
-        mode => OperationModes.values.map(_.toString).contains(mode),
+        mode =>
+          Set(
+            "PARSE",
+            "ANALYZE",
+            "OPTIMIZE",
+            "OPTIMIZE_WITH_STATS",
+            "PHYSICAL",
+            "EXECUTION",
+            "NONE").contains(mode),
         "Invalid value for 'kyuubi.operation.plan.only.mode'. Valid values are" +
-          "'parse', 'analyze', 'optimize', 'optimize_with_stats', 'physical', 'execution' " +
-          "and 'none'.")
-      .createWithDefault(OperationModes.NONE.toString)
-
-  object PlanOnlyStyles extends Enumeration with Logging {
-    type PlanOnlyStyle = Value
-    val PLAIN, JSON, UNKNOWN = Value
-
-    def apply(mode: String): PlanOnlyStyle = {
-      mode.toUpperCase(Locale.ROOT) match {
-        case "PLAIN" => PLAIN
-        case "JSON" => JSON
-        case other =>
-          warn(s"Unsupported plan only style: $mode, using UNKNOWN instead")
-          UNKNOWN
-      }
-    }
-  }
+          "'parse', 'analyze', 'optimize', 'optimize_with_stats', 'physical', 'execution' and " +
+          "'none'.")
+      .createWithDefault(NoneMode.name)
 
   val OPERATION_PLAN_ONLY_OUT_STYLE: ConfigEntry[String] =
     buildConf("kyuubi.operation.plan.only.output.style")
@@ -1701,7 +1675,7 @@ object KyuubiConf {
         mode => Set("PLAIN", "JSON").contains(mode),
         "Invalid value for 'kyuubi.operation.plan.only.output.style'. Valid values are " +
           "'plain', 'json'.")
-      .createWithDefault(PlanOnlyStyles.PLAIN.toString)
+      .createWithDefault(PlainStyle.name)
 
   val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.operation.plan.only.excludes")

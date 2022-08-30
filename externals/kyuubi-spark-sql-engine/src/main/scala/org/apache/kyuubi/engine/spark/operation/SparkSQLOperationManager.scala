@@ -23,18 +23,17 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiConf.OperationModes._
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{Operation, OperationManager}
+import org.apache.kyuubi.operation.{NoneMode, Operation, OperationManager, PlanOnlyMode}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
 class SparkSQLOperationManager private (name: String) extends OperationManager(name) {
 
   def this() = this(classOf[SparkSQLOperationManager].getSimpleName)
 
-  private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY_MODE)
+  private lazy val planOnlyModeDefault = getConf.get(OPERATION_PLAN_ONLY_MODE)
   private lazy val operationIncrementalCollectDefault = getConf.get(OPERATION_INCREMENTAL_COLLECT)
   private lazy val operationLanguageDefault = getConf.get(OPERATION_LANGUAGE)
   private lazy val operationConvertCatalogDatabaseDefault =
@@ -67,11 +66,13 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     val operation =
       lang match {
         case OperationLanguages.SQL =>
-          val mode =
-            OperationModes(spark.conf.get(OPERATION_PLAN_ONLY_MODE.key, operationModeDefault))
-          spark.conf.set(OPERATION_PLAN_ONLY_MODE.key, mode.toString)
+          val mode = PlanOnlyMode.fromString(spark.conf.get(
+            OPERATION_PLAN_ONLY_MODE.key,
+            planOnlyModeDefault))
+
+          spark.conf.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
           mode match {
-            case NONE =>
+            case NoneMode =>
               val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)
                 .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)
               new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)

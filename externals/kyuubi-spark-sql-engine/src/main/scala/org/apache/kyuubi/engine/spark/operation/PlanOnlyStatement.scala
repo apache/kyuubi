@@ -23,10 +23,10 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE, PlanOnlyStyles}
-import org.apache.kyuubi.config.KyuubiConf.OperationModes._
-import org.apache.kyuubi.config.KyuubiConf.PlanOnlyStyles.{JSON, PLAIN}
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator}
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE}
+import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
+import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
+import org.apache.kyuubi.operation.PlanOnlyStyle.{notSupportedStyleError, unknownStyleError}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -36,7 +36,7 @@ import org.apache.kyuubi.session.Session
 class PlanOnlyStatement(
     session: Session,
     override val statement: String,
-    mode: OperationMode)
+    mode: PlanOnlyMode)
   extends SparkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
@@ -45,10 +45,10 @@ class PlanOnlyStatement(
       .getOrElse(session.sessionManager.getConf.get(OPERATION_PLAN_ONLY_EXCLUDES))
   }
 
-  private val style = PlanOnlyStyles(spark.conf.get(
+  private val style = PlanOnlyStyle.fromString(spark.conf.get(
     OPERATION_PLAN_ONLY_OUT_STYLE.key,
     session.sessionManager.getConf.get(OPERATION_PLAN_ONLY_OUT_STYLE)))
-  spark.conf.set(OPERATION_PLAN_ONLY_OUT_STYLE.key, style.toString)
+  spark.conf.set(OPERATION_PLAN_ONLY_OUT_STYLE.key, style.name)
 
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
@@ -64,16 +64,17 @@ class PlanOnlyStatement(
     try {
       SQLConf.withExistingConf(spark.sessionState.conf) {
         val parsed = spark.sessionState.sqlParser.parsePlan(statement)
+
         parsed match {
           case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
             result = spark.sql(statement)
             iter = new ArrayFetchIterator(result.collect())
 
           case plan => style match {
-              case PLAIN => explainWithPlainStyle(plan)
-              case JSON => explainWithJsonStyle(plan)
-              case _ => throw KyuubiSQLException(s"The plan only style $style" +
-                  " doesn't support in Spark SQL engine.")
+              case PlainStyle => explainWithPlainStyle(plan)
+              case JsonStyle => explainWithJsonStyle(plan)
+              case UnknownStyle => unknownStyleError(style)
+              case other => throw notSupportedStyleError(other, "Spark SQL")
             }
         }
       }
@@ -84,18 +85,18 @@ class PlanOnlyStatement(
 
   private def explainWithPlainStyle(plan: LogicalPlan): Unit = {
     mode match {
-      case PARSE =>
+      case ParseMode =>
         iter = new IterableFetchIterator(Seq(Row(plan.toString())))
-      case ANALYZE =>
+      case AnalyzeMode =>
         val analyzed = spark.sessionState.analyzer.execute(plan)
         spark.sessionState.analyzer.checkAnalysis(analyzed)
         iter = new IterableFetchIterator(Seq(Row(analyzed.toString())))
-      case OPTIMIZE =>
+      case OptimizeMode =>
         val analyzed = spark.sessionState.analyzer.execute(plan)
         spark.sessionState.analyzer.checkAnalysis(analyzed)
         val optimized = spark.sessionState.optimizer.execute(analyzed)
         iter = new IterableFetchIterator(Seq(Row(optimized.toString())))
-      case OPTIMIZE_WITH_STATS =>
+      case OptimizeWithStatsMode =>
         val analyzed = spark.sessionState.analyzer.execute(plan)
         spark.sessionState.analyzer.checkAnalysis(analyzed)
         val optimized = spark.sessionState.optimizer.execute(analyzed)
@@ -105,41 +106,40 @@ class PlanOnlyStatement(
           addSuffix = true,
           SQLConf.get.maxToStringFields,
           printOperatorId = false))))
-      case PHYSICAL =>
+      case PhysicalMode =>
         val physical = spark.sql(statement).queryExecution.sparkPlan
         iter = new IterableFetchIterator(Seq(Row(physical.toString())))
-      case EXECUTION =>
+      case ExecutionMode =>
         val executed = spark.sql(statement).queryExecution.executedPlan
         iter = new IterableFetchIterator(Seq(Row(executed.toString())))
-      case _ =>
-        throw KyuubiSQLException(s"The operation mode $mode" +
-          " doesn't support in Spark SQL engine.")
+      case UnknownMode => throw unknownModeError(mode)
+      case _ => throw notSupportedModeError(mode, "Spark SQL")
     }
   }
 
   private def explainWithJsonStyle(plan: LogicalPlan): Unit = {
     mode match {
-      case PARSE =>
+      case ParseMode =>
         iter = new IterableFetchIterator(Seq(Row(plan.toJSON)))
-      case ANALYZE =>
+      case AnalyzeMode =>
         val analyzed = spark.sessionState.analyzer.execute(plan)
         spark.sessionState.analyzer.checkAnalysis(analyzed)
         iter = new IterableFetchIterator(Seq(Row(analyzed.toJSON)))
-      case OPTIMIZE | OPTIMIZE_WITH_STATS =>
+      case OptimizeMode | OptimizeWithStatsMode =>
         val analyzed = spark.sessionState.analyzer.execute(plan)
         spark.sessionState.analyzer.checkAnalysis(analyzed)
         val optimized = spark.sessionState.optimizer.execute(analyzed)
         iter = new IterableFetchIterator(Seq(Row(optimized.toJSON)))
-      case PHYSICAL =>
+      case PhysicalMode =>
         val physical = spark.sql(statement).queryExecution.sparkPlan
         iter = new IterableFetchIterator(Seq(Row(physical.toJSON)))
-      case EXECUTION =>
+      case ExecutionMode =>
         val executed = spark.sql(statement).queryExecution.executedPlan
         iter = new IterableFetchIterator(Seq(Row(executed.toJSON)))
+      case UnknownMode => throw unknownModeError(mode)
       case _ =>
         throw KyuubiSQLException(s"The operation mode $mode" +
           " doesn't support in Spark SQL engine.")
     }
   }
-
 }

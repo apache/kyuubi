@@ -17,19 +17,18 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{SQLException, Statement}
+import java.sql.Statement
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.OperationModes._
-import org.apache.kyuubi.config.KyuubiConf.PlanOnlyStyles.{JSON, PLAIN}
+import org.apache.kyuubi.jdbc.hive.KyuubiSQLException
 
 class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
-      .set(KyuubiConf.OPERATION_PLAN_ONLY_MODE, OPTIMIZE.toString)
+      .set(KyuubiConf.OPERATION_PLAN_ONLY_MODE, OptimizeMode.name)
       .set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "plan-only")
   }
 
@@ -43,7 +42,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1059: Plan only operation with session conf") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ANALYZE.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> AnalyzeMode.name))(Map.empty) {
       withJdbcStatement() { statement =>
         val operationPlan = getOperationPlanWithStatement(statement)
         assert(operationPlan.startsWith("Project") && operationPlan.contains("Filter"))
@@ -52,9 +51,9 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1059: Plan only operation with set command") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ANALYZE.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> AnalyzeMode.name))(Map.empty) {
       withJdbcStatement() { statement =>
-        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=$PARSE")
+        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${ParseMode.name}")
         val operationPlan = getOperationPlanWithStatement(statement)
         assert(operationPlan.startsWith("'Project"))
       }
@@ -62,7 +61,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1919: Plan only operation with PHYSICAL mode") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PHYSICAL.toString))(
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PhysicalMode.name))(
       Map.empty) {
       withJdbcStatement() { statement =>
         val operationPlan = getOperationPlanWithStatement(statement)
@@ -72,7 +71,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1919: Plan only operation with EXECUTION mode") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> EXECUTION.toString))(
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ExecutionMode.name))(
       Map.empty) {
       withJdbcStatement() { statement =>
         val operationPlan = getOperationPlanWithStatement(statement)
@@ -83,10 +82,10 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1920: Plan only operations with UseStatement or SetNamespaceCommand") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> NONE.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name))(Map.empty) {
       withDatabases("test_database") { statement =>
         statement.execute("create database test_database")
-        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=$OPTIMIZE")
+        statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${OptimizeMode.name}")
         val result = statement.executeQuery("use test_database")
         assert(!result.next(), "In contrast to PlanOnly mode, it will returns an empty result")
       }
@@ -105,7 +104,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("kyuubi #2565: Variable substitution should work in plan only mode") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PARSE.toString))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ParseMode.name))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.executeQuery("set x = y")
         val resultSet = statement.executeQuery("select '${x}'")
@@ -116,7 +115,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #3128: Support CostMode for PlanOnlyStatement") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> OPTIMIZE_WITH_STATS.toString))(
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> OptimizeWithStatsMode.name))(
       Map.empty) {
       withJdbcStatement() { statement =>
         val resultSet = statement.executeQuery(
@@ -131,9 +130,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   test("KYUUBI #3376 : Spark physical Plan outputs in plain style") {
     withSessionConf()(Map(
-      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PHYSICAL.toString,
-      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> PLAIN.toString))(
-      Map.empty) {
+      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PhysicalMode.name,
+      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> PlainStyle.name))() {
       withJdbcStatement() { statement =>
         val resultSet = statement.executeQuery(
           "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1")
@@ -146,9 +144,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   test("KYUUBI #3376 : Spark physical Plan outputs in json style") {
     withSessionConf()(Map(
-      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PHYSICAL.toString,
-      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> JSON.toString))(
-      Map.empty) {
+      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PhysicalMode.name,
+      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> JsonStyle.name))() {
       withJdbcStatement() { statement =>
         val resultSet = statement.executeQuery(
           "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1")
@@ -162,9 +159,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   test("KYUUBI #3376 : Spark optimized Plan outputs in json style") {
     withSessionConf()(Map(
-      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> OPTIMIZE.toString,
-      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> JSON.toString))(
-      Map.empty) {
+      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> OptimizeMode.name,
+      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> JsonStyle.name))() {
       withJdbcStatement() { statement =>
         val resultSet = statement.executeQuery(
           "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1")
@@ -178,9 +174,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   test("KYUUBI #3376 : Spark parse Plan outputs in json style") {
     withSessionConf()(Map(
-      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PARSE.toString,
-      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> JSON.toString))(
-      Map.empty) {
+      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ParseMode.name,
+      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> JsonStyle.name))() {
       withJdbcStatement() { statement =>
         val resultSet = statement.executeQuery(
           "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1")
@@ -196,8 +191,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "parse"))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=parser")
-        val e = intercept[SQLException](statement.executeQuery("select 1"))
-        assert(e.getMessage.contains("The operation mode UNKNOWN doesn't support"))
+        val e = intercept[KyuubiSQLException](statement.executeQuery("select 1"))
+        assert(e.getMessage.contains("Unknown planOnly mode: parser"))
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=parse")
         val result = statement.executeQuery("select 1")
         assert(result.next())

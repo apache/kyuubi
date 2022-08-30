@@ -20,9 +20,9 @@ package org.apache.kyuubi.engine.flink.operation
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.operations.command._
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.OperationModes._
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil
+import org.apache.kyuubi.operation.{ExecutionMode, ParseMode, PhysicalMode, PlanOnlyMode, UnknownMode}
+import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -32,7 +32,7 @@ import org.apache.kyuubi.session.Session
 class PlanOnlyStatement(
     session: Session,
     override val statement: String,
-    mode: OperationMode) extends FlinkOperation(session) {
+    mode: PlanOnlyMode) extends FlinkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   private val lineSeparator: String = System.lineSeparator()
@@ -64,13 +64,13 @@ class PlanOnlyStatement(
     val explainPlans =
       tableEnv.explainSql(statement).split(s"$lineSeparator$lineSeparator")
     val operationPlan = mode match {
-      case PARSE => explainPlans(0).split(s"== Abstract Syntax Tree ==$lineSeparator")(1)
-      case PHYSICAL =>
+      case ParseMode => explainPlans(0).split(s"== Abstract Syntax Tree ==$lineSeparator")(1)
+      case PhysicalMode =>
         explainPlans(1).split(s"== Optimized Physical Plan ==$lineSeparator")(1)
-      case EXECUTION =>
+      case ExecutionMode =>
         explainPlans(2).split(s"== Optimized Execution Plan ==$lineSeparator")(1)
-      case _ =>
-        throw KyuubiSQLException(s"The operation mode $mode doesn't support in Flink SQL engine.")
+      case UnknownMode => throw unknownModeError(mode)
+      case _ => throw notSupportedModeError(mode, "Flink SQL")
     }
     resultSet =
       ResultSetUtil.stringListToResultSet(
