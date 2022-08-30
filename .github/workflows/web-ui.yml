@@ -21,14 +21,13 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      # from https://github.com/marketplace/actions/setup-node-js-environment
-      - name: setup npm
-        uses: actions/setup-node@v3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2.2.2
         with:
-          node-version: 16
+          version: 6.24.1
       - name: npm run coverage & build
-        run: >-
-          cd ./kyuubi-server/web-ui &&
-          npm install &&
-          npm run coverage &&
-          npm run build
+        run: ｜
+          cd ./kyuubi-server/web-ui
+          pnpm install
+          pnpm run coverage
+          pnpm run build
