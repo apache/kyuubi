@@ -17,8 +17,13 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import java.util
+
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.commons.collections.CollectionUtils
+import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -72,22 +77,34 @@ object RuleAuthorization {
       val resource = request.getResource.asInstanceOf[AccessResource]
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
-          resource.getColumns.foreach { col =>
+          val reqs = resource.getColumns.map { col =>
             val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
-            val req = AccessRequest(cr, ugi, opType, request.accessType)
-            verify(req, auditHandler)
-          }
-        case _ => verify(request, auditHandler)
+            AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
+          }.asJava
+          verify(reqs, auditHandler)
+        case _ => verify(util.Collections.singletonList(request), auditHandler)
       }
     }
   }
 
-  private def verify(req: AccessRequest, auditHandler: SparkRangerAuditHandler): Unit = {
-    val ret = SparkRangerAdminPlugin.isAccessAllowed(req, auditHandler)
-    if (ret != null && !ret.getIsAllowed) {
-      throw new AccessControlException(
-        s"Permission denied: user [${req.getUser}] does not have [${req.getAccessType}] privilege" +
-          s" on [${req.getResource.getAsString}]")
+  @throws[AccessControlException]
+  private def verify(
+      requests: util.List[RangerAccessRequest],
+      auditHandler: SparkRangerAuditHandler): Unit = {
+    if (CollectionUtils.isEmpty(requests)) {
+      return
+    }
+
+    val results = SparkRangerAdminPlugin.isAccessAllowed(requests, auditHandler)
+    if (CollectionUtils.isNotEmpty(results)) {
+      requests.asScala.zip(results.asScala).foreach {
+        case (req, result) =>
+          if (result != null && !result.getIsAllowed) {
+            throw new AccessControlException(
+              s"Permission denied: user [${req.getUser}] does not have [${req.getAccessType}]" +
+                s" privilege on [${req.getResource.getAsString}]")
+          }
+      }
     }
   }
 }
