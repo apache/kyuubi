@@ -63,7 +63,7 @@ jobs:
         with:
           node-version: 16
       - name: Web UI Style with node
-        run: ｜
+        run: |
           cd ./kyuubi-server/web-ui
           npm install pnpm -g
           pnpm install
