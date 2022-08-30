@@ -351,7 +351,7 @@ kyuubi.ha.zookeeper.session.timeout|60000|The timeout(ms) of a connected session
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-kyuubi.hive.engine.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.6.0
+kyuubi.engine.hive.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.6.0
 
 
 ### Kinit
@@ -487,7 +487,7 @@ kyuubi.spnego.principal|&lt;undefined&gt;|SPNego service principal, typical valu
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-kyuubi.trino.engine.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.6.0
+kyuubi.engine.trino.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.6.0
 
 
 ### Zookeeper
