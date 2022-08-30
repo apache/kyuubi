@@ -517,7 +517,6 @@ object PrivilegesBuilder {
         val databases = getFieldVal[Seq[String]](resolvedNamespace, "namespace")
         outputObjs += databasePrivileges(quote(databases))
 
-
       case "ReplaceArcticData" =>
         val relation = getPlanField[Any]("table")
         val identifier = getFieldVal[AnyRef](relation, "identifier")
