@@ -1341,6 +1341,55 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_TRINO_CONNECTION_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.connection.password")
+      .doc("The password used for connecting to trino cluster")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_KEYSTORE_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.connection.keystore.path")
+      .doc("The keystore path used for connecting to trino cluster")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.connection.keystore.password")
+      .doc("The keystore password used for connecting to trino cluster")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_KEYSTORE_TYPE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.connection.keystore.type")
+      .doc("The keystore type used for connecting to trino cluster")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_TRUSTSTORE_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.connection.truststore.path")
+      .doc("The truststore path used for connecting to trino cluster")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.connection.truststore.password")
+      .doc("The truststore password used for connecting to trino cluster")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_TRUSTSTORE_TYPE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.connection.truststore.type")
+      .doc("The truststore type used for connecting to trino cluster")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_TRINO_SHOW_PROGRESS: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.trino.showProgress")
       .doc("When true, show the progress bar and final info in the Trino engine log.")

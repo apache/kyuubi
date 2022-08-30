@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit
 
 import io.airlift.units.Duration
 import io.trino.client.ClientSession
+import io.trino.client.OkHttpUtil.basicAuth
+import io.trino.client.OkHttpUtil.setupSsl
 import okhttp3.OkHttpClient
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
@@ -66,14 +68,48 @@ class TrinoSessionImpl(
       case (USE_CATALOG, catalog) => catalogName = catalog
       case (USE_DATABASE, database) => databaseName = database
     }
-
-    val httpClient = new OkHttpClient.Builder().build()
-
     clientSession = createClientSession()
+    val sessionConf = sessionManager.getConf
+    val httpClient = createHttpClient(sessionConf, clientSession, user)
     trinoContext = TrinoContext(httpClient, clientSession)
 
     super.open()
     EventBus.post(sessionEvent)
+  }
+
+  private def createHttpClient(
+      sessionConf: KyuubiConf,
+      session: ClientSession,
+      user: String): OkHttpClient = {
+    val password = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_PASSWORD)
+    val keystorePath = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_PATH)
+    val keystorePassword = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD)
+    val keystoreType = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_TYPE)
+    val truststorePath = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_PATH)
+    val truststorePassword = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD)
+    val truststoreType = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_TYPE)
+
+    val serverScheme = session.getServer.getScheme
+
+    val builder = new OkHttpClient.Builder()
+
+    setupSsl(
+      builder,
+      Optional.ofNullable(keystorePath.orNull),
+      Optional.ofNullable(keystorePassword.orNull),
+      Optional.ofNullable(keystoreType.orNull),
+      Optional.ofNullable(truststorePath.orNull),
+      Optional.ofNullable(truststorePassword.orNull),
+      Optional.ofNullable(truststoreType.orNull))
+
+    if (password.isDefined) {
+      require(
+        serverScheme.equalsIgnoreCase("https"),
+        "Trino engine using username/password requires HTTPS to be enabled")
+      builder.addInterceptor(basicAuth(user, password.get))
+    }
+
+    builder.build()
   }
 
   private def createClientSession(): ClientSession = {
