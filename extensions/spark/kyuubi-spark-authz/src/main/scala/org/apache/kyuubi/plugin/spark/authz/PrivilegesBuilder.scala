@@ -517,6 +517,19 @@ object PrivilegesBuilder {
         val databases = getFieldVal[Seq[String]](resolvedNamespace, "namespace")
         outputObjs += databasePrivileges(quote(databases))
 
+
+      case "ReplaceArcticData" =>
+        val relation = getPlanField[Any]("table")
+        val identifier = getFieldVal[AnyRef](relation, "identifier")
+        val namespace = invoke(identifier, "namespace").asInstanceOf[Array[String]]
+        val table = invoke(identifier, "name").asInstanceOf[String]
+        outputObjs += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.UPDATE,
+          quote(namespace),
+          table,
+          Nil)
+
       case _ =>
       // AddArchivesCommand
       // AddFileCommand
