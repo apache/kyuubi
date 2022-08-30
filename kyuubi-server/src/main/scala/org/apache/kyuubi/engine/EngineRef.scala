@@ -206,6 +206,8 @@ private[kyuubi] class EngineRef(
           }
         }
 
+        // even the submit process succeeds, the application might meet failure when initializing,
+        // check the engine application state from engine manager and fast fail on engine terminate
         if (exitValue == Some(0)) {
           Option(engineManager).foreach { engineMgr =>
             engineMgr.getApplicationInfo(builder.clusterManager(), engineRefId).foreach { appInfo =>
