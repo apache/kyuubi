@@ -32,7 +32,7 @@ class KyuubiServiceDiscovery(
     if (!isServerLost.get()) {
       discoveryClient.deregisterService()
       discoveryClient.closeClient()
-      gracefulShutdownLatch.await() // wait for graceful shutdown triggered by watcher
+      // TODO gracefulShutdownLatch.await() // wait for graceful shutdown triggered by watcher
     } else {
       warn(s"The Zookeeper ensemble is LOST")
     }

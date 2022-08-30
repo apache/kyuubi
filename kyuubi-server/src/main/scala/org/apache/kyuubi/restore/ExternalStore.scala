@@ -25,6 +25,7 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.restore.kvstore.KVStore
 import org.apache.kyuubi.restore.operation.{RestoredExecuteStatement, RestoredKyuubiOperation}
 import org.apache.kyuubi.restore.session.RestoredKyuubiSessionImpl
+import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 
 abstract class ExternalStore[T, E <: StoreEntity](store: KVStore) {
@@ -44,25 +45,25 @@ abstract class ExternalStore[T, E <: StoreEntity](store: KVStore) {
 
   def remove(key: String): Unit = {
     store.remove(key)
-    store.remove(s"${key}__HANDLER_SERVER__")
+    store.remove(getHoldKey(key))
   }
 
   protected def entity(value: T): E
 
   protected def restore(key: String, e: E): T
 
-  private lazy val handlerServerId: String = {
-    // TODO get server instance
-    ""
-  }
+  private lazy val serverId: String =
+    KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
+
+  def getHoldKey(key: String): String = s"${key}__${serverId}__HANDLER_SERVER__"
 
   def isHold(key: String): Boolean = {
-    val handler = store.get[String](s"${key}__HANDLER_SERVER__", classOf[String])
-    handler.isEmpty || handler.get.equals(handlerServerId)
+    val handler = store.get[String](getHoldKey(key), classOf[String])
+    handler.isDefined
   }
 
   private def markHoldServer(key: String): Unit = {
-    store.set(s"${key}__HANDLER_SERVER__", handlerServerId)
+    store.set(getHoldKey(key), "")
   }
 }
 

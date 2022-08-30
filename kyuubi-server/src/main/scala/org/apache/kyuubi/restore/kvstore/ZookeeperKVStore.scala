@@ -18,6 +18,7 @@ package org.apache.kyuubi.restore.kvstore
 
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.utils.ZKPaths
+import org.apache.zookeeper.{CreateMode, KeeperException}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,8 +30,12 @@ class ZookeeperKVStore(conf: KyuubiConf) extends KVStore with Logging {
   private val zkClient: CuratorFramework = buildZookeeperClient(conf)
 
   override def get[T](key: String, klass: Class[T]): Option[T] = {
-    val data = zkClient.getData()
-      .forPath(getPath(key))
+    val data = try {
+      zkClient.getData()
+        .forPath(getPath(key))
+    } catch {
+      case _: KeeperException.NoNodeException => null
+    }
     if (data != null) {
       try {
         Some(serializer.deserialize[T](data, klass))
@@ -47,20 +52,39 @@ class ZookeeperKVStore(conf: KyuubiConf) extends KVStore with Logging {
   override def set(key: String, value: Any): Unit = {
     // TODO TTL
     val data = serializer.serialize(value)
-    zkClient.create()
-      .creatingParentsIfNeeded()
-      .forPath(getPath(key), data)
+    if (isEphemeralNode(key)) {
+      zkClient.create()
+        .creatingParentsIfNeeded()
+        .withMode(CreateMode.EPHEMERAL)
+        .forPath(getPath(key), data)
+    } else {
+      zkClient.create()
+        .creatingParentsIfNeeded()
+        .withMode(CreateMode.PERSISTENT)
+        .forPath(getPath(key), data)
+    }
   }
 
   override def remove(key: String): Unit = {
-    zkClient.delete()
-      .forPath(getPath(key))
+    try {
+      zkClient.delete()
+        .forPath(getPath(key))
+    } catch {
+      case _: KeeperException.NoNodeException =>
+    }
   }
 
   // TODO add conf entry and subdirectories of kyuubi.ha.namespace
   private val storeNamespace = conf.getOption("kyuubi.store.namespace").getOrElse("/kyuubi_store")
   private def getPath(key: String): String = {
     ZKPaths.makePath(storeNamespace, key)
+  }
+
+  private def isEphemeralNode(key: String): Boolean = {
+    key.toUpperCase match {
+      case s if s.endsWith("__HANDLER_SERVER__") => true
+      case _ => false
+    }
   }
 }
 

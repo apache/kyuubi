@@ -26,6 +26,7 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.{Utils, WithMultipleKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.TClientTestUtils
+import org.apache.kyuubi.server.KyuubiServer
 
 class KyuubiSessionRestoreSuite extends WithMultipleKyuubiServer {
 
@@ -36,6 +37,7 @@ class KyuubiSessionRestoreSuite extends WithMultipleKyuubiServer {
     val server2Url = getConnectionUrl(1)
     assert(server1Url !== server2Url)
     var sessionHandle: TSessionHandle = null
+    KyuubiServer.kyuubiServer = servers(0)
     TClientTestUtils.withThriftClient(server1Url) { client =>
       val conf = Map("kyuubi.session.engine.launch.async" -> "false")
       val req = new TOpenSessionReq()
@@ -46,6 +48,7 @@ class KyuubiSessionRestoreSuite extends WithMultipleKyuubiServer {
       sessionHandle = resp.getSessionHandle()
       servers(0).stop()
     }
+    KyuubiServer.kyuubiServer = servers(1)
     assert(sessionHandle != null)
     TClientTestUtils.withThriftClient(server2Url) { client =>
       val req = new TGetInfoReq(sessionHandle, TGetInfoType.CLI_SERVER_NAME)
@@ -77,6 +80,7 @@ class KyuubiSessionRestoreSuite extends WithMultipleKyuubiServer {
     assert(server1Url !== server2Url)
     var sessionHandle: TSessionHandle = null
     var operationHandle: TOperationHandle = null
+    KyuubiServer.kyuubiServer = servers(0)
     TClientTestUtils.withThriftClient(server1Url) { client =>
       val conf = Map("kyuubi.session.engine.launch.async" -> "false")
       val req = new TOpenSessionReq()
@@ -95,6 +99,7 @@ class KyuubiSessionRestoreSuite extends WithMultipleKyuubiServer {
 
       servers(0).stop()
     }
+    KyuubiServer.kyuubiServer = servers(1)
     assert(sessionHandle != null)
     assert(operationHandle != null)
     TClientTestUtils.withThriftClient(server2Url) { client =>
@@ -116,6 +121,7 @@ class KyuubiSessionRestoreSuite extends WithMultipleKyuubiServer {
     assert(server1Url !== server2Url)
     var sessionHandle: TSessionHandle = null
     var operationHandle: TOperationHandle = null
+    KyuubiServer.kyuubiServer = servers(0)
     TClientTestUtils.withThriftClient(server1Url) { client =>
       val conf = Map("kyuubi.session.engine.launch.async" -> "false")
       val req = new TOpenSessionReq()
@@ -137,6 +143,7 @@ class KyuubiSessionRestoreSuite extends WithMultipleKyuubiServer {
 
       servers(0).stop()
     }
+    KyuubiServer.kyuubiServer = servers(1)
     assert(sessionHandle != null)
     assert(operationHandle != null)
     TClientTestUtils.withThriftClient(server2Url) { client =>
@@ -164,6 +171,7 @@ class KyuubiSessionRestoreSuite extends WithMultipleKyuubiServer {
     assert(server1Url !== server2Url)
     var sessionHandle: TSessionHandle = null
     var operationHandle: TOperationHandle = null
+    KyuubiServer.kyuubiServer = servers(0)
     TClientTestUtils.withThriftClient(server1Url) { client =>
       val conf = Map("kyuubi.session.engine.launch.async" -> "false")
       val req = new TOpenSessionReq()
@@ -185,6 +193,7 @@ class KyuubiSessionRestoreSuite extends WithMultipleKyuubiServer {
 
       servers(0).stop()
     }
+    KyuubiServer.kyuubiServer = servers(1)
     assert(sessionHandle != null)
     assert(operationHandle != null)
     TClientTestUtils.withThriftClient(server2Url) { client =>
