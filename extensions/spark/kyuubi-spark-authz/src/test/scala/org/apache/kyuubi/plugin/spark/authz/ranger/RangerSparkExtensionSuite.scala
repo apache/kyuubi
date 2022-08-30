@@ -35,6 +35,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
+import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.CONF_FULL_ACCESS_CHECK_ENABLE
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
@@ -574,6 +575,47 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       } else {
         assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
       }
+    }
+  }
+
+  test("[KYUUBI #3371] Support full checking all access privileges") {
+    val db1 = "default"
+    val table = "hive_src"
+    val sinkTable = "hive_tgt"
+
+    withCleanTmpResources(Seq(
+      (s"$db1.$table", "table"),
+      (s"$db1.$sinkTable", "table"))) {
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $db1.$table" +
+          s" (id int, name string, city string)"))
+
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $db1.$sinkTable" +
+          s" (id int, name string, city string)"))
+
+      spark.sparkContext.setLocalProperty(CONF_FULL_ACCESS_CHECK_ENABLE, "false")
+      val e1 = intercept[AccessControlException](
+        doAs("someone", sql(s"select * from $db1.$table")).explain)
+      assert(e1.getMessage.contains(s"does not have [select] privilege on" +
+        s" [$db1/$table/id]"))
+
+      spark.sparkContext.setLocalProperty(CONF_FULL_ACCESS_CHECK_ENABLE, "true")
+      val e2 = intercept[AccessControlException](
+        doAs("someone", sql(s"select * from $db1.$table")).explain)
+      assert(e2.getMessage.contains(s"does not have [select] privilege on" +
+        s" [$db1/$table/city,$db1/$table/id,$db1/$table/name]"))
+
+      val e3 = intercept[AccessControlException](
+        doAs(
+          "someone",
+          sql(s"INSERT INTO $sinkTable SELECT * FROM $db1.$table")))
+      assert(e3.getMessage.contains(s"user [someone] does not have" +
+        s" [select] privilege" +
+        s" on [default/hive_src/city,default/hive_src/id,default/hive_src/name]," +
+        s" [update] privilege on [default/hive_tgt]"))
     }
   }
 }
