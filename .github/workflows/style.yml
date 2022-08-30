@@ -58,13 +58,14 @@ jobs:
           done
       - name: JavaStyle with maven
         run: build/mvn spotless:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2.2.2
+      - name: setup npm
+        uses: actions/setup-node@v3
         with:
-          version: 6.24.1
+          node-version: 16
       - name: Web UI Style with node
         run: ｜
           cd ./kyuubi-server/web-ui
+          npm install pnpm -g
           pnpm install
           pnpm run lint
           echo "---------------------------------------Notice------------------------------------"
