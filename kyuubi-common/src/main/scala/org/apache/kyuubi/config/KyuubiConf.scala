@@ -1675,6 +1675,34 @@ object KyuubiConf {
           "and 'none'.")
       .createWithDefault(OperationModes.NONE.toString)
 
+  object PlanOnlyStyles extends Enumeration with Logging {
+    type PlanOnlyStyle = Value
+    val PLAIN, JSON, UNKNOWN = Value
+
+    def apply(mode: String): PlanOnlyStyle = {
+      mode.toUpperCase(Locale.ROOT) match {
+        case "PLAIN" => PLAIN
+        case "JSON" => JSON
+        case other =>
+          warn(s"Unsupported plan only style: $mode, using UNKNOWN instead")
+          UNKNOWN
+      }
+    }
+  }
+
+  val OPERATION_PLAN_ONLY_OUT_STYLE: ConfigEntry[String] =
+    buildConf("kyuubi.operation.plan.only.output.style")
+      .doc("Configures the planOnly output style, The value can be 'plain' and 'json', default " +
+        "value is 'plain', this configuration supports only the output styles of the Spark engine")
+      .version("1.7.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValue(
+        mode => Set("PLAIN", "JSON").contains(mode),
+        "Invalid value for 'kyuubi.operation.plan.only.output.style'. Valid values are " +
+          "'plain', 'json'.")
+      .createWithDefault(PlanOnlyStyles.PLAIN.toString)
+
   val OPERATION_PLAN_ONLY_EXCLUDES: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.operation.plan.only.excludes")
       .doc("Comma-separated list of query plan names, in the form of simple class names, i.e, " +
