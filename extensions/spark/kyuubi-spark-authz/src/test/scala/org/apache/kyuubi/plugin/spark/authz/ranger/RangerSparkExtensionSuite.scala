@@ -596,13 +596,13 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         sql(s"CREATE TABLE IF NOT EXISTS $db1.$sinkTable" +
           s" (id int, name string, city string)"))
 
-      spark.sparkContext.setLocalProperty(CONF_FULL_ACCESS_CHECK_ENABLE, "false")
+      SparkRangerAdminPlugin.getConfig.setBoolean(CONF_FULL_ACCESS_CHECK_ENABLE, false)
       val e1 = intercept[AccessControlException](
         doAs("someone", sql(s"select * from $db1.$table")).explain)
       assert(e1.getMessage.contains(s"does not have [select] privilege on" +
         s" [$db1/$table/id]"))
 
-      spark.sparkContext.setLocalProperty(CONF_FULL_ACCESS_CHECK_ENABLE, "true")
+      SparkRangerAdminPlugin.getConfig.setBoolean(CONF_FULL_ACCESS_CHECK_ENABLE, true)
       val e2 = intercept[AccessControlException](
         doAs("someone", sql(s"select * from $db1.$table")).explain)
       assert(e2.getMessage.contains(s"does not have [select] privilege on" +

@@ -49,7 +49,8 @@ object RuleAuthorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Boolean]("__KYUUBI_AUTHZ_TAG")
 
-  val CONF_FULL_ACCESS_CHECK_ENABLE = "kyuubi.authz.enable.full.access.check"
+  val CONF_FULL_ACCESS_CHECK_ENABLE =
+    s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.enable.full.access.check"
 
   def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
     val auditHandler = new SparkRangerAuditHandler
@@ -89,8 +90,8 @@ object RuleAuthorization {
         case _ => accessReqs += Seq(request)
       }
     }
-    val isEnabledFullAccessCheck = "true".equalsIgnoreCase(
-      spark.sparkContext.getLocalProperty(CONF_FULL_ACCESS_CHECK_ENABLE))
+    val isEnabledFullAccessCheck =
+      SparkRangerAdminPlugin.getConfig.getBoolean(CONF_FULL_ACCESS_CHECK_ENABLE, false)
     if (isEnabledFullAccessCheck) {
       verify(
         accessReqs.toStream.flatMap(_.toStream).asJava,
@@ -114,10 +115,10 @@ object RuleAuthorization {
     }
 
     val results = SparkRangerAdminPlugin.isAccessAllowed(requests, auditHandler)
+
     val disallowedReqs = requests.asScala.zip(results.asScala).filter {
       case (_, result) => result != null && !result.getIsAllowed
     } map { case (req, _) => req }
-
     if (disallowedReqs.isEmpty) {
       return
     }
