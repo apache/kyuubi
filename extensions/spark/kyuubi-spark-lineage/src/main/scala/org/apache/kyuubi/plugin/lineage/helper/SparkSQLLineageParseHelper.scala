@@ -23,7 +23,9 @@ import scala.util.{Failure, Success, Try}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
+import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, TableCatalog}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -75,10 +77,25 @@ trait LineageParser {
     }
   }
 
+  private def getExpressionSubqueryPlans(expression: Expression): Seq[LogicalPlan] = {
+    expression match {
+      case s: ScalarSubquery => Seq(s.plan)
+      case s => s.children.flatMap(getExpressionSubqueryPlans)
+    }
+  }
+
   private def getSelectColumnLineage(
       named: Seq[NamedExpression]): AttributeMap[AttributeSet] = {
     val exps = named.map {
-      case a: Alias => a.toAttribute -> a.references
+      case exp: Alias =>
+        if (exp.references.nonEmpty) exp.toAttribute -> exp.references
+        else {
+          exp.toAttribute ->
+            getExpressionSubqueryPlans(exp.child)
+              .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]()))
+              .foldLeft(ListMap[Attribute, AttributeSet]())(mergeColumnsLineage).values
+              .foldLeft(AttributeSet.empty)(_ ++ _)
+        }
       case a: Attribute => a -> a.references
     }
     ListMap(exps: _*)
@@ -94,6 +111,8 @@ trait LineageParser {
         k -> AttributeSet(attrs.collect {
           case attr if relationAttrSet.contains(attr) =>
             attr.withName(Seq(tableName, attr.name).filter(_.nonEmpty).mkString("."))
+          case attr if attr.name.contains(".") =>
+            attr
         })
       }
     } else {
@@ -220,6 +239,15 @@ trait LineageParser {
         val nextColumnsLineage =
           joinColumnsLineage(parentColumnsLineage, getSelectColumnLineage(p.aggregateExpressions))
         p.children.map(extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
+
+      case p: Join =>
+        p.joinType match {
+          case LeftSemi | LeftAnti =>
+            extractColumnsLineage(p.left, parentColumnsLineage)
+          case _ =>
+            p.children.map(extractColumnsLineage(_, parentColumnsLineage))
+              .reduce(mergeColumnsLineage)
+        }
 
       case p: Union =>
         // merge all children in to one derivedColumns
