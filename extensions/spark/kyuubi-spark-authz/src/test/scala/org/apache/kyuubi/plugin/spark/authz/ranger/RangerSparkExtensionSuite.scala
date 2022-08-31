@@ -35,8 +35,8 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
-import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.CONF_FULL_ACCESS_CHECK_ENABLE
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.CONF_ENABLE_FULL_ACCESS_VIOLATION_MSG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
@@ -596,13 +596,13 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         sql(s"CREATE TABLE IF NOT EXISTS $db1.$sinkTable" +
           s" (id int, name string, city string)"))
 
-      SparkRangerAdminPlugin.getConfig.setBoolean(CONF_FULL_ACCESS_CHECK_ENABLE, false)
+      SparkRangerAdminPlugin.getConfig.setBoolean(CONF_ENABLE_FULL_ACCESS_VIOLATION_MSG, false)
       val e1 = intercept[AccessControlException](
         doAs("someone", sql(s"select * from $db1.$table")).explain)
       assert(e1.getMessage.contains(s"does not have [select] privilege on" +
         s" [$db1/$table/id]"))
 
-      SparkRangerAdminPlugin.getConfig.setBoolean(CONF_FULL_ACCESS_CHECK_ENABLE, true)
+      SparkRangerAdminPlugin.getConfig.setBoolean(CONF_ENABLE_FULL_ACCESS_VIOLATION_MSG, true)
       val e2 = intercept[AccessControlException](
         doAs("someone", sql(s"select * from $db1.$table")).explain)
       assert(e2.getMessage.contains(s"does not have [select] privilege on" +

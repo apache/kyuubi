@@ -17,11 +17,24 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import java.util
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+
+import org.apache.commons.collections.CollectionUtils
+import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
+import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
+
+  val CONF_ENABLE_FULL_ACCESS_VIOLATION_MSG =
+    s"ranger.plugin.${getServiceType}.enable.full.access.violation.msg"
+  val isEnabledFullAccessCheck: () => Boolean =
+    () => getConfig.getBoolean(CONF_ENABLE_FULL_ACCESS_VIOLATION_MSG, false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
     val result = evalRowFilterPolicies(req, null)
@@ -75,5 +88,55 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
     val lower = s"regexp_replace($upper, '[a-z]', 'x'$pos)"
     val digits = s"regexp_replace($lower, '[0-9]', 'n'$pos)"
     digits
+  }
+
+  @throws[AccessControlException]
+  def verify(
+      requests: util.List[RangerAccessRequest],
+      auditHandler: SparkRangerAuditHandler,
+      enabledFullAccessViolationMsg: Boolean): Unit = {
+    if (CollectionUtils.isEmpty(requests)) {
+      return
+    }
+
+    val results = SparkRangerAdminPlugin.isAccessAllowed(requests, auditHandler)
+
+    val disallowedReqs = requests.asScala.zip(results.asScala).filter {
+      case (_, result) => result != null && !result.getIsAllowed
+    } map { case (req, _) => req }
+    if (disallowedReqs.isEmpty) {
+      return
+    }
+
+    if (!enabledFullAccessViolationMsg) {
+      val req = disallowedReqs.headOption.orNull
+      if (req != null) {
+        if (!enabledFullAccessViolationMsg) {
+          throw new AccessControlException(
+            s"Permission denied: user [${req.getUser}]" +
+              s" does not have [${req.getAccessType}]" +
+              s" privilege on [${req.getResource.getAsString}]")
+        }
+      }
+    } else {
+      val accessType2ResMap: mutable.Map[String, mutable.Set[String]] =
+        mutable.SortedMap()
+      disallowedReqs.foreach { req =>
+        {
+          val resourceSet = accessType2ResMap.getOrElseUpdate(
+            req.getAccessType,
+            mutable.SortedSet[String]())
+          resourceSet += req.getResource.getAsString
+        }
+      }
+
+      val user: String = disallowedReqs.head.getUser
+      val privilegeErrorMsg = accessType2ResMap.map {
+        case (accessType, resSet) =>
+          s"[${accessType}] privilege on [${resSet.mkString(",")}]"
+      }.mkString(", ")
+      throw new AccessControlException(
+        s"Permission denied: user [${user}] does not have ${privilegeErrorMsg}")
+    }
   }
 }
