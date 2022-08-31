@@ -26,6 +26,7 @@
 
 set -o pipefail
 set -e
+set -x
 
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 DISTDIR="$KYUUBI_HOME/dist"
