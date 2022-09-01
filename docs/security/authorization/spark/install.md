@@ -93,13 +93,13 @@ Macros are now supported for using user/group/tag in row filter expressions, int
 ```
 
 ##### Checking all required Access privileges
-By default, Authz plugin checks required privileges one by one and throw the first unsatisfied privilege in exception message. By adding the following config `ranger.plugin.spark.enable.full.access.check`, full access checking for all privileges is enabled and it collects all unsatisfied privileges on related resources in exception message.
+By default, Authz plugin checks required privileges one by one and throw the first unsatisfied privilege in exception. Setting `ranger.plugin.spark.enable.full.access.check` to enable access checking in one single call and all disallowed privileges will be thrown in exception message.
 ```xml
     <property>
-        <name>ranger.plugin.spark.enable.full.access.check</name>
+        <name>ranger.plugin.plugin.authorize.in.single.call</name>
         <value>true</value>
-        <description>Enable access checking for all privileges required by the query. Default value is false.</description>
-    </property>    
+        <description>Enable access checks in single call and showing all disallowed privileges in exception. Default value is false.</description>
+    </property>
 ```
 
 #### ranger-spark-audit.xml

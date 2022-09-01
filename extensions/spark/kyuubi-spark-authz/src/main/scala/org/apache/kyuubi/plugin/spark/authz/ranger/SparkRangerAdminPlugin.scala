@@ -31,10 +31,15 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
 
-  val CONF_ENABLE_FULL_ACCESS_VIOLATION_MSG =
-    s"ranger.plugin.${getServiceType}.enable.full.access.violation.msg"
-  val isEnabledFullAccessCheck: () => Boolean =
-    () => getConfig.getBoolean(CONF_ENABLE_FULL_ACCESS_VIOLATION_MSG, false)
+  /**
+   * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
+   * JOIN operator may have two tables and their columns to verify.
+   *
+   * This configuration controls whether to verify the privilege objects in a single RPC call or
+   * to verify them one by one.
+   */
+  def authorizeInSingleCall: Boolean =
+    getConfig.getBoolean(s"ranger.plugin.${getServiceType}.authorize.in.single.call", false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
     val result = evalRowFilterPolicies(req, null)

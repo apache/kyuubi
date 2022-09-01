@@ -71,32 +71,23 @@ object RuleAuthorization {
     addAccessRequest(inputs, isInput = true)
     addAccessRequest(outputs, isInput = false)
 
-    val accessReqs = ArrayBuffer[Seq[RangerAccessRequest]]()
-    requests.foreach { request =>
+    val requestArrays = requests.map { request =>
       val resource = request.getResource.asInstanceOf[AccessResource]
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
-          val reqs = resource.getColumns.map { col =>
+          resource.getColumns.map { col =>
             val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
             AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
           }
-          accessReqs += reqs
-        case _ => accessReqs += Seq(request)
+        case _ => Seq(request)
       }
     }
 
-    if (isEnabledFullAccessCheck()) {
-      SparkRangerAdminPlugin.verify(
-        accessReqs.toStream.flatMap(_.toStream).asJava,
-        auditHandler,
-        enabledFullAccessViolationMsg = true)
+    if (authorizeInSingleCall) {
+      verify(requestArrays.flatten.asJava, auditHandler, authorizeInSingleCall)
     } else {
-      accessReqs.foreach {
-        reqList =>
-          SparkRangerAdminPlugin.verify(
-            reqList.asJava,
-            auditHandler,
-            enabledFullAccessViolationMsg = false)
+      requestArrays.foreach {
+        requests => verify(requests.asJava, auditHandler, authorizeInSingleCall)
       }
     }
   }
