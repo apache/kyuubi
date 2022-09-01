@@ -98,8 +98,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
   @throws[AccessControlException]
   def verify(
       requests: util.List[RangerAccessRequest],
-      auditHandler: SparkRangerAuditHandler,
-      enabledFullAccessViolationMsg: Boolean): Unit = {
+      auditHandler: SparkRangerAuditHandler): Unit = {
     if (CollectionUtils.isEmpty(requests)) {
       return
     }
@@ -113,35 +112,20 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
       return
     }
 
-    if (!enabledFullAccessViolationMsg) {
-      val req = disallowedReqs.headOption.orNull
-      if (req != null) {
-        if (!enabledFullAccessViolationMsg) {
-          throw new AccessControlException(
-            s"Permission denied: user [${req.getUser}]" +
-              s" does not have [${req.getAccessType}]" +
-              s" privilege on [${req.getResource.getAsString}]")
-        }
-      }
-    } else {
-      val accessType2ResMap: mutable.Map[String, mutable.Set[String]] =
-        mutable.SortedMap()
-      disallowedReqs.foreach { req =>
-        {
-          val resourceSet = accessType2ResMap.getOrElseUpdate(
-            req.getAccessType,
-            mutable.SortedSet[String]())
-          resourceSet += req.getResource.getAsString
-        }
-      }
-
-      val user: String = disallowedReqs.head.getUser
-      val privilegeErrorMsg = accessType2ResMap.map {
-        case (accessType, resSet) =>
-          s"[${accessType}] privilege on [${resSet.mkString(",")}]"
-      }.mkString(", ")
-      throw new AccessControlException(
-        s"Permission denied: user [${user}] does not have ${privilegeErrorMsg}")
+    val accessType2ResMap: mutable.Map[String, mutable.Set[String]] = mutable.SortedMap()
+    disallowedReqs.foreach { req =>
+      val resourceSet = accessType2ResMap.getOrElseUpdate(
+        req.getAccessType,
+        mutable.SortedSet[String]())
+      resourceSet += req.getResource.getAsString
     }
+
+    val user: String = disallowedReqs.head.getUser
+    val privilegeErrorMsg = accessType2ResMap.map {
+      case (accessType, resSet) =>
+        s"[${accessType}] privilege on [${resSet.mkString(",")}]"
+    }.mkString(", ")
+    throw new AccessControlException(
+      s"Permission denied: user [${user}] does not have ${privilegeErrorMsg}")
   }
 }

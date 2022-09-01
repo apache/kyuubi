@@ -84,10 +84,10 @@ object RuleAuthorization {
     }
 
     if (authorizeInSingleCall) {
-      verify(requestArrays.flatten.asJava, auditHandler, authorizeInSingleCall)
+      verify(requestArrays.flatten.asJava, auditHandler)
     } else {
-      requestArrays.foreach {
-        requests => verify(requests.asJava, auditHandler, authorizeInSingleCall)
+      requestArrays.foreach { requests =>
+        verify(requests.asJava, auditHandler)
       }
     }
   }
