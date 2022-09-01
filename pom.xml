@@ -2188,12 +2188,6 @@
                 <module>extensions/spark/kyuubi-extension-spark-3-3</module>
                 <module>extensions/spark/kyuubi-spark-connector-kudu</module>
             </modules>
-            <repositories>
-                <repository>
-                    <id>staging-repo</id>
-                    <url>https://oss.sonatype.org/content/repositories/iodelta-1087/</url>
-                </repository>
-            </repositories>
         </profile>
 
         <profile>
