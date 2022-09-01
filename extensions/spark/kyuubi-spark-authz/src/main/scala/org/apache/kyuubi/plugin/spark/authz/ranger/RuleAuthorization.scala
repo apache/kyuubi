@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.util.Collections
-
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
@@ -85,10 +82,10 @@ object RuleAuthorization {
     }
 
     if (authorizeInSingleCall) {
-      verify(requestArrays.flatten.asJava, auditHandler)
+      verify(requestArrays.flatten, auditHandler)
     } else {
       requestArrays.flatten.foreach { req =>
-        verify(Collections.singletonList(req), auditHandler)
+        verify(Seq(req), auditHandler)
       }
     }
   }
