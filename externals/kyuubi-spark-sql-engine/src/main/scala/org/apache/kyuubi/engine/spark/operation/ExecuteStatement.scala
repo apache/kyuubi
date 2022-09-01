@@ -103,15 +103,15 @@ class ExecuteStatement(
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       operationListener.foreach(spark.sparkContext.addSparkListener(_))
+      var resultStatement = statement
       if (multipleStatements) {
         val statements = Utils.splitQueriesBySemiColon(statement)
         statements.dropRight(1).foreach { stmt =>
           withStatement(stmt)(spark.sql(stmt).show())
         }
-        result = spark.sql(statements.last)
-      } else {
-        result = spark.sql(statement)
+        resultStatement = statements.last
       }
+      withStatement(resultStatement)(result = spark.sql(resultStatement))
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
