@@ -110,11 +110,11 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
         if (indices.nonEmpty) {
           val user = requests.head.getUser
           val accessTypeToResource =
-            indices.foldLeft(mutable.Map.empty[String, mutable.Set[String]])((m, idx) => {
+            indices.foldLeft(mutable.LinkedHashMap.empty[String, mutable.Set[String]])((m, idx) => {
               val req = requests(idx)
               val accessType = req.getAccessType
               val resource = req.getResource.getAsString
-              m.getOrElseUpdate(accessType, mutable.Set.empty[String]) += resource
+              m.getOrElseUpdate(accessType, mutable.LinkedHashSet.empty[String]) += resource
               m
             })
           val errorMsg = accessTypeToResource
