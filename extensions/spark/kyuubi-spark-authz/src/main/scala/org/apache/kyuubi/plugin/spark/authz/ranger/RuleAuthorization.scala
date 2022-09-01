@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import java.util.Collections
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -30,8 +32,7 @@ import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._;
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
     case p if !plan.getTagValue(KYUUBI_AUTHZ_TAG).contains(true) =>
@@ -87,7 +88,9 @@ object RuleAuthorization {
       verify(requestArrays.flatten.asJava, auditHandler)
     } else {
       requestArrays.foreach { requests =>
-        verify(requests.asJava, auditHandler)
+        requests.foreach { req =>
+          verify(Collections.singletonList(req), auditHandler)
+        }
       }
     }
   }

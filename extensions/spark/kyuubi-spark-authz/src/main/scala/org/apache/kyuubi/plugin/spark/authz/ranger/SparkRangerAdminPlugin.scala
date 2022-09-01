@@ -35,7 +35,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
    * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
    * JOIN operator may have two tables and their columns to verify.
    *
-   * This configuration controls whether to verify the privilege objects in a single RPC call or
+   * This configuration controls whether to verify the privilege objects in single call or
    * to verify them one by one.
    */
   def authorizeInSingleCall: Boolean =
@@ -95,6 +95,12 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
     digits
   }
 
+  /**
+   * batch verifying RangerAccessRequests
+   * and throws exception with all disallowed privileges
+   * for accessType and resources
+   * in alphabet order
+   */
   @throws[AccessControlException]
   def verify(
       requests: util.List[RangerAccessRequest],
@@ -125,6 +131,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
       case (accessType, resSet) =>
         s"[${accessType}] privilege on [${resSet.mkString(",")}]"
     }.mkString(", ")
+
     throw new AccessControlException(
       s"Permission denied: user [${user}] does not have ${privilegeErrorMsg}")
   }
