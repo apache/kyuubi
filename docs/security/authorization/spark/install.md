@@ -92,7 +92,7 @@ Macros are now supported for using user/group/tag in row filter expressions, int
     </property>    
 ```
 
-##### Throwing all disallowed privileges
+##### Showing all disallowed privileges
 By default, Authz plugin checks required privileges one by one and throw the first unsatisfied privilege in exception. By setting `ranger.plugin.spark.authorize.in.single.call` to `true`, Authz plugin executes access checks in single call and throws all disallowed privileges in exception message.
 ```xml
     <property>
