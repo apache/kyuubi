@@ -19,6 +19,8 @@ package org.apache.kyuubi.server.metadata
 
 import java.util.UUID
 
+import scala.collection.JavaConverters._
+
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
@@ -96,6 +98,12 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       assert(!retryRef2.hasRemainingRequests())
       assert(metadataManager.getBatch(metadata2.identifier).getState === "RUNNING")
     }
+
+    metadataManager.identifierRequestsRetryRefs.clear()
+    eventually(timeout(3.seconds)) {
+      metadataManager.identifierRequestsRetryingCounts.asScala.forall(_._2.get() == 0)
+    }
+    metadataManager.identifierRequestsRetryingCounts.clear()
   }
 
   test("metadata request metrics") {

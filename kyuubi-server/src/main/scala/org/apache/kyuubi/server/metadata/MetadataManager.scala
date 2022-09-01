@@ -36,10 +36,12 @@ class MetadataManager extends AbstractService("MetadataManager") {
 
   private var _metadataStore: MetadataStore = _
 
-  private val identifierRequestsRetryRefs =
+  // Visible for testing.
+  private[metadata] val identifierRequestsRetryRefs =
     new ConcurrentHashMap[String, MetadataRequestsRetryRef]()
 
-  private val identifierRequestsRetryingCounts =
+  // Visible for testing.
+  private[metadata] val identifierRequestsRetryingCounts =
     new ConcurrentHashMap[String, AtomicInteger]()
 
   private val requestsRetryTrigger =
