@@ -96,7 +96,6 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
    * batch verifying RangerAccessRequests
    * and throws exception with all disallowed privileges
    * for accessType and resources
-   * in alphabet order
    */
   @throws[AccessControlException]
   def verify(
@@ -111,11 +110,11 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
         if (indices.nonEmpty) {
           val user = requests.head.getUser
           val accessTypeToResource =
-            indices.foldLeft(mutable.SortedMap.empty[String, mutable.Set[String]])((m, idx) => {
+            indices.foldLeft(mutable.Map.empty[String, mutable.Set[String]])((m, idx) => {
               val req = requests(idx)
               val accessType = req.getAccessType
               val resource = req.getResource.getAsString
-              m.getOrElseUpdate(accessType, mutable.SortedSet.empty[String]) += resource
+              m.getOrElseUpdate(accessType, mutable.Set.empty[String]) += resource
               m
             })
           val errorMsg = accessTypeToResource
