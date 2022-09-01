@@ -47,11 +47,4 @@ public class KyuubiStatementTest {
       stmt.setFetchSize(-1);
     }
   }
-
-  @Test(expected = SQLException.class)
-  public void testaddBatch() throws SQLException {
-    try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
-      stmt.addBatch(null);
-    }
-  }
 }
