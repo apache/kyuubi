@@ -23,7 +23,6 @@ import java.nio.file.{Files, Paths}
 import java.security.PrivilegedExceptionAction
 import java.util.Properties
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -205,17 +204,22 @@ class UtilsSuite extends KyuubiFunSuite {
   }
 
   test("splitQueriesBySemiColon") {
-    val expected = Seq("select 1", "select 2", "select 3").asJava
-    assert(Utils.splitQueriesBySemiColon("select 1; select 2; select 3").asJava.retainAll(expected))
-    assert(
-      Utils.splitQueriesBySemiColon("select 1; select 2; select 3;").asJava.retainAll(expected))
-    assert(
-      Utils.splitQueriesBySemiColon("select 1; select 2;;; select 3").asJava.retainAll(expected))
-    assert(Utils.splitQueriesBySemiColon(
-      "select 1 /** ;*/\n--;\n; select 2;;; select 3;").asJava.retainAll(expected))
+    def checkResult(result: Seq[String], expectedResult: Seq[String]): Boolean = {
+      result.zip(expectedResult).forall { case (res, expected) =>
+        res.contains(expected)
+      }
+    }
 
-    val expected2 = Seq("select ';', 1", "select \";\", 2", "select 3").asJava
-    assert(Utils.splitQueriesBySemiColon(
-      "select ';', 1 /** ;*/\n--;\n; select \";\", 2;;; select 3;").asJava.retainAll(expected2))
+    val expected = Seq("select 1", "select 2", "select 3")
+    assert(checkResult(Utils.splitQueriesBySemiColon("select 1; select 2; select 3"), expected))
+    assert(checkResult(Utils.splitQueriesBySemiColon("select 1; select 2;;; select 3"), expected))
+    assert(checkResult(
+      Utils.splitQueriesBySemiColon("select 1 /** ;*/\n--;\n; select 2;;; select 3;"),
+      expected))
+
+    val expected2 = Seq("select ';', 1", "select \";\", 2", "select 3")
+    assert(checkResult(
+      Utils.splitQueriesBySemiColon("select ';', 1 /** ;*/\n--;\n; select \";\", 2;;; select 3;"),
+      expected2))
   }
 }
