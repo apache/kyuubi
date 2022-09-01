@@ -577,48 +577,48 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #3371] Support full checking all access privileges") {
+  test("[KYUUBI #3371] support throws all disallowed privileges in exception") {
     val db1 = "default"
-    val table = "hive_src"
-    val sinkTable = "hive_tgt"
+    val srcTable1 = "hive_src1"
+    val srcTable2 = "hive_src2"
+    val sinkTable1 = "hive_sink1"
 
     withCleanTmpResources(Seq(
-      (s"$db1.$table", "table"),
-      (s"$db1.$sinkTable", "table"))) {
+      (s"$db1.$srcTable1", "table"),
+      (s"$db1.$srcTable2", "table"),
+      (s"$db1.$sinkTable1", "table"))) {
       doAs(
         "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $db1.$table" +
+        sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
           s" (id int, name string, city string)"))
 
       doAs(
         "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $db1.$sinkTable" +
-          s" (id int, name string, city string)"))
+        sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable2" +
+          s" (id int, age int)"))
 
-      SparkRangerAdminPlugin.getConfig.setBoolean(
-        s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
-        false)
-      val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"select * from $db1.$table")).explain)
-      assert(e1.getMessage.contains(s"does not have [select] privilege on" +
-        s" [$db1/$table/id]"))
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $db1.$sinkTable1" +
+          s" (id int, age int, name string, city string)"))
+
+      val insertSql1 = s"INSERT INTO $sinkTable1" +
+        s" SELECT tb1.id as id, tb2.age as age, tb1.name as name, tb1.city as city" +
+        s" FROM $db1.$srcTable1 as tb1" +
+        s" JOIN $db1.$srcTable2 as tb2" +
+        s" on tb1.id = tb2.id"
+      val e1 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))
+      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
 
       SparkRangerAdminPlugin.getConfig.setBoolean(
         s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
         true)
-      val e2 = intercept[AccessControlException](
-        doAs("someone", sql(s"select * from $db1.$table")).explain)
-      assert(e2.getMessage.contains(s"does not have [select] privilege on" +
-        s" [$db1/$table/city,$db1/$table/id,$db1/$table/name]"))
-
-      val e3 = intercept[AccessControlException](
-        doAs(
-          "someone",
-          sql(s"INSERT INTO $sinkTable SELECT * FROM $db1.$table")))
-      assert(e3.getMessage.contains(s"user [someone] does not have" +
-        s" [select] privilege" +
-        s" on [default/hive_src/city,default/hive_src/id,default/hive_src/name]," +
-        s" [update] privilege on [default/hive_tgt]"))
+      val e2 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))
+      assert(e2.getMessage.contains(s"does not have" +
+        s" [select] privilege on" +
+        s" [$db1/$srcTable1/city,$db1/$srcTable1/id,$db1/$srcTable1/name," +
+        s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
+        s" [update] privilege on [$db1/$sinkTable1]"))
     }
   }
 }
