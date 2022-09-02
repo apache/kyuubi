@@ -26,8 +26,10 @@ import org.apache.ranger.plugin.service.RangerBasePlugin
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
 
-object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
+object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
+  with RangerConfigProvider {
 
   /**
    * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
@@ -36,8 +38,9 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
    * This configuration controls whether to verify the privilege objects in single call or
    * to verify them one by one.
    */
-  def authorizeInSingleCall: Boolean =
-    getConfig.getBoolean(s"ranger.plugin.${getServiceType}.authorize.in.single.call", false)
+  def authorizeInSingleCall: Boolean = getRangerConf.getBoolean(
+    s"ranger.plugin.${getServiceType}.authorize.in.single.call",
+    false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
     val result = evalRowFilterPolicies(req, null)
