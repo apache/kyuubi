@@ -48,7 +48,17 @@ private[authz] object AuthZUtils {
       methodName: String,
       args: (Class[_], AnyRef)*): AnyRef = {
     val (types, values) = args.unzip
-    val method = obj.getClass.getDeclaredMethod(methodName, types: _*)
+    val method = obj.getClass.getMethod(methodName, types: _*)
+    method.setAccessible(true)
+    method.invoke(obj, values: _*)
+  }
+
+  def invokeStatic(
+      obj: Class[_],
+      methodName: String,
+      args: (Class[_], AnyRef)*): AnyRef = {
+    val (types, values) = args.unzip
+    val method = obj.getMethod(methodName, types: _*)
     method.setAccessible(true)
     method.invoke(obj, values: _*)
   }

@@ -17,11 +17,30 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.LinkedHashMap
+
+import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
+import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
 
-object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
+object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
+  with RangerConfigProvider {
+
+  /**
+   * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
+   * JOIN operator may have two tables and their columns to verify.
+   *
+   * This configuration controls whether to verify the privilege objects in single call or
+   * to verify them one by one.
+   */
+  def authorizeInSingleCall: Boolean = getRangerConf.getBoolean(
+    s"ranger.plugin.${getServiceType}.authorize.in.single.call",
+    false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
     val result = evalRowFilterPolicies(req, null)
@@ -75,5 +94,41 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
     val lower = s"regexp_replace($upper, '[a-z]', 'x'$pos)"
     val digits = s"regexp_replace($lower, '[0-9]', 'n'$pos)"
     digits
+  }
+
+  /**
+   * batch verifying RangerAccessRequests
+   * and throws exception with all disallowed privileges
+   * for accessType and resources
+   */
+  def verify(
+      requests: Seq[RangerAccessRequest],
+      auditHandler: SparkRangerAuditHandler): Unit = {
+    if (requests.nonEmpty) {
+      val results = SparkRangerAdminPlugin.isAccessAllowed(requests.asJava, auditHandler)
+      if (results != null) {
+        val indices = results.asScala.zipWithIndex.filter { case (result, idx) =>
+          result != null && !result.getIsAllowed
+        }.map(_._2)
+        if (indices.nonEmpty) {
+          val user = requests.head.getUser
+          val accessTypeToResource =
+            indices.foldLeft(LinkedHashMap.empty[String, ArrayBuffer[String]])((m, idx) => {
+              val req = requests(idx)
+              val accessType = req.getAccessType
+              val resource = req.getResource.getAsString
+              m.getOrElseUpdate(accessType, ArrayBuffer.empty[String])
+                .append(resource)
+              m
+            })
+          val errorMsg = accessTypeToResource
+            .map { case (accessType, resources) =>
+              s"[$accessType] ${resources.mkString("privilege on [", ",", "]")}"
+            }.mkString(", ")
+          throw new AccessControlException(
+            s"Permission denied: user [$user] does not have $errorMsg")
+        }
+      }
+    }
   }
 }
