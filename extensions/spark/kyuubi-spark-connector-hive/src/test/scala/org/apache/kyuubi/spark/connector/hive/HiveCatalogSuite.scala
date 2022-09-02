@@ -17,38 +17,24 @@
 
 package org.apache.kyuubi.spark.connector.hive
 
-import org.apache.spark.SparkConf
-import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
-
-class HiveCatalogSuite extends KyuubiFunSuite {
+class HiveCatalogSuite extends KyuubiHiveTest {
 
   test("get catalog name") {
-    val sparkConf = new SparkConf()
-      .setMaster("local[*]")
-      .set("spark.ui.enabled", "false")
-      .set("spark.sql.catalogImplementation", "hive")
-      .set("spark.sql.catalog.v2hive", classOf[HiveTableCatalog].getName)
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+    withSparkSession() { spark =>
       val catalog = new HiveTableCatalog
-      val catalogName = "v2hive"
+      val catalogName = "hive"
       catalog.initialize(catalogName, CaseInsensitiveStringMap.empty())
       assert(catalog.name() == catalogName)
     }
   }
 
   test("supports namespaces") {
-    val sparkConf = new SparkConf()
-      .setMaster("local[*]")
-      .set("spark.ui.enabled", "false")
-      .set("spark.sql.catalogImplementation", "hive")
-      .set("spark.sql.catalog.v2hive_namespaces", classOf[HiveTableCatalog].getName)
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+    withSparkSession() { spark =>
       try {
-        spark.sql("USE v2hive_namespaces")
+        spark.sql("USE hive")
         spark.sql("CREATE NAMESPACE IF NOT EXISTS ns1")
         assert(spark.sql(s"SHOW NAMESPACES").collect().length == 2)
       } finally {
@@ -58,16 +44,11 @@ class HiveCatalogSuite extends KyuubiFunSuite {
   }
 
   test("nonexistent table") {
-    val sparkConf = new SparkConf()
-      .setMaster("local[*]")
-      .set("spark.ui.enabled", "false")
-      .set("spark.sql.catalogImplementation", "hive")
-      .set("spark.sql.catalog.v2hive", classOf[HiveTableCatalog].getName)
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+    withSparkSession() { spark =>
       val exception = intercept[AnalysisException] {
-        spark.table("v2hive.ns1.nonexistent_table")
+        spark.table("hive.ns1.nonexistent_table")
       }
-      assert(exception.message === "Table or view not found: v2hive.ns1.nonexistent_table")
+      assert(exception.message === "Table or view not found: hive.ns1.nonexistent_table")
     }
   }
 }

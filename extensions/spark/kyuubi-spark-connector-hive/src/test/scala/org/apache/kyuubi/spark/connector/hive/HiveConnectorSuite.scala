@@ -17,57 +17,44 @@
 
 package org.apache.kyuubi.spark.connector.hive
 
-import org.apache.spark.SparkConf
-import org.apache.spark.sql.{AnalysisException, Row, SparkSession}
+import org.apache.spark.sql.AnalysisException
 
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
+class HiveConnectorSuite extends KyuubiHiveTest {
 
-class HiveConnectorSuite extends KyuubiFunSuite {
+  def withTempTable(table: String)(f: => Unit): Unit = {
+    withSparkSession() { spark =>
+      spark.sql(
+        s"""
+           | CREATE TABLE IF NOT EXISTS
+           | $table (id String, date String)
+           | USING PARQUET
+           | PARTITIONED BY (date)
+           |""".stripMargin).collect()
 
-  def withTempTable(spark: SparkSession, table: String)(f: => Unit): Unit = {
-    spark.sql(
-      s"""
-         | CREATE TABLE IF NOT EXISTS
-         | $table (id String, date String)
-         | USING PARQUET
-         | PARTITIONED BY (date)
-         |""".stripMargin).collect()
-    try f
-    finally spark.sql(s"DROP TABLE $table")
+      try f
+      finally spark.sql(s"DROP TABLE IF EXISTS $table")
+    }
   }
 
-  test("simple query") {
-    val sparkConf = new SparkConf()
-      .setMaster("local[*]")
-      .set("spark.ui.enabled", "false")
-      .set("spark.sql.catalogImplementation", "hive")
-      .set("spark.sql.catalog.hivev2", classOf[HiveTableCatalog].getName)
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      val table = "default.employee"
-      withTempTable(spark, table) {
-        spark.sql(
-          s"""
-             | INSERT INTO
-             | $table
-             | VALUES("yi", "2022-08-08")
-             |""".stripMargin).collect()
-
+  test("A simple query flow.") {
+    withSparkSession() { spark =>
+      val table = "hive.default.employee"
+      withTempTable(table) {
         // can query an existing Hive table in three sections
         val result = spark.sql(
           s"""
-             | SELECT * FROM hivev2.$table
+             | SELECT * FROM $table
              |""".stripMargin)
-        assert(result.collect().head == Row("yi", "2022-08-08"))
+        assert(result.collect().isEmpty)
 
         // error msg should contains catalog info if table is not exist
         val e = intercept[AnalysisException] {
           spark.sql(
             s"""
-               | SELECT * FROM hivev2.ns1.tb1
+               | SELECT * FROM hive.ns1.tb1
                |""".stripMargin)
         }
-        assert(e.getMessage().contains("Table or view not found: hivev2.ns1.tb1"))
+        assert(e.getMessage().contains("Table or view not found: hive.ns1.tb1"))
       }
     }
   }
