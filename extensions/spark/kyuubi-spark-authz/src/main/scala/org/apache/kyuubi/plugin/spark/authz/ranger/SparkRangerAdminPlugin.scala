@@ -18,7 +18,8 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.LinkedHashMap
 
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
@@ -97,7 +98,6 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
    * and throws exception with all disallowed privileges
    * for accessType and resources
    */
-  @throws[AccessControlException]
   def verify(
       requests: Seq[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
@@ -110,11 +110,12 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql") {
         if (indices.nonEmpty) {
           val user = requests.head.getUser
           val accessTypeToResource =
-            indices.foldLeft(mutable.LinkedHashMap.empty[String, mutable.Set[String]])((m, idx) => {
+            indices.foldLeft(LinkedHashMap.empty[String, ArrayBuffer[String]])((m, idx) => {
               val req = requests(idx)
               val accessType = req.getAccessType
               val resource = req.getResource.getAsString
-              m.getOrElseUpdate(accessType, mutable.LinkedHashSet.empty[String]) += resource
+              m.getOrElseUpdate(accessType, ArrayBuffer.empty[String])
+                .append(resource)
               m
             })
           val errorMsg = accessTypeToResource
