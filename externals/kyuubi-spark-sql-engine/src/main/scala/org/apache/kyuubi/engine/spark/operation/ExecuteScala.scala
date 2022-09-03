@@ -77,7 +77,10 @@ class ExecuteScala(
           } else {
             spark.sparkContext.addFile(jar.toString)
             val localJarFile = new File(SparkFiles.get(new Path(jar.toURI.getPath).getName))
-            repl.addUrlsToClassPath(localJarFile.toURI.toURL)
+            val localJarUrl = localJarFile.toURI.toURL
+            if (!replUrls.contains(localJarUrl)) {
+              repl.addUrlsToClassPath(localJarUrl)
+            }
           }
         } catch {
           case e: Throwable => error(s"Error adding $jar to repl class path", e)
