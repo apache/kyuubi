@@ -27,15 +27,14 @@ concurrency:
   group: linter-${{ github.ref }}
   cancel-in-progress: true
 
-# no install runs before style check because it is expensive, we can skip build if style fails
-# Well, sometimes when we introduce a new module, it may 'fail' the style check for missing
-# dependency we just create for other module to inherit.
-# We can ignore this failure and merge the PR, if we see the style check pass on the new module
-# or via a local quick verification.
 jobs:
   linter:
     name: Style check
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        profiles:
+          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds'
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 8
@@ -45,8 +44,12 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Install
+        run: |
+          build/mvn clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
+            -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip
       - name: Scalastyle with maven
-        run: build/mvn scalastyle:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
+        run: build/mvn scalastyle:check ${{ matrix.profiles }}
       - name: Print scalastyle error report
         if: failure()
         run: >-
@@ -57,7 +60,7 @@ jobs:
               fi
           done
       - name: JavaStyle with maven
-        run: build/mvn spotless:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
+        run: build/mvn spotless:check ${{ matrix.profiles }}
       - name: setup npm
         uses: actions/setup-node@v3
         with:
