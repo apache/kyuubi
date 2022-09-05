@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.util.matching.Regex
 
-import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
