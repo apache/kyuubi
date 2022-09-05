@@ -47,7 +47,8 @@ object OperationType extends Enumeration {
       case "AlterDatabaseSetLocationCommand" |
           "SetNamespaceLocation" => ALTERDATABASE_LOCATION
       case "AlterTableAddColumnsCommand" |
-          "AlterHoodieTableAddColumnsCommand" => ALTERTABLE_ADDCOLS
+          "AlterHoodieTableAddColumnsCommand" |
+           "AlterTable" => ALTERTABLE_ADDCOLS
       case "AlterTableAddPartitionCommand" => ALTERTABLE_ADDPARTS
       case "AlterTableChangeColumnCommand" => ALTERTABLE_REPLACECOLS
       case "AlterTableDropPartitionCommand" => ALTERTABLE_DROPPARTS
@@ -70,7 +71,8 @@ object OperationType extends Enumeration {
           "OptimizedCreateHiveTableAsSelectCommand" => CREATETABLE_AS_SELECT
       case "CreateTableCommand" |
           "CreateDataSourceTableCommand" |
-          "CreateTableLikeCommand" => CREATETABLE
+          "CreateTableLikeCommand" |
+          "CreateV2Table" => CREATETABLE
       case "CreateViewCommand" |
           "CacheTableCommand" |
           "CreateTempViewUsing" |
@@ -81,7 +83,7 @@ object OperationType extends Enumeration {
       case "DescribeColumnCommand" | "DescribeTableCommand" => DESCTABLE
       case "DropDatabaseCommand" | "DropNamespace" => DROPDATABASE
       case "DropFunctionCommand" | "DropFunction" => DROPFUNCTION
-      case "DropTableCommand" => DROPTABLE
+      case "DropTableCommand" | "DropTable" => DROPTABLE
       case "ExplainCommand" => EXPLAIN
       case "InsertIntoDataSourceCommand" |
           "InsertIntoDataSourceDirCommand" |

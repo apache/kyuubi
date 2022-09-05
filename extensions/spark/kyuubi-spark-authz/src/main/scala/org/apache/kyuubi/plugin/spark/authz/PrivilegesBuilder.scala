@@ -18,7 +18,6 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
@@ -28,11 +27,11 @@ import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project, Sort, Window}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StructField
-
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 object PrivilegesBuilder {
 
@@ -146,6 +145,17 @@ object PrivilegesBuilder {
 
       case permanentViewMarker: PermanentViewMarker =>
         mergeProjection(permanentViewMarker.catalogTable, plan)
+
+      case d: DataSourceV2Relation =>
+        val identifier = getFieldVal[AnyRef](d, "identifier").asInstanceOf[Option[AnyRef]]
+        val namespace = invoke(identifier.get, "namespace").asInstanceOf[Array[String]]
+        val table = invoke(identifier.get, "name").asInstanceOf[String]
+        privilegeObjects += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.OTHER,
+          quote(namespace),
+          table,
+          Nil)
 
       case p =>
         for (child <- p.children) {
@@ -350,18 +360,6 @@ object PrivilegesBuilder {
         val database = getFieldVal[Seq[String]](child, "nameParts")
         inputObjs += databasePrivileges(quote(database))
 
-      case "CreateTableAsSelect" |
-          "ReplaceTableAsSelect" =>
-        val left = getPlanField[LogicalPlan]("name")
-        left.nodeName match {
-          case "ResolvedDBObjectName" =>
-            val nameParts = getPlanField[Seq[String]]("nameParts")
-            val db = Some(quote(nameParts.init))
-            outputObjs += tablePrivileges(TableIdentifier(nameParts.last, db))
-          case _ =>
-        }
-        buildQuery(getQuery, inputObjs)
-
       case "CreateTableLikeCommand" =>
         val target = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("targetTable"), spark)
         val source = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("sourceTable"), spark)
@@ -528,12 +526,82 @@ object PrivilegesBuilder {
 
       case "ReplaceArcticData" =>
         val relation = getPlanField[Any]("table")
-        val identifier = getFieldVal[AnyRef](relation, "identifier")
-        val namespace = invoke(identifier, "namespace").asInstanceOf[Array[String]]
-        val table = invoke(identifier, "name").asInstanceOf[String]
+        val identifier = getFieldVal[AnyRef](relation, "identifier").asInstanceOf[Option[AnyRef]]
+        val namespace = invoke(identifier.get, "namespace").asInstanceOf[Array[String]]
+        val table = invoke(identifier.get, "name").asInstanceOf[String]
         outputObjs += PrivilegeObject(
           TABLE_OR_VIEW,
           PrivilegeObjectActionType.UPDATE,
+          quote(namespace),
+          table,
+          Nil)
+
+      case "CreateV2Table" =>
+        val relation = getPlanField[Any]("tableName")
+        val namespace = getFieldVal(relation, "namespace").asInstanceOf[Array[String]]
+        val table = getFieldVal(relation, "name").asInstanceOf[String]
+        outputObjs += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.OTHER,
+          quote(namespace),
+          table,
+          Nil)
+
+      case "AlterTable" =>
+        val relation = getPlanField[Any]("ident")
+        val namespace = getFieldVal(relation, "namespace").asInstanceOf[Array[String]]
+        val table = getFieldVal(relation, "name").asInstanceOf[String]
+        outputObjs += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.OTHER,
+          quote(namespace),
+          table,
+          Nil)
+
+      case "DropTable" =>
+        val child = getPlanField[Any]("child")
+        val identifier = getFieldVal[AnyRef](child, "identifier")
+        val namespace = getFieldVal(identifier, "namespace").asInstanceOf[Array[String]]
+        val table = getFieldVal(identifier, "name").asInstanceOf[String]
+        outputObjs += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.OTHER,
+          quote(namespace),
+          table,
+          Nil)
+
+      case "OverwriteByExpression" =>
+        val relation = getPlanField[Any]("table")
+        val identifier = getFieldVal[AnyRef](relation, "identifier").asInstanceOf[Option[AnyRef]]
+        val namespace = invoke(identifier.get, "namespace").asInstanceOf[Array[String]]
+        val table = invoke(identifier.get, "name").asInstanceOf[String]
+        outputObjs += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.INSERT_OVERWRITE,
+          quote(namespace),
+          table,
+          Nil)
+
+      case "AppendData" =>
+        val relation = getPlanField[Any]("table")
+        val identifier = getFieldVal[AnyRef](relation, "identifier").asInstanceOf[Option[AnyRef]]
+        val namespace = invoke(identifier.get, "namespace").asInstanceOf[Array[String]]
+        val table = invoke(identifier.get, "name").asInstanceOf[String]
+        outputObjs += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.INSERT,
+          quote(namespace),
+          table,
+          Nil)
+
+      case "CreateTableAsSelect" |
+           "ReplaceTableAsSelect" =>
+        val relation = getPlanField[Any]("tableName")
+        val namespace = getFieldVal(relation, "namespace").asInstanceOf[Array[String]]
+        val table = getFieldVal(relation, "name").asInstanceOf[String]
+        outputObjs += PrivilegeObject(
+          TABLE_OR_VIEW,
+          PrivilegeObjectActionType.OTHER,
           quote(namespace),
           table,
           Nil)

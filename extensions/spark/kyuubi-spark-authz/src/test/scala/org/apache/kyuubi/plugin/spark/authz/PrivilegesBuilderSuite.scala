@@ -1578,6 +1578,27 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
   }
+
+  test("CreateV2Table") {
+    assume(!isSparkV2)
+    withTable("CreateV2Table") { _ =>
+      val plan = sql(s"CREATE TABLE CreateV2Table(a int, b string) USING hive")
+        .queryExecution.analyzed
+      val operationType = OperationType(plan.nodeName)
+      assert(operationType === CREATETABLE)
+      val tuple = PrivilegesBuilder.build(plan, spark)
+      assert(tuple._1.size === 0)
+      assert(tuple._2.size === 1)
+      val po = tuple._2.head
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.dbname === "default")
+      assert(po.objectName === "CreateV2Table")
+      assert(po.columns.isEmpty)
+      val accessType = ranger.AccessType(po, operationType, isInput = false)
+      assert(accessType === AccessType.CREATE)
+    }
+  }
 }
 
 case class SimpleInsert(userSpecifiedSchema: StructType)(@transient val sparkSession: SparkSession)
