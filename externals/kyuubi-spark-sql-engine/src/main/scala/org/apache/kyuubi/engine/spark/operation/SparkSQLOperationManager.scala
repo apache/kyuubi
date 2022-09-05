@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
@@ -62,11 +61,11 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
         return catalogDatabaseOperation
       }
     }
-    val lang = confOverlay.getOrElse(
+    val lang = OperationLanguages(confOverlay.getOrElse(
       OPERATION_LANGUAGE.key,
-      spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault))
+      spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault)))
     val operation =
-      OperationLanguages.withName(lang.toUpperCase(Locale.ROOT)) match {
+      lang match {
         case OperationLanguages.SQL =>
           val mode =
             OperationModes(spark.conf.get(OPERATION_PLAN_ONLY_MODE.key, operationModeDefault))
@@ -82,6 +81,10 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
         case OperationLanguages.SCALA =>
           val repl = sessionToRepl.getOrElseUpdate(session.handle, KyuubiSparkILoop(spark))
           new ExecuteScala(session, repl, statement)
+        case OperationLanguages.UNKNOWN =>
+          spark.conf.unset(OPERATION_LANGUAGE.key)
+          throw KyuubiSQLException(s"The operation language $lang" +
+            " doesn't support in Spark SQL engine.")
       }
     addOperation(operation)
   }

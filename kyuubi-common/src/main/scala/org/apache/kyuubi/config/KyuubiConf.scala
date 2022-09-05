@@ -1721,9 +1721,18 @@ object KyuubiConf {
         "UseStatement",
         "SetCatalogAndNamespace"))
 
-  object OperationLanguages extends Enumeration {
+  object OperationLanguages extends Enumeration with Logging {
     type OperationLanguage = Value
-    val SQL, SCALA = Value
+    val SQL, SCALA, UNKNOWN = Value
+    def apply(language: String): OperationLanguage = {
+      language.toUpperCase(Locale.ROOT) match {
+        case "SQL" => SQL
+        case "SCALA" => SCALA
+        case other =>
+          warn(s"Unsupported operation language: $language, using UNKNOWN instead")
+          UNKNOWN
+      }
+    }
   }
 
   val OPERATION_LANGUAGE: ConfigEntry[String] =
