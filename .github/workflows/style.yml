@@ -36,6 +36,10 @@ jobs:
   linter:
     name: Style check
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        profiles:
+          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds'
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 8
@@ -45,10 +49,22 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Check kyuubi modules avaliable
+        id: modules-check
+        run: build/mvn dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true
+
+      - name: Install
+        if: failure() && steps.modules-check.outcome != 'success'
+        run: |
+          build/mvn clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
+            -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.ski
+
       - name: Scalastyle with maven
-        run: build/mvn scalastyle:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
+        id: scalastyle-check
+        if: always()
+        run: build/mvn scalastyle:check ${{ matrix.profiles }}
       - name: Print scalastyle error report
-        if: failure()
+        if: failure() && steps.scalastyle-check.outcome != 'success'
         run: >-
           for log in `find * -name "scalastyle-output.xml"`;
             do
@@ -57,12 +73,15 @@ jobs:
               fi
           done
       - name: JavaStyle with maven
-        run: build/mvn spotless:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
+        if: always()
+        run: build/mvn spotless:check ${{ matrix.profiles }}
       - name: setup npm
+        if: always()
         uses: actions/setup-node@v3
         with:
           node-version: 16
       - name: Web UI Style with node
+        if: always()
         run: |
           cd ./kyuubi-server/web-ui
           npm install pnpm -g
