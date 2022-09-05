@@ -22,6 +22,7 @@ import java.sql.{SQLException, Statement}
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OperationModes._
+import org.apache.kyuubi.config.KyuubiConf.PlanOnlyStyles.{JSON, PLAIN}
 
 class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
@@ -124,6 +125,69 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         val operationPlan = resultSet.getString(1)
         assert(operationPlan.startsWith("RepartitionByExpression")
           && operationPlan.contains("Statistics"))
+      }
+    }
+  }
+
+  test("KYUUBI #3376 : Spark physical Plan outputs in plain style") {
+    withSessionConf()(Map(
+      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PHYSICAL.toString,
+      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> PLAIN.toString))(
+      Map.empty) {
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(
+          "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1")
+        assert(resultSet.next())
+        val operationPlan = resultSet.getString(1)
+        assert(operationPlan.startsWith("Exchange hashpartitioning"))
+      }
+    }
+  }
+
+  test("KYUUBI #3376 : Spark physical Plan outputs in json style") {
+    withSessionConf()(Map(
+      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PHYSICAL.toString,
+      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> JSON.toString))(
+      Map.empty) {
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(
+          "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1")
+        assert(resultSet.next())
+        val operationPlan = resultSet.getString(1)
+        assert(operationPlan.contains(
+          "\"class\":\"org.apache.spark.sql.execution.exchange.ShuffleExchangeExec\""))
+      }
+    }
+  }
+
+  test("KYUUBI #3376 : Spark optimized Plan outputs in json style") {
+    withSessionConf()(Map(
+      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> OPTIMIZE.toString,
+      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> JSON.toString))(
+      Map.empty) {
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(
+          "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1")
+        assert(resultSet.next())
+        val operationPlan = resultSet.getString(1)
+        assert(operationPlan.contains(
+          "\"class\":\"org.apache.spark.sql.catalyst.plans.logical.LocalRelation\""))
+      }
+    }
+  }
+
+  test("KYUUBI #3376 : Spark parse Plan outputs in json style") {
+    withSessionConf()(Map(
+      KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> PARSE.toString,
+      KyuubiConf.OPERATION_PLAN_ONLY_OUT_STYLE.key -> JSON.toString))(
+      Map.empty) {
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(
+          "SELECT * FROM VALUES(1),(2),(3) AS t(c1) DISTRIBUTE BY c1")
+        assert(resultSet.next())
+        val operationPlan = resultSet.getString(1)
+        assert(operationPlan.contains(
+          "\"class\":\"org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute\""))
       }
     }
   }
