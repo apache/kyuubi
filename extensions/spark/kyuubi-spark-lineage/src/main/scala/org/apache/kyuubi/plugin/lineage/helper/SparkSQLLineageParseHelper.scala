@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
+import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, TableCatalog}
@@ -38,13 +39,17 @@ import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersio
 trait LineageParser {
   def sparkSession: SparkSession
 
+  val SUBQUERY_COLUMN_IDENTIFIER = "__subquery__"
+  val AGGREGATE_COLUMN_IDENTIFIER = "__aggregate__"
+  val LOCAL_TABLE_IDENTIFIER = "__local__"
+
   type AttributeMap[A] = ListMap[Attribute, A]
 
   def parse(plan: LogicalPlan): Lineage = {
     val columnsLineage =
       extractColumnsLineage(plan, ListMap[Attribute, AttributeSet]()).toList.collect {
         case (k, attrs) =>
-          k.name -> attrs.map(_.name).toSet
+          k.name -> attrs.map(_.qualifiedName).toSet
       }
     val (inputTables, outputTables) = columnsLineage.foldLeft((List[String](), List[String]())) {
       case ((inputs, outputs), (out, in)) =>
@@ -72,7 +77,10 @@ trait LineageParser {
       val childMap = child.map { case (k, attrs) => (k.exprId, attrs) }
       parent.map { case (k, attrs) =>
         k -> AttributeSet(attrs.flatMap(attr =>
-          childMap.getOrElse(attr.exprId, AttributeSet.empty)))
+          childMap.getOrElse(
+            attr.exprId,
+            if (attr.name.equalsIgnoreCase(AGGREGATE_COLUMN_IDENTIFIER)) AttributeSet(attr)
+            else AttributeSet.empty)))
       }
     }
   }
@@ -90,11 +98,18 @@ trait LineageParser {
       case exp: Alias =>
         if (exp.references.nonEmpty) exp.toAttribute -> exp.references
         else {
-          exp.toAttribute ->
-            getExpressionSubqueryPlans(exp.child)
-              .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]()))
-              .foldLeft(ListMap[Attribute, AttributeSet]())(mergeColumnsLineage).values
-              .foldLeft(AttributeSet.empty)(_ ++ _)
+          exp.child match {
+            case _: AggregateExpression =>
+              exp.toAttribute -> AttributeSet(
+                exp.toAttribute.withName(AGGREGATE_COLUMN_IDENTIFIER))
+            case _ =>
+              val attrRefs = getExpressionSubqueryPlans(exp.child)
+                .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]()))
+                .foldLeft(ListMap[Attribute, AttributeSet]())(mergeColumnsLineage).values
+                .foldLeft(AttributeSet.empty)(_ ++ _)
+                .map(attr => attr.withQualifier(attr.qualifier :+ SUBQUERY_COLUMN_IDENTIFIER))
+              exp.toAttribute -> AttributeSet(attrRefs)
+          }
         }
       case a: Attribute => a -> a.references
     }
@@ -104,22 +119,26 @@ trait LineageParser {
   private def joinRelationColumnLineage(
       parent: AttributeMap[AttributeSet],
       relationAttrs: Seq[Attribute],
-      tableName: String = ""): AttributeMap[AttributeSet] = {
+      qualifier: Seq[String] = Seq()): AttributeMap[AttributeSet] = {
     val relationAttrSet = AttributeSet(relationAttrs)
     if (parent.nonEmpty) {
       parent.map { case (k, attrs) =>
         k -> AttributeSet(attrs.collect {
           case attr if relationAttrSet.contains(attr) =>
-            attr.withName(Seq(tableName, attr.name).filter(_.nonEmpty).mkString("."))
-          case attr if attr.name.contains(".") =>
-            attr
+            attr.withQualifier(qualifier)
+          case attr
+              if attr.qualifier.nonEmpty && attr.qualifier.last.equalsIgnoreCase(
+                SUBQUERY_COLUMN_IDENTIFIER) =>
+            attr.withQualifier(attr.qualifier.init)
+          case attr if attr.name.equalsIgnoreCase(AGGREGATE_COLUMN_IDENTIFIER) =>
+            attr.withQualifier(qualifier)
         })
       }
     } else {
       ListMap(relationAttrs.map { attr =>
         (
           attr,
-          AttributeSet(attr.withName(Seq(tableName, attr.name).filter(_.nonEmpty).mkString("."))))
+          AttributeSet(attr.withQualifier(qualifier)))
       }: _*)
     }
   }
@@ -262,18 +281,18 @@ trait LineageParser {
 
       case p: LogicalRelation if p.catalogTable.nonEmpty =>
         val tableName = p.catalogTable.get.qualifiedName
-        joinRelationColumnLineage(parentColumnsLineage, p.output, tableName)
+        joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(tableName))
 
       case p: HiveTableRelation =>
         val tableName = p.tableMeta.qualifiedName
-        joinRelationColumnLineage(parentColumnsLineage, p.output, tableName)
+        joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(tableName))
 
       case p: DataSourceV2ScanRelation =>
         val tableName = p.name
-        joinRelationColumnLineage(parentColumnsLineage, p.output, tableName)
+        joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(tableName))
 
       case p: LocalRelation =>
-        joinRelationColumnLineage(parentColumnsLineage, p.output, "__local__")
+        joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(LOCAL_TABLE_IDENTIFIER))
 
       case p if p.children.isEmpty => ListMap[Attribute, AttributeSet]()
 

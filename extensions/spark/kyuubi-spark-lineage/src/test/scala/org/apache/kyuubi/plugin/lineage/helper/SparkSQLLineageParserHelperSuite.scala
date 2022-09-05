@@ -83,6 +83,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       spark.sql("create view alterviewascommand1 as select * from test_db0.test_table0")
       val ret1 =
         exectractLineage("alter view alterviewascommand1 as select * from test_db0.test_table0")
+
       assert(ret1 == Lineage(
         List("test_db0.test_table0"),
         List("default.alterviewascommand1"),
@@ -704,6 +705,64 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
+  test("columns lineage extract - agg sql") {
+    val sql0 = """select key as a, count(*) as b, 1 as c from test_db0.test_table0 group by key"""
+    val ret0 = exectractLineage(sql0)
+    assert(ret0 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.key")),
+        ("b", Set("test_db0.test_table0.__aggregate__")),
+        ("c", Set()))))
+
+    val sql1 = """select count(*) as a, 1 as b from test_db0.test_table0"""
+    val ret1 = exectractLineage(sql1)
+    assert(ret1 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.__aggregate__")),
+        ("b", Set()))))
+
+    val sql2 = """select every(count(key) == 1) as a, 1 as b from test_db0.test_table0"""
+    val ret2 = exectractLineage(sql2)
+    assert(ret2 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.key")),
+        ("b", Set()))))
+
+    val sql3 = """select every(count(*) == 1) as a, 1 as b from test_db0.test_table0"""
+    val ret3 = exectractLineage(sql3)
+    assert(ret3 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.__aggregate__")),
+        ("b", Set()))))
+
+    val sql4 = """select first(key) as a, 1 as b from test_db0.test_table0"""
+    val ret4 = exectractLineage(sql4)
+    assert(ret4 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.key")),
+        ("b", Set()))))
+
+    val sql5 = """select avg(key) as a, 1 as b from test_db0.test_table0"""
+    val ret5 = exectractLineage(sql5)
+    assert(ret5 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.key")),
+        ("b", Set()))))
+
+  }
+
   test("columns lineage extract - subquery sql") {
     val ddls =
       """
@@ -743,10 +802,10 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           |""".stripMargin
       val ret2 = exectractLineage(sql2)
       assert(ret2 == Lineage(
-        List("default.table1"),
+        List("default.table0", "default.table1"),
         List(),
         List(
-          ("aa", Set()),
+          ("aa", Set("default.table0.__aggregate__")),
           ("bb", Set("default.table1.b")))))
 
       // ListQuery
@@ -859,7 +918,6 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
     val optimized = spark.sessionState.optimizer.execute(analyzed)
-
     SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
   }
 

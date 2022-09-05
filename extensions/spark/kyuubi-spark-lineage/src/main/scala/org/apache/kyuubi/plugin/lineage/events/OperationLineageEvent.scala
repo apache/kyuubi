@@ -41,6 +41,12 @@ class Lineage(
   }
 
   override def hashCode(): Int = super.hashCode()
+
+  override def toString: String = {
+    s"inputTables($inputTables)\n" +
+      s"outputTables($outputTables)\n" +
+      s"columnLineage($columnLineage)"
+  }
 }
 
 object Lineage {
