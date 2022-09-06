@@ -71,11 +71,11 @@ To enable the custom EventHandler, we need to
 - Put the jar package to ``$KYUUBI_HOME/jars`` directory to make it visible for
     the classpath of the kyuubi server.
 - Configure the following properties to ``$KYUUBI_HOME/conf/kyuubi-defaults.conf``
-  on each node where kyuubi server is installed. If you need use other event handler, it can be appended after the ``CUSTOM``
+  on each node where kyuubi server is installed. If you need use other event handler, it can be appended after the ``CUSTOM``.
 
 .. code-block:: property
    :margin:
 
    kyuubi.backend.server.event.loggers=CUSTOM
 
-- Restart all the kyuubi server instances
+- Restart all the kyuubi server instances.
