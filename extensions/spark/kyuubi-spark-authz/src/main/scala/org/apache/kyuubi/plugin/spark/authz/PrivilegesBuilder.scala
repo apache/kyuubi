@@ -68,6 +68,19 @@ object PrivilegesBuilder {
     }
   }
 
+  private def isTempView(
+      tableIdent: TableIdentifier,
+      spark: SparkSession): Boolean = {
+    val parts = tableIdent.database match {
+      case Some(db) =>
+        Seq(db, tableIdent.table)
+      case _ =>
+        Seq(tableIdent.table)
+    }
+
+    spark.sessionState.catalog.isTempView(parts)
+  }
+
   /**
    * Build PrivilegeObjects from Spark LogicalPlan
    *
@@ -382,7 +395,9 @@ object PrivilegesBuilder {
         outputObjs += databasePrivileges(quote(database))
 
       case "DropTableCommand" =>
-        outputObjs += tablePrivileges(getTableName)
+        if (!isTempView(getPlanField[TableIdentifier]("tableName"), spark)) {
+          outputObjs += tablePrivileges(getTableName)
+        }
 
       case "ExplainCommand" =>
 
