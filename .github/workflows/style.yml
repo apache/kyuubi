@@ -53,6 +53,7 @@ jobs:
       - name: Check kyuubi modules avaliable
         id: modules-check
         run: build/mvn dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
+        continue-on-error: true
 
       - name: Install
         if: failure() && steps.modules-check.outcome != 'success'
@@ -64,7 +65,6 @@ jobs:
 
       - name: Scalastyle with maven
         id: scalastyle-check
-        if: always()
         run: build/mvn scalastyle:check ${{ matrix.profiles }}
       - name: Print scalastyle error report
         if: failure() && steps.scalastyle-check.outcome != 'success'
@@ -76,15 +76,12 @@ jobs:
               fi
           done
       - name: JavaStyle with maven
-        if: always()
         run: build/mvn spotless:check ${{ matrix.profiles }}
       - name: setup npm
-        if: always()
         uses: actions/setup-node@v3
         with:
           node-version: 16
       - name: Web UI Style with node
-        if: always()
         run: |
           cd ./kyuubi-server/web-ui
           npm install pnpm -g
