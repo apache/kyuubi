@@ -274,23 +274,13 @@ object PrivilegesBuilder {
         }
 
       case "CacheTable" =>
-        // >= 3.2
-        outputObjs += tablePrivileges(getMultipartIdentifier)
         val query = getPlanField[LogicalPlan]("table") // table to cache
         buildQuery(query, inputObjs)
 
       case "CacheTableCommand" =>
-        if (isSparkVersionEqualTo("3.1")) {
-          outputObjs += tablePrivileges(getMultipartIdentifier)
-        } else {
-          outputObjs += tablePrivileges(getTableIdent)
-        }
         getPlanField[Option[LogicalPlan]]("plan").foreach(buildQuery(_, inputObjs))
 
       case "CacheTableAsSelect" =>
-        val view = getPlanField[String]("tempViewName")
-        outputObjs += tablePrivileges(TableIdentifier(view))
-
         val query = getPlanField[LogicalPlan]("plan")
         buildQuery(query, inputObjs)
 
