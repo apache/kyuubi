@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import java.util.UUID
 
 import org.apache.hadoop.fs.{FileSystem, FileUtil, Path}
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TStatusCode}
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode}
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer, WithSimpleDFSService}
@@ -241,6 +241,28 @@ class KyuubiOperationPerUserSuite
       val rs = kyuubiStatement.executeScala("println(test.utils.Math.add(1,2))")
       rs.next()
       assert(rs.getString(1) === "3")
+    }
+  }
+
+  test("server info provider - server") {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
+      }
+    }
+  }
+
+  test("server info provider - engine") {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Spark SQL")
+      }
     }
   }
 }

@@ -199,12 +199,23 @@ class KyuubiSessionImpl(
   }
 
   override def getInfo(infoType: TGetInfoType): TGetInfoValue = {
-    if (client != null) {
-      withAcquireRelease() {
-        client.getInfo(infoType).getInfoValue
+    val serverConf = sessionManager.getConf
+    val provider = serverConf.get(SERVER_INFO_PROVIDER)
+
+    if (client == null) {
+      if (provider != "SERVER") {
+        warn("The engine client haven't initialized, return the Kyuubi Server info " +
+          s"instead of $provider")
       }
-    } else {
-      super.getInfo(infoType)
+      return super.getInfo(infoType)
+    }
+
+    provider match {
+      case "SERVER" => super.getInfo(infoType)
+      case "ENGINE" => withAcquireRelease() {
+          client.getInfo(infoType).getInfoValue
+        }
+      case unknown => throw new IllegalArgumentException(s"Unknown server info provider $unknown")
     }
   }
 }

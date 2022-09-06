@@ -19,11 +19,13 @@ package org.apache.kyuubi.engine.flink.session
 
 import scala.util.control.NonFatal
 
+import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.table.client.gateway.SqlExecutionException
 import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.flink.table.client.gateway.local.LocalExecutor
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils
 import org.apache.kyuubi.session.{AbstractSession, SessionManager}
 
@@ -65,5 +67,14 @@ class FlinkSessionImpl(
       case (key, value) => setModifiableConfig(key, value)
     }
     super.open()
+  }
+
+  override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
+    infoType match {
+      case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
+        TGetInfoValue.stringValue("Apache Flink")
+      case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(EnvironmentInformation.getVersion)
+      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
+    }
   }
 }
