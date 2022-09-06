@@ -642,7 +642,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         (s"$db1.$cacheTable3", "cache"),
         (s"$db1.$cacheTable4", "cache"))) {
 
-        doAs("admin",
+        doAs(
+          "admin",
           sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
             s" (id int, name string, city string)"))
 
