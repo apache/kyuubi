@@ -448,6 +448,29 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
   }
 
+  test("[KYUUBI #3430] AlterTableRenameCommand should skip permission check if it's tempview") {
+    val tempView = "temp_view"
+    val tempView2 = "temp_view2"
+    val globalTempView = "global_temp_view"
+    val globalTempView2 = "global_temp_view2"
+
+    // create or replace view
+    doAs("denyuser", sql(s"CREATE TEMPORARY VIEW $tempView AS select * from values(1)"))
+    doAs(
+      "denyuser",
+      sql(s"CREATE GLOBAL TEMPORARY VIEW $globalTempView AS SELECT * FROM values(1)"))
+
+    // rename view
+    doAs("denyuser2", sql(s"ALTER VIEW $tempView RENAME TO $tempView2"))
+    doAs(
+      "denyuser2",
+      sql(s"ALTER VIEW global_temp.$globalTempView RENAME TO global_temp.$globalTempView2"))
+
+    doAs("admin", sql(s"DROP VIEW IF EXISTS $tempView2"))
+    doAs("admin", sql(s"DROP VIEW IF EXISTS global_temp.$globalTempView2"))
+    doAs("admin", assert(sql("show tables from global_temp").collect().length == 0))
+  }
+
   test("[KYUUBI #3426] Drop temp view should be skipped permission check") {
     val tempView = "temp_view"
     val globalTempView = "global_temp_view"
