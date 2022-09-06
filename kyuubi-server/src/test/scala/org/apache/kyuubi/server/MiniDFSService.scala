@@ -17,19 +17,24 @@
 
 package org.apache.kyuubi.server
 
+import java.io.{File, FileWriter}
+import java.net.InetAddress
+
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hadoop.hdfs.client.HdfsClientConfigKeys
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 
 class MiniDFSService(name: String, hdfsConf: Configuration)
   extends AbstractService(name)
   with Logging {
-
+  private val hadoopConfDir: File = Utils.createTempDir().toFile
   private var hdfsCluster: MiniDFSCluster = _
 
   def this(hdfsConf: Configuration = new Configuration()) =
@@ -55,6 +60,7 @@ class MiniDFSService(name: String, hdfsConf: Configuration)
       s"NameNode address in configuration is " +
         s"${hdfsConf.get(HdfsClientConfigKeys.DFS_NAMENODE_RPC_ADDRESS_KEY)}")
     super.start()
+    saveHadoopConf()
   }
 
   override def stop(): Unit = {
@@ -62,6 +68,21 @@ class MiniDFSService(name: String, hdfsConf: Configuration)
     super.stop()
   }
 
+  private def saveHadoopConf(): Unit = {
+    val configToWrite = new Configuration(false)
+    val hostName = InetAddress.getLocalHost.getHostName
+    hdfsConf.iterator().asScala.foreach { kv =>
+      val key = kv.getKey
+      val value = kv.getValue.replaceAll(hostName, "localhost")
+      configToWrite.set(key, value)
+      getConf.set(key, value)
+    }
+    val writer = new FileWriter(new File(hadoopConfDir, "hdfs-site.xml"))
+    configToWrite.writeXml(writer)
+    writer.close()
+  }
+
   def getHadoopConf: Configuration = hdfsConf
   def getDFSPort: Int = hdfsCluster.getNameNodePort
+  def getHadoopConfDir: String = hadoopConfDir.getAbsolutePath
 }
