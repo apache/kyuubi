@@ -49,7 +49,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         if (tableIdentifier.isEmpty) {
           datasourceV2Relation
         } else {
-          applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
+          applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get._1, spark)
         }
       case other => apply(other)
     }

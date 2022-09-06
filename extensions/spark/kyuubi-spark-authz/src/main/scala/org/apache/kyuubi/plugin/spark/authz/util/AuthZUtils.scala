@@ -18,12 +18,13 @@
 package org.apache.kyuubi.plugin.spark.authz.util
 
 import scala.util.{Failure, Success, Try}
-
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
+
+import scala.collection.mutable.ArrayBuffer
 
 private[authz] object AuthZUtils {
 
@@ -98,13 +99,27 @@ private[authz] object AuthZUtils {
     plan.nodeName == "DataSourceV2Relation" && plan.resolved
   }
 
-  def getDatasourceV2Identifier(plan: LogicalPlan): Option[TableIdentifier] = {
+  def getDatasourceV2Identifier(plan: LogicalPlan): Option[(TableIdentifier, Seq[String])] = {
     // avoid importing DataSourceV2Relation for Spark version compatibility
     val identifier = getFieldVal[Option[AnyRef]](plan, "identifier")
+    // Seq[AttributeReference]
+    val outputAttrSeq = getFieldVal[Option[AnyRef]](plan, "output")
+
+    // todo need more imporments
+
+    val colNames = ArrayBuffer[String]()
+    if (outputAttrSeq.isDefined) {
+      val outputAttrSeq2 = outputAttrSeq.get.asInstanceOf[Seq[AnyRef]]
+      outputAttrSeq2.foreach { attr => {
+        colNames += getFieldVal[Option[AnyRef]](attr, "name").orNull.toString
+      }
+      }
+    }
+
     identifier.map { id =>
       val namespaces = invoke(id, "namespace").asInstanceOf[Array[String]]
       val table = invoke(id, "name").asInstanceOf[String]
-      TableIdentifier(table, Some(quote(namespaces)))
+      (TableIdentifier(table, Some(quote(namespaces))), colNames)
     }
   }
 
