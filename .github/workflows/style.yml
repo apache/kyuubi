@@ -56,7 +56,7 @@ jobs:
         continue-on-error: true
 
       - name: Install
-        if: failure() && steps.modules-check.outcome != 'success'
+        if: steps.modules-check.conclusion != 'success' && steps.modules-check.outcome != 'failure'
         run: |
           export MVN_OPT="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip"
           build/mvn clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.2,tpcds
