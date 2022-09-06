@@ -18,6 +18,7 @@
 package org.apache.kyuubi.it.hive.operation
 
 import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
+
 import org.apache.kyuubi.{HiveEngineTests, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._

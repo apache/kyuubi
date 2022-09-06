@@ -18,6 +18,7 @@
 package org.apache.kyuubi.it.flink.operation
 
 import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.it.flink.WithKyuubiServerAndFlinkMiniCluster
