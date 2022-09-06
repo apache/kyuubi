@@ -40,7 +40,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
-// scalastyle:on
+  // scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
   protected def doAs[T](user: String, f: => T): T = {
@@ -71,6 +71,9 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         case (db, "database") => doAs("admin", sql(s"DROP DATABASE IF EXISTS $db"))
         case (fn, "function") => doAs("admin", sql(s"DROP FUNCTION IF EXISTS $fn"))
         case (view, "view") => doAs("admin", sql(s"DROP VIEW IF EXISTS $view"))
+        case (cacheTable, "cache") => if (isSparkV32OrGreater) {
+            doAs("admin", sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
+          }
         case (_, e) =>
           throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
       }
@@ -145,8 +148,16 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val e = intercept[AccessControlException](sql(create))
     assert(e.getMessage === errorMessage("create", "mydb"))
     withCleanTmpResources(Seq((testDb, "database"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
-      doAs("admin", assert(Try { sql(alter) }.isSuccess))
+      doAs(
+        "admin",
+        assert(Try {
+          sql(create)
+        }.isSuccess))
+      doAs(
+        "admin",
+        assert(Try {
+          sql(alter)
+        }.isSuccess))
       val e1 = intercept[AccessControlException](sql(alter))
       assert(e1.getMessage === errorMessage("alter", "mydb"))
       val e2 = intercept[AccessControlException](sql(drop))
@@ -168,14 +179,34 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     assert(e.getMessage === errorMessage("create"))
 
     withCleanTmpResources(Seq((s"$db.$table", "table"))) {
-      doAs("bob", assert(Try { sql(create0) }.isSuccess))
-      doAs("bob", assert(Try { sql(alter0) }.isSuccess))
+      doAs(
+        "bob",
+        assert(Try {
+          sql(create0)
+        }.isSuccess))
+      doAs(
+        "bob",
+        assert(Try {
+          sql(alter0)
+        }.isSuccess))
 
       val e1 = intercept[AccessControlException](sql(drop0))
       assert(e1.getMessage === errorMessage("drop"))
-      doAs("bob", assert(Try { sql(alter0) }.isSuccess))
-      doAs("bob", assert(Try { sql(select).collect() }.isSuccess))
-      doAs("kent", assert(Try { sql(s"SELECT key FROM $db.$table").collect() }.isSuccess))
+      doAs(
+        "bob",
+        assert(Try {
+          sql(alter0)
+        }.isSuccess))
+      doAs(
+        "bob",
+        assert(Try {
+          sql(select).collect()
+        }.isSuccess))
+      doAs(
+        "kent",
+        assert(Try {
+          sql(s"SELECT key FROM $db.$table").collect()
+        }.isSuccess))
 
       Seq(
         select,
@@ -215,7 +246,11 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
 
     withCleanTmpResources(Seq((s"$db.${table}2", "table"), (s"$db.$table", "table"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
+      doAs(
+        "admin",
+        assert(Try {
+          sql(create)
+        }.isSuccess))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
@@ -259,7 +294,11 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     withCleanTmpResources(Seq(
       (s"$db.${table}2", "table"),
       (s"$db.$table", "table"))) {
-      doAs("admin", assert(Try { sql(create) }.isSuccess))
+      doAs(
+        "admin",
+        assert(Try {
+          sql(create)
+        }.isSuccess))
       doAs(
         "admin",
         sql(
@@ -619,6 +658,39 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
         s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
         s" [update] privilege on [$db1/$sinkTable1]"))
+    }
+  }
+
+  test("[KYUUBI #3411] skip checking cache table") {
+    if (isSparkV32OrGreater) { // cache table sql supported since 3.2.0
+
+      val db1 = "default"
+      val srcTable1 = "hive_src1"
+      val cacheTable1 = "cacheTable1"
+      val cacheTable2 = "cacheTable2"
+      val cacheTable3 = "cacheTable3"
+      val cacheTable4 = "cacheTable4"
+
+      withCleanTmpResources(Seq(
+        (s"$db1.$srcTable1", "table"),
+        (s"$db1.$cacheTable1", "cache"),
+        (s"$db1.$cacheTable2", "cache"),
+        (s"$db1.$cacheTable3", "cache"),
+        (s"$db1.$cacheTable4", "cache"))) {
+        doAs(
+          "admin",
+          sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
+            s" (id int, name string, city string)"))
+
+        val e1 = intercept[AccessControlException](
+          doAs("someone", sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
+
+        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
+
+        doAs("admin", sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
+
+        doAs("someone", sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
+      }
     }
   }
 }
