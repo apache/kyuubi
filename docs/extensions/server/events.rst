@@ -28,17 +28,20 @@ it can help us to create a custom EventHandler.
    import org.apache.kyuubi.config.KyuubiConf
    import org.apache.kyuubi.events.KyuubiEvent
 
+   /**
+    * Custom EventHandler provider. We can implement it to provide a custom EventHandler.
+    * The implementation will be loaded by ``Service Provider Interface``.
+    */
    trait CustomEventHandlerProvider {
 
      /**
-      * The create method is called by the Server EventHandler register
-      * to create a custom event handler.
+      * The create method is called to create a custom event handler
+      * when this implementation is loaded.
       *
       * @param kyuubiConf The conf can be used to read some configs.
-      *
       * @return A custom handler to handle KyuubiEvent.
-     */
-     def create(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent]
+      */
+      def create(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent]
    }
 
 Build A Custom EventHandler
