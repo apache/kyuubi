@@ -229,6 +229,7 @@ kyuubi.engine.event.loggers|SPARK|A comma separated list of engine history logge
 kyuubi.engine.flink.extra.classpath|&lt;undefined&gt;|The extra classpath for the flink sql engine, for configuring location of hadoop client jars, etc|string|1.6.0
 kyuubi.engine.flink.java.options|&lt;undefined&gt;|The extra java options for the flink sql engine|string|1.6.0
 kyuubi.engine.flink.memory|1g|The heap memory for the flink sql engine|string|1.6.0
+kyuubi.engine.hive.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
 kyuubi.engine.hive.extra.classpath|&lt;undefined&gt;|The extra classpath for the hive query engine, for configuring location of hadoop client jars, etc|string|1.6.0
 kyuubi.engine.hive.java.options|&lt;undefined&gt;|The extra java options for the hive query engine|string|1.6.0
 kyuubi.engine.hive.memory|1g|The heap memory for the hive query engine|string|1.6.0
@@ -253,7 +254,8 @@ kyuubi.engine.share.level|USER|Engines will be shared in different levels, avail
 kyuubi.engine.share.level.sub.domain|&lt;undefined&gt;|(deprecated) - Using kyuubi.engine.share.level.subdomain instead|string|1.2.0
 kyuubi.engine.share.level.subdomain|&lt;undefined&gt;|Allow end-users to create a subdomain for the share level of an engine. A subdomain is a case-insensitive string values that must be a valid zookeeper sub path. For example, for `USER` share level, an end-user can share a certain engine within a subdomain, not for all of its clients. End-users are free to create multiple engines in the `USER` share level. When disable engine pool, use 'default' if absent.|string|1.4.0
 kyuubi.engine.single.spark.session|false|When set to true, this engine is running in a single session mode. All the JDBC/ODBC connections share the temporary views, function registries, SQL configuration and the current database.|boolean|1.3.0
-kyuubi.engine.spark.event.loggers|SPARK|A comma separated list of engine loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.6.0
+kyuubi.engine.spark.event.loggers|SPARK|A comma separated list of engine loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
+kyuubi.engine.trino.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
 kyuubi.engine.trino.extra.classpath|&lt;undefined&gt;|The extra classpath for the trino query engine, for configuring other libs which may need by the trino engine |string|1.6.0
 kyuubi.engine.trino.java.options|&lt;undefined&gt;|The extra java options for the trino query engine|string|1.6.0
 kyuubi.engine.trino.memory|1g|The heap memory for the trino query engine|string|1.6.0
@@ -345,13 +347,6 @@ kyuubi.ha.zookeeper.node.creation.timeout|PT2M|Timeout for creating zookeeper no
 kyuubi.ha.zookeeper.publish.configs|false|When set to true, publish Kerberos configs to Zookeeper.Note that the Hive driver needs to be greater than 1.3 or 2.0 or apply HIVE-11581 patch.|boolean|1.4.0
 kyuubi.ha.zookeeper.quorum||(deprecated) The connection string for the zookeeper ensemble|string|1.0.0
 kyuubi.ha.zookeeper.session.timeout|60000|The timeout(ms) of a connected session to be idled|int|1.0.0
-
-
-### Hive
-
-Key | Default | Meaning | Type | Since
---- | --- | --- | --- | ---
-kyuubi.engine.hive.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.6.0
 
 
 ### Kinit
@@ -481,13 +476,6 @@ Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
 kyuubi.spnego.keytab|&lt;undefined&gt;|Keytab file for SPNego principal|string|1.6.0
 kyuubi.spnego.principal|&lt;undefined&gt;|SPNego service principal, typical value would look like HTTP/_HOST@EXAMPLE.COM. SPNego service principal would be used when restful Kerberos security is enabled. This needs to be set only if SPNEGO is to be used in authentication.|string|1.6.0
-
-
-### Trino
-
-Key | Default | Meaning | Type | Since
---- | --- | --- | --- | ---
-kyuubi.engine.trino.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.6.0
 
 
 ### Zookeeper

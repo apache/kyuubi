@@ -2073,7 +2073,7 @@ object KyuubiConf {
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         " <li>JDBC: to be done</li>" +
         " <li>CUSTOM: to be done.</li></ul>")
-      .version("1.6.0")
+      .version("1.7.0")
       .fallbackConf(ENGINE_EVENT_LOGGERS)
 
   val ENGINE_HIVE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
@@ -2084,7 +2084,7 @@ object KyuubiConf {
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         " <li>JDBC: to be done</li>" +
         " <li>CUSTOM: to be done.</li></ul>")
-      .version("1.6.0")
+      .version("1.7.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .toSequence()
@@ -2094,14 +2094,14 @@ object KyuubiConf {
       .createWithDefault(Seq("JSON"))
 
   val ENGINE_TRINO_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.engine.hive.event.loggers")
+    buildConf("kyuubi.engine.trino.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
         " events go. We use spark logger by default.<ul>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         " <li>JDBC: to be done</li>" +
         " <li>CUSTOM: to be done.</li></ul>")
-      .version("1.6.0")
+      .version("1.7.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .toSequence()
