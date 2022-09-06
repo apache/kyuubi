@@ -93,9 +93,10 @@ object PrivilegesBuilder {
       }
     }
 
-    def mergeProjectionForV2(table: TableIdentifier,
-                             colNames: Seq[String],
-                             plan: LogicalPlan): Unit = {
+    def mergeProjectionForDataSourceV2(
+        table: TableIdentifier,
+        colNames: Seq[String],
+        plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table,
@@ -140,9 +141,10 @@ object PrivilegesBuilder {
         }
 
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
-        getDatasourceV2Identifier(datasourceV2Relation).foreach {
-          case (tableIdentifier, colNames) =>
-            mergeProjectionForV2(tableIdentifier, colNames, plan)
+        val t = getDatasourceV2Identifier(datasourceV2Relation)
+        if (t.isDefined) {
+          val colNames = getDatasourceV2ColumnNames(plan)
+          mergeProjectionForDataSourceV2(t.get, colNames, plan)
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
