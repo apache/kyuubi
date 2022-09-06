@@ -254,7 +254,9 @@ object PrivilegesBuilder {
 
       case "AlterViewAsCommand" =>
         val view = getPlanField[TableIdentifier]("name")
-        outputObjs += tablePrivileges(view)
+        if (!isTempView(view, spark)) {
+          outputObjs += tablePrivileges(view)
+        }
         buildQuery(getQuery, inputObjs)
 
       case "AlterViewAs" =>
