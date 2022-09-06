@@ -641,18 +641,16 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         (s"$db1.$cacheTable2", "cache"),
         (s"$db1.$cacheTable3", "cache"),
         (s"$db1.$cacheTable4", "cache"))) {
-        doAs(
-          "admin",
+
+        doAs("admin",
           sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
             s" (id int, name string, city string)"))
 
         val e1 = intercept[AccessControlException](
           doAs("someone", sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
-
         assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
 
         doAs("admin", sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
-
         doAs("someone", sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
       }
     }

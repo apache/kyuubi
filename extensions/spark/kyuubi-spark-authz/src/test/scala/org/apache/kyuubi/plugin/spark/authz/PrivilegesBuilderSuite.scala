@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import scala.reflect.io.File
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
@@ -459,15 +458,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assert(tuple._1.isEmpty)
     }
 
-    assert(tuple._2.size === 1)
-    val po = tuple._2.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname equalsIgnoreCase reusedDb)
-    assert(po.objectName equalsIgnoreCase reusedDb)
-    assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.CREATE)
+    assert(tuple._2.size === 0)
   }
 
   test("CacheTableAsSelect") {
@@ -490,15 +481,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
-    assert(tuple._2.size === 1)
-    val po = tuple._2.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(StringUtils.isEmpty(po.dbname))
-    assert(po.objectName === "CacheTableAsSelect")
-    assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.CREATE)
+    assert(tuple._2.size === 0)
   }
 
   test("CreateViewCommand") {
