@@ -38,25 +38,39 @@ For further information about PySpark JDBC usage and options, please refer to Sp
 - Put the jdbc driver jar file to `$SPARK_HOME/jars` directory to make it visible for
   the classpath of PySpark.
 
+- Create spark session in runtime
+```python
+from pyspark.sql import SparkSession
+
+builder = SparkSession.builder \
+        .config("spark.driver.extraClassPath",
+                "/path/hive-service-3.1.3.jar,/path/hive-jdbc-3.1.3.jar") \
+        .config("spark.jars", "/path/hive-service-3.1.3.jar,/path/hive-jdbc-3.1.3.jar")
+spark = builder.getOrCreate()
+```
 
 ```python
-# Loading data from a JDBC source
-jdbcDF = spark.read
-    .format("jdbc")
-    .option("url", "jdbc:kyuubi://kyuubi_sever_ip:kyuubi_port")
-    .option("dbtable", "schema.tablename")
-    .option("user", "username")
-    .option("password", "password")
-    .load()
+# Loading data from Kyuubi via HiveDriver as JDBC source
+jdbcDF = spark.read \
+  .format("jdbc") \
+  .options(driver="org.apache.hive.jdbc.HiveDriver",
+           url="jdbc:hive2://kyuubi_server_ip:kyuubi_server_port",
+           user="user",
+           password="password",
+           query="select * from testdb.table2 limit 5"
+           ) \
+  .load()
 
 
-# Saving data to a JDBC source
-jdbcDF.write
-    .format("jdbc")
-    .option("url", "jdbc:kyuubi://kyuubi_sever_ip:kyuubi_port")
-    .option("dbtable", "schema.tablename")
-    .option("user", "username")
-    .option("password", "password")
+# Saving data to Kyuubi via HiveDriver as JDBC source
+jdbcDF.write \
+    .format("jdbc") \
+    .options(driver="org.apache.hive.jdbc.HiveDriver",
+             url="jdbc:hive2://kyuubi_server_ip:kyuubi_server_port",
+           user="user",
+           password="password",
+             dbtable="testdb.table2"
+           ) \
     .save()
 ```
 
