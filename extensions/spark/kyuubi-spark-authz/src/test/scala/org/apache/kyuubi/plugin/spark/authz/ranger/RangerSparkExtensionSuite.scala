@@ -148,16 +148,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val e = intercept[AccessControlException](sql(create))
     assert(e.getMessage === errorMessage("create", "mydb"))
     withCleanTmpResources(Seq((testDb, "database"))) {
-      doAs(
-        "admin",
-        assert(Try {
-          sql(create)
-        }.isSuccess))
-      doAs(
-        "admin",
-        assert(Try {
-          sql(alter)
-        }.isSuccess))
+      doAs("admin", assert(Try { sql(create) }.isSuccess))
+      doAs("admin", assert(Try { sql(alter) }.isSuccess))
       val e1 = intercept[AccessControlException](sql(alter))
       assert(e1.getMessage === errorMessage("alter", "mydb"))
       val e2 = intercept[AccessControlException](sql(drop))
@@ -179,34 +171,14 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     assert(e.getMessage === errorMessage("create"))
 
     withCleanTmpResources(Seq((s"$db.$table", "table"))) {
-      doAs(
-        "bob",
-        assert(Try {
-          sql(create0)
-        }.isSuccess))
-      doAs(
-        "bob",
-        assert(Try {
-          sql(alter0)
-        }.isSuccess))
+      doAs("bob", assert(Try { sql(create0) }.isSuccess))
+      doAs("bob", assert(Try { sql(alter0) }.isSuccess))
 
       val e1 = intercept[AccessControlException](sql(drop0))
       assert(e1.getMessage === errorMessage("drop"))
-      doAs(
-        "bob",
-        assert(Try {
-          sql(alter0)
-        }.isSuccess))
-      doAs(
-        "bob",
-        assert(Try {
-          sql(select).collect()
-        }.isSuccess))
-      doAs(
-        "kent",
-        assert(Try {
-          sql(s"SELECT key FROM $db.$table").collect()
-        }.isSuccess))
+      doAs("bob", assert(Try { sql(alter0) }.isSuccess))
+      doAs("bob", assert(Try { sql(select).collect() }.isSuccess))
+      doAs("kent", assert(Try { sql(s"SELECT key FROM $db.$table").collect() }.isSuccess))
 
       Seq(
         select,
@@ -246,11 +218,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
 
     withCleanTmpResources(Seq((s"$db.${table}2", "table"), (s"$db.$table", "table"))) {
-      doAs(
-        "admin",
-        assert(Try {
-          sql(create)
-        }.isSuccess))
+      doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
@@ -294,11 +262,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     withCleanTmpResources(Seq(
       (s"$db.${table}2", "table"),
       (s"$db.$table", "table"))) {
-      doAs(
-        "admin",
-        assert(Try {
-          sql(create)
-        }.isSuccess))
+      doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs(
         "admin",
         sql(
