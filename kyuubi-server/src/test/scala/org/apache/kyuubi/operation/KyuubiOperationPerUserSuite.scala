@@ -17,19 +17,30 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.UUID
+
+import org.apache.hadoop.fs.{FileSystem, FileUtil, Path}
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TStatusCode}
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.{Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 
-class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests {
+class KyuubiOperationPerUserSuite
+  extends WithKyuubiServer with SparkQueryTests with WithSimpleDFSService {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
+  }
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CONF_DIR", getHadoopConfDir)
   }
 
   test("kyuubi defined function - system_user/session_user") {
@@ -198,6 +209,38 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
           assert(session.client.asyncRequestInterrupted)
         }
       }
+    }
+  }
+
+  test("scala NPE issue with hdfs jar") {
+    val jarDir = Utils.createTempDir().toFile
+    val udfCode =
+      """
+        |package test.utils
+        |
+        |object Math {
+        |def add(x: Int, y: Int): Int = x + y
+        |}
+        |
+        |""".stripMargin
+    val jarFile = UserJarTestUtils.createJarFile(
+      udfCode,
+      "test",
+      s"test-function-${UUID.randomUUID}.jar",
+      jarDir.toString)
+    val hadoopConf = getHadoopConf
+    val dfs = FileSystem.get(hadoopConf)
+    val dfsJarDir = dfs.makeQualified(new Path(s"jars-${UUID.randomUUID()}"))
+    val localFs = FileSystem.getLocal(hadoopConf)
+    val localPath = new Path(jarFile.getAbsolutePath)
+    val dfsJarPath = new Path(dfsJarDir, "test-function.jar")
+    FileUtil.copy(localFs, localPath, dfs, dfsJarPath, false, false, hadoopConf)
+    withJdbcStatement() { statement =>
+      val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
+      statement.executeQuery(s"add jar $dfsJarPath")
+      val rs = kyuubiStatement.executeScala("println(test.utils.Math.add(1,2))")
+      rs.next()
+      assert(rs.getString(1) === "3")
     }
   }
 }

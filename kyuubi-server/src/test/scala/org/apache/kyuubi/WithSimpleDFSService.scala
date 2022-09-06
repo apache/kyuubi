@@ -41,6 +41,7 @@ trait WithSimpleDFSService extends KyuubiFunSuite {
   }
 
   def getHadoopConf: Configuration = miniDFSService.getHadoopConf
+  def getHadoopConfDir: String = miniDFSService.getHadoopConfDir
 
   def getDefaultFS: String = miniDFSService.getHadoopConf.get("fs.defaultFS")
   def getDFSPort: Int = miniDFSService.getDFSPort

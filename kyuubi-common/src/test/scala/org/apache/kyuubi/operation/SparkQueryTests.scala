@@ -34,7 +34,7 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
 
   protected lazy val SPARK_ENGINE_MAJOR_MINOR_VERSION: (Int, Int) = sparkEngineMajorMinorVersion
 
-  protected lazy val httpMode = false;
+  protected lazy val httpMode = false
 
   test("execute statement - select null") {
     withJdbcStatement() { statement =>
