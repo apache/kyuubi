@@ -40,6 +40,7 @@ jobs:
       matrix:
         profiles:
           - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds'
+
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 8
@@ -51,13 +52,15 @@ jobs:
           check-latest: false
       - name: Check kyuubi modules avaliable
         id: modules-check
-        run: build/mvn dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true
+        run: build/mvn dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
 
       - name: Install
         if: failure() && steps.modules-check.outcome != 'success'
         run: |
-          build/mvn clean install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
-            -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.ski
+          export MVN_OPT="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip"
+          build/mvn clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.2,tpcds
+          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-1 -Pspark-3.1
+          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-2 -Pspark-3.2
 
       - name: Scalastyle with maven
         id: scalastyle-check
