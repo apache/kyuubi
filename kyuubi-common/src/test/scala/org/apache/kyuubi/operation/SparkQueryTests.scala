@@ -480,7 +480,7 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
         assert(set.getString("plan") startsWith "Create")
         val set0 = statement.executeQuery(setkey)
         assert(set0.next())
-        assert(set0.getString(2) === "OPTIMIZE")
+        assert(set0.getString(2) === "optimize")
         val e1 = intercept[SQLException](statement.executeQuery(dql))
         assert(e1.getMessage.contains("Table or view not found"))
         statement.execute("SET kyuubi.operation.plan.only.mode=analyze")

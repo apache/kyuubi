@@ -23,10 +23,9 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiConf.OperationModes._
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
-import org.apache.kyuubi.operation.{Operation, OperationManager}
+import org.apache.kyuubi.operation.{NoneMode, Operation, OperationManager, PlanOnlyMode}
 import org.apache.kyuubi.session.Session
 
 class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManager") {
@@ -53,16 +52,18 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
         return catalogDatabaseOperation
       }
     }
-    val mode = OperationModes(flinkSession.sessionContext.getConfigMap.getOrDefault(
+
+    val mode = PlanOnlyMode.fromString(flinkSession.sessionContext.getConfigMap.getOrDefault(
       OPERATION_PLAN_ONLY_MODE.key,
       operationModeDefault))
-    flinkSession.sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.toString)
+
+    flinkSession.sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
     val resultMaxRows =
       flinkSession.normalizedConf.getOrElse(
         ENGINE_FLINK_MAX_ROWS.key,
         resultMaxRowsDefault.toString).toInt
     val op = mode match {
-      case NONE =>
+      case NoneMode =>
         // FLINK-24427 seals calcite classes which required to access in async mode, considering
         // there is no much benefit in async mode, here we just ignore `runAsync` and always run
         // statement in sync mode as a workaround
