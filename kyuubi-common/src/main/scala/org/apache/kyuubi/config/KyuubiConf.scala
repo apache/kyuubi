@@ -305,6 +305,13 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val PROXY_KUBERNETES_SPARK_UI_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.proxy.kubernetes.spark.ui.enabled")
+      .doc("")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
   // ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -41,4 +41,9 @@ trait FrontendService {
    * An optional `ServiceDiscovery` for [[FrontendService]] to expose itself
    */
   val discoveryService: Option[Service]
+
+  /**
+   * An optional `UI`for each engine expose it's ui
+   */
+  def ui: Option[String] = None
 }

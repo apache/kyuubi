@@ -92,6 +92,8 @@ class SparkTBinaryFrontendService(
       None
     }
   }
+
+  override def ui: Option[String] = sc.uiWebUrl
 }
 
 object SparkTBinaryFrontendService extends Logging {

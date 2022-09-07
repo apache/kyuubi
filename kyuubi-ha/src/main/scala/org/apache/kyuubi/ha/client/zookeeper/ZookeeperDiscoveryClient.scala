@@ -40,12 +40,12 @@ import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NodeExistsException
 import org.apache.zookeeper.WatchedEvent
 import org.apache.zookeeper.Watcher
-
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.PROXY_KUBERNETES_SPARK_UI_ENABLED
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NODE_TIMEOUT
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_PUBLISH_CONFIGS
@@ -230,8 +230,9 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       version: Option[String] = None,
       external: Boolean = false): Unit = {
     val instance = serviceDiscovery.fe.connectionUrl
+    val ui = serviceDiscovery.fe.ui
     val watcher = new DeRegisterWatcher(instance, serviceDiscovery)
-    serviceNode = createPersistentNode(conf, namespace, instance, version, external)
+    serviceNode = createPersistentNode(conf, namespace, instance, version, ui, external)
     // Set a watch on the serviceNode
     if (zkClient.checkExists
         .usingWatcher(watcher.asInstanceOf[Watcher]).forPath(serviceNode.getActualPath) == null) {
@@ -276,7 +277,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       instance: String,
       version: Option[String] = None,
       external: Boolean = false): String = {
-    createPersistentNode(conf, namespace, instance, version, external).getActualPath
+    createPersistentNode(conf, namespace, instance, version, None, external).getActualPath
   }
 
   @VisibleForTesting
@@ -330,6 +331,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       namespace: String,
       instance: String,
       version: Option[String] = None,
+      ui: Option[String] = None,
       external: Boolean = false): PersistentNode = {
     val ns = ZKPaths.makePath(null, namespace)
     try {
@@ -353,12 +355,17 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val createMode =
       if (external) CreateMode.PERSISTENT_SEQUENTIAL
       else CreateMode.EPHEMERAL_SEQUENTIAL
-    val znodeData =
+    var znodeData =
       if (conf.get(HA_ZK_PUBLISH_CONFIGS) && session.isEmpty) {
         addConfsToPublish(conf, instance)
       } else {
         instance
       }
+    znodeData = if (conf.get(PROXY_KUBERNETES_SPARK_UI_ENABLED) && ui.nonEmpty) {
+        znodeData + ";spark.ui=" + ui.get
+    } else {
+      znodeData
+    }
     try {
       localServiceNode = new PersistentNode(
         zkClient,
