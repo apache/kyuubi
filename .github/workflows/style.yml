@@ -27,15 +27,15 @@ concurrency:
   group: linter-${{ github.ref }}
   cancel-in-progress: true
 
-# no install runs before style check because it is expensive, we can skip build if style fails
-# Well, sometimes when we introduce a new module, it may 'fail' the style check for missing
-# dependency we just create for other module to inherit.
-# We can ignore this failure and merge the PR, if we see the style check pass on the new module
-# or via a local quick verification.
 jobs:
   linter:
     name: Style check
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        profiles:
+          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds'
+
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 8
@@ -45,10 +45,26 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Check kyuubi modules avaliable
+        id: modules-check
+        run: build/mvn dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
+        continue-on-error: true
+
+      - name: Install
+        # When a continue-on-error step fails, the outcome is failure, but the final conclusion is success.
+        # for more details, please visit: https://github.com/actions/toolkit/issues/399#issuecomment-666147717
+        if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
+        run: |
+          MVN_OPT="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip"
+          build/mvn clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.2,tpcds
+          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-1 -Pspark-3.1
+          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-3,extensions/spark/kyuubi-spark-connector-kudu,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.3
+
       - name: Scalastyle with maven
-        run: build/mvn scalastyle:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
+        id: scalastyle-check
+        run: build/mvn scalastyle:check ${{ matrix.profiles }}
       - name: Print scalastyle error report
-        if: failure()
+        if: failure() && steps.scalastyle-check.outcome != 'success'
         run: >-
           for log in `find * -name "scalastyle-output.xml"`;
             do
@@ -57,7 +73,7 @@ jobs:
               fi
           done
       - name: JavaStyle with maven
-        run: build/mvn spotless:check -Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds
+        run: build/mvn spotless:check ${{ matrix.profiles }}
       - name: setup npm
         uses: actions/setup-node@v3
         with:
