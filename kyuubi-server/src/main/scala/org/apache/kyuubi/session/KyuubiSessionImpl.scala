@@ -199,8 +199,7 @@ class KyuubiSessionImpl(
   }
 
   override def getInfo(infoType: TGetInfoType): TGetInfoValue = {
-    val serverConf = sessionManager.getConf
-    val provider = serverConf.get(SERVER_INFO_PROVIDER)
+    val provider = sessionConf.get(SERVER_INFO_PROVIDER)
 
     if (client == null) {
       if (provider != "SERVER") {
