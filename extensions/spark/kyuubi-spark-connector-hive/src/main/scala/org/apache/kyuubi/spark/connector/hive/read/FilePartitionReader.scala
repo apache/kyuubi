@@ -23,7 +23,7 @@ import org.apache.parquet.io.ParquetDecodingException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.execution.datasources.SchemaColumnConvertNotSupportedException
-import org.apache.spark.sql.hive.kyuubi.connector.HiveConnectorHelper.inputFileBlockHolder
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.inputFileBlockHolder
 import org.apache.spark.sql.internal.SQLConf
 
 // scalastyle:off line.size.limit

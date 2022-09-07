@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.spark.connector.hive
+package org.apache.kyuubi.spark.connector.hive.read
 
 import scala.collection.JavaConverters._
 
@@ -30,7 +30,7 @@ import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapred.{InputFormat, JobConf}
 import org.apache.hadoop.util.ReflectionUtils
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.hive.kyuubi.connector.HiveConnectorHelper.{hiveShim, hiveTableUtil}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hiveShim, hiveTableUtil}
 import org.apache.spark.sql.types.StructType
 
 object HiveReader {
