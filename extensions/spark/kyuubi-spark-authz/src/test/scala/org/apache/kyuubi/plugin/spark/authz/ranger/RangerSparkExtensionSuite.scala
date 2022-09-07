@@ -510,25 +510,30 @@ class InMemoryTableCatalogRangerSparkExtensionSuite extends RangerSparkExtension
       assert(e3.getMessage.contains(s"does not have [drop] privilege" +
         s" on [$namespace1/$table1]"))
 
-//      // insert
-//      val e4 = intercept[AccessControlException](
-//        doAs("someone", sql(s"INSERT INTO $catalog.$namespace1.$table1 (id, name, city)" +
-//          s" VALUES (1, 'bowen', 'Guangzhou')")))
-//      assert(e4.getMessage.contains(s"does not have [select] privilege" +
-//        s" on [$namespace1/$table1/id]"))
-//
-//      // update
-//      val e5 = intercept[AccessControlException](
-//        doAs("someone", sql(s"UPDATE $catalog.$namespace1.$table1 SET city='Hangzhou' " +
-//          " WHERE id=1")))
-//      assert(e5.getMessage.contains(s"does not have [select] privilege" +
-//        s" on [$namespace1/$table1/id]"))
-//
-//      // delete
-//      val e6 = intercept[AccessControlException](
-//        doAs("someone", sql(s"DELETE FROM $catalog.$namespace1.$table1 WHERE id=1")))
-//      assert(e6.getMessage.contains(s"does not have [select] privilege" +
-//        s" on [$namespace1/$table1/id]"))
+      // AppendData
+      // todo update?
+      val e4 = intercept[AccessControlException](
+        doAs(
+          "someone",
+          sql(s"INSERT INTO $catalog.$namespace1.$table1 (id, name, city)" +
+            s" VALUES (1, 'bowen', 'Guangzhou')")))
+      assert(e4.getMessage.contains(s"does not have [update] privilege" +
+        s" on [$namespace1/$table1]"))
+
+      // UpdateTable
+      val e5 = intercept[AccessControlException](
+        doAs(
+          "someone",
+          sql(s"UPDATE $catalog.$namespace1.$table1 SET city='Hangzhou' " +
+            " WHERE id=1")))
+      assert(e5.getMessage.contains(s"does not have [update] privilege" +
+        s" on [$namespace1/$table1]"))
+
+      // DeleteFromTable
+      val e6 = intercept[AccessControlException](
+        doAs("someone", sql(s"DELETE FROM $catalog.$namespace1.$table1 WHERE id=1")))
+      assert(e6.getMessage.contains(s"does not have [update] privilege" +
+        s" on [$namespace1/$table1/]"))
     }
   }
 }

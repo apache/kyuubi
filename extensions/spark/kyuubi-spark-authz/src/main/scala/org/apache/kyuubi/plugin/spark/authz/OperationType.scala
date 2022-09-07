@@ -84,12 +84,14 @@ object OperationType extends Enumeration {
       case "DropDatabaseCommand" | "DropNamespace" => DROPDATABASE
       case "DropFunctionCommand" | "DropFunction" => DROPFUNCTION
       case "DropTableCommand" | "DropTable" => DROPTABLE
+      case "DeleteFromTable" | "DropTable" => DROPTABLE
       case "ExplainCommand" => EXPLAIN
       case "InsertIntoDataSourceCommand" |
           "InsertIntoDataSourceDirCommand" |
           "InsertIntoHiveTable" |
           "InsertIntoHiveDirCommand" |
-          "SaveIntoDataSourceCommand" => QUERY
+          "SaveIntoDataSourceCommand" |
+          "AppendData" => QUERY // todo AppendData redundant and shadowed conflict
       case "LoadDataCommand" => LOAD
       case "SetCommand" => SHOWCONF
       case "RefreshFunctionCommand" | "RefreshFunction" => RELOADFUNCTION

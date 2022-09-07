@@ -420,7 +420,7 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(getTableName)
 
       case "DropTable" =>
-        val resolvedTable = invoke(plan, "child").asInstanceOf[LogicalPlan]
+        val resolvedTable = getPlanField[LogicalPlan]("child")
         val tableIdent = getFieldVal[Identifier](resolvedTable, "identifier")
         outputObjs += tablePrivilegesForDSV2(tableIdent)
 
@@ -451,7 +451,23 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(table, actionType = actionType)
         buildQuery(getQuery, inputObjs)
 
-      case "AppendData" => // v2 insert
+      case "AppendData" => // DsV2 insert
+        val table = getPlanField[AnyRef]("table")
+        val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
+        outputObjs += tablePrivilegesForDSV2(tableIdentifier.get, actionType = INSERT)
+      // todo inputObjs
+
+      case "UpdateTable" => // DsV2 update
+        val table = getPlanField[AnyRef]("table")
+        val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
+        outputObjs += tablePrivilegesForDSV2(tableIdentifier.get, actionType = INSERT)
+      // todo inputObjs
+
+      case "DeleteFromTable" => // DsV2 update
+        val table = getPlanField[AnyRef]("table")
+        val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
+        outputObjs += tablePrivilegesForDSV2(tableIdentifier.get, actionType = INSERT)
+      // todo inputObjs
 
       case "LoadDataCommand" =>
         val table = getPlanField[TableIdentifier]("table")
