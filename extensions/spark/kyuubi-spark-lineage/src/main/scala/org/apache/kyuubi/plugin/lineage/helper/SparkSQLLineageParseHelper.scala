@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
-import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
+import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, TableCatalog}
@@ -40,7 +40,7 @@ trait LineageParser {
   def sparkSession: SparkSession
 
   val SUBQUERY_COLUMN_IDENTIFIER = "__subquery__"
-  val AGGREGATE_COLUMN_IDENTIFIER = "__aggregate__"
+  val AGGREGATE_COUNT_COLUMN_IDENTIFIER = "__count__"
   val LOCAL_TABLE_IDENTIFIER = "__local__"
 
   type AttributeMap[A] = ListMap[Attribute, A]
@@ -79,7 +79,7 @@ trait LineageParser {
         k -> AttributeSet(attrs.flatMap(attr =>
           childMap.getOrElse(
             attr.exprId,
-            if (attr.name.equalsIgnoreCase(AGGREGATE_COLUMN_IDENTIFIER)) AttributeSet(attr)
+            if (attr.name.equalsIgnoreCase(AGGREGATE_COUNT_COLUMN_IDENTIFIER)) AttributeSet(attr)
             else AttributeSet.empty)))
       }
     }
@@ -92,25 +92,32 @@ trait LineageParser {
     }
   }
 
+  private def containsCountAll(expr: Expression): Boolean = {
+    expr match {
+      case e: Count if e.references.isEmpty => true
+      case e =>
+        e.children.exists(containsCountAll)
+    }
+  }
+
   private def getSelectColumnLineage(
       named: Seq[NamedExpression]): AttributeMap[AttributeSet] = {
     val exps = named.map {
       case exp: Alias =>
-        if (exp.references.nonEmpty) exp.toAttribute -> exp.references
-        else {
-          exp.child match {
-            case _: AggregateExpression =>
-              exp.toAttribute -> AttributeSet(
-                exp.toAttribute.withName(AGGREGATE_COLUMN_IDENTIFIER))
-            case _ =>
-              val attrRefs = getExpressionSubqueryPlans(exp.child)
-                .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]()))
-                .foldLeft(ListMap[Attribute, AttributeSet]())(mergeColumnsLineage).values
-                .foldLeft(AttributeSet.empty)(_ ++ _)
-                .map(attr => attr.withQualifier(attr.qualifier :+ SUBQUERY_COLUMN_IDENTIFIER))
-              exp.toAttribute -> AttributeSet(attrRefs)
+        val references =
+          if (exp.references.nonEmpty) exp.references
+          else {
+            val attrRefs = getExpressionSubqueryPlans(exp.child)
+              .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]()))
+              .foldLeft(ListMap[Attribute, AttributeSet]())(mergeColumnsLineage).values
+              .foldLeft(AttributeSet.empty)(_ ++ _)
+              .map(attr => attr.withQualifier(attr.qualifier :+ SUBQUERY_COLUMN_IDENTIFIER))
+            AttributeSet(attrRefs)
           }
-        }
+        (
+          exp.toAttribute,
+          if (!containsCountAll(exp.child)) references
+          else references + exp.toAttribute.withName(AGGREGATE_COUNT_COLUMN_IDENTIFIER))
       case a: Attribute => a -> a.references
     }
     ListMap(exps: _*)
@@ -119,7 +126,7 @@ trait LineageParser {
   private def joinRelationColumnLineage(
       parent: AttributeMap[AttributeSet],
       relationAttrs: Seq[Attribute],
-      qualifier: Seq[String] = Seq()): AttributeMap[AttributeSet] = {
+      qualifier: Seq[String]): AttributeMap[AttributeSet] = {
     val relationAttrSet = AttributeSet(relationAttrs)
     if (parent.nonEmpty) {
       parent.map { case (k, attrs) =>
@@ -130,7 +137,7 @@ trait LineageParser {
               if attr.qualifier.nonEmpty && attr.qualifier.last.equalsIgnoreCase(
                 SUBQUERY_COLUMN_IDENTIFIER) =>
             attr.withQualifier(attr.qualifier.init)
-          case attr if attr.name.equalsIgnoreCase(AGGREGATE_COLUMN_IDENTIFIER) =>
+          case attr if attr.name.equalsIgnoreCase(AGGREGATE_COUNT_COLUMN_IDENTIFIER) =>
             attr.withQualifier(qualifier)
         })
       }

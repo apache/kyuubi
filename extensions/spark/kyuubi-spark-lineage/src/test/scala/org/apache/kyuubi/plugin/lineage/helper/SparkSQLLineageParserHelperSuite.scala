@@ -713,7 +713,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       List(),
       List(
         ("a", Set("test_db0.test_table0.key")),
-        ("b", Set("test_db0.test_table0.__aggregate__")),
+        ("b", Set("test_db0.test_table0.__count__")),
         ("c", Set()))))
 
     val sql1 = """select count(*) as a, 1 as b from test_db0.test_table0"""
@@ -722,7 +722,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       List("test_db0.test_table0"),
       List(),
       List(
-        ("a", Set("test_db0.test_table0.__aggregate__")),
+        ("a", Set("test_db0.test_table0.__count__")),
         ("b", Set()))))
 
     val sql2 = """select every(count(key) == 1) as a, 1 as b from test_db0.test_table0"""
@@ -740,7 +740,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       List("test_db0.test_table0"),
       List(),
       List(
-        ("a", Set("test_db0.test_table0.__aggregate__")),
+        ("a", Set("test_db0.test_table0.__count__")),
         ("b", Set()))))
 
     val sql4 = """select first(key) as a, 1 as b from test_db0.test_table0"""
@@ -759,6 +759,26 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       List(),
       List(
         ("a", Set("test_db0.test_table0.key")),
+        ("b", Set()))))
+
+    val sql6 =
+      """select every(count(value) + sum(key) == 1) as a,
+        | 1 as b from test_db0.test_table0""".stripMargin
+    val ret6 = exectractLineage(sql6)
+    assert(ret6 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.value", "test_db0.test_table0.key")),
+        ("b", Set()))))
+
+    val sql7 = """select every(count(*) + sum(key) == 1) as a, 1 as b from test_db0.test_table0"""
+    val ret7 = exectractLineage(sql7)
+    assert(ret7 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.__count__", "test_db0.test_table0.key")),
         ("b", Set()))))
 
   }
@@ -805,7 +825,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         List("default.table0", "default.table1"),
         List(),
         List(
-          ("aa", Set("default.table0.__aggregate__")),
+          ("aa", Set("default.table0.__count__")),
           ("bb", Set("default.table1.b")))))
 
       // ListQuery

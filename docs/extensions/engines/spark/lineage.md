@@ -56,9 +56,9 @@ The lineage of this SQL:
 
 #### Lineage specific identification
 
-- `__aggregate__`. Means that the column is an aggregate expression 
-  and cannot extract the specific column, such as `count(*)`. Lineage of the column
-  like `default.test_table0.__aggregate__`.
+- `__count__`. Means that the column is an `count(*)` aggregate expression 
+  and cannot extract the specific column. Lineage of the column
+  like `default.test_table0.__count__`.
 - `__local__`. Means that the lineage of the table is a `LocalRelation` and not the real table,
   like `__local__.a`
 
