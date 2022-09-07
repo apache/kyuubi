@@ -23,9 +23,10 @@ import org.apache.hadoop.fs.{FileSystem, FileUtil, Path}
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode}
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer, WithSimpleDFSService}
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
+import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
 
@@ -41,6 +42,17 @@ class KyuubiOperationPerUserSuite
   override def beforeAll(): Unit = {
     super.beforeAll()
     conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CONF_DIR", getHadoopConfDir)
+  }
+
+  test("audit Kyuubi server MetaData") {
+    withJdbcStatement() { statement =>
+      val metaData = statement.getConnection.getMetaData
+      assert(metaData.getDatabaseProductName === "Apache Kyuubi (Incubating)")
+      assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
+      val ver = SemanticVersion(KYUUBI_VERSION)
+      assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
+      assert(metaData.getDatabaseMinorVersion === ver.minorVersion)
+    }
   }
 
   test("kyuubi defined function - system_user/session_user") {
@@ -245,9 +257,7 @@ class KyuubiOperationPerUserSuite
   }
 
   test("server info provider - server") {
-    withSessionConf(Map(
-      KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER",
-      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))()() {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))()() {
       withSessionHandle { (client, handle) =>
         val req = new TGetInfoReq()
         req.setSessionHandle(handle)
@@ -258,9 +268,7 @@ class KyuubiOperationPerUserSuite
   }
 
   test("server info provider - engine") {
-    withSessionConf(Map(
-      KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE",
-      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))()() {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
       withSessionHandle { (client, handle) =>
         val req = new TGetInfoReq()
         req.setSessionHandle(handle)

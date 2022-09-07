@@ -26,10 +26,12 @@ import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hive.service.rpc.thrift._
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.types._
 
+import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.schema.SchemaHelper.TIMESTAMP_NTZ
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
@@ -52,6 +54,17 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       }
       assert(!expected.hasNext)
       assert(!types.next())
+    }
+  }
+
+  test("audit Spark engine MetaData") {
+    withJdbcStatement() { statement =>
+      val metaData = statement.getConnection.getMetaData
+      assert(metaData.getDatabaseProductName === "Spark SQL")
+      assert(metaData.getDatabaseProductVersion === SPARK_VERSION)
+      val ver = SemanticVersion(SPARK_VERSION)
+      assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
+      assert(metaData.getDatabaseMinorVersion === ver.minorVersion)
     }
   }
 

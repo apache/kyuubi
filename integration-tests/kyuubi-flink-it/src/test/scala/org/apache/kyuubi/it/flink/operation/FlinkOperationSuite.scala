@@ -73,9 +73,7 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
   }
 
   test("server info provider - server") {
-    withSessionConf(Map(
-      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false",
-      KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))()() {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))()() {
       withSessionHandle { (client, handle) =>
         val req = new TGetInfoReq()
         req.setSessionHandle(handle)
@@ -86,9 +84,7 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
   }
 
   test("server info provider - engine") {
-    withSessionConf(Map(
-      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false",
-      KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
       withSessionHandle { (client, handle) =>
         val req = new TGetInfoReq()
         req.setSessionHandle(handle)
