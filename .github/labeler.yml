@@ -109,13 +109,14 @@
 
 "module:spark":
   - "externals/kyuubi-spark-sql-engine/**/*" 
-  - "extensions/spark/kyuubi-extension-spark*/**/*"
-  - "extensions/spark/kyuubi-spark-authz/**/*"
-  - "integration-tests/kyuubi-kubernetes-it/**/*"
+  - "extensions/spark/**/*"
   - "tools/spark-block-cleaner/**/*"
 
 "module:extensions":
-  - "extension/**/*"
+  - "extensions/**/*"
 
 "module:rest-client":
   - "kyuubi-rest-client/**/*"
+
+"module:integration-tests":
+  - "integration-tests/**/*"
