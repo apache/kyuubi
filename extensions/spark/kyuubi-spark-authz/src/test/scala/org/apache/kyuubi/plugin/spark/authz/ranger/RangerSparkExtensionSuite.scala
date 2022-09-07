@@ -25,6 +25,7 @@ import scala.util.Try
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
@@ -76,6 +77,42 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           }
         case (_, e) =>
           throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
+      }
+    }
+  }
+
+  /**
+   * Drops temporary view `viewNames` after calling `f`.
+   */
+  protected def withTempView(viewNames: String*)(f: => Unit): Unit = {
+    try {
+      f
+    } finally {
+      viewNames.foreach { viewName =>
+        try spark.catalog.dropTempView(viewName)
+        catch {
+          // If the test failed part way, we don't want to mask the failure by failing to remove
+          // temp views that never got created.
+          case _: NoSuchTableException =>
+        }
+      }
+    }
+  }
+
+  /**
+   * Drops global temporary view `viewNames` after calling `f`.
+   */
+  protected def withGlobalTempView(viewNames: String*)(f: => Unit): Unit = {
+    try {
+      f
+    } finally {
+      viewNames.foreach { viewName =>
+        try spark.catalog.dropGlobalTempView(viewName)
+        catch {
+          // If the test failed part way, we don't want to mask the failure by failing to remove
+          // global temp views that never got created.
+          case _: NoSuchTableException =>
+        }
       }
     }
   }
@@ -529,21 +566,31 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   test("[KYUUBI #3343] pass temporary view creation") {
     val tempView = "temp_view"
     val globalTempView = "global_temp_view"
-    doAs("denyuser", sql(s"CREATE TEMPORARY VIEW $tempView AS select * from values(1)"))
 
-    doAs(
-      "denyuser",
-      sql(s"CREATE OR REPLACE TEMPORARY VIEW $tempView" +
-        s" AS select * from values(1)"))
+    withTempView(tempView) {
+      doAs(
+        "denyuser",
+        assert(Try(sql(s"CREATE TEMPORARY VIEW $tempView AS select * from values(1)")).isSuccess))
 
-    doAs(
-      "denyuser",
-      sql(s"CREATE GLOBAL TEMPORARY VIEW $globalTempView AS SELECT * FROM values(1)"))
+      doAs(
+        "denyuser",
+        Try(sql(s"CREATE OR REPLACE TEMPORARY VIEW $tempView" +
+          s" AS select * from values(1)")).isSuccess)
+    }
 
-    doAs(
-      "denyuser",
-      sql(s"CREATE OR REPLACE GLOBAL TEMPORARY VIEW $globalTempView" +
-        s" AS select * from values(1)"))
+    withGlobalTempView(globalTempView) {
+      doAs(
+        "denyuser",
+        Try(
+          sql(
+            s"CREATE GLOBAL TEMPORARY VIEW $globalTempView AS SELECT * FROM values(1)")).isSuccess)
+
+      doAs(
+        "denyuser",
+        Try(sql(s"CREATE OR REPLACE GLOBAL TEMPORARY VIEW $globalTempView" +
+          s" AS select * from values(1)")).isSuccess)
+    }
+    doAs("admin", assert(sql("show tables from global_temp").collect().length == 0))
   }
 }
 
