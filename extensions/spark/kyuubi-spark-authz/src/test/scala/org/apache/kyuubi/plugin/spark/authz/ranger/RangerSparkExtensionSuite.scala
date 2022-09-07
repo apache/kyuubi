@@ -497,14 +497,13 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
         s" on [$namespace1/$table2]"))
 
       // CreateAsSelect
-      // todo input table???
       val e21 = intercept[AccessControlException](
         doAs(
           "someone",
           sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
             s" AS select * from $catalogV2.$namespace1.$table1")))
-      assert(e21.getMessage.contains(s"does not have [create] privilege" +
-        s" on [$namespace1/$table2]"))
+      assert(e21.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/city]"))
 
       // DropTable
       val e3 = intercept[AccessControlException](
@@ -513,7 +512,6 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
         s" on [$namespace1/$table1]"))
 
       // AppendData
-      // todo update?
       val e4 = intercept[AccessControlException](
         doAs(
           "someone",

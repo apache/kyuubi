@@ -154,6 +154,15 @@ object PrivilegesBuilder {
           mergeProjectionForDataSourceV2(tableIdentifier.get, plan.outputSet.toSeq, plan)
         }
 
+      case v2ResolvedPlan if v2ResolvedPlan.nodeName == "ResolvedDBObjectName" =>
+        val nameParts = getFieldVal[Seq[String]](v2ResolvedPlan, "nameParts")
+        val cols = invoke(v2ResolvedPlan, "output").asInstanceOf[Seq[Attribute]]
+        mergeProjectionForDataSourceV2(
+          TableIdentifier(quote(nameParts.tail), Some(nameParts.head)),
+          cols,
+          plan)
+        val a = 1
+
       case u if u.nodeName == "UnresolvedRelation" =>
         val tableNameM = u.getClass.getMethod("tableName")
         val parts = tableNameM.invoke(u).asInstanceOf[String].split("\\.")
@@ -338,11 +347,9 @@ object PrivilegesBuilder {
         // fixme: do we need to add columns to check?
         outputObjs += tablePrivileges(table)
 
-      case "CreateTable" | "CreateTableAsSelect" =>
+      case "CreateTable" =>
         val table = invoke(plan, "tableName").asInstanceOf[Identifier]
         outputObjs += tablePrivilegesForDSV2(table)
-        val query = getPlanField("name").asInstanceOf[LogicalPlan]
-        buildQuery(query, inputObjs)
 
       case "CreateDataSourceTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("table").identifier
@@ -373,7 +380,7 @@ object PrivilegesBuilder {
         val left = getPlanField[LogicalPlan]("name")
         left.nodeName match {
           case "ResolvedDBObjectName" =>
-            val nameParts = getPlanField[Seq[String]]("nameParts")
+            val nameParts = getFieldVal[Seq[String]](left, "nameParts")
             val db = Some(quote(nameParts.init))
             outputObjs += tablePrivileges(TableIdentifier(nameParts.last, db))
           case _ =>
