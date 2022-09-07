@@ -448,6 +448,34 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
   }
 
+  test("[KYUUBI #3426] Drop temp view should be skipped permission check") {
+    val tempView = "temp_view"
+    val globalTempView = "global_temp_view"
+    doAs("denyuser", sql(s"CREATE TEMPORARY VIEW $tempView AS select * from values(1)"))
+
+    doAs(
+      "denyuser",
+      sql(s"CREATE OR REPLACE TEMPORARY VIEW $tempView" +
+        s" AS select * from values(1)"))
+
+    doAs(
+      "denyuser",
+      sql(s"CREATE GLOBAL TEMPORARY VIEW $globalTempView AS SELECT * FROM values(1)"))
+
+    doAs(
+      "denyuser",
+      sql(s"CREATE OR REPLACE GLOBAL TEMPORARY VIEW $globalTempView" +
+        s" AS select * from values(1)"))
+
+    // global_temp will contain the temporary view, even if it is not global
+    doAs("admin", assert(sql("show tables from global_temp").collect().length == 2))
+
+    doAs("denyuser2", sql(s"DROP VIEW IF EXISTS $tempView"))
+    doAs("denyuser2", sql(s"DROP VIEW IF EXISTS global_temp.$globalTempView"))
+
+    doAs("admin", assert(sql("show tables from global_temp").collect().length == 0))
+  }
+
   test("[KYUUBI #3343] pass temporary view creation") {
     val tempView = "temp_view"
     val globalTempView = "global_temp_view"
