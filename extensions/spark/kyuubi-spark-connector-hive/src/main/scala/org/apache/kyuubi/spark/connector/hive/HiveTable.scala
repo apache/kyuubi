@@ -20,17 +20,22 @@ package org.apache.kyuubi.spark.connector.hive
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.connector.catalog.{SupportsRead, SupportsWrite, Table, TableCapability}
-import org.apache.spark.sql.connector.catalog.TableCapability.BATCH_READ
+import org.apache.spark.sql.connector.catalog.TableCapability.{BATCH_READ, BATCH_WRITE, OVERWRITE_BY_FILTER, OVERWRITE_DYNAMIC}
+import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.connector.write.{LogicalWriteInfo, WriteBuilder}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveConnectorHelper.{logicalExpressions, BucketSpecHelper}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
+
+import org.apache.kyuubi.spark.connector.hive.write.HiveWriteBuilder
 
 case class HiveTable(
     sparkSession: SparkSession,
@@ -59,16 +64,26 @@ case class HiveTable(
 
   override def properties(): util.Map[String, String] = catalogTable.properties.asJava
 
+  override def partitioning: Array[Transform] = {
+    val partitions = new mutable.ArrayBuffer[Transform]()
+    catalogTable.partitionColumnNames.foreach { col =>
+      partitions += logicalExpressions.identity(logicalExpressions.reference(Seq(col)))
+    }
+    catalogTable.bucketSpec.foreach { spec =>
+      partitions += spec.asTransform
+    }
+    partitions.toArray
+  }
+
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
     HiveScanBuilder(sparkSession, fileIndex, dataSchema, catalogTable)
   }
 
   override def newWriteBuilder(info: LogicalWriteInfo): WriteBuilder = {
-    // TODO: Support write code path fo hive v2.
-    throw new UnsupportedOperationException("Not support write for v2 hive.")
+    HiveWriteBuilder(sparkSession, catalogTable, info, hiveTableCatalog)
   }
 
   override def capabilities(): util.Set[TableCapability] = {
-    util.EnumSet.of(BATCH_READ)
+    util.EnumSet.of(BATCH_READ, BATCH_WRITE, OVERWRITE_BY_FILTER, OVERWRITE_DYNAMIC)
   }
 }
