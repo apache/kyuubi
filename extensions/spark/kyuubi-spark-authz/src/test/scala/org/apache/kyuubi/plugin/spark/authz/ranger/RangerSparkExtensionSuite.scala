@@ -447,6 +447,26 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         assert(sql(s"show table extended from $db like '$table*'").collect().length === 0))
     }
   }
+
+  test("[KYUUBI #3343] pass temporary view creation") {
+    val tempView = "temp_view"
+    val globalTempView = "global_temp_view"
+    doAs("denyuser", sql(s"CREATE TEMPORARY VIEW $tempView AS select * from values(1)"))
+
+    doAs(
+      "denyuser",
+      sql(s"CREATE OR REPLACE TEMPORARY VIEW $tempView" +
+        s" AS select * from values(1)"))
+
+    doAs(
+      "denyuser",
+      sql(s"CREATE GLOBAL TEMPORARY VIEW $globalTempView AS SELECT * FROM values(1)"))
+
+    doAs(
+      "denyuser",
+      sql(s"CREATE OR REPLACE GLOBAL TEMPORARY VIEW $globalTempView" +
+        s" AS select * from values(1)"))
+  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
@@ -501,30 +521,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           val join = s"SELECT a.id, b.name FROM $db.$table1 a JOIN $db.$table2 b ON a.id=b.id"
           assert(sql(join).collect().length == 1)
         })
-    }
-  }
-
-  test("[KYUUBI #3343] pass temporary view creation") {
-    val table = "hive_src"
-    val tempView = "temp_view"
-    val globalTempView = "global_temp_view"
-
-    withCleanTmpResources(Seq((table, "table"))) {
-      doAs("admin", sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
-
-      doAs("admin", sql(s"CREATE TEMPORARY VIEW $tempView AS select * from $table"))
-
-      doAs(
-        "admin",
-        sql(s"CREATE OR REPLACE TEMPORARY VIEW $tempView" +
-          s" AS select * from $table"))
-
-      doAs("admin", sql(s"CREATE GLOBAL TEMPORARY VIEW $globalTempView AS SELECT * FROM $table"))
-
-      doAs(
-        "admin",
-        sql(s"CREATE OR REPLACE GLOBAL TEMPORARY VIEW $globalTempView" +
-          s" AS select * from $table"))
     }
   }
 
