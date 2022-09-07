@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.CommandExecutionMode
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 
@@ -112,10 +113,15 @@ class PlanOnlyStatement(
           SQLConf.get.maxToStringFields,
           printOperatorId = false))))
       case PhysicalMode =>
-        val physical = spark.sql(statement).queryExecution.sparkPlan
+        val analyzed = spark.sessionState.analyzer.execute(plan)
+        spark.sessionState.analyzer.checkAnalysis(analyzed)
+        val physical = spark.sessionState.executePlan(analyzed, CommandExecutionMode.SKIP).sparkPlan
         iter = new IterableFetchIterator(Seq(Row(physical.toString())))
       case ExecutionMode =>
-        val executed = spark.sql(statement).queryExecution.executedPlan
+        val analyzed = spark.sessionState.analyzer.execute(plan)
+        spark.sessionState.analyzer.checkAnalysis(analyzed)
+        val executed =
+          spark.sessionState.executePlan(analyzed, CommandExecutionMode.SKIP).executedPlan
         iter = new IterableFetchIterator(Seq(Row(executed.toString())))
       case UnknownMode => throw unknownModeError(mode)
       case _ => throw notSupportedModeError(mode, "Spark SQL")
