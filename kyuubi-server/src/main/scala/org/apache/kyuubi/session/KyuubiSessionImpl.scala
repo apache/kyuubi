@@ -209,6 +209,7 @@ class KyuubiSessionImpl(
       return super.getInfo(infoType)
     }
 
+    waitForEngineLaunched()
     provider match {
       case "SERVER" => super.getInfo(infoType)
       case "ENGINE" => withAcquireRelease() {
