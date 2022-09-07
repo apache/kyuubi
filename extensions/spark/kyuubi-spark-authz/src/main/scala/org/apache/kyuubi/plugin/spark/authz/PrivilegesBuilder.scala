@@ -222,8 +222,10 @@ object PrivilegesBuilder {
       case "AlterTableRenameCommand" =>
         val oldTable = getPlanField[TableIdentifier]("oldName")
         val newTable = getPlanField[TableIdentifier]("newName")
-        outputObjs += tablePrivileges(oldTable, actionType = PrivilegeObjectActionType.DELETE)
-        outputObjs += tablePrivileges(newTable)
+        if (!isTempView(oldTable, spark)) {
+          outputObjs += tablePrivileges(oldTable, actionType = PrivilegeObjectActionType.DELETE)
+          outputObjs += tablePrivileges(newTable)
+        }
 
       // this is for spark 3.1 or below
       case "AlterTableRecoverPartitionsCommand" =>
