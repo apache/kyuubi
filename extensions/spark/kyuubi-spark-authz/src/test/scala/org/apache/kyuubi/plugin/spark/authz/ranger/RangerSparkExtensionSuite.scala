@@ -475,6 +475,7 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
     val namespace1 = "ns1"
     val table1 = "table1"
     val table2 = "table2"
+    val cacheTable1 = "cacheTable1"
 
     withCleanTmpResources(
       Seq((s"$catalogV2.$namespace1.$table1", "table"))) {
@@ -534,6 +535,15 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
         doAs("someone", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1")))
       assert(e6.getMessage.contains(s"does not have [update] privilege" +
         s" on [$namespace1/$table1]"))
+
+      // CacheTable
+      val e7 = intercept[AccessControlException](
+        doAs(
+          "someone",
+          sql(s"CACHE TABLE $cacheTable1" +
+            s" AS select * from $catalogV2.$namespace1.$table1")))
+      assert(e7.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/id]"))
     }
   }
 }

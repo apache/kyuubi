@@ -468,12 +468,14 @@ object PrivilegesBuilder {
         val table = getPlanField[AnyRef]("table")
         val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
         outputObjs += tablePrivilegesForDSV2(tableIdentifier.get, actionType = INSERT)
+      // todo INSERT ?
       // todo inputObjs
 
       case "DeleteFromTable" => // DsV2 update
         val table = getPlanField[AnyRef]("table")
         val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
         outputObjs += tablePrivilegesForDSV2(tableIdentifier.get, actionType = INSERT)
+      // todo INSERT ?
       // todo inputObjs
 
       case "LoadDataCommand" =>
