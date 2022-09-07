@@ -30,7 +30,7 @@ import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, Phys
 import org.apache.spark.sql.execution.command.CommandUtils
 import org.apache.spark.sql.execution.datasources.WriteTaskResult
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hive, toSQLValue, HiveExternalCatalog}
+import org.apache.spark.sql.hive.kyuubi.connector.KyuubiHiveConnectorBridgeHelper.{hive, toSQLValue, HiveExternalCatalog}
 import org.apache.spark.sql.types.StringType
 
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorException

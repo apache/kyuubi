@@ -30,7 +30,7 @@ import org.apache.spark.sql.hive.{HadoopTableReader, HiveShim, HiveTableUtil}
 import org.apache.spark.sql.hive.client.HiveClientImpl
 import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StructType}
 
-object HiveBridgeHelper {
+object KyuubiHiveConnectorBridgeHelper {
   type HiveSessionCatalog = org.apache.spark.sql.hive.HiveSessionCatalog
   type HiveMetastoreCatalog = org.apache.spark.sql.hive.HiveMetastoreCatalog
   type HiveExternalCatalog = org.apache.spark.sql.hive.HiveExternalCatalog

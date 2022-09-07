@@ -34,7 +34,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.read.{InputPartition, PartitionReader}
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2._
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.NextIterator
+import org.apache.spark.sql.hive.kyuubi.connector.KyuubiHiveConnectorBridgeHelper.NextIterator
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types._

@@ -30,7 +30,7 @@ import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapred.{InputFormat, JobConf}
 import org.apache.hadoop.util.ReflectionUtils
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hiveShim, hiveTableUtil}
+import org.apache.spark.sql.hive.kyuubi.connector.KyuubiHiveConnectorBridgeHelper.{hiveShim, hiveTableUtil}
 import org.apache.spark.sql.types.StructType
 
 object HiveReader {

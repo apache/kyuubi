@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartitio
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, BoundReference, Expression, Predicate}
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources._
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.hiveClientImpl
+import org.apache.spark.sql.hive.kyuubi.connector.KyuubiHiveConnectorBridgeHelper.hiveClientImpl
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConnectorException}

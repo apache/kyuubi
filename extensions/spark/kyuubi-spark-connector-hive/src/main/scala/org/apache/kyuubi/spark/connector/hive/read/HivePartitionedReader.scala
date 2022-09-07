@@ -33,7 +33,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, SpecificInternalRow
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.execution.datasources.PartitionedFile
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hadoopTableReader, hiveShim}
+import org.apache.spark.sql.hive.kyuubi.connector.KyuubiHiveConnectorBridgeHelper.{hadoopTableReader, hiveShim}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.SerializableConfiguration
 
