@@ -202,9 +202,9 @@ class KyuubiSessionImpl(
     sessionConf.get(SERVER_INFO_PROVIDER) match {
       case "SERVER" => super.getInfo(infoType)
       case "ENGINE" => withAcquireRelease() {
-        waitForEngineLaunched()
-        client.getInfo(infoType).getInfoValue
-      }
+          waitForEngineLaunched()
+          client.getInfo(infoType).getInfoValue
+        }
       case unknown => throw new IllegalArgumentException(s"Unknown server info provider $unknown")
     }
   }
