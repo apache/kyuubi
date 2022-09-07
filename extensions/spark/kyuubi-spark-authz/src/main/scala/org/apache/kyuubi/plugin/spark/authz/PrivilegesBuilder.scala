@@ -24,8 +24,9 @@ import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project, Sort, Window}
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StructField
 
@@ -45,6 +46,13 @@ object PrivilegesBuilder {
       columns: Seq[String] = Nil,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
     PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns)
+  }
+
+  private def tablePrivilegesForDSV2(
+      table: Identifier,
+      columns: Seq[String] = Nil,
+      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
+    PrivilegeObject(TABLE_OR_VIEW, actionType, quote(table.namespace()), table.name(), columns)
   }
 
   private def functionPrivileges(
@@ -95,12 +103,12 @@ object PrivilegesBuilder {
 
     def mergeProjectionForDataSourceV2(
         table: TableIdentifier,
-        colNames: Seq[String],
+        cols: Seq[Attribute],
         plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table,
-          colNames)
+          cols.map { c => c.name })
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
@@ -141,10 +149,9 @@ object PrivilegesBuilder {
         }
 
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
-        val t = getDatasourceV2Identifier(datasourceV2Relation)
-        if (t.isDefined) {
-          val colNames = getDatasourceV2ColumnNames(plan)
-          mergeProjectionForDataSourceV2(t.get, colNames, plan)
+        val tableIdentifier = getDatasourceV2Identifier(datasourceV2Relation)
+        if (tableIdentifier.isDefined) {
+          mergeProjectionForDataSourceV2(tableIdentifier.get, plan.outputSet.toSeq, plan)
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
@@ -331,6 +338,12 @@ object PrivilegesBuilder {
         // fixme: do we need to add columns to check?
         outputObjs += tablePrivileges(table)
 
+      case "CreateTable" | "CreateTableAsSelect" =>
+        val table = invoke(plan, "tableName").asInstanceOf[Identifier]
+        outputObjs += tablePrivilegesForDSV2(table)
+        val query = getPlanField("name").asInstanceOf[LogicalPlan]
+        buildQuery(query, inputObjs)
+
       case "CreateDataSourceTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("table").identifier
         outputObjs += tablePrivileges(table)
@@ -406,6 +419,11 @@ object PrivilegesBuilder {
       case "DropTableCommand" =>
         outputObjs += tablePrivileges(getTableName)
 
+      case "DropTable" =>
+        val resolvedTable = invoke(plan, "child").asInstanceOf[LogicalPlan]
+        val tableIdent = getFieldVal[Identifier](resolvedTable, "identifier")
+        outputObjs += tablePrivilegesForDSV2(tableIdent)
+
       case "ExplainCommand" =>
 
       case "ExternalCommandExecutor" =>
@@ -432,6 +450,8 @@ object PrivilegesBuilder {
         val actionType = if (overwrite) INSERT_OVERWRITE else INSERT
         outputObjs += tablePrivileges(table, actionType = actionType)
         buildQuery(getQuery, inputObjs)
+
+      case "AppendData" => // v2 insert
 
       case "LoadDataCommand" =>
         val table = getPlanField[TableIdentifier]("table")

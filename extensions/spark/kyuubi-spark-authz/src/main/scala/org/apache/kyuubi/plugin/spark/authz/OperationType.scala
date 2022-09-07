@@ -70,7 +70,9 @@ object OperationType extends Enumeration {
           "OptimizedCreateHiveTableAsSelectCommand" => CREATETABLE_AS_SELECT
       case "CreateTableCommand" |
           "CreateDataSourceTableCommand" |
-          "CreateTableLikeCommand" => CREATETABLE
+          "CreateTableLikeCommand" |
+          "CreateTable" |
+          "CreateTableAsSelect" => CREATETABLE
       case "CreateViewCommand" |
           "CacheTableCommand" |
           "CreateTempViewUsing" |
@@ -81,7 +83,7 @@ object OperationType extends Enumeration {
       case "DescribeColumnCommand" | "DescribeTableCommand" => DESCTABLE
       case "DropDatabaseCommand" | "DropNamespace" => DROPDATABASE
       case "DropFunctionCommand" | "DropFunction" => DROPFUNCTION
-      case "DropTableCommand" => DROPTABLE
+      case "DropTableCommand" | "DropTable" => DROPTABLE
       case "ExplainCommand" => EXPLAIN
       case "InsertIntoDataSourceCommand" |
           "InsertIntoDataSourceDirCommand" |

@@ -27,6 +27,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
+import org.apache.spark.sql.connector.catalog.InMemoryCatalog
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
@@ -451,6 +452,85 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
+}
+
+class InMemoryTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+  override protected val catalogImpl: String = "in-memory"
+
+  override def beforeAll(): Unit = {
+    spark.conf.set("spark.sql.catalog.testcat", classOf[InMemoryCatalog].getName)
+    super.beforeAll()
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+
+    spark.sessionState.catalog.reset()
+    spark.sessionState.conf.clear()
+  }
+
+  test("[KYUUBI #34244 check access privilege for DatasourceV2]") {
+    val catalog = "testcat"
+    val namespace1 = "namespace1"
+    val table1 = "table1"
+    val table2 = "table2"
+    withCleanTmpResources(
+      Seq((s"$catalog.$namespace1.$table1", "table"))) {
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalog.$namespace1"))
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $catalog.$namespace1.$table1" +
+          " (id int, name string, city string)"))
+
+      // select
+      val e1 = intercept[AccessControlException](
+        doAs("someone", sql(s"select city, id from $catalog.$namespace1.$table1").explain()))
+      assert(e1.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/id]"))
+
+      // CreateTable
+      val e2 = intercept[AccessControlException](
+        doAs("someone", sql(s"CREATE TABLE IF NOT EXISTS $catalog.$namespace1.$table2")))
+      assert(e2.getMessage.contains(s"does not have [create] privilege" +
+        s" on [$namespace1/$table2]"))
+
+      // CreateAsSelect
+      // todo input table???
+      val e21 = intercept[AccessControlException](
+        doAs(
+          "someone",
+          sql(s"CREATE TABLE IF NOT EXISTS $catalog.$namespace1.$table2" +
+            s" AS select * from $catalog.$namespace1.$table1")))
+      assert(e21.getMessage.contains(s"does not have [create] privilege" +
+        s" on [$namespace1/$table2]"))
+
+      // DropTable
+      val e3 = intercept[AccessControlException](
+        doAs("someone", sql(s"DROP TABLE $catalog.$namespace1.$table1")))
+      assert(e3.getMessage.contains(s"does not have [drop] privilege" +
+        s" on [$namespace1/$table1]"))
+
+//      // insert
+//      val e4 = intercept[AccessControlException](
+//        doAs("someone", sql(s"INSERT INTO $catalog.$namespace1.$table1 (id, name, city)" +
+//          s" VALUES (1, 'bowen', 'Guangzhou')")))
+//      assert(e4.getMessage.contains(s"does not have [select] privilege" +
+//        s" on [$namespace1/$table1/id]"))
+//
+//      // update
+//      val e5 = intercept[AccessControlException](
+//        doAs("someone", sql(s"UPDATE $catalog.$namespace1.$table1 SET city='Hangzhou' " +
+//          " WHERE id=1")))
+//      assert(e5.getMessage.contains(s"does not have [select] privilege" +
+//        s" on [$namespace1/$table1/id]"))
+//
+//      // delete
+//      val e6 = intercept[AccessControlException](
+//        doAs("someone", sql(s"DELETE FROM $catalog.$namespace1.$table1 WHERE id=1")))
+//      assert(e6.getMessage.contains(s"does not have [select] privilege" +
+//        s" on [$namespace1/$table1/id]"))
+    }
+  }
 }
 
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
