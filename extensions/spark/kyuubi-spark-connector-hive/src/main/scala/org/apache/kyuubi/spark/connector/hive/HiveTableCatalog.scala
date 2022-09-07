@@ -38,7 +38,7 @@ import org.apache.spark.sql.connector.catalog.NamespaceChange.RemoveProperty
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.datasources.DataSource
 import org.apache.spark.sql.hive.HiveUDFExpressionBuilder
-import org.apache.spark.sql.hive.kyuubi.connector.HiveConnectorHelper.{catalogV2Util, postExternalCatalogEvent, HiveExternalCatalog, HiveMetastoreCatalog, HiveSessionCatalog}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{catalogV2Util, postExternalCatalogEvent, HiveExternalCatalog, HiveMetastoreCatalog, HiveSessionCatalog}
 import org.apache.spark.sql.internal.StaticSQLConf.CATALOG_IMPLEMENTATION
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -150,7 +150,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
       schema: StructType,
       partitions: Array[Transform],
       properties: util.Map[String, String]): Table = {
-    import org.apache.spark.sql.hive.kyuubi.connector.HiveConnectorHelper.TransformHelper
+    import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.TransformHelper
     val (partitionColumns, maybeBucketSpec) = partitions.toSeq.convertTransforms
     val provider = properties.getOrDefault(TableCatalog.PROP_PROVIDER, conf.defaultDataSourceName)
     val tableProperties = properties.asScala

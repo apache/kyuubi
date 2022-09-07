@@ -29,7 +29,7 @@ import org.apache.hadoop.hive.ql.exec.TaskRunner
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils
-import org.apache.spark.sql.hive.kyuubi.connector.HiveConnectorHelper.{hive, HiveExternalCatalog, HiveVersion}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hive, HiveExternalCatalog, HiveVersion}
 
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorException
 

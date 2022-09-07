@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.spark.connector.hive
+package org.apache.kyuubi.spark.connector.hive.read
 
 import java.util.Locale
 
@@ -32,12 +32,12 @@ import org.apache.spark.sql.connector.read.PartitionReaderFactory
 import org.apache.spark.sql.execution.PartitionedFileUtil
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2.FileScan
-import org.apache.spark.sql.hive.kyuubi.connector.HiveConnectorHelper.hiveClientImpl
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.hiveClientImpl
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.apache.kyuubi.spark.connector.hive.read.HivePartitionReaderFactory
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorException
 
 case class HiveScan(
     sparkSession: SparkSession,

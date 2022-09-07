@@ -31,10 +31,11 @@ import org.apache.spark.sql.connector.catalog.TableCapability.{BATCH_READ, BATCH
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.connector.write.{LogicalWriteInfo, WriteBuilder}
-import org.apache.spark.sql.hive.kyuubi.connector.HiveConnectorHelper.{logicalExpressions, BucketSpecHelper}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{logicalExpressions, BucketSpecHelper}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+import org.apache.kyuubi.spark.connector.hive.read.{HiveCatalogFileIndex, HiveScanBuilder}
 import org.apache.kyuubi.spark.connector.hive.write.HiveWriteBuilder
 
 case class HiveTable(

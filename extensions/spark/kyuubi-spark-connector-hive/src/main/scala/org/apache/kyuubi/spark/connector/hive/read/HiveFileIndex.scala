@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.spark.connector.hive
+package org.apache.kyuubi.spark.connector.hive.read
 
 import java.net.URI
 
@@ -29,8 +29,10 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartitio
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, BoundReference, Expression, Predicate}
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources._
-import org.apache.spark.sql.hive.kyuubi.connector.HiveConnectorHelper.hiveClientImpl
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.hiveClientImpl
 import org.apache.spark.sql.types.StructType
+
+import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConnectorException}
 
 class HiveCatalogFileIndex(
     sparkSession: SparkSession,
