@@ -464,23 +464,23 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   val cacheTable1 = "cacheTable1"
 
   override def beforeAll(): Unit = {
-   if (isSparkV32OrGreater) {
+    if (isSparkV32OrGreater) {
 
-    spark.conf.set(
-      s"spark.sql.catalog.$catalogV2",
-      "org.apache.spark.sql.connector.catalog.InMemoryCatalog")
+      spark.conf.set(
+        s"spark.sql.catalog.$catalogV2",
+        "org.apache.spark.sql.connector.catalog.InMemoryCatalog")
 
-    super.beforeAll()
+      super.beforeAll()
 
-    doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
-    doAs(
-      "admin",
-      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
-        " (id int, name string, city string)"))
-    doAs(
-      "admin",
-      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
-        " (id int, name string, city string)"))
+      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
+          " (id int, name string, city string)"))
+      doAs(
+        "admin",
+        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
+          " (id int, name string, city string)"))
     }
   }
 
