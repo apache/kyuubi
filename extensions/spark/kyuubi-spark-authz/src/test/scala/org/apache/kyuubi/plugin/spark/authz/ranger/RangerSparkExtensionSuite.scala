@@ -457,11 +457,26 @@ class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite
 class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
 
-  private val catalogV2 = "testcat"
+  val catalogV2 = "testcat"
+  val namespace1 = "ns1"
+  val table1 = "table1"
+  val table2 = "table2"
+  val outputTable1 = "outputTable1"
+  val cacheTable1 = "cacheTable1"
 
   override def beforeAll(): Unit = {
     spark.conf.set(s"spark.sql.catalog.$catalogV2", classOf[InMemoryCatalog].getName)
     super.beforeAll()
+
+    doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
+    doAs(
+      "admin",
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
+        " (id int, name string, city string)"))
+    doAs(
+      "admin",
+      sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
+        " (id int, name string, city string)"))
   }
 
   override def afterAll(): Unit = {
@@ -471,71 +486,96 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
     spark.sessionState.conf.clear()
   }
 
-  test("[KYUUBI #34244 check access privilege for DatasourceV2]") {
-    val namespace1 = "ns1"
-    val table1 = "table1"
-    val table2 = "table2"
-    val cacheTable1 = "cacheTable1"
+  test("[KYUUBI #3424] SELECT") {
+    // select
+    val e1 = intercept[AccessControlException](
+      doAs("someone", sql(s"select city, id from $catalogV2.$namespace1.$table1").explain()))
+    assert(e1.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1/id]"))
+  }
 
-    withCleanTmpResources(
-      Seq((s"$catalogV2.$namespace1.$table1", "table"))) {
-      doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
+  test("[KYUUBI #3424] CREATE TABLE") {
+    // CreateTable
+    val e2 = intercept[AccessControlException](
+      doAs("someone", sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2")))
+    assert(e2.getMessage.contains(s"does not have [create] privilege" +
+      s" on [$namespace1/$table2]"))
+
+    // CreateAsSelect
+    val e21 = intercept[AccessControlException](
       doAs(
-        "admin",
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1" +
-          " (id int, name string, city string)"))
+        "someone",
+        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
+          s" AS select * from $catalogV2.$namespace1.$table2")))
+    assert(e21.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table2/city]"))
+  }
 
-      // select
-      val e1 = intercept[AccessControlException](
-        doAs("someone", sql(s"select city, id from $catalogV2.$namespace1.$table1").explain()))
-      assert(e1.getMessage.contains(s"does not have [select] privilege" +
-        s" on [$namespace1/$table1/id]"))
+  test("[KYUUBI #3424] DROP TABLE") {
+    // DropTable
+    val e3 = intercept[AccessControlException](
+      doAs("someone", sql(s"DROP TABLE $catalogV2.$namespace1.$table1")))
+    assert(e3.getMessage.contains(s"does not have [drop] privilege" +
+      s" on [$namespace1/$table1]"))
+  }
 
-      // CreateTable
-      val e2 = intercept[AccessControlException](
-        doAs("someone", sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2")))
-      assert(e2.getMessage.contains(s"does not have [create] privilege" +
-        s" on [$namespace1/$table2]"))
+  test("[KYUUBI #3424] INSERT TABLE") {
+    // AppendData: Insert Using a VALUES Clause
+    val e4 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+          s" VALUES (1, 'bowenliang123', 'Guangzhou')")))
+    assert(e4.getMessage.contains(s"does not have [update] privilege" +
+      s" on [$namespace1/$outputTable1]"))
 
-      // CreateAsSelect
-      val e21 = intercept[AccessControlException](
-        doAs(
-          "someone",
-          sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
-            s" AS select * from $catalogV2.$namespace1.$table1")))
-      assert(e21.getMessage.contains(s"does not have [select] privilege" +
-        s" on [$namespace1/$table1/city]"))
+    // AppendData: Insert Using a TABLE Statement
+    val e42 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+          s" TABLE $catalogV2.$namespace1.$table1")))
+    assert(e42.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1/city]"))
 
-      // DropTable
-      val e3 = intercept[AccessControlException](
-        doAs("someone", sql(s"DROP TABLE $catalogV2.$namespace1.$table1")))
-      assert(e3.getMessage.contains(s"does not have [drop] privilege" +
-        s" on [$namespace1/$table1]"))
+    // AppendData: Insert Using a SELECT Statement
+    val e43 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+          s" SELECT * from $catalogV2.$namespace1.$table1")))
+    assert(e43.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1/city]"))
 
-      // AppendData
-      val e4 = intercept[AccessControlException](
-        doAs(
-          "someone",
-          sql(s"INSERT INTO $catalogV2.$namespace1.$table1 (id, name, city)" +
-            s" VALUES (1, 'bowenliang123', 'Guangzhou')")))
-      assert(e4.getMessage.contains(s"does not have [update] privilege" +
-        s" on [$namespace1/$table1]"))
+    // OverwriteByExpression: Insert Overwrite
+    val e44 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"INSERT OVERWRITE $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+          s" VALUES (1, 'bowenliang123', 'Guangzhou')")))
+    assert(e44.getMessage.contains(s"does not have [update] privilege" +
+      s" on [$namespace1/$outputTable1]"))
+  }
 
-      // UpdateTable
-      val e5 = intercept[AccessControlException](
-        doAs(
-          "someone",
-          sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Hangzhou' " +
-            " WHERE id=1")))
-      assert(e5.getMessage.contains(s"does not have [update] privilege" +
-        s" on [$namespace1/$table1]"))
+  test("[KYUUBI #3424] UPDATE TABLE") {
+    // UpdateTable
+    val e5 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Hangzhou' " +
+          " WHERE id=1")))
+    assert(e5.getMessage.contains(s"does not have [update] privilege" +
+      s" on [$namespace1/$table1]"))
 
+    test("[KYUUBI #3424] DELETE FROM TABLE") {
       // DeleteFromTable
       val e6 = intercept[AccessControlException](
         doAs("someone", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1")))
       assert(e6.getMessage.contains(s"does not have [update] privilege" +
         s" on [$namespace1/$table1]"))
+    }
 
+    test("[KYUUBI #3424] CACHE TABLE") {
       // CacheTable
       val e7 = intercept[AccessControlException](
         doAs(
@@ -751,7 +791,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
         val e1 = intercept[AccessControlException](
           doAs("someone", sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
-        assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
+        assert(
+          e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
 
         doAs("admin", sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
         doAs("someone", sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
