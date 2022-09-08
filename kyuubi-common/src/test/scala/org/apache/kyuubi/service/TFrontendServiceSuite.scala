@@ -26,7 +26,7 @@ import org.scalatest.time._
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_BIND_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.{OperationHandle, TClientTestUtils}
 import org.apache.kyuubi.service.TFrontendService.FeServiceServerContext
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
@@ -34,7 +34,7 @@ import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
 class TFrontendServiceSuite extends KyuubiFunSuite {
 
   protected val server = new NoopTBinaryFrontendServer()
-  protected val conf = KyuubiConf()
+  protected val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
     .set(KyuubiConf.SESSION_CHECK_INTERVAL, Duration.ofSeconds(5).toMillis)
@@ -54,8 +54,8 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
   }
 
   override def afterAll(): Unit = {
-    server.getServices.foreach(_.stop())
     super.afterAll()
+    server.getServices.foreach(_.stop())
   }
 
   private def checkOperationResult(
@@ -166,8 +166,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       val req = new TGetInfoReq()
       req.setSessionHandle(handle)
       req.setInfoType(TGetInfoType.CLI_DBMS_VER)
-      val resp = client.GetInfo(req)
-      assert(resp.getInfoValue.getStringValue === org.apache.kyuubi.KYUUBI_VERSION)
+      assert(client.GetInfo(req).getInfoValue.getStringValue === org.apache.kyuubi.KYUUBI_VERSION)
       req.setInfoType(TGetInfoType.CLI_SERVER_NAME)
       assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
       req.setInfoType(TGetInfoType.CLI_DBMS_NAME)

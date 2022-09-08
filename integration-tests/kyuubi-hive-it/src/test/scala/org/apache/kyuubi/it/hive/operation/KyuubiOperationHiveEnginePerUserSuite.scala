@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.it.hive.operation
 
+import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
+
 import org.apache.kyuubi.{HiveEngineTests, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -37,4 +39,26 @@ class KyuubiOperationHiveEnginePerUserSuite extends WithKyuubiServer with HiveEn
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
+
+  test("server info provider - server") {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
+      }
+    }
+  }
+
+  test("server info provider - engine") {
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Hive")
+      }
+    }
+  }
 }
