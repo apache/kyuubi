@@ -275,6 +275,11 @@ object PrivilegesBuilder {
         val table = getTableName
         outputObjs += tablePrivileges(table)
 
+      case "AlterTable" =>
+        val table = getPlanField[Any]("table")
+        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
+        outputObjs += tablePrivilegesWithIdentifier(tableIdent.get)
+
       case "AlterViewAsCommand" =>
         val view = getPlanField[TableIdentifier]("name")
         outputObjs += tablePrivileges(view)
@@ -321,9 +326,16 @@ object PrivilegesBuilder {
         buildQuery(query, inputObjs)
 
       case "CreateNamespace" =>
-        val resolvedNamespace = getPlanField[Any]("name")
-        val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
-        outputObjs += databasePrivileges(quote(databases))
+        // for Spark 3.0/3.1
+        val namespace = getFieldValOption[Seq[String]](plan, "namespace")
+        if (namespace.isDefined) {
+          outputObjs += databasePrivileges(quote(namespace.get))
+        } else {
+          // for Spark 3.2+
+          val resolvedNamespace = getPlanField[Any]("name")
+          val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
+          outputObjs += databasePrivileges(quote(databases))
+        }
 
       case "CreateViewCommand" =>
         if (getPlanField[ViewType]("viewType") == PersistedView) {
@@ -345,7 +357,7 @@ object PrivilegesBuilder {
         // fixme: do we need to add columns to check?
         outputObjs += tablePrivileges(table)
 
-      case "CreateTable" =>
+      case "CreateTable" | "CreateV2Table" =>
         val table = invoke(plan, "tableName").asInstanceOf[Identifier]
         outputObjs += tablePrivilegesWithIdentifier(table)
 
@@ -375,13 +387,20 @@ object PrivilegesBuilder {
 
       case "CreateTableAsSelect" |
           "ReplaceTableAsSelect" =>
-        val left = getPlanField[LogicalPlan]("name")
-        left.nodeName match {
-          case "ResolvedDBObjectName" =>
-            val nameParts = getFieldVal[Seq[String]](left, "nameParts")
-            val db = Some(quote(nameParts.init))
-            outputObjs += tablePrivileges(TableIdentifier(nameParts.last, db))
-          case _ =>
+        val tableIdent = getFieldValOption[Identifier](plan, "tableName")
+        if (tableIdent.isDefined) {
+          // Spark 3.1
+          outputObjs += tablePrivilegesWithIdentifier(tableIdent.get)
+        } else {
+          // Spark 3.2+
+          val left = getPlanField[LogicalPlan]("name")
+          left.nodeName match {
+            case "ResolvedDBObjectName" =>
+              val nameParts = getFieldVal[Seq[String]](left, "nameParts")
+              val db = Some(quote(nameParts.init))
+              outputObjs += tablePrivileges(TableIdentifier(nameParts.last, db))
+            case _ =>
+          }
         }
         buildQuery(getQuery, inputObjs)
 

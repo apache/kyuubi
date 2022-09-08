@@ -18,7 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.security.PrivilegedExceptionAction
-import java.sql.Timestamp
+import java.sql.{DriverManager, Timestamp}
 
 import scala.util.Try
 
@@ -29,10 +29,12 @@ import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
@@ -453,22 +455,27 @@ class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite
   override protected val catalogImpl: String = "in-memory"
 }
 
-class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
 
   val catalogV2 = "testcat"
+  val jdbcCatalogV2 = "jdbc2"
   val namespace1 = "ns1"
   val table1 = "table1"
   val table2 = "table2"
   val outputTable1 = "outputTable1"
   val cacheTable1 = "cacheTable1"
 
-  override def beforeAll(): Unit = {
-    if (isSparkV32OrGreater) {
+  private val dbUrl = s"jdbc:derby:memory:$catalogV2"
+  private val jdbcUrl: String = s"$dbUrl;create=true"
 
+  override def beforeAll(): Unit = {
+    if (isSparkV31OrGreater) {
+      spark.conf.set(s"spark.sql.catalog.$catalogV2", classOf[JDBCTableCatalog].getName)
+      spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
       spark.conf.set(
-        s"spark.sql.catalog.$catalogV2",
-        "org.apache.spark.sql.connector.catalog.InMemoryCatalog")
+        s"spark.sql.catalog.$catalogV2.driver",
+        "org.apache.derby.jdbc.AutoloadedDriver")
 
       super.beforeAll()
 
@@ -488,10 +495,15 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
     super.afterAll()
     spark.sessionState.catalog.reset()
     spark.sessionState.conf.clear()
+
+    // cleanup db
+    try {
+      DriverManager.getConnection(s"$dbUrl;shutdown=true")
+    }
   }
 
   test("[KYUUBI #3424] SELECT") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV31OrGreater)
 
     // select
     val e1 = intercept[AccessControlException](
@@ -501,7 +513,7 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] CREATE TABLE") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV31OrGreater)
 
     // CreateTable
     val e2 = intercept[AccessControlException](
@@ -520,7 +532,7 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] DROP TABLE") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV31OrGreater)
 
     // DropTable
     val e3 = intercept[AccessControlException](
@@ -530,7 +542,7 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] INSERT TABLE") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV31OrGreater)
 
     // AppendData: Insert Using a VALUES Clause
     val e4 = intercept[AccessControlException](
@@ -570,7 +582,7 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] UPDATE TABLE") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV31OrGreater)
 
     // UpdateTable
     val e5 = intercept[AccessControlException](
@@ -583,7 +595,7 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] DELETE FROM TABLE") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV31OrGreater)
 
     // DeleteFromTable
     val e6 = intercept[AccessControlException](
@@ -593,7 +605,7 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] CACHE TABLE") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV31OrGreater)
 
     // CacheTable
     val e7 = intercept[AccessControlException](
@@ -601,12 +613,18 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
         "someone",
         sql(s"CACHE TABLE $cacheTable1" +
           s" AS select * from $catalogV2.$namespace1.$table1")))
-    assert(e7.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
+    if (isSparkV32OrGreater) {
+      assert(e7.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/id]"))
+    } else {
+      // todo catalog
+      assert(e7.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$catalogV2.$namespace1/$table1]"))
+    }
   }
 
   test("[KYUUBI #3424] ALTER TABLE") {
-    assume(isSparkV32OrGreater)
+    assume(isSparkV31OrGreater)
 
     // AddColumns
     val e61 = intercept[AccessControlException](
