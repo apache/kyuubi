@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
@@ -75,11 +76,24 @@ class SparkSessionImpl(
     super.runOperation(operation)
   }
 
+  override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
+    infoType match {
+      case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
+        TGetInfoValue.stringValue("Spark SQL")
+      case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.spark.SPARK_VERSION)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
+      case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
+          TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
+          TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
+      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
+    }
+  }
+
   override def close(): Unit = {
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
     super.close()
-    spark.sessionState.catalog.getTempViewNames().foreach(spark.catalog.uncacheTable(_))
+    spark.sessionState.catalog.getTempViewNames().foreach(spark.catalog.uncacheTable)
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closeILoop(handle)
   }
 }

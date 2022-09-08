@@ -416,6 +416,7 @@ kyuubi.operation.status.polling.timeout|PT5S|Timeout(ms) for long polling asynch
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+kyuubi.server.info.provider|SERVER|The server information provider name, some clients may rely on this information to check the server compatibilities and functionalities. <li>SERVER: Return Kyuubi server information.</li> <li>ENGINE: Return Kyuubi engine information.</li>|string|1.6.1
 kyuubi.server.limit.connections.per.ipaddress|&lt;undefined&gt;|Maximum kyuubi server connections per ipaddress. Any user exceeding this limit will not be allowed to connect.|int|1.6.0
 kyuubi.server.limit.connections.per.user|&lt;undefined&gt;|Maximum kyuubi server connections per user. Any user exceeding this limit will not be allowed to connect.|int|1.6.0
 kyuubi.server.limit.connections.per.user.ipaddress|&lt;undefined&gt;|Maximum kyuubi server connections per user:ipaddress combination. Any user-ipaddress exceeding this limit will not be allowed to connect.|int|1.6.0

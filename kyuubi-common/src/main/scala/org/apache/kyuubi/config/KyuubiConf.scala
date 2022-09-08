@@ -1691,6 +1691,16 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val SERVER_INFO_PROVIDER: ConfigEntry[String] =
+    buildConf("kyuubi.server.info.provider")
+      .doc("The server information provider name, some clients may rely on this information" +
+        " to check the server compatibilities and functionalities." +
+        " <li>SERVER: Return Kyuubi server information.</li>" +
+        " <li>ENGINE: Return Kyuubi engine information.</li>")
+      .version("1.6.1")
+      .stringConf
+      .createWithDefault("SERVER")
+
   val ENGINE_SPARK_SHOW_PROGRESS: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.spark.showProgress")
       .doc("When true, show the progress bar in the spark engine log.")
