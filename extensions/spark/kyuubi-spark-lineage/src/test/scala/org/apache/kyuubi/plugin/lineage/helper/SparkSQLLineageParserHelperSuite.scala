@@ -56,10 +56,12 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     spark.sql("create table if not exists test_db0.test_table_part0" +
       " (key int, value string, pid string) using parquet" +
       "  partitioned by(pid)")
+    spark.sql("create table if not exists test_db0.test_table1" +
+      " (key int, value string) using parquet")
   }
 
   override def afterAll(): Unit = {
-    Seq("test_db0.test_table0", "test_db0.test_table_part0").foreach { t =>
+    Seq("test_db0.test_table0", "test_db0.test_table1", "test_db0.test_table_part0").foreach { t =>
       spark.sql(s"drop table if exists $t")
     }
     spark.sql("drop database if exists test_db")
@@ -81,6 +83,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       spark.sql("create view alterviewascommand1 as select * from test_db0.test_table0")
       val ret1 =
         exectractLineage("alter view alterviewascommand1 as select * from test_db0.test_table0")
+
       assert(ret1 == Lineage(
         List("test_db0.test_table0"),
         List("default.alterviewascommand1"),
@@ -255,6 +258,18 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         List("default.insertintodatasourcecommand"),
         List(
           ("default.insertintodatasourcecommand.a", Set("test_db0.test_table0.key")),
+          ("default.insertintodatasourcecommand.b", Set("test_db0.test_table0.value")))))
+
+      val ret2 =
+        exectractLineage(
+          s"insert into table  $tableName " +
+            s"select (select key from test_db0.test_table1 limit 1) + 1 as aa, " +
+            s"value as bb from test_db0.test_table0")
+      assert(ret2 == Lineage(
+        List("test_db0.test_table1", "test_db0.test_table0"),
+        List("default.insertintodatasourcecommand"),
+        List(
+          ("default.insertintodatasourcecommand.a", Set("test_db0.test_table1.key")),
           ("default.insertintodatasourcecommand.b", Set("test_db0.test_table0.value")))))
 
     }
@@ -690,11 +705,239 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
+  test("columns lineage extract - agg sql") {
+    val sql0 = """select key as a, count(*) as b, 1 as c from test_db0.test_table0 group by key"""
+    val ret0 = exectractLineage(sql0)
+    assert(ret0 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.key")),
+        ("b", Set("test_db0.test_table0.__count__")),
+        ("c", Set()))))
+
+    val sql1 = """select count(*) as a, 1 as b from test_db0.test_table0"""
+    val ret1 = exectractLineage(sql1)
+    assert(ret1 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.__count__")),
+        ("b", Set()))))
+
+    val sql2 = """select every(count(key) == 1) as a, 1 as b from test_db0.test_table0"""
+    val ret2 = exectractLineage(sql2)
+    assert(ret2 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.key")),
+        ("b", Set()))))
+
+    val sql3 = """select every(count(*) == 1) as a, 1 as b from test_db0.test_table0"""
+    val ret3 = exectractLineage(sql3)
+    assert(ret3 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.__count__")),
+        ("b", Set()))))
+
+    val sql4 = """select first(key) as a, 1 as b from test_db0.test_table0"""
+    val ret4 = exectractLineage(sql4)
+    assert(ret4 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.key")),
+        ("b", Set()))))
+
+    val sql5 = """select avg(key) as a, 1 as b from test_db0.test_table0"""
+    val ret5 = exectractLineage(sql5)
+    assert(ret5 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.key")),
+        ("b", Set()))))
+
+    val sql6 =
+      """select every(count(value) + sum(key) == 1) as a,
+        | 1 as b from test_db0.test_table0""".stripMargin
+    val ret6 = exectractLineage(sql6)
+    assert(ret6 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.value", "test_db0.test_table0.key")),
+        ("b", Set()))))
+
+    val sql7 = """select every(count(*) + sum(key) == 1) as a, 1 as b from test_db0.test_table0"""
+    val ret7 = exectractLineage(sql7)
+    assert(ret7 == Lineage(
+      List("test_db0.test_table0"),
+      List(),
+      List(
+        ("a", Set("test_db0.test_table0.__count__", "test_db0.test_table0.key")),
+        ("b", Set()))))
+
+  }
+
+  test("columns lineage extract - subquery sql") {
+    val ddls =
+      """
+        |create table table0(a int, b string, c string)
+        |create table table1(a int, b string, c string)
+        |""".stripMargin
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withTable("table0", "table1") { _ =>
+      val sql0 =
+        """
+          |select a as aa, bb, cc from (select b as bb, c as cc from table1) t0, table0
+          |""".stripMargin
+      val ret0 = exectractLineage(sql0)
+      assert(ret0 == Lineage(
+        List("default.table0", "default.table1"),
+        List(),
+        List(
+          ("aa", Set("default.table0.a")),
+          ("bb", Set("default.table1.b")),
+          ("cc", Set("default.table1.c")))))
+
+      val sql1 =
+        """
+          |select (select a from table1) as aa, b as bb from table1
+          |""".stripMargin
+      val ret1 = exectractLineage(sql1)
+      assert(ret1 == Lineage(
+        List("default.table1"),
+        List(),
+        List(
+          ("aa", Set("default.table1.a")),
+          ("bb", Set("default.table1.b")))))
+
+      val sql2 =
+        """
+          |select (select count(*) from table0) as aa, b as bb from table1
+          |""".stripMargin
+      val ret2 = exectractLineage(sql2)
+      assert(ret2 == Lineage(
+        List("default.table0", "default.table1"),
+        List(),
+        List(
+          ("aa", Set("default.table0.__count__")),
+          ("bb", Set("default.table1.b")))))
+
+      // ListQuery
+      val sql3 =
+        """
+          |select * from table0 where table0.a in (select a from table1)
+          |""".stripMargin
+      val ret3 = exectractLineage(sql3)
+      assert(ret3 == Lineage(
+        List("default.table0"),
+        List(),
+        List(
+          ("a", Set("default.table0.a")),
+          ("b", Set("default.table0.b")),
+          ("c", Set("default.table0.c")))))
+
+      // Exists
+      val sql4 =
+        """
+          |select * from table0 where exists (select * from table1 where table0.c = table1.c)
+          |""".stripMargin
+      val ret4 = exectractLineage(sql4)
+      assert(ret4 == Lineage(
+        List("default.table0"),
+        List(),
+        List(
+          ("a", Set("default.table0.a")),
+          ("b", Set("default.table0.b")),
+          ("c", Set("default.table0.c")))))
+
+      val sql5 =
+        """
+          |select * from table0 where exists (select * from table1 where c = "odone")
+          |""".stripMargin
+      val ret5 = exectractLineage(sql5)
+      assert(ret5 == Lineage(
+        List("default.table0"),
+        List(),
+        List(
+          ("a", Set("default.table0.a")),
+          ("b", Set("default.table0.b")),
+          ("c", Set("default.table0.c")))))
+
+      val sql6 =
+        """
+          |select * from table0 where not exists (select * from table1 where c = "odone")
+          |""".stripMargin
+      val ret6 = exectractLineage(sql6)
+      assert(ret6 == Lineage(
+        List("default.table0"),
+        List(),
+        List(
+          ("a", Set("default.table0.a")),
+          ("b", Set("default.table0.b")),
+          ("c", Set("default.table0.c")))))
+
+      val sql7 =
+        """
+          |select * from table0 where table0.a not in (select a from table1)
+          |""".stripMargin
+      val ret7 = exectractLineage(sql7)
+      assert(ret7 == Lineage(
+        List("default.table0"),
+        List(),
+        List(
+          ("a", Set("default.table0.a")),
+          ("b", Set("default.table0.b")),
+          ("c", Set("default.table0.c")))))
+
+      val sql8 =
+        """
+          |select (select a from table1) + 1, b as bb from table1
+          |""".stripMargin
+      val ret8 = exectractLineage(sql8)
+      assert(ret8 == Lineage(
+        List("default.table1"),
+        List(),
+        List(
+          ("(scalarsubquery() + 1)", Set("default.table1.a")),
+          ("bb", Set("default.table1.b")))))
+
+      val sql9 =
+        """
+          |select (select a from table1 limit 1) + 1 as aa, b as bb from table1
+          |""".stripMargin
+      val ret9 = exectractLineage(sql9)
+      assert(ret9 == Lineage(
+        List("default.table1"),
+        List(),
+        List(
+          ("aa", Set("default.table1.a")),
+          ("bb", Set("default.table1.b")))))
+
+      val sql10 =
+        """
+          |select (select a from table1 limit 1) + (select a from table0 limit 1) + 1 as aa,
+          | b as bb from table1
+          |""".stripMargin
+      val ret10 = exectractLineage(sql10)
+      assert(ret10 == Lineage(
+        List("default.table1", "default.table0"),
+        List(),
+        List(
+          ("aa", Set("default.table1.a", "default.table0.a")),
+          ("bb", Set("default.table1.b")))))
+    }
+  }
+
   private def exectractLineage(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
     val optimized = spark.sessionState.optimizer.execute(analyzed)
-
     SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
   }
 

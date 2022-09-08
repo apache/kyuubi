@@ -54,6 +54,15 @@ The lineage of this SQL:
 }
 ```
 
+#### Lineage specific identification
+
+- `__count__`. Means that the column is an `count(*)` aggregate expression 
+  and cannot extract the specific column. Lineage of the column
+  like `default.test_table0.__count__`.
+- `__local__`. Means that the lineage of the table is a `LocalRelation` and not the real table,
+  like `__local__.a`
+
+
 ### SQL type support
 
 Currently supported column lineage for spark's `Command` and `Query` type:
