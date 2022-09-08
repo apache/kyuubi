@@ -464,11 +464,12 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   val cacheTable1 = "cacheTable1"
 
   override def beforeAll(): Unit = {
-    assume(isSparkV32OrGreater)
+   if (isSparkV32OrGreater) {
 
     spark.conf.set(
       s"spark.sql.catalog.$catalogV2",
       "org.apache.spark.sql.connector.catalog.InMemoryCatalog")
+
     super.beforeAll()
 
     doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
@@ -480,11 +481,10 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
       "admin",
       sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$outputTable1" +
         " (id int, name string, city string)"))
+    }
   }
 
   override def afterAll(): Unit = {
-    assume(isSparkV32OrGreater)
-
     super.afterAll()
     spark.sessionState.catalog.reset()
     spark.sessionState.conf.clear()
@@ -514,9 +514,9 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
       doAs(
         "someone",
         sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
-          s" AS select * from $catalogV2.$namespace1.$table2")))
+          s" AS select * from $catalogV2.$namespace1.$table1")))
     assert(e21.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table2/city]"))
+      s" on [$namespace1/$table1/city]"))
   }
 
   test("[KYUUBI #3424] DROP TABLE") {
@@ -580,27 +580,29 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
           " WHERE id=1")))
     assert(e5.getMessage.contains(s"does not have [update] privilege" +
       s" on [$namespace1/$table1]"))
+  }
 
-    test("[KYUUBI #3424] DELETE FROM TABLE") {
-      // DeleteFromTable
-      val e6 = intercept[AccessControlException](
-        doAs("someone", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1")))
-      assert(e6.getMessage.contains(s"does not have [update] privilege" +
-        s" on [$namespace1/$table1]"))
-    }
+  test("[KYUUBI #3424] DELETE FROM TABLE") {
+    assume(isSparkV32OrGreater)
 
-    test("[KYUUBI #3424] CACHE TABLE") {
-      assume(isSparkV32OrGreater)
+    // DeleteFromTable
+    val e6 = intercept[AccessControlException](
+      doAs("someone", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1")))
+    assert(e6.getMessage.contains(s"does not have [update] privilege" +
+      s" on [$namespace1/$table1]"))
+  }
 
-      // CacheTable
-      val e7 = intercept[AccessControlException](
-        doAs(
-          "someone",
-          sql(s"CACHE TABLE $cacheTable1" +
-            s" AS select * from $catalogV2.$namespace1.$table1")))
-      assert(e7.getMessage.contains(s"does not have [select] privilege" +
-        s" on [$namespace1/$table1/id]"))
-    }
+  test("[KYUUBI #3424] CACHE TABLE") {
+    assume(isSparkV32OrGreater)
+
+    // CacheTable
+    val e7 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"CACHE TABLE $cacheTable1" +
+          s" AS select * from $catalogV2.$namespace1.$table1")))
+    assert(e7.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1/id]"))
   }
 
   test("[KYUUBI #3424] ALTER TABLE") {
