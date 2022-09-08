@@ -49,8 +49,6 @@ class SparkSessionImpl(
 
   private val sessionEvent = SessionEvent(this)
 
-  def serverIpAddress(): String = serverIpAddress
-
   override def open(): Unit = {
     normalizedConf.foreach {
       case ("use:database", database) =>
