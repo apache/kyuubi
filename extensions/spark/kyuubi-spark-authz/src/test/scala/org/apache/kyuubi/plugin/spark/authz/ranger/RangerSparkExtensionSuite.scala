@@ -496,7 +496,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     spark.sessionState.conf.clear()
 
     // cleanup db
-    try {
+    Try {
       DriverManager.getConnection(s"$dbUrl;shutdown=true")
     }
   }
