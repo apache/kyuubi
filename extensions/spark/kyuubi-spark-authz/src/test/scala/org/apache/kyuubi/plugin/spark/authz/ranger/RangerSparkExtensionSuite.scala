@@ -29,7 +29,6 @@ import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
@@ -470,7 +469,9 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
   override def beforeAll(): Unit = {
     if (isSparkV31OrGreater) {
-      spark.conf.set(s"spark.sql.catalog.$catalogV2", classOf[JDBCTableCatalog].getName)
+      spark.conf.set(
+        s"spark.sql.catalog.$catalogV2",
+        "org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog")
       spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
       spark.conf.set(
         s"spark.sql.catalog.$catalogV2.driver",
