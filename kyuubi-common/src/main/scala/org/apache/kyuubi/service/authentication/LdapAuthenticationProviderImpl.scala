@@ -17,10 +17,9 @@
 
 package org.apache.kyuubi.service.authentication
 
-import javax.naming.{Context, NamingException}
-import javax.naming.directory.InitialDirContext
 import javax.security.sasl.AuthenticationException
 
+import com.unboundid.ldap.sdk.{LDAPConnection, LDAPException, LDAPSearchException, SearchScope}
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -50,12 +49,6 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       throw new AuthenticationException(s"Error validating LDAP user, password is null" +
         s" or contains blank space")
     }
-
-    val env = new java.util.Hashtable[String, Any]()
-    env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-    env.put(Context.SECURITY_AUTHENTICATION, "simple")
-
-    conf.get(AUTHENTICATION_LDAP_URL).foreach(env.put(Context.PROVIDER_URL, _))
 
     val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
     val u =
