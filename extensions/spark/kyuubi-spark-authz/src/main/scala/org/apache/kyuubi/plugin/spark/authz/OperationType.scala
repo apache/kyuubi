@@ -61,7 +61,7 @@ object OperationType extends Enumeration {
           "AlterTableUnsetPropertiesCommand" => ALTERTABLE_PROPERTIES
       case ava if ava.contains("AlterViewAs") => ALTERVIEW_AS
       case ac if ac.startsWith("Analyze") => ANALYZE_TABLE
-      case "AppendData" => ALTERTABLE_ADDPARTS
+      case "AppendData" => QUERY
       case "CreateDatabaseCommand" | "CreateNamespace" => CREATEDATABASE
       case "CreateFunctionCommand" | "CreateFunction" => CREATEFUNCTION
       case "CreateTableAsSelect" |
@@ -90,8 +90,7 @@ object OperationType extends Enumeration {
           "InsertIntoDataSourceDirCommand" |
           "InsertIntoHiveTable" |
           "InsertIntoHiveDirCommand" |
-          "SaveIntoDataSourceCommand" |
-          "AppendData" => QUERY // todo AppendData redundant and shadowed conflict
+          "SaveIntoDataSourceCommand" => QUERY
       case "LoadDataCommand" => LOAD
       case "SetCommand" => SHOWCONF
       case "RefreshFunctionCommand" | "RefreshFunction" => RELOADFUNCTION

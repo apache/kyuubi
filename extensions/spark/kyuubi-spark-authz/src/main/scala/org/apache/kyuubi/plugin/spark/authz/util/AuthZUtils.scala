@@ -99,17 +99,12 @@ private[authz] object AuthZUtils {
     plan.nodeName == "DataSourceV2Relation" && plan.resolved
   }
 
-  def getDatasourceV2Identifier(plan: LogicalPlan): Option[TableIdentifier] = {
+  def getDatasourceV2Identifier(plan: LogicalPlan): Option[Identifier] = {
     // avoid importing DataSourceV2Relation for Spark version compatibility
-    val identifier = getFieldVal[Option[Identifier]](plan, "identifier")
-    if (identifier.isEmpty) {
-      None
-    } else {
-      Some(getTableIdentifierFromIdentifier(identifier.get))
-    }
+    getFieldVal[Option[Identifier]](plan, "identifier")
   }
 
-  private def getTableIdentifierFromIdentifier(id: Identifier): TableIdentifier = {
+  def getTableIdentifierFromIdentifier(id: Identifier): TableIdentifier = {
     val namespaces = invoke(id, "namespace").asInstanceOf[Array[String]]
     val table = invoke(id, "name").asInstanceOf[String]
     TableIdentifier(table, Some(quote(namespaces)))

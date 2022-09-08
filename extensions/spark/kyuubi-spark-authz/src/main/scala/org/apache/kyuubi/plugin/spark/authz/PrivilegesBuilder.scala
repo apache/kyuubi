@@ -48,7 +48,7 @@ object PrivilegesBuilder {
     PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns)
   }
 
-  private def tablePrivilegesForDSV2(
+  private def tablePrivilegesWithIdentifier(
       table: Identifier,
       columns: Seq[String] = Nil,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
@@ -101,18 +101,19 @@ object PrivilegesBuilder {
       }
     }
 
-    def mergeProjectionForDataSourceV2(
-        table: TableIdentifier,
+    def mergeProjectionWithIdentifier(
+        table: Identifier,
         cols: Seq[Attribute],
-        plan: LogicalPlan): Unit = {
+        plan: LogicalPlan,
+        actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += tablePrivileges(
+        privilegeObjects += tablePrivilegesWithIdentifier(
           table,
           cols.map { c => c.name })
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivileges(table, cols)
+        privilegeObjects += tablePrivilegesWithIdentifier(table, cols, actionType)
       }
     }
 
@@ -151,17 +152,8 @@ object PrivilegesBuilder {
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdentifier = getDatasourceV2Identifier(datasourceV2Relation)
         if (tableIdentifier.isDefined) {
-          mergeProjectionForDataSourceV2(tableIdentifier.get, plan.outputSet.toSeq, plan)
+          mergeProjectionWithIdentifier(tableIdentifier.get, plan.outputSet.toSeq, plan)
         }
-
-      case v2ResolvedPlan if v2ResolvedPlan.nodeName == "ResolvedDBObjectName" =>
-        val nameParts = getFieldVal[Seq[String]](v2ResolvedPlan, "nameParts")
-        val cols = invoke(v2ResolvedPlan, "output").asInstanceOf[Seq[Attribute]]
-        mergeProjectionForDataSourceV2(
-          TableIdentifier(quote(nameParts.tail), Some(nameParts.head)),
-          cols,
-          plan)
-        val a = 1
 
       case u if u.nodeName == "UnresolvedRelation" =>
         val tableNameM = u.getClass.getMethod("tableName")
@@ -349,7 +341,7 @@ object PrivilegesBuilder {
 
       case "CreateTable" =>
         val table = invoke(plan, "tableName").asInstanceOf[Identifier]
-        outputObjs += tablePrivilegesForDSV2(table)
+        outputObjs += tablePrivilegesWithIdentifier(table)
 
       case "CreateDataSourceTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("table").identifier
@@ -429,7 +421,7 @@ object PrivilegesBuilder {
       case "DropTable" =>
         val resolvedTable = getPlanField[LogicalPlan]("child")
         val tableIdent = getFieldVal[Identifier](resolvedTable, "identifier")
-        outputObjs += tablePrivilegesForDSV2(tableIdent)
+        outputObjs += tablePrivilegesWithIdentifier(tableIdent)
 
       case "ExplainCommand" =>
 
@@ -461,20 +453,20 @@ object PrivilegesBuilder {
       case "AppendData" => // DsV2 insert
         val table = getPlanField[AnyRef]("table")
         val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += tablePrivilegesForDSV2(tableIdentifier.get, actionType = INSERT)
-      // todo inputObjs
+        outputObjs += tablePrivilegesWithIdentifier(tableIdentifier.get, actionType = INSERT)
+        buildQuery(getQuery, inputObjs)
 
       case "UpdateTable" => // DsV2 update
         val table = getPlanField[AnyRef]("table")
         val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += tablePrivilegesForDSV2(tableIdentifier.get, actionType = INSERT)
+        outputObjs += tablePrivilegesWithIdentifier(tableIdentifier.get, actionType = UPDATE)
       // todo INSERT ?
       // todo inputObjs
 
       case "DeleteFromTable" => // DsV2 update
         val table = getPlanField[AnyRef]("table")
         val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += tablePrivilegesForDSV2(tableIdentifier.get, actionType = INSERT)
+        outputObjs += tablePrivilegesWithIdentifier(tableIdentifier.get, actionType = INSERT)
       // todo INSERT ?
       // todo inputObjs
 
@@ -487,6 +479,12 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(table, cols.toSeq, actionType = actionType)
 
       case "MergeIntoTable" =>
+
+      case "OverwriteByExpression" =>
+        val table = getPlanField[AnyRef]("table")
+        val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
+        outputObjs += tablePrivilegesWithIdentifier(tableIdentifier.get, actionType = UPDATE)
+        buildQuery(getQuery, inputObjs)
 
       case "RepairTableCommand" =>
         val enableAddPartitions = getPlanField[Boolean]("enableAddPartitions")
