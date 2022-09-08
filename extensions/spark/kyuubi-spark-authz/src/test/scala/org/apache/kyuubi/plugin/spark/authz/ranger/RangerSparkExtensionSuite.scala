@@ -27,7 +27,6 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
-import org.apache.spark.sql.connector.catalog.InMemoryCatalog
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
@@ -465,7 +464,11 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   val cacheTable1 = "cacheTable1"
 
   override def beforeAll(): Unit = {
-    spark.conf.set(s"spark.sql.catalog.$catalogV2", classOf[InMemoryCatalog].getName)
+    assume(isSparkV32OrGreater)
+
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2",
+      "org.apache.spark.sql.connector.catalog.InMemoryCatalog")
     super.beforeAll()
 
     doAs("admin", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
@@ -480,13 +483,16 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   override def afterAll(): Unit = {
-    super.afterAll()
+    assume(isSparkV32OrGreater)
 
+    super.afterAll()
     spark.sessionState.catalog.reset()
     spark.sessionState.conf.clear()
   }
 
   test("[KYUUBI #3424] SELECT") {
+    assume(isSparkV32OrGreater)
+
     // select
     val e1 = intercept[AccessControlException](
       doAs("someone", sql(s"select city, id from $catalogV2.$namespace1.$table1").explain()))
@@ -495,6 +501,8 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] CREATE TABLE") {
+    assume(isSparkV32OrGreater)
+
     // CreateTable
     val e2 = intercept[AccessControlException](
       doAs("someone", sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2")))
@@ -512,6 +520,8 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] DROP TABLE") {
+    assume(isSparkV32OrGreater)
+
     // DropTable
     val e3 = intercept[AccessControlException](
       doAs("someone", sql(s"DROP TABLE $catalogV2.$namespace1.$table1")))
@@ -520,6 +530,8 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] INSERT TABLE") {
+    assume(isSparkV32OrGreater)
+
     // AppendData: Insert Using a VALUES Clause
     val e4 = intercept[AccessControlException](
       doAs(
@@ -558,6 +570,8 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
   }
 
   test("[KYUUBI #3424] UPDATE TABLE") {
+    assume(isSparkV32OrGreater)
+
     // UpdateTable
     val e5 = intercept[AccessControlException](
       doAs(
@@ -576,6 +590,8 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
     }
 
     test("[KYUUBI #3424] CACHE TABLE") {
+      assume(isSparkV32OrGreater)
+
       // CacheTable
       val e7 = intercept[AccessControlException](
         doAs(
@@ -585,6 +601,43 @@ class InMemoryV2TableCatalogRangerSparkExtensionSuite extends RangerSparkExtensi
       assert(e7.getMessage.contains(s"does not have [select] privilege" +
         s" on [$namespace1/$table1/id]"))
     }
+  }
+
+  test("[KYUUBI #3424] ALTER TABLE") {
+    assume(isSparkV32OrGreater)
+
+    // AddColumns
+    val e61 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"ALTER TABLE $catalogV2.$namespace1.$table1 ADD COLUMNS (age int) ").explain()))
+    assert(e61.getMessage.contains(s"does not have [alter] privilege" +
+      s" on [$namespace1/$table1]"))
+
+    // DropColumns
+    val e62 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"ALTER TABLE $catalogV2.$namespace1.$table1 DROP COLUMNS city ").explain()))
+    assert(e62.getMessage.contains(s"does not have [alter] privilege" +
+      s" on [$namespace1/$table1]"))
+
+    // RenameColumn
+    val e63 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"ALTER TABLE $catalogV2.$namespace1.$table1 RENAME COLUMN city TO city2 ").explain()))
+    assert(e63.getMessage.contains(s"does not have [alter] privilege" +
+      s" on [$namespace1/$table1]"))
+
+    // AlterColumn
+    val e64 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"ALTER TABLE $catalogV2.$namespace1.$table1 " +
+          s"ALTER COLUMN city COMMENT 'city' ")))
+    assert(e64.getMessage.contains(s"does not have [alter] privilege" +
+      s" on [$namespace1/$table1]"))
   }
 }
 
