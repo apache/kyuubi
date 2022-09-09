@@ -150,9 +150,9 @@ object PrivilegesBuilder {
         }
 
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
-        val tableIdentifier = getDatasourceV2Identifier(datasourceV2Relation)
-        if (tableIdentifier.isDefined) {
-          mergeProjectionWithIdentifier(tableIdentifier.get, plan.outputSet.toSeq, plan)
+        val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
+        if (tableIdent.isDefined) {
+          mergeProjectionWithIdentifier(tableIdent.get, plan.outputSet.toSeq, plan)
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
@@ -218,8 +218,8 @@ object PrivilegesBuilder {
       // v2AlterTableCommands of Spark 3.2+
       case "AddColumns" | "AlterColumn" | "DropColumns" | "ReplaceColumns" | "RenameColumn" =>
         val table = getPlanField[LogicalPlan]("table")
-        val tableIdentifier = getFieldVal[Identifier](table, "identifier")
-        outputObjs += tablePrivilegesWithIdentifier(tableIdentifier)
+        val tableIdent = getFieldVal[Identifier](table, "identifier")
+        outputObjs += tablePrivilegesWithIdentifier(tableIdent)
 
       case "AlterTableAddColumnsCommand" =>
         val table = getPlanField[TableIdentifier]("table")
@@ -314,6 +314,18 @@ object PrivilegesBuilder {
           inputObjs += databasePrivileges(db.get)
         }
 
+      case "CreateNamespace" =>
+        // for Spark 3.1 and below
+        val namespace = getFieldValOption[Seq[String]](plan, "namespace")
+        if (namespace.isDefined) {
+          outputObjs += databasePrivileges(quote(namespace.get))
+        } else {
+          // for Spark 3.2+
+          val resolvedNamespace = getPlanField[Any]("name")
+          val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
+          outputObjs += databasePrivileges(quote(databases))
+        }
+
       case "CacheTable" =>
         val query = getPlanField[LogicalPlan]("table") // table to cache
         buildQuery(query, inputObjs)
@@ -324,18 +336,6 @@ object PrivilegesBuilder {
       case "CacheTableAsSelect" =>
         val query = getPlanField[LogicalPlan]("plan")
         buildQuery(query, inputObjs)
-
-      case "CreateNamespace" =>
-        // for Spark 3.0/3.1
-        val namespace = getFieldValOption[Seq[String]](plan, "namespace")
-        if (namespace.isDefined) {
-          outputObjs += databasePrivileges(quote(namespace.get))
-        } else {
-          // for Spark 3.2+
-          val resolvedNamespace = getPlanField[Any]("name")
-          val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
-          outputObjs += databasePrivileges(quote(databases))
-        }
 
       case "CreateViewCommand" =>
         if (getPlanField[ViewType]("viewType") == PersistedView) {
@@ -389,7 +389,7 @@ object PrivilegesBuilder {
           "ReplaceTableAsSelect" =>
         val tableIdent = getFieldValOption[Identifier](plan, "tableName")
         if (tableIdent.isDefined) {
-          // Spark 3.1
+          // Spark 3.1 and below
           outputObjs += tablePrivilegesWithIdentifier(tableIdent.get)
         } else {
           // Spark 3.2+
@@ -440,13 +440,13 @@ object PrivilegesBuilder {
         val database = getFieldVal[Seq[String]](child, "namespace")
         outputObjs += databasePrivileges(quote(database))
 
-      case "DropTableCommand" =>
-        outputObjs += tablePrivileges(getTableName)
-
       case "DropTable" =>
         val resolvedTable = getPlanField[LogicalPlan]("child")
         val tableIdent = getFieldVal[Identifier](resolvedTable, "identifier")
         outputObjs += tablePrivilegesWithIdentifier(tableIdent)
+
+      case "DropTableCommand" =>
+        outputObjs += tablePrivileges(getTableName)
 
       case "ExplainCommand" =>
 
@@ -477,21 +477,21 @@ object PrivilegesBuilder {
 
       case "AppendData" => // DsV2 insert
         val table = getPlanField[AnyRef]("table")
-        val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += tablePrivilegesWithIdentifier(tableIdentifier.get, actionType = INSERT)
+        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
+        outputObjs += tablePrivilegesWithIdentifier(tableIdent.get, actionType = INSERT)
         buildQuery(getQuery, inputObjs)
 
       case "UpdateTable" => // DsV2 update
         val table = getPlanField[AnyRef]("table")
-        val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += tablePrivilegesWithIdentifier(tableIdentifier.get, actionType = UPDATE)
+        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
+        outputObjs += tablePrivilegesWithIdentifier(tableIdent.get, actionType = UPDATE)
       // todo INSERT ?
       // todo inputObjs
 
       case "DeleteFromTable" => // DsV2 update
         val table = getPlanField[AnyRef]("table")
-        val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += tablePrivilegesWithIdentifier(tableIdentifier.get, actionType = INSERT)
+        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
+        outputObjs += tablePrivilegesWithIdentifier(tableIdent.get, actionType = INSERT)
       // todo INSERT ?
       // todo inputObjs
 
@@ -507,8 +507,8 @@ object PrivilegesBuilder {
 
       case "OverwriteByExpression" =>
         val table = getPlanField[AnyRef]("table")
-        val tableIdentifier = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += tablePrivilegesWithIdentifier(tableIdentifier.get, actionType = UPDATE)
+        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
+        outputObjs += tablePrivilegesWithIdentifier(tableIdent.get, actionType = UPDATE)
         buildQuery(getQuery, inputObjs)
 
       case "RepairTableCommand" =>

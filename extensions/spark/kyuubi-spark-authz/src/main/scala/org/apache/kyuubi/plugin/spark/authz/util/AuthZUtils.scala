@@ -110,7 +110,6 @@ private[authz] object AuthZUtils {
   }
 
   def getDatasourceV2Identifier(plan: LogicalPlan): Option[Identifier] = {
-    // avoid importing DataSourceV2Relation for Spark version compatibility
     getFieldVal[Option[Identifier]](plan, "identifier")
   }
 
