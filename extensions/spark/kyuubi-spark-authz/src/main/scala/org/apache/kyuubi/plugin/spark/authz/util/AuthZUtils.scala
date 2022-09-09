@@ -104,9 +104,7 @@ private[authz] object AuthZUtils {
   }
 
   def getTableIdentifierFromIdentifier(id: Identifier): TableIdentifier = {
-    val namespaces = invoke(id, "namespace").asInstanceOf[Array[String]]
-    val table = invoke(id, "name").asInstanceOf[String]
-    TableIdentifier(table, Some(quote(namespaces)))
+    TableIdentifier(id.name(), Some(quote(id.namespace())))
   }
 
   def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {
