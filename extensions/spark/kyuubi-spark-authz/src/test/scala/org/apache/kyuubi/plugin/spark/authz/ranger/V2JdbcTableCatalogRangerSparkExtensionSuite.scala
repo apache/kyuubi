@@ -30,9 +30,6 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
 
-  private val dbUrl = s"jdbc:derby:memory:$catalogV2"
-  private val jdbcUrl: String = s"$dbUrl;create=true"
-
   val catalogV2 = "testcat"
   val jdbcCatalogV2 = "jdbc2"
   val namespace1 = "ns1"
@@ -40,6 +37,9 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   val table2 = "table2"
   val outputTable1 = "outputTable1"
   val cacheTable1 = "cacheTable1"
+
+  val dbUrl = s"jdbc:derby:memory:$catalogV2"
+  val jdbcUrl: String = s"$dbUrl;create=true"
 
   override def beforeAll(): Unit = {
     if (isSparkV31OrGreater) {
