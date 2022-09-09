@@ -89,7 +89,7 @@ object PrivilegesBuilder {
       projectionList: Seq[NamedExpression] = Nil,
       conditionList: Seq[NamedExpression] = Nil): Unit = {
 
-    def mergeProjection(table: CatalogTable, plan: LogicalPlan): Unit = {
+    def mergeProjectionV1Table(table: CatalogTable, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
         privilegeObjects += v1TablePrivileges(
           table.identifier,
@@ -101,7 +101,7 @@ object PrivilegesBuilder {
       }
     }
 
-    def mergeProjectionWithIdentifier(table: Identifier, plan: LogicalPlan): Unit = {
+    def mergeProjectionV2Table(table: Identifier, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
         privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name))
       } else {
@@ -136,17 +136,17 @@ object PrivilegesBuilder {
         buildQuery(s.child, privilegeObjects, projectionList, cols)
 
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
-        mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation)
+        mergeProjectionV1Table(getHiveTable(hiveTableRelation), hiveTableRelation)
 
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         getDatasourceTable(logicalRelation).foreach { t =>
-          mergeProjection(t, plan)
+          mergeProjectionV1Table(t, plan)
         }
 
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
         if (tableIdent.isDefined) {
-          mergeProjectionWithIdentifier(tableIdent.get, plan)
+          mergeProjectionV2Table(tableIdent.get, plan)
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
@@ -156,7 +156,7 @@ object PrivilegesBuilder {
         privilegeObjects += v1TablePrivileges(TableIdentifier(parts.last, Some(db)))
 
       case permanentViewMarker: PermanentViewMarker =>
-        mergeProjection(permanentViewMarker.catalogTable, plan)
+        mergeProjectionV1Table(permanentViewMarker.catalogTable, plan)
 
       case p =>
         for (child <- p.children) {
