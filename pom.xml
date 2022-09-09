@@ -147,7 +147,7 @@
         <jakarta.activation.version>1.2.1</jakarta.activation.version>
         <jersey.version>2.36</jersey.version>
         <jetty.version>9.4.48.v20220622</jetty.version>
-        <jline.version>2.14.6</jline.version>
+        <jline.version>0.9.94</jline.version>
         <junit.version>4.13.1</junit.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
@@ -164,7 +164,6 @@
         <scopt.version>4.1.0</scopt.version>
         <slf4j.version>1.7.35</slf4j.version>
         <snakeyaml.version>1.30</snakeyaml.version>
-        <snappy.version>1.1.8.4</snappy.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
@@ -180,7 +179,7 @@
         <trino.client.version>363</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
-        <zookeeper.version>3.6.3</zookeeper.version>
+        <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.jline.version>2.12</hive.client.jline.version>
@@ -1120,20 +1119,8 @@
                 <version>${zookeeper.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>io.netty</groupId>
+                        <groupId>*</groupId>
                         <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.yetus</groupId>
-                        <artifactId>audience-annotations</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1500,12 +1487,6 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.jdbc.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.xerial.snappy</groupId>
-                <artifactId>snappy-java</artifactId>
-                <version>${snappy.version}</version>
             </dependency>
 
             <!-- flink -->
