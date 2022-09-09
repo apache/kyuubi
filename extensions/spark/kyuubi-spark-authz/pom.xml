@@ -217,12 +217,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!--<dependency>-->
-        <!--    <groupId>org.apache.spark</groupId>-->
-        <!--    <artifactId>spark-catalyst_${scala.binary.version}</artifactId>-->
-        <!--    <type>test-jar</type>-->
-        <!--</dependency>-->
-
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-api</artifactId>
