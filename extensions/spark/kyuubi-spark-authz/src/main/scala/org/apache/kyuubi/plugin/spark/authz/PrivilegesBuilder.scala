@@ -104,8 +104,7 @@ object PrivilegesBuilder {
     def mergeProjectionWithIdentifier(
         table: Identifier,
         cols: Seq[Attribute],
-        plan: LogicalPlan,
-        actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): Unit = {
+        plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivilegesWithIdentifier(
           table,
@@ -113,7 +112,7 @@ object PrivilegesBuilder {
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivilegesWithIdentifier(table, cols, actionType)
+        privilegeObjects += tablePrivilegesWithIdentifier(table, cols)
       }
     }
 
