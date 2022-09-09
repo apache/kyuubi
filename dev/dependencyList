@@ -21,6 +21,7 @@ annotations/4.1.1.4//annotations-4.1.1.4.jar
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
 automaton/1.11-8//automaton-1.11-8.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
+commons-cli/1.5.0//commons-cli-1.5.0.jar
 commons-codec/1.15//commons-codec-1.15.jar
 commons-collections/3.2.2//commons-collections-3.2.2.jar
 commons-lang/2.6//commons-lang-2.6.jar
@@ -96,7 +97,7 @@ jetty-server/9.4.48.v20220622//jetty-server-9.4.48.v20220622.jar
 jetty-servlet/9.4.48.v20220622//jetty-servlet-9.4.48.v20220622.jar
 jetty-util-ajax/9.4.48.v20220622//jetty-util-ajax-9.4.48.v20220622.jar
 jetty-util/9.4.48.v20220622//jetty-util-9.4.48.v20220622.jar
-jline/0.9.94//jline-0.9.94.jar
+jline/2.14.6//jline-2.14.6.jar
 jul-to-slf4j/1.7.35//jul-to-slf4j-1.7.35.jar
 kubernetes-client/5.12.1//kubernetes-client-5.12.1.jar
 kubernetes-model-admissionregistration/5.12.1//kubernetes-model-admissionregistration-5.12.1.jar
@@ -168,6 +169,7 @@ simpleclient_tracer_otel/0.16.0//simpleclient_tracer_otel-0.16.0.jar
 simpleclient_tracer_otel_agent/0.16.0//simpleclient_tracer_otel_agent-0.16.0.jar
 slf4j-api/1.7.35//slf4j-api-1.7.35.jar
 snakeyaml/1.30//snakeyaml-1.30.jar
+snappy-java/1.1.8.4//snappy-java-1.1.8.4.jar
 swagger-annotations/2.2.1//swagger-annotations-2.2.1.jar
 swagger-core/2.2.1//swagger-core-2.2.1.jar
 swagger-integration/2.2.1//swagger-integration-2.2.1.jar
@@ -176,4 +178,5 @@ swagger-models/2.2.1//swagger-models-2.2.1.jar
 vertx-core/4.3.2//vertx-core-4.3.2.jar
 vertx-grpc/4.3.2//vertx-grpc-4.3.2.jar
 zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar
-zookeeper/3.4.14//zookeeper-3.4.14.jar
+zookeeper-jute/3.6.3//zookeeper-jute-3.6.3.jar
+zookeeper/3.6.3//zookeeper-3.6.3.jar

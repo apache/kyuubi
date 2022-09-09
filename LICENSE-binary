@@ -209,6 +209,7 @@ Apache License Version 2.0
 --------------------------
 com.zaxxer:HikariCP
 com.google.android:annotations
+commons-cli:commons-cli
 commons-lang:commons-lang
 commons-logging:commons-logging
 org.apache.commons:commons-lang3
@@ -277,6 +278,7 @@ org.apache.logging.log4j:log4j-api
 org.apache.logging.log4j:log4j-core
 org.apache.logging.log4j:log4j-slf4j-impl
 org.webjars:swagger-ui
+org.xerial.snappy:snappy-java
 org.yaml:snakeyaml
 io.dropwizard.metrics:metrics-core
 io.dropwizard.metrics:metrics-jmx
@@ -319,6 +321,7 @@ io.swagger.core.v3:swagger-jaxrs2
 io.swagger.core.v3:swagger-models
 io.vertx:vertx-core
 io.vertx:vertx-grpc
+org.apache.zookeeper:zookeeper-jute
 org.apache.zookeeper:zookeeper
 
 
