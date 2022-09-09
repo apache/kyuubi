@@ -24,8 +24,8 @@ import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, NamedExpression}
-import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project, Sort, Window}
+import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StructField
@@ -101,14 +101,9 @@ object PrivilegesBuilder {
       }
     }
 
-    def mergeProjectionWithIdentifier(
-        table: Identifier,
-        cols: Seq[Attribute],
-        plan: LogicalPlan): Unit = {
+    def mergeProjectionWithIdentifier(table: Identifier, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += tablePrivilegesWithIdentifier(
-          table,
-          cols.map { c => c.name })
+        privilegeObjects += tablePrivilegesWithIdentifier(table, plan.output.map(_.name))
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
@@ -151,7 +146,7 @@ object PrivilegesBuilder {
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
         if (tableIdent.isDefined) {
-          mergeProjectionWithIdentifier(tableIdent.get, plan.outputSet.toSeq, plan)
+          mergeProjectionWithIdentifier(tableIdent.get, plan)
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
