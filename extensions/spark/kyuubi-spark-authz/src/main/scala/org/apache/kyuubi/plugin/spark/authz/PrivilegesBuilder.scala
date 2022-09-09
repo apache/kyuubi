@@ -309,15 +309,13 @@ object PrivilegesBuilder {
         }
 
       case "CreateNamespace" =>
-        // for Spark 3.1 and below
-        val namespace = getFieldValOption[Seq[String]](plan, "namespace")
-        if (namespace.isDefined) {
-          outputObjs += databasePrivileges(quote(namespace.get))
-        } else {
-          // for Spark 3.2+
+        if (isSparkVersionAtLeast("3.3")) {
           val resolvedNamespace = getPlanField[Any]("name")
           val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
           outputObjs += databasePrivileges(quote(databases))
+        } else {
+          val namespace = getPlanField[Seq[String]]("namespace")
+          outputObjs += databasePrivileges(quote(namespace))
         }
 
       case "CacheTable" =>
@@ -381,12 +379,7 @@ object PrivilegesBuilder {
 
       case "CreateTableAsSelect" |
           "ReplaceTableAsSelect" =>
-        val tableIdent = getFieldValOption[Identifier](plan, "tableName")
-        if (tableIdent.isDefined) {
-          // Spark 3.1 and below
-          outputObjs += tablePrivilegesWithIdentifier(tableIdent.get)
-        } else {
-          // Spark 3.2+
+        if (isSparkVersionAtLeast("3.3")) {
           val left = getPlanField[LogicalPlan]("name")
           left.nodeName match {
             case "ResolvedDBObjectName" =>
@@ -395,6 +388,9 @@ object PrivilegesBuilder {
               outputObjs += tablePrivileges(TableIdentifier(nameParts.last, db))
             case _ =>
           }
+        } else {
+          val tableIdent = getPlanField[Identifier]("tableName")
+          outputObjs += tablePrivilegesWithIdentifier(tableIdent)
         }
         buildQuery(getQuery, inputObjs)
 
@@ -469,20 +465,20 @@ object PrivilegesBuilder {
         outputObjs += tablePrivileges(table, actionType = actionType)
         buildQuery(getQuery, inputObjs)
 
-      case "AppendData" => // DsV2 insert
+      case "AppendData" =>
         val table = getPlanField[AnyRef]("table")
         val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
         outputObjs += tablePrivilegesWithIdentifier(tableIdent.get, actionType = INSERT)
         buildQuery(getQuery, inputObjs)
 
-      case "UpdateTable" => // DsV2 update
+      case "UpdateTable" =>
         val table = getPlanField[AnyRef]("table")
         val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
         outputObjs += tablePrivilegesWithIdentifier(tableIdent.get, actionType = UPDATE)
       // todo INSERT ?
       // todo inputObjs
 
-      case "DeleteFromTable" => // DsV2 update
+      case "DeleteFromTable" =>
         val table = getPlanField[AnyRef]("table")
         val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
         outputObjs += tablePrivilegesWithIdentifier(tableIdent.get, actionType = INSERT)
