@@ -21,6 +21,7 @@ annotations/4.1.1.4//annotations-4.1.1.4.jar
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
 automaton/1.11-8//automaton-1.11-8.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
+commons-cli/1.5.0//commons-cli-1.5.0.jar
 commons-codec/1.15//commons-codec-1.15.jar
 commons-collections/3.2.2//commons-collections-3.2.2.jar
 commons-lang/2.6//commons-lang-2.6.jar
