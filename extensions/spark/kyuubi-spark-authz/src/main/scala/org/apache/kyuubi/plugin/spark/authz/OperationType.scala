@@ -48,7 +48,7 @@ object OperationType extends Enumeration {
           "SetNamespaceLocation" => ALTERDATABASE_LOCATION
       case "AlterTableAddColumnsCommand" |
           "AlterHoodieTableAddColumnsCommand" |
-          "AlterTable" | // todo identify add col for AlterTable
+          "AlterTable" |
           "AddColumns" |
           "AlterColumn" |
           "DropColumns" => ALTERTABLE_ADDCOLS
