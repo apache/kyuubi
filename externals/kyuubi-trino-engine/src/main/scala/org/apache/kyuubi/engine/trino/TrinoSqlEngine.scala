@@ -24,7 +24,6 @@ import scala.util.control.NonFatal
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, TRINO_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
 import org.apache.kyuubi.engine.trino.TrinoSqlEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.trino.event.{TrinoEngineEvent, TrinoEventHandlerRegister}
 import org.apache.kyuubi.events.EventBus
@@ -59,7 +58,6 @@ object TrinoSqlEngine extends Logging {
   private val countDownLatch = new CountDownLatch(1)
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
-    .set(ENGINE_EVENT_LOGGERS.key, "JSON")
 
   var currentEngine: Option[TrinoSqlEngine] = None
 
@@ -88,7 +86,7 @@ object TrinoSqlEngine extends Logging {
   }
 
   private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
-    TrinoEventHandlerRegister.registerEngineEventLoggers(conf)
+    TrinoEventHandlerRegister.registerEventLoggers(conf)
   }
 
   def main(args: Array[String]): Unit = {

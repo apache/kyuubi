@@ -18,19 +18,15 @@ package org.apache.kyuubi.events
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_LOGGERS, SERVER_EVENT_LOGGERS}
 import org.apache.kyuubi.events.EventLoggerType.EventLoggerType
 import org.apache.kyuubi.events.handler.{EventHandler, EventHandlerLoader}
 
 trait EventHandlerRegister extends Logging {
 
-  def registerEngineEventLoggers(conf: KyuubiConf): Unit = {
-    val loggers = conf.get(ENGINE_EVENT_LOGGERS)
-    register(loggers, conf)
-  }
+  protected def getLoggers(conf: KyuubiConf): Seq[String]
 
-  def registerServerEventLoggers(conf: KyuubiConf): Unit = {
-    val loggers = conf.get(SERVER_EVENT_LOGGERS)
+  def registerEventLoggers(conf: KyuubiConf): Unit = {
+    val loggers = getLoggers(conf)
     register(loggers, conf)
   }
 
