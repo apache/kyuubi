@@ -38,7 +38,7 @@ import org.apache.spark.sql.connector.catalog.NamespaceChange.RemoveProperty
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.datasources.DataSource
 import org.apache.spark.sql.hive.HiveUDFExpressionBuilder
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{catalogV2Util, postExternalCatalogEvent, HiveExternalCatalog, HiveMetastoreCatalog, HiveSessionCatalog}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{catalogV2Util, postExternalCatalogEvent, HiveMetastoreCatalog, HiveSessionCatalog}
 import org.apache.spark.sql.internal.StaticSQLConf.CATALOG_IMPLEMENTATION
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -52,6 +52,8 @@ class HiveTableCatalog(sparkSession: SparkSession)
   extends TableCatalog with SQLConfHelper with SupportsNamespaces with Logging {
 
   def this() = this(SparkSession.active)
+
+  private val externalCatalogManager = ExternalCatalogManager.getOrCreate(sparkSession)
 
   private val sc = sparkSession.sparkContext
 
@@ -116,7 +118,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
    * A catalog that interacts with external systems.
    */
   lazy val externalCatalog: ExternalCatalogWithListener = {
-    val externalCatalog = new HiveExternalCatalog(sparkConf, hadoopConf)
+    val externalCatalog = externalCatalogManager.take(Ticket(catalogName, sparkConf, hadoopConf))
 
     // Wrap to provide catalog events
     val wrapped = new ExternalCatalogWithListener(externalCatalog)
