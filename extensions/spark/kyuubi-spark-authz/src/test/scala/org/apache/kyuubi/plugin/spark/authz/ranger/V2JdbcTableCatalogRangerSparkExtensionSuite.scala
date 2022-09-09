@@ -102,7 +102,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
         sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
           s" AS select * from $catalogV2.$namespace1.$table1")))
     assert(e21.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/city]"))
+      s" on [$namespace1/$table1/id]"))
   }
 
   test("[KYUUBI #3424] DROP TABLE") {
@@ -134,7 +134,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
         sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
           s" TABLE $catalogV2.$namespace1.$table1")))
     assert(e42.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/city]"))
+      s" on [$namespace1/$table1/id]"))
 
     // AppendData: Insert Using a SELECT Statement
     val e43 = intercept[AccessControlException](
@@ -143,7 +143,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
         sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
           s" SELECT * from $catalogV2.$namespace1.$table1")))
     assert(e43.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/city]"))
+      s" on [$namespace1/$table1/id]"))
 
     // OverwriteByExpression: Insert Overwrite
     val e44 = intercept[AccessControlException](
