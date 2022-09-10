@@ -23,17 +23,17 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEDATABASE, CREATETABLE, CREATEVIEW, DROPTABLE, OperationType, QUERY}
+import org.apache.kyuubi.plugin.spark.authz.OperationType.{ALTERTABLE_ADDCOLS, ALTERTABLE_RENAMECOL, ALTERTABLE_REPLACECOLS, CREATEDATABASE, CREATETABLE, CREATEVIEW, DROPTABLE, OperationType, QUERY}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
-import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2CommandType, V2CreateTablePlan, V2WriteCommand}
+import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2AlterTableCommand, V2CommandType, V2CreateTablePlan, V2WriteCommand}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getFieldVal, invoke, isSparkVersionAtLeast, isSparkVersionAtMost, quote}
 
 object V2CommandType extends Enumeration {
   type V2CommandType = Value
 
-  // traits' name from Spark v2commands
-  val V2CreateTablePlan, V2WriteCommand = Value
+  // traits' name from Spark v2commands and v2AlterTableCommands
+  val V2CreateTablePlan, V2WriteCommand, V2AlterTableCommand = Value
 
   // with query plan
   val HasQuery = Value
@@ -85,12 +85,19 @@ object v2Commands extends Enumeration {
         case V2CreateTablePlan =>
           val table = invoke(p, "tableName").asInstanceOf[Identifier]
           outputObjs += v2TablePrivileges(table)
+
         case V2WriteCommand =>
           val table = getFieldVal[AnyRef](p, "table")
           val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
           if (tableIdent.isDefined) {
             outputObjs += v2TablePrivileges(tableIdent.get, actionType = outputObjsActionType)
           }
+
+        case V2AlterTableCommand =>
+          val table = getFieldVal[LogicalPlan](p, "table")
+          val tableIdent = getFieldVal[Identifier](table, "identifier")
+          outputObjs += v2TablePrivileges(tableIdent)
+
         case _ =>
       }
     }
@@ -202,4 +209,30 @@ object v2Commands extends Enumeration {
       buildQuery(query, inputObjs)
     })
 
+
+  // v2AlterTableCommands with V2AlterTableCommand trait
+  val AddColumns: V2Command = V2Command(
+    operType = ALTERTABLE_ADDCOLS,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2AlterTableCommand))
+
+  val AlterColumn : V2Command = V2Command(
+    operType = ALTERTABLE_ADDCOLS,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2AlterTableCommand))
+
+  val DropColumns : V2Command = V2Command(
+    operType = ALTERTABLE_ADDCOLS,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2AlterTableCommand))
+
+  val ReplaceColumns : V2Command = V2Command(
+    operType = ALTERTABLE_REPLACECOLS,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2AlterTableCommand))
+
+  val RenameColumn : V2Command = V2Command(
+    operType = ALTERTABLE_RENAMECOL,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2AlterTableCommand))
 }

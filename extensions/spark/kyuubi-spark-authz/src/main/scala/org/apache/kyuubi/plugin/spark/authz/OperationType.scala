@@ -44,21 +44,15 @@ object OperationType extends Enumeration {
       case "AddFilesCommand" => EXPLAIN
       case "AddJarsCommand" => EXPLAIN
       case "AddPartitions" => ALTERTABLE_ADDPARTS
-      case "AlterColumn" => ALTERTABLE_REPLACECOLS
       case "AlterDatabasePropertiesCommand" |
           "SetNamespaceProperties" => ALTERDATABASE
       case "AlterDatabaseSetLocationCommand" |
           "SetNamespaceLocation" => ALTERDATABASE_LOCATION
       case "AlterTableAddColumnsCommand" |
           "AlterHoodieTableAddColumnsCommand" |
-          "AlterTable" |
-          "AddColumns" |
-          "AlterColumn" |
-          "DropColumns" => ALTERTABLE_ADDCOLS
+          "AlterTable" => ALTERTABLE_ADDCOLS
       case "AlterTableAddPartitionCommand" => ALTERTABLE_ADDPARTS
-      case "AlterTableChangeColumnCommand" |
-          "RenameColumn" |
-          "ReplaceColumns" => ALTERTABLE_REPLACECOLS
+      case "AlterTableChangeColumnCommand" => ALTERTABLE_REPLACECOLS
       case "AlterTableDropPartitionCommand" => ALTERTABLE_DROPPARTS
       case "AlterTableRenameCommand" => ALTERTABLE_RENAME
       case "AlterTableRecoverPartitionsCommand" |

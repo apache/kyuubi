@@ -212,12 +212,6 @@ object PrivilegesBuilder {
         val database = getPlanField[String]("databaseName")
         outputObjs += databasePrivileges(database)
 
-      // v2AlterTableCommands of Spark 3.2+
-      case "AddColumns" | "AlterColumn" | "DropColumns" | "ReplaceColumns" | "RenameColumn" =>
-        val table = getPlanField[LogicalPlan]("table")
-        val tableIdent = getFieldVal[Identifier](table, "identifier")
-        outputObjs += v2TablePrivileges(tableIdent)
-
       case "AlterTableAddColumnsCommand" =>
         val table = getPlanField[TableIdentifier]("table")
         val cols = getPlanField[Seq[StructField]]("colsToAdd").map(_.name)
