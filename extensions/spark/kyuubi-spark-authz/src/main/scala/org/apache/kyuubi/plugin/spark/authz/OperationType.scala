@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-import org.apache.kyuubi.plugin.spark.authz.v2Commands._
-
 object OperationType extends Enumeration {
 
   type OperationType = Value
@@ -82,8 +80,6 @@ object OperationType extends Enumeration {
       case "CreateTableCommand" |
           "CreateDataSourceTableCommand" |
           "CreateTableLikeCommand" |
-          "CreateTable" |
-          "CreateV2Table" |
           "CreateTableAsSelect" => CREATETABLE
       case "CreateViewCommand" |
           "CacheTableCommand" |

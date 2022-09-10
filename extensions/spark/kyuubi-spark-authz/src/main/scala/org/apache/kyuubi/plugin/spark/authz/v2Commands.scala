@@ -21,12 +21,20 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEDATABASE, OperationType, QUERY}
-import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder.databasePrivileges
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getFieldVal, isSparkVersionAtLeast, isSparkVersionAtMost, quote}
+import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEDATABASE, CREATETABLE, OperationType, QUERY}
+import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
+import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{V2CommandType, V2CreateTablePlan}
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getFieldVal, invoke, isSparkVersionAtLeast, isSparkVersionAtMost, quote}
+
+object V2CommandType extends Enumeration {
+  type V2CommandType = Value
+  val V2CreateTablePlan = Value
+}
 
 object v2Commands extends Enumeration {
+
   import scala.language.implicitConversions
 
   implicit def valueToV2CommandBuilder(x: Value): V2Command =
@@ -36,34 +44,43 @@ object v2Commands extends Enumeration {
     try {
       val cmd = v2Commands.withName(commandName)
 
-      !(StringUtils.isNotBlank(cmd.mostVer) && isSparkVersionAtMost(cmd.mostVer)) &&
-      !(StringUtils.isNotBlank(cmd.leastVer) && isSparkVersionAtLeast(cmd.leastVer))
+      // check spark version requirements
+      (StringUtils.isBlank(cmd.mostVer) || isSparkVersionAtMost(cmd.mostVer)) &&
+        (StringUtils.isBlank(cmd.leastVer) || isSparkVersionAtLeast(cmd.leastVer))
     } catch {
-      case e: NoSuchElementException => false
+      case _: NoSuchElementException => false
     }
   }
 
-  private val defaultBuildInput: (
-      LogicalPlan,
-      ArrayBuffer[PrivilegeObject]) => Unit = (p, inputObjs) => {}
+  val defaultBuildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
+    (p, inputObjs, cmdTypes) => {}
 
-  private val defaultBuildOutput: (LogicalPlan, ArrayBuffer[PrivilegeObject]) => Unit =
-    (p, outputObjs) => {}
+  val defaultBuildOutput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
+    (p, outputObjs, cmdTypes) => {
+      cmdTypes.foreach {
+        case V2CreateTablePlan =>
+          val table = invoke(p, "tableName").asInstanceOf[Identifier]
+          outputObjs += v2TablePrivileges(table)
+      }
+    }
 
   case class V2Command(
       leastVer: String = "",
       mostVer: String = "",
-      buildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject]) => Unit = defaultBuildInput,
-      buildOutput: (LogicalPlan, ArrayBuffer[PrivilegeObject]) => Unit = defaultBuildOutput,
-      operType: OperationType = QUERY)
+      buildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
+        defaultBuildInput,
+      buildOutput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
+        defaultBuildOutput,
+      operType: OperationType = QUERY,
+      cmdTypes: Seq[V2CommandType] = Seq())
     extends super.Val {
 
     def handle(
         plan: LogicalPlan,
         inputObjs: ArrayBuffer[PrivilegeObject],
         outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
-      this.buildInput(plan, inputObjs)
-      this.buildOutput(plan, outputObjs)
+      this.buildInput(plan, inputObjs, cmdTypes)
+      this.buildOutput(plan, outputObjs, cmdTypes)
     }
   }
 
@@ -71,7 +88,7 @@ object v2Commands extends Enumeration {
 
   val CreateNamespace: V2Command = V2Command(
     operType = CREATEDATABASE,
-    buildOutput = (plan, outputObjs) => {
+    buildOutput = (plan, outputObjs, _) => {
       if (isSparkVersionAtLeast("3.3")) {
         val resolvedNamespace = getFieldVal[Any](plan, "name")
         val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
@@ -81,5 +98,17 @@ object v2Commands extends Enumeration {
         outputObjs += databasePrivileges(quote(namespace))
       }
     })
+
+  // with V2CreateTablePlan
+
+  val CreateTable: V2Command = V2Command(
+    operType = CREATETABLE,
+    cmdTypes = Seq(V2CreateTablePlan),
+    leastVer = "3.3")
+
+  val CreateV2Table: V2Command = V2Command(
+    operType = CREATETABLE,
+    cmdTypes = Seq(V2CreateTablePlan),
+    mostVer = "3.2")
 
 }

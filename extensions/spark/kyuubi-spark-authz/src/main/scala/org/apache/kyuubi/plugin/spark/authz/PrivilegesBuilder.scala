@@ -41,14 +41,14 @@ object PrivilegesBuilder {
     PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db)
   }
 
-  private def v1TablePrivileges(
+  def v1TablePrivileges(
       table: TableIdentifier,
       columns: Seq[String] = Nil,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
     PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns)
   }
 
-  private def v2TablePrivileges(
+  def v2TablePrivileges(
       table: Identifier,
       columns: Seq[String] = Nil,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
@@ -341,10 +341,6 @@ object PrivilegesBuilder {
         val table = getPlanField[CatalogTable]("table").identifier
         // fixme: do we need to add columns to check?
         outputObjs += v1TablePrivileges(table)
-
-      case "CreateTable" | "CreateV2Table" =>
-        val table = invoke(plan, "tableName").asInstanceOf[Identifier]
-        outputObjs += v2TablePrivileges(table)
 
       case "CreateDataSourceTableAsSelectCommand" =>
         val table = getPlanField[CatalogTable]("table").identifier
