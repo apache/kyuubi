@@ -70,7 +70,6 @@ object OperationType extends Enumeration {
           "AlterTableUnsetPropertiesCommand" => ALTERTABLE_PROPERTIES
       case ava if ava.contains("AlterViewAs") => ALTERVIEW_AS
       case ac if ac.startsWith("Analyze") => ANALYZE_TABLE
-      case "AppendData" => QUERY
       case "CreateDatabaseCommand" => CREATEDATABASE
       case "CreateFunctionCommand" | "CreateFunction" => CREATEFUNCTION
       case "CreateTableAsSelect" |
@@ -91,7 +90,6 @@ object OperationType extends Enumeration {
       case "DropDatabaseCommand" | "DropNamespace" => DROPDATABASE
       case "DropFunctionCommand" | "DropFunction" => DROPFUNCTION
       case "DropTableCommand" => DROPTABLE
-      case "DeleteFromTable" => DROPTABLE
       case "ExplainCommand" => EXPLAIN
       case "InsertIntoDataSourceCommand" |
           "InsertIntoDataSourceDirCommand" |

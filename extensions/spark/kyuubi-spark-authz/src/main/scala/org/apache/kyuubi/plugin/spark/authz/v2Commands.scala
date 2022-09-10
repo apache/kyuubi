@@ -24,8 +24,9 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEDATABASE, CREATETABLE, DROPTABLE, OperationType, QUERY}
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
-import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2CommandType, V2CreateTablePlan}
+import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2CommandType, V2CreateTablePlan, V2WriteCommand}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getFieldVal, invoke, isSparkVersionAtLeast, isSparkVersionAtMost, quote}
 
 object V2CommandType extends Enumeration {
@@ -50,8 +51,15 @@ object v2Commands extends Enumeration {
       val cmd = v2Commands.withName(commandName)
 
       // check spark version requirements
-      (StringUtils.isBlank(cmd.mostVer) || isSparkVersionAtMost(cmd.mostVer)) &&
-      (StringUtils.isBlank(cmd.leastVer) || isSparkVersionAtLeast(cmd.leastVer))
+      def passSparkVersionCheck =
+        (StringUtils.isBlank(cmd.mostVer) || isSparkVersionAtMost(cmd.mostVer)) &&
+          (StringUtils.isBlank(cmd.leastVer) || isSparkVersionAtLeast(cmd.leastVer))
+
+      if (!passSparkVersionCheck || !cmd.enabled) {
+        false
+      } else {
+        true
+      }
     } catch {
       case _: NoSuchElementException => false
     }
@@ -67,12 +75,22 @@ object v2Commands extends Enumeration {
       }
     }
 
-  val defaultBuildOutput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
-    (p, outputObjs, cmdTypes) => {
+  val defaultBuildOutput: (
+      LogicalPlan,
+      ArrayBuffer[PrivilegeObject],
+      Seq[V2CommandType],
+      PrivilegeObjectActionType) => Unit =
+    (p, outputObjs, cmdTypes, outputObjsActionType) => {
       cmdTypes.foreach {
         case V2CreateTablePlan =>
           val table = invoke(p, "tableName").asInstanceOf[Identifier]
           outputObjs += v2TablePrivileges(table)
+        case V2WriteCommand =>
+          val table = getFieldVal[AnyRef](p, "table")
+          val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
+          if (tableIdent.isDefined) {
+            outputObjs += v2TablePrivileges(tableIdent.get, actionType = outputObjsActionType)
+          }
         case _ =>
       }
     }
@@ -82,10 +100,15 @@ object v2Commands extends Enumeration {
       mostVer: String = "",
       buildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
         defaultBuildInput,
-      buildOutput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
-        defaultBuildOutput,
+      buildOutput: (
+          LogicalPlan,
+          ArrayBuffer[PrivilegeObject],
+          Seq[V2CommandType],
+          PrivilegeObjectActionType) => Unit = defaultBuildOutput,
       operType: OperationType = QUERY,
-      cmdTypes: Seq[V2CommandType] = Seq())
+      cmdTypes: Seq[V2CommandType] = Seq(),
+      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER,
+      enabled: Boolean = true)
     extends super.Val {
 
     def handle(
@@ -93,7 +116,7 @@ object v2Commands extends Enumeration {
         inputObjs: ArrayBuffer[PrivilegeObject],
         outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
       this.buildInput(plan, inputObjs, cmdTypes)
-      this.buildOutput(plan, outputObjs, cmdTypes)
+      this.buildOutput(plan, outputObjs, cmdTypes, outputActionType)
     }
   }
 
@@ -101,7 +124,7 @@ object v2Commands extends Enumeration {
 
   val CreateNamespace: V2Command = V2Command(
     operType = CREATEDATABASE,
-    buildOutput = (plan, outputObjs, _) => {
+    buildOutput = (plan, outputObjs, _, _) => {
       if (isSparkVersionAtLeast("3.3")) {
         val resolvedNamespace = getFieldVal[Any](plan, "name")
         val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
@@ -136,10 +159,23 @@ object v2Commands extends Enumeration {
     operType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan, HasQuery))
 
+  // with V2WriteCommand
+  val AppendData: V2Command = V2Command(
+    cmdTypes = Seq(V2WriteCommand, HasQuery),
+    outputActionType = PrivilegeObjectActionType.INSERT)
+
+  val UpdateTable: V2Command = V2Command(
+    cmdTypes = Seq(V2WriteCommand),
+    outputActionType = PrivilegeObjectActionType.UPDATE)
+
+  val DeleteFromTable: V2Command = V2Command(
+    cmdTypes = Seq(V2WriteCommand),
+    outputActionType = PrivilegeObjectActionType.UPDATE)
+
   // other table commands
   val DropTable: V2Command = V2Command(
     operType = DROPTABLE,
-    buildOutput = (plan, outputObjs, _) => {
+    buildOutput = (plan, outputObjs, _, _) => {
       val tableIdent =
         if (isSparkVersionAtLeast("3.1")) {
           val resolvedTable = getFieldVal[LogicalPlan](plan, "child")

@@ -432,22 +432,6 @@ object PrivilegesBuilder {
         outputObjs += v1TablePrivileges(table, actionType = actionType)
         buildQuery(getQuery, inputObjs)
 
-      case "AppendData" =>
-        val table = getPlanField[AnyRef]("table")
-        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += v2TablePrivileges(tableIdent.get, actionType = INSERT)
-        buildQuery(getQuery, inputObjs)
-
-      case "UpdateTable" =>
-        val table = getPlanField[AnyRef]("table")
-        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += v2TablePrivileges(tableIdent.get, actionType = UPDATE)
-
-      case "DeleteFromTable" =>
-        val table = getPlanField[AnyRef]("table")
-        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += v2TablePrivileges(tableIdent.get, actionType = INSERT)
-
       case "LoadDataCommand" =>
         val table = getPlanField[TableIdentifier]("table")
         val overwrite = getPlanField[Boolean]("isOverwrite")
