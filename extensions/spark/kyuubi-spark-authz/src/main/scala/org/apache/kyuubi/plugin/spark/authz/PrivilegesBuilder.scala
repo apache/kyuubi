@@ -260,11 +260,6 @@ object PrivilegesBuilder {
         val table = getTableName
         outputObjs += tablePrivileges(table)
 
-      case "AlterTable" =>
-        val table = getPlanField[Any]("table")
-        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += v2TablePrivileges(tableIdent.get)
-
       case "AlterViewAsCommand" =>
         val view = getPlanField[TableIdentifier]("name")
         outputObjs += tablePrivileges(view)

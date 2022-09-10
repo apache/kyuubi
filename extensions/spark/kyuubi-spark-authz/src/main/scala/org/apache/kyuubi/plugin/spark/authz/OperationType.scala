@@ -49,8 +49,7 @@ object OperationType extends Enumeration {
       case "AlterDatabaseSetLocationCommand" |
           "SetNamespaceLocation" => ALTERDATABASE_LOCATION
       case "AlterTableAddColumnsCommand" |
-          "AlterHoodieTableAddColumnsCommand" |
-          "AlterTable" => ALTERTABLE_ADDCOLS
+          "AlterHoodieTableAddColumnsCommand" => ALTERTABLE_ADDCOLS
       case "AlterTableAddPartitionCommand" => ALTERTABLE_ADDPARTS
       case "AlterTableChangeColumnCommand" => ALTERTABLE_REPLACECOLS
       case "AlterTableDropPartitionCommand" => ALTERTABLE_DROPPARTS
