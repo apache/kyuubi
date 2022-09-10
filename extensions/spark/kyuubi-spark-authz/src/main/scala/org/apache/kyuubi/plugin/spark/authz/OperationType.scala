@@ -90,8 +90,8 @@ object OperationType extends Enumeration {
       case "DescribeColumnCommand" | "DescribeTableCommand" => DESCTABLE
       case "DropDatabaseCommand" | "DropNamespace" => DROPDATABASE
       case "DropFunctionCommand" | "DropFunction" => DROPFUNCTION
-      case "DropTableCommand" | "DropTable" => DROPTABLE
-      case "DeleteFromTable" | "DropTable" => DROPTABLE
+      case "DropTableCommand" => DROPTABLE
+      case "DeleteFromTable" => DROPTABLE
       case "ExplainCommand" => EXPLAIN
       case "InsertIntoDataSourceCommand" |
           "InsertIntoDataSourceDirCommand" |

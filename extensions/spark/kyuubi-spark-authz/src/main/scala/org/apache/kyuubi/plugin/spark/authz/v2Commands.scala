@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEDATABASE, CREATETABLE, OperationType, QUERY}
+import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEDATABASE, CREATETABLE, DROPTABLE, OperationType, QUERY}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
 import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2CommandType, V2CreateTablePlan}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getFieldVal, invoke, isSparkVersionAtLeast, isSparkVersionAtMost, quote}
@@ -135,5 +135,19 @@ object v2Commands extends Enumeration {
   val ReplaceTableAsSelect: V2Command = V2Command(
     operType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan, HasQuery))
+
+  // other table commands
+  val DropTable: V2Command = V2Command(
+    operType = DROPTABLE,
+    buildOutput = (plan, outputObjs, _) => {
+      val tableIdent =
+        if (isSparkVersionAtLeast("3.1")) {
+          val resolvedTable = getFieldVal[LogicalPlan](plan, "child")
+          getFieldVal[Identifier](resolvedTable, "identifier")
+        } else {
+          getFieldVal[Identifier](plan, "ident")
+        }
+      outputObjs += v2TablePrivileges(tableIdent)
+    })
 
 }

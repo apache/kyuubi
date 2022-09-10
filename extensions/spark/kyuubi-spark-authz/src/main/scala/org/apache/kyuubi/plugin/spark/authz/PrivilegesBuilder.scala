@@ -402,11 +402,6 @@ object PrivilegesBuilder {
         val database = getFieldVal[Seq[String]](child, "namespace")
         outputObjs += databasePrivileges(quote(database))
 
-      case "DropTable" =>
-        val resolvedTable = getPlanField[LogicalPlan]("child")
-        val tableIdent = getFieldVal[Identifier](resolvedTable, "identifier")
-        outputObjs += v2TablePrivileges(tableIdent)
-
       case "DropTableCommand" =>
         outputObjs += v1TablePrivileges(getTableName)
 
