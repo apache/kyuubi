@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEDATABASE, CREATETABLE, DROPTABLE, OperationType, QUERY}
+import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEDATABASE, CREATETABLE, CREATEVIEW, DROPTABLE, OperationType, QUERY}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
 import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2CommandType, V2CreateTablePlan, V2WriteCommand}
@@ -186,24 +186,16 @@ object v2Commands extends Enumeration {
       outputObjs += v2TablePrivileges(tableIdent)
     })
 
-  // 3.3
   val CacheTable: V2Command = V2Command(
+    operType = CREATEVIEW,
     leastVer = "3.2",
     buildInput = (plan, inputObjs, _) => {
       val query = getFieldVal[LogicalPlan](plan, "table") // table to cache
       buildQuery(query, inputObjs)
     })
 
-//  val CacheTableCommand: V2Command = V2Command(
-//    leastVer = "3.2",
-//    buildInput = (plan, inputObjs, _) => {
-//      val query = getFieldVal[Option[LogicalPlan]](plan, "plan")
-//      if (query.isDefined) {
-//        buildQuery(query.get, inputObjs)
-//      }
-//    })
-
   val CacheTableAsSelect: V2Command = V2Command(
+    operType = CREATEVIEW,
     leastVer = "3.2",
     buildInput = (plan, inputObjs, _) => {
       val query = getFieldVal[LogicalPlan](plan, "plan")
