@@ -95,7 +95,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     assert(e2.getMessage.contains(s"does not have [create] privilege" +
       s" on [$namespace1/$table2]"))
 
-    // CreateAsSelect
+    // CreateTableAsSelect
     val e21 = intercept[AccessControlException](
       doAs(
         "someone",

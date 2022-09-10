@@ -25,12 +25,17 @@ import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEDATABASE, CREATETABLE, OperationType, QUERY}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
-import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{V2CommandType, V2CreateTablePlan}
+import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2CommandType, V2CreateTablePlan}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getFieldVal, invoke, isSparkVersionAtLeast, isSparkVersionAtMost, quote}
 
 object V2CommandType extends Enumeration {
   type V2CommandType = Value
-  val V2CreateTablePlan = Value
+
+  // traits' name from Spark v2commands
+  val V2CreateTablePlan, V2WriteCommand = Value
+
+  // with query plan
+  val HasQuery = Value
 }
 
 object v2Commands extends Enumeration {
@@ -46,14 +51,21 @@ object v2Commands extends Enumeration {
 
       // check spark version requirements
       (StringUtils.isBlank(cmd.mostVer) || isSparkVersionAtMost(cmd.mostVer)) &&
-        (StringUtils.isBlank(cmd.leastVer) || isSparkVersionAtLeast(cmd.leastVer))
+      (StringUtils.isBlank(cmd.leastVer) || isSparkVersionAtLeast(cmd.leastVer))
     } catch {
       case _: NoSuchElementException => false
     }
   }
 
   val defaultBuildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
-    (p, inputObjs, cmdTypes) => {}
+    (p, inputObjs, cmdTypes) => {
+      cmdTypes.foreach {
+        case HasQuery =>
+          val query = getFieldVal[LogicalPlan](p, "query")
+          buildQuery(query, inputObjs)
+        case _ =>
+      }
+    }
 
   val defaultBuildOutput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
     (p, outputObjs, cmdTypes) => {
@@ -61,6 +73,7 @@ object v2Commands extends Enumeration {
         case V2CreateTablePlan =>
           val table = invoke(p, "tableName").asInstanceOf[Identifier]
           outputObjs += v2TablePrivileges(table)
+        case _ =>
       }
     }
 
@@ -110,5 +123,17 @@ object v2Commands extends Enumeration {
     operType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan),
     mostVer = "3.2")
+
+  val CreateTableAsSelect: V2Command = V2Command(
+    operType = CREATETABLE,
+    cmdTypes = Seq(V2CreateTablePlan, HasQuery))
+
+  val ReplaceTable: V2Command = V2Command(
+    operType = CREATETABLE,
+    cmdTypes = Seq(V2CreateTablePlan))
+
+  val ReplaceTableAsSelect: V2Command = V2Command(
+    operType = CREATETABLE,
+    cmdTypes = Seq(V2CreateTablePlan, HasQuery))
 
 }

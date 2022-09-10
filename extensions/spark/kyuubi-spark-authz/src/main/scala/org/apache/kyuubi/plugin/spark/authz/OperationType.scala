@@ -79,8 +79,7 @@ object OperationType extends Enumeration {
           "OptimizedCreateHiveTableAsSelectCommand" => CREATETABLE_AS_SELECT
       case "CreateTableCommand" |
           "CreateDataSourceTableCommand" |
-          "CreateTableLikeCommand" |
-          "CreateTableAsSelect" => CREATETABLE
+          "CreateTableLikeCommand" => CREATETABLE
       case "CreateViewCommand" |
           "CacheTableCommand" |
           "CreateTempViewUsing" |

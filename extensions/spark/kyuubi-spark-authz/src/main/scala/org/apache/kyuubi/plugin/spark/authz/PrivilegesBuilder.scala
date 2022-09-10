@@ -83,7 +83,7 @@ object PrivilegesBuilder {
    * @param privilegeObjects input or output spark privilege object list
    * @param projectionList Projection list after pruning
    */
-  private def buildQuery(
+  def buildQuery(
       plan: LogicalPlan,
       privilegeObjects: ArrayBuffer[PrivilegeObject],
       projectionList: Seq[NamedExpression] = Nil,
@@ -365,23 +365,6 @@ object PrivilegesBuilder {
         val child = getPlanField("child")
         val database = getFieldVal[Seq[String]](child, "nameParts")
         inputObjs += databasePrivileges(quote(database))
-
-      case "CreateTableAsSelect" |
-          "ReplaceTableAsSelect" =>
-        if (isSparkVersionAtLeast("3.3")) {
-          val left = getPlanField[LogicalPlan]("name")
-          left.nodeName match {
-            case "ResolvedDBObjectName" =>
-              val nameParts = getFieldVal[Seq[String]](left, "nameParts")
-              val db = Some(quote(nameParts.init))
-              outputObjs += v1TablePrivileges(TableIdentifier(nameParts.last, db))
-            case _ =>
-          }
-        } else {
-          val tableIdent = getPlanField[Identifier]("tableName")
-          outputObjs += v2TablePrivileges(tableIdent)
-        }
-        buildQuery(getQuery, inputObjs)
 
       case "CreateTableLikeCommand" =>
         val target = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("targetTable"), spark)
