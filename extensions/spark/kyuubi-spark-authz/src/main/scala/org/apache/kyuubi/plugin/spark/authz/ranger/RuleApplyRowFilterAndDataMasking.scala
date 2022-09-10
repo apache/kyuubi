@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -49,13 +50,17 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         if (tableIdentifier.isEmpty) {
           datasourceV2Relation
         } else {
-          applyFilterAndMasking(
-            datasourceV2Relation,
-            getTableIdentifierFromIdentifier(tableIdentifier.get),
-            spark)
+          applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
         }
       case other => apply(other)
     }
+  }
+
+  private def applyFilterAndMasking(
+      plan: LogicalPlan,
+      identifier: Identifier,
+      spark: SparkSession): LogicalPlan = {
+    applyFilterAndMasking(plan, getTableIdentifierFromV2Identifier(identifier), spark)
   }
 
   private def applyFilterAndMasking(

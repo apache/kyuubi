@@ -103,7 +103,7 @@ private[authz] object AuthZUtils {
     getFieldVal[Option[Identifier]](plan, "identifier")
   }
 
-  def getTableIdentifierFromIdentifier(id: Identifier): TableIdentifier = {
+  def getTableIdentifierFromV2Identifier(id: Identifier): TableIdentifier = {
     TableIdentifier(id.name(), Some(quote(id.namespace())))
   }
 
