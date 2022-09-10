@@ -475,15 +475,11 @@ object PrivilegesBuilder {
         val table = getPlanField[AnyRef]("table")
         val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
         outputObjs += v2TablePrivileges(tableIdent.get, actionType = UPDATE)
-      // todo INSERT ?
-      // todo inputObjs
 
       case "DeleteFromTable" =>
         val table = getPlanField[AnyRef]("table")
         val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
         outputObjs += v2TablePrivileges(tableIdent.get, actionType = INSERT)
-      // todo INSERT ?
-      // todo inputObjs
 
       case "LoadDataCommand" =>
         val table = getPlanField[TableIdentifier]("table")
