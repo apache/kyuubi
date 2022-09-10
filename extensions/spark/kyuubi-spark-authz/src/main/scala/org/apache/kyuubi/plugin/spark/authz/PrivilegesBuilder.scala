@@ -417,12 +417,6 @@ object PrivilegesBuilder {
 
       case "MergeIntoTable" =>
 
-      case "OverwriteByExpression" =>
-        val table = getPlanField[AnyRef]("table")
-        val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
-        outputObjs += v2TablePrivileges(tableIdent.get, actionType = UPDATE)
-        buildQuery(getQuery, inputObjs)
-
       case "RepairTableCommand" =>
         val enableAddPartitions = getPlanField[Boolean]("enableAddPartitions")
         if (enableAddPartitions) {

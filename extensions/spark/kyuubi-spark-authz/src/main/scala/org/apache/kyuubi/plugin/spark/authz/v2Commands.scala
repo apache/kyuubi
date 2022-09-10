@@ -184,6 +184,14 @@ object v2Commands extends Enumeration {
     cmdTypes = Seq(V2WriteCommand),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
+  val OverwriteByExpression: V2Command = V2Command(
+    cmdTypes = Seq(V2WriteCommand, HasQuery),
+    outputActionType = PrivilegeObjectActionType.UPDATE)
+
+  val OverwritePartitionsDynamic: V2Command = V2Command(
+    cmdTypes = Seq(V2WriteCommand, HasQuery),
+    outputActionType = PrivilegeObjectActionType.UPDATE)
+
   // other table commands
   val DropTable: V2Command = V2Command(
     operType = DROPTABLE,
