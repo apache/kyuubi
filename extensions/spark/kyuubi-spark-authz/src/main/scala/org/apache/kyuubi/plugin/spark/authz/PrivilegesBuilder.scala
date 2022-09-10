@@ -34,6 +34,7 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
+import org.apache.kyuubi.plugin.spark.authz.v2Commands.v2TablePrivileges
 
 object PrivilegesBuilder {
 
@@ -46,13 +47,6 @@ object PrivilegesBuilder {
       columns: Seq[String] = Nil,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
     PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns)
-  }
-
-  def v2TablePrivileges(
-      table: Identifier,
-      columns: Seq[String] = Nil,
-      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(TABLE_OR_VIEW, actionType, quote(table.namespace()), table.name(), columns)
   }
 
   private def functionPrivileges(

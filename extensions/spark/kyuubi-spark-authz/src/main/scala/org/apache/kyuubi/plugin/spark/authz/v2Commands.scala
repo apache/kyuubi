@@ -25,6 +25,7 @@ import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.{ALTERTABLE_ADDCOLS, ALTERTABLE_RENAMECOL, ALTERTABLE_REPLACECOLS, CREATEDATABASE, CREATETABLE, CREATEVIEW, DROPTABLE, OperationType, QUERY}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
 import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2AlterTableCommand, V2CommandType, V2CreateTablePlan, V2WriteCommand}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getFieldVal, invoke, isSparkVersionAtLeast, isSparkVersionAtMost, quote}
@@ -51,15 +52,11 @@ object v2Commands extends Enumeration {
       val cmd = v2Commands.withName(commandName)
 
       // check spark version requirements
-      def passSparkVersionCheck =
+      def passSparkVersionCheck: Boolean =
         (StringUtils.isBlank(cmd.mostVer) || isSparkVersionAtMost(cmd.mostVer)) &&
           (StringUtils.isBlank(cmd.leastVer) || isSparkVersionAtLeast(cmd.leastVer))
 
-      if (!passSparkVersionCheck || !cmd.enabled) {
-        false
-      } else {
-        true
-      }
+      passSparkVersionCheck && cmd.enabled
     } catch {
       case _: NoSuchElementException => false
     }
@@ -127,6 +124,14 @@ object v2Commands extends Enumeration {
     }
   }
 
+  def v2TablePrivileges(
+      table: Identifier,
+      columns: Seq[String] = Nil,
+      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
+    PrivilegeObject(TABLE_OR_VIEW, actionType, quote(table.namespace()), table.name(), columns)
+  }
+
+  // /////////////////////////////////////////////////////////////////////////////////////////////
   // commands
 
   val CreateNamespace: V2Command = V2Command(
