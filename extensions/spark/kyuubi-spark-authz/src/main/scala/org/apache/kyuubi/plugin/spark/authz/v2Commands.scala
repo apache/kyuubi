@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.OperationType.{ALTERTABLE_ADDCOLS, ALTERTABLE_RENAMECOL, ALTERTABLE_REPLACECOLS, CREATEDATABASE, CREATETABLE, CREATEVIEW, DROPTABLE, OperationType, QUERY}
+import org.apache.kyuubi.plugin.spark.authz.OperationType.{ALTERTABLE_ADDCOLS, ALTERTABLE_RENAMECOL, ALTERTABLE_REPLACECOLS, CREATEDATABASE, CREATETABLE, CREATEVIEW, DROPDATABASE, DROPTABLE, OperationType, QUERY}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
@@ -145,6 +145,14 @@ object v2Commands extends Enumeration {
         val namespace = getFieldVal[Seq[String]](plan, "namespace")
         outputObjs += databasePrivileges(quote(namespace))
       }
+    })
+
+  val DropNamespace: V2Command = V2Command(
+    operType = DROPDATABASE,
+    buildOutput = (plan, outputObjs, _, _) => {
+      val resolvedNamespace = getFieldVal[LogicalPlan](plan, "namespace")
+      val databases = getFieldVal[Seq[String]](resolvedNamespace, "namespace")
+      outputObjs += databasePrivileges(quote(databases))
     })
 
   // with V2CreateTablePlan

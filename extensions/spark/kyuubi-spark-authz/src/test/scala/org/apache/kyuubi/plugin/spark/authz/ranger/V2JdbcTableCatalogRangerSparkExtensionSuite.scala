@@ -33,6 +33,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   val catalogV2 = "testcat"
   val jdbcCatalogV2 = "jdbc2"
   val namespace1 = "ns1"
+  val namespace2 = "ns2"
   val table1 = "table1"
   val table2 = "table2"
   val outputTable1 = "outputTable1"
@@ -74,6 +75,26 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     Try {
       DriverManager.getConnection(s"$dbUrl;shutdown=true")
     }
+  }
+
+  test("[KYUUBI #3424] CREATE DATABASE") {
+    assume(isSparkV31OrGreater)
+
+    // create database
+    val e1 = intercept[AccessControlException](
+      doAs("someone", sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace2").explain()))
+    assert(e1.getMessage.contains(s"does not have [create] privilege" +
+      s" on [$namespace2]"))
+  }
+
+  test("[KYUUBI #3424] DROP DATABASE") {
+    assume(isSparkV31OrGreater)
+
+    // create database
+    val e1 = intercept[AccessControlException](
+      doAs("someone", sql(s"DROP DATABASE IF EXISTS $catalogV2.$namespace2").explain()))
+    assert(e1.getMessage.contains(s"does not have [drop] privilege" +
+      s" on [$namespace2]"))
   }
 
   test("[KYUUBI #3424] SELECT TABLE") {
