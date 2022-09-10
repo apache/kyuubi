@@ -37,7 +37,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 
 object PrivilegesBuilder {
 
-  private def databasePrivileges(db: String): PrivilegeObject = {
+  def databasePrivileges(db: String): PrivilegeObject = {
     PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db)
   }
 
@@ -202,6 +202,9 @@ object PrivilegesBuilder {
     }
 
     plan.nodeName match {
+      case v2Cmd if v2Commands.accept(v2Cmd) =>
+        v2Commands.withName(v2Cmd).handle(plan, inputObjs, outputObjs)
+
       case "AlterDatabasePropertiesCommand" |
           "AlterDatabaseSetLocationCommand" |
           "CreateDatabaseCommand" |
@@ -306,16 +309,6 @@ object PrivilegesBuilder {
         val db = getPlanField[Option[String]]("databaseName")
         if (db.nonEmpty) {
           inputObjs += databasePrivileges(db.get)
-        }
-
-      case "CreateNamespace" =>
-        if (isSparkVersionAtLeast("3.3")) {
-          val resolvedNamespace = getPlanField[Any]("name")
-          val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
-          outputObjs += databasePrivileges(quote(databases))
-        } else {
-          val namespace = getPlanField[Seq[String]]("namespace")
-          outputObjs += databasePrivileges(quote(namespace))
         }
 
       case "CacheTable" =>

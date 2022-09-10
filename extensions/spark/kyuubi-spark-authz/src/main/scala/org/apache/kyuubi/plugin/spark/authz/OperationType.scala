@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import org.apache.kyuubi.plugin.spark.authz.v2Commands._
+
 object OperationType extends Enumeration {
 
   type OperationType = Value
@@ -37,6 +39,9 @@ object OperationType extends Enumeration {
    */
   def apply(clzName: String): OperationType = {
     clzName match {
+      case v2Cmd if v2Commands.accept(v2Cmd) =>
+        v2Commands.withName(v2Cmd).operType
+
       case "AddArchivesCommand" => EXPLAIN
       case "AddFilesCommand" => EXPLAIN
       case "AddJarsCommand" => EXPLAIN
@@ -68,7 +73,7 @@ object OperationType extends Enumeration {
       case ava if ava.contains("AlterViewAs") => ALTERVIEW_AS
       case ac if ac.startsWith("Analyze") => ANALYZE_TABLE
       case "AppendData" => QUERY
-      case "CreateDatabaseCommand" | "CreateNamespace" => CREATEDATABASE
+      case "CreateDatabaseCommand" => CREATEDATABASE
       case "CreateFunctionCommand" | "CreateFunction" => CREATEFUNCTION
       case "CreateTableAsSelect" |
           "CreateDataSourceTableAsSelectCommand" |
