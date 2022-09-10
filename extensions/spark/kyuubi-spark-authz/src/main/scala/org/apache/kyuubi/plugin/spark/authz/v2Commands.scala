@@ -209,29 +209,28 @@ object v2Commands extends Enumeration {
       buildQuery(query, inputObjs)
     })
 
-
   // v2AlterTableCommands with V2AlterTableCommand trait
   val AddColumns: V2Command = V2Command(
     operType = ALTERTABLE_ADDCOLS,
     leastVer = "3.2",
     cmdTypes = Seq(V2AlterTableCommand))
 
-  val AlterColumn : V2Command = V2Command(
+  val AlterColumn: V2Command = V2Command(
     operType = ALTERTABLE_ADDCOLS,
     leastVer = "3.2",
     cmdTypes = Seq(V2AlterTableCommand))
 
-  val DropColumns : V2Command = V2Command(
+  val DropColumns: V2Command = V2Command(
     operType = ALTERTABLE_ADDCOLS,
     leastVer = "3.2",
     cmdTypes = Seq(V2AlterTableCommand))
 
-  val ReplaceColumns : V2Command = V2Command(
+  val ReplaceColumns: V2Command = V2Command(
     operType = ALTERTABLE_REPLACECOLS,
     leastVer = "3.2",
     cmdTypes = Seq(V2AlterTableCommand))
 
-  val RenameColumn : V2Command = V2Command(
+  val RenameColumn: V2Command = V2Command(
     operType = ALTERTABLE_RENAMECOL,
     leastVer = "3.2",
     cmdTypes = Seq(V2AlterTableCommand))
