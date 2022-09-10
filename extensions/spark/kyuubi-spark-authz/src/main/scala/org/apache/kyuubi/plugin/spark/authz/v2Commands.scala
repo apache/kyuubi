@@ -186,4 +186,28 @@ object v2Commands extends Enumeration {
       outputObjs += v2TablePrivileges(tableIdent)
     })
 
+  // 3.3
+  val CacheTable: V2Command = V2Command(
+    leastVer = "3.2",
+    buildInput = (plan, inputObjs, _) => {
+      val query = getFieldVal[LogicalPlan](plan, "table") // table to cache
+      buildQuery(query, inputObjs)
+    })
+
+//  val CacheTableCommand: V2Command = V2Command(
+//    leastVer = "3.2",
+//    buildInput = (plan, inputObjs, _) => {
+//      val query = getFieldVal[Option[LogicalPlan]](plan, "plan")
+//      if (query.isDefined) {
+//        buildQuery(query.get, inputObjs)
+//      }
+//    })
+
+  val CacheTableAsSelect: V2Command = V2Command(
+    leastVer = "3.2",
+    buildInput = (plan, inputObjs, _) => {
+      val query = getFieldVal[LogicalPlan](plan, "plan")
+      buildQuery(query, inputObjs)
+    })
+
 }

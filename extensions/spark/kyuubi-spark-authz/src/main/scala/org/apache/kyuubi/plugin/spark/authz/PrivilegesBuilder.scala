@@ -311,16 +311,8 @@ object PrivilegesBuilder {
           inputObjs += databasePrivileges(db.get)
         }
 
-      case "CacheTable" =>
-        val query = getPlanField[LogicalPlan]("table") // table to cache
-        buildQuery(query, inputObjs)
-
       case "CacheTableCommand" =>
         getPlanField[Option[LogicalPlan]]("plan").foreach(buildQuery(_, inputObjs))
-
-      case "CacheTableAsSelect" =>
-        val query = getPlanField[LogicalPlan]("plan")
-        buildQuery(query, inputObjs)
 
       case "CreateViewCommand" =>
         if (getPlanField[ViewType]("viewType") == PersistedView) {

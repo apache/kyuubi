@@ -191,7 +191,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
       assert(e7.getMessage.contains(s"does not have [select] privilege" +
         s" on [$namespace1/$table1/id]"))
     } else {
-      // todo catalog
       assert(e7.getMessage.contains(s"does not have [select] privilege" +
         s" on [$catalogV2.$namespace1/$table1]"))
     }
