@@ -42,7 +42,7 @@ object PrivilegesBuilder {
     PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db)
   }
 
-  def tablePrivileges(
+  private def tablePrivileges(
       table: TableIdentifier,
       columns: Seq[String] = Nil,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
