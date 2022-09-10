@@ -217,6 +217,18 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     }
   }
 
+  test("[KYUUBI #3424] TRUNCATE TABLE") {
+    assume(isSparkV31OrGreater)
+
+    // CreateView with select
+    val e1 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"TRUNCATE TABLE $catalogV2.$namespace1.$table1")))
+    assert(e1.getMessage.contains(s"does not have [update] privilege" +
+      s" on [$catalogV2.$namespace1/$table1]"))
+  }
+
   test("[KYUUBI #3424] ALTER TABLE") {
     assume(isSparkV31OrGreater)
 

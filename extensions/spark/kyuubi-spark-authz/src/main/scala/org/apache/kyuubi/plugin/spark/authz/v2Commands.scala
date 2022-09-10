@@ -230,6 +230,15 @@ object v2Commands extends Enumeration {
       buildQuery(query, inputObjs)
     })
 
+  val TruncateTable: V2Command = V2Command(
+    operType = DROPDATABASE,
+    leastVer = "3.2",
+    buildOutput = (plan, outputObjs, _, _) => {
+      val table = getFieldVal[Any](plan, "table")
+      val tableIdent = getFieldVal[Identifier](table, "identifier")
+      outputObjs += v2TablePrivileges(tableIdent, actionType = PrivilegeObjectActionType.UPDATE)
+    })
+
   // v2AlterTableCommands with V2AlterTableCommand trait
   val AlterTable: V2Command = V2Command(
     operType = ALTERTABLE_ADDCOLS,
@@ -238,7 +247,9 @@ object v2Commands extends Enumeration {
     buildOutput = (plan, outputObjs, _, _) => {
       val table = getFieldVal[Any](plan, "table")
       val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
-      outputObjs += v2TablePrivileges(tableIdent.get)
+      if (tableIdent.isDefined) {
+        outputObjs += v2TablePrivileges(tableIdent.get)
+      }
     })
 
   val AddColumns: V2Command = V2Command(
