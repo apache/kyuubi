@@ -176,6 +176,49 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
       s" on [$namespace1/$outputTable1]"))
   }
 
+  test("[KYUUBI #3424] MERGE INTO") {
+    assume(isSparkV31OrGreater)
+
+    val mergeIntoSql =
+      s"""
+         |MERGE INTO $catalogV2.$namespace1.$outputTable1 AS target
+         |USING $catalogV2.$namespace1.$table1  AS source
+         |ON target.id = source.id
+         |WHEN MATCHED AND (target.name='delete') THEN DELETE
+         |WHEN MATCHED AND (target.name='update') THEN UPDATE SET target.city = source.city
+      """.stripMargin
+
+    // MergeIntoTable:  Using a MERGE INTO Statement
+    val e1 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(mergeIntoSql
+        )))
+    assert(e1.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1/id]"))
+
+    try {
+      SparkRangerAdminPlugin.getRangerConf.setBoolean(
+        s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+        true)
+
+      // MergeIntoTable:  Using a MERGE INTO Statement
+      val e2 = intercept[AccessControlException](
+        doAs(
+          "someone",
+          sql(mergeIntoSql
+          )))
+      assert(e2.getMessage.contains(s"does not have" +
+        s" [select] privilege" +
+        s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
+        s" [update] privilege on [$namespace1/$outputTable1]"))
+    } finally {
+      SparkRangerAdminPlugin.getRangerConf.setBoolean(
+        s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+        false)
+    }
+  }
+
   test("[KYUUBI #3424] UPDATE TABLE") {
     assume(isSparkV31OrGreater)
 
