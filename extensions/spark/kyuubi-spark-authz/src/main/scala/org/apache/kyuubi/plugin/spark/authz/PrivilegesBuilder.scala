@@ -197,7 +197,7 @@ object PrivilegesBuilder {
 
     plan.nodeName match {
       case v2Cmd if v2Commands.accept(v2Cmd) =>
-        v2Commands.withName(v2Cmd).handle(plan, inputObjs, outputObjs)
+        v2Commands.withName(v2Cmd).buildCommand(plan, inputObjs, outputObjs)
 
       case "AlterDatabasePropertiesCommand" |
           "AlterDatabaseSetLocationCommand" |

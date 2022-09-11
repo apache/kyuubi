@@ -120,7 +120,7 @@ object v2Commands extends Enumeration {
       enabled: Boolean = true)
     extends super.Val {
 
-    def handle(
+    def buildCommand(
         plan: LogicalPlan,
         inputObjs: ArrayBuffer[PrivilegeObject],
         outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
