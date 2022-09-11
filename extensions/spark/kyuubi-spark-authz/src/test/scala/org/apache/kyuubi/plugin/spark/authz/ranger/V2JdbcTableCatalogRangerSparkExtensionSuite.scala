@@ -229,6 +229,18 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
       s" on [$namespace1/$table1]"))
   }
 
+  test("[KYUUBI #3424] MSCK REPAIR TABLE") {
+    assume(isSparkV32OrGreater)
+
+    // CreateView with select
+    val e1 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"MSCK REPAIR TABLE $catalogV2.$namespace1.$table1")))
+    assert(e1.getMessage.contains(s"does not have [alter] privilege" +
+      s" on [$namespace1/$table1]"))
+  }
+
   test("[KYUUBI #3424] ALTER TABLE") {
     assume(isSparkV31OrGreater)
 

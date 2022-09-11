@@ -248,6 +248,11 @@ object v2Commands extends Enumeration {
     cmdTypes = Seq(
       if (isSparkVersionAtLeast("3.2")) V2AlterTableCommand else V2DdlTableCommand))
 
+  val RepairTable: V2Command = V2Command(
+    operType = ALTERTABLE_ADDPARTS,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2DdlTableCommand))
+
   val TruncateTable: V2Command = V2Command(
     leastVer = "3.2",
     buildOutput = (plan, outputObjs, _, _) => {
