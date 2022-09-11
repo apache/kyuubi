@@ -83,7 +83,7 @@ object PrivilegesBuilder {
       projectionList: Seq[NamedExpression] = Nil,
       conditionList: Seq[NamedExpression] = Nil): Unit = {
 
-    def mergeProjectionV1Table(table: CatalogTable, plan: LogicalPlan): Unit = {
+    def mergeProjection(table: CatalogTable, plan: LogicalPlan): Unit = {
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table.identifier,
@@ -130,11 +130,11 @@ object PrivilegesBuilder {
         buildQuery(s.child, privilegeObjects, projectionList, cols)
 
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
-        mergeProjectionV1Table(getHiveTable(hiveTableRelation), hiveTableRelation)
+        mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation)
 
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         getDatasourceTable(logicalRelation).foreach { t =>
-          mergeProjectionV1Table(t, plan)
+          mergeProjection(t, plan)
         }
 
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
@@ -150,7 +150,7 @@ object PrivilegesBuilder {
         privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
 
       case permanentViewMarker: PermanentViewMarker =>
-        mergeProjectionV1Table(permanentViewMarker.catalogTable, plan)
+        mergeProjection(permanentViewMarker.catalogTable, plan)
 
       case p =>
         for (child <- p.children) {
