@@ -1719,7 +1719,7 @@ object KyuubiConf {
         " <li>ENGINE: Return Kyuubi engine information.</li>")
       .version("1.6.1")
       .stringConf
-      .createWithDefault("SERVER")
+      .createWithDefault("ENGINE")
 
   val ENGINE_SPARK_SHOW_PROGRESS: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.spark.showProgress")
