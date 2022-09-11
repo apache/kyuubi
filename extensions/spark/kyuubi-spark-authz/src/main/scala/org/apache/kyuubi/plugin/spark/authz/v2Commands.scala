@@ -23,11 +23,11 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.OperationType.{ALTERTABLE_ADDCOLS, ALTERTABLE_RENAMECOL, ALTERTABLE_REPLACECOLS, CREATEDATABASE, CREATETABLE, CREATEVIEW, DROPDATABASE, DROPTABLE, OperationType, QUERY}
+import org.apache.kyuubi.plugin.spark.authz.OperationType.{ALTERDATABASE, ALTERTABLE_ADDCOLS, ALTERTABLE_PROPERTIES, ALTERTABLE_RENAMECOL, ALTERTABLE_REPLACECOLS, CREATEDATABASE, CREATETABLE, CREATEVIEW, DROPDATABASE, DROPTABLE, OperationType, QUERY}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
-import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2AlterTableCommand, V2CommandType, V2CreateTablePlan, V2WriteCommand}
+import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2AlterTableCommand, V2CommandType, V2CreateTablePlan, V2DdlTableCommand, V2WriteCommand}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getFieldVal, invoke, isSparkVersionAtLeast, isSparkVersionAtMost, quote}
 
 object V2CommandType extends Enumeration {
@@ -36,8 +36,8 @@ object V2CommandType extends Enumeration {
   // traits' name from Spark v2commands and v2AlterTableCommands
   val V2CreateTablePlan, V2WriteCommand, V2AlterTableCommand = Value
 
-  // with query plan
-  val HasQuery = Value
+  // custom types
+  val HasQuery, V2DdlTableCommand = Value
 }
 
 object v2Commands extends Enumeration {
@@ -90,8 +90,13 @@ object v2Commands extends Enumeration {
             outputObjs += v2TablePrivileges(tableIdent.get, actionType = outputObjsActionType)
           }
 
-        case V2AlterTableCommand =>
+        case V2AlterTableCommand if isSparkVersionAtLeast("3.2") =>
           val table = getFieldVal[LogicalPlan](p, "table")
+          val tableIdent = getFieldVal[Identifier](table, "identifier")
+          outputObjs += v2TablePrivileges(tableIdent)
+
+        case V2DdlTableCommand =>
+          val table = getFieldVal[AnyRef](p, "child")
           val tableIdent = getFieldVal[Identifier](table, "identifier")
           outputObjs += v2TablePrivileges(tableIdent)
 
@@ -229,6 +234,19 @@ object v2Commands extends Enumeration {
       val query = getFieldVal[LogicalPlan](plan, "plan")
       buildQuery(query, inputObjs)
     })
+
+  val CommentOnNamespace: V2Command = V2Command(
+    operType = ALTERDATABASE,
+    buildOutput = (plan, outputObjs, _, _) => {
+      val resolvedNamespace = getFieldVal[AnyRef](plan, "child")
+      val namespace = getFieldVal[Seq[String]](resolvedNamespace, "namespace")
+      outputObjs += databasePrivileges(quote(namespace))
+    })
+
+  val CommentOnTable: V2Command = V2Command(
+    operType = ALTERTABLE_PROPERTIES,
+    cmdTypes = Seq(
+      if (isSparkVersionAtLeast("3.2")) V2AlterTableCommand else V2DdlTableCommand))
 
   val TruncateTable: V2Command = V2Command(
     operType = DROPDATABASE,

@@ -265,4 +265,33 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     assert(e64.getMessage.contains(s"does not have [alter] privilege" +
       s" on [$namespace1/$table1]"))
   }
+
+  test("[KYUUBI #3424] COMMENT ON") {
+    assume(isSparkV31OrGreater)
+
+    // CommentOnNamespace
+    val e1 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"COMMENT ON DATABASE $catalogV2.$namespace1 IS 'xYz' ").explain()))
+    assert(e1.getMessage.contains(s"does not have [alter] privilege" +
+      s" on [$namespace1]"))
+
+    // CommentOnNamespace
+    val e2 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"COMMENT ON NAMESPACE $catalogV2.$namespace1 IS 'xYz' ").explain()))
+    assert(e2.getMessage.contains(s"does not have [alter] privilege" +
+      s" on [$namespace1]"))
+
+    // CommentOnTable
+    val e3 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"COMMENT ON TABLE $catalogV2.$namespace1.$table1 IS 'xYz' ").explain()))
+    assert(e3.getMessage.contains(s"does not have [alter] privilege" +
+      s" on [$namespace1/$table1]"))
+
+  }
 }
