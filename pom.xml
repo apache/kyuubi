@@ -116,7 +116,7 @@
         <delta.version>2.0.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
-        <flink.version>1.15.1</flink.version>
+        <flink.version>1.15.2</flink.version>
         <flink.module.scala.suffix></flink.module.scala.suffix>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
@@ -2220,7 +2220,7 @@
         <profile>
             <id>flink-1.15</id>
             <properties>
-                <flink.version>1.15.1</flink.version>
+                <flink.version>1.15.2</flink.version>
                 <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
