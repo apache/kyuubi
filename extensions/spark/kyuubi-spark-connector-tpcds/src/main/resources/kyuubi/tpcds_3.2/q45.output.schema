@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`ca_zip` STRING,`ca_county` STRING,`sum(ws_sales_price)` DECIMAL(17,2)
+ca_zip STRING,ca_county STRING,`sum(ws_sales_price)` DECIMAL(17,2)

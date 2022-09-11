@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`s_name` STRING,`s_address` STRING
+s_name STRING,s_address STRING

@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`o_orderpriority` STRING,`order_count` BIGINT NOT NULL
+o_orderpriority STRING,order_count BIGINT NOT NULL

@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`product_name` STRING,`store_name` STRING,`store_zip` STRING,`b_street_number` STRING,`b_street_name` STRING,`b_city` STRING,`b_zip` STRING,`c_street_number` STRING,`c_street_name` STRING,`c_city` STRING,`c_zip` STRING,`syear` INT,`cnt` BIGINT NOT NULL,`s11` DECIMAL(17,2),`s21` DECIMAL(17,2),`s31` DECIMAL(17,2),`s12` DECIMAL(17,2),`s22` DECIMAL(17,2),`s32` DECIMAL(17,2),`syear` INT,`cnt` BIGINT NOT NULL
+product_name STRING,store_name STRING,store_zip STRING,b_street_number STRING,b_street_name STRING,b_city STRING,b_zip STRING,c_street_number STRING,c_street_name STRING,c_city STRING,c_zip STRING,syear INT,cnt BIGINT NOT NULL,s11 DECIMAL(17,2),s21 DECIMAL(17,2),s31 DECIMAL(17,2),s12 DECIMAL(17,2),s22 DECIMAL(17,2),s32 DECIMAL(17,2),syear INT,cnt BIGINT NOT NULL

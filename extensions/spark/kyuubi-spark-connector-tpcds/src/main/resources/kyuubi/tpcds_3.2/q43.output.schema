@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`s_store_name` STRING,`s_store_id` STRING NOT NULL,`sun_sales` DECIMAL(17,2),`mon_sales` DECIMAL(17,2),`tue_sales` DECIMAL(17,2),`wed_sales` DECIMAL(17,2),`thu_sales` DECIMAL(17,2),`fri_sales` DECIMAL(17,2),`sat_sales` DECIMAL(17,2)
+s_store_name STRING,s_store_id STRING NOT NULL,sun_sales DECIMAL(17,2),mon_sales DECIMAL(17,2),tue_sales DECIMAL(17,2),wed_sales DECIMAL(17,2),thu_sales DECIMAL(17,2),fri_sales DECIMAL(17,2),sat_sales DECIMAL(17,2)

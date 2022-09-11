@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`total_sum` DECIMAL(17,2),`i_category` STRING,`i_class` STRING,`lochierarchy` TINYINT NOT NULL,`rank_within_parent` INT NOT NULL
+total_sum DECIMAL(17,2),i_category STRING,i_class STRING,lochierarchy TINYINT NOT NULL,rank_within_parent INT NOT NULL

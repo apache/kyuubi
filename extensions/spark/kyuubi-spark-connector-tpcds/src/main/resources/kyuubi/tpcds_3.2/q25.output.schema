@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`i_item_id` STRING NOT NULL,`i_item_desc` STRING,`s_store_id` STRING NOT NULL,`s_store_name` STRING,`store_sales_profit` DECIMAL(17,2),`store_returns_loss` DECIMAL(17,2),`catalog_sales_profit` DECIMAL(17,2)
+i_item_id STRING NOT NULL,i_item_desc STRING,s_store_id STRING NOT NULL,s_store_name STRING,store_sales_profit DECIMAL(17,2),store_returns_loss DECIMAL(17,2),catalog_sales_profit DECIMAL(17,2)

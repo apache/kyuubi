@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`customer_id` STRING NOT NULL,`customer_first_name` STRING,`customer_last_name` STRING,`customer_email_address` STRING
+customer_id STRING NOT NULL,customer_first_name STRING,customer_last_name STRING,customer_email_address STRING

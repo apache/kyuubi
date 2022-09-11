@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`am_pm_ratio` DECIMAL(35,20)
+am_pm_ratio DECIMAL(35,20)

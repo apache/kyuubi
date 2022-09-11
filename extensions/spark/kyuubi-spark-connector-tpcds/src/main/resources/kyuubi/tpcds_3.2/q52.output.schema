@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`d_year` INT,`brand_id` INT,`brand` STRING,`ext_price` DECIMAL(17,2)
+d_year INT,brand_id INT,brand STRING,ext_price DECIMAL(17,2)

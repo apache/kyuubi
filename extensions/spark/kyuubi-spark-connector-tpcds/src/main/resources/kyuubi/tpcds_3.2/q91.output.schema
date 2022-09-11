@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`Call_Center` STRING NOT NULL,`Call_Center_Name` STRING,`Manager` STRING,`Returns_Loss` DECIMAL(17,2)
+Call_Center STRING NOT NULL,Call_Center_Name STRING,Manager STRING,Returns_Loss DECIMAL(17,2)

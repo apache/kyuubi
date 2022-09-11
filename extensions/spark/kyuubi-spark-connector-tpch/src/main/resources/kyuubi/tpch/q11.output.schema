@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`ps_partkey` BIGINT,`value` DOUBLE
+ps_partkey BIGINT,value DOUBLE
