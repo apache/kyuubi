@@ -249,7 +249,6 @@ object v2Commands extends Enumeration {
       if (isSparkVersionAtLeast("3.2")) V2AlterTableCommand else V2DdlTableCommand))
 
   val TruncateTable: V2Command = V2Command(
-    operType = DROPDATABASE,
     leastVer = "3.2",
     buildOutput = (plan, outputObjs, _, _) => {
       val table = getFieldVal[Any](plan, "table")
