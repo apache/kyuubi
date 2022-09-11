@@ -257,7 +257,8 @@ object v2Commands extends Enumeration {
     buildOutput = (plan, outputObjs, _, _) => {
       val table = getFieldVal[DataSourceV2Relation](plan, "targetTable")
       if (table.identifier.isDefined) {
-        outputObjs += v2TablePrivileges(table.identifier.get,
+        outputObjs += v2TablePrivileges(
+          table.identifier.get,
           actionType = PrivilegeObjectActionType.UPDATE)
       }
     })
