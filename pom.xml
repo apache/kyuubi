@@ -141,7 +141,7 @@
         <httpcore.version>4.4.15</httpcore.version>
         <hudi.version>0.12.0</hudi.version>
         <iceberg.version>0.14.0</iceberg.version>
-        <jackson.version>2.13.3</jackson.version>
+        <jackson.version>2.13.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.1</jakarta.activation.version>
@@ -163,7 +163,7 @@
         <scalatestplus.version>3.2.9.0</scalatestplus.version>
         <scopt.version>4.1.0</scopt.version>
         <slf4j.version>1.7.35</slf4j.version>
-        <snakeyaml.version>1.30</snakeyaml.version>
+        <snakeyaml.version>1.31</snakeyaml.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
