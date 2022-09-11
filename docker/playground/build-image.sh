@@ -31,18 +31,7 @@ fi
 
 SELF_DIR="$(cd "$(dirname "$0")"; pwd)"
 
-KYUUBI_VERSION="$(grep -A1 "<artifactId>kyuubi-parent" "${SELF_DIR}/../../pom.xml" | grep "<version>" | head -n1 | awk -F '[<>]' '{print $3}')"
-
-AWS_JAVA_SDK_VERSION=1.12.239
-HADOOP_VERSION=3.3.1
-HIVE_VERSION=2.3.9
-ICEBERG_VERSION=0.14.1
-KYUUBI_HADOOP_VERSION=3.3.4
-POSTGRES_JDBC_VERSION=42.3.4
-SCALA_BINARY_VERSION=2.12
-SPARK_VERSION=3.3.0
-SPARK_BINARY_VERSION=3.3
-SPARK_HADOOP_VERSION=3.3.2
+source "${SELF_DIR}/.env"
 
 ${BUILD_CMD} \
   --build-arg APACHE_MIRROR=${APACHE_MIRROR} \
