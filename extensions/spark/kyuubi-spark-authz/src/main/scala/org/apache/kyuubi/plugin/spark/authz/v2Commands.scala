@@ -28,14 +28,14 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
-import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2AlterTableCommand, V2CommandType, V2CreateTablePlan, V2DdlTableCommand, V2WriteCommand}
+import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2AlterTableCommand, V2CommandType, V2CreateTablePlan, V2DdlTableCommand, V2PartitionCommand, V2WriteCommand}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 object V2CommandType extends Enumeration {
   type V2CommandType = Value
 
   // traits' name from Spark v2commands and v2AlterTableCommands
-  val V2CreateTablePlan, V2WriteCommand, V2AlterTableCommand = Value
+  val V2CreateTablePlan, V2WriteCommand, V2AlterTableCommand, V2PartitionCommand = Value
 
   // custom types
   val HasQuery, V2DdlTableCommand = Value
@@ -98,6 +98,11 @@ object v2Commands extends Enumeration {
 
         case V2DdlTableCommand =>
           val table = getFieldVal[AnyRef](p, "child")
+          val tableIdent = getFieldVal[Identifier](table, "identifier")
+          outputObjs += v2TablePrivileges(tableIdent)
+
+        case V2PartitionCommand =>
+          val table = getFieldVal[AnyRef](p, "table")
           val tableIdent = getFieldVal[Identifier](table, "identifier")
           outputObjs += v2TablePrivileges(tableIdent)
 
@@ -186,6 +191,7 @@ object v2Commands extends Enumeration {
     cmdTypes = Seq(V2CreateTablePlan, HasQuery))
 
   // with V2WriteCommand
+
   val AppendData: V2Command = V2Command(
     cmdTypes = Seq(V2WriteCommand, HasQuery),
     outputActionType = PrivilegeObjectActionType.INSERT)
@@ -206,7 +212,30 @@ object v2Commands extends Enumeration {
     cmdTypes = Seq(V2WriteCommand, HasQuery),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
+  // with V2PartitionCommand
+
+  val AddPartitions: V2Command = V2Command(
+    operType = OperationType.ALTERTABLE_ADDPARTS,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2PartitionCommand))
+
+  val DropPartitions: V2Command = V2Command(
+    operType = OperationType.ALTERTABLE_DROPPARTS,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2PartitionCommand))
+
+  val RenamePartitions: V2Command = V2Command(
+    operType = OperationType.ALTERTABLE_ADDPARTS,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2PartitionCommand))
+
+  val TruncatePartition: V2Command = V2Command(
+    operType = OperationType.ALTERTABLE_DROPPARTS,
+    leastVer = "3.2",
+    cmdTypes = Seq(V2PartitionCommand))
+
   // other table commands
+
   val DropTable: V2Command = V2Command(
     operType = DROPTABLE,
     buildOutput = (plan, outputObjs, _, _) => {
@@ -276,7 +305,8 @@ object v2Commands extends Enumeration {
       outputObjs += v2TablePrivileges(tableIdent, actionType = PrivilegeObjectActionType.UPDATE)
     })
 
-  // v2AlterTableCommands with V2AlterTableCommand trait
+  // with V2AlterTableCommand
+
   val AlterTable: V2Command = V2Command(
     operType = ALTERTABLE_ADDCOLS,
     leastVer = "3.0",
