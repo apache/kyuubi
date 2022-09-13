@@ -110,8 +110,10 @@ object v2Commands extends Enumeration {
     }
 
   case class V2Command(
+      operationType: OperationType = QUERY,
       leastVer: Option[String] = None,
       mostVer: Option[String] = None,
+      cmdTypes: Seq[V2CommandType] = Seq(),
       buildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
         defaultBuildInput,
       buildOutput: (
@@ -119,8 +121,6 @@ object v2Commands extends Enumeration {
           ArrayBuffer[PrivilegeObject],
           Seq[V2CommandType],
           PrivilegeObjectActionType) => Unit = defaultBuildOutput,
-      operationType: OperationType = QUERY,
-      cmdTypes: Seq[V2CommandType] = Seq(),
       outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER,
       enabled: Boolean = true) {
 
