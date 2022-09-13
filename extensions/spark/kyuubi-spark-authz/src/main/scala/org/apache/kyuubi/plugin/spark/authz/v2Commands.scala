@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
@@ -54,8 +53,8 @@ object v2Commands extends Enumeration {
 
       // check spark version requirements
       def passSparkVersionCheck: Boolean =
-        (StringUtils.isBlank(cmd.mostVer) || isSparkVersionAtMost(cmd.mostVer)) &&
-          (StringUtils.isBlank(cmd.leastVer) || isSparkVersionAtLeast(cmd.leastVer))
+        (cmd.mostVer.isEmpty || isSparkVersionAtMost(cmd.mostVer.get)) &&
+          (cmd.leastVer.isEmpty || isSparkVersionAtLeast(cmd.leastVer.get))
 
       passSparkVersionCheck && cmd.enabled
     } catch {
@@ -111,8 +110,8 @@ object v2Commands extends Enumeration {
     }
 
   case class V2Command(
-      leastVer: String = "",
-      mostVer: String = "",
+      leastVer: Option[String] = None,
+      mostVer: Option[String] = None,
       buildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
         defaultBuildInput,
       buildOutput: (
@@ -141,6 +140,7 @@ object v2Commands extends Enumeration {
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
     PrivilegeObject(TABLE_OR_VIEW, actionType, quote(table.namespace()), table.name(), columns)
   }
+
 
   // /////////////////////////////////////////////////////////////////////////////////////////////
   // commands
@@ -171,12 +171,12 @@ object v2Commands extends Enumeration {
   val CreateTable: V2Command = V2Command(
     operType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan),
-    leastVer = "3.3")
+    leastVer = Some("3.3"))
 
   val CreateV2Table: V2Command = V2Command(
     operType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan),
-    mostVer = "3.2")
+    mostVer = Some("3.2"))
 
   val CreateTableAsSelect: V2Command = V2Command(
     operType = CREATETABLE,
@@ -216,22 +216,22 @@ object v2Commands extends Enumeration {
 
   val AddPartitions: V2Command = V2Command(
     operType = OperationType.ALTERTABLE_ADDPARTS,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2PartitionCommand))
 
   val DropPartitions: V2Command = V2Command(
     operType = OperationType.ALTERTABLE_DROPPARTS,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2PartitionCommand))
 
   val RenamePartitions: V2Command = V2Command(
     operType = OperationType.ALTERTABLE_ADDPARTS,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2PartitionCommand))
 
   val TruncatePartition: V2Command = V2Command(
     operType = OperationType.ALTERTABLE_DROPPARTS,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2PartitionCommand))
 
   // other table commands
@@ -251,7 +251,7 @@ object v2Commands extends Enumeration {
 
   val CacheTable: V2Command = V2Command(
     operType = CREATEVIEW,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     buildInput = (plan, inputObjs, _) => {
       val query = getFieldVal[LogicalPlan](plan, "table") // table to cache
       buildQuery(query, inputObjs)
@@ -259,7 +259,7 @@ object v2Commands extends Enumeration {
 
   val CacheTableAsSelect: V2Command = V2Command(
     operType = CREATEVIEW,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     buildInput = (plan, inputObjs, _) => {
       val query = getFieldVal[LogicalPlan](plan, "plan")
       buildQuery(query, inputObjs)
@@ -294,11 +294,11 @@ object v2Commands extends Enumeration {
 
   val RepairTable: V2Command = V2Command(
     operType = ALTERTABLE_ADDPARTS,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2DdlTableCommand))
 
   val TruncateTable: V2Command = V2Command(
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     buildOutput = (plan, outputObjs, _, _) => {
       val table = getFieldVal[Any](plan, "table")
       val tableIdent = getFieldVal[Identifier](table, "identifier")
@@ -309,8 +309,7 @@ object v2Commands extends Enumeration {
 
   val AlterTable: V2Command = V2Command(
     operType = ALTERTABLE_ADDCOLS,
-    leastVer = "3.0",
-    mostVer = "3.1",
+    mostVer = Some("3.1"),
     buildOutput = (plan, outputObjs, _, _) => {
       val table = getFieldVal[Any](plan, "table")
       val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
@@ -321,26 +320,26 @@ object v2Commands extends Enumeration {
 
   val AddColumns: V2Command = V2Command(
     operType = ALTERTABLE_ADDCOLS,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 
   val AlterColumn: V2Command = V2Command(
     operType = ALTERTABLE_ADDCOLS,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 
   val DropColumns: V2Command = V2Command(
     operType = ALTERTABLE_ADDCOLS,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 
   val ReplaceColumns: V2Command = V2Command(
     operType = ALTERTABLE_REPLACECOLS,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 
   val RenameColumn: V2Command = V2Command(
     operType = ALTERTABLE_RENAMECOL,
-    leastVer = "3.2",
+    leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 }
