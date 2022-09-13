@@ -38,12 +38,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            is-pom-changed:
-              - '**/pom.xml'
       - name: Setup JDK 8
         uses: actions/setup-java@v2
         with:
@@ -53,7 +47,6 @@ jobs:
           check-latest: false
       - name: Check kyuubi modules avaliable
         id: modules-check
-        if: steps.filter.outputs.is-pom-changed == 'true'
         run: build/mvn dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
         continue-on-error: true
 
