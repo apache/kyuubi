@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import io.etcd.jetcd.launcher.{Etcd, EtcdCluster}
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_CLIENT_CLASS
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_CLIENT_CLASS}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryClientTests
 import org.apache.kyuubi.service.NoopTBinaryFrontendServer
@@ -38,24 +38,26 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
 
   override def getConnectString: String = _connectString
 
-  val conf: KyuubiConf = {
-    KyuubiConf()
-      .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
-  }
+  var conf: KyuubiConf = KyuubiConf()
+    .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
 
   override def beforeAll(): Unit = {
     etcdCluster = new Etcd.Builder()
       .withNodes(2)
       .build()
     etcdCluster.start()
+    conf = new KyuubiConf()
+      .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
+      .set(HA_ADDRESSES, getConnectString)
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
+    super.afterAll()
     if (etcdCluster != null) {
       etcdCluster.close()
+      etcdCluster = null
     }
-    super.afterAll()
   }
 
   test("etcd test: set, get and delete") {

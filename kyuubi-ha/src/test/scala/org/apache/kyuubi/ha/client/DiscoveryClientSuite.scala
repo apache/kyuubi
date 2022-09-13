@@ -18,16 +18,23 @@
 package org.apache.kyuubi.ha.client
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.config.KyuubiConf
 
-class DiscoveryClientProviderSuite extends KyuubiFunSuite {
-  test("discovery") {
-    val conf = KyuubiConf()
-    DiscoveryClientProvider.withDiscoveryClient(conf) { discoveryClient =>
-      discoveryClient.getServerHost("/kyuubi")
-    }
-    DiscoveryClientProvider.withDiscoveryClient(conf) { discoveryClient =>
-      discoveryClient.getServerHost("/kyuubi")
-    }
+trait DiscoveryClientSuite extends KyuubiFunSuite {
+
+  test("parse host and port from instance string") {
+    val host = "127.0.0.1"
+    val port = 10009
+    val instance1 = s"$host:$port"
+    val (host1, port1) = DiscoveryClient.parseInstanceHostPort(instance1)
+    assert(host === host1)
+    assert(port === port1)
+
+    val instance2 = s"hive.server2.thrift.sasl.qop=auth;hive.server2.thrift.bind.host=$host;" +
+      s"hive.server2.transport.mode=binary;hive.server2.authentication=KERBEROS;" +
+      s"hive.server2.thrift.port=$port;" +
+      s"hive.server2.authentication.kerberos.principal=test/_HOST@apache.org"
+    val (host2, port2) = DiscoveryClient.parseInstanceHostPort(instance2)
+    assert(host === host2)
+    assert(port === port2)
   }
 }
