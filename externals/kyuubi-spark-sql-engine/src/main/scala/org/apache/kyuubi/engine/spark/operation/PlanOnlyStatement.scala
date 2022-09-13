@@ -18,8 +18,9 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.CommandExecutionMode
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
+import org.apache.spark.sql.execution.SimpleMode
+import org.apache.spark.sql.execution.command.ExplainCommand
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 
@@ -115,14 +116,13 @@ class PlanOnlyStatement(
       case PhysicalMode =>
         val analyzed = spark.sessionState.analyzer.execute(plan)
         spark.sessionState.analyzer.checkAnalysis(analyzed)
-        val physical = spark.sessionState.executePlan(analyzed, CommandExecutionMode.SKIP).sparkPlan
+        val optimized = spark.sessionState.optimizer.execute(analyzed)
+        val physical = spark.sessionState.planner.plan(ReturnAnswer(optimized)).next()
         iter = new IterableFetchIterator(Seq(Row(physical.toString())))
       case ExecutionMode =>
-        val analyzed = spark.sessionState.analyzer.execute(plan)
-        spark.sessionState.analyzer.checkAnalysis(analyzed)
-        val executed =
-          spark.sessionState.executePlan(analyzed, CommandExecutionMode.SKIP).executedPlan
-        iter = new IterableFetchIterator(Seq(Row(executed.toString())))
+        val executed = ExplainCommand(plan, SimpleMode).run(spark).map(x =>
+          Row(x.getString(0).replaceFirst("== Physical Plan ==\n", "")))
+        iter = new IterableFetchIterator(executed)
       case UnknownMode => throw unknownModeError(mode)
       case _ => throw notSupportedModeError(mode, "Spark SQL")
     }
@@ -142,9 +142,13 @@ class PlanOnlyStatement(
         val optimized = spark.sessionState.optimizer.execute(analyzed)
         iter = new IterableFetchIterator(Seq(Row(optimized.toJSON)))
       case PhysicalMode =>
-        val physical = spark.sql(statement).queryExecution.sparkPlan
+        val analyzed = spark.sessionState.analyzer.execute(plan)
+        spark.sessionState.analyzer.checkAnalysis(analyzed)
+        val optimized = spark.sessionState.optimizer.execute(analyzed)
+        val physical = spark.sessionState.planner.plan(ReturnAnswer(optimized)).next()
         iter = new IterableFetchIterator(Seq(Row(physical.toJSON)))
       case ExecutionMode =>
+        warn("Plan like Command will real execute")
         val executed = spark.sql(statement).queryExecution.executedPlan
         iter = new IterableFetchIterator(Seq(Row(executed.toJSON)))
       case UnknownMode => throw unknownModeError(mode)

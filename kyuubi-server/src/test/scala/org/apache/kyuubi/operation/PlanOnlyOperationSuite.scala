@@ -188,7 +188,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("kyuubi #3214: Plan only mode with an incorrect value") {
-    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "parse"))(Map.empty) {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> ParseMode.name))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=parser")
         val e = intercept[KyuubiSQLException](statement.executeQuery("select 1"))
@@ -199,6 +199,39 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         assert(result.getString(1).contains("Project [unresolvedalias(1, None)]"))
       }
     }
+  }
+
+  test("kyuubi #3435: Command should not execute when plan only mode is set to PHYSICAL") {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name))(Map.empty) {
+      withJdbcStatement("tmp_test") { statement =>
+        statement.execute("create database if not exists db1")
+        statement.execute("use db1")
+        statement.executeQuery("create table tmp_test(test_col string) using parquet")
+        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=physical")
+        statement.executeQuery("drop table tmp_test")
+        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=none")
+        val result = statement.executeQuery("desc table tmp_test")
+        assert(result.next())
+        assert(result.getString(1).contains("test_col"))
+      }
+    }
+  }
+
+  test("kyuubi #3435: Command should not execute when plan only mode is set to EXECUTION") {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name))(Map.empty) {
+      withJdbcStatement("tmp_test") { statement =>
+        statement.execute("create database if not exists db1")
+        statement.execute("use db1")
+        statement.executeQuery("create table tmp_test(test_col string) using parquet")
+        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=execution")
+        statement.executeQuery("drop table tmp_test")
+        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=none")
+        val result = statement.executeQuery("desc table tmp_test")
+        assert(result.next())
+        assert(result.getString(1).contains("test_col"))
+      }
+    }
+
   }
 
   private def getOperationPlanWithStatement(statement: Statement): String = {
