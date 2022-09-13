@@ -40,17 +40,17 @@ object v2Commands extends Enumeration {
 
   import scala.language.implicitConversions
 
-  implicit def valueToV2CommandBuilder(x: Value): V2Command =
-    x.asInstanceOf[V2Command]
+  implicit def valueToCmdPrivilegeBuilder(x: Value): CmdPrivilegeBuilder =
+    x.asInstanceOf[CmdPrivilegeBuilder]
 
   def accept(commandName: String): Boolean = {
     try {
-      val cmd = v2Commands.withName(commandName)
+      val command = v2Commands.withName(commandName)
 
       // check spark version requirements
       def passSparkVersionCheck: Boolean =
-        (cmd.mostVer.isEmpty || isSparkVersionAtMost(cmd.mostVer.get)) &&
-          (cmd.leastVer.isEmpty || isSparkVersionAtLeast(cmd.leastVer.get))
+        (command.mostVer.isEmpty || isSparkVersionAtMost(command.mostVer.get)) &&
+          (command.leastVer.isEmpty || isSparkVersionAtLeast(command.leastVer.get))
 
       passSparkVersionCheck
     } catch {
@@ -100,11 +100,11 @@ object v2Commands extends Enumeration {
       }
     }
 
-  case class V2Command(
+  case class CmdPrivilegeBuilder(
       operationType: OperationType = QUERY,
       leastVer: Option[String] = None,
       mostVer: Option[String] = None,
-      cmdTypes: Seq[CommandType] = Seq(),
+      cmdTypes: Seq[CommandType] = Seq.empty,
       buildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[CommandType]) => Unit =
         defaultBuildInput,
       buildOutput: (
@@ -114,7 +114,7 @@ object v2Commands extends Enumeration {
           PrivilegeObjectActionType) => Unit = defaultBuildOutput,
       outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER) {
 
-    def buildCommand(
+    def buildPrivileges(
         plan: LogicalPlan,
         inputObjs: ArrayBuffer[PrivilegeObject],
         outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
@@ -132,7 +132,7 @@ object v2Commands extends Enumeration {
 
   // commands
 
-  val CreateNamespace: V2Command = V2Command(
+  val CreateNamespace: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATEDATABASE,
     buildOutput = (plan, outputObjs, _, _) => {
       if (isSparkVersionAtLeast("3.3")) {
@@ -145,7 +145,7 @@ object v2Commands extends Enumeration {
       }
     })
 
-  val DropNamespace: V2Command = V2Command(
+  val DropNamespace: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = DROPDATABASE,
     buildOutput = (plan, outputObjs, _, _) => {
       val resolvedNamespace = getFieldVal[LogicalPlan](plan, "namespace")
@@ -155,75 +155,75 @@ object v2Commands extends Enumeration {
 
   // with V2CreateTablePlan
 
-  val CreateTable: V2Command = V2Command(
+  val CreateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
     cmdTypes = Seq(HasTableNameAsIdentifier),
     leastVer = Some("3.3"))
 
-  val CreateV2Table: V2Command = V2Command(
+  val CreateV2Table: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
     cmdTypes = Seq(HasTableNameAsIdentifier),
     mostVer = Some("3.2"))
 
-  val CreateTableAsSelect: V2Command = V2Command(
+  val CreateTableAsSelect: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
     cmdTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicPlan))
 
-  val ReplaceTable: V2Command = V2Command(
+  val ReplaceTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
     cmdTypes = Seq(HasTableNameAsIdentifier))
 
-  val ReplaceTableAsSelect: V2Command = V2Command(
+  val ReplaceTableAsSelect: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
     cmdTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicPlan))
 
   // with V2WriteCommand
 
-  val AppendData: V2Command = V2Command(
+  val AppendData: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     cmdTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicPlan),
     outputActionType = PrivilegeObjectActionType.INSERT)
 
-  val UpdateTable: V2Command = V2Command(
+  val UpdateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     cmdTypes = Seq(HasTableAsIdentifierOption),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
-  val DeleteFromTable: V2Command = V2Command(
+  val DeleteFromTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     cmdTypes = Seq(HasTableAsIdentifierOption),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
-  val OverwriteByExpression: V2Command = V2Command(
+  val OverwriteByExpression: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     cmdTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicPlan),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
-  val OverwritePartitionsDynamic: V2Command = V2Command(
+  val OverwritePartitionsDynamic: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     cmdTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicPlan),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   // with V2PartitionCommand
 
-  val AddPartitions: V2Command = V2Command(
+  val AddPartitions: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = OperationType.ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasTableAsIdentifier))
 
-  val DropPartitions: V2Command = V2Command(
+  val DropPartitions: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = OperationType.ALTERTABLE_DROPPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasTableAsIdentifier))
 
-  val RenamePartitions: V2Command = V2Command(
+  val RenamePartitions: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = OperationType.ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasTableAsIdentifier))
 
-  val TruncatePartition: V2Command = V2Command(
+  val TruncatePartition: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = OperationType.ALTERTABLE_DROPPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasTableAsIdentifier))
 
   // other table commands
 
-  val DropTable: V2Command = V2Command(
+  val DropTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = DROPTABLE,
     buildOutput = (plan, outputObjs, _, _) => {
       val tableIdent =
@@ -236,7 +236,7 @@ object v2Commands extends Enumeration {
       outputObjs += v2TablePrivileges(tableIdent)
     })
 
-  val CacheTable: V2Command = V2Command(
+  val CacheTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATEVIEW,
     leastVer = Some("3.2"),
     buildInput = (plan, inputObjs, _) => {
@@ -244,7 +244,7 @@ object v2Commands extends Enumeration {
       buildQuery(query, inputObjs)
     })
 
-  val CacheTableAsSelect: V2Command = V2Command(
+  val CacheTableAsSelect: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATEVIEW,
     leastVer = Some("3.2"),
     buildInput = (plan, inputObjs, _) => {
@@ -252,7 +252,7 @@ object v2Commands extends Enumeration {
       buildQuery(query, inputObjs)
     })
 
-  val CommentOnNamespace: V2Command = V2Command(
+  val CommentOnNamespace: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERDATABASE,
     buildOutput = (plan, outputObjs, _, _) => {
       val resolvedNamespace = getFieldVal[AnyRef](plan, "child")
@@ -260,12 +260,12 @@ object v2Commands extends Enumeration {
       outputObjs += databasePrivileges(quote(namespace))
     })
 
-  val CommentOnTable: V2Command = V2Command(
+  val CommentOnTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_PROPERTIES,
     cmdTypes = Seq(
       if (isSparkVersionAtLeast("3.2")) HasTableAsIdentifier else HasChildAsIdentifier))
 
-  val MergeIntoTable: V2Command = V2Command(
+  val MergeIntoTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     buildInput = (plan, inputObjs, _) => {
       val table = getFieldVal[DataSourceV2Relation](plan, "sourceTable")
       buildQuery(table, inputObjs)
@@ -279,12 +279,12 @@ object v2Commands extends Enumeration {
       }
     })
 
-  val RepairTable: V2Command = V2Command(
+  val RepairTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasChildAsIdentifier))
 
-  val TruncateTable: V2Command = V2Command(
+  val TruncateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     leastVer = Some("3.2"),
     buildOutput = (plan, outputObjs, _, _) => {
       val table = getFieldVal[Any](plan, "table")
@@ -294,7 +294,7 @@ object v2Commands extends Enumeration {
 
   // with V2AlterTableCommand
 
-  val AlterTable: V2Command = V2Command(
+  val AlterTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_ADDCOLS,
     mostVer = Some("3.1"),
     buildOutput = (plan, outputObjs, _, _) => {
@@ -305,27 +305,27 @@ object v2Commands extends Enumeration {
       }
     })
 
-  val AddColumns: V2Command = V2Command(
+  val AddColumns: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_ADDCOLS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasTableAsIdentifier))
 
-  val AlterColumn: V2Command = V2Command(
+  val AlterColumn: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_ADDCOLS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasTableAsIdentifier))
 
-  val DropColumns: V2Command = V2Command(
+  val DropColumns: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_ADDCOLS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasTableAsIdentifier))
 
-  val ReplaceColumns: V2Command = V2Command(
+  val ReplaceColumns: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_REPLACECOLS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasTableAsIdentifier))
 
-  val RenameColumn: V2Command = V2Command(
+  val RenameColumn: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_RENAMECOL,
     leastVer = Some("3.2"),
     cmdTypes = Seq(HasTableAsIdentifier))
