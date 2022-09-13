@@ -122,8 +122,7 @@ object v2Commands extends Enumeration {
       operationType: OperationType = QUERY,
       cmdTypes: Seq[V2CommandType] = Seq(),
       outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER,
-      enabled: Boolean = true)
-    extends super.Val {
+      enabled: Boolean = true) {
 
     def buildCommand(
         plan: LogicalPlan,
