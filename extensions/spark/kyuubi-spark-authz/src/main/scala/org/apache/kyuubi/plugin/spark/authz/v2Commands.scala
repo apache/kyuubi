@@ -27,20 +27,16 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
-import org.apache.kyuubi.plugin.spark.authz.V2CommandType.{HasQuery, V2AlterTableCommand, V2CommandType, V2CreateTablePlan, V2DdlTableCommand, V2PartitionCommand, V2WriteCommand}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-
-object V2CommandType extends Enumeration {
-  type V2CommandType = Value
-
-  // traits' name from Spark v2commands and v2AlterTableCommands
-  val V2CreateTablePlan, V2WriteCommand, V2AlterTableCommand, V2PartitionCommand = Value
-
-  // custom types
-  val HasQuery, V2DdlTableCommand = Value
-}
+import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.{CommandType, HasChildAsIdentifier, HasQueryAsLogicPlan, HasTableAsIdentifier, HasTableAsIdentifierOption, HasTableNameAsIdentifier}
 
 object v2Commands extends Enumeration {
+
+  object CommandType extends Enumeration {
+    type CommandType = Value
+    val HasChildAsIdentifier, HasQueryAsLogicPlan, HasTableAsIdentifier, HasTableAsIdentifierOption,
+        HasTableNameAsIdentifier = Value
+  }
 
   import scala.language.implicitConversions
 
@@ -56,16 +52,16 @@ object v2Commands extends Enumeration {
         (cmd.mostVer.isEmpty || isSparkVersionAtMost(cmd.mostVer.get)) &&
           (cmd.leastVer.isEmpty || isSparkVersionAtLeast(cmd.leastVer.get))
 
-      passSparkVersionCheck && cmd.enabled
+      passSparkVersionCheck
     } catch {
       case _: NoSuchElementException => false
     }
   }
 
-  val defaultBuildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
+  val defaultBuildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[CommandType]) => Unit =
     (p, inputObjs, cmdTypes) => {
       cmdTypes.foreach {
-        case HasQuery =>
+        case HasQueryAsLogicPlan =>
           val query = getFieldVal[LogicalPlan](p, "query")
           buildQuery(query, inputObjs)
         case _ =>
@@ -75,33 +71,28 @@ object v2Commands extends Enumeration {
   val defaultBuildOutput: (
       LogicalPlan,
       ArrayBuffer[PrivilegeObject],
-      Seq[V2CommandType],
+      Seq[CommandType],
       PrivilegeObjectActionType) => Unit =
     (p, outputObjs, cmdTypes, outputObjsActionType) => {
       cmdTypes.foreach {
-        case V2CreateTablePlan =>
+        case HasTableNameAsIdentifier =>
           val table = invoke(p, "tableName").asInstanceOf[Identifier]
           outputObjs += v2TablePrivileges(table)
 
-        case V2WriteCommand =>
+        case HasTableAsIdentifierOption =>
           val table = getFieldVal[AnyRef](p, "table")
           val tableIdent = getFieldVal[Option[Identifier]](table, "identifier")
           if (tableIdent.isDefined) {
             outputObjs += v2TablePrivileges(tableIdent.get, actionType = outputObjsActionType)
           }
 
-        case V2AlterTableCommand if isSparkVersionAtLeast("3.2") =>
+        case HasTableAsIdentifier =>
           val table = getFieldVal[LogicalPlan](p, "table")
           val tableIdent = getFieldVal[Identifier](table, "identifier")
           outputObjs += v2TablePrivileges(tableIdent)
 
-        case V2DdlTableCommand =>
+        case HasChildAsIdentifier =>
           val table = getFieldVal[AnyRef](p, "child")
-          val tableIdent = getFieldVal[Identifier](table, "identifier")
-          outputObjs += v2TablePrivileges(tableIdent)
-
-        case V2PartitionCommand =>
-          val table = getFieldVal[AnyRef](p, "table")
           val tableIdent = getFieldVal[Identifier](table, "identifier")
           outputObjs += v2TablePrivileges(tableIdent)
 
@@ -113,16 +104,15 @@ object v2Commands extends Enumeration {
       operationType: OperationType = QUERY,
       leastVer: Option[String] = None,
       mostVer: Option[String] = None,
-      cmdTypes: Seq[V2CommandType] = Seq(),
-      buildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[V2CommandType]) => Unit =
+      cmdTypes: Seq[CommandType] = Seq(),
+      buildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[CommandType]) => Unit =
         defaultBuildInput,
       buildOutput: (
           LogicalPlan,
           ArrayBuffer[PrivilegeObject],
-          Seq[V2CommandType],
+          Seq[CommandType],
           PrivilegeObjectActionType) => Unit = defaultBuildOutput,
-      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER,
-      enabled: Boolean = true) {
+      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER) {
 
     def buildCommand(
         plan: LogicalPlan,
@@ -140,7 +130,6 @@ object v2Commands extends Enumeration {
     PrivilegeObject(TABLE_OR_VIEW, actionType, quote(table.namespace()), table.name(), columns)
   }
 
-  // /////////////////////////////////////////////////////////////////////////////////////////////
   // commands
 
   val CreateNamespace: V2Command = V2Command(
@@ -168,46 +157,46 @@ object v2Commands extends Enumeration {
 
   val CreateTable: V2Command = V2Command(
     operationType = CREATETABLE,
-    cmdTypes = Seq(V2CreateTablePlan),
+    cmdTypes = Seq(HasTableNameAsIdentifier),
     leastVer = Some("3.3"))
 
   val CreateV2Table: V2Command = V2Command(
     operationType = CREATETABLE,
-    cmdTypes = Seq(V2CreateTablePlan),
+    cmdTypes = Seq(HasTableNameAsIdentifier),
     mostVer = Some("3.2"))
 
   val CreateTableAsSelect: V2Command = V2Command(
     operationType = CREATETABLE,
-    cmdTypes = Seq(V2CreateTablePlan, HasQuery))
+    cmdTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicPlan))
 
   val ReplaceTable: V2Command = V2Command(
     operationType = CREATETABLE,
-    cmdTypes = Seq(V2CreateTablePlan))
+    cmdTypes = Seq(HasTableNameAsIdentifier))
 
   val ReplaceTableAsSelect: V2Command = V2Command(
     operationType = CREATETABLE,
-    cmdTypes = Seq(V2CreateTablePlan, HasQuery))
+    cmdTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicPlan))
 
   // with V2WriteCommand
 
   val AppendData: V2Command = V2Command(
-    cmdTypes = Seq(V2WriteCommand, HasQuery),
+    cmdTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicPlan),
     outputActionType = PrivilegeObjectActionType.INSERT)
 
   val UpdateTable: V2Command = V2Command(
-    cmdTypes = Seq(V2WriteCommand),
+    cmdTypes = Seq(HasTableAsIdentifierOption),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   val DeleteFromTable: V2Command = V2Command(
-    cmdTypes = Seq(V2WriteCommand),
+    cmdTypes = Seq(HasTableAsIdentifierOption),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   val OverwriteByExpression: V2Command = V2Command(
-    cmdTypes = Seq(V2WriteCommand, HasQuery),
+    cmdTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicPlan),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   val OverwritePartitionsDynamic: V2Command = V2Command(
-    cmdTypes = Seq(V2WriteCommand, HasQuery),
+    cmdTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicPlan),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   // with V2PartitionCommand
@@ -215,22 +204,22 @@ object v2Commands extends Enumeration {
   val AddPartitions: V2Command = V2Command(
     operationType = OperationType.ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2PartitionCommand))
+    cmdTypes = Seq(HasTableAsIdentifier))
 
   val DropPartitions: V2Command = V2Command(
     operationType = OperationType.ALTERTABLE_DROPPARTS,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2PartitionCommand))
+    cmdTypes = Seq(HasTableAsIdentifier))
 
   val RenamePartitions: V2Command = V2Command(
     operationType = OperationType.ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2PartitionCommand))
+    cmdTypes = Seq(HasTableAsIdentifier))
 
   val TruncatePartition: V2Command = V2Command(
     operationType = OperationType.ALTERTABLE_DROPPARTS,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2PartitionCommand))
+    cmdTypes = Seq(HasTableAsIdentifier))
 
   // other table commands
 
@@ -274,7 +263,7 @@ object v2Commands extends Enumeration {
   val CommentOnTable: V2Command = V2Command(
     operationType = ALTERTABLE_PROPERTIES,
     cmdTypes = Seq(
-      if (isSparkVersionAtLeast("3.2")) V2AlterTableCommand else V2DdlTableCommand))
+      if (isSparkVersionAtLeast("3.2")) HasTableAsIdentifier else HasChildAsIdentifier))
 
   val MergeIntoTable: V2Command = V2Command(
     buildInput = (plan, inputObjs, _) => {
@@ -293,7 +282,7 @@ object v2Commands extends Enumeration {
   val RepairTable: V2Command = V2Command(
     operationType = ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2DdlTableCommand))
+    cmdTypes = Seq(HasChildAsIdentifier))
 
   val TruncateTable: V2Command = V2Command(
     leastVer = Some("3.2"),
@@ -319,25 +308,25 @@ object v2Commands extends Enumeration {
   val AddColumns: V2Command = V2Command(
     operationType = ALTERTABLE_ADDCOLS,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2AlterTableCommand))
+    cmdTypes = Seq(HasTableAsIdentifier))
 
   val AlterColumn: V2Command = V2Command(
     operationType = ALTERTABLE_ADDCOLS,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2AlterTableCommand))
+    cmdTypes = Seq(HasTableAsIdentifier))
 
   val DropColumns: V2Command = V2Command(
     operationType = ALTERTABLE_ADDCOLS,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2AlterTableCommand))
+    cmdTypes = Seq(HasTableAsIdentifier))
 
   val ReplaceColumns: V2Command = V2Command(
     operationType = ALTERTABLE_REPLACECOLS,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2AlterTableCommand))
+    cmdTypes = Seq(HasTableAsIdentifier))
 
   val RenameColumn: V2Command = V2Command(
     operationType = ALTERTABLE_RENAMECOL,
     leastVer = Some("3.2"),
-    cmdTypes = Seq(V2AlterTableCommand))
+    cmdTypes = Seq(HasTableAsIdentifier))
 }
