@@ -6,7 +6,7 @@ Playground
 ### Setup
 
 1. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/);
-2. Start compose services `cd docker/playground && docker compose up`;
+2. Go to `docker/playground`, and use `docker compose up` to start compose services in the foreground, or use `docker compose up -d` to run compose services as daemon;
 
 ### Play
 
@@ -30,7 +30,7 @@ Add a Kyuubi datasource with
 
 ### Shutdown
 
-1. Stop the compose services by pressing `CTRL+C`; 
+1. Stop compose services by pressing `CTRL+C` if they are running on the foreground, or by `docker compose down` if they are running as daemon;
 2. Remove the stopped containers `docker compose rm`;
 
 ## For Maintainers
