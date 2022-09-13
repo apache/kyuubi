@@ -236,10 +236,9 @@ cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR
 cp "$KYUUBI_HOME"/kyuubi-hive-beeline/target/*.jar "$DISTDIR/beeline-jars/"
 
 # Share the jars w/ server to reduce binary size
-cd $DISTDIR/beeline-jars
 for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/beeline-jars/$jar" ]]; then
-    ln -snf "../jars/$jar" "$DISTDIR/beeline-jars/$jar"
+    (cd $DISTDIR/beeline-jars; ln -snf "../jars/$jar" "$DISTDIR/beeline-jars/$jar")
   fi
 done
 
@@ -254,10 +253,9 @@ cp "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/kyuubi-trino-engine_${SCAL
 cp -r "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/scala-$SCALA_VERSION/jars/" "$DISTDIR/externals/engines/trino"
 
 # Share the jars w/ server to reduce binary size
-cd $DISTDIR/externals/engines/trino
 for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/externals/engines/trino/$jar" ]]; then
-    ln -snf "../jars/$jar" "$DISTDIR/externals/engines/trino/$jar"
+    (cd $DISTDIR/externals/engines/trino; ln -snf "../../../jars/$jar" "$DISTDIR/externals/engines/trino/$jar")
   fi
 done
 
@@ -269,10 +267,9 @@ cp "$KYUUBI_HOME/externals/kyuubi-jdbc-engine/target/kyuubi-jdbc-engine_${SCALA_
 cp -r "$KYUUBI_HOME/externals/kyuubi-jdbc-engine/target/scala-$SCALA_VERSION/jars/" "$DISTDIR/externals/engines/jdbc"
 
 # Share the jars w/ server to reduce binary size
-cd $DISTDIR/externals/engines/jdbc
 for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/externals/engines/jdbc/$jar" ]]; then
-    ln -snf "../jars/$jar" "$DISTDIR/externals/engines/jdbc/$jar"
+    (cd $DISTDIR/externals/engines/jdbc; ln -snf "../../../jars/$jar" "$DISTDIR/externals/engines/jdbc/$jar")
   fi
 done
 
@@ -328,7 +325,7 @@ if [[ "$MAKE_TGZ" == "true" ]]; then
   TARDIR="$KYUUBI_HOME/$TARDIR_NAME"
   rm -rf "$TARDIR"
   cp -R "$DISTDIR" "$TARDIR"
-  tar czf "$TARDIR.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
+  tar czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
   rm -rf "$TARDIR"
   echo "The Kyuubi tarball $TARDIR_NAME.tgz is successfully generated in $KYUUBI_HOME."
 fi
