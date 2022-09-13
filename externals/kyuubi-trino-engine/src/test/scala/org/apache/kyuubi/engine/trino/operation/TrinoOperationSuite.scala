@@ -22,21 +22,12 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Set
 
 import io.trino.client.ClientStandardTypes._
-import org.apache.hive.service.rpc.thrift.TCancelOperationReq
-import org.apache.hive.service.rpc.thrift.TCloseOperationReq
-import org.apache.hive.service.rpc.thrift.TCloseSessionReq
-import org.apache.hive.service.rpc.thrift.TExecuteStatementReq
-import org.apache.hive.service.rpc.thrift.TFetchOrientation
-import org.apache.hive.service.rpc.thrift.TFetchResultsReq
-import org.apache.hive.service.rpc.thrift.TGetOperationStatusReq
-import org.apache.hive.service.rpc.thrift.TOpenSessionReq
-import org.apache.hive.service.rpc.thrift.TOperationState
-import org.apache.hive.service.rpc.thrift.TStatusCode
+import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.trino.TrinoQueryTests
-import org.apache.kyuubi.engine.trino.WithTrinoEngine
+import org.apache.kyuubi.engine.trino.{TrinoQueryTests, TrinoStatement, WithTrinoEngine}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
@@ -765,6 +756,43 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
             assert(changedCatalog == "")
           }
         }
+      }
+    }
+  }
+
+  test("[KYUUBI #3452] Implement GetInfo for Trino engine") {
+    def getTrinoVersion: String = {
+      var version: String = "Unknown"
+      withTrinoContainer { trinoContext =>
+        val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "SELECT version()")
+        val schema = trinoStatement.getColumns
+        val resultSet = trinoStatement.execute()
+
+        assert(schema.size === 1)
+        assert(schema(0).getName === "_col0")
+
+        assert(resultSet.toIterator.hasNext)
+        version = resultSet.toIterator.next().head.toString
+      }
+      version
+    }
+
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue === "Trino")
+
+        val req2 = new TGetInfoReq()
+        req2.setSessionHandle(handle)
+        req2.setInfoType(TGetInfoType.CLI_DBMS_VER)
+        assert(client.GetInfo(req2).getInfoValue.getStringValue === getTrinoVersion)
+
+        val req3 = new TGetInfoReq()
+        req3.setSessionHandle(handle)
+        req3.setInfoType(TGetInfoType.CLI_MAX_COLUMN_NAME_LEN)
+        assert(client.GetInfo(req3).getInfoValue.getLenValue === 0)
       }
     }
   }
