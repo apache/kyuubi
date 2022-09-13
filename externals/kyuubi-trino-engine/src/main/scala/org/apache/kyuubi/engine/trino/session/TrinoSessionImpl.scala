@@ -27,13 +27,12 @@ import java.util.concurrent.TimeUnit
 import io.airlift.units.Duration
 import io.trino.client.ClientSession
 import okhttp3.OkHttpClient
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils.currentUser
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
-import org.apache.kyuubi.engine.trino.TrinoConf
-import org.apache.kyuubi.engine.trino.TrinoContext
+import org.apache.kyuubi.engine.trino.{TrinoConf, TrinoContext, TrinoStatement}
 import org.apache.kyuubi.engine.trino.event.TrinoSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
@@ -107,6 +106,28 @@ class TrinoSessionImpl(
   override protected def runOperation(operation: Operation): OperationHandle = {
     sessionEvent.totalOperations += 1
     super.runOperation(operation)
+  }
+
+  override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
+    infoType match {
+      case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
+        TGetInfoValue.stringValue("Trino")
+      case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(getTrinoServerVersion)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
+      case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
+          TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
+          TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(0)
+      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
+    }
+  }
+
+  private def getTrinoServerVersion: String = {
+    val trinoStatement =
+      TrinoStatement(trinoContext, sessionManager.getConf, "SELECT version()")
+    val resultSet = trinoStatement.execute()
+
+    assert(resultSet.hasNext)
+    resultSet.next().head.toString
   }
 
   override def close(): Unit = {
