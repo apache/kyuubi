@@ -112,7 +112,8 @@ object v2Commands extends Enumeration {
           ArrayBuffer[PrivilegeObject],
           Seq[CommandType],
           PrivilegeObjectActionType) => Unit = defaultBuildOutput,
-      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER) {
+      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER)
+    extends super.Val {
 
     def buildPrivileges(
         plan: LogicalPlan,
