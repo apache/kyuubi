@@ -43,7 +43,6 @@ object OperationType extends Enumeration {
       case "AddArchivesCommand" => EXPLAIN
       case "AddFilesCommand" => EXPLAIN
       case "AddJarsCommand" => EXPLAIN
-      case "AddPartitions" => ALTERTABLE_ADDPARTS
       case "AlterDatabasePropertiesCommand" |
           "SetNamespaceProperties" => ALTERDATABASE
       case "AlterDatabaseSetLocationCommand" |
@@ -65,8 +64,7 @@ object OperationType extends Enumeration {
       case ac if ac.startsWith("Analyze") => ANALYZE_TABLE
       case "CreateDatabaseCommand" => CREATEDATABASE
       case "CreateFunctionCommand" | "CreateFunction" => CREATEFUNCTION
-      case "CreateTableAsSelect" |
-          "CreateDataSourceTableAsSelectCommand" |
+      case "CreateDataSourceTableAsSelectCommand" |
           "CreateHiveTableAsSelectCommand" |
           "OptimizedCreateHiveTableAsSelectCommand" => CREATETABLE_AS_SELECT
       case "CreateTableCommand" |
@@ -74,9 +72,7 @@ object OperationType extends Enumeration {
           "CreateTableLikeCommand" => CREATETABLE
       case "CreateViewCommand" |
           "CacheTableCommand" |
-          "CreateTempViewUsing" |
-          "CacheTable" |
-          "CacheTableAsSelect" => CREATEVIEW
+          "CreateTempViewUsing" => CREATEVIEW
       case "DescribeDatabaseCommand" | "DescribeNamespace" => DESCDATABASE
       case "DescribeFunctionCommand" => DESCFUNCTION
       case "DescribeColumnCommand" | "DescribeTableCommand" => DESCTABLE
