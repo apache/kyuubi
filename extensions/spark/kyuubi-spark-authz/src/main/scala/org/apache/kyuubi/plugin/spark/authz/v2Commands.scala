@@ -119,7 +119,7 @@ object v2Commands extends Enumeration {
           ArrayBuffer[PrivilegeObject],
           Seq[V2CommandType],
           PrivilegeObjectActionType) => Unit = defaultBuildOutput,
-      operType: OperationType = QUERY,
+      operationType: OperationType = QUERY,
       cmdTypes: Seq[V2CommandType] = Seq(),
       outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER,
       enabled: Boolean = true)
@@ -141,12 +141,11 @@ object v2Commands extends Enumeration {
     PrivilegeObject(TABLE_OR_VIEW, actionType, quote(table.namespace()), table.name(), columns)
   }
 
-
   // /////////////////////////////////////////////////////////////////////////////////////////////
   // commands
 
   val CreateNamespace: V2Command = V2Command(
-    operType = CREATEDATABASE,
+    operationType = CREATEDATABASE,
     buildOutput = (plan, outputObjs, _, _) => {
       if (isSparkVersionAtLeast("3.3")) {
         val resolvedNamespace = getFieldVal[Any](plan, "name")
@@ -159,7 +158,7 @@ object v2Commands extends Enumeration {
     })
 
   val DropNamespace: V2Command = V2Command(
-    operType = DROPDATABASE,
+    operationType = DROPDATABASE,
     buildOutput = (plan, outputObjs, _, _) => {
       val resolvedNamespace = getFieldVal[LogicalPlan](plan, "namespace")
       val databases = getFieldVal[Seq[String]](resolvedNamespace, "namespace")
@@ -169,25 +168,25 @@ object v2Commands extends Enumeration {
   // with V2CreateTablePlan
 
   val CreateTable: V2Command = V2Command(
-    operType = CREATETABLE,
+    operationType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan),
     leastVer = Some("3.3"))
 
   val CreateV2Table: V2Command = V2Command(
-    operType = CREATETABLE,
+    operationType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan),
     mostVer = Some("3.2"))
 
   val CreateTableAsSelect: V2Command = V2Command(
-    operType = CREATETABLE,
+    operationType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan, HasQuery))
 
   val ReplaceTable: V2Command = V2Command(
-    operType = CREATETABLE,
+    operationType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan))
 
   val ReplaceTableAsSelect: V2Command = V2Command(
-    operType = CREATETABLE,
+    operationType = CREATETABLE,
     cmdTypes = Seq(V2CreateTablePlan, HasQuery))
 
   // with V2WriteCommand
@@ -215,29 +214,29 @@ object v2Commands extends Enumeration {
   // with V2PartitionCommand
 
   val AddPartitions: V2Command = V2Command(
-    operType = OperationType.ALTERTABLE_ADDPARTS,
+    operationType = OperationType.ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2PartitionCommand))
 
   val DropPartitions: V2Command = V2Command(
-    operType = OperationType.ALTERTABLE_DROPPARTS,
+    operationType = OperationType.ALTERTABLE_DROPPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2PartitionCommand))
 
   val RenamePartitions: V2Command = V2Command(
-    operType = OperationType.ALTERTABLE_ADDPARTS,
+    operationType = OperationType.ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2PartitionCommand))
 
   val TruncatePartition: V2Command = V2Command(
-    operType = OperationType.ALTERTABLE_DROPPARTS,
+    operationType = OperationType.ALTERTABLE_DROPPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2PartitionCommand))
 
   // other table commands
 
   val DropTable: V2Command = V2Command(
-    operType = DROPTABLE,
+    operationType = DROPTABLE,
     buildOutput = (plan, outputObjs, _, _) => {
       val tableIdent =
         if (isSparkVersionAtLeast("3.1")) {
@@ -250,7 +249,7 @@ object v2Commands extends Enumeration {
     })
 
   val CacheTable: V2Command = V2Command(
-    operType = CREATEVIEW,
+    operationType = CREATEVIEW,
     leastVer = Some("3.2"),
     buildInput = (plan, inputObjs, _) => {
       val query = getFieldVal[LogicalPlan](plan, "table") // table to cache
@@ -258,7 +257,7 @@ object v2Commands extends Enumeration {
     })
 
   val CacheTableAsSelect: V2Command = V2Command(
-    operType = CREATEVIEW,
+    operationType = CREATEVIEW,
     leastVer = Some("3.2"),
     buildInput = (plan, inputObjs, _) => {
       val query = getFieldVal[LogicalPlan](plan, "plan")
@@ -266,7 +265,7 @@ object v2Commands extends Enumeration {
     })
 
   val CommentOnNamespace: V2Command = V2Command(
-    operType = ALTERDATABASE,
+    operationType = ALTERDATABASE,
     buildOutput = (plan, outputObjs, _, _) => {
       val resolvedNamespace = getFieldVal[AnyRef](plan, "child")
       val namespace = getFieldVal[Seq[String]](resolvedNamespace, "namespace")
@@ -274,7 +273,7 @@ object v2Commands extends Enumeration {
     })
 
   val CommentOnTable: V2Command = V2Command(
-    operType = ALTERTABLE_PROPERTIES,
+    operationType = ALTERTABLE_PROPERTIES,
     cmdTypes = Seq(
       if (isSparkVersionAtLeast("3.2")) V2AlterTableCommand else V2DdlTableCommand))
 
@@ -293,7 +292,7 @@ object v2Commands extends Enumeration {
     })
 
   val RepairTable: V2Command = V2Command(
-    operType = ALTERTABLE_ADDPARTS,
+    operationType = ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2DdlTableCommand))
 
@@ -308,7 +307,7 @@ object v2Commands extends Enumeration {
   // with V2AlterTableCommand
 
   val AlterTable: V2Command = V2Command(
-    operType = ALTERTABLE_ADDCOLS,
+    operationType = ALTERTABLE_ADDCOLS,
     mostVer = Some("3.1"),
     buildOutput = (plan, outputObjs, _, _) => {
       val table = getFieldVal[Any](plan, "table")
@@ -319,27 +318,27 @@ object v2Commands extends Enumeration {
     })
 
   val AddColumns: V2Command = V2Command(
-    operType = ALTERTABLE_ADDCOLS,
+    operationType = ALTERTABLE_ADDCOLS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 
   val AlterColumn: V2Command = V2Command(
-    operType = ALTERTABLE_ADDCOLS,
+    operationType = ALTERTABLE_ADDCOLS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 
   val DropColumns: V2Command = V2Command(
-    operType = ALTERTABLE_ADDCOLS,
+    operationType = ALTERTABLE_ADDCOLS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 
   val ReplaceColumns: V2Command = V2Command(
-    operType = ALTERTABLE_REPLACECOLS,
+    operationType = ALTERTABLE_REPLACECOLS,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 
   val RenameColumn: V2Command = V2Command(
-    operType = ALTERTABLE_RENAMECOL,
+    operationType = ALTERTABLE_RENAMECOL,
     leastVer = Some("3.2"),
     cmdTypes = Seq(V2AlterTableCommand))
 }
