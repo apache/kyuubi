@@ -18,5 +18,6 @@
 
 # Kyuubi Migration Guide
 
-## Upgrading from Kyuubi 1.6.0 to 1.7.0
-* In Kyuubi 1.6.0, Kyuubi provides the `kyuubi.server.info.provider` option to control get the server or the engine information, in Kyuubi 1.6.0, it defaults to the `SERVER`, after Kyuubi 1.7.0, it defaults to the `ENGINE`, which means that information about engine is returned by default, Setting the option as "SERVER" restores the previous behavior.
+## Upgrading from Kyuubi 1.6 to 1.7
+
+* Since Kyuubi 1.7, Kyuubi returns engine's information for `GetInfo` request instead of server. To restore the previous behavior, set `kyuubi.server.info.provider` to `SERVER`.
