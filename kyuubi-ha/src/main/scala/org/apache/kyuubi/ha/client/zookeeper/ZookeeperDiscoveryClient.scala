@@ -362,11 +362,12 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       } else {
         instance
       }
-    znodeData = if (conf.get(PROXY_KUBERNETES_SPARK_UI_ENABLED) && ui.nonEmpty) {
+    znodeData =
+      if (conf.get(PROXY_KUBERNETES_SPARK_UI_ENABLED) && ui.nonEmpty) {
         znodeData + ";spark.ui=" + ui.get
-    } else {
-      znodeData
-    }
+      } else {
+        znodeData
+      }
     try {
       localServiceNode = new PersistentNode(
         zkClient,
