@@ -1202,6 +1202,7 @@
                 <groupId>org.apache.hudi</groupId>
                 <artifactId>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</artifactId>
                 <version>${hudi.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
