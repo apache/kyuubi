@@ -28,10 +28,18 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeO
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.{CommandType, HasChildAsIdentifier, HasQueryAsLogicPlan, HasTableAsIdentifier, HasTableAsIdentifierOption, HasTableNameAsIdentifier}
+import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType._
 
+/**
+ * Building privilege objects
+ * for Spark Datasource V2 commands
+ */
 object v2Commands extends Enumeration {
 
+  /**
+   * Command types
+   * for hinting privileges building of inputObjs or outputObjs
+   */
   object CommandType extends Enumeration {
     type CommandType = Value
     val HasChildAsIdentifier, HasQueryAsLogicPlan, HasTableAsIdentifier, HasTableAsIdentifierOption,
@@ -43,6 +51,13 @@ object v2Commands extends Enumeration {
   implicit def valueToCmdPrivilegeBuilder(x: Value): CmdPrivilegeBuilder =
     x.asInstanceOf[CmdPrivilegeBuilder]
 
+  /**
+   * check whether commandName is implemented with supported privilege builders
+   * and pass the requirement checks (e.g. Spark version)
+   *
+   * @param commandName name of command
+   * @return true if so, false else
+   */
   def accept(commandName: String): Boolean = {
     try {
       val command = v2Commands.withName(commandName)
@@ -100,6 +115,17 @@ object v2Commands extends Enumeration {
       }
     }
 
+  /**
+   * Command privilege builder
+   *
+   * @param operationType    OperationType for converting accessType
+   * @param leastVer         minimum Spark version required
+   * @param mostVer          maximum Spark version supported
+   * @param commandTypes     Seq of [[CommandType]] hinting privilege building
+   * @param buildInput       input [[PrivilegeObject]] for privilege check
+   * @param buildOutput      output [[PrivilegeObject]] for privilege check
+   * @param outputActionType [[PrivilegeObjectActionType]] for output [[PrivilegeObject]]
+   */
   case class CmdPrivilegeBuilder(
       operationType: OperationType = QUERY,
       leastVer: Option[String] = None,
@@ -131,7 +157,7 @@ object v2Commands extends Enumeration {
     PrivilegeObject(TABLE_OR_VIEW, actionType, quote(table.namespace()), table.name(), columns)
   }
 
-  // commands
+  // namespace commands
 
   val CreateNamespace: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATEDATABASE,
@@ -224,19 +250,6 @@ object v2Commands extends Enumeration {
 
   // other table commands
 
-  val DropTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
-    operationType = DROPTABLE,
-    buildOutput = (plan, outputObjs, _, _) => {
-      val tableIdent =
-        if (isSparkVersionAtLeast("3.1")) {
-          val resolvedTable = getFieldVal[LogicalPlan](plan, "child")
-          getFieldVal[Identifier](resolvedTable, "identifier")
-        } else {
-          getFieldVal[Identifier](plan, "ident")
-        }
-      outputObjs += v2TablePrivileges(tableIdent)
-    })
-
   val CacheTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATEVIEW,
     leastVer = Some("3.2"),
@@ -266,6 +279,18 @@ object v2Commands extends Enumeration {
     commandTypes = Seq(
       if (isSparkVersionAtLeast("3.2")) HasTableAsIdentifier else HasChildAsIdentifier))
 
+  val DropTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
+    operationType = DROPTABLE,
+    buildOutput = (plan, outputObjs, _, _) => {
+      val tableIdent =
+        if (isSparkVersionAtLeast("3.1")) {
+          val resolvedTable = getFieldVal[LogicalPlan](plan, "child")
+          getFieldVal[Identifier](resolvedTable, "identifier")
+        } else {
+          getFieldVal[Identifier](plan, "ident")
+        }
+      outputObjs += v2TablePrivileges(tableIdent)
+    })
   val MergeIntoTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     buildInput = (plan, inputObjs, _) => {
       val table = getFieldVal[DataSourceV2Relation](plan, "sourceTable")
