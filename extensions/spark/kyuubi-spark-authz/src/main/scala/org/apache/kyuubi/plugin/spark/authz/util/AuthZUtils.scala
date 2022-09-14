@@ -24,6 +24,7 @@ import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
+import org.apache.spark.sql.connector.catalog.Identifier
 
 private[authz] object AuthZUtils {
 
@@ -98,14 +99,12 @@ private[authz] object AuthZUtils {
     plan.nodeName == "DataSourceV2Relation" && plan.resolved
   }
 
-  def getDatasourceV2Identifier(plan: LogicalPlan): Option[TableIdentifier] = {
-    // avoid importing DataSourceV2Relation for Spark version compatibility
-    val identifier = getFieldVal[Option[AnyRef]](plan, "identifier")
-    identifier.map { id =>
-      val namespaces = invoke(id, "namespace").asInstanceOf[Array[String]]
-      val table = invoke(id, "name").asInstanceOf[String]
-      TableIdentifier(table, Some(quote(namespaces)))
-    }
+  def getDatasourceV2Identifier(plan: LogicalPlan): Option[Identifier] = {
+    getFieldVal[Option[Identifier]](plan, "identifier")
+  }
+
+  def getTableIdentifierFromV2Identifier(id: Identifier): TableIdentifier = {
+    TableIdentifier(id.name(), Some(quote(id.namespace())))
   }
 
   def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {

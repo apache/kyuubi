@@ -25,7 +25,8 @@ import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
-import org.apache.spark.sql.catalyst.plans.logical.{Command, Filter, Join, LogicalPlan, Project, Sort, Window}
+import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.StructField
 
@@ -33,10 +34,11 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
+import org.apache.kyuubi.plugin.spark.authz.v2Commands.v2TablePrivileges
 
 object PrivilegesBuilder {
 
-  private def databasePrivileges(db: String): PrivilegeObject = {
+  def databasePrivileges(db: String): PrivilegeObject = {
     PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db)
   }
 
@@ -88,7 +90,7 @@ object PrivilegesBuilder {
    * @param privilegeObjects input or output spark privilege object list
    * @param projectionList Projection list after pruning
    */
-  private def buildQuery(
+  def buildQuery(
       plan: LogicalPlan,
       privilegeObjects: ArrayBuffer[PrivilegeObject],
       projectionList: Seq[NamedExpression] = Nil,
@@ -103,6 +105,16 @@ object PrivilegesBuilder {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
         privilegeObjects += tablePrivileges(table.identifier, cols)
+      }
+    }
+
+    def mergeProjectionV2Table(table: Identifier, plan: LogicalPlan): Unit = {
+      if (projectionList.isEmpty) {
+        privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name))
+      } else {
+        val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
+          .filter(plan.outputSet.contains).map(_.name).distinct
+        privilegeObjects += v2TablePrivileges(table, cols)
       }
     }
 
@@ -136,6 +148,12 @@ object PrivilegesBuilder {
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         getDatasourceTable(logicalRelation).foreach { t =>
           mergeProjection(t, plan)
+        }
+
+      case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
+        val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
+        if (tableIdent.isDefined) {
+          mergeProjectionV2Table(tableIdent.get, plan)
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
@@ -191,6 +209,9 @@ object PrivilegesBuilder {
     }
 
     plan.nodeName match {
+      case v2Cmd if v2Commands.accept(v2Cmd) =>
+        v2Commands.withName(v2Cmd).buildPrivileges(plan, inputObjs, outputObjs)
+
       case "AlterDatabasePropertiesCommand" |
           "AlterDatabaseSetLocationCommand" |
           "CreateDatabaseCommand" |
@@ -290,21 +311,8 @@ object PrivilegesBuilder {
           inputObjs += databasePrivileges(db.get)
         }
 
-      case "CacheTable" =>
-        val query = getPlanField[LogicalPlan]("table") // table to cache
-        buildQuery(query, inputObjs)
-
       case "CacheTableCommand" =>
         getPlanField[Option[LogicalPlan]]("plan").foreach(buildQuery(_, inputObjs))
-
-      case "CacheTableAsSelect" =>
-        val query = getPlanField[LogicalPlan]("plan")
-        buildQuery(query, inputObjs)
-
-      case "CreateNamespace" =>
-        val resolvedNamespace = getPlanField[Any]("name")
-        val databases = getFieldVal[Seq[String]](resolvedNamespace, "nameParts")
-        outputObjs += databasePrivileges(quote(databases))
 
       case "CreateViewCommand" =>
         if (getPlanField[ViewType]("viewType") == PersistedView) {
@@ -349,18 +357,6 @@ object PrivilegesBuilder {
         val child = getPlanField("child")
         val database = getFieldVal[Seq[String]](child, "nameParts")
         inputObjs += databasePrivileges(quote(database))
-
-      case "CreateTableAsSelect" |
-          "ReplaceTableAsSelect" =>
-        val left = getPlanField[LogicalPlan]("name")
-        left.nodeName match {
-          case "ResolvedDBObjectName" =>
-            val nameParts = getPlanField[Seq[String]]("nameParts")
-            val db = Some(quote(nameParts.init))
-            outputObjs += tablePrivileges(TableIdentifier(nameParts.last, db))
-          case _ =>
-        }
-        buildQuery(getQuery, inputObjs)
 
       case "CreateTableLikeCommand" =>
         val target = setCurrentDBIfNecessary(getPlanField[TableIdentifier]("targetTable"), spark)
