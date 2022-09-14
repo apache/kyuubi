@@ -28,7 +28,7 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeO
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType._
+import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.{CommandType, HasChildAsIdentifier, HasQueryAsLogicPlan, HasTableAsIdentifier, HasTableAsIdentifierOption, HasTableNameAsIdentifier}
 
 /**
  * Building privilege objects
