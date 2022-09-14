@@ -648,6 +648,32 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("uid")
 
+  val AUTHENTICATION_LDAP_BIND_USER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.binddn")
+      .doc("The user with which to bind to the LDAP server, and search for the full domain name " +
+        "of the user being authenticated." +
+        " For example: uid=admin,cn=Directory Manager,ou=users,dc=example,dc=com")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_BIND_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.bindpw")
+      .doc("The password for the bind user," +
+        " to be used to search for the full name of the user being authenticated.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_USERDNPATTERN: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.userDNPattern")
+      .doc("COLON-separated list of patterns to use to find DNs for users in this directory." +
+        "Use %s where the actual group name is to be substituted for." +
+        "For example: CN=%s,CN=Users,DC=subdomain,DC=domain,DC=com.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
   val AUTHENTICATION_JDBC_DRIVER: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.jdbc.driver.class")
       .doc("Driver class name for JDBC Authentication Provider.")

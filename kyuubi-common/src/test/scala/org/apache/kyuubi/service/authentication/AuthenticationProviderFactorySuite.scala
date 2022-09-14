@@ -32,7 +32,7 @@ class AuthenticationProviderFactorySuite extends KyuubiFunSuite {
     p1.authenticate(Utils.currentUser, "")
     val p2 = getAuthenticationProvider(AuthMethods.withName("LDAP"), conf)
     val e1 = intercept[AuthenticationException](p2.authenticate("test", "test"))
-    assert(e1.getMessage.contains("Error validating LDAP user:"))
+    assert(e1.getMessage.contains("LDAP url is wrong"))
     val e2 = intercept[AuthenticationException](
       AuthenticationProviderFactory.getAuthenticationProvider(null, conf))
     assert(e2.getMessage === "Not a valid authentication method")
