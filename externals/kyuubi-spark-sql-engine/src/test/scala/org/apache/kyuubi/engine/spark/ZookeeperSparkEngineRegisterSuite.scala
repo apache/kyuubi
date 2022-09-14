@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import org.apache.kyuubi.config.KyuubiConf.PROXY_KUBERNETES_SPARK_UI_ENABLED
-import org.apache.kyuubi.ha.client.zookeeper.{ZookeeperClientProvider, ZookeeperDiscoveryClient}
+import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider
 
 class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
   with WithEmbeddedZookeeper {
