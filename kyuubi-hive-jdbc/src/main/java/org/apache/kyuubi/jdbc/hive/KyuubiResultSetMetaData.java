@@ -132,4 +132,38 @@ public class KyuubiResultSetMetaData implements SQLResultSetMetaData {
     }
     return column - 1;
   }
+
+  @Override
+  public boolean isSigned(int column) throws SQLException {
+    TTypeId typeId = columnTypes.get(toZeroIndex(column));
+    switch (typeId) {
+      case TINYINT_TYPE:
+      case SMALLINT_TYPE:
+      case INT_TYPE:
+      case BIGINT_TYPE:
+      case FLOAT_TYPE:
+      case DOUBLE_TYPE:
+      case DECIMAL_TYPE:
+      case TIMESTAMP_TYPE:
+      case DATE_TYPE:
+      case INTERVAL_YEAR_MONTH_TYPE:
+      case INTERVAL_DAY_TIME_TYPE:
+      case TIMESTAMPLOCALTZ_TYPE:
+        return true;
+
+      case BOOLEAN_TYPE:
+      case STRING_TYPE:
+      case VARCHAR_TYPE:
+      case CHAR_TYPE:
+      case NULL_TYPE:
+      case BINARY_TYPE:
+      case ARRAY_TYPE:
+      case MAP_TYPE:
+      case STRUCT_TYPE:
+      case UNION_TYPE:
+      case USER_DEFINED_TYPE:
+      default:
+        return false;
+    }
+  }
 }
