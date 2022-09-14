@@ -45,13 +45,15 @@ class KyuubiOperationPerUserSuite
   }
 
   test("audit Kyuubi server MetaData") {
-    withJdbcStatement() { statement =>
-      val metaData = statement.getConnection.getMetaData
-      assert(metaData.getDatabaseProductName === "Apache Kyuubi (Incubating)")
-      assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
-      val ver = SemanticVersion(KYUUBI_VERSION)
-      assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
-      assert(metaData.getDatabaseMinorVersion === ver.minorVersion)
+    withSessionConf()(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER"))(Map.empty) {
+      withJdbcStatement() { statement =>
+        val metaData = statement.getConnection.getMetaData
+        assert(metaData.getDatabaseProductName === "Apache Kyuubi (Incubating)")
+        assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
+        val ver = SemanticVersion(KYUUBI_VERSION)
+        assert(metaData.getDatabaseMajorVersion === ver.majorVersion)
+        assert(metaData.getDatabaseMinorVersion === ver.minorVersion)
+      }
     }
   }
 

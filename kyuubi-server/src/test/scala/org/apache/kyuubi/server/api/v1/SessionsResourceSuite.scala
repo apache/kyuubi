@@ -27,6 +27,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
@@ -147,7 +148,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "admin",
       "123456",
       "localhost",
-      Map("testConfig" -> "testValue").asJava)
+      Map("testConfig" -> "testValue", KyuubiConf.SERVER_INFO_PROVIDER.key -> "SERVER").asJava)
 
     var response: Response = webTarget.path("api/v1/sessions")
       .request(MediaType.APPLICATION_JSON_TYPE)
