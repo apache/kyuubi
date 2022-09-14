@@ -19,6 +19,8 @@ package org.apache.kyuubi
 
 import java.nio.file.Path
 
+import org.apache.kyuubi.engine.SemanticVersion
+
 trait DataLakeSuiteMixin {
 
   protected def format: String
@@ -30,4 +32,9 @@ trait DataLakeSuiteMixin {
   protected def extraJars: String
 
   protected def extraConfigs: Map[String, String]
+
+  def isSparkVersionAtLeast(ver: String): Boolean = {
+    SemanticVersion(SPARK_COMPILE_VERSION).isVersionAtLeast(ver)
+  }
+
 }

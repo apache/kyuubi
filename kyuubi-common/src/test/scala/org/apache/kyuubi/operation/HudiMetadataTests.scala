@@ -114,9 +114,12 @@ trait HudiMetadataTests extends HiveJDBCTestHelper with HudiSuiteMixin {
       "array<string>",
       "date",
       "timestamp",
-      "struct<`X`: bigint, `Y`: double>",
+      // SPARK-37931
+      if (isSparkVersionAtLeast("3.3")) "struct<X: bigint, Y: double>"
+      else "struct<`X`: bigint, `Y`: double>",
       "binary",
-      "struct<`X`: string>")
+      // SPARK-37931
+      if (isSparkVersionAtLeast("3.3")) "struct<X: string>" else "struct<`X`: string>")
     val cols = dataTypes.zipWithIndex.map { case (dt, idx) => s"c$idx" -> dt }
     val (colNames, _) = cols.unzip
 
