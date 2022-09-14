@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import org.apache.kyuubi.config.KyuubiConf.PROXY_KUBERNETES_SPARK_UI_ENABLED
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient
+import org.apache.kyuubi.ha.client.zookeeper.{ZookeeperClientProvider, ZookeeperDiscoveryClient}
 
 class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
   with WithEmbeddedZookeeper {
@@ -30,10 +30,11 @@ class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
 
   override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID().toString}"
 
-  test("") {
+  test("Spark Engine Register Zookeeper with spark ui info") {
     zookeeperConf.foreach(entry => kyuubiConf.set(entry._1, entry._2))
-    val client = new ZookeeperDiscoveryClient(kyuubiConf)
-    val bytes = client.getData(namespace)
+    val client = ZookeeperClientProvider.buildZookeeperClient(kyuubiConf)
+    client.start()
+    val bytes = client.getData.forPath(namespace)
     val data = new String(bytes, StandardCharsets.UTF_8)
     assert(data.contains("spark.ui"))
   }
