@@ -40,6 +40,7 @@ import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NodeExistsException
 import org.apache.zookeeper.WatchedEvent
 import org.apache.zookeeper.Watcher
+
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.KyuubiSQLException
