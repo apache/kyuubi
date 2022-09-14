@@ -28,7 +28,7 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeO
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.{CommandType, HasChildAsIdentifier, HasQueryAsLogicPlan, HasTableAsIdentifier, HasTableAsIdentifierOption, HasTableNameAsIdentifier}
+import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.{CommandType, HasChildAsIdentifier, HasQueryAsLogicalPlan, HasTableAsIdentifier, HasTableAsIdentifierOption, HasTableNameAsIdentifier}
 
 /**
  * Building privilege objects
@@ -37,13 +37,14 @@ import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.{CommandType,
 object v2Commands extends Enumeration {
 
   /**
-   * Command types
+   * Command type enum
+   * with naming rule as `HasFieldAsReturnType`
    * for hinting privileges building of inputObjs or outputObjs
    */
   object CommandType extends Enumeration {
     type CommandType = Value
-    val HasChildAsIdentifier, HasQueryAsLogicPlan, HasTableAsIdentifier, HasTableAsIdentifierOption,
-        HasTableNameAsIdentifier = Value
+    val HasChildAsIdentifier, HasQueryAsLogicalPlan, HasTableAsIdentifier,
+        HasTableAsIdentifierOption, HasTableNameAsIdentifier = Value
   }
 
   import scala.language.implicitConversions
@@ -76,7 +77,7 @@ object v2Commands extends Enumeration {
   val defaultBuildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[CommandType]) => Unit =
     (plan, inputObjs, commandTypes) => {
       commandTypes.foreach {
-        case HasQueryAsLogicPlan =>
+        case HasQueryAsLogicalPlan =>
           val query = getFieldVal[LogicalPlan](plan, "query")
           buildQuery(query, inputObjs)
         case _ =>
@@ -194,7 +195,7 @@ object v2Commands extends Enumeration {
 
   val CreateTableAsSelect: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
-    commandTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicPlan))
+    commandTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicalPlan))
 
   val ReplaceTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
@@ -202,12 +203,12 @@ object v2Commands extends Enumeration {
 
   val ReplaceTableAsSelect: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
-    commandTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicPlan))
+    commandTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicalPlan))
 
   // with V2WriteCommand
 
   val AppendData: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
-    commandTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicPlan),
+    commandTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicalPlan),
     outputActionType = PrivilegeObjectActionType.INSERT)
 
   val UpdateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
@@ -219,11 +220,11 @@ object v2Commands extends Enumeration {
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   val OverwriteByExpression: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
-    commandTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicPlan),
+    commandTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicalPlan),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   val OverwritePartitionsDynamic: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
-    commandTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicPlan),
+    commandTypes = Seq(HasTableAsIdentifierOption, HasQueryAsLogicalPlan),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   // with V2PartitionCommand
