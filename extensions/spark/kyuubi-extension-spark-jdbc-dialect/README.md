@@ -15,5 +15,5 @@
  - limitations under the License.
  -->
 
-# Kyuubi Spark Client side Extension
+# Kyuubi Spark JDBC dialect Extension
 

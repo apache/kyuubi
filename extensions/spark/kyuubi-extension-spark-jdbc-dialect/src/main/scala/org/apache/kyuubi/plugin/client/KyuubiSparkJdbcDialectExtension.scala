@@ -22,7 +22,7 @@ import org.apache.spark.sql.jdbc.JdbcDialects
 
 import org.apache.kyuubi.plugin.client.dialect.HiveDialect
 
-class KyuubiSparkClientExtension extends (SparkSessionExtensions => Unit) {
+class KyuubiSparkJdbcDialectExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
     // register hive jdbc dialect
     JdbcDialects.registerDialect(HiveDialect)

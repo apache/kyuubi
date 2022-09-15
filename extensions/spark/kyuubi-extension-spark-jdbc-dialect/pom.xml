@@ -28,7 +28,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-extension-spark-client_2.12</artifactId>
+    <artifactId>kyuubi-extension-spark-jdbc-dialect_2.12</artifactId>
     <name>Kyuubi Spark Client-side Extension</name>
     <packaging>jar</packaging>
     <url>https://kyuubi.apache.org/</url>
