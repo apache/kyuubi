@@ -44,6 +44,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.toString === s"ConfigEntry(key=kyuubi.int.spark, defaultValue=<undefined>," +
       s" doc=$doc, version=<none>, type=int)")
 
+    KyuubiConf.register(e1)
     val conf = KyuubiConf()
     assert(conf.get(e1).isEmpty)
     val e = intercept[IllegalArgumentException](new OptionalConfigEntry[Int](
@@ -84,6 +85,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.toString === s"ConfigEntry(key=kyuubi.long.spark, defaultValue=1," +
       s" doc=doc, version=0.11.1, type=long)")
 
+    KyuubiConf.register(e1)
     val conf = KyuubiConf()
     assert(conf.get(e1) === 2)
     conf.set(e1.key, "5")
@@ -113,6 +115,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.toString === s"ConfigEntry(key=kyuubi.double.spark, defaultValue=3.0," +
       s" doc=doc, version=, type=double)")
 
+    KyuubiConf.register(e1)
     val conf = KyuubiConf()
     assert(conf.get(e1) === 3.0)
     conf.set(e1.asInstanceOf[ConfigEntry[AnyVal]], 5.0)
@@ -138,9 +141,34 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(fallback.toString === s"ConfigEntry(key=kyuubi.fallback.spark, defaultValue=origin," +
       s" doc=fallback, version=1.2.0, type=string)")
 
+    KyuubiConf.register(fallback)
     val conf = KyuubiConf()
     assert(conf.get(fallback) === "origin")
     conf.set(origin.key, "new value")
     assert(conf.get(fallback) === "new value", "fallback to new original key")
   }
+
+  test("An unregistered config should not be get") {
+    val config = new ConfigEntryWithDefaultString[Double](
+      "kyuubi.unregistered.spark",
+      "3.0",
+      s => java.lang.Double.valueOf(s),
+      v => v.toString,
+      "doc",
+      "",
+      "double",
+      false)
+
+    val conf = KyuubiConf()
+    KyuubiConf.register(config)
+    assert(conf.get(config) == 3.0)
+
+    KyuubiConf.unregister(config)
+
+    val exception = intercept[IllegalArgumentException](conf.get(config))
+    assert(exception.getMessage.contains("requirement failed: " +
+      "ConfigEntry(key=kyuubi.unregistered.spark, defaultValue=3.0, " +
+      "doc=doc, version=, type=double) is not registered"))
+  }
+
 }

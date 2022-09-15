@@ -131,7 +131,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
 
     rewriteToConf(Paths.get(kyuubiHome, "conf", "kyuubi-defaults.conf.template"), newOutput)
 
-    KyuubiConf.kyuubiConfEntries.values().asScala
+    KyuubiConf.getConfigEntries().asScala
       .toSeq
       .filterNot(_.internal)
       .groupBy(_.key.split("\\.")(1))
