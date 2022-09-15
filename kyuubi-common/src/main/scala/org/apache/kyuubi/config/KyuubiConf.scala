@@ -305,9 +305,9 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val PROXY_KUBERNETES_SPARK_UI_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.proxy.kubernetes.spark.ui.enabled")
-      .doc("")
+  val PROXY_SPARK_UI_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.proxy.spark.ui.enabled")
+      .doc("Whether to enabled kyuubi help proxy spark ui")
       .version("1.7.0")
       .booleanConf
       .createWithDefault(false)

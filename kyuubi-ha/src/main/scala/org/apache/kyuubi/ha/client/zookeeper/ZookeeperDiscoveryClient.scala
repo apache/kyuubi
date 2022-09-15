@@ -46,7 +46,7 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.PROXY_KUBERNETES_SPARK_UI_ENABLED
+import org.apache.kyuubi.config.KyuubiConf.PROXY_SPARK_UI_ENABLED
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NODE_TIMEOUT
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_PUBLISH_CONFIGS
@@ -363,7 +363,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         instance
       }
     znodeData =
-      if (conf.get(PROXY_KUBERNETES_SPARK_UI_ENABLED) && ui.nonEmpty) {
+      if (conf.get(PROXY_SPARK_UI_ENABLED) && ui.nonEmpty) {
         znodeData + ";spark.ui=" + ui.get
       } else {
         znodeData

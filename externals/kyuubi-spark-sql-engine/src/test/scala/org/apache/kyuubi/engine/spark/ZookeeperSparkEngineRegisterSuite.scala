@@ -20,14 +20,14 @@ package org.apache.kyuubi.engine.spark
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-import org.apache.kyuubi.config.KyuubiConf.PROXY_KUBERNETES_SPARK_UI_ENABLED
+import org.apache.kyuubi.config.KyuubiConf.PROXY_SPARK_UI_ENABLED
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider
 
 class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
   with WithEmbeddedZookeeper {
   override def withKyuubiConf: Map[String, String] =
     super.withKyuubiConf ++ zookeeperConf ++ Map(
-      PROXY_KUBERNETES_SPARK_UI_ENABLED.key -> "true",
+      PROXY_SPARK_UI_ENABLED.key -> "true",
       "spark.ui.enabled" -> "true")
 
   override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID().toString}"
