@@ -28,7 +28,7 @@ class KyuubiHiveDialectSuite extends AnyFunSuite {
     assert(KyuubiHiveDialect.canHandle("jdbc:kyuubi://"))
   }
 
-  test("[KYUUBI #3489] Kyuubi Hive dialect: single column name") {
+  test("[KYUUBI #3489] Kyuubi Hive dialect: quoteIdentifier") {
     assertResult("`id`")(KyuubiHiveDialect.quoteIdentifier("id"))
     assertResult("`table`.`id`")(KyuubiHiveDialect.quoteIdentifier("table.id"))
   }
