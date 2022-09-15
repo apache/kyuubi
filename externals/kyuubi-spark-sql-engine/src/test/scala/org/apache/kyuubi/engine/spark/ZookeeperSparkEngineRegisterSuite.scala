@@ -26,7 +26,9 @@ import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider
 class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
   with WithEmbeddedZookeeper {
   override def withKyuubiConf: Map[String, String] =
-    super.withKyuubiConf ++ zookeeperConf ++ Map(PROXY_KUBERNETES_SPARK_UI_ENABLED.key -> "true")
+    super.withKyuubiConf ++ zookeeperConf ++ Map(
+      PROXY_KUBERNETES_SPARK_UI_ENABLED.key -> "true",
+      "spark.ui.enabled" -> "true")
 
   override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID().toString}"
 
@@ -34,7 +36,8 @@ class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
     zookeeperConf.foreach(entry => kyuubiConf.set(entry._1, entry._2))
     val client = ZookeeperClientProvider.buildZookeeperClient(kyuubiConf)
     client.start()
-    val bytes = client.getData.forPath(namespace)
+    val bytes =
+      client.getData.forPath(namespace + "/" + client.getChildren.forPath(namespace).get(0))
     val data = new String(bytes, StandardCharsets.UTF_8)
     assert(data.contains("spark.ui"))
   }
