@@ -25,6 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
 
+import org.apache.kyuubi.KyuubiThrowableHelper.getParameterErrorInfo
 import org.apache.kyuubi.Utils.stringifyException
 
 /**
@@ -82,8 +83,9 @@ object KyuubiSQLException {
     }
   }
 
-  def featureNotSupported(): KyuubiSQLException = {
-    KyuubiSQLException("feature not supported", sqlState = "0A000")
+  def featureNotSupported(feature: String = ""): KyuubiSQLException = {
+    val errorInfo = getParameterErrorInfo("FEATURE_NOT_SUPPORTED", feature)
+    KyuubiSQLException(errorInfo._1, sqlState = errorInfo._2)
   }
 
   def connectionDoesNotExist(): KyuubiSQLException = {

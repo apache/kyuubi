@@ -1,0 +1,6 @@
+{
+  "FEATURE_NOT_SUPPORTED" : {
+    "message" : "Currently, Kyuubi does not support the feature %s.",
+    "sqlState" : "0A000"
+  }
+}
