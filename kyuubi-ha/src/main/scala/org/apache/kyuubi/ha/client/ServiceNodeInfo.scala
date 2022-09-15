@@ -23,6 +23,7 @@ case class ServiceNodeInfo(
     host: String,
     port: Int,
     version: Option[String],
-    engineRefId: Option[String]) {
+    engineRefId: Option[String],
+    ui: Option[String] = None) {
   def instance: String = s"$host:$port"
 }

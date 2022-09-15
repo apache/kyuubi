@@ -209,12 +209,16 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       val size = sizeOpt.getOrElse(hosts.size())
       hosts.asScala.takeRight(size).map { p =>
         val path = ZKPaths.makePath(namespace, p)
-        val instance = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+        // zookeeper node data may contains public conf or engine ui info
+        val znodeData = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+        val instance = znodeData.split(";")(0)
+        val ui =
+          znodeData.split(";").find(_.startsWith("spark.ui=")).map(_.stripPrefix("spark.ui="))
         val (host, port) = DiscoveryClient.parseInstanceHostPort(instance)
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
         val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
         info(s"Get service instance:$instance and version:$version under $namespace")
-        ServiceNodeInfo(namespace, p, host, port, version, engineRefId)
+        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, ui)
       }
     } catch {
       case _: Exception if silent => Nil

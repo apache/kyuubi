@@ -416,6 +416,13 @@ kyuubi.operation.spark.listener.enabled|true|When set to true, Spark engine regi
 kyuubi.operation.status.polling.timeout|PT5S|Timeout(ms) for long polling asynchronous running sql query's status|duration|1.0.0
 
 
+### Proxy
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.proxy.spark.ui.enabled|false|Whether to enabled kyuubi help proxy spark ui|boolean|1.7.0
+
+
 ### Server
 
 Key | Default | Meaning | Type | Since
