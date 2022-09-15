@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.client.dialect
+package org.apache.spark.sql.dialect
 
-import java.util.Locale
+// scalastyle:off
+import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.spark.sql.jdbc.JdbcDialect
+class KyuubiHiveDialectSuite extends AnyFunSuite {
+// scalastyle:on
 
-object HiveDialect extends JdbcDialect {
-
-  override def canHandle(url: String): Boolean = {
-    url.toLowerCase(Locale.ROOT).startsWith("jdbc:hive2://") ||
-    url.toLowerCase(Locale.ROOT).startsWith("jdbc:kyuubi://")
+  test("[KYUUBI #3489] Kyuubi Hive dialect: can handle jdbc url") {
+    assert(KyuubiHiveDialect.canHandle("jdbc:hive2://"))
+    assert(KyuubiHiveDialect.canHandle("jdbc:kyuubi://"))
   }
 
-  override def quoteIdentifier(colName: String): String = {
-//    colName.split(".").map(part => s"`$part`").mkString(".")
-    s"`$colName`"
+  test("[KYUUBI #3489] Kyuubi Hive dialect: single column name") {
+    assertResult("`id`")(KyuubiHiveDialect.quoteIdentifier("id"))
+    assertResult("`table`.`id`")(KyuubiHiveDialect.quoteIdentifier("table.id"))
   }
-
 }
