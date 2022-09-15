@@ -148,9 +148,8 @@ class PlanOnlyStatement(
         val physical = spark.sessionState.planner.plan(ReturnAnswer(optimized)).next()
         iter = new IterableFetchIterator(Seq(Row(physical.toJSON)))
       case ExecutionMode =>
-        warn("Plan like Command will real execute")
-        val executed = spark.sql(statement).queryExecution.executedPlan
-        iter = new IterableFetchIterator(Seq(Row(executed.toJSON)))
+        throw KyuubiSQLException(s"The operation mode $mode" +
+          " with json style doesn't support in Spark SQL engine.")
       case UnknownMode => throw unknownModeError(mode)
       case _ =>
         throw KyuubiSQLException(s"The operation mode $mode" +
