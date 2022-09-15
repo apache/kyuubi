@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.client
+package org.apache.spark.sql.dialect
 
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.jdbc.JdbcDialects
 
-import org.apache.kyuubi.plugin.client.dialect.HiveDialect
-
 class KyuubiSparkJdbcDialectExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
     // register hive jdbc dialect
-    JdbcDialects.registerDialect(HiveDialect)
+    JdbcDialects.registerDialect(KyuubiHiveDialect)
   }
 }
