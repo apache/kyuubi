@@ -51,6 +51,8 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
       .createWithDefault(false)
     assert(booleanConf.key === "kyuubi.boolean.conf")
     assert(!booleanConf.defaultVal.get)
+
+    KyuubiConf.register(booleanConf)
     val kyuubiConf = KyuubiConf().set(booleanConf.key, "invalid conf")
     val e = intercept[IllegalArgumentException](kyuubiConf.get(booleanConf))
     assert(e.getMessage === "kyuubi.boolean.conf should be boolean, but was invalid conf")
@@ -67,6 +69,7 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
       .toSequence()
       .createWithDefault(Nil)
     assert(sequenceConf.defaultVal.get.isEmpty)
+    KyuubiConf.register(sequenceConf)
     val kyuubiConf = KyuubiConf().set(sequenceConf.key, "kyuubi,kent")
     assert(kyuubiConf.get(sequenceConf) === Seq("kyuubi", "kent"))
   }
@@ -78,6 +81,7 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     assert(timeConf.key === "kyuubi.time.config")
     assert(timeConf.defaultVal.get === 3)
     val kyuubiConf = KyuubiConf().set(timeConf.key, "invalid")
+    KyuubiConf.register(timeConf)
     val e = intercept[IllegalArgumentException](kyuubiConf.get(timeConf))
     assert(e.getMessage startsWith "The formats accepted are 1) based on the ISO-8601")
   }
@@ -90,6 +94,7 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     assert(intConf.key === "kyuubi.invalid.config")
     assert(intConf.defaultVal.get === 3)
     val kyuubiConf = KyuubiConf().set(intConf.key, "-1")
+    KyuubiConf.register(intConf)
     val e = intercept[IllegalArgumentException](kyuubiConf.get(intConf))
     assert(e.getMessage equals "'-1' in kyuubi.invalid.config is invalid. must be positive integer")
   }
