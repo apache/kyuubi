@@ -21,9 +21,13 @@ import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.flink.table.api.{DataTypes, ResultKind}
+import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.catalog.ObjectIdentifier
+import org.apache.flink.types.Row
 
-import org.apache.kyuubi.engine.flink.result.{Constants, ResultSetUtil}
+import org.apache.kyuubi.engine.flink.result.ResultSet
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetTables(
@@ -49,22 +53,46 @@ class GetTables(
           .flatMap { _schema =>
             flinkCatalog.listTables(_schema).asScala
               .filter { _table => tableNamePattern.pattern.matcher(_table).matches() }
-              .filter { _table =>
-                // skip check type of every table if request all types
-                if (Set(Constants.TABLE_TYPE, Constants.VIEW_TYPE) subsetOf tableTypes) {
-                  true
-                } else {
-                  val objPath = ObjectIdentifier.of(catalogName, _schema, _table).toObjectPath
-                  Try(flinkCatalog.getTable(objPath)) match {
-                    case Success(table) => tableTypes.contains(table.getTableKind.name)
-                    case Failure(_) => false
-                  }
+              .map { _table =>
+                val objPath = ObjectIdentifier.of(catalogName, _schema, _table).toObjectPath
+                Try(flinkCatalog.getTable(objPath)) match {
+                  case Success(table) => (_table, Some(table))
+                  case Failure(_) => (_table, None)
                 }
               }
+              .filter(_._2.isDefined)
+              .filter { _table =>
+                tableTypes.contains(_table._2.get.getTableKind.name)
+              }.map { _table =>
+                Row.of(
+                  catalogName,
+                  _schema,
+                  _table._1,
+                  _table._2.get.getTableKind.name(),
+                  _table._2.get.getComment,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null)
+              }
           }
-      }
+      }.toArray
 
-      resultSet = ResultSetUtil.stringListToResultSet(tables.toList, Constants.SHOW_TABLES_RESULT)
+      resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+        .columns(
+          Column.physical(TABLE_CAT, DataTypes.STRING()),
+          Column.physical(TABLE_SCHEM, DataTypes.STRING()),
+          Column.physical(TABLE_NAME, DataTypes.STRING()),
+          Column.physical(TABLE_TYPE, DataTypes.STRING()),
+          Column.physical(REMARKS, DataTypes.STRING()),
+          Column.physical("TYPE_CAT", DataTypes.STRING()),
+          Column.physical("TYPE_SCHEM", DataTypes.STRING()),
+          Column.physical("TYPE_NAME", DataTypes.STRING()),
+          Column.physical("SELF_REFERENCING_COL_NAME", DataTypes.STRING()),
+          Column.physical("REF_GENERATION", DataTypes.STRING()))
+        .data(tables)
+        .build
     } catch onError()
   }
 }

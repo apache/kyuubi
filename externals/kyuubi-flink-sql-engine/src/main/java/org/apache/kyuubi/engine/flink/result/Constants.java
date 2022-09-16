@@ -21,8 +21,6 @@ package org.apache.kyuubi.engine.flink.result;
 /** Constant column names. */
 public class Constants {
 
-  public static final String SHOW_TABLES_RESULT = "tables";
-
   public static final String TABLE_TYPE = "TABLE";
   public static final String VIEW_TYPE = "VIEW";
 
