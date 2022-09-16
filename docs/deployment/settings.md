@@ -149,7 +149,6 @@ kyuubi.authentication.ldap.bindpw|&lt;undefined&gt;|The password for the bind us
 kyuubi.authentication.ldap.domain|&lt;undefined&gt;|LDAP domain.|string|1.0.0
 kyuubi.authentication.ldap.guidKey|uid|LDAP attribute name whose values are unique in this LDAP server.For example:uid or cn.|string|1.2.0
 kyuubi.authentication.ldap.url|&lt;undefined&gt;|SPACE character separated LDAP connection URL(s).|string|1.0.0
-kyuubi.authentication.ldap.userDNPattern|&lt;undefined&gt;|COLON-separated list of patterns to use to find DNs for users in this directory.Use %s where the actual group name is to be substituted for.For example: CN=%s,CN=Users,DC=subdomain,DC=domain,DC=com.|string|1.7.0
 kyuubi.authentication.sasl.qop|auth|Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul>|string|1.0.0
 
 

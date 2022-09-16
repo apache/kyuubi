@@ -19,6 +19,8 @@ package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
 
+import com.unboundid.ldap.sdk.LDAPException
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
@@ -53,7 +55,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     val e3 = intercept[AuthenticationException](
       providerImpl.authenticate(user, "kent"))
     assert(e3.getMessage.contains(user))
-    assert(e3.getCause.isInstanceOf[com.unboundid.ldap.sdk.LDAPException])
+    assert(e3.getCause.isInstanceOf[LDAPException])
 
     conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
     val providerImpl2 = new LdapAuthenticationProviderImpl(conf)

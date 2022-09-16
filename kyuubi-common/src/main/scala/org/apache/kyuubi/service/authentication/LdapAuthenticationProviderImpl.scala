@@ -17,11 +17,9 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.util
-import java.util.Collections
 import javax.security.sasl.AuthenticationException
 
-import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 import com.unboundid.ldap.sdk.{LDAPConnection, LDAPException}
 import org.apache.commons.lang3.StringUtils
@@ -45,30 +43,9 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
    */
   override def authenticate(user: String, password: String): Unit = {
 
-    var bindUser = conf.get(AUTHENTICATION_LDAP_BIND_USER).getOrElse("")
-    var bindPassword = conf.get(AUTHENTICATION_LDAP_BIND_PASSWORD).getOrElse("")
-
-    val usedBind = bindUser.nonEmpty && bindPassword.nonEmpty
-
-    if (!usedBind) {
-      // If no bind user or bind password was specified,
-      // we assume the user we are authenticating has the ability to search
-      // the LDAP tree, so we use it as the "binding" account.
-      // This is the way it worked before bind users were allowed in the LDAP authenticator,
-      // so we keep existing systems working.
-      bindUser = user
-      bindPassword = password
-    }
-
-    if (StringUtils.isBlank(bindUser)) {
-      throw new AuthenticationException(s"Error validating LDAP user, user is null" +
-        s" or contains blank space")
-    }
-
-    if (StringUtils.isBlank(bindPassword)) {
-      throw new AuthenticationException(s"Error validating LDAP user, password is null" +
-        s" or contains blank space")
-    }
+    val tuple = resolveBindUserPassword(user, password)
+    val bindUser = tuple._1
+    val bindPassword = tuple._2
 
     val ldapUrl = conf.get(AUTHENTICATION_LDAP_URL).getOrElse("")
     val ldapUrlSplit = ldapUrl.split(":")
@@ -81,10 +58,10 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     val ldapPort = ldapUrlSplit(2).toInt
 
     val candidatePrincipals = createCandidatePrincipals(conf, bindUser)
-    if (candidatePrincipals.size() == 0) {
+    if (candidatePrincipals.isEmpty) {
       throw new AuthenticationException(s"No candidate principals for $bindUser was found.")
     }
-    val principalsItertor = candidatePrincipals.iterator()
+    val principalsItertor = candidatePrincipals.iterator
     var ldapConnection: LDAPConnection = null
     while (principalsItertor.hasNext && ldapConnection == null) {
       val candidatePrincipal = principalsItertor.next()
@@ -120,43 +97,63 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
    * @param user username
    * @return a list of user's principals
    */
-  private def createCandidatePrincipals(conf: KyuubiConf, user: String): util.List[String] = {
-    if (hasDomain(user) || isDn(user)) return Collections.singletonList(user)
+  private def createCandidatePrincipals(conf: KyuubiConf, user: String): List[String] = {
+    if (hasDomain(user) || isDn(user)) return List(user)
     val ldapDomain = conf.get(AUTHENTICATION_LDAP_DOMAIN).getOrElse("")
     if (StringUtils.isNotBlank(ldapDomain)) {
-      return Collections.singletonList(user + "@" + ldapDomain)
+      return List(user + "@" + ldapDomain)
     }
     val userPatterns = parseDnPatterns(conf)
-    if (userPatterns.isEmpty) return Collections.singletonList(user)
-    val candidatePrincipals = new util.ArrayList[String]
-    for (userPattern <- userPatterns.asScala) {
-      candidatePrincipals.add(userPattern.replaceAll("%s", user))
+    if (userPatterns.isEmpty) return List(user)
+    val candidatePrincipals: ListBuffer[String] = ListBuffer()
+    for (userPattern <- userPatterns) {
+      candidatePrincipals += userPattern.replaceAll("%s", user)
     }
-    candidatePrincipals
+    candidatePrincipals.toList
   }
 
   /**
    * Reads and parses DN patterns from Kyuubi configuration.
-   * <br>
-   * If no patterns are provided in the configuration, then the base DN will be used.
-   *
    * @param conf Kyuubi configuration
    * @return a list of DN patterns
    */
-  private def parseDnPatterns(conf: KyuubiConf): util.List[String] = {
-    val patternsString = conf.get(AUTHENTICATION_LDAP_USERDNPATTERN).getOrElse("")
-    val result = new util.ArrayList[String]
-    if (StringUtils.isBlank(patternsString)) {
-      val defaultBaseDn = conf.get(AUTHENTICATION_LDAP_BASEDN).getOrElse("")
-      val guidAttr = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
-      if (StringUtils.isNotBlank(defaultBaseDn)) result.add(guidAttr + "=%s," + defaultBaseDn)
-    } else {
-      val patterns = patternsString.split(":")
-      for (pattern <- patterns) {
-        if (pattern.contains(",") && pattern.contains("=")) result.add(pattern)
-      }
+  private def parseDnPatterns(conf: KyuubiConf): List[String] = {
+    val result: ListBuffer[String] = ListBuffer()
+    val defaultBaseDn = conf.get(AUTHENTICATION_LDAP_BASEDN).getOrElse("")
+    val guidAttr = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
+    if (StringUtils.isNotBlank(defaultBaseDn)) result += (guidAttr + "=%s," + defaultBaseDn)
+    result.toList
+  }
+
+  private def resolveBindUserPassword(user: String, password: String): (String, String) = {
+
+    var bindUser = conf.get(AUTHENTICATION_LDAP_BIND_USER).getOrElse("")
+    var bindPassword = conf.get(AUTHENTICATION_LDAP_BIND_PASSWORD).getOrElse("")
+
+    val usedBind = bindUser.nonEmpty && bindPassword.nonEmpty
+
+    if (!usedBind) {
+      // If no bind user or bind password was specified,
+      // we assume the user we are authenticating has the ability to search
+      // the LDAP tree, so we use it as the "binding" account.
+      // This is the way it worked before bind users were allowed in the LDAP authenticator,
+      // so we keep existing systems working.
+      bindUser = user
+      bindPassword = password
     }
-    result
+
+    if (StringUtils.isBlank(bindUser)) {
+      throw new AuthenticationException(s"Error validating LDAP user, user is null" +
+        s" or contains blank space")
+    }
+
+    if (StringUtils.isBlank(bindPassword)) {
+      throw new AuthenticationException(s"Error validating LDAP user, password is null" +
+        s" or contains blank space")
+    }
+
+    (bindUser, bindPassword)
+
   }
 
 }
