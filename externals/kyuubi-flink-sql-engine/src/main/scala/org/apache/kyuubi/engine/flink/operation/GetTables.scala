@@ -64,13 +64,13 @@ class GetTables(
               .filter {
                 case (_, None) => false
                 case (_, Some(flinkTable)) => tableTypes.contains(flinkTable.getTableKind.name)
-              }.map { case (tableName, Some(flinkTable)) =>
+              }.map { case (tableName, flinkTable) =>
                 Row.of(
                   catalogName,
                   schemaName,
                   tableName,
-                  flinkTable.getTableKind.name,
-                  flinkTable.getComment,
+                  flinkTable.map(_.getTableKind.name).getOrElse(""),
+                  flinkTable.map(_.getComment).getOrElse(""),
                   null,
                   null,
                   null,
