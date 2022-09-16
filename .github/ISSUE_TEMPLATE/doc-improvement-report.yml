@@ -90,7 +90,9 @@ body:
         especially if you already know a good understanding of how to implement the fix.
         Kyuubi is a community-driven project and we love to bring new contributors in.
       options:
-        - label: Yes I am willing to submit a PR!
+        - label: Yes. I can submit a PR independently to improve.
+        - label: Yes. I would be willing to submit a PR with guidance from the Kyuubi community to improve.
+        - label: No. I cannot submit a PR at this time.
 
   - type: markdown
     attributes:
