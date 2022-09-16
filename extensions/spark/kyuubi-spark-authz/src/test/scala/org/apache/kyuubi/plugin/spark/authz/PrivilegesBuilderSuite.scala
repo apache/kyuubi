@@ -664,16 +664,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(operationType === CREATEVIEW)
     val tuple = PrivilegesBuilder.build(plan, spark)
     assert(tuple._1.size === 0)
-
-    assert(tuple._2.size === 1)
-    val po = tuple._2.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po.dbname === null)
-    assert(po.objectName === "CreateTempViewUsing")
-    assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.CREATE)
+    assert(tuple._2.size === 0)
   }
 
   test("DescribeColumnCommand") {
