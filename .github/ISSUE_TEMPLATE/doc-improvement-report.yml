@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: Kyuubi Doc Improvement Report
+name: Doc Improvement Report
 title: "[DOCS] "
 description: Fix errors, or improve the content or refactor architecture of online documentation
 labels: ["kind:documentation"]

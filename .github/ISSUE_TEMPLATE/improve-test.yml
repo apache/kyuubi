@@ -15,17 +15,15 @@
 # limitations under the License.
 #
 
-# See https://gh-community.github.io/issue-template-feedback/structured/
-
-name: Improvement
-title: "[Improvement] "
-description: Suggest an improvement on performance, code quality, user experience, etc
-labels: [ "improvement" ]
+name: Test Only Fix
+title: "[TEST]: "
+description: Describe the tests you want to improve with Apache Kyuubi
+labels: ["kind:test,priority:minor"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for contributing to Apache Kyuubi! Your opinions are deeply valued by the community.
+        Thank you for finding the time to report the issue! We really appreciate the community's efforts to improve Kyuubi.
 
   - type: checkboxes
     attributes:
@@ -47,19 +45,11 @@ body:
 
   - type: textarea
     attributes:
-      label: What would you like to be improved?
+      label: Describe the issues of the existing tests or improvements for new tests
       placeholder: >
-        Please describe the problem you see and how it is needed to be improved.
+        Please describe the tests problem you see and how it is needed to be improved.
     validations:
       required: true
-
-  - type: textarea
-    attributes:
-      label: How should we improve?
-      placeholder: >
-        Please provide the solution if you have thoughts.
-    validations:
-      required: false
 
   - type: checkboxes
     attributes:
@@ -73,4 +63,4 @@ body:
 
   - type: markdown
     attributes:
-      value: "Thanks for taking the time to create this improvement issue!"
+      value: "Thanks for taking the time to improve the test coverage and fix test issues."

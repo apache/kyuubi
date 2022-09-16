@@ -17,7 +17,7 @@
 
 # See https://gh-community.github.io/issue-template-feedback/structured/
 
-name: Kyuubi Bug Report
+name: Bug Report
 title: "[Bug] "
 description: Describe the bug you encountered with Apache Kyuubi
 labels: [ "kind:bug,priority:major" ]
