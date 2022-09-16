@@ -25,3 +25,4 @@ Extensions for Spark
     functions
     ../../../connector/spark/index
     lineage
+    jdbc-dialect
