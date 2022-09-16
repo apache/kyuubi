@@ -48,7 +48,7 @@ class GetTables(
       val schemaNameRegex = toJavaRegex(schemaNamePattern).r
       val tableNameRegex = toJavaRegex(tableNamePattern).r
 
-      val tables = tableEnv.getCatalog(catalogName).asScala.toSeq.flatMap { flinkCatalog =>
+      val tables = tableEnv.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
         flinkCatalog.listDatabases().asScala
           .filter { schemaName => schemaNameRegex.pattern.matcher(schemaName).matches() }
           .flatMap { schemaName =>
@@ -78,7 +78,7 @@ class GetTables(
                   null)
               }
           }
-      }.toArray
+      }
 
       resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(
