@@ -63,7 +63,7 @@ Examples:
 
 `${KYUUBI_HOME}/bin/docker-image-tool.sh` use `Kyuubi Version` as default docker tag and always build `${repo}/kyuubi:${tag}` image.
 
-The script can also help build external Spark into a Kyuubi image that acts as a client for submitting tasks by `-s ${SPAAK_HOME}`.
+The script can also help build external Spark into a Kyuubi image that acts as a client for submitting tasks by `-s ${SPARK_HOME}`.
 
 Of course, if you have an image that contains the Spark binary package, you don't have to copy Spark locally. Make your Spark Image as BASE_IMAGE by using the `-S ${SPARK_HOME_IN_DOCKER}` and `-b BASE_IMAGE=${SPARK_IMAGE}` arguments.
 
@@ -93,12 +93,12 @@ If you do not use Service or HostNetwork to get the IP address of the node where
 You should connect like:
 ```shell
 kubectl exec -it kyuubi-example -- /bin/bash
-${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://localhost:10009'
+${KYUUBI_HOME}/bin/beeline -u 'jdbc:hive2://localhost:10009'
 ```
 
 Or you can submit tasks directly through local beeline:
 ```shell
-${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://${hostname}:${port}'
+${KYUUBI_HOME}/bin/beeline -u 'jdbc:hive2://${hostname}:${port}'
 ```
 As using service nodePort, port means nodePort and hostname means any hostname of kubernetes node.
 
