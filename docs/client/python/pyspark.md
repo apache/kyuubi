@@ -39,22 +39,27 @@ Prepare JDBC driver jar file. Supported Hive compatible JDBC Driver as below:
 
 | Driver     | Driver Class Name | Remarks|
 | ---------- | ----------------- | ----- |
-| Kyuubi Hive Driver ([doc](https://kyuubi.readthedocs.io/en/latest/client/jdbc/kyuubi_jdbc.html))| org.apache.kyuubi.jdbc.KyuubiHiveDriver | 
-| Hive Driver ([doc](https://kyuubi.readthedocs.io/en/latest/client/jdbc/kyuubi_jdbc.html))| org.apache.hive.jdbc.HiveDriver | Compile for the driver on master branch, as [KYUUBI #3484](https://github.com/apache/incubator-kyuubi/pull/3485) required by Spark JDBC source not yet inclueded in release version.
+| Kyuubi Hive Driver ([doc](../jdbc/kyuubi_jdbc.html))| org.apache.kyuubi.jdbc.KyuubiHiveDriver | 
+| Hive Driver ([doc](../jdbc/hive_jdbc.html))| org.apache.hive.jdbc.HiveDriver | Compile for the driver on master branch, as [KYUUBI #3484](https://github.com/apache/incubator-kyuubi/pull/3485) required by Spark JDBC source not yet inclueded in release version.
 
 Refer docs of the driver and prepare the JDBC driver jar file.
 
 
 ### Prepare Hive Dialect
 
-Hive Dialect support is requried by Spark for wraping sql correctly and sending to JDBC driver. Kyuubi provides a JDBC dialect plugin with auto regiesting Hive Daliect support for Spark. Follow the instrunctions in [Hive Dialect Support](https://kyuubi.readthedocs.io/en/latest/extensions/engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
+Hive Dialect support is requried by Spark for wraping sql correctly and sending to JDBC driver. Kyuubi provides a JDBC dialect plugin with auto regiesting Hive Daliect support for Spark. Follow the instrunctions in [Hive Dialect Support](../../engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
 
-### Registering jars of JDBC driver and Hive Dialect
+### Including jars of JDBC driver and Hive Dialect
 
 Choose one of following ways to regeister driver to Spark,
 
 - Put the jar file of JDBC driver and Hive Dialect to `$SPARK_HOME/jars` directory to make it visible for the classpath of PySpark. And adding `spark.sql.extensions = org.apache.spark.sql.dialect.KyuubiSparkJdbcDialectExtension` to `$SPARK_HOME/conf/spark_defaults.conf.`
 
+- With spark's start shell, include JDBC driver when you submit the application with `--packages`, and the Hive Dialect plugins with `--jars` and `--driver-class-path`
+
+```
+ $SPARK_HOME/bin/pyspark --packages org.apache.hive:hive-jdbc:x.y.z --driver-class-path /path/kyuubi-extension-spark-jdbc-dialect_-*.jar --jars /path/kyuubi-extension-spark-jdbc-dialect_-*.jar
+```
 
 - Setting jars and config with SparkSession builder
 
@@ -62,8 +67,8 @@ Choose one of following ways to regeister driver to Spark,
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder \
-        .config("spark.jars", "/path/hive-jdbc-x.y.z.jar,/path/hive-service-x.y.z.jar") \
-        .config("spark.driver.extraClassPath", "/kyuubi-extension-spark-jdbc-dialect_-*.jar") \
+        .config("spark.jars", "/path/hive-jdbc-x.y.z.jar,/path/hive-service-x.y.z.jar", "/path/kyuubi-extension-spark-jdbc-dialect_-*.jar") \
+        .config("spark.driver.extraClassPath", "/path/hive-jdbc-x.y.z.jar,/path/hive-service-x.y.z.jar", "/path/kyuubi-extension-spark-jdbc-dialect_-*.jar") \
         .config("spark.sql.extensions", "org.apache.spark.sql.dialect.KyuubiSparkJdbcDialectExtension") \
         .getOrCreate()
 ```
