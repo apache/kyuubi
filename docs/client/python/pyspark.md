@@ -18,46 +18,73 @@
 
 # PySpark
 
-[PySpark](https://spark.apache.org/docs/latest/api/python/index.html) PySpark is an interface for Apache Spark in Python. PySpark can connect the Kyuubi server via JDBC driver.
+[PySpark](https://spark.apache.org/docs/latest/api/python/index.html) is an interface for Apache Spark in Python. PySpark can connect the Kyuubi server via JDBC driver.
 
 ## Requirements
-PySpark works with Python 3.7 and above. Installation of PySpark and Spark SQL is as follows:
+PySpark works with Python 3.7 and above.
+
+Install PySpark with Spark SQL and optional pandas on Spark using PyPI as follows:
 
 ```shell
 pip install pyspark 'pyspark[sql]' 'pyspark[pandas_on_spark]'
 ```
 
-## Usage
-Use the Kyuubi server's host and thrift protocol port to connect.
+For installation using Conda or manually downloading, please refer to [PySpark installation](https://spark.apache.org/docs/latest/api/python/getting_started/install.html).
 
-For further information about PySpark JDBC usage and options, please refer to Spark's [JDBC To Other Databases
-](https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html).
+## Preperation
 
-### via JDBC to Kyuubi
 
-- Put the jdbc driver jar file to `$SPARK_HOME/jars` directory to make it visible for
-  the classpath of PySpark.
+### Prepare JDBC driver 
+Prepare JDBC driver jar file. Supported Hive compatible JDBC Driver as below:
 
-- Create spark session in runtime
+| Driver     | Driver Class Name | Remarks|
+| ---------- | ----------------- | ----- |
+| Kyuubi Hive Driver ([doc](https://kyuubi.readthedocs.io/en/latest/client/jdbc/kyuubi_jdbc.html))| org.apache.kyuubi.jdbc.KyuubiHiveDriver | 
+| Hive Driver ([doc](https://kyuubi.readthedocs.io/en/latest/client/jdbc/kyuubi_jdbc.html))| org.apache.hive.jdbc.HiveDriver | Compile for the driver on master branch, as [KYUUBI #3484](https://github.com/apache/incubator-kyuubi/pull/3485) required by Spark JDBC source not yet inclueded in release version.
+
+Refer docs of the driver and prepare the JDBC driver jar file.
+
+
+### Prepare Hive Dialect
+
+Hive Dialect support is requried by Spark for wraping sql correctly and sending to JDBC driver. Kyuubi provides a JDBC dialect plugin with auto regiesting Hive Daliect support for Spark. Follow the instrunctions in [Hive Dialect Support](https://kyuubi.readthedocs.io/en/latest/extensions/engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
+
+### Registering jars of JDBC driver and Hive Dialect
+
+Choose one of following ways to regeister driver to Spark,
+
+- Put the jar file of JDBC driver and Hive Dialect to `$SPARK_HOME/jars` directory to make it visible for the classpath of PySpark. And adding `spark.sql.extensions = org.apache.spark.sql.dialect.KyuubiSparkJdbcDialectExtension` to `$SPARK_HOME/conf/spark_defaults.conf.`
+
+
+- Setting jars and config with SparkSession builder
+
 ```python
 from pyspark.sql import SparkSession
 
-builder = SparkSession.builder \
-        .config("spark.driver.extraClassPath",
-                "/path/hive-service-3.1.3.jar,/path/hive-jdbc-3.1.3.jar") \
-        .config("spark.jars", "/path/hive-service-3.1.3.jar,/path/hive-jdbc-3.1.3.jar")
-spark = builder.getOrCreate()
+spark = SparkSession.builder \
+        .config("spark.jars", "/path/hive-jdbc-x.y.z.jar,/path/hive-service-x.y.z.jar") \
+        .config("spark.driver.extraClassPath", "/kyuubi-extension-spark-jdbc-dialect_-*.jar") \
+        .config("spark.sql.extensions", "org.apache.spark.sql.dialect.KyuubiSparkJdbcDialectExtension") \
+        .getOrCreate()
 ```
+
+
+
+## Usage
+
+For further information about PySpark JDBC usage and options, please refer to Spark's [JDBC To Other Databases](https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html).
+
+### Reading and Writing dataframe via JDBC data source
 
 ```python
 # Loading data from Kyuubi via HiveDriver as JDBC source
 jdbcDF = spark.read \
   .format("jdbc") \
   .options(driver="org.apache.hive.jdbc.HiveDriver",
-           url="jdbc:hive2://kyuubi_server_ip:kyuubi_server_port",
+           url="jdbc:hive2://kyuubi_server_ip:port",
            user="user",
            password="password",
-           query="select * from testdb.table2 limit 5"
+           query="select * from testdb.src_table"
            ) \
   .load()
 
@@ -66,10 +93,10 @@ jdbcDF = spark.read \
 jdbcDF.write \
     .format("jdbc") \
     .options(driver="org.apache.hive.jdbc.HiveDriver",
-             url="jdbc:hive2://kyuubi_server_ip:kyuubi_server_port",
+             url="jdbc:hive2://kyuubi_server_ip:port",
            user="user",
            password="password",
-             dbtable="testdb.table2"
+           dbtable="testdb.tgt_table"
            ) \
     .save()
 ```
