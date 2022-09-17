@@ -128,9 +128,9 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
 
     val op = new GetTables(
       session = session,
-      catalog = catalogName,
-      schema = schemaName,
-      tableName = tableName,
+      catalogNameOrEmpty = catalogName,
+      schemaNamePattern = schemaName,
+      tableNamePattern = tableName,
       tableTypes = tTypes)
 
     addOperation(op)

@@ -389,7 +389,9 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
            |  id int,
            |  name string,
            |  price double
-           | ) with (
+           | )
+           | comment 'table_comment'
+           | with (
            |   'connector' = 'filesystem'
            | )
        """.stripMargin)
@@ -403,25 +405,37 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val metaData = statement.getConnection.getMetaData
       val rs1 = metaData.getTables(null, null, null, null)
       assert(rs1.next())
-      assert(rs1.getString(1) == table)
+      assert(rs1.getString(1) == "default_catalog")
+      assert(rs1.getString(2) == "default_database")
+      assert(rs1.getString(3) == table)
+      assert(rs1.getString(4) == "TABLE")
+      assert(rs1.getString(5) == "table_comment")
       assert(rs1.next())
-      assert(rs1.getString(1) == table_view)
+      assert(rs1.getString(1) == "default_catalog")
+      assert(rs1.getString(2) == "default_database")
+      assert(rs1.getString(3) == table_view)
+      assert(rs1.getString(4) == "VIEW")
+      assert(rs1.getString(5) == "")
 
       // get table , table name like table%
       val rs2 = metaData.getTables(null, null, "table%", Array("TABLE"))
       assert(rs2.next())
-      assert(rs2.getString(1) == table)
+      assert(rs2.getString(1) == "default_catalog")
+      assert(rs2.getString(2) == "default_database")
+      assert(rs2.getString(3) == table)
       assert(!rs2.next())
 
       // get view , view name like *
       val rs3 = metaData.getTables(null, "default_database", "*", Array("VIEW"))
       assert(rs3.next())
-      assert(rs3.getString(1) == table_view)
+      assert(rs3.getString(1) == "default_catalog")
+      assert(rs3.getString(2) == "default_database")
+      assert(rs3.getString(3) == table_view)
 
       // get view , view name like *, schema pattern like default_%
       val rs4 = metaData.getTables(null, "default_%", "*", Array("VIEW"))
       assert(rs4.next())
-      assert(rs4.getString(1) == table_view)
+      assert(rs4.getString(3) == table_view)
 
       // get view , view name like *, schema pattern like no_exists_%
       val rs5 = metaData.getTables(null, "no_exists_%", "*", Array("VIEW"))
