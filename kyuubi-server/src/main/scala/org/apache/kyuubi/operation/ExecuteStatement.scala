@@ -59,6 +59,7 @@ class ExecuteStatement(
 
   private def executeStatement(): Unit = {
     try {
+      sendCredentialsIfNeeded()
       // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
       // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
       // engine crash without response before socket read timeout.
