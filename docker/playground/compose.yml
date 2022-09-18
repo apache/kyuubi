@@ -73,6 +73,7 @@ services:
       - ./image/hive-site.xml:/etc/hive/conf/hive-site.xml
       - ./image/spark-defaults.conf:/etc/spark/conf/spark-defaults.conf
       - ./image/kyuubi-defaults.conf:/etc/kyuubi/conf/kyuubi-defaults.conf
+      - ./image/kyuubi-log4j2.xml:/etc/kyuubi/conf/log4j2.xml
     depends_on:
       - metastore
       - minio
