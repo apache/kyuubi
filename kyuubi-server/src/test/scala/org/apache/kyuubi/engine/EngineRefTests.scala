@@ -143,6 +143,40 @@ trait EngineRefTests extends KyuubiFunSuite {
         userName,
         Array("abc")))
     assert(engineRef3.defaultEngineName === s"kyuubi_GROUP_SPARK_SQL_${userName}_abc_$id")
+
+    val customUserName = "IamauserwithCustomgroup"
+    val customGroupName = "customGroup"
+    val groups = new Array[String](2)
+    groups(0) = "primaryGroup"
+    groups(1) = customGroupName
+    val customUGI = UserGroupInformation.createUserForTesting(customUserName, groups)
+    val customId = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_GROUP_NAME.key, customGroupName)
+    val customEngineRef = new EngineRef(conf, customUserName, customId, null)
+    assert(customEngineRef.appUser == customGroupName)
+    assert(customEngineRef.engineSpace ===
+      DiscoveryPaths.makePath(
+        s"kyuubi_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
+        customGroupName,
+        Array("abc")))
+    assert(customEngineRef.defaultEngineName ===
+      s"kyuubi_GROUP_SPARK_SQL_${customGroupName}_abc_$customId")
+
+    val customUserName2 = "IamauserwithCustomgroup2"
+    val groups2 = new Array[String](1)
+    groups2(0) = "primaryGroup"
+    val customUGI2 = UserGroupInformation.createUserForTesting(customUserName2, groups2)
+    val customId2 = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_GROUP_NAME.key, "whatever")
+    val customEngineRef2 = new EngineRef(conf, customUserName2, customId2, null)
+    assert(customEngineRef2.engineSpace ===
+      DiscoveryPaths.makePath(
+        s"kyuubi_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
+        groups2(0),
+        Array("abc")))
+    assert(customEngineRef2.defaultEngineName ===
+      s"kyuubi_GROUP_SPARK_SQL_${groups2(0)}_abc_$customId2")
+
   }
 
   test("SERVER shared level engine name") {

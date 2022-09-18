@@ -65,6 +65,8 @@ private[kyuubi] class EngineRef(
 
   private val engineType: EngineType = EngineType.withName(conf.get(ENGINE_TYPE))
 
+  private val customGroupName: Option[String] = conf.get(ENGINE_SHARE_LEVEL_GROUP_NAME)
+
   // Server-side engine pool size threshold
   private val poolThreshold: Int = conf.get(ENGINE_POOL_SIZE_THRESHOLD)
 
@@ -98,13 +100,18 @@ private[kyuubi] class EngineRef(
     case SERVER => Utils.currentUser
     case GROUP =>
       val clientUGI = UserGroupInformation.createRemoteUser(user)
-      // Similar to `clientUGI.getPrimaryGroupName` (avoid IOE) to get the Primary GroupName of
-      // the client user mapping to
-      clientUGI.getGroupNames.headOption match {
-        case Some(primaryGroup) => primaryGroup
-        case None =>
-          warn(s"There is no primary group for $user, use the client user name as group directly")
-          user
+      val ugiGroupNames = clientUGI.getGroupNames
+      if (customGroupName.isDefined && ugiGroupNames.contains(customGroupName.get)) {
+        customGroupName.get
+      } else {
+        // Similar to `clientUGI.getPrimaryGroupName` (avoid IOE) to get the Primary GroupName of
+        // the client user mapping to
+        ugiGroupNames.headOption match {
+          case Some(primaryGroup) => primaryGroup
+          case None =>
+            warn(s"There is no primary group for $user, use the client user name as group directly")
+            user
+        }
       }
     case _ => user
   }

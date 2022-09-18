@@ -1348,6 +1348,16 @@ object KyuubiConf {
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
 
+  val ENGINE_SHARE_LEVEL_GROUP_NAME: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.engine.share.level.group.name")
+      .doc("Allow end-users to choose custom group name for the `GROUP` share level of an " +
+        " engine. If the user's [Hadoop GroupsMapping](https://reurl.cc/xE61Y5) contains " +
+        " the custom group name, the value will be chose instead of primary group. " +
+        " This setting is recommended through JDBC url")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_TYPE: ConfigEntry[String] = buildConf("kyuubi.engine.type")
     .doc("Specify the detailed engine that supported by the Kyuubi. The engine type bindings to" +
       " SESSION scope. This configuration is experimental. Currently, available configs are: <ul>" +
