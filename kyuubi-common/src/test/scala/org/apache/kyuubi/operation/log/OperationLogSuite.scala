@@ -29,6 +29,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.NoopSessionManager
+import org.apache.kyuubi.util.ThriftUtils
 
 class OperationLogSuite extends KyuubiFunSuite {
 
@@ -146,10 +147,11 @@ class OperationLogSuite extends KyuubiFunSuite {
     OperationLog.createOperationLogRootDirectory(session)
     assert(logRoot.isFile)
     val oHandle = OperationHandle()
-    intercept[Exception] {
-      val log = OperationLog.createOperationLog(session, oHandle)
-      log.read(1)
-    }
+
+    val log = OperationLog.createOperationLog(session, oHandle)
+    val tRowSet = log.read(1)
+    assert(tRowSet == ThriftUtils.newEmptyRowSet)
+
     logRoot.delete()
 
     OperationLog.createOperationLogRootDirectory(session)
@@ -222,6 +224,9 @@ class OperationLogSuite extends KyuubiFunSuite {
       }
 
       val log = new OperationLog(file)
+      // The operation log file is created externally and should be initialized actively.
+      log.initOperationLogIfNecessary()
+
       compareResult(log.read(-1, 1), Seq("0"))
       compareResult(log.read(-1, 1), Seq("1"))
       compareResult(log.read(0, 1), Seq("0"))
@@ -230,5 +235,30 @@ class OperationLogSuite extends KyuubiFunSuite {
     } finally {
       Utils.deleteDirectoryRecursively(file.toFile)
     }
+  }
+
+  test("[KYUUBI #3511] Reading an uninitialized log should return empty rowSet") {
+    val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
+    val oHandle = OperationHandle()
+
+    val log = OperationLog.createOperationLog(session, oHandle)
+    // It has not been initialized, and returns empty `TRowSet` directly.
+    val tRowSet = log.read(1)
+    assert(tRowSet == ThriftUtils.newEmptyRowSet)
+
+    OperationLog.createOperationLogRootDirectory(session)
+    val log1 = OperationLog.createOperationLog(session, oHandle)
+    // write means initialized operationLog, we can read log directly later
+    log1.write(msg1)
+    val msg = log1.read(1).getColumns.get(0).getStringVal.getValues.asScala.head
+    assert(msg == msg1)
   }
 }
