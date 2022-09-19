@@ -30,7 +30,7 @@ class ZookeeperSparkEngineRegisterSuite extends WithDiscoverySparkSQLEngine
       PROXY_SPARK_UI_ENABLED.key -> "true",
       "spark.ui.enabled" -> "true")
 
-  override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID().toString}"
+  override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID}"
 
   test("Spark Engine Register Zookeeper with spark ui info") {
     zookeeperConf.foreach(entry => kyuubiConf.set(entry._1, entry._2))
