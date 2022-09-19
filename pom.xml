@@ -2223,12 +2223,29 @@
                 <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
             </properties>
         </profile>
+
         <profile>
             <id>flink-1.15</id>
             <properties>
                 <flink.version>1.15.2</flink.version>
                 <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
+        </profile>
+
+        <profile>
+            <id>flink-1.16</id>
+            <properties>
+                <flink.version>1.16.0</flink.version>
+                <flink.module.scala.suffix></flink.module.scala.suffix>
+                <flink.archive.mirror>https://dist.apache.org/repos/dist/dev/flink/flink-1.16.0-rc0</flink.archive.mirror>
+            </properties>
+            <repositories>
+                <repository>
+                    <id>flink-staging-repo</id>
+                    <name>Flink 1.16.0 Staging Repo</name>
+                    <url>https://repository.apache.org/content/repositories/orgapacheflink-1532/</url>
+                </repository>
+            </repositories>
         </profile>
 
         <profile>
