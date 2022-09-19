@@ -46,6 +46,8 @@ trait SparkSessionProvider {
       .config(
         "spark.sql.warehouse.dir",
         Files.createTempDirectory("spark-warehouse").toString)
+      .config("spark.sql.extensions",
+        "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
       .withExtensions(extension)
       .getOrCreate()
   }

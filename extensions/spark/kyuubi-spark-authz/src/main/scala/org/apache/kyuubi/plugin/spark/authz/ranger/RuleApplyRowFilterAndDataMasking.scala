@@ -33,7 +33,15 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
   override def apply(plan: LogicalPlan): LogicalPlan = {
     // Apply FilterAndMasking and wrap HiveTableRelation/LogicalRelation/DataSourceV2Relation with
     // RowFilterAndDataMaskingMarker if it is not wrapped yet.
-    plan mapChildren {
+
+    val planChildren = plan match {
+      case p if p.nodeName == "UpdateIcebergTable"
+        | p.nodeName == "MergeIntoIcebergTable" =>
+        p.children.tail
+      case _ => plan.children
+    }
+
+    plan mapChildren  {
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
