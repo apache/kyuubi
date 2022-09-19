@@ -706,7 +706,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       openConf.put("set:hivevar:" + hiveVar.getKey(), hiveVar.getValue());
     }
     // switch the database
-    openConf.put("use:database", connParams.getDbName());
+    if (connParams.getCatalogName() != null) {
+      openConf.put("use:database", connParams.getCatalogName() + "." + connParams.getDbName());
+    } else {
+      openConf.put("use:database", connParams.getDbName());
+    }
     // set the fetchSize
     openConf.put(
         "set:hiveconf:hive.server2.thrift.resultset.default.fetch.size",

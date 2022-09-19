@@ -152,14 +152,27 @@ public class Utils {
     String sessVars = jdbcURI.getPath();
     if ((sessVars != null) && !sessVars.isEmpty()) {
       String dbName = "";
+      String catalogName = "";
       // removing leading '/' returned by getPath()
       sessVars = sessVars.substring(1);
       if (!sessVars.contains(";")) {
-        // only dbname is provided
-        dbName = sessVars;
+        if (sessVars.contains("/")) {
+          catalogName = sessVars.substring(0, sessVars.indexOf('/'));
+          dbName = sessVars.substring(sessVars.indexOf('/') + 1);
+        } else {
+          // only dbname is provided
+          dbName = sessVars;
+        }
       } else {
         // we have dbname followed by session parameters
-        dbName = sessVars.substring(0, sessVars.indexOf(';'));
+        String catalogAndDb = sessVars.substring(0, sessVars.indexOf(';'));
+        if (catalogAndDb.contains("/")) {
+          catalogName = catalogAndDb.substring(0, catalogAndDb.indexOf('/'));
+          dbName = catalogAndDb.substring(catalogAndDb.indexOf('/') + 1);
+        } else {
+          // only dbname is provided
+          dbName = catalogAndDb;
+        }
         sessVars = sessVars.substring(sessVars.indexOf(';') + 1);
         Matcher sessMatcher = pattern.matcher(sessVars);
         while (sessMatcher.find()) {
@@ -168,6 +181,9 @@ public class Utils {
                 "Bad URL format: Multiple values for property " + sessMatcher.group(1));
           }
         }
+      }
+      if (!catalogName.isEmpty()) {
+        connParams.setCatalogName(catalogName);
       }
       if (!dbName.isEmpty()) {
         connParams.setDbName(dbName);
