@@ -45,11 +45,11 @@ Prepare JDBC driver jar file. Supported Hive compatible JDBC Driver as below:
 Refer to docs of the driver and prepare the JDBC driver jar file.
 
 
-### Prepare Hive Dialect plugin
+### Prepare JDBC Hive Dialect extension
 
-Hive Dialect support is requried by Spark for wraping sql correctly and sending to JDBC driver. Kyuubi provides a JDBC dialect plugin with auto regiesting Hive Daliect support for Spark. Follow the instrunctions in [Hive Dialect Support](../../engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
+Hive Dialect support is requried by Spark for wraping sql correctly and sending to JDBC driver. Kyuubi provides a JDBC dialect extension with auto regiested Hive Daliect support for Spark. Follow the instrunctions in [Hive Dialect Support](../../engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
 
-### Including jars of JDBC driver and Hive Dialect
+### Including jars of JDBC driver and Hive Dialect extention
 
 Choose one of following ways to include jar files to Spark.
 
