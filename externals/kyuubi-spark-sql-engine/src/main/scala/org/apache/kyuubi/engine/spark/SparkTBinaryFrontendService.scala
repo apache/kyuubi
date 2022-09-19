@@ -94,7 +94,13 @@ class SparkTBinaryFrontendService(
   }
 
   override def extraConfs: Map[String, String] = {
-    super.extraConfs ++ Map("ui" -> sc.uiWebUrl.get)
+    val extraConfs =
+      if (sc.uiWebUrl.nonEmpty) {
+        Map("ui" -> sc.uiWebUrl.get)
+      } else {
+        Map.empty
+      }
+    super.extraConfs ++ extraConfs
   }
 }
 
