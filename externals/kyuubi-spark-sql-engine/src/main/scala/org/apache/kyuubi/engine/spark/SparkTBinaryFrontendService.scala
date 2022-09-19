@@ -93,7 +93,9 @@ class SparkTBinaryFrontendService(
     }
   }
 
-  override def ui: Option[String] = sc.uiWebUrl
+  override def extraConfs: Map[String, String] = {
+    super.extraConfs ++ Map("ui" -> sc.uiWebUrl.get)
+  }
 }
 
 object SparkTBinaryFrontendService extends Logging {

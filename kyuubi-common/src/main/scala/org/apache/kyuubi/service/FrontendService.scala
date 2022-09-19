@@ -43,7 +43,7 @@ trait FrontendService {
   val discoveryService: Option[Service]
 
   /**
-   * An optional `UI`for each engine expose it's ui
+   * An empty map for [[FrontendService]] to expose it's extra configurations
    */
-  def ui: Option[String] = None
+  def extraConfs: Map[String, String] = Map.empty
 }
