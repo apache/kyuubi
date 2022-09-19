@@ -39,11 +39,10 @@ Prepare JDBC driver jar file. Supported Hive compatible JDBC Driver as below:
 
 | Driver     | Driver Class Name | Remarks|
 | ---------- | ----------------- | ----- |
-| Kyuubi Hive Driver ([doc](../jdbc/kyuubi_jdbc.html))| org.apache.kyuubi.jdbc.KyuubiHiveDriver | 
-| Hive Driver ([doc](../jdbc/hive_jdbc.html))| org.apache.hive.jdbc.HiveDriver | Compile for the driver on master branch, as [KYUUBI #3484](https://github.com/apache/incubator-kyuubi/pull/3485) required by Spark JDBC source not yet included in released version.
+| Kyuubi Hive Driver ([doc](../jdbc/kyuubi_jdbc.html))| org.apache.kyuubi.jdbc.KyuubiHiveDriver |  Compile for the driver on master branch, as [KYUUBI #3484](https://github.com/apache/incubator-kyuubi/pull/3485) required by Spark JDBC source not yet included in released version.
+| Hive Driver ([doc](../jdbc/hive_jdbc.html))| org.apache.hive.jdbc.HiveDriver | 
 
 Refer to docs of the driver and prepare the JDBC driver jar file.
-
 
 ### Prepare JDBC Hive Dialect extension
 
