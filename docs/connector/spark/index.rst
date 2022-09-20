@@ -36,6 +36,7 @@ purpose.
     hudi
     iceberg
     kudu
+    hive
     flink_table_store
     tidb
     tpcds
