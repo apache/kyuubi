@@ -43,11 +43,21 @@ body:
             issues.
           required: true
 
+  - type: checkboxes
+    attributes:
+      label: What kind of test improve?
+      options:
+        - label: Fix flaky tests.
+        - label: Fix bug in tests.
+        - label: Increase test coverage.
+        - label: Other kinds of test improve.
+
   - type: textarea
     attributes:
       label: Describe the issues of the existing tests or improvements for new tests
       placeholder: >
-        Please describe the tests problem you see and how it is needed to be improved.
+        Please describe the tests problem you see and how it is needed to be improved, if it is
+        a flaky test, please provide the link of failure like GitHub Actions url.
     validations:
       required: true
 
