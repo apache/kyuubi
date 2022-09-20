@@ -20,14 +20,11 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
-import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.CommandType
-import org.apache.kyuubi.plugin.spark.authz.v2Commands.v2TablePrivileges
 
 /**
  * Building privilege objects
@@ -114,16 +111,6 @@ object IcebergCommands extends Enumeration {
   val UnresolvedMergeIntoIcebergTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder()
 
   val MergeIntoIcebergTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
-    buildInput = (plan, inputObjs, _) => {
-      val table = getFieldVal[DataSourceV2Relation](plan, "sourceTable")
-      buildQuery(table, inputObjs)
-    },
-    buildOutput = (plan, outputObjs, _, _) => {
-      val table = getFieldVal[DataSourceV2Relation](plan, "targetTable")
-      if (table.identifier.isDefined) {
-        outputObjs += v2TablePrivileges(
-          table.identifier.get,
-          actionType = PrivilegeObjectActionType.UPDATE)
-      }
-    })
+    buildInput = v2Commands.MergeIntoTable.buildInput,
+    buildOutput = v2Commands.MergeIntoTable.buildOutput)
 }
