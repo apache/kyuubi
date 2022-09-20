@@ -18,16 +18,16 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import scala.collection.JavaConverters._
-import scala.util.{Failure, Success, Try}
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.api.{DataTypes, ResultKind}
 import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl
-import org.apache.flink.table.catalog.{Column, ObjectIdentifier}
+import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
+import org.apache.kyuubi.engine.flink.schema.SchemaHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
@@ -55,29 +55,25 @@ class GetColumns(
         if (StringUtils.isEmpty(catalogNameOrEmpty)) tableEnv.getCurrentCatalog
         else catalogNameOrEmpty
 
-      val schemaNameRegex = toJavaRegex(schemaNamePattern).r
-      val tableNameRegex = toJavaRegex(tableNamePattern).r
+      val schemaNameRegex = toJavaRegex(schemaNamePattern)
+      val tableNameRegex = toJavaRegex(tableNamePattern)
       val columnNameRegex = toJavaRegex(columnNamePattern).r
 
       val columns = tableEnv.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
-        flinkCatalog.listDatabases().asScala
-          .filter { schemaName => schemaNameRegex.pattern.matcher(schemaName).matches() }
+        SchemaHelper.getSchemasWithPattern(flinkCatalog, schemaNameRegex)
           .flatMap { schemaName =>
-            flinkCatalog.listTables(schemaName).asScala
-              .filter { tableName => tableNameRegex.pattern.matcher(tableName).matches() }
-              .map { tableName =>
-                val objPath = ObjectIdentifier.of(catalogName, schemaName, tableName).toObjectPath
-                Try(flinkCatalog.getTable(objPath)) match {
-                  case Success(flinkTable) => (tableName, Some(flinkTable))
-                  case Failure(_) => (tableName, None)
-                }
-              }
+            SchemaHelper.getFlinkTablesWithPattern(
+              flinkCatalog,
+              catalogName,
+              schemaName,
+              tableNameRegex)
               .filter { _._2.isDefined }
               .flatMap { case (tableName, flinkTable) =>
-                val schema = flinkTable.get.getUnresolvedSchema.resolve(resolver)
-                schema.getColumns.asScala.toArray.zipWithIndex
-                  .filter(c =>
-                    columnNameRegex.pattern.matcher(c._1.getName).matches())
+                val resolvedSchema = flinkTable.get.getUnresolvedSchema.resolve(resolver)
+                resolvedSchema.getColumns.asScala.toArray.zipWithIndex
+                  .filter { case (column, _) =>
+                    columnNameRegex.pattern.matcher(column.getName).matches()
+                  }
                   .map { case (column, pos) =>
                     toColumnResult(catalogName, schemaName, tableName, column, pos)
                   }
