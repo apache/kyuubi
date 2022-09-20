@@ -265,6 +265,15 @@ kyuubi.engine.user.isolated.spark.session.idle.interval|PT1M|The interval to che
 kyuubi.engine.user.isolated.spark.session.idle.timeout|PT6H|If kyuubi.engine.user.isolated.spark.session is false, we will release the spark session if its corresponding user is inactive after this configured timeout.|duration|1.6.0
 
 
+### Event
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.event.async.pool.keepalive.time|PT1M|Time(ms) that an idle async thread of the async event handler thread pool will wait for a new task to arrive before terminating|duration|1.7.0
+kyuubi.event.async.pool.size|8|Number of threads in the async event handler thread pool|int|1.7.0
+kyuubi.event.async.pool.wait.queue.size|100|Size of the wait queue for the async event handler thread pool|int|1.7.0
+
+
 ### Frontend
 
 Key | Default | Meaning | Type | Since

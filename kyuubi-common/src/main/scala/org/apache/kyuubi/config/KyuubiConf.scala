@@ -2120,4 +2120,26 @@ object KyuubiConf {
         _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM")),
         "Unsupported event loggers")
       .createWithDefault(Seq("JSON"))
+
+  val ASYNC_EVENT_HANDLER_POLL_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.event.async.pool.size")
+      .doc("Number of threads in the async event handler thread pool")
+      .version("1.7.0")
+      .intConf
+      .createWithDefault(8)
+
+  val ASYNC_EVENT_HANDLER_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.event.async.pool.wait.queue.size")
+      .doc("Size of the wait queue for the async event handler thread pool")
+      .version("1.7.0")
+      .intConf
+      .createWithDefault(100)
+
+  val ASYNC_EVENT_HANDLER_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("kyuubi.event.async.pool.keepalive.time")
+      .doc("Time(ms) that an idle async thread of the async event handler thread pool will wait" +
+        " for a new task to arrive before terminating")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
 }
