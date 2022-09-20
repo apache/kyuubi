@@ -111,7 +111,8 @@ object IcebergCommands extends Enumeration {
     commandTypes = Seq(v2Commands.CommandType.HasTableAsIdentifierOption),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
-  // MergeIntoIcebergTable & UnresolvedMergeIntoIcebergTable
+  val UnresolvedMergeIntoIcebergTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder()
+
   val MergeIntoIcebergTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     buildInput = (plan, inputObjs, _) => {
       val table = getFieldVal[DataSourceV2Relation](plan, "sourceTable")

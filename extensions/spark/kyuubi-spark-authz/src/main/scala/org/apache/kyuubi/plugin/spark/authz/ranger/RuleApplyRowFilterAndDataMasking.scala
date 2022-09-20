@@ -24,43 +24,36 @@ import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
+  private def mapPlanChildren(plan: LogicalPlan, f: LogicalPlan => LogicalPlan): LogicalPlan = {
+    if (plan.children.isEmpty) {
+      plan
+    } else {
+      val skippedTablePlans: Seq[LogicalPlan] = plan match {
+        case _ if IcebergCommands.accept(plan.nodeName) =>
+          Seq(
+            getFieldValOptional[LogicalPlan](plan, "table"),
+            getFieldValOptional[LogicalPlan](plan, "targetTable"),
+            getFieldValOptional[LogicalPlan](plan, "sourceTable"))
+            .filter(tableIdentOpt => tableIdentOpt.isDefined)
+            .map(tableIdentOpt => tableIdentOpt.get)
+        case _ => Seq.empty
+      }
+
+      val mappedChildren = (plan.children diff skippedTablePlans).map(f)
+      plan.withNewChildren(skippedTablePlans ++ mappedChildren)
+    }
+  }
+
   override def apply(plan: LogicalPlan): LogicalPlan = {
     // Apply FilterAndMasking and wrap HiveTableRelation/LogicalRelation/DataSourceV2Relation with
     // RowFilterAndDataMaskingMarker if it is not wrapped yet.
-
-    def mapPlanChildren(f: LogicalPlan => LogicalPlan): LogicalPlan = {
-      if (plan.children.isEmpty) {
-        plan
-      } else {
-        val childrenLength = plan.children.length
-        var skippedHeads: Seq[LogicalPlan] = Seq.empty
-        val planChildren = plan match {
-
-          // skip head child for iceberg commands
-          case p
-              if plan.resolved && (p.nodeName == "UpdateIcebergTable"
-                | p.nodeName == "DeleteFromIcebergTable") =>
-            skippedHeads = plan.children.take(1)
-            p.children.takeRight(childrenLength - 1)
-          case p if p.nodeName == "UnresolvedMergeIntoIcebergTable" =>
-            skippedHeads = plan.children.take(2)
-            Seq()
-
-          case _ => plan.children
-        }
-
-        val mappedChildren = planChildren.map(f)
-        plan.withNewChildren(skippedHeads ++ mappedChildren)
-      }
-    }
-
-    mapPlanChildren {
+    mapPlanChildren(plan, {
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
@@ -80,7 +73,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
           applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
         }
       case other => apply(other)
-    }
+    })
   }
 
   private def applyFilterAndMasking(
