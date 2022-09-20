@@ -22,6 +22,13 @@ Add a Kyuubi datasource with
 - username: `anonymous`
 - password: `<empty>`
 
+3. Using built-in dataset
+
+Kyuubi supply some built-in dataset, After the Kyuubi starts, you can run the following command to load the different datasets:
+
+- For loading TPC-DS tiny dataset to spark_catalog.tpcds_tiny, run `docker exec -it kyuubi /opt/kyuubi/bin/beeline -u 'jdbc:hive2://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpcds-tiny.sql`
+- For loading TPC-H tiny dataset to spark_catalog.tpch_tiny, run `docker exec -it kyuubi /opt/kyuubi/bin/beeline -u 'jdbc:hive2://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpch-tiny.sql`
+
 ### Access Service
 
 - MinIO: http://localhost:9001
