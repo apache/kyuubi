@@ -99,14 +99,14 @@ class SparkProcessBuilder(
       buffer += s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$userName"
     }
 
-    // iff the keytab is specified, PROXY_USER is not supported
-    val shortUserName = useKeytab()
-    if (shortUserName.nonEmpty) {
-      setSparkUserName(shortUserName.get)
-    } else {
-      setSparkUserName(proxyUser)
-      buffer += PROXY_USER
-      buffer += proxyUser
+    // if the keytab is specified, PROXY_USER is not supported
+    tryKeytab() match {
+      case None =>
+        setSparkUserName(proxyUser)
+        buffer += PROXY_USER
+        buffer += proxyUser
+      case Some(name) =>
+        setSparkUserName(name)
     }
 
     mainResource.foreach { r => buffer += r }
@@ -116,7 +116,7 @@ class SparkProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
-  private def useKeytab(): Option[String] = {
+  private def tryKeytab(): Option[String] = {
     val principal = conf.getOption(PRINCIPAL)
     val keytab = conf.getOption(KEYTAB)
     if (principal.isEmpty || keytab.isEmpty) {
