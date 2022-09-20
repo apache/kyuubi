@@ -57,9 +57,7 @@ class FlinkSessionImpl(
       case ("use:catalog", catalog) =>
         val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
         try {
-          if (catalog != null) {
-            tableEnv.useCatalog(catalog)
-          }
+          tableEnv.useCatalog(catalog)
         } catch {
           case NonFatal(e) =>
             throw e

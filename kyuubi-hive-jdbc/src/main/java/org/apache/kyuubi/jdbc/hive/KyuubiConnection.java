@@ -706,7 +706,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       openConf.put("set:hivevar:" + hiveVar.getKey(), hiveVar.getValue());
     }
     // switch the catalog
-    openConf.put("use:catalog", connParams.getCatalogName());
+    if (connParams.getCatalogName() != null) {
+      openConf.put("use:catalog", connParams.getCatalogName());
+    }
     // switch the database
     openConf.put("use:database", connParams.getDbName());
     // set the fetchSize

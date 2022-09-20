@@ -47,11 +47,13 @@ class TrinoSessionImpl(
 
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
+  private var catalogName: String = ""
 
   private val sessionEvent = TrinoSessionEvent(this)
 
   override def open(): Unit = {
     normalizedConf.foreach {
+      case ("use:catalog", catalog) => catalogName = catalog
       case ("use:database", database) => clientSession = createClientSession(database)
       case _ => // do nothing
     }
@@ -72,11 +74,11 @@ class TrinoSessionImpl(
     val connectionUrl = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_URL).getOrElse(
       throw KyuubiSQLException("Trino server url can not be null!"))
 
-    val catalog = conf.getOrElse(
-      "use:catalog",
-      sessionConf.get(
+    if (catalogName.isEmpty) {
+      catalogName = sessionConf.get(
         KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG).getOrElse(
-        throw KyuubiSQLException("Trino default catalog can not be null!")))
+        throw KyuubiSQLException("Trino default catalog can not be null!"))
+    }
 
     val user = sessionConf
       .getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY).getOrElse(currentUser)
@@ -90,7 +92,7 @@ class TrinoSessionImpl(
       Optional.empty(),
       Collections.emptySet(),
       null,
-      catalog,
+      catalogName,
       schema,
       null,
       ZoneId.systemDefault(),
