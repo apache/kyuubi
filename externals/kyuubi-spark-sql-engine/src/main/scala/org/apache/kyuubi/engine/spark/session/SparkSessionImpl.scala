@@ -51,6 +51,15 @@ class SparkSessionImpl(
 
   override def open(): Unit = {
     normalizedConf.foreach {
+      case ("use:catalog", catalog) =>
+        try {
+          if (catalog != null) {
+            SparkCatalogShim().setCurrentCatalog(spark, catalog)
+          }
+        } catch {
+          case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
+            warn(e.getMessage())
+        }
       case ("use:database", database) =>
         try {
           SparkCatalogShim().setCurrentDatabase(spark, database)
