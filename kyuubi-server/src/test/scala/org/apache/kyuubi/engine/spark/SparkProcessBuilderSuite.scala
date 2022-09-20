@@ -270,6 +270,26 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     assert(!pb.toString.contains(engineRefId2))
     assert(pb.toString.contains(engineRefId))
   }
+
+  test("SparkProcessBuilder build spark engine with SPARK_USER_NAME") {
+    val proxyName = "kyuubi"
+    val conf1 = KyuubiConf(false)
+    val b1 = new SparkProcessBuilder(proxyName, conf1)
+    val c1 = b1.toString.split(' ')
+    assert(c1.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$proxyName"))
+    assert(c1.contains(s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$proxyName"))
+
+    tryWithSecurityEnabled {
+      val conf2 = conf.set("spark.kerberos.principal", testPrincipal)
+        .set("spark.kerberos.keytab", testKeytab)
+      val name = ServiceUtils.getShortName(testPrincipal)
+      val b2 = new SparkProcessBuilder(name, conf2)
+      val c2 = b2.toString.split(' ')
+      assert(c2.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$name"))
+      assert(c2.contains(s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$name"))
+      assert(!c2.contains(s"--proxy-user $name"))
+    }
+  }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)

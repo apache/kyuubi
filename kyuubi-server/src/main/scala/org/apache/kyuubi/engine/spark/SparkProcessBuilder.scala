@@ -91,8 +91,20 @@ class SparkProcessBuilder(
       buffer += s"${convertConfigKey(k)}=$v"
     }
 
+    // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
+    def setSparkUserName(userName: String): Unit = {
+      buffer += CONF
+      buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
+      buffer += CONF
+      buffer += s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$userName"
+    }
+
     // iff the keytab is specified, PROXY_USER is not supported
-    if (!useKeytab()) {
+    val shortUserName = useKeytab()
+    if (shortUserName.nonEmpty) {
+      setSparkUserName(shortUserName.get)
+    } else {
+      setSparkUserName(proxyUser)
       buffer += PROXY_USER
       buffer += proxyUser
     }
@@ -104,26 +116,27 @@ class SparkProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
-  private def useKeytab(): Boolean = {
+  private def useKeytab(): Option[String] = {
     val principal = conf.getOption(PRINCIPAL)
     val keytab = conf.getOption(KEYTAB)
     if (principal.isEmpty || keytab.isEmpty) {
-      false
+      None
     } else {
       try {
         val ugi = UserGroupInformation
           .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
-        val keytabEnabled = ugi.getShortUserName == proxyUser
-        if (!keytabEnabled) {
+        if (ugi.getShortUserName != proxyUser) {
           warn(s"The session proxy user: $proxyUser is not same with " +
             s"spark principal: ${ugi.getShortUserName}, so we can't support use keytab. " +
             s"Fallback to use proxy user.")
+          None
+        } else {
+          Some(ugi.getShortUserName)
         }
-        keytabEnabled
       } catch {
         case e: IOException =>
           error(s"Failed to login for ${principal.get}", e)
-          false
+          None
       }
     }
   }
