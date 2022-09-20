@@ -24,29 +24,29 @@ import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
   private def mapPlanChildren(plan: LogicalPlan, f: LogicalPlan => LogicalPlan): LogicalPlan = {
-    if (plan.children.isEmpty) {
+    val planChildren = plan.children
+    if (planChildren.isEmpty) {
       plan
     } else {
-      val skippedTablePlans: Seq[LogicalPlan] = plan match {
-        case _ if IcebergCommands.accept(plan.nodeName) =>
-          Seq(
-            getFieldValOptional[LogicalPlan](plan, "table"),
-            getFieldValOptional[LogicalPlan](plan, "targetTable"),
-            getFieldValOptional[LogicalPlan](plan, "sourceTable"))
-            .filter(tableIdentOpt => tableIdentOpt.isDefined)
-            .map(tableIdentOpt => tableIdentOpt.get)
-        case _ => Seq.empty
-      }
+      val skipablePlans: Seq[LogicalPlan] = Seq(
+        getFieldValOptional[LogicalPlan](plan, "table"),
+        getFieldValOptional[LogicalPlan](plan, "targetTable"),
+        getFieldValOptional[LogicalPlan](plan, "sourceTable"))
+        .filter(tableIdentOpt => tableIdentOpt.isDefined)
+        .map(tableIdentOpt => tableIdentOpt.get)
 
-      val mappedChildren = (plan.children diff skippedTablePlans).map(f)
-      plan.withNewChildren(skippedTablePlans ++ mappedChildren)
+      // ensure skipped table is in plan's children
+      val skippedPlans = skipablePlans diff (skipablePlans diff planChildren)
+
+      val mappedChildren = (planChildren diff skippedPlans).map(f)
+      plan.withNewChildren(skippedPlans ++ mappedChildren)
     }
   }
 
