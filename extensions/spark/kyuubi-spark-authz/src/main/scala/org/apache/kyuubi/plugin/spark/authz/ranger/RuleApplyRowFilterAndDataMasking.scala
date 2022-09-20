@@ -36,9 +36,9 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       plan
     } else {
       val skipablePlans: Seq[LogicalPlan] = Seq(
-        getFieldValOptional[LogicalPlan](plan, "table"),
-        getFieldValOptional[LogicalPlan](plan, "targetTable"),
-        getFieldValOptional[LogicalPlan](plan, "sourceTable"))
+        getFieldValOption[LogicalPlan](plan, "table"),
+        getFieldValOption[LogicalPlan](plan, "targetTable"),
+        getFieldValOption[LogicalPlan](plan, "sourceTable"))
         .filter(tableIdentOpt => tableIdentOpt.isDefined)
         .map(tableIdentOpt => tableIdentOpt.get)
 

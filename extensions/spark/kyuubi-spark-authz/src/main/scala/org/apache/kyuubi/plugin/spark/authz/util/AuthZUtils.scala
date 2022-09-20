@@ -44,7 +44,7 @@ private[authz] object AuthZUtils {
     }
   }
 
-  def getFieldValOptional[T](o: Any, name: String): Option[T] = {
+  def getFieldValOption[T](o: Any, name: String): Option[T] = {
     try {
       val value = getFieldVal[T](o, name)
       Some(value)
