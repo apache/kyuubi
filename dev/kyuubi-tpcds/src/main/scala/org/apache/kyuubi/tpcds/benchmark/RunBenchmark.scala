@@ -63,7 +63,7 @@ object RunBenchmark {
         .action((x, c) => c.copy(iterations = x))
         .text("the number of iterations to run")
       opt[String]('r', "results-dir")
-        .action((x, c) => c.copy(resultsDir = Some(x)))
+        .action((x, c) => c.copy(resultsDir = x))
         .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
       help("help")
         .text("prints this usage text")
