@@ -28,7 +28,9 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val sqlExtensions: String =
-    "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
+    if (isSparkV32OrGreater)
+      "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
+    else ""
 
   val catalogV2 = "local"
   val namespace1 = "ns1"

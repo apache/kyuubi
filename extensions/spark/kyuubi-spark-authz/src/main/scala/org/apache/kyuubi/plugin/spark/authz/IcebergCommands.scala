@@ -31,7 +31,7 @@ import org.apache.kyuubi.plugin.spark.authz.v2Commands.v2TablePrivileges
 
 /**
  * Building privilege objects
- * for Iceberg commands rewritten by extention
+ * for Iceberg commands rewritten by extension
  */
 object IcebergCommands extends Enumeration {
 
