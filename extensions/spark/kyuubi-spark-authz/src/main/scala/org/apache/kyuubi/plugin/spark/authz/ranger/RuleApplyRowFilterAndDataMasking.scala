@@ -35,29 +35,32 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
     // RowFilterAndDataMaskingMarker if it is not wrapped yet.
 
     def mapPlanChildren(f: LogicalPlan => LogicalPlan): LogicalPlan = {
-      if (plan.children.nonEmpty) {
-        var isSkippedHead: Boolean = false
+      if (plan.children.isEmpty) {
+        plan
+      } else {
+        val childrenLength = plan.children.length
+        var skippedHeads: Seq[LogicalPlan] = Seq.empty
         val planChildren = plan match {
-          // skip head child for iceberg
-          case p if p.nodeName == "UpdateIcebergTable"
-            | p.nodeName == "MergeIntoIcebergTable" =>
-            isSkippedHead = true
-            p.children.tail
+
+          // skip head child for iceberg commands
+          case p
+              if plan.resolved && (p.nodeName == "UpdateIcebergTable"
+                | p.nodeName == "DeleteFromIcebergTable") =>
+            skippedHeads = plan.children.take(1)
+            p.children.takeRight(childrenLength - 1)
+          case p if p.nodeName == "UnresolvedMergeIntoIcebergTable" =>
+            skippedHeads = plan.children.take(2)
+            Seq()
+
           case _ => plan.children
         }
 
         val mappedChildren = planChildren.map(f)
-        if (isSkippedHead) {
-          plan.withNewChildren(Seq(plan.children.head) ++ mappedChildren)
-        } else {
-          plan.withNewChildren(mappedChildren)
-        }
-      } else {
-        plan
+        plan.withNewChildren(skippedHeads ++ mappedChildren)
       }
     }
 
-     mapPlanChildren  {
+    mapPlanChildren {
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)

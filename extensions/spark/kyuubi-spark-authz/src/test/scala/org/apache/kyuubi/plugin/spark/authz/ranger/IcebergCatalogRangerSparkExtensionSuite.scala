@@ -16,44 +16,34 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-
 // scalastyle:off
-import org.apache.kyuubi.plugin.spark.authz.AccessControlException
-import org.apache.spark.sql.SparkSessionExtensions
-
 import java.nio.file.Files
+
+import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
 /**
  * Tests for RangerSparkExtensionSuite
- * on JdbcTableCatalog with DataSource V2 API.
+ * on Iceberg catalog with DataSource V2 API.
  */
-class IcebergTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
+class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val sqlExtensions: String =
+    "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
 
   val catalogV2 = "local"
-  val jdbcCatalogV2 = "jdbc2"
   val namespace1 = "ns1"
-  val namespace2 = "ns2"
   val table1 = "table1"
-  val table2 = "table2"
   val outputTable1 = "outputTable1"
-  val cacheTable1 = "cacheTable1"
-
-  override protected val extension: SparkSessionExtensions => Unit = {
-    new RangerSparkExtension
-  }
-
 
   override def beforeAll(): Unit = {
-    if (isSparkV31OrGreater) {
+    if (isSparkV32OrGreater) {
       spark.conf.set(
         s"spark.sql.catalog.$catalogV2",
         "org.apache.iceberg.spark.SparkCatalog")
       spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
-      val string = Files.createTempDirectory("spark-warehouse-hive").toString
-      spark.conf.set(s"spark.sql.catalog.$catalogV2.warehouse",
-        string)
-
+      spark.conf.set(
+        s"spark.sql.catalog.$catalogV2.warehouse",
+        Files.createTempDirectory("iceberg-hadoop").toString)
 
       super.beforeAll()
 
@@ -80,10 +70,8 @@ class IcebergTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionS
     spark.sessionState.conf.clear()
   }
 
-
-
-  test("[KYUUBI #3424] MERGE INTO") {
-    assume(isSparkV31OrGreater)
+  test("[KYUUBI #3515] MERGE INTO") {
+    assume(isSparkV32OrGreater)
 
     val mergeIntoSql =
       s"""
@@ -119,33 +107,40 @@ class IcebergTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionS
         s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
         false)
     }
+
+    doAs("admin", sql(mergeIntoSql))
   }
 
-  test("[KYUUBI #3424] UPDATE TABLE") {
-    assume(isSparkV31OrGreater)
+  test("[KYUUBI #3515] UPDATE TABLE") {
+    assume(isSparkV32OrGreater)
 
-//    // UpdateTable
-//    val e5 = intercept[AccessControlException](
-//      doAs(
-//        "someone",
-//        sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Hangzhou' " +
-//          " WHERE id=1")))
-//    assert(e5.getMessage.contains(s"does not have [update] privilege" +
-//      s" on [$namespace1/$table1]"))
+    // UpdateTable
+    val e1 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
+          " WHERE id=1")))
+    assert(e1.getMessage.contains(s"does not have [update] privilege" +
+      s" on [$namespace1/$table1]"))
 
     doAs(
       "admin",
-      sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Hangzhou' " +
+      sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
         " WHERE id=1"))
   }
 
-  test("[KYUUBI #3424] DELETE FROM TABLE") {
-    assume(isSparkV31OrGreater)
+  test("[KYUUBI #3515] DELETE FROM TABLE") {
+    assume(isSparkV32OrGreater)
 
     // DeleteFromTable
     val e6 = intercept[AccessControlException](
-      doAs("someone", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1")))
+      doAs("someone", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2")))
     assert(e6.getMessage.contains(s"does not have [update] privilege" +
       s" on [$namespace1/$table1]"))
+
+    doAs(
+      "admin",
+      sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
+        " WHERE id=2"))
   }
 }
