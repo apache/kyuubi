@@ -74,6 +74,8 @@ services:
       - ./image/spark-defaults.conf:/etc/spark/conf/spark-defaults.conf
       - ./image/kyuubi-defaults.conf:/etc/kyuubi/conf/kyuubi-defaults.conf
       - ./image/kyuubi-log4j2.xml:/etc/kyuubi/conf/log4j2.xml
+      - ./image/load-dataset-tpcds-tiny.sql:/opt/load_data/load-dataset-tpcds-tiny.sql
+      - ./image/load-dataset-tpch-tiny.sql:/opt/load_data/load-dataset-tpch-tiny.sql
     depends_on:
       - metastore
       - minio
