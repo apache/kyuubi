@@ -138,9 +138,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     assert(e6.getMessage.contains(s"does not have [update] privilege" +
       s" on [$namespace1/$table1]"))
 
-    doAs(
-      "admin",
-      sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
-        " WHERE id=2"))
+    doAs("admin", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
   }
 }
