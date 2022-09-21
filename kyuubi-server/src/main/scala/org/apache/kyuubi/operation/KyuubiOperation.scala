@@ -30,7 +30,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPE
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.OperationState
-import org.apache.kyuubi.session.{KyuubiSessionImpl, Session}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiOperation(session: Session) extends AbstractOperation(session) {
@@ -84,6 +84,16 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
   override protected def beforeRun(): Unit = {
     setHasResultSet(true)
     setState(OperationState.RUNNING)
+    sendCredentialsIfNeeded()
+  }
+
+  protected def sendCredentialsIfNeeded(): Unit = {
+    val appUser = session.asInstanceOf[KyuubiSessionImpl].engine.appUser
+    val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
+    sessionManager.credentialsManager.sendCredentialsIfNeeded(
+      session.handle.identifier.toString,
+      appUser,
+      client.sendCredentials)
   }
 
   override protected def afterRun(): Unit = {
