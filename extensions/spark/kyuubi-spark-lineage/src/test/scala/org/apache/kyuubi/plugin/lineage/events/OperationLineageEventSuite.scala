@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.lineage.events
 
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 import org.apache.spark.SparkConf
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent}
@@ -45,7 +45,7 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
   test("operation lineage event capture: for execute sql") {
     val countDownLatch = new CountDownLatch(1)
     var actual: Lineage = null
-    spark.sparkContext.removeSparkListener(new SparkListener {
+    spark.sparkContext.addSparkListener(new SparkListener {
       override def onOtherEvent(event: SparkListenerEvent): Unit = {
         event match {
           case lineageEvent: OperationLineageEvent =>
@@ -68,7 +68,7 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
         List(
           ("col0", Set("default.test_table0.a")),
           ("col1", Set("default.test_table0.b"))))
-      countDownLatch.await()
+      countDownLatch.await(20, TimeUnit.SECONDS)
       assert(actual == expected)
     }
   }
