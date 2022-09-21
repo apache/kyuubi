@@ -93,10 +93,14 @@ class SparkProcessBuilder(
 
     // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
     def setSparkUserName(userName: String): Unit = {
-      buffer += CONF
-      buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
-      buffer += CONF
-      buffer += s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$userName"
+      clusterManager().foreach(cm => {
+        if (cm.startsWith("k8s://")) {
+          buffer += CONF
+          buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
+          buffer += CONF
+          buffer += s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$userName"
+        }
+      })
     }
 
     // if the keytab is specified, PROXY_USER is not supported
