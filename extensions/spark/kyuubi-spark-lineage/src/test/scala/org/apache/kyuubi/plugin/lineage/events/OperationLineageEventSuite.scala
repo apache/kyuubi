@@ -20,10 +20,10 @@ package org.apache.kyuubi.plugin.lineage.events
 import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.SparkConf
+import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent}
 import org.apache.spark.sql.SparkListenerExtensionTest
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
 class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtensionTest {
@@ -45,13 +45,19 @@ class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtens
   test("operation lineage event capture: for execute sql") {
     val countDownLatch = new CountDownLatch(1)
     var actual: Lineage = null
-    EventBus.register[OperationLineageEvent] { event =>
-      event.lineage.foreach {
-        case lineage if lineage.inputTables.nonEmpty =>
-          actual = lineage
-          countDownLatch.countDown()
+    spark.sparkContext.removeSparkListener(new SparkListener {
+      override def onOtherEvent(event: SparkListenerEvent): Unit = {
+        event match {
+          case lineageEvent: OperationLineageEvent =>
+            lineageEvent.lineage.foreach {
+              case lineage if lineage.inputTables.nonEmpty =>
+                actual = lineage
+                countDownLatch.countDown()
+            }
+          case _ =>
+        }
       }
-    }
+    })
 
     withTable("test_table0") { _ =>
       spark.sql("create table test_table0(a string, b string)")

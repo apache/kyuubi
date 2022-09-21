@@ -61,6 +61,14 @@ class EngineEventsStore(store: KVStore) {
     }
   }
 
+  def getStatementLineage(executionId: String): Option[SparkOperationLineageEvent] = {
+    try {
+      Some(store.read(classOf[SparkOperationLineageEvent], executionId))
+    } catch {
+      case _: NoSuchElementException => None
+    }
+  }
+
   def getSessionCount: Long = {
     store.count(classOf[SessionEvent])
   }

@@ -15,27 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.lineage.helper
+package org.apache.spark.kyuubi.lineage
 
-import org.apache.spark.SPARK_VERSION
+import org.apache.spark.SparkContext
+import org.apache.spark.scheduler.SparkListenerEvent
+import org.apache.spark.sql.SparkSession
 
-object SparkListenerHelper {
+object SparkContextHelper {
 
-  lazy val sparkMajorMinorVersion: (Int, Int) = {
-    val runtimeSparkVer = org.apache.spark.SPARK_VERSION
-    val runtimeVersion = SemanticVersion(runtimeSparkVer)
-    (runtimeVersion.majorVersion, runtimeVersion.minorVersion)
+  def globalSparkContext: SparkContext = SparkSession.active.sparkContext
+
+  def postEventToSparkListenerBus(
+      event: SparkListenerEvent,
+      sc: SparkContext = globalSparkContext) {
+    sc.listenerBus.post(event)
   }
 
-  def isSparkVersionAtMost(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtMost(targetVersionString)
-  }
-
-  def isSparkVersionAtLeast(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionAtLeast(targetVersionString)
-  }
-
-  def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
-    SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
-  }
 }

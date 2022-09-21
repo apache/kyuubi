@@ -22,7 +22,7 @@ import org.apache.spark.status.{ElementTrackingStore, KVUtils}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_UI_SESSION_LIMIT, ENGINE_UI_STATEMENT_LIMIT}
-import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
+import org.apache.kyuubi.engine.spark.events.{OperationLineageEventWrapper, SessionEvent, SparkOperationEvent, SparkOperationLineageEvent}
 
 class SparkSQLEngineEventListener(
     kvstore: ElementTrackingStore,
@@ -50,6 +50,12 @@ class SparkSQLEngineEventListener(
     event match {
       case e: SessionEvent => updateSessionStore(e)
       case e: SparkOperationEvent => updateStatementStore(e)
+      case e: SparkListenerEvent if SparkUtilsHelper.lineageClassesArePresent =>
+        e match {
+          case OperationLineageEventWrapper(lineageEvent) =>
+            updateStatementLineageStore(lineageEvent)
+          case _ => // Ignore
+        }
       case _ => // Ignore
     }
   }
@@ -60,6 +66,10 @@ class SparkSQLEngineEventListener(
 
   private def updateStatementStore(event: SparkOperationEvent): Unit = {
     kvstore.write(event, true)
+  }
+
+  private def updateStatementLineageStore(event: SparkOperationLineageEvent): Unit = {
+    kvstore.write(event, false)
   }
 
   private def cleanupSession(count: Long): Unit = {
@@ -84,7 +94,10 @@ class SparkSQLEngineEventListener(
     val toDelete = KVUtils.viewToSeq(view, countToDelete.toInt) { j =>
       j.completeTime != 0
     }
-    toDelete.foreach { j => kvstore.delete(j.getClass, j.statementId) }
+    toDelete.foreach { j =>
+      kvstore.delete(j.getClass, j.statementId)
+      j.executionId.foreach(kvstore.delete(classOf[SparkOperationLineageEvent], _))
+    }
   }
 
   private def calculateNumberToRemove(dataSize: Long, retainedSize: Long): Long = {

@@ -15,42 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi
-
-import scala.util.matching.Regex
-
-import org.apache.spark.SparkConf
-import org.apache.spark.util.Utils
+package org.apache.kyuubi.engine.spark.events
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.plugin.lineage.events.OperationLineageEvent
 
-/**
- * A place to invoke non-public APIs of [[Utils]], anything to be added here need to
- * think twice
- */
-object SparkUtilsHelper extends Logging {
+object OperationLineageEventWrapper extends Logging {
 
-  /**
-   * Redact the sensitive information in the given string.
-   */
-  def redact(regex: Option[Regex], text: String): String = {
-    Utils.redact(regex, text)
-  }
-
-  /**
-   * Get the path of a temporary directory.
-   */
-  def getLocalDir(conf: SparkConf): String = {
-    Utils.getLocalDir(conf)
-  }
-
-  def lineageClassesArePresent: Boolean = {
+  def unapply(event: OperationLineageEvent): Option[SparkOperationLineageEvent] = {
     try {
-      Utils.classForName(
-        "org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener")
-      true
+      val lineage = event.lineage.map(e => {
+        val columnLineage = e.columnLineage.map(c => ColumnLineage(c.column, c.originalColumns))
+        new Lineage(e.inputTables, e.outputTables, columnLineage)
+      })
+      Some(SparkOperationLineageEvent(event.executionId, event.eventTime, lineage, event.exception))
     } catch {
-      case _: ClassNotFoundException | _: NoClassDefFoundError => false
+      case e: Throwable =>
+        warn("Failed to unwrap operation lineage event.", e)
+        None
     }
   }
+
 }

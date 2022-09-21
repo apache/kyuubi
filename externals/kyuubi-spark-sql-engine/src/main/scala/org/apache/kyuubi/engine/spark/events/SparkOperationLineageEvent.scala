@@ -15,9 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin.lineage.events
+package org.apache.kyuubi.engine.spark.events
 
 import org.apache.spark.scheduler.SparkListenerEvent
+
+import org.apache.kyuubi.Utils
+import org.apache.kyuubi.events.KyuubiEvent
 
 case class ColumnLineage(column: String, originalColumns: Set[String])
 
@@ -61,8 +64,12 @@ object Lineage {
   }
 }
 
-case class OperationLineageEvent(
+case class SparkOperationLineageEvent(
     executionId: Long,
     eventTime: Long,
     lineage: Option[Lineage],
-    exception: Option[Throwable]) extends SparkListenerEvent
+    exception: Option[Throwable]) extends KyuubiEvent with SparkListenerEvent {
+
+  override def partitions: Seq[(String, String)] =
+    ("day", Utils.getDateFromTimestamp(eventTime)) :: Nil
+}
