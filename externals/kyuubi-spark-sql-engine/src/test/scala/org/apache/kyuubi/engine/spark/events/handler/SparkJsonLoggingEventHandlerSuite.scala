@@ -42,7 +42,9 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
     KyuubiConf.ENGINE_SPARK_EVENT_LOGGERS.key -> s"$JSON",
     KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot,
     "spark.eventLog.enabled" -> "true",
-    "spark.eventLog.dir" -> logRoot)
+    "spark.eventLog.dir" -> logRoot,
+    "spark.sql.queryExecutionListeners" ->
+      "org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener")
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -125,6 +127,36 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
         assert(result.select("statementId").first().get(0) === statementId)
         assert(result.count() >= 1)
         assert(result.select("statement").first().get(0) === sql)
+      }
+    }
+  }
+
+  test("test SparkOperationLineageEvent") {
+    val statementLineageEventPath = Paths.get(
+      logRoot,
+      "spark_operation_lineage",
+      s"day=$currentDate",
+      spark.sparkContext.applicationId + ".json")
+
+    withJdbcStatement("test1", "test2") { statement =>
+      statement.execute("create table default.test1 (id int)")
+      statement.execute("create table default.test2 (id int)")
+      statement.execute("insert into default.test2 select * from default.test1")
+
+      eventually(timeout(300.seconds), interval(5.seconds)) {
+        val table = statementLineageEventPath.getParent
+        val result = spark.sql(s"select lineage.inputTables as inputTables," +
+          s" lineage.outputTables as outputTables" +
+          s" from `json`.`$table`" +
+          s" where lineage is not null and size(lineage.inputTables) > 0").take(1)
+
+        assert(result.size >= 1)
+        result.foreach(row => {
+          val inputTables = row.getList[String](row.schema.fieldIndex("inputTables"))
+          val outputTables = row.getList[String](row.schema.fieldIndex("outputTables"))
+          assert(inputTables.contains("default.test1"))
+          assert(outputTables.contains("default.test2"))
+        })
       }
     }
   }

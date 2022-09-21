@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark.events
 import org.apache.spark.scheduler.SparkListenerEvent
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.KVIndexParam
 import org.apache.kyuubi.events.KyuubiEvent
 
 case class ColumnLineage(column: String, originalColumns: Set[String])
@@ -65,7 +66,7 @@ object Lineage {
 }
 
 case class SparkOperationLineageEvent(
-    executionId: Long,
+    @KVIndexParam executionId: Long,
     eventTime: Long,
     lineage: Option[Lineage],
     exception: Option[Throwable]) extends KyuubiEvent with SparkListenerEvent {

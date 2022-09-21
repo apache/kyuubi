@@ -23,6 +23,7 @@ import org.apache.spark.status.{ElementTrackingStore, KVUtils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_UI_SESSION_LIMIT, ENGINE_UI_STATEMENT_LIMIT}
 import org.apache.kyuubi.engine.spark.events.{OperationLineageEventWrapper, SessionEvent, SparkOperationEvent, SparkOperationLineageEvent}
+import org.apache.kyuubi.events.EventBus
 
 class SparkSQLEngineEventListener(
     kvstore: ElementTrackingStore,
@@ -54,6 +55,7 @@ class SparkSQLEngineEventListener(
         e match {
           case OperationLineageEventWrapper(lineageEvent) =>
             updateStatementLineageStore(lineageEvent)
+            EventBus.post(lineageEvent)
           case _ => // Ignore
         }
       case _ => // Ignore
