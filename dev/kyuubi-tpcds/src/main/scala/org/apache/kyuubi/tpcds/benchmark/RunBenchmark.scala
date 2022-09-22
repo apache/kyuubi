@@ -19,6 +19,8 @@ package org.apache.kyuubi.tpcds.benchmark
 
 import java.net.InetAddress
 
+import scala.collection.immutable.HashSet
+
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -29,7 +31,8 @@ case class RunConfig(
     filter: Option[String] = None,
     iterations: Int = 3,
     breakdown: Boolean = false,
-    resultsDir: String = "/spark/sql/performance")
+    resultsDir: String = "/spark/sql/performance",
+    whiteList: Option[String] = None)
 
 // scalastyle:off
 /**
@@ -65,6 +68,9 @@ object RunBenchmark {
       opt[String]('r', "results-dir")
         .action((x, c) => c.copy(resultsDir = x))
         .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
+      opt[String]('w',"white list")
+        .action((x, c) => c.copy(whiteList = Some(x)))
+        .text("name of the queries to run, use , split multiple name")
       help("help")
         .text("prints this usage text")
     }
@@ -96,11 +102,19 @@ object RunBenchmark {
       benchmark.tpcds2_4Queries
     }
 
+    val runQueries = config.whiteList.map { w =>
+      val set = w.split(",").filter(_.nonEmpty).toSet
+      // Prefer white list using qxx instead of qxx-vxx
+      allQueries.filter(q => set.contains(q.name.split('-')(0)))
+    } getOrElse {
+      allQueries
+    }
+
     println("== QUERY LIST ==")
-    allQueries.foreach(q => println(q.name))
+    runQueries.foreach(q => println(q.name))
 
     val experiment = benchmark.runExperiment(
-      executionsToRun = allQueries,
+      executionsToRun = runQueries,
       includeBreakdown = config.breakdown,
       iterations = config.iterations,
       tags = Map("host" -> InetAddress.getLocalHost.getHostName))
