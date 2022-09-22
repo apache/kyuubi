@@ -183,7 +183,7 @@ object SparkSQLEngine extends Logging {
   def createSpark(): SparkSession = {
     val engineCredentials = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
     kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
-    _sparkConf.remove(s"spark.${KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY}")
+    _sparkConf.set(s"spark.${KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY}", "")
 
     val session = SparkSession.builder.config(_sparkConf).getOrCreate
 
