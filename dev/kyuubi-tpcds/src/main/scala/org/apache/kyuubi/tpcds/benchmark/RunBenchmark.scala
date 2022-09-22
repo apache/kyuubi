@@ -19,8 +19,6 @@ package org.apache.kyuubi.tpcds.benchmark
 
 import java.net.InetAddress
 
-import scala.collection.immutable.HashSet
-
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -68,7 +66,7 @@ object RunBenchmark {
       opt[String]('r', "results-dir")
         .action((x, c) => c.copy(resultsDir = x))
         .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
-      opt[String]('w',"white list")
+      opt[String]('w', "white-list")
         .action((x, c) => c.copy(whiteList = Some(x)))
         .text("name of the queries to run, use , split multiple name")
       help("help")
