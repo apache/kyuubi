@@ -154,17 +154,19 @@ function stop_kyuubi() {
     TARGET_ID="$(cat "$pid")"
     if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
       echo "Stopping $CLASS"
-      kill "$TARGET_ID" && rm -f "$pid"
+      kill "$TARGET_ID"
       for i in {1..20}
       do
         sleep 0.5
         if [[ ! $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+          rm -f "$pid"
           break
         fi
       done
 
-      if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
-        echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully "
+      if [ -f ${pid} ]; then
+        echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully,
+        and remove pid file: ${pid}"
       else
         kyuubi_logo
         echo "Bye!"
