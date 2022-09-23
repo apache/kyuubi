@@ -62,6 +62,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
   private val zkClient: CuratorFramework = buildZookeeperClient(conf)
   private var serviceNode: PersistentNode = _
+  private var watcher: DeRegisterWatcher = _
 
   def createClient(): Unit = {
     zkClient.start()
@@ -230,15 +231,10 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       version: Option[String] = None,
       external: Boolean = false): Unit = {
     val instance = serviceDiscovery.fe.connectionUrl
-    val watcher = new DeRegisterWatcher(instance, serviceDiscovery)
+    watcher = new DeRegisterWatcher(instance, serviceDiscovery)
     serviceNode = createPersistentNode(conf, namespace, instance, version, external)
     // Set a watch on the serviceNode
-    if (zkClient.checkExists
-        .usingWatcher(watcher.asInstanceOf[Watcher]).forPath(serviceNode.getActualPath) == null) {
-      // No node exists, throw exception
-      throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
-        s"instance[${instance}] on ZooKeeper.")
-    }
+    watchNode()
   }
 
   def deregisterService(): Unit = {
@@ -385,12 +381,26 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     localServiceNode
   }
 
-  class DeRegisterWatcher(instance: String, serviceDiscovery: ServiceDiscovery) extends Watcher {
+  private def watchNode(): Unit = {
+    if (zkClient.checkExists
+        .usingWatcher(watcher.asInstanceOf[Watcher]).forPath(serviceNode.getActualPath) == null) {
+      // No node exists, throw exception
+      throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
+        s"instance[${watcher.instance}] on ZooKeeper.")
+    }
+  }
+
+  class DeRegisterWatcher(val instance: String, serviceDiscovery: ServiceDiscovery)
+    extends Watcher {
     override def process(event: WatchedEvent): Unit = {
       if (event.getType == Watcher.Event.EventType.NodeDeleted) {
-        warn(s"This Kyuubi instance ${instance} is now de-registered from" +
-          s" ZooKeeper. The server will be shut down after the last client session completes.")
+        warn(s"This Kyuubi instance $instance is now de-registered from" +
+          " ZooKeeper. The server will be shut down after the last client session completes.")
+        ZookeeperDiscoveryClient.this.deregisterService()
         serviceDiscovery.stopGracefully()
+      } else if (event.getType == Watcher.Event.EventType.NodeDataChanged) {
+        warn(s"This Kyuubi instance $instance now receives the NodeDataChanged event")
+        ZookeeperDiscoveryClient.this.watchNode()
       }
     }
   }
