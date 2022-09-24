@@ -14,11 +14,12 @@
    limitations under the License.
 
 
-Python DB-APIs
+Python
 ==============
 
 .. toctree::
     :maxdepth: 2
 
     pyhive
+    pyspark
 
