@@ -46,7 +46,7 @@ Refer to docs of the driver and prepare the JDBC driver jar file.
 
 ### Prepare JDBC Hive Dialect extension
 
-Hive Dialect support is requried by Spark for wraping sql correctly and sending to JDBC driver. Kyuubi provides a JDBC dialect extension with auto regiested Hive Daliect support for Spark. Follow the instrunctions in [Hive Dialect Support](../../engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
+Hive Dialect support is requried by Spark for wraping SQL correctly and sending to JDBC driver. Kyuubi provides a JDBC dialect extension with auto regiested Hive Daliect support for Spark. Follow the instrunctions in [Hive Dialect Support](../../engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
 
 ### Including jars of JDBC driver and Hive Dialect extention
 
@@ -110,7 +110,7 @@ jdbcDF.write \
 ### Use PySpark with Pandas
 From PySpark 3.2.0, PySpark supports pandas API on Spark which allows you to scale your pandas workload out.
 
-Pandas-on-Spark DataFrame and Spark DataFrame are virtually interchangeable.More instructions in [From/to pandas and PySpark DataFrames](https://spark.apache.org/docs/latest/api/python/user_guide/pandas_on_spark/pandas_pyspark.html#pyspark).
+Pandas-on-Spark DataFrame and Spark DataFrame are virtually interchangeable. More instructions in [From/to pandas and PySpark DataFrames](https://spark.apache.org/docs/latest/api/python/user_guide/pandas_on_spark/pandas_pyspark.html#pyspark).
 
 
 ```python
