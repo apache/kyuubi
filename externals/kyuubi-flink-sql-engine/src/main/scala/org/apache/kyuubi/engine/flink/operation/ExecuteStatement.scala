@@ -155,9 +155,7 @@ class ExecuteStatement(
 
   private def runOperation(operation: Operation): Unit = {
     val result = executor.executeOperation(sessionId, operation)
-    if (result.getJobClient.isPresent) {
-      jobId = Some(result.getJobClient.get().getJobID)
-    }
+    jobId = result.getJobClient.asScala.map(_.getJobID)
     result.await()
     resultSet = ResultSet.fromTableResult(result)
   }
