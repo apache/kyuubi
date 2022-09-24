@@ -940,7 +940,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     stmt.executeQuery("insert into tbl_a values (1)")
     val queryId = stmt.asInstanceOf[KyuubiStatement].getQueryId
     assert(queryId !== null)
-    // parser the string to check if it's valid Flink job id
+    // parse the string to check if it's valid Flink job id
     assert(JobID.fromHexString(queryId) !== null)
   }
 }
