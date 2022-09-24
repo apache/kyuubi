@@ -701,11 +701,15 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - create/alter/drop catalog") {
-    // TODO: validate table results after FLINK-25558 is resolved
+  test("execute statement - create/drop catalog") {
     withJdbcStatement()({ statement =>
-      statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
-      assert(statement.execute("drop catalog cat_a"))
+      val createResult =
+        statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
+      assert(createResult.next())
+      assert(createResult.getString(1) === "OK")
+      val dropResult = statement.executeQuery("drop catalog cat_a")
+      assert(dropResult.next())
+      assert(dropResult.getString(1) === "OK")
     })
   }
 
@@ -726,11 +730,16 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("execute statement - create/alter/drop database") {
-    // TODO: validate table results after FLINK-25558 is resolved
     withJdbcStatement()({ statement =>
-      statement.executeQuery("create database db_a")
-      assert(statement.execute("alter database db_a set ('k1' = 'v1')"))
-      assert(statement.execute("drop database db_a"))
+      val createResult = statement.executeQuery("create database db_a")
+      assert(createResult.next())
+      assert(createResult.getString(1) === "OK")
+      val alterResult = statement.executeQuery("alter database db_a set ('k1' = 'v1')")
+      assert(alterResult.next())
+      assert(alterResult.getString(1) === "OK")
+      val dropResult = statement.executeQuery("drop database db_a")
+      assert(dropResult.next())
+      assert(dropResult.getString(1) === "OK")
     })
   }
 
@@ -751,20 +760,32 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("execute statement - create/alter/drop table") {
-    // TODO: validate table results after FLINK-25558 is resolved
     withJdbcStatement()({ statement =>
-      statement.executeQuery("create table tbl_a (a string) with ('connector' = 'blackhole')")
-      assert(statement.execute("alter table tbl_a rename to tbl_b"))
-      assert(statement.execute("drop table tbl_b"))
+      val createResult = {
+        statement.executeQuery("create table tbl_a (a string) with ('connector' = 'blackhole')")
+      }
+      assert(createResult.next())
+      assert(createResult.getString(1) === "OK")
+      val alterResult = statement.executeQuery("alter table tbl_a rename to tbl_b")
+      assert(alterResult.next())
+      assert(alterResult.getString(1) === "OK")
+      val dropResult = statement.executeQuery("drop table tbl_b")
+      assert(dropResult.next())
+      assert(dropResult.getString(1) === "OK")
     })
   }
 
   test("execute statement - create/alter/drop view") {
-    // TODO: validate table results after FLINK-25558 is resolved
     withMultipleConnectionJdbcStatement()({ statement =>
-      statement.executeQuery("create view view_a as select 1")
-      assert(statement.execute("alter view view_a rename to view_b"))
-      assert(statement.execute("drop view view_b"))
+      val createResult = statement.executeQuery("create view view_a as select 1")
+      assert(createResult.next())
+      assert(createResult.getString(1) === "OK")
+      val alterResult = statement.executeQuery("alter view view_a rename to view_b")
+      assert(alterResult.next())
+      assert(alterResult.getString(1) === "OK")
+      val dropResult = statement.executeQuery("drop view view_b")
+      assert(dropResult.next())
+      assert(dropResult.getString(1) === "OK")
     })
   }
 
