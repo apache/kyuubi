@@ -30,7 +30,7 @@ case class RunConfig(
     iterations: Int = 3,
     breakdown: Boolean = false,
     resultsDir: String = "/spark/sql/performance",
-    whiteList: Option[String] = None)
+    queries: Option[String] = None)
 
 // scalastyle:off
 /**
@@ -66,8 +66,8 @@ object RunBenchmark {
       opt[String]('r', "results-dir")
         .action((x, c) => c.copy(resultsDir = x))
         .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
-      opt[String]('w', "white-list")
-        .action((x, c) => c.copy(whiteList = Some(x)))
+      opt[String]('q', "queries")
+        .action((x, c) => c.copy(queries = Some(x)))
         .text("name of the queries to run, use , split multiple name")
       help("help")
         .text("prints this usage text")
@@ -100,7 +100,7 @@ object RunBenchmark {
       benchmark.tpcds2_4Queries
     }
 
-    val runQueries = config.whiteList.map { w =>
+    val runQueries = config.queries.map { w =>
       val set = w.split(",").filter(_.nonEmpty).toSet
       // Prefer white list using qxx instead of qxx-vxx
       allQueries.filter(q => set.contains(q.name.split('-')(0)))
