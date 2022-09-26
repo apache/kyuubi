@@ -165,8 +165,23 @@ function stop_kyuubi() {
       done
 
       if [ -f ${pid} ]; then
-        echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully,
-        and remove pid file: ${pid}"
+        echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully"
+        kill -9 ${TARGET_ID}
+        for i in {1..20}
+        do
+          sleep 0.5
+          if [[ ! $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+            rm -f "$pid"
+            break
+          fi
+        done
+        if [ -f ${pid} ]; then
+          echo "Failed to stop kyuubi forcefully after 10 seconds"
+          exit 1
+        else
+          kyuubi_logo
+          echo "Bye!"
+        fi
       else
         kyuubi_logo
         echo "Bye!"
