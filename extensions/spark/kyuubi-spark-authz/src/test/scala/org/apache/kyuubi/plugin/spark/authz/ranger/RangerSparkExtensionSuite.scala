@@ -794,5 +794,4 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     assert(e.getMessage.contains("Authz rules cannot be disabled by a set statement."))
     intercept[AccessControlException](sql(stmt))
   }
-
 }
