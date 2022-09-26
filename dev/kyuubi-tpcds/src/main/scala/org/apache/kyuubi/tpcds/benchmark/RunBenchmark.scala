@@ -102,7 +102,7 @@ object RunBenchmark {
 
     val runQueries = config.queries.map { w =>
       val set = w.split(",").filter(_.nonEmpty).toSet
-      // Prefer white list using qxx instead of qxx-vxx
+      // prefer queries using qxx instead of qxx-vxx
       allQueries.filter(q => set.contains(q.name.split('-')(0)))
     } getOrElse {
       allQueries
