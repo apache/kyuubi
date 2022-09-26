@@ -23,7 +23,7 @@
 ## Requirements
 PySpark works with Python 3.7 and above.
 
-Install PySpark with Spark SQL and optional pandas on Spark using PyPI as follows:
+Install PySpark with Spark SQL and optional pandas support on Spark using PyPI as follows:
 
 ```shell
 pip install pyspark 'pyspark[sql]' 'pyspark[pandas_on_spark]'
@@ -31,7 +31,7 @@ pip install pyspark 'pyspark[sql]' 'pyspark[pandas_on_spark]'
 
 For installation using Conda or manually downloading, please refer to [PySpark installation](https://spark.apache.org/docs/latest/api/python/getting_started/install.html).
 
-## Preperation
+## Preparation
 
 
 ### Prepare JDBC driver 
@@ -46,15 +46,15 @@ Refer to docs of the driver and prepare the JDBC driver jar file.
 
 ### Prepare JDBC Hive Dialect extension
 
-Hive Dialect support is requried by Spark for wraping SQL correctly and sending to JDBC driver. Kyuubi provides a JDBC dialect extension with auto regiested Hive Daliect support for Spark. Follow the instrunctions in [Hive Dialect Support](../../engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
+Hive Dialect support is required by Spark for wrapping SQL correctly and sending it to the JDBC driver. Kyuubi provides a JDBC dialect extension with auto-registered Hive Daliect support for Spark. Follow the instructions in [Hive Dialect Support](../../engines/spark/jdbc-dialect.html) to prepare the plugin jar file `kyuubi-extension-spark-jdbc-dialect_-*.jar`.
 
-### Including jars of JDBC driver and Hive Dialect extention
+### Including jars of JDBC driver and Hive Dialect extension
 
-Choose one of following ways to include jar files to Spark.
+Choose one of the following ways to include jar files in Spark.
 
 - Put the jar file of JDBC driver and Hive Dialect to `$SPARK_HOME/jars` directory to make it visible for the classpath of PySpark. And adding `spark.sql.extensions = org.apache.spark.sql.dialect.KyuubiSparkJdbcDialectExtension` to `$SPARK_HOME/conf/spark_defaults.conf.`
 
-- With spark's start shell, include JDBC driver when you submit the application with `--packages`, and the Hive Dialect plugins with `--jars`
+- With spark's start shell, include the JDBC driver when submitting the application with `--packages`, and the Hive Dialect plugins with `--jars`
 
 ```
 $SPARK_HOME/bin/pyspark --py-files PY_FILES \
@@ -79,10 +79,10 @@ spark = SparkSession.builder \
 
 For further information about PySpark JDBC usage and options, please refer to Spark's [JDBC To Other Databases](https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html).
 
-### Reading and Writing via JDBC data source
+### Using as JDBC Datasource programmingly
 
 ```python
-# Loading data from Kyuubi via HiveDriver as JDBC source
+# Loading data from Kyuubi via HiveDriver as JDBC datasource
 jdbcDF = spark.read \
   .format("jdbc") \
   .options(driver="org.apache.hive.jdbc.HiveDriver",
@@ -94,7 +94,7 @@ jdbcDF = spark.read \
   .load()
 
 
-# Saving data to Kyuubi via HiveDriver as JDBC source
+# Saving data to Kyuubi via HiveDriver as JDBC datasource
 jdbcDF.write \
     .format("jdbc") \
     .options(driver="org.apache.hive.jdbc.HiveDriver",
@@ -104,6 +104,32 @@ jdbcDF.write \
            dbtable="testdb.tgt_table"
            ) \
     .save()
+```
+
+### Using as JDBC Datasource table with SQL
+
+From Spark 3.2.0, [`CREATE DATASOURCE TABLE`](https://spark.apache.org/docs/latest/sql-ref-syntax-ddl-create-table-datasource.html) is supported to create jdbc source with SQL.
+
+
+```python
+# create JDBC Datasource table with DDL
+spark.sql("""CREATE TABLE kyuubi_table USING JDBC
+OPTIONS (
+    driver='org.apache.hive.jdbc.HiveDriver',
+    url='jdbc:hive2://kyuubi_server_ip:port',
+    user='user',
+    password='password',
+    dbtable='testdb.some_table'
+)""")
+
+# read data to dataframe
+jdbcDF = spark.sql("SELECT * FROM kyuubi_table")
+
+# write data from dataframe in overwrite mode
+df.writeTo("kyuubi_table").overwrite
+
+# write data from query
+spark.sql("INSERT INTO kyuubi_table SELECT * FROM some_table")
 ```
 
 
