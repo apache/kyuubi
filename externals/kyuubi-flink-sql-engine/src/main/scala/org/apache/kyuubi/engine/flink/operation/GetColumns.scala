@@ -125,13 +125,13 @@ class GetColumns(
       tableName,                                                        // TABLE_NAME
       column.getName,                                                   // COLUMN_NAME
       Integer.valueOf(toJavaSQLType(logicalType)),                      // DATA_TYPE
-      logicalType.toString.replace(" NOT NULL", ""), // TYPE_NAME
+      logicalType.toString.replace(" NOT NULL", ""),                    // TYPE_NAME
       null,                                                             // COLUMN_SIZE
       null,                                                             // BUFFER_LENGTH
       getDecimalDigits(logicalType),                                    // DECIMAL_DIGITS
       getNumPrecRadix(logicalType),                                     // NUM_PREC_RADIX
       Integer.valueOf(if (logicalType.isNullable) 1 else 0),            // NULLABLE
-      column.getComment.orElse(""),                              // REMARKS
+      column.getComment.orElse(""),                                     // REMARKS
       null,                                                             // COLUMN_DEF
       null,                                                             // SQL_DATA_TYPE
       null,                                                             // SQL_DATETIME_SUB
