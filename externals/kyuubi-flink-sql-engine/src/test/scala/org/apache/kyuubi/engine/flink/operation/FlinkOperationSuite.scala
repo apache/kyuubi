@@ -662,7 +662,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         "create table tbl_src (a int) with ('connector' = 'datagen', 'number-of-rows' = '100')")
       val resultSet = statement.executeQuery(s"select count(a) from tbl_src")
       assert(resultSet.next())
-      assert(resultSet.getInt(1) === 100)
+      assert(resultSet.getInt(1) <= 100)
     }
   }
 
