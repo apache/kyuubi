@@ -181,6 +181,13 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
   }
 
   override def getQueryId(operation: Operation): String = {
-    throw KyuubiSQLException.featureNotSupported()
+    // return empty string instead of null if there's no query id
+    // otherwise there would be TTransportException
+    operation match {
+      case exec: ExecuteStatement => exec.jobId.map(_.toHexString).getOrElse("")
+      case _: PlanOnlyStatement => ""
+      case _ =>
+        throw new IllegalStateException(s"Unsupported Flink operation class $classOf[operation].")
+    }
   }
 }
