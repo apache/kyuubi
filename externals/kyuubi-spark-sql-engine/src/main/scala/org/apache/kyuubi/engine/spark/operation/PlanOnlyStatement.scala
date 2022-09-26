@@ -119,6 +119,9 @@ class PlanOnlyStatement(
       case ExecutionMode =>
         val executed = spark.sql(statement).queryExecution.executedPlan
         iter = new IterableFetchIterator(Seq(Row(executed.toString())))
+      case LineageMode =>
+        val result = parseLineage(spark, plan)
+        iter = new IterableFetchIterator(Seq(Row(result)))
       case UnknownMode => throw unknownModeError(mode)
       case _ => throw notSupportedModeError(mode, "Spark SQL")
     }
@@ -143,10 +146,33 @@ class PlanOnlyStatement(
       case ExecutionMode =>
         val executed = spark.sql(statement).queryExecution.executedPlan
         iter = new IterableFetchIterator(Seq(Row(executed.toJSON)))
+      case LineageMode =>
+        val result = parseLineage(spark, plan)
+        iter = new IterableFetchIterator(Seq(Row(result)))
       case UnknownMode => throw unknownModeError(mode)
       case _ =>
         throw KyuubiSQLException(s"The operation mode $mode" +
           " doesn't support in Spark SQL engine.")
+    }
+  }
+
+  private def parseLineage(spark: SparkSession, plan: LogicalPlan): String = {
+    val analyzed = spark.sessionState.analyzer.execute(plan)
+    spark.sessionState.analyzer.checkAnalysis(analyzed)
+    val optimized = spark.sessionState.optimizer.execute(analyzed)
+    try {
+      if (!SparkUtilsHelper.classesArePresent(
+          "org.apache.kyuubi.plugin.lineage.helper.LineageParser")) {
+        throw new Exception("'org.apache.kyuubi.plugin.lineage.helper.LineageParser' not found," +
+          " need to install kyuubi-spark-lineage plugin before using the 'lineage' mode")
+      }
+      val lineageParser = new LineageParser { def sparkSession = spark }
+      val lineage = lineageParser.parse(optimized)
+      val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+      mapper.writeValueAsString(lineage)
+    } catch {
+      case e: Throwable =>
+        throw KyuubiSQLException(s"Extract columns lineage failed: ${e.getMessage}", e)
     }
   }
 }

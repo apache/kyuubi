@@ -41,6 +41,8 @@ case object PhysicalMode extends PlanOnlyMode { val name = "physical" }
 
 case object ExecutionMode extends PlanOnlyMode { val name = "execution" }
 
+case object LineageMode extends PlanOnlyMode { val name = "lineage" }
+
 case object NoneMode extends PlanOnlyMode { val name = "none" }
 
 case object UnknownMode extends PlanOnlyMode {
@@ -64,6 +66,7 @@ object PlanOnlyMode {
     case OptimizeWithStatsMode.name => OptimizeWithStatsMode
     case PhysicalMode.name => PhysicalMode
     case ExecutionMode.name => ExecutionMode
+    case LineageMode.name => LineageMode
     case NoneMode.name => NoneMode
     case other => UnknownMode.mode(other)
   }
