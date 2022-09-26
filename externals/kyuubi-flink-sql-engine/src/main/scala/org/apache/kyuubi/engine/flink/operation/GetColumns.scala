@@ -126,18 +126,18 @@ class GetColumns(
       column.getName,                                                   // COLUMN_NAME
       Integer.valueOf(toJavaSQLType(logicalType)),                      // DATA_TYPE
       logicalType.toString.replace(" NOT NULL", ""),                    // TYPE_NAME
-      null,                                                             // COLUMN_SIZE
+      getColumnSize(logicalType),                                       // COLUMN_SIZE
       null,                                                             // BUFFER_LENGTH
       getDecimalDigits(logicalType),                                    // DECIMAL_DIGITS
       getNumPrecRadix(logicalType),                                     // NUM_PREC_RADIX
       Integer.valueOf(if (logicalType.isNullable) 1 else 0),            // NULLABLE
-      column.getComment.orElse(""),                                     // REMARKS
+      column.getComment.orElse(null),                                   // REMARKS
       null,                                                             // COLUMN_DEF
       null,                                                             // SQL_DATA_TYPE
       null,                                                             // SQL_DATETIME_SUB
       null,                                                             // CHAR_OCTET_LENGTH
       Integer.valueOf(pos),                                             // ORDINAL_POSITION
-      "YES",                                                            // IS_NULLABLE
+      if (logicalType.isNullable) "YES" else "NO",                      // IS_NULLABLE
       null,                                                             // SCOPE_CATALOG
       null,                                                             // SCOPE_SCHEMA
       null,                                                             // SCOPE_TABLE
@@ -156,13 +156,13 @@ class GetColumns(
     case c: Class[_] if c == classOf[BigIntType] => java.sql.Types.BIGINT
     case c: Class[_] if c == classOf[FloatType] => java.sql.Types.FLOAT
     case c: Class[_] if c == classOf[DoubleType] => java.sql.Types.DOUBLE
-    case c: Class[_] if c == classOf[CharType] => java.sql.Types.VARCHAR
+    case c: Class[_] if c == classOf[CharType] => java.sql.Types.CHAR
     case c: Class[_] if c == classOf[VarCharType] => java.sql.Types.VARCHAR
     case c: Class[_] if c == classOf[DecimalType] => java.sql.Types.DECIMAL
     case c: Class[_] if c == classOf[DateType] => java.sql.Types.DATE
     case c: Class[_] if c == classOf[TimestampType] => java.sql.Types.TIMESTAMP
-    case c: Class[_] if c == classOf[DayTimeIntervalType] => java.sql.Types.TIMESTAMP
-    case c: Class[_] if c == classOf[YearMonthIntervalType] => java.sql.Types.TIMESTAMP
+    case c: Class[_] if c == classOf[DayTimeIntervalType] => java.sql.Types.OTHER
+    case c: Class[_] if c == classOf[YearMonthIntervalType] => java.sql.Types.OTHER
     case c: Class[_] if c == classOf[ZonedTimestampType] => java.sql.Types.TIMESTAMP
     case c: Class[_] if c == classOf[TimeType] => java.sql.Types.TIME
     case c: Class[_] if c == classOf[BinaryType] => java.sql.Types.BINARY
@@ -173,29 +173,45 @@ class GetColumns(
     case c: Class[_] if c == classOf[StructuredType] => java.sql.Types.STRUCT
     case c: Class[_] if c == classOf[DistinctType] => java.sql.Types.OTHER
     case c: Class[_] if c == classOf[RawType[_]] => java.sql.Types.OTHER
-    case c: Class[_] if c == classOf[RowType] => java.sql.Types.OTHER
+    case c: Class[_] if c == classOf[RowType] => java.sql.Types.STRUCT
     case c: Class[_] if c == classOf[SymbolType[_]] => java.sql.Types.OTHER
     case _ => java.sql.Types.OTHER
   }
 
-  private def getDecimalDigits(flinkType: LogicalType): Integer = flinkType.getClass match {
-    case c: Class[_] if c == classOf[BooleanType] => 0
-    case c: Class[_] if c == classOf[IntType] => 0
+  private def getColumnSize(flinkType: LogicalType): Integer = flinkType.getClass match {
+    case c: Class[_] if c == classOf[TinyIntType] => 3
+    case c: Class[_] if c == classOf[SmallIntType] => 5
+    case c: Class[_] if c == classOf[IntType] => 10
+    case c: Class[_] if c == classOf[DateType] => 10
+    case c: Class[_] if c == classOf[BigIntType] => 19
     case c: Class[_] if c == classOf[FloatType] => 7
     case c: Class[_] if c == classOf[DoubleType] => 15
     case c: Class[_] if c == classOf[DecimalType] => flinkType.asInstanceOf[DecimalType].getScale
-    case c: Class[_] if c == classOf[TimestampType] => 6
+    case c: Class[_] if c == classOf[VarCharType] => Integer.MAX_VALUE
+    case c: Class[_] if c == classOf[BinaryType] => Integer.MAX_VALUE
+    case c: Class[_] if c == classOf[TimestampType] => 29
+    case _ => null
+  }
+
+  private def getDecimalDigits(flinkType: LogicalType): Integer = flinkType.getClass match {
+    case c: Class[_] if c == classOf[BooleanType] => 0
+    case c: Class[_] if c == classOf[TinyIntType] => 0
+    case c: Class[_] if c == classOf[SmallIntType] => 0
+    case c: Class[_] if c == classOf[IntType] => 0
+    case c: Class[_] if c == classOf[BigIntType] => 0
+    case c: Class[_] if c == classOf[FloatType] => 7
+    case c: Class[_] if c == classOf[DoubleType] => 15
+    case c: Class[_] if c == classOf[DecimalType] => flinkType.asInstanceOf[DecimalType].getScale
+    case c: Class[_] if c == classOf[TimestampType] => 9
     case _ => null
   }
 
   private def getNumPrecRadix(flinkType: LogicalType): Integer = flinkType.getClass match {
-    case c: Class[_] if c == classOf[TinyIntType] => 10
-    case c: Class[_] if c == classOf[SmallIntType] => 10
-    case c: Class[_] if c == classOf[IntType] => 10
-    case c: Class[_] if c == classOf[BigIntType] => 10
-    case c: Class[_] if c == classOf[FloatType] => 10
-    case c: Class[_] if c == classOf[DoubleType] => 10
-    case c: Class[_] if c == classOf[DecimalType] => 10
+    case c: Class[_]
+        if c == classOf[TinyIntType] || c == classOf[SmallIntType]
+          || c == classOf[IntType] || c == classOf[BigIntType]
+          || c == classOf[FloatType] || c == classOf[DoubleType]
+          || c == classOf[DecimalType] => 10
     case _ => null
   }
 }
