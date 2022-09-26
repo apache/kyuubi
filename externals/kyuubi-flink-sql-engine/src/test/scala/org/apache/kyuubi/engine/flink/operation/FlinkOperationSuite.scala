@@ -34,7 +34,7 @@ import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
-import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiStatement}
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.operation.{HiveJDBCTestHelper, NoneMode}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.service.ServiceState._
@@ -977,14 +977,14 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("get query id") {
-    val conn = new KyuubiConnection(jdbcUrl, new Properties())
-    val stmt = conn.createStatement()
-    stmt.executeQuery("create table tbl_a (a int) with ('connector' = 'blackhole')")
-    assert(stmt.asInstanceOf[KyuubiStatement].getQueryId === null)
-    stmt.executeQuery("insert into tbl_a values (1)")
-    val queryId = stmt.asInstanceOf[KyuubiStatement].getQueryId
-    assert(queryId !== null)
-    // parse the string to check if it's valid Flink job id
-    assert(JobID.fromHexString(queryId) !== null)
+    withJdbcStatement("tbl_a") { stmt =>
+      stmt.executeQuery("create table tbl_a (a int) with ('connector' = 'blackhole')")
+      assert(stmt.asInstanceOf[KyuubiStatement].getQueryId === null)
+      stmt.executeQuery("insert into tbl_a values (1)")
+      val queryId = stmt.asInstanceOf[KyuubiStatement].getQueryId
+      assert(queryId !== null)
+      // parse the string to check if it's valid Flink job id
+      assert(JobID.fromHexString(queryId) !== null)
+    }
   }
 }
