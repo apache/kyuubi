@@ -30,7 +30,7 @@ case class RunConfig(
     iterations: Int = 3,
     breakdown: Boolean = false,
     resultsDir: String = "/spark/sql/performance",
-    queries: Option[String] = None)
+    queries: Set[String])
 
 // scalastyle:off
 /**
@@ -67,7 +67,14 @@ object RunBenchmark {
         .action((x, c) => c.copy(resultsDir = x))
         .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
       opt[String]('q', "queries")
-        .action((x, c) => c.copy(queries = Some(x)))
+        .action((x, c) =>
+          c.copy(queries = {
+            if (x.nonEmpty || !x.isBlank) {
+              x.split(",").filter(_.nonEmpty).toSet
+            } else {
+              Set.empty[String]
+            }
+          }))
         .text("name of the queries to run, use , split multiple name")
       help("help")
         .text("prints this usage text")
@@ -100,13 +107,7 @@ object RunBenchmark {
       benchmark.tpcds2_4Queries
     }
 
-    val runQueries = config.queries.map { w =>
-      val set = w.split(",").filter(_.nonEmpty).toSet
-      // prefer queries using qxx instead of qxx-vxx
-      allQueries.filter(q => set.contains(q.name.split('-')(0)))
-    } getOrElse {
-      allQueries
-    }
+    val runQueries = allQueries.filter(q => config.queries.contains(q.name.split('-')(0)))
 
     println("== QUERY LIST ==")
     runQueries.foreach(q => println(q.name))
