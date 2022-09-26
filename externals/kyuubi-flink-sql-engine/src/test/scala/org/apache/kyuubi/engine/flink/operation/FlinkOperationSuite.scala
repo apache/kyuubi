@@ -19,10 +19,11 @@ package org.apache.kyuubi.engine.flink.operation
 
 import java.nio.file.Files
 import java.sql.DatabaseMetaData
-import java.util.UUID
+import java.util.{Properties, UUID}
 
 import scala.collection.JavaConverters._
 
+import org.apache.flink.api.common.JobID
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -34,6 +35,7 @@ import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
+import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiStatement}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.service.ServiceState._
@@ -973,5 +975,17 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     withThriftClient { client =>
       assertDefaultDatabase(client, "default_database", true)
     }
+  }
+
+  test("get query id") {
+    val conn = new KyuubiConnection(jdbcUrl, new Properties())
+    val stmt = conn.createStatement()
+    stmt.executeQuery("create table tbl_a (a int) with ('connector' = 'blackhole')")
+    assert(stmt.asInstanceOf[KyuubiStatement].getQueryId === null)
+    stmt.executeQuery("insert into tbl_a values (1)")
+    val queryId = stmt.asInstanceOf[KyuubiStatement].getQueryId
+    assert(queryId !== null)
+    // parse the string to check if it's valid Flink job id
+    assert(JobID.fromHexString(queryId) !== null)
   }
 }

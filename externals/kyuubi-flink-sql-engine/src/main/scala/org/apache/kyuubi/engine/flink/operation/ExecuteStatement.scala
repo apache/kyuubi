@@ -23,6 +23,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.flink.api.common.JobID
 import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.client.gateway.TypedResult
 import org.apache.flink.table.data.{GenericArrayData, GenericMapData, RowData}
@@ -53,6 +54,8 @@ class ExecuteStatement(
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session, getHandle)
+
+  var jobId: Option[JobID] = None
 
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
@@ -152,6 +155,7 @@ class ExecuteStatement(
 
   private def runOperation(operation: Operation): Unit = {
     val result = executor.executeOperation(sessionId, operation)
+    jobId = result.getJobClient.asScala.map(_.getJobID)
     result.await()
     resultSet = ResultSet.fromTableResult(result)
   }
