@@ -39,6 +39,7 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
   SparkRangerAdminPlugin.init()
 
   override def apply(v1: SparkSessionExtensions): Unit = {
+    v1.injectParser { case (_, parser) => new DisabledExcludeAuthzParser(parser) }
     v1.injectResolutionRule(_ => new RuleReplaceShowObjectCommands())
     v1.injectResolutionRule(_ => new RuleApplyPermanentViewMarker())
     v1.injectResolutionRule(new RuleApplyRowFilterAndDataMasking(_))

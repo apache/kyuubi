@@ -784,4 +784,15 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("Authz rules should not be disabled by a set statement") {
+    val stmt = s"CREATE TABLE IF NOT EXISTS default.my_table (key int, value int) USING $format"
+    intercept[AccessControlException](sql(stmt))
+    val e = intercept[AccessControlException] {
+      spark.sql("set spark.sql.optimizer.excludedRules=org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization")
+    }
+    assert(e.getMessage.contains("Authz rules cannot be disabled by a set statement."))
+    intercept[AccessControlException](sql(stmt))
+  }
+
 }
