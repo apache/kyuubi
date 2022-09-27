@@ -47,34 +47,33 @@ class TrinoSessionImpl(
 
   var trinoContext: TrinoContext = _
   private var clientSession: ClientSession = _
-  private var catalogName: String = ""
+  private var catalogName: String = null
+  private var databaseName: String = null
 
   private val sessionEvent = TrinoSessionEvent(this)
 
   override def open(): Unit = {
     normalizedConf.foreach {
       case ("use:catalog", catalog) => catalogName = catalog
-      case ("use:database", database) => clientSession = createClientSession(database)
+      case ("use:database", database) => databaseName = database
       case _ => // do nothing
     }
 
     val httpClient = new OkHttpClient.Builder().build()
 
-    if (clientSession == null) {
-      clientSession = createClientSession()
-    }
+    clientSession = createClientSession()
     trinoContext = TrinoContext(httpClient, clientSession)
 
     super.open()
     EventBus.post(sessionEvent)
   }
 
-  private def createClientSession(schema: String = null): ClientSession = {
+  private def createClientSession(): ClientSession = {
     val sessionConf = sessionManager.getConf
     val connectionUrl = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_URL).getOrElse(
       throw KyuubiSQLException("Trino server url can not be null!"))
 
-    if (catalogName.isEmpty) {
+    if (catalogName == null) {
       catalogName = sessionConf.get(
         KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG).getOrElse(
         throw KyuubiSQLException("Trino default catalog can not be null!"))
@@ -93,7 +92,7 @@ class TrinoSessionImpl(
       Collections.emptySet(),
       null,
       catalogName,
-      schema,
+      databaseName,
       null,
       ZoneId.systemDefault(),
       Locale.getDefault,
