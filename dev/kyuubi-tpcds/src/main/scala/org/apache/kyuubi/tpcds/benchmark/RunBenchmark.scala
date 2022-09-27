@@ -30,7 +30,7 @@ case class RunConfig(
     iterations: Int = 3,
     breakdown: Boolean = false,
     resultsDir: String = "/spark/sql/performance",
-    queries: Set[String])
+    queries: Set[String] = Set.empty)
 
 // scalastyle:off
 /**
