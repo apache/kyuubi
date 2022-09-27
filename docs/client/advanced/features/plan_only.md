@@ -17,11 +17,11 @@
 
 # Plan Only Execution Mode
 
-plan only execution mode is implemented through Spark extensions, so it is only supported Spark engine so far.
+Plan only execution mode is implemented through Spark extensions, so it is only supported Spark engine so far.
 
-It can print Spark's parser, analyze or optimize phases execution plan, and supports session-level and operation-level parameter settings, which are used in the following ways.
+It can print Spark's parsing, analysis or optimization phases execution planning, and supports application-level and session-level parameter settings, which are used in the following ways.
 
-## Session level parameter setting
+## Application-level parameter setting
 
 You can add parameters to the URL when establishing a JDBC connection, the parameter is kyuubi.operation.plan.only.mode=parse/analyze/optimize. 
 JDBC URLs have the following format:
@@ -59,7 +59,7 @@ The results are as follows:
 0: jdbc:hive2://0.0.0.0:10009/default>
 ```
 
-## Operation level parameter setting
+## Session-level parameter setting
 
 You can also set the kyuubi.operation.plan.only.mode parameter by executing the set command after the connection has been established
 ```shell
