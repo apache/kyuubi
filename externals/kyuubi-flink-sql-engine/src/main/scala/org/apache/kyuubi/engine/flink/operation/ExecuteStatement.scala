@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.flink.api.common.JobID
-import org.apache.flink.table.api.ResultKind
+import org.apache.flink.table.api.{ResultKind, TableResult}
 import org.apache.flink.table.client.gateway.TypedResult
 import org.apache.flink.table.data.{GenericArrayData, GenericMapData, RowData}
 import org.apache.flink.table.data.binary.{BinaryArrayData, BinaryMapData}
@@ -154,7 +154,12 @@ class ExecuteStatement(
   }
 
   private def runOperation(operation: Operation): Unit = {
-    val result = executor.executeOperation(sessionId, operation)
+    // FLINK-24461 executeOperation method changes the return type
+    // from TableResult to TableResultInternal
+    val executeOperation = DynMethods.builder("executeOperation")
+      .impl(executor.getClass, classOf[String], classOf[Operation])
+      .build(executor)
+    val result = executeOperation.invoke[TableResult](sessionId, operation)
     jobId = result.getJobClient.asScala.map(_.getJobID)
     result.await()
     resultSet = ResultSet.fromTableResult(result)
