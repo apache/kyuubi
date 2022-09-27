@@ -102,7 +102,12 @@ object RunBenchmark {
       benchmark.tpcds2_4Queries
     }
 
-    val runQueries = allQueries.filter(q => config.queries.contains(q.name.split('-')(0)))
+    val runQueries =
+      if (config.queries.nonEmpty) {
+        allQueries.filter(q => config.queries.contains(q.name.split('-')(0)))
+      } else {
+        allQueries
+      }
 
     println("== QUERY LIST ==")
     runQueries.foreach(q => println(q.name))
