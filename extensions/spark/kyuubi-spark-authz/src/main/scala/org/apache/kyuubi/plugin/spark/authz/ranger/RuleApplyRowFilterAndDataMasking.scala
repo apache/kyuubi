@@ -30,7 +30,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
-  private def mapPlanChildren(plan: LogicalPlan, f: LogicalPlan => LogicalPlan): LogicalPlan = {
+  private def mapPlanChildren(plan: LogicalPlan)(f: LogicalPlan => LogicalPlan): LogicalPlan = {
     val planChildren = plan.children
     if (planChildren.isEmpty) {
       plan
@@ -52,29 +52,27 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
   override def apply(plan: LogicalPlan): LogicalPlan = {
     // Apply FilterAndMasking and wrap HiveTableRelation/LogicalRelation/DataSourceV2Relation with
     // RowFilterAndDataMaskingMarker if it is not wrapped yet.
-    mapPlanChildren(
-      plan,
-      {
-        case p: RowFilterAndDataMaskingMarker => p
-        case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
-          val table = getHiveTable(hiveTableRelation)
-          applyFilterAndMasking(hiveTableRelation, table.identifier, spark)
-        case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
-          val table = getDatasourceTable(logicalRelation)
-          if (table.isEmpty) {
-            logicalRelation
-          } else {
-            applyFilterAndMasking(logicalRelation, table.get.identifier, spark)
-          }
-        case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
-          val tableIdentifier = getDatasourceV2Identifier(datasourceV2Relation)
-          if (tableIdentifier.isEmpty) {
-            datasourceV2Relation
-          } else {
-            applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
-          }
-        case other => apply(other)
-      })
+    mapPlanChildren(plan)({
+      case p: RowFilterAndDataMaskingMarker => p
+      case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
+        val table = getHiveTable(hiveTableRelation)
+        applyFilterAndMasking(hiveTableRelation, table.identifier, spark)
+      case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
+        val table = getDatasourceTable(logicalRelation)
+        if (table.isEmpty) {
+          logicalRelation
+        } else {
+          applyFilterAndMasking(logicalRelation, table.get.identifier, spark)
+        }
+      case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
+        val tableIdentifier = getDatasourceV2Identifier(datasourceV2Relation)
+        if (tableIdentifier.isEmpty) {
+          datasourceV2Relation
+        } else {
+          applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
+        }
+      case other => apply(other)
+    })
   }
 
   private def applyFilterAndMasking(

@@ -138,7 +138,7 @@ private[authz] object AuthZUtils {
    * @return
    */
   def passSparkVersionCheck: (Option[String], Option[String]) => Boolean =
-    (mostSparkVersion: Option[String], leastSparkVersion: Option[String]) => {
+    (mostSparkVersion, leastSparkVersion) => {
       mostSparkVersion.forall(isSparkVersionAtMost) &&
       leastSparkVersion.forall(isSparkVersionAtLeast)
     }
