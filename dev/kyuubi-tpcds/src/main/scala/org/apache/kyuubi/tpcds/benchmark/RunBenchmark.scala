@@ -29,7 +29,8 @@ case class RunConfig(
     filter: Option[String] = None,
     iterations: Int = 3,
     breakdown: Boolean = false,
-    resultsDir: String = "/spark/sql/performance")
+    resultsDir: String = "/spark/sql/performance",
+    queries: Set[String] = Set.empty)
 
 // scalastyle:off
 /**
@@ -65,6 +66,11 @@ object RunBenchmark {
       opt[String]('r', "results-dir")
         .action((x, c) => c.copy(resultsDir = x))
         .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
+      opt[String]('q', "queries")
+        .action { case (x, c) =>
+          c.copy(queries = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
+        }
+        .text("name of the queries to run, use , split multiple name")
       help("help")
         .text("prints this usage text")
     }
@@ -96,11 +102,18 @@ object RunBenchmark {
       benchmark.tpcds2_4Queries
     }
 
+    val runQueries =
+      if (config.queries.nonEmpty) {
+        allQueries.filter(q => config.queries.contains(q.name.split('-')(0)))
+      } else {
+        allQueries
+      }
+
     println("== QUERY LIST ==")
-    allQueries.foreach(q => println(q.name))
+    runQueries.foreach(q => println(q.name))
 
     val experiment = benchmark.runExperiment(
-      executionsToRun = allQueries,
+      executionsToRun = runQueries,
       includeBreakdown = config.breakdown,
       iterations = config.iterations,
       tags = Map("host" -> InetAddress.getLocalHost.getHostName))
