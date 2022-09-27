@@ -67,14 +67,9 @@ object RunBenchmark {
         .action((x, c) => c.copy(resultsDir = x))
         .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref")
       opt[String]('q', "queries")
-        .action((x, c) =>
-          c.copy(queries = {
-            if (x.nonEmpty || !x.isBlank) {
-              x.split(",").filter(_.nonEmpty).toSet
-            } else {
-              Set.empty[String]
-            }
-          }))
+        .action { case (x, c) =>
+          c.copy(queries = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
+        }
         .text("name of the queries to run, use , split multiple name")
       help("help")
         .text("prints this usage text")
