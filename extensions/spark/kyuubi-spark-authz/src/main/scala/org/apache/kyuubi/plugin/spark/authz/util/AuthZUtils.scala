@@ -140,7 +140,7 @@ private[authz] object AuthZUtils {
   def passSparkVersionCheck: (Option[String], Option[String]) => Boolean =
     (mostSparkVersion: Option[String], leastSparkVersion: Option[String]) => {
       mostSparkVersion.forall(isSparkVersionAtMost) &&
-        leastSparkVersion.forall(isSparkVersionAtLeast)
+      leastSparkVersion.forall(isSparkVersionAtLeast)
     }
 
   def quoteIfNeeded(part: String): String = {
