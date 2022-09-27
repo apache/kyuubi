@@ -37,9 +37,9 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
     } else {
       // skip effected table within plan's children
       val skippedMapChildren: Seq[LogicalPlan] = Seq(
-        getFieldValOption[LogicalPlan](plan, "table"),
-        getFieldValOption[LogicalPlan](plan, "targetTable"),
-        getFieldValOption[LogicalPlan](plan, "sourceTable"))
+        getFieldValOpt[LogicalPlan](plan, "table"),
+        getFieldValOpt[LogicalPlan](plan, "targetTable"),
+        getFieldValOpt[LogicalPlan](plan, "sourceTable"))
         .collect {
           case t if t.isDefined => t.get
         } intersect planChildren

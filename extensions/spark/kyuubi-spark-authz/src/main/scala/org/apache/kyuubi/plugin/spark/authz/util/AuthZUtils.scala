@@ -44,14 +44,7 @@ private[authz] object AuthZUtils {
     }
   }
 
-  def getFieldValOption[T](o: Any, name: String): Option[T] = {
-    try {
-      val value = getFieldVal[T](o, name)
-      Some(value)
-    } catch {
-      case _: Exception => None
-    }
-  }
+  def getFieldValOpt[T](o: Any, name: String): Option[T] = Try(getFieldVal[T](o, name)).toOption
 
   def invoke(
       obj: AnyRef,
