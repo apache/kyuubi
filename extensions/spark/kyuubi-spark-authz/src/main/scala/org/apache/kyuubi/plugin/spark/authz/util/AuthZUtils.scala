@@ -130,6 +130,19 @@ private[authz] object AuthZUtils {
     SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
   }
 
+  /**
+   * check if spark version satisfied
+   * first param is option of supported most  spark version,
+   * and secont param is option of supported least spark version
+   *
+   * @return
+   */
+  def passSparkVersionCheck: (Option[String], Option[String]) => Boolean =
+    (mostSparkVersion: Option[String], leastSparkVersion: Option[String]) => {
+      mostSparkVersion.forall(isSparkVersionAtMost) &&
+        leastSparkVersion.forall(isSparkVersionAtLeast)
+    }
+
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
       part

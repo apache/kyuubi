@@ -49,11 +49,7 @@ object IcebergCommands extends Enumeration {
       val command = IcebergCommands.withName(commandName)
 
       // check spark version requirements
-      def passSparkVersionCheck: Boolean =
-        (command.mostVer.isEmpty || isSparkVersionAtMost(command.mostVer.get)) &&
-          (command.leastVer.isEmpty || isSparkVersionAtLeast(command.leastVer.get))
-
-      passSparkVersionCheck
+      passSparkVersionCheck(command.mostVer, command.leastVer)
     } catch {
       case _: NoSuchElementException => false
     }
