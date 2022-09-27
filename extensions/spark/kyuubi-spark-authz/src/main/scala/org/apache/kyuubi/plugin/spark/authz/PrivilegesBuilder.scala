@@ -523,9 +523,9 @@ object PrivilegesBuilder {
 
       case "ReplaceArcticData" =>
         val relation = getPlanField[Any]("table")
-        val identifier = getFieldVal[AnyRef](relation, "identifier")
-        val namespace = invoke(identifier, "namespace").asInstanceOf[Array[String]]
-        val table = invoke(identifier, "name").asInstanceOf[String]
+        val identifier = getFieldVal[AnyRef](relation, "identifier").asInstanceOf[Option[AnyRef]]
+        val namespace = invoke(identifier.get, "namespace").asInstanceOf[Array[String]]
+        val table = invoke(identifier.get, "name").asInstanceOf[String]
         outputObjs += PrivilegeObject(
           TABLE_OR_VIEW,
           PrivilegeObjectActionType.UPDATE,
