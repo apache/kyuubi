@@ -52,7 +52,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
   override def apply(plan: LogicalPlan): LogicalPlan = {
     // Apply FilterAndMasking and wrap HiveTableRelation/LogicalRelation/DataSourceV2Relation with
     // RowFilterAndDataMaskingMarker if it is not wrapped yet.
-    mapPlanChildren(plan)({
+    mapPlanChildren(plan) {
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
@@ -72,7 +72,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
           applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
         }
       case other => apply(other)
-    })
+    }
   }
 
   private def applyFilterAndMasking(
