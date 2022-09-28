@@ -70,13 +70,97 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("get columns") {
-    withJdbcStatement() { statement =>
-      val exceptionMsg = intercept[Exception](statement.getConnection.getMetaData.getColumns(
-        null,
-        null,
-        null,
-        null)).getMessage
-      assert(exceptionMsg.contains(s"Unsupported Operation type GetColumns"))
+    val tableName = "flink_get_col_operation"
+
+    withJdbcStatement(tableName) { statement =>
+      statement.execute(
+        s"""
+           | create table $tableName (
+           |  c0 boolean,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer,
+           |  c4 bigint,
+           |  c5 float,
+           |  c6 double,
+           |  c7 decimal(38,20),
+           |  c8 decimal(10,2),
+           |  c9 string,
+           |  c10 array<bigint>,
+           |  c11 array<string>,
+           |  c12 map<smallint, tinyint>,
+           |  c13 date,
+           |  c14 timestamp,
+           |  c15 binary
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      val metaData = statement.getConnection.getMetaData
+
+      Seq("%", null, ".*", "c.*") foreach { columnPattern =>
+        val rowSet = metaData.getColumns("", "", tableName, columnPattern)
+
+        import java.sql.Types._
+        val expectedJavaTypes = Seq(
+          BOOLEAN,
+          TINYINT,
+          SMALLINT,
+          INTEGER,
+          BIGINT,
+          FLOAT,
+          DOUBLE,
+          DECIMAL,
+          DECIMAL,
+          VARCHAR,
+          ARRAY,
+          ARRAY,
+          JAVA_OBJECT,
+          DATE,
+          TIMESTAMP,
+          BINARY)
+
+        val expectedSqlType = Seq(
+          "BOOLEAN",
+          "TINYINT",
+          "SMALLINT",
+          "INT",
+          "BIGINT",
+          "FLOAT",
+          "DOUBLE",
+          "DECIMAL(38, 20)",
+          "DECIMAL(10, 2)",
+          "STRING",
+          "ARRAY<BIGINT>",
+          "ARRAY<STRING>",
+          "MAP<SMALLINT, TINYINT>",
+          "DATE",
+          "TIMESTAMP(6)",
+          "BINARY(1)")
+
+        var pos = 0
+
+        while (rowSet.next()) {
+          assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+          assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+          assert(rowSet.getString(TABLE_NAME) === tableName)
+          assert(rowSet.getString(COLUMN_NAME) === s"c$pos")
+          assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))
+          assert(rowSet.getString(TYPE_NAME) === expectedSqlType(pos))
+          assert(rowSet.getInt(BUFFER_LENGTH) === 0)
+          assert(rowSet.getInt(NULLABLE) === 1)
+          assert(rowSet.getInt(ORDINAL_POSITION) === pos)
+          assert(rowSet.getString(IS_NULLABLE) === "YES")
+          assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
+          pos += 1
+        }
+
+        assert(pos === expectedSqlType.length, "all columns should have been verified")
+      }
+      val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
+      assert(!rowSet.next())
     }
   }
 
