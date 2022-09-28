@@ -18,6 +18,8 @@ package org.apache.kyuubi.engine.jdbc.doris
 
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
+import java.sql.{Date, Timestamp}
+
 class StatementSuite extends WithDorisEngine with HiveJDBCTestHelper {
 
   test("test select") {
@@ -77,9 +79,9 @@ class StatementSuite extends WithDorisEngine with HiveJDBCTestHelper {
         assert(resultSet1.getObject(4) == 4)
         assert(resultSet1.getObject(5) == 5)
         assert(resultSet1.getObject(6) == "6")
-        assert(resultSet1.getObject(7) == "7.7")
-        assert(resultSet1.getObject(8) == "2022-05-08")
-        assert(resultSet1.getObject(9) == "2022-05-08 17:47:45")
+        assert(resultSet1.getObject(7) == new java.math.BigDecimal("7.7"))
+        assert(resultSet1.getObject(8) == Date.valueOf("2022-05-08"))
+        assert(resultSet1.getObject(9) == Timestamp.valueOf("2022-05-08 17:47:45"))
         assert(resultSet1.getObject(10) == "a")
         assert(resultSet1.getObject(11) == "Hello")
         assert(resultSet1.getObject(12) == "Hello, Kyuubi")
