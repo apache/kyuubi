@@ -17,11 +17,13 @@
 
 package org.apache.kyuubi.server.rest.client
 
+import java.io.File
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.shaded.com.nimbusds.jose.util.StandardCharset
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
@@ -312,6 +314,23 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "--endTime",
       "20220101000000")
     testPrematureExitForControlCli(listArgs1, "Batch List (from 0 total 0)")
+  }
+
+  test("test batch yaml without request field") {
+    val tempDir = Utils.createTempDir()
+    val yamlFile1 = Files.write(
+      new File(tempDir.toFile, "f1.yaml").toPath,
+      s"""
+         |apiVersion: v1
+         |user: test_user
+         |""".stripMargin
+        .getBytes(StandardCharset.UTF_8))
+    val args = Array(
+      "create",
+      "batch",
+      "-f",
+      yamlFile1.toFile.getAbsolutePath)
+    testPrematureExitForControlCli(args, "No batch request field specified in yaml")
   }
 
   private def getBatchIdFromBatchReport(batchReport: String): String = {
