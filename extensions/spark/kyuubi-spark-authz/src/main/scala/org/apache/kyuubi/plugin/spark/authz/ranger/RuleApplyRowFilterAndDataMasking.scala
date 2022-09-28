@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 
@@ -35,14 +35,12 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
     if (planChildren.isEmpty) {
       plan
     } else {
-      // skip effected table within plan's children
-      val skippedMapChildren: Seq[LogicalPlan] = Seq(
-        getFieldValOpt[LogicalPlan](plan, "table"),
-        getFieldValOpt[LogicalPlan](plan, "targetTable"),
-        getFieldValOpt[LogicalPlan](plan, "sourceTable"))
-        .collect {
-          case t if t.isDefined => t.get
-        } intersect planChildren
+      val skippedMapChildren = plan match {
+        case _ if IcebergCommands.accept(plan.nodeName) =>
+          IcebergCommands.skipMappedChildren(plan)
+        case _ =>
+          Seq.empty
+      }
 
       val mappedChildren = (planChildren diff skippedMapChildren).map(f)
       plan.withNewChildren(skippedMapChildren ++ mappedChildren)
@@ -52,7 +50,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
   override def apply(plan: LogicalPlan): LogicalPlan = {
     // Apply FilterAndMasking and wrap HiveTableRelation/LogicalRelation/DataSourceV2Relation with
     // RowFilterAndDataMaskingMarker if it is not wrapped yet.
-    mapPlanChildren(plan)({
+    mapPlanChildren(plan) {
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
@@ -72,7 +70,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
           applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
         }
       case other => apply(other)
-    })
+    }
   }
 
   private def applyFilterAndMasking(

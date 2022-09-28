@@ -55,6 +55,16 @@ object IcebergCommands extends Enumeration {
     }
   }
 
+  def skipMappedChildren(plan: LogicalPlan): Seq[LogicalPlan] = {
+    Seq(
+      getFieldValOpt[LogicalPlan](plan, "table"),
+      getFieldValOpt[LogicalPlan](plan, "targetTable"),
+      getFieldValOpt[LogicalPlan](plan, "sourceTable"))
+      .collect {
+        case t if t.isDefined => t.get
+      } intersect plan.children
+  }
+
   /**
    * Command privilege builder
    *
