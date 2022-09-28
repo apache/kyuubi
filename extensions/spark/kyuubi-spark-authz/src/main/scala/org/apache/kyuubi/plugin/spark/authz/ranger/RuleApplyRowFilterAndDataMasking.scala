@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Alias
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, View}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
@@ -52,6 +52,10 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         } else {
           applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
         }
+      case permanentView: View if hasResolvedPermanentView(permanentView) =>
+        val viewIdent = getPermView(permanentView)
+        applyFilterAndMasking(permanentView, viewIdent.identifier, spark)
+
       case other => apply(other)
     }
   }

@@ -116,6 +116,10 @@ private[authz] object AuthZUtils {
     }
   }
 
+  def getPermView(plan: LogicalPlan): CatalogTable = {
+    getFieldVal[CatalogTable](plan, "desc")
+  }
+
   def isSparkVersionAtMost(targetVersionString: String): Boolean = {
     SemanticVersion(SPARK_VERSION).isVersionAtMost(targetVersionString)
   }
