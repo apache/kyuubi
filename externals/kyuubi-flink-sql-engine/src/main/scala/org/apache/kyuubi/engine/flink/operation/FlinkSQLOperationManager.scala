@@ -147,9 +147,14 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    throw new UnsupportedOperationException(
-      "Unsupported Operation type GetColumns. You can execute " +
-        "DESCRIBE statement instead to get column infos.")
+    val op = new GetColumns(
+      session = session,
+      catalogNameOrEmpty = catalogName,
+      schemaNamePattern = schemaName,
+      tableNamePattern = tableName,
+      columnNamePattern = columnName)
+
+    addOperation(op)
   }
 
   override def newGetFunctionsOperation(
