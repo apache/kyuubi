@@ -16,9 +16,9 @@
  */
 package org.apache.kyuubi.engine.jdbc.doris
 
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
-
 import java.sql.{Date, Timestamp}
+
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class StatementSuite extends WithDorisEngine with HiveJDBCTestHelper {
 
