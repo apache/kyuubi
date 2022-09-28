@@ -89,12 +89,15 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         Alias(maskExpr, attr.name)()
       }
     }
+    val newOutputAttributes = newOutput.map(a => a.toAttribute)
 
     if (filterExprStr.isEmpty) {
-      Project(newOutput, RowFilterAndDataMaskingMarker(plan))
+      Project(newOutput, RowFilterAndDataMaskingMarker(plan,
+        newOutputAttributes))
     } else {
       val filterExpr = parse(filterExprStr.get)
-      Project(newOutput, Filter(filterExpr, RowFilterAndDataMaskingMarker(plan)))
+      Project(newOutput, Filter(filterExpr,
+        RowFilterAndDataMaskingMarker(plan, newOutputAttributes)))
     }
   }
 }

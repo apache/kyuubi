@@ -344,7 +344,8 @@
             }
           ],
           "users": [
-            "bob"
+            "bob",
+            "bowen"
           ],
           "groups": [],
           "conditions": [],
@@ -698,6 +699,70 @@
           ],
           "users": [
             "bob"
+          ],
+          "groups": [],
+          "conditions": [],
+          "delegateAdmin": false
+        }
+      ],
+      "rowFilterPolicyItems": [],
+      "options": {},
+      "validitySchedules": [],
+      "policyLabels": [
+        ""
+      ],
+      "id": 5,
+      "guid": "ed1868a1-bf79-4721-a3d5-6815cc7d4986",
+      "isEnabled": true,
+      "version": 1
+    },{
+      "service": "hive_jenkins",
+      "name": "src_value_hash",
+      "policyType": 1,
+      "policyPriority": 0,
+      "description": "",
+      "isAuditEnabled": true,
+      "resources": {
+        "database": {
+          "values": [
+            "default",
+            "spark_catalog"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "value1"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "view1"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
+      },
+      "policyItems": [],
+      "denyPolicyItems": [],
+      "allowExceptions": [],
+      "denyExceptions": [],
+      "dataMaskPolicyItems": [
+        {
+          "dataMaskInfo": {
+            "dataMaskType": "MASK_HASH"
+          },
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [
+            "bowen"
           ],
           "groups": [],
           "conditions": [],
