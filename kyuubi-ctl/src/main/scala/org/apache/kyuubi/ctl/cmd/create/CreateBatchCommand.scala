@@ -45,7 +45,7 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
         throw ControlCliException(1)
       }
       val config = Option(request.get("configs").asInstanceOf[JMap[Object, Object]].asScala)
-        .map(_.map { case (k, v) => (k.toString, v.toString) }.asJava)
+        .map(_.map { case (k, v) => (k.toString, Option(v).map(_.toString).getOrElse("")) }.asJava)
         .getOrElse(Collections.emptyMap())
       val args = Option(request.get("args").asInstanceOf[JList[Object]].asScala)
         .map(_.map(x => x.toString).asJava)

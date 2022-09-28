@@ -60,6 +60,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
                          |    wait.completion: true
                          |    k1: v1
                          |    1: test_integer_key
+                         |    key:
                          |options:
                          |  verbose: true""".stripMargin
     Files.write(Paths.get(batchFile), batch_basic.getBytes(StandardCharsets.UTF_8))
