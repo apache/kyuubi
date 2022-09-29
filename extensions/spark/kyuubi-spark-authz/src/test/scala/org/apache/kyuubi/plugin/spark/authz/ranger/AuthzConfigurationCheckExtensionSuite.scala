@@ -33,7 +33,7 @@ class AuthzConfigurationCheckExtensionSuite extends AnyFunSuite with SparkSessio
   }
 
   test("apply spark configuration restriction rules") {
-    sql("set spark.sql.kyuubi.conf.restricted.list=spark.sql.abc,spark.sql.xyz")
+    sql("set spark.kyuubi.conf.restricted.list=spark.sql.abc,spark.sql.xyz")
     val extension = AuthzConfigurationCheckExtension(spark)
     val p1 = sql("set spark.sql.runSQLOnFiles=true").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p1))
@@ -45,7 +45,7 @@ class AuthzConfigurationCheckExtensionSuite extends AnyFunSuite with SparkSessio
     intercept[AccessControlException](extension.apply(p4))
     val p5 = sql("set spark.sql.xyz=abc").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p5))
-    val p6 = sql("set spark.sql.kyuubi.conf.restricted.list=123").queryExecution.analyzed
+    val p6 = sql("set spark.kyuubi.conf.restricted.list=123").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p6))
     val p7 = sql("set spark.sql.efg=hijk").queryExecution.analyzed
     extension.apply(p7)

@@ -28,20 +28,18 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
  */
 case class AuthzConfigurationCheckExtension(spark: SparkSession) extends (LogicalPlan => Unit) {
 
-  final val RESTRICT_LIST_KEY = "spark.sql.kyuubi.conf.restricted.list"
+  final val RESTRICT_LIST_KEY = "spark.kyuubi.conf.restricted.list"
 
-  private val bannedList: Seq[String] =
-    RESTRICT_LIST_KEY ::
-      "spark.sql.runSQLOnFiles" ::
-      "spark.sql.extensions" ::
-      spark.conf.getOption(RESTRICT_LIST_KEY).map(_.split(',').toList).getOrElse(Nil)
+  private val restrictedConfList: Set[String] =
+    Set(RESTRICT_LIST_KEY, "spark.sql.runSQLOnFiles", "spark.sql.extensions") ++
+      spark.conf.getOption(RESTRICT_LIST_KEY).map(_.split(',').toSet).getOrElse(Set.empty)
 
   override def apply(plan: LogicalPlan): Unit = plan match {
     case SetCommand(Some((
           "spark.sql.optimizer.excludedRules" | "spark.sql.adaptive.optimizer.excludedRules",
           Some(v)))) if v.contains("org.apache.kyuubi.plugin.spark.authz.ranger") =>
       throw new AccessControlException("Excluding Authz security rules is not allowed")
-    case SetCommand(Some((k, Some(_)))) if bannedList.contains(k) =>
+    case SetCommand(Some((k, Some(_)))) if restrictedConfList.contains(k) =>
       throw new AccessControlException(s"Modifying config $k is not allowed")
     case _ =>
   }
