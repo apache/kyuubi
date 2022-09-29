@@ -53,8 +53,8 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
           applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
         }
       case permanentView: PermanentViewMarker =>
-        val viewIdent = getPermView(permanentView)
-        applyFilterAndMasking(permanentView, viewIdent.identifier, spark)
+        val viewIdent = permanentView.catalogTable.identifier
+        applyFilterAndMasking(permanentView, viewIdent, spark)
       case other => apply(other)
     }
   }
