@@ -524,7 +524,7 @@
       "version": 26
     },{
       "service": "hive_jenkins",
-      "name": "src_key _less_than_20",
+      "name": "src_key_less_than_20_perm_view",
       "policyType": 2,
       "policyPriority": 0,
       "description": "",
@@ -575,8 +575,8 @@
       "policyLabels": [
         ""
       ],
-      "id": 4,
-      "guid": "f588a9ed-f7b1-48f7-9d0d-c12cf2b9b7ed",
+      "id": 22,
+      "guid": "c240a7ea-9d26-4db2-b925-d5dbe49bd447 \n",
       "isEnabled": true,
       "version": 26
     },
@@ -710,7 +710,7 @@
     },
     {
       "service": "hive_jenkins",
-      "name": "src_value_hash",
+      "name": "src_value_hash_perm_view",
       "policyType": 1,
       "policyPriority": 0,
       "description": "",
@@ -832,8 +832,8 @@
       "policyLabels": [
         ""
       ],
-      "id": 5,
-      "guid": "ed1868a1-bf79-4721-a3d5-6815cc7d4986",
+      "id": 20,
+      "guid": "bfeddeab-50d0-4902-985f-42559efa39c3",
       "isEnabled": true,
       "version": 1
     },
