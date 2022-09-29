@@ -85,7 +85,12 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         attr
       } else {
         val maskExpr = parse(maskExprStr.get)
-        Alias(maskExpr, attr.name)(exprId = attr.exprId)
+        plan match {
+          case _: PermanentViewMarker =>
+            Alias(maskExpr, attr.name)(exprId = attr.exprId)
+          case _ =>
+            Alias(maskExpr, attr.name)()
+        }
       }
     }
 
