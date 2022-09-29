@@ -286,6 +286,42 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
   }
 
+  test("row level filter with permanent view") {
+    val db = "default"
+    val table = "src"
+    val view1 = "view1"
+    val col = "key"
+    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
+    val createView =
+      s"CREATE OR REPLACE VIEW $db.$view1" +
+        s" AS SELECT * FROM $db.$table"
+
+    withCleanTmpResources(Seq(
+      (s"$db.$table", "table"),
+      (s"$db.$view1", "view"))) {
+      doAs("admin", assert(Try { sql(create) }.isSuccess))
+      doAs("admin", assert(Try { sql(createView) }.isSuccess))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
+
+      Seq(
+        s"SELECT value FROM $db.$view1",
+        s"SELECT value as key FROM $db.$view1",
+        s"SELECT max(value) FROM $db.$view1",
+        s"SELECT coalesce(max(value), 1) FROM $db.$view1",
+        s"SELECT value FROM $db.$view1 WHERE value in (SELECT value as key FROM $db.$view1)")
+        .foreach { q =>
+          doAs(
+            "bowen", {
+              withClue(q) {
+                assert(sql(q).collect() === Seq(Row(1)))
+              }
+            })
+        }
+    }
+  }
+
   test("data masking") {
     val db = "default"
     val table = "src"
