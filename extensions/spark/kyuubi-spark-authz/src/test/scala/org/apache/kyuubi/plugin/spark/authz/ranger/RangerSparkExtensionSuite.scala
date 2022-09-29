@@ -396,7 +396,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           Seq(Row(1), Row(20), Row(30))))
 
       Seq(
-        s"SELECT value1, value2, value3, value4, value5 FROM $db.$view1",
+        s"SELECT value1, value2 FROM $db.$view1",
 //        s"SELECT value1 as key, value2, value3, value4, value5 FROM $db.$view1",
 //        s"SELECT max(value1), max(value2), max(value3), max(value4), max(value5) FROM $db.$view1",
 //        s"SELECT coalesce(max(value1), 1), coalesce(max(value2), 1), coalesce(max(value3), 1), " +

@@ -116,8 +116,8 @@ private[authz] object AuthZUtils {
     }
   }
 
-  def getPermView(plan: LogicalPlan): CatalogTable = {
-    getFieldVal[CatalogTable](plan, "desc")
+  def getPermView(plan: PermanentViewMarker): CatalogTable = {
+    getFieldVal[CatalogTable](plan.child, "desc")
   }
 
   def isSparkVersionAtMost(targetVersionString: String): Boolean = {

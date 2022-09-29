@@ -20,13 +20,13 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Alias
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, View}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -52,10 +52,9 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         } else {
           applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
         }
-      case permanentView: View if hasResolvedPermanentView(permanentView) =>
+      case permanentView: PermanentViewMarker =>
         val viewIdent = getPermView(permanentView)
         applyFilterAndMasking(permanentView, viewIdent.identifier, spark)
-
       case other => apply(other)
     }
   }
@@ -89,15 +88,12 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         Alias(maskExpr, attr.name)()
       }
     }
-    val newOutputAttributes = newOutput.map(a => a.toAttribute)
 
     if (filterExprStr.isEmpty) {
-      Project(newOutput, RowFilterAndDataMaskingMarker(plan,
-        newOutputAttributes))
+      Project(newOutput, RowFilterAndDataMaskingMarker(plan))
     } else {
       val filterExpr = parse(filterExprStr.get)
-      Project(newOutput, Filter(filterExpr,
-        RowFilterAndDataMaskingMarker(plan, newOutputAttributes)))
+      Project(newOutput, Filter(filterExpr, RowFilterAndDataMaskingMarker(plan)))
     }
   }
 }
