@@ -360,51 +360,25 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val col = "key"
     val create =
       s"CREATE TABLE IF NOT EXISTS $db.$table" +
-        s" ($col int, value1 int, value2 string, value3 string, value4 timestamp, value5 string)" +
+        s" ($col int, value1 int, value2 string)" +
         s" USING $format"
-
 
     val createView =
       s"CREATE OR REPLACE VIEW $db.$view1" +
-//        s" (value1 , value2 , value3 , value4 , value5 )" +
         s" AS SELECT * FROM $db.$table"
 
     withCleanTmpResources(Seq(
-      (s"$db.${table}2", "table"), (s"$db.$view1", "view"),
-      (s"$db.$table", "table"))) {
+      (s"$db.$table", "table"),
+      (s"$db.$view1", "view"))) {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs("admin", assert(Try { sql(createView) }.isSuccess))
       doAs(
         "admin",
         sql(
-          s"INSERT INTO $db.$table SELECT 1, 1, 'hello', 'world', " +
-            s"timestamp'2018-11-17 12:34:56', 'World'"))
-      doAs(
-        "admin",
-        sql(
-          s"INSERT INTO $db.$table SELECT 20, 2, 'kyuubi', 'y', " +
-            s"timestamp'2018-11-17 12:34:56', 'world'"))
-      doAs(
-        "admin",
-        sql(
-          s"INSERT INTO $db.$table SELECT 30, 3, 'spark', 'a'," +
-            s" timestamp'2018-11-17 12:34:56', 'world'"))
-
-      doAs(
-        "kent",
-        assert(sql(s"SELECT key FROM $db.$table order by key").collect() ===
-          Seq(Row(1), Row(20), Row(30))))
+          s"INSERT INTO $db.$table SELECT 1, 1, 'hello'"))
 
       Seq(
-        s"SELECT value1, value2 FROM $db.$view1",
-//        s"SELECT value1 as key, value2, value3, value4, value5 FROM $db.$view1",
-//        s"SELECT max(value1), max(value2), max(value3), max(value4), max(value5) FROM $db.$view1",
-//        s"SELECT coalesce(max(value1), 1), coalesce(max(value2), 1), coalesce(max(value3), 1), " +
-//          s"coalesce(max(value4), timestamp '2018-01-01 22:33:44'), coalesce(max(value5), 1) " +
-//          s"FROM $db.$view1",
-//        s"SELECT value1, value2, value3, value4, value5 FROM $db.$view1 WHERE value2 in" +
-//          s" (SELECT value2 as key FROM $db.$view1)"
-      )
+        s"SELECT value1, value2 FROM $db.$view1")
         .foreach { q =>
           doAs(
             "bowen", {
@@ -413,19 +387,10 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
                   Seq(
                     Row(
                       DigestUtils.md5Hex("1"),
-                      "xxxxx",
-                      "worlx",
-                      Timestamp.valueOf("2018-01-01 00:00:00"),
-                      "Xorld")))
+                      "hello")))
               }
             })
         }
-//      doAs(
-//        "bob", {
-//          sql(s"CREATE TABLE $db.src2 using $format AS SELECT value1 FROM $db.$table")
-//          assert(sql(s"SELECT value1 FROM $db.${table}2").collect() ===
-//            Seq(Row(DigestUtils.md5Hex("1"))))
-//        })
     }
   }
 

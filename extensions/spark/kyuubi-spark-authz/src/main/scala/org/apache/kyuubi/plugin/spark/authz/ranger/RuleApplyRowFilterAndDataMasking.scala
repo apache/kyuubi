@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Alias
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, SubqueryAlias}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
@@ -85,7 +85,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         attr
       } else {
         val maskExpr = parse(maskExprStr.get)
-        Alias(maskExpr, attr.name)()
+        Alias(maskExpr, attr.name)(exprId = attr.exprId)
       }
     }
 
