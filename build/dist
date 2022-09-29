@@ -231,13 +231,13 @@ echo "Hive $HIVE_VERSION" >> "$DISTDIR/RELEASE"
 echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
 # Copy kyuubi server jars
-cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/*.jar" "$DISTDIR/jars/"
+cp -r "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/jars/"
 
 # Copy kyuubi beeline jars
-cp "$KYUUBI_HOME/kyuubi-hive-beeline/target/*.jar" "$DISTDIR/beeline-jars/"
+cp "$KYUUBI_HOME"/kyuubi-hive-beeline/target/*.jar "$DISTDIR/beeline-jars/"
 
 # Share the jars w/ server to reduce binary size
-for jar in $(ls "$DISTDIR/jars/*.jar"); do
+for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/beeline-jars/$jar" ]]; then
     (cd $DISTDIR/beeline-jars; ln -snf "../jars/$jar" "$DISTDIR/beeline-jars/$jar")
   fi
@@ -251,7 +251,7 @@ cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engin
 
 # Copy trino engines
 cp "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/kyuubi-trino-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/trino/"
-cp -r "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/scala-$SCALA_VERSION/jars/*.jar" "$DISTDIR/externals/engines/trino/"
+cp -r "$KYUUBI_HOME"/externals/kyuubi-trino-engine/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/externals/engines/trino/"
 
 # Share the jars w/ server to reduce binary size
 for jar in $(ls "$DISTDIR/jars/"); do
@@ -265,10 +265,10 @@ cp "$KYUUBI_HOME/externals/kyuubi-hive-sql-engine/target/kyuubi-hive-sql-engine_
 
 # Copy jdbc engines
 cp "$KYUUBI_HOME/externals/kyuubi-jdbc-engine/target/kyuubi-jdbc-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/jdbc/"
-cp -r "$KYUUBI_HOME/externals/kyuubi-jdbc-engine/target/scala-$SCALA_VERSION/jars/*.jar" "$DISTDIR/externals/engines/jdbc/"
+cp -r "$KYUUBI_HOME"/externals/kyuubi-jdbc-engine/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/externals/engines/jdbc/"
 
 # Share the jars w/ server to reduce binary size
-for jar in $(ls "$DISTDIR/jars/*.jar"); do
+for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/externals/engines/jdbc/$jar" ]]; then
     (cd $DISTDIR/externals/engines/jdbc; ln -snf "../../../jars/$jar" "$DISTDIR/externals/engines/jdbc/$jar")
   fi
@@ -278,7 +278,7 @@ done
 if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" ]]; then
   mkdir -p "$DISTDIR/tools/spark-block-cleaner/kubernetes"
   mkdir -p "$DISTDIR/tools/spark-block-cleaner/jars"
-  cp -r "$KYUUBI_HOME/tools/spark-block-cleaner/kubernetes/*" "$DISTDIR/tools/spark-block-cleaner/kubernetes/"
+  cp -r "$KYUUBI_HOME"/tools/spark-block-cleaner/kubernetes/* "$DISTDIR/tools/spark-block-cleaner/kubernetes/"
   cp "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/tools/spark-block-cleaner/jars/"
 fi
 
