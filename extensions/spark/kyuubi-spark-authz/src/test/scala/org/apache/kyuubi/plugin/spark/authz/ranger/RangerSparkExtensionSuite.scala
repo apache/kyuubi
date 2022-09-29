@@ -286,19 +286,19 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
   }
 
-  test("row level filter with permanent view") {
+  test("KYUUBI #3581: row level filter on permanent view") {
     val db = "default"
     val table = "src"
-    val view1 = "view1"
+    val permView = "perm_view"
     val col = "key"
     val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
     val createView =
-      s"CREATE OR REPLACE VIEW $db.$view1" +
+      s"CREATE OR REPLACE VIEW $db.$permView" +
         s" AS SELECT * FROM $db.$table"
 
     withCleanTmpResources(Seq(
       (s"$db.$table", "table"),
-      (s"$db.$view1", "view"))) {
+      (s"$db.$permView", "view"))) {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs("admin", assert(Try { sql(createView) }.isSuccess))
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
@@ -306,14 +306,14 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
       doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
 
       Seq(
-        s"SELECT value FROM $db.$view1",
-        s"SELECT value as key FROM $db.$view1",
-        s"SELECT max(value) FROM $db.$view1",
-        s"SELECT coalesce(max(value), 1) FROM $db.$view1",
-        s"SELECT value FROM $db.$view1 WHERE value in (SELECT value as key FROM $db.$view1)")
+        s"SELECT value FROM $db.$permView",
+        s"SELECT value as key FROM $db.$permView",
+        s"SELECT max(value) FROM $db.$permView",
+        s"SELECT coalesce(max(value), 1) FROM $db.$permView",
+        s"SELECT value FROM $db.$permView WHERE value in (SELECT value as key FROM $db.$permView)")
         .foreach { q =>
           doAs(
-            "bowen", {
+            "perm_view_user", {
               withClue(q) {
                 assert(sql(q).collect() === Seq(Row(1)))
               }
@@ -389,10 +389,10 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
   }
 
-  test("data masking with permanent view") {
+  test("KYUUBI #3581: data masking on permanent view") {
     val db = "default"
     val table = "src"
-    val view1 = "view1"
+    val permView = "perm_view"
     val col = "key"
     val create =
       s"CREATE TABLE IF NOT EXISTS $db.$table" +
@@ -400,12 +400,12 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         s" USING $format"
 
     val createView =
-      s"CREATE OR REPLACE VIEW $db.$view1" +
+      s"CREATE OR REPLACE VIEW $db.$permView" +
         s" AS SELECT * FROM $db.$table"
 
     withCleanTmpResources(Seq(
       (s"$db.$table", "table"),
-      (s"$db.$view1", "view"))) {
+      (s"$db.$permView", "view"))) {
       doAs("admin", assert(Try { sql(create) }.isSuccess))
       doAs("admin", assert(Try { sql(createView) }.isSuccess))
       doAs(
@@ -414,10 +414,10 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           s"INSERT INTO $db.$table SELECT 1, 1, 'hello'"))
 
       Seq(
-        s"SELECT value1, value2 FROM $db.$view1")
+        s"SELECT value1, value2 FROM $db.$permView")
         .foreach { q =>
           doAs(
-            "bowen", {
+            "perm_view_user", {
               withClue(q) {
                 assert(sql(q).collect() ===
                   Seq(

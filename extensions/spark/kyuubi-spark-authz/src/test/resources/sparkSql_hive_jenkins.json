@@ -345,7 +345,7 @@
           ],
           "users": [
             "bob",
-            "bowen"
+            "perm_view_user"
           ],
           "groups": [],
           "conditions": [],
@@ -539,7 +539,7 @@
         },
         "table": {
           "values": [
-            "view1"
+            "perm_view"
           ],
           "isExcludes": false,
           "isRecursive": false
@@ -562,7 +562,7 @@
             }
           ],
           "users": [
-            "bowen"
+            "perm_view_user"
           ],
           "groups": [],
           "conditions": [],
@@ -797,7 +797,7 @@
         },
         "table": {
           "values": [
-            "view1"
+            "perm_view"
           ],
           "isExcludes": false,
           "isRecursive": false
@@ -819,7 +819,7 @@
             }
           ],
           "users": [
-            "bowen"
+            "perm_view_user"
           ],
           "groups": [],
           "conditions": [],
