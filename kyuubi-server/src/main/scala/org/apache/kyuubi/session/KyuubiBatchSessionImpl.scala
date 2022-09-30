@@ -119,8 +119,7 @@ class KyuubiBatchSessionImpl(
         realUser = user,
         username = user,
         ipAddress = ipAddress,
-        // TODO: support to transfer fe connection url when opening session
-        kyuubiInstance = KyuubiRestFrontendService.getConnectionUrl,
+        kyuubiInstance = connectionUrl,
         state = OperationState.PENDING.toString,
         resource = batchRequest.getResource,
         className = batchRequest.getClassName,

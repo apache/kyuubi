@@ -61,8 +61,6 @@ case class KyuubiSessionEvent(
 
 object KyuubiSessionEvent {
   def apply(session: KyuubiSession): KyuubiSessionEvent = {
-    assert(KyuubiServer.kyuubiServer != null)
-    val serverIP = KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
     KyuubiSessionEvent(
       session.handle.identifier.toString,
       session.protocol.getValue,
@@ -70,7 +68,7 @@ object KyuubiSessionEvent {
       session.name.getOrElse(""),
       session.user,
       session.ipAddress,
-      serverIP,
+      session.connectionUrl,
       session.conf,
       session.createTime)
   }
