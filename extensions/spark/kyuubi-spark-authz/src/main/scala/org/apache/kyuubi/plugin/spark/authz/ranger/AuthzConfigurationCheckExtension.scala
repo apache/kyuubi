@@ -42,7 +42,7 @@ case class AuthzConfigurationCheckExtension(spark: SparkSession) extends (Logica
           Some(v)))) if v.contains("org.apache.kyuubi.plugin.spark.authz.ranger") =>
       throw new AccessControlException("Excluding Authz security rules is not allowed")
     case SetCommand(Some((k, Some(_)))) if bannedList.contains(k) =>
-      throw new AccessControlException(s"Modifying $k is not allowed")
+      throw new AccessControlException(s"Modifying config $k is not allowed")
     case _ =>
   }
 }
