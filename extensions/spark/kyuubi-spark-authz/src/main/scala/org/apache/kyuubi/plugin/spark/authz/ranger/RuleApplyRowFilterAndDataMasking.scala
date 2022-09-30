@@ -25,8 +25,8 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.RowFilterAndDataMaskingMarker
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -52,6 +52,9 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         } else {
           applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
         }
+      case permanentView: PermanentViewMarker =>
+        val viewIdent = permanentView.catalogTable.identifier
+        applyFilterAndMasking(permanentView, viewIdent, spark)
       case other => apply(other)
     }
   }
@@ -82,7 +85,12 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         attr
       } else {
         val maskExpr = parse(maskExprStr.get)
-        Alias(maskExpr, attr.name)()
+        plan match {
+          case _: PermanentViewMarker =>
+            Alias(maskExpr, attr.name)(exprId = attr.exprId)
+          case _ =>
+            Alias(maskExpr, attr.name)()
+        }
       }
     }
 
