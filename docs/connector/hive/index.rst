@@ -18,3 +18,5 @@ Connectors for Hive SQL Query Engine
 
 .. toctree::
     :maxdepth: 2
+
+    iceberg
