@@ -28,7 +28,7 @@ Authorization in Kyuubi
 -----------------------
 
 Storage-based Authorization
-***************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As Kyuubi supports multi tenancy, a tenant can only visit authorized resources,
 including computing resources, data, etc.
@@ -41,7 +41,7 @@ as well as their permissions.
 Storage-based authorization offers users with database, table and partition-level coarse-gained access control.
 
 SQL-standard authorization with Ranger
-**************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A SQL-standard authorization usually offers a row/colum-level fine-grained access control to meet the real-world data security need.
 
@@ -59,4 +59,51 @@ Kyuubi Spark Authz Plugin itself provides general purpose for ACL management for
 It is not necessary to deploy it with the Kyuubi server and engine, and can be used as an extension for any Spark SQL jobs.
 However, the authorization always requires a robust authentication layer and multi tenancy support, so Kyuubi is a perfect match.
 
+Restrict security configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+End-users can disable the AuthZ plugin by modifying Spark's configuration. For example:
+
+
+.. code-block:: sql
+
+   select * from parquet.`/path/to/table`
+
+.. code-block:: sql
+
+   set spark.sql.optimizer.excludedRules=org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization
+
+Kyuubi provides a mechanism to ban security configurations to enhance the security of production environments
+
+.. note:: How do we modify the Spark engine configurations please refer to the documentation `Spark Configurations`_
+
+
+
+Restrict session level config
+*****************************
+
+You can specify config `kyuubi.session.conf.ignore.list` values and config `kyuubi.session.conf.restrict.list` values to disable changing session+ level configuration on the server side. For example:
+
+.. code-block::
+
+   kyuubi.session.conf.ignore.list    spark.driver.memory,spark.sql.optimizer.excludedRules
+
+.. code-block::
+
+   kyuubi.session.conf.restrict.list    spark.driver.memory,spark.sql.optimizer.excludedRules
+
+Restrict operation level config
+*******************************
+
+You can specify config `spark.kyuubi.conf.restricted.list` values to disable changing operation level configuration on the engine side, this means that the config key in the restricted list cannot set dynamic configuration via SET syntax. For examples:
+
+.. code-block::
+
+   spark.kyuubi.conf.restricted.list  spark.sql.adaptive.enabled,spark.sql.adaptive.skewJoin.enabled
+
+.. note:: 
+   1. Note that config `spark.sql.runSQLOnFiles` values and config `spark.sql.extensions` values are by default in the engine restriction configuration list
+   2. A set statement with key equal to `spark.sql.optimizer.excludedRules` or `spark.sql.adaptive.optimizer.excludedRules` and value containing `org.apache.kyuubi.plugin.spark.authz.ranger.*` also does not allow modification.
+
 .. _Apache Ranger: https://ranger.apache.org/
+.. _Spark Configurations: ../../../deployment/settings.html#spark-configurations
