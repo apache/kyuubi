@@ -103,7 +103,7 @@ You can specify config `spark.kyuubi.conf.restricted.list` values to disable cha
 
 .. note:: 
    1. Note that config `spark.sql.runSQLOnFiles` values and config `spark.sql.extensions` values are by default in the engine restriction configuration list
-   2. A set statement with key equal to `spark.sql.optimizer.excludedRules` or `spark.sql.adaptive.optimizer.excludedRules` and value containing `org.apache.kyuubi.plugin.spark.authz.ranger.*` also does not allow modification.
+   2. A set statement with key equal to `spark.sql.optimizer.excludedRules` and value containing `org.apache.kyuubi.plugin.spark.authz.ranger.*` also does not allow modification.
 
 .. _Apache Ranger: https://ranger.apache.org/
 .. _Spark Configurations: ../../../deployment/settings.html#spark-configurations

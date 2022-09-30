@@ -36,7 +36,7 @@ case class AuthzConfigurationCheckExtension(spark: SparkSession) extends (Logica
 
   override def apply(plan: LogicalPlan): Unit = plan match {
     case SetCommand(Some((
-          "spark.sql.optimizer.excludedRules" | "spark.sql.adaptive.optimizer.excludedRules",
+          "spark.sql.optimizer.excludedRules",
           Some(v)))) if v.contains("org.apache.kyuubi.plugin.spark.authz.ranger") =>
       throw new AccessControlException("Excluding Authz security rules is not allowed")
     case SetCommand(Some((k, Some(_)))) if restrictedConfList.contains(k) =>
