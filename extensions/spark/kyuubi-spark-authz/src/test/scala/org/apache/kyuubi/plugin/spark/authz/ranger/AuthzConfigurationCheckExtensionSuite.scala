@@ -52,8 +52,5 @@ class AuthzConfigurationCheckExtensionSuite extends AnyFunSuite with SparkSessio
     val p8 = sql(
       s"set spark.sql.optimizer.excludedRules=${classOf[RuleAuthorization].getName}").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p8))
-    val p9 =
-      sql(s"set spark.sql.adaptive.optimizer.excludedRules=${classOf[RuleAuthorization].getName}").queryExecution.analyzed
-    intercept[AccessControlException](extension.apply(p9))
   }
 }
