@@ -23,7 +23,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 
-class AuthzConfigurationCheckExtensionSuite extends AnyFunSuite with SparkSessionProvider
+class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvider
   with BeforeAndAfterAll {
 
   override protected val catalogImpl: String = "in-memory"
@@ -34,7 +34,7 @@ class AuthzConfigurationCheckExtensionSuite extends AnyFunSuite with SparkSessio
 
   test("apply spark configuration restriction rules") {
     sql("set spark.kyuubi.conf.restricted.list=spark.sql.abc,spark.sql.xyz")
-    val extension = AuthzConfigurationCheckExtension(spark)
+    val extension = AuthzConfigurationChecker(spark)
     val p1 = sql("set spark.sql.runSQLOnFiles=true").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p1))
     val p2 = sql("set spark.sql.runSQLOnFiles=false").queryExecution.analyzed

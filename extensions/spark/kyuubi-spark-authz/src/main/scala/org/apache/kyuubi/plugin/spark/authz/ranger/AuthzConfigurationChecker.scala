@@ -26,7 +26,7 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 /**
  * For banning end-users from set restricted spark configurations
  */
-case class AuthzConfigurationCheckExtension(spark: SparkSession) extends (LogicalPlan => Unit) {
+case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan => Unit) {
 
   final val RESTRICT_LIST_KEY = "spark.kyuubi.conf.restricted.list"
 
