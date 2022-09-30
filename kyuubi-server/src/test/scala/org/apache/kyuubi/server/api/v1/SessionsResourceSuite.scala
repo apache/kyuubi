@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 import java.util
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.{MediaType, Response}
+import javax.ws.rs.core.{GenericType, MediaType, Response}
 
 import scala.collection.JavaConverters._
 
@@ -92,8 +92,9 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // get session list
     var response2 = webTarget.path("api/v1/sessions").request().get()
     assert(200 == response2.getStatus)
-    val sessions1 = response2.readEntity(classOf[Seq[SessionData]])
+    val sessions1 = response2.readEntity(new GenericType[Seq[SessionData]]() {})
     assert(sessions1.nonEmpty)
+    assert(sessions1.head.getConnectionUrl === fe.connectionUrl)
 
     // close an opened session
     val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
