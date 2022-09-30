@@ -32,6 +32,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI_SESSION_CONNECTION_URL_KEY}
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
@@ -147,7 +148,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       userName,
       request.getPassword,
       ipAddress,
-      request.getConfigs.asScala.toMap)
+      (request.getConfigs.asScala ++ Map(
+        KYUUBI_CLIENT_IP_KEY -> ipAddress,
+        KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl)).toMap)
     new dto.SessionHandle(handle.identifier)
   }
 
