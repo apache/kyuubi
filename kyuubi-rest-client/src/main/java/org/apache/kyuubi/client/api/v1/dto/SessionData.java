@@ -27,6 +27,7 @@ public class SessionData {
   private String identifier;
   private String user;
   private String ipAddr;
+  private String connectionUrl;
   private Map<String, String> conf;
   private Long createTime;
   private Long duration;
@@ -38,6 +39,7 @@ public class SessionData {
       String identifier,
       String user,
       String ipAddr,
+      String connectionUrl,
       Map<String, String> conf,
       Long createTime,
       Long duration,
@@ -45,6 +47,7 @@ public class SessionData {
     this.identifier = identifier;
     this.user = user;
     this.ipAddr = ipAddr;
+    this.connectionUrl = connectionUrl;
     this.conf = conf;
     this.createTime = createTime;
     this.duration = duration;
@@ -73,6 +76,14 @@ public class SessionData {
 
   public void setIpAddr(String ipAddr) {
     this.ipAddr = ipAddr;
+  }
+
+  public String getConnectionUrl() {
+    return connectionUrl;
+  }
+
+  public void setConnectionUrl(String connectionUrl) {
+    this.connectionUrl = connectionUrl;
   }
 
   public Map<String, String> getConf() {

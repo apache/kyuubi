@@ -58,6 +58,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         session.handle.identifier.toString,
         session.user,
         session.ipAddress,
+        session.connectionUrl,
         session.conf.asJava,
         session.createTime,
         session.lastAccessTime - session.createTime,
