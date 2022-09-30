@@ -27,6 +27,7 @@ import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.mysql.MySQLCommandHandler._
@@ -39,7 +40,7 @@ object MySQLCommandHandler {
   val connIdToSessHandle = new ConcurrentHashMap[Int, SessionHandle]
 }
 
-class MySQLCommandHandler(be: BackendService, execPool: ThreadPoolExecutor)
+class MySQLCommandHandler(connectionUrl: String, be: BackendService, execPool: ThreadPoolExecutor)
   extends SimpleChannelInboundHandler[MySQLCommandPacket] with Logging {
 
   implicit private val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(execPool)
@@ -101,7 +102,12 @@ class MySQLCommandHandler(be: BackendService, execPool: ThreadPoolExecutor)
       }
       // v1 is sufficient now, upgrade version when needed
       val proto = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1
-      val sessionHandle = be.openSession(proto, user, "", remoteIp, sessionConf)
+      val sessionHandle = be.openSession(
+        proto,
+        user,
+        "",
+        remoteIp,
+        sessionConf ++ Map(KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl))
       sessionHandle
     } catch {
       case rethrow: Exception =>
