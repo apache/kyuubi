@@ -18,7 +18,6 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.KyuubiSession
 
 /**
