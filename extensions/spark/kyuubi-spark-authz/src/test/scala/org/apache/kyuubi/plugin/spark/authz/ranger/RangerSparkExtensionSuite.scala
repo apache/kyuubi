@@ -286,7 +286,9 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
   }
 
-  test("KYUUBI #3581: row level filter on permanent view") {
+  test("[KYUUBI #3581]: row level filter on permanent view") {
+    assume(isSparkV31OrGreater)
+
     val db = "default"
     val table = "src"
     val permView = "perm_view"
@@ -389,7 +391,9 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
   }
 
-  test("KYUUBI #3581: data masking on permanent view") {
+  test("[KYUUBI #3581]: data masking on permanent view") {
+    assume(isSparkV31OrGreater)
+
     val db = "default"
     val table = "src"
     val permView = "perm_view"
