@@ -2271,6 +2271,16 @@
                         </executions>
                     </plugin>
                     <plugin>
+                        <groupId>net.nicoulaj.maven.plugins</groupId>
+                        <artifactId>checksum-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>source-release-checksum</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-deploy-plugin</artifactId>
                         <inherited>true</inherited>
