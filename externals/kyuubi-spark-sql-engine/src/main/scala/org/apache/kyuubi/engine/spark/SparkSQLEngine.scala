@@ -160,7 +160,9 @@ object SparkSQLEngine extends Logging {
       "20")
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
+    val podNamePrefix = s"kyuubi_${user}_spark_sql"
     _sparkConf.setIfMissing("spark.app.name", appName)
+    _sparkConf.setIfMissing("spark.kubernetes.executor.podNamePrefix", podNamePrefix)
     val defaultCat = if (KyuubiSparkUtil.hiveClassesArePresent) "hive" else "in-memory"
     _sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
 
