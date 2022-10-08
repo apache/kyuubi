@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>23</version>
+        <version>27</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -99,7 +99,7 @@
         <maven.version>3.8.6</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <scala.version>2.12.16</scala.version>
+        <scala.version>2.12.17</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
 
         <antlr4.version>4.8</antlr4.version>
@@ -209,7 +209,7 @@
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
-        <maven.plugin.silencer.version>1.7.9</maven.plugin.silencer.version>
+        <maven.plugin.silencer.version>1.7.10</maven.plugin.silencer.version>
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
 
@@ -2266,6 +2266,16 @@
                         <executions>
                             <execution>
                                 <id>source-release-assembly</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>net.nicoulaj.maven.plugins</groupId>
+                        <artifactId>checksum-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>source-release-checksum</id>
                                 <phase>none</phase>
                             </execution>
                         </executions>
