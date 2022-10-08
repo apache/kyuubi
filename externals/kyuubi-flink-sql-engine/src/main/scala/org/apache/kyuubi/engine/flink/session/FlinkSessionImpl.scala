@@ -54,6 +54,14 @@ class FlinkSessionImpl(
   override def open(): Unit = {
     executor.openSession(handle.identifier.toString)
     normalizedConf.foreach {
+      case ("use:catalog", catalog) =>
+        val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
+        try {
+          tableEnv.useCatalog(catalog)
+        } catch {
+          case NonFatal(e) =>
+            throw e
+        }
       case ("use:database", database) =>
         val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
         try {
