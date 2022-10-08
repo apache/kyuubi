@@ -135,6 +135,7 @@ class SparkRangerAdminPlugin(
     }
   }
 }
+
 object SparkRangerAdminPlugin {
   def apply(serviceName: String, appId: String): SparkRangerAdminPlugin = {
     val plugin = new SparkRangerAdminPlugin(serviceName, appId)
