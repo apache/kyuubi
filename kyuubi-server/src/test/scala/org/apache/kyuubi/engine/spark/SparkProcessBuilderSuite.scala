@@ -277,7 +277,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val b1 = new SparkProcessBuilder(proxyName, conf1)
     val c1 = b1.toString.split(' ')
     assert(c1.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$proxyName"))
-    assert(c1.contains(s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$proxyName"))
+    assert(c1.contains(s"spark.executorEnv.SPARK_USER_NAME=$proxyName"))
 
     tryWithSecurityEnabled {
       val conf2 = conf.set("spark.master", "k8s://test:12345")
@@ -287,7 +287,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       val b2 = new SparkProcessBuilder(name, conf2)
       val c2 = b2.toString.split(' ')
       assert(c2.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$name"))
-      assert(c2.contains(s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$name"))
+      assert(c2.contains(s"spark.executorEnv.SPARK_USER_NAME=$name"))
       assert(!c2.contains(s"--proxy-user $name"))
     }
 
@@ -296,7 +296,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val b3 = new SparkProcessBuilder(proxyName, conf3)
     val c3 = b3.toString.split(' ')
     assert(!c3.contains(s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$proxyName"))
-    assert(!c3.contains(s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$proxyName"))
+    assert(!c3.contains(s"spark.executorEnv.SPARK_USER_NAME=$proxyName"))
   }
 }
 
