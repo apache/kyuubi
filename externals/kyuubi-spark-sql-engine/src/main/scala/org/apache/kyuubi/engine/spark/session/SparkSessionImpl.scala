@@ -51,6 +51,13 @@ class SparkSessionImpl(
 
   override def open(): Unit = {
     normalizedConf.foreach {
+      case ("use:catalog", catalog) =>
+        try {
+          SparkCatalogShim().setCurrentCatalog(spark, catalog)
+        } catch {
+          case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
+            warn(e.getMessage())
+        }
       case ("use:database", database) =>
         try {
           SparkCatalogShim().setCurrentDatabase(spark, database)
@@ -58,9 +65,6 @@ class SparkSessionImpl(
           case e
               if database == "default" && e.getMessage != null &&
                 e.getMessage.contains("not found") =>
-          // use:database is from hive so the catalog is always session catalog which must have
-          // default namespace `default`. But as spark support v2 catalog, catalog may not have
-          // default namespace. Here we do nothing for compatible both session and v2 catalog.
         }
       case (key, value) => setModifiableConfig(key, value)
     }
