@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.getRangerPlugin
 import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
@@ -70,17 +71,18 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       plan: LogicalPlan,
       identifier: TableIdentifier,
       spark: SparkSession): LogicalPlan = {
+    val rangerPlugin = getRangerPlugin()
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = OperationType(plan.nodeName)
     val parse = spark.sessionState.sqlParser.parseExpression _
     val are = AccessResource(ObjectType.TABLE, identifier.database.orNull, identifier.table, null)
     val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
-    val filterExprStr = SparkRangerAdminPlugin.getFilterExpr(art)
+    val filterExprStr = rangerPlugin.getFilterExpr(art)
     val newOutput = plan.output.map { attr =>
       val are =
         AccessResource(ObjectType.COLUMN, identifier.database.orNull, identifier.table, attr.name)
       val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
-      val maskExprStr = SparkRangerAdminPlugin.getMaskingExpr(art)
+      val maskExprStr = rangerPlugin.getMaskingExpr(art)
       if (maskExprStr.isEmpty) {
         attr
       } else {

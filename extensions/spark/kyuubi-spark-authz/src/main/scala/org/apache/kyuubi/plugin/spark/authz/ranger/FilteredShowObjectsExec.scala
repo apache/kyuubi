@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.getRangerPlugin
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
 trait FilteredShowObjectsExec extends LeafExecNode {
@@ -47,7 +48,7 @@ case class FilteredShowNamespaceExec(delegated: SparkPlan) extends FilteredShowO
     val database = r.getString(0)
     val resource = AccessResource(ObjectType.DATABASE, database, null, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
-    val result = SparkRangerAdminPlugin.isAccessAllowed(request)
+    val result = getRangerPlugin().isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
 }
@@ -60,7 +61,7 @@ case class FilteredShowTablesExec(delegated: SparkPlan) extends FilteredShowObje
     val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
     val resource = AccessResource(objectType, database, table, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, AccessType.USE)
-    val result = SparkRangerAdminPlugin.isAccessAllowed(request)
+    val result = getRangerPlugin().isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
 }

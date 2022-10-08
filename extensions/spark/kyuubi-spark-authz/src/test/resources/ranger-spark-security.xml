@@ -25,6 +25,14 @@
   </property>
 
   <property>
+    <name>ranger.plugin.spark.catalog.catalog2.service.name</name>
+    <value>hive_jenkins_catalog2</value>
+    <description>
+      Name of the Ranger service containing policies for catalog `catalog2`
+    </description>
+  </property>
+
+  <property>
     <name>ranger.plugin.spark.policy.source.impl</name>
     <value>org.apache.kyuubi.plugin.spark.authz.ranger.RangerLocalClient</value>
   </property>

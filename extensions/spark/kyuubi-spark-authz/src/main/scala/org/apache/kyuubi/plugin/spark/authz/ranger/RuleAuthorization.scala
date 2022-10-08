@@ -28,7 +28,7 @@ import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
-import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.getRangerPlugin
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._;
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
@@ -81,11 +81,12 @@ object RuleAuthorization {
       }
     }
 
-    if (authorizeInSingleCall) {
-      verify(requestArrays.flatten, auditHandler)
+    val rangerPlugin = getRangerPlugin()
+    if (rangerPlugin.authorizeInSingleCall) {
+      rangerPlugin.verify(requestArrays.flatten, auditHandler)
     } else {
       requestArrays.flatten.foreach { req =>
-        verify(Seq(req), auditHandler)
+        rangerPlugin.verify(Seq(req), auditHandler)
       }
     }
   }

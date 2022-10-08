@@ -26,6 +26,7 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.getRangerPlugin
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
 
@@ -35,6 +36,7 @@ object AccessRequest {
       user: UserGroupInformation,
       opType: OperationType,
       accessType: AccessType): AccessRequest = {
+    val plugin = getRangerPlugin()
     val userName = user.getShortUserName
     val groups = user.getGroupNames.toSet.asJava
     val req = new AccessRequest(accessType)
@@ -43,12 +45,12 @@ object AccessRequest {
     req.setUserGroups(groups)
     req.setAction(opType.toString)
     try {
-      val getRoles = SparkRangerAdminPlugin.getClass.getMethod(
+      val getRoles = plugin.getClass.getMethod(
         "getRolesFromUserAndGroups",
         classOf[String],
         classOf[java.util.Set[String]])
       getRoles.setAccessible(true)
-      val roles = getRoles.invoke(SparkRangerAdminPlugin, userName, groups)
+      val roles = getRoles.invoke(plugin, userName, groups)
       val setRoles = req.getClass.getMethod("setUserRoles", classOf[java.util.Set[String]])
       setRoles.setAccessible(true)
       setRoles.invoke(req, roles)
@@ -61,9 +63,9 @@ object AccessRequest {
       case _ => req.setAccessType(accessType.toString.toLowerCase)
     }
     try {
-      val getClusterName = SparkRangerAdminPlugin.getClass.getMethod("getClusterName")
+      val getClusterName = plugin.getClass.getMethod("getClusterName")
       getClusterName.setAccessible(true)
-      val clusterName = getClusterName.invoke(SparkRangerAdminPlugin)
+      val clusterName = getClusterName.invoke(plugin)
       val setClusterName = req.getClass.getMethod("setClusterName", classOf[String])
       setClusterName.setAccessible(true)
       setClusterName.invoke(req, clusterName)

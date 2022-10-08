@@ -18,17 +18,20 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
 
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.serviceType
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
 
-object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
+class SparkRangerAdminPlugin(
+    serviceName: String,
+    appId: String)
+  extends RangerBasePlugin(serviceType, serviceName, appId)
   with RangerConfigProvider {
 
   /**
@@ -105,7 +108,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
       requests: Seq[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
     if (requests.nonEmpty) {
-      val results = SparkRangerAdminPlugin.isAccessAllowed(requests.asJava, auditHandler)
+      val results = isAccessAllowed(requests.asJava, auditHandler)
       if (results != null) {
         val indices = results.asScala.zipWithIndex.filter { case (result, idx) =>
           result != null && !result.getIsAllowed
@@ -130,5 +133,12 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
         }
       }
     }
+  }
+}
+object SparkRangerAdminPlugin {
+  def apply(serviceName: String, appId: String): SparkRangerAdminPlugin = {
+    val plugin = new SparkRangerAdminPlugin(serviceName, appId)
+    plugin.init()
+    plugin
   }
 }

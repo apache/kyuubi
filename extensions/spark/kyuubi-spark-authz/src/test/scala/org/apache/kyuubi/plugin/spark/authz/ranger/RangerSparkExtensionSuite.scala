@@ -786,6 +786,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val srcTable1 = "hive_src1"
     val srcTable2 = "hive_src2"
     val sinkTable1 = "hive_sink1"
+    val rangerPlugin = SparkRangerAdminPluginFactory.getRangerPlugin()
 
     withCleanTmpResources(Seq(
       (s"$db1.$srcTable1", "table"),
@@ -815,8 +816,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
 
       try {
-        SparkRangerAdminPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+        rangerPlugin.getRangerConf.setBoolean(
+          s"ranger.plugin.${SparkRangerAdminPluginFactory.getRangerPlugin().getServiceType}.authorize.in.single.call",
           true)
         val e2 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))
         assert(e2.getMessage.contains(s"does not have" +
@@ -826,8 +827,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s" [update] privilege on [$db1/$sinkTable1]"))
       } finally {
         // revert to default value
-        SparkRangerAdminPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+        rangerPlugin.getRangerConf.setBoolean(
+          s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
           false)
       }
     }
