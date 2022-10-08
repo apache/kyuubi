@@ -536,6 +536,27 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     }
   }
 
+  test("create temporary function") {
+    val plan = sql("CREATE TEMPORARY FUNCTION CreateTempFunction AS" +
+      "'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === CREATEFUNCTION)
+    val tuple = PrivilegesBuilder.build(plan, spark)
+    assert(tuple._1.size === 0)
+    assert(tuple._2.size === 0)
+  }
+
+  test("describe temporary function") {
+    val plan = sql("DESCRIBE FUNCTION CreateTempFunction")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === DESCFUNCTION)
+    val tuple = PrivilegesBuilder.build(plan, spark)
+    assert(tuple._1.size === 0)
+    assert(tuple._2.size === 0)
+  }
+
   test("CreateFunctionCommand") {
     val plan = sql("CREATE FUNCTION CreateFunctionCommand AS 'class_name'")
       .queryExecution.analyzed

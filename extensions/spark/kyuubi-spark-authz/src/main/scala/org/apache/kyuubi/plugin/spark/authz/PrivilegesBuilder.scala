@@ -351,7 +351,11 @@ object PrivilegesBuilder {
           "RefreshFunctionCommand" =>
         val db = getPlanField[Option[String]]("databaseName")
         val functionName = getPlanField[String]("functionName")
-        outputObjs += functionPrivileges(db.orNull, functionName)
+        val isTemp = spark.sessionState.catalog.isTemporaryFunction(
+          FunctionIdentifier(functionName, db))
+        if (!isTemp) {
+          outputObjs += functionPrivileges(db.orNull, functionName)
+        }
 
       case "CreateFunction" | "DropFunction" | "RefreshFunction" =>
         val child = getPlanField("child")
@@ -386,7 +390,10 @@ object PrivilegesBuilder {
 
       case "DescribeFunctionCommand" =>
         val func = getPlanField[FunctionIdentifier]("functionName")
-        inputObjs += functionPrivileges(func.database.orNull, func.funcName)
+        val isTemp = spark.sessionState.catalog.isTemporaryFunction(func)
+        if (!isTemp) {
+          inputObjs += functionPrivileges(func.database.orNull, func.funcName)
+        }
 
       case "DropNamespace" =>
         val child = getPlanField[Any]("namespace")
