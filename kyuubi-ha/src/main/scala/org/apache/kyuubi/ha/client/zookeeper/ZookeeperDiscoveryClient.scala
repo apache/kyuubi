@@ -61,7 +61,7 @@ import org.apache.kyuubi.util.ThreadUtils
 class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
   private val zkClient: CuratorFramework = buildZookeeperClient(conf)
-  private var serviceNode: PersistentNode = _
+  @volatile private var serviceNode: PersistentNode = _
   private var watcher: DeRegisterWatcher = _
 
   def createClient(): Unit = {
