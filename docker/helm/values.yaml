@@ -47,6 +47,9 @@ server:
   conf:
     mountPath: /opt/kyuubi/conf
 
+environments:
+  KYUUBI_HOME: /opt/kyuubi
+
 service:
   type: NodePort
   # The default port limit of kubernetes is 30000-32767
