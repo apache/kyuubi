@@ -329,4 +329,6 @@ object Utils extends Logging {
    */
   def getContextOrKyuubiClassLoader: ClassLoader =
     Option(Thread.currentThread().getContextClassLoader).getOrElse(getKyuubiClassLoader)
+
+  def isOnK8s: Boolean = Files.exists(Paths.get("/var/run/secrets/kubernetes.io"))
 }
