@@ -17,9 +17,9 @@
 
 # Plan Only Execution Mode
 
-Plan only execution mode is implemented through Spark extensions, so it is only supported Spark engine so far.
+Plan only execution mode currently only supports Spark and Flink engine.
 
-It can print Spark's parsing, analysis or optimization phases execution planning, and supports application-level and session-level parameter settings, which are used in the following ways.
+It can print parsing, analysis or optimization phases execution planning, and supports application-level and session-level parameter settings, which are used in the following ways.
 
 ## Application-level parameter setting
 
