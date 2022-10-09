@@ -59,7 +59,7 @@ object AccessResource {
         resource.setValue("database", firstLevelResource)
         resource.setValue("table", secondLevelResource)
     }
-    resource.setServiceDef(getRangerPlugin().getServiceDef)
+    resource.setServiceDef(getRangerPlugin().r.getServiceDef)
     resource
   }
 

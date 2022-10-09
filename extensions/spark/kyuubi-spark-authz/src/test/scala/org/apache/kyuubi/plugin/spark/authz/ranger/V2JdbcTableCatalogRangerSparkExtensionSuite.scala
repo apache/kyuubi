@@ -200,7 +200,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
     try {
       rangerPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
+        s"ranger.plugin.${rangerPlugin.r.getServiceType}.authorize.in.single.call",
         true)
       val e2 = intercept[AccessControlException](
         doAs(
@@ -212,7 +212,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
         s" [update] privilege on [$namespace1/$outputTable1]"))
     } finally {
       rangerPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
+        s"ranger.plugin.${rangerPlugin.r.getServiceType}.authorize.in.single.call",
         false)
     }
   }

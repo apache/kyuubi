@@ -20,11 +20,13 @@ package org.apache.kyuubi.plugin.spark.authz.util
 import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.connector.catalog.Identifier
+
 
 private[authz] object AuthZUtils {
 
@@ -126,6 +128,16 @@ private[authz] object AuthZUtils {
 
   def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
     SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
+  }
+
+  def isRanger21orGreater: Boolean = {
+    try {
+      classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
+      true
+    } catch {
+      case _: NoSuchMethodException =>
+        false
+    }
   }
 
   def quoteIfNeeded(part: String): String = {

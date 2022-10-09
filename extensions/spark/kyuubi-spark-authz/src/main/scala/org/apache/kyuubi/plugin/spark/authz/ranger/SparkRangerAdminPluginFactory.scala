@@ -20,10 +20,8 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.collection.concurrent.{Map, TrieMap}
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.ranger.authorization.hadoop.config.RangerConfiguration
 import org.apache.spark.internal.Logging
 
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{invoke, invokeStatic}
 
 object SparkRangerAdminPluginFactory extends Logging {
 
@@ -50,23 +48,10 @@ object SparkRangerAdminPluginFactory extends Logging {
         null
       case _ =>
         val defaultPlugin = getRangerPlugin(catalog = None)
-        val rangerConf = {
-          try {
-            // for Ranger 2.1+
-            invoke(defaultPlugin, "getConfig")
-          } catch {
-            case _: Throwable =>
-              // for Ranger 2.0 and below
-              val conf = invokeStatic(classOf[RangerConfiguration], "getInstance")
-              invoke(conf, "addResourcesForServiceType", (classOf[String], serviceType))
-              conf
-          }
-        }
-
         val serviceNameForCatalog = defaultPlugin.getRangerConf
           .get(s"ranger.plugin.spark.catalog.$catalogName.service.name")
         serviceNameForCatalog match {
-          case _ if StringUtils.isBlank(_) =>
+          case s: String if StringUtils.isBlank(s) =>
             throw new RuntimeException(
               s"config ranger.plugin.spark.catalog.$catalogName.service.name not found")
           case _ => serviceNameForCatalog
@@ -83,7 +68,6 @@ object SparkRangerAdminPluginFactory extends Logging {
     catalog2pluginMap.getOrElseUpdate(
       catalogName, {
         val plugin = SparkRangerAdminPlugin(serviceName = serviceName, appId = appId)
-        plugin.init()
         plugin
       })
   }

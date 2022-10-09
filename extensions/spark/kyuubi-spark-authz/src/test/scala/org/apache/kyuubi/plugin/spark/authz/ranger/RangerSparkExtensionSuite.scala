@@ -817,7 +817,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       try {
         rangerPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${SparkRangerAdminPluginFactory.getRangerPlugin().getServiceType}.authorize.in.single.call",
+          s"ranger.plugin.${SparkRangerAdminPluginFactory.getRangerPlugin().r.getServiceType}" +
+            s".authorize.in.single.call",
           true)
         val e2 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))
         assert(e2.getMessage.contains(s"does not have" +
@@ -828,7 +829,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       } finally {
         // revert to default value
         rangerPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
+          s"ranger.plugin.${rangerPlugin.r.getServiceType}.authorize.in.single.call",
           false)
       }
     }

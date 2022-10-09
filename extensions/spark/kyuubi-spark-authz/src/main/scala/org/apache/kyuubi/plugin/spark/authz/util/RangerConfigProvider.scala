@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.util
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.ranger.plugin.service.RangerBasePlugin
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
@@ -36,7 +37,8 @@ trait RangerConfigProvider {
   def getRangerConf: Configuration = {
     try {
       // for Ranger 2.1+
-      invoke(this, "getConfig").asInstanceOf[Configuration]
+      val basePlugin = getFieldVal[RangerBasePlugin](this, "r")
+      invoke(basePlugin, "getConfig").asInstanceOf[Configuration]
     } catch {
       case _: NoSuchMethodException =>
         // for Ranger 2.0 and below

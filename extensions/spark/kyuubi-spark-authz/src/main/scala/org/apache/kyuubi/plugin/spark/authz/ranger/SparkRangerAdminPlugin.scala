@@ -31,8 +31,10 @@ import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
 class SparkRangerAdminPlugin(
     serviceName: String,
     appId: String)
-  extends RangerBasePlugin(serviceType, serviceName, appId)
-  with RangerConfigProvider {
+//  extends RangerBasePlugin(serviceType, serviceName, appId)
+  extends RangerConfigProvider {
+
+  var r: RangerBasePlugin = _
 
   /**
    * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
@@ -42,11 +44,11 @@ class SparkRangerAdminPlugin(
    * to verify them one by one.
    */
   def authorizeInSingleCall: Boolean = getRangerConf.getBoolean(
-    s"ranger.plugin.${getServiceType}.authorize.in.single.call",
+    s"ranger.plugin.${r.getServiceType}.authorize.in.single.call",
     false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
-    val result = evalRowFilterPolicies(req, null)
+    val result = r.evalRowFilterPolicies(req, null)
     Option(result)
       .filter(_.isRowFilterEnabled)
       .map(_.getFilterExpr)
@@ -55,7 +57,7 @@ class SparkRangerAdminPlugin(
 
   def getMaskingExpr(req: AccessRequest): Option[String] = {
     val col = req.getResource.asInstanceOf[AccessResource].getColumn
-    val result = evalDataMaskPolicies(req, null)
+    val result = r.evalDataMaskPolicies(req, null)
     Option(result).filter(_.isMaskEnabled).map { res =>
       if ("MASK_NULL".equalsIgnoreCase(res.getMaskType)) {
         "NULL"
@@ -108,7 +110,7 @@ class SparkRangerAdminPlugin(
       requests: Seq[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
     if (requests.nonEmpty) {
-      val results = isAccessAllowed(requests.asJava, auditHandler)
+      val results = r.isAccessAllowed(requests.asJava, auditHandler)
       if (results != null) {
         val indices = results.asScala.zipWithIndex.filter { case (result, idx) =>
           result != null && !result.getIsAllowed
@@ -139,7 +141,18 @@ class SparkRangerAdminPlugin(
 object SparkRangerAdminPlugin {
   def apply(serviceName: String, appId: String): SparkRangerAdminPlugin = {
     val plugin = new SparkRangerAdminPlugin(serviceName, appId)
-    plugin.init()
+    plugin.r =
+      try {
+        // for ranger 2.1
+        classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
+          .newInstance(serviceType, serviceName, appId)
+      } catch {
+        // for ranger 2.0 and below, ignoring service name
+        case _: NoSuchMethodException =>
+          classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String])
+            .newInstance(serviceType, appId)
+      }
+    plugin.r.init()
     plugin
   }
 }
