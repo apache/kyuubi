@@ -19,14 +19,14 @@
 
 Plan only execution mode currently only supports Spark and Flink engine.
 
-It can print parsing, analysis or optimization phases execution planning, and supports application-level and session-level parameter settings, which are used in the following ways.
+Configure the kyuubi.operation.plan.only.mode parameter, The value can be 'parse', 'analyze', 'optimize', 'optimize_with_stats', 'physical', 'execution', or 'none', when it is 'none', indicate to the statement will be fully executed, otherwise only way without executing the query. different engines currently support different modes, the Spark engine supports all modes, and the Flink engine supports 'parse', 'physical', and 'execution', other engines do not support planOnly currently, and supports application-level and session-level parameter settings, which are used in the following ways.
 
 ## Application-level parameter setting
 
 You can add parameters to the URL when establishing a JDBC connection, the parameter is kyuubi.operation.plan.only.mode=parse/analyze/optimize. 
 JDBC URLs have the following format:
 ```shell
-    jdbc:hive2://<host>:<port>/<dbName>;<sessionVars>?kyuubi.operation.plan.only.mode=parse/analyze/optimize;<kyuubiConfs>#<[spark|hive]Vars>
+    jdbc:hive2://<host>:<port>/<dbName>;<sessionVars>?kyuubi.operation.plan.only.mode=parse/analyze/optimize/optimize_with_stats/physical/execution/none;<kyuubiConfs>#<[spark|hive]Vars>
 ```
 Refer to [hive_jdbc doc](../../jdbc/hive_jdbc.md) for details of others parameters
 
