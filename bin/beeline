@@ -30,6 +30,11 @@ fi
 
 RUNNER="${JAVA_HOME}/bin/java"
 
+# Append jline option to enable the Beeline process to run in background.
+if [[ ( ! $(ps -o stat= -p $$) =~ "+" ) && ! ( -p /dev/stdin ) ]]; then
+    export KYUUBI_BEELINE_OPTS="$KYUUBI_BEELINE_OPTS -Djline.terminal=jline.UnsupportedTerminal"
+fi
+
 ## Find the Kyuubi beeline Jar
 if [[ -z "$KYUUBI_BEELINE_JARS" ]]; then
   KYUUBI_BEELINE_JARS="$KYUUBI_HOME/beeline-jars"
