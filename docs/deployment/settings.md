@@ -269,7 +269,7 @@ Key | Default | Meaning | Type | Since
 kyuubi.frontend.backoff.slot.length|PT0.1S|(deprecated) Time to back off during login to the thrift frontend service.|duration|1.0.0
 kyuubi.frontend.bind.host|&lt;undefined&gt;|(deprecated) Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.|string|1.0.0
 kyuubi.frontend.bind.port|10009|(deprecated) Port of the machine on which to run the thrift frontend service via binary protocol.|int|1.0.0
-kyuubi.frontend.connection.url.use.hostname|true|When true, frontend services prefer hostname, otherwise, ip address|boolean|1.5.0
+kyuubi.frontend.connection.url.use.hostname|true|When true, frontend services prefer hostname, otherwise, ip address. Note that, the default value is set to `false` when engine running on Kubernetes to prevent potential network issue.|boolean|1.5.0
 kyuubi.frontend.login.timeout|PT20S|(deprecated) Timeout for Thrift clients during login to the thrift frontend service.|duration|1.0.0
 kyuubi.frontend.max.message.size|104857600|(deprecated) Maximum message size in bytes a Kyuubi server will accept.|int|1.0.0
 kyuubi.frontend.max.worker.threads|999|(deprecated) Maximum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.0.0

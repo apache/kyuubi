@@ -314,4 +314,6 @@ object Utils extends Logging {
   }
 
   def isCommandAvailable(cmd: String): Boolean = s"which $cmd".! == 0
+
+  def isOnK8s: Boolean = Files.exists(Paths.get("/var/run/secrets/kubernetes.io"))
 }
