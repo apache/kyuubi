@@ -18,13 +18,15 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.RebalancePartitions
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, RebalancePartitions, Sort}
+import org.apache.spark.sql.execution.command.DataWritingCommand
 import org.apache.spark.sql.hive.HiveUtils
 import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
 class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
+
   test("check rebalance exists") {
     def check(df: DataFrame, expectedRebalanceNum: Int = 1): Unit = {
       assert(
@@ -173,6 +175,78 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
           case _: RebalancePartitions => true
         }
         assert(repartition.size == 1)
+      }
+    }
+  }
+
+  test("Infer rebalance and sorder orders") {
+    def checkShuffleAndSort(dataWritingCommand: LogicalPlan, sSize: Int, rSize: Int): Unit = {
+      assert(dataWritingCommand.isInstanceOf[DataWritingCommand])
+      val plan = dataWritingCommand.asInstanceOf[DataWritingCommand].query
+      assert(plan.collect {
+        case s: Sort => s
+      }.size == sSize)
+      assert(plan.collect {
+        case r: RebalancePartitions if r.partitionExpressions.size == rSize => r
+      }.nonEmpty || rSize == 0)
+    }
+
+    withTable("t", "input1", "input2") {
+      withSQLConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS.key -> "true") {
+        sql(s"CREATE TABLE t (c1 int, c2 long) USING PARQUET PARTITIONED BY (p string)")
+        sql(s"CREATE TABLE input1 USING PARQUET AS SELECT * FROM VALUES(1,2),(1,3)")
+        sql(s"CREATE TABLE input2 USING PARQUET AS SELECT * FROM VALUES(1,3),(1,3)")
+
+        val df0 = sql(
+          s"""
+             |INSERT INTO TABLE t PARTITION(p='a')
+             |SELECT /*+ broadcast(input2) */ input1.col1, input2.col1
+             |FROM input1
+             |JOIN input2
+             |ON input1.col1 = input2.col1
+             |""".stripMargin)
+        checkShuffleAndSort(df0.queryExecution.analyzed, 1, 1)
+
+        val df1 = sql(
+          s"""
+             |INSERT INTO TABLE t PARTITION(p='a')
+             |SELECT /*+ broadcast(input2) */ input1.col1, input1.col2
+             |FROM input1
+             |LEFT JOIN input2
+             |ON input1.col1 = input2.col1 and input1.col2 = input2.col2
+             |""".stripMargin)
+        checkShuffleAndSort(df1.queryExecution.analyzed, 1, 2)
+
+        val df2 = sql(
+          s"""
+             |INSERT INTO TABLE t PARTITION(p='a')
+             |SELECT col1 as c1, count(*) as c2
+             |FROM input1
+             |GROUP BY col1
+             |HAVING count(*) > 0
+             |""".stripMargin)
+        checkShuffleAndSort(df2.queryExecution.analyzed, 1, 1)
+
+        // dynamic partition
+        val df3 = sql(
+          s"""
+             |INSERT INTO TABLE t PARTITION(p)
+             |SELECT /*+ broadcast(input2) */ input1.col1, input1.col2, input1.col2
+             |FROM input1
+             |JOIN input2
+             |ON input1.col1 = input2.col1
+             |""".stripMargin)
+        checkShuffleAndSort(df3.queryExecution.analyzed, 0, 1)
+
+        // non-deterministic
+        val df4 = sql(
+          s"""
+             |INSERT INTO TABLE t PARTITION(p='a')
+             |SELECT col1 + rand(), count(*) as c2
+             |FROM input1
+             |GROUP BY col1
+             |""".stripMargin)
+        checkShuffleAndSort(df4.queryExecution.analyzed, 0, 0)
       }
     }
   }
