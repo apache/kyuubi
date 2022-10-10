@@ -164,8 +164,12 @@ object SparkSQLEngine extends Logging {
     val defaultCat = if (KyuubiSparkUtil.hiveClassesArePresent) "hive" else "in-memory"
     _sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
 
-    kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    kyuubiConf.setIfMissing(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
+
+    if (Utils.isOnK8s) {
+      kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
+    }
 
     // Pass kyuubi config from spark with `spark.kyuubi`
     val sparkToKyuubiPrefix = "spark.kyuubi."
