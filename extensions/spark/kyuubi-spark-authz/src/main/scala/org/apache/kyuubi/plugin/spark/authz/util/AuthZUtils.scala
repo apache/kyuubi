@@ -129,7 +129,7 @@ private[authz] object AuthZUtils {
     SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
   }
 
-  def isRanger21orGreater: Boolean = {
+  lazy val isRanger21orGreater: Boolean = {
     try {
       classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
       true
