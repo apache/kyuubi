@@ -137,6 +137,9 @@ trait ProcBuilder {
 
     val envs = pb.environment()
     envs.putAll(env.asJava)
+    if (shortName.equals("flink")) {
+      envs.put("HADOOP_PROXY_USER", proxyUser)
+    }
     pb.directory(workingDir.toFile)
     pb.redirectError(engineLog)
     pb.redirectOutput(engineLog)
