@@ -170,8 +170,8 @@ object SparkSQLEngine extends Logging {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
     }
 
-    // set web ui port 0 when no deploy k8s cluster mode
-    if (!isOnKubernetesUsingClusterMode) {
+    // Set web ui port 0 to avoid port conflicts during non-k8s cluster mode
+    if (!isOnK8sClusterMode) {
       _sparkConf.setIfMissing("spark.ui.port", "0")
     }
 
@@ -314,6 +314,8 @@ object SparkSQLEngine extends Logging {
       "CreateSparkTimeoutChecker").start()
   }
 
-  private def isOnKubernetesUsingClusterMode: Boolean =
+  private def isOnK8sClusterMode: Boolean = {
+    // only spark driver pod will build with `SPARK_APPLICATION_ID` env.
     Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
+  }
 }
