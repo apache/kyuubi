@@ -17,9 +17,9 @@
 
 # Plan Only Execution Mode
 
-Plan only execution mode currently only supports Spark and Flink engine.
+Plan only execution mode currently only supports spark and flink engine.
 
-Configure the kyuubi.operation.plan.only.mode parameter, The value can be 'parse', 'analyze', 'optimize', 'optimize_with_stats', 'physical', 'execution', or 'none', when it is 'none', indicate to the statement will be fully executed, otherwise only way without executing the query. different engines currently support different modes, the Spark engine supports all modes, and the Flink engine supports 'parse', 'physical', and 'execution', other engines do not support planOnly currently, and supports application-level and session-level parameter settings, which are used in the following ways.
+Configure the kyuubi.operation.plan.only.mode parameter, the value can be 'parse', 'analyze', 'optimize', 'optimize_with_stats', 'physical', 'execution', or 'none', when it is 'none', indicate to the statement will be fully executed, otherwise only way without executing the query. Different engines currently support different modes, the spark engine supports all modes, and the flink engine supports 'parse', 'physical', and 'execution', other engines do not support plan-only mode currently, and supports application-level and session-level parameter settings, which are used in the following ways.
 
 ## Application-level parameter setting
 
