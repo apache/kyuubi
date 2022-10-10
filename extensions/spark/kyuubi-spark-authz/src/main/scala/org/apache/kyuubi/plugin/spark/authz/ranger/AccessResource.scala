@@ -24,7 +24,7 @@ import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
-import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.getRangerBasePlugin
+
 
 class AccessResource private (val objectType: ObjectType) extends RangerAccessResourceImpl {
   implicit def asString(obj: Object): String = if (obj != null) obj.asInstanceOf[String] else null
@@ -59,7 +59,7 @@ object AccessResource {
         resource.setValue("database", firstLevelResource)
         resource.setValue("table", secondLevelResource)
     }
-    resource.setServiceDef(getRangerBasePlugin().getServiceDef)
+    resource.setServiceDef(SparkRangerAdminPlugin.basePlugin.getServiceDef)
     resource
   }
 

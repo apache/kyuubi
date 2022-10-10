@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider.getRangerConfFromPlugin
 
 trait RangerConfigProvider {
 
@@ -35,9 +36,16 @@ trait RangerConfigProvider {
    *         for Ranger 2.0 and below
    */
   def getRangerConf: Configuration = {
+    val basePlugin = getFieldVal[RangerBasePlugin](this, "basePlugin")
+    getRangerConfFromPlugin(basePlugin)
+  }
+
+}
+
+object RangerConfigProvider {
+  def getRangerConfFromPlugin(basePlugin: RangerBasePlugin): Configuration = {
     try {
       // for Ranger 2.1+
-      val basePlugin = getFieldVal[RangerBasePlugin](this, "basePlugin")
       invoke(basePlugin, "getConfig").asInstanceOf[Configuration]
     } catch {
       case _: NoSuchMethodException =>

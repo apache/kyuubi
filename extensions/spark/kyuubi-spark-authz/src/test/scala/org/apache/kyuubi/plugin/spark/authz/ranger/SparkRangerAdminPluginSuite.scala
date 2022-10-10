@@ -26,7 +26,7 @@ import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 class SparkRangerAdminPluginSuite extends AnyFunSuite {
 // scalastyle:on
 
-  val rangerPlugin = SparkRangerAdminPluginFactory.getRangerPlugin()
+  val rangerPlugin = SparkRangerAdminPlugin
 
   test("get filter expression") {
     val bob = UserGroupInformation.createRemoteUser("bob")

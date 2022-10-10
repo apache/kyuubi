@@ -20,42 +20,46 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.{defaultAppId, serviceType}
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.{defaultAppId, serviceType}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isRanger21orGreater
 
 class SparkRangerAdminPluginFactorySuite extends AnyFunSuite {
 // scalastyle:on
   test("[KYUUBI #3594] get or create Ranger plugin by catalog name for Ranger 2.1+") {
     assume(isRanger21orGreater)
+    SparkRangerAdminPlugin.init()
 
-    val rangerPlugin1 = SparkRangerAdminPluginFactory.getRangerPlugin()
+    val rangerPlugin1 = SparkRangerAdminPlugin.getRangerBasePlugin
     assertResult((serviceType, "hive_jenkins", defaultAppId))((
-      rangerPlugin1.basePlugin.getServiceType,
-      rangerPlugin1.basePlugin.getServiceName,
-      rangerPlugin1.basePlugin.getAppId))
+      rangerPlugin1.getServiceType,
+      rangerPlugin1.getServiceName,
+      rangerPlugin1.getAppId))
 
     val catalog2 = "catalog2"
-    val rangerPlugin2 = SparkRangerAdminPluginFactory.getRangerPlugin(catalog = Some(catalog2))
+    val rangerPlugin2 =
+      SparkRangerAdminPlugin.getRangerBasePlugin(catalog = Some(catalog2))
     assertResult((serviceType, s"hive_jenkins_$catalog2", catalog2))((
-      rangerPlugin2.basePlugin.getServiceType,
-      rangerPlugin2.basePlugin.getServiceName,
-      rangerPlugin2.basePlugin.getAppId))
+      rangerPlugin2.getServiceType,
+      rangerPlugin2.getServiceName,
+      rangerPlugin2.getAppId))
   }
 
   test("[KYUUBI #3594] same service type of Ranger plugin for catalogs for Ranger 2.0 and below") {
     assume(!isRanger21orGreater)
+    SparkRangerAdminPlugin.init()
 
-    val rangerPlugin1 = SparkRangerAdminPluginFactory.getRangerPlugin()
+    val rangerPlugin1 = SparkRangerAdminPlugin.getRangerBasePlugin
     assertResult((serviceType, "hive_jenkins", defaultAppId))((
-      rangerPlugin1.basePlugin.getServiceType,
-      rangerPlugin1.basePlugin.getServiceName,
-      rangerPlugin1.basePlugin.getAppId))
+      rangerPlugin1.getServiceType,
+      rangerPlugin1.getServiceName,
+      rangerPlugin1.getAppId))
 
     val catalog2 = "catalog2"
-    val rangerPlugin2 = SparkRangerAdminPluginFactory.getRangerPlugin(catalog = Some(catalog2))
+    val rangerPlugin2 =
+      SparkRangerAdminPlugin.getRangerBasePlugin(catalog = Some(catalog2))
     assertResult((serviceType, s"hive_jenkins", catalog2))((
-      rangerPlugin2.basePlugin.getServiceType,
-      rangerPlugin2.basePlugin.getServiceName,
-      rangerPlugin2.basePlugin.getAppId))
+      rangerPlugin2.getServiceType,
+      rangerPlugin2.getServiceName,
+      rangerPlugin2.getAppId))
   }
 }

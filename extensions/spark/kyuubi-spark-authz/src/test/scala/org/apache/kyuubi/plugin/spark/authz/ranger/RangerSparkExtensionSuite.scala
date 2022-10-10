@@ -786,7 +786,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val srcTable1 = "hive_src1"
     val srcTable2 = "hive_src2"
     val sinkTable1 = "hive_sink1"
-    val rangerPlugin = SparkRangerAdminPluginFactory.getRangerPlugin()
+    val rangerPlugin = SparkRangerAdminPlugin
 
     withCleanTmpResources(Seq(
       (s"$db1.$srcTable1", "table"),
@@ -818,7 +818,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       try {
         rangerPlugin.getRangerConf.setBoolean(
           "ranger.plugin" +
-            s".${SparkRangerAdminPluginFactory.getRangerPlugin().basePlugin.getServiceType}" +
+            s".${SparkRangerAdminPlugin.basePlugin.getServiceType}" +
             ".authorize.in.single.call",
           true)
         val e2 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))

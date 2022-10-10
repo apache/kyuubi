@@ -179,7 +179,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   test("[KYUUBI #3424] MERGE INTO") {
     assume(isSparkV31OrGreater)
 
-    val rangerPlugin = SparkRangerAdminPluginFactory.getRangerPlugin()
+    val rangerPlugin = SparkRangerAdminPlugin
 
     val mergeIntoSql =
       s"""

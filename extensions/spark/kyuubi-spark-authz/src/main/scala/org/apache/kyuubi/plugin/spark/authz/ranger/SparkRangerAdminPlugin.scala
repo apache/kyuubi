@@ -18,25 +18,30 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.JavaConverters._
+import scala.collection.concurrent.{Map, TrieMap}
 import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
-import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.serviceType
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider.getRangerConfFromPlugin
 
-class SparkRangerAdminPlugin(
-    serviceName: String,
-    appId: String)
+object SparkRangerAdminPlugin
   extends RangerConfigProvider {
+
+  val serviceType: String = "spark"
+  val defaultAppId: String = "sparkSql"
 
   /**
    * delegated ranger base plugin
    */
   var basePlugin: RangerBasePlugin = _
+
+  val catalog2pluginMap: Map[String, RangerBasePlugin] = TrieMap()
 
   /**
    * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
@@ -138,22 +143,69 @@ class SparkRangerAdminPlugin(
       }
     }
   }
-}
 
-object SparkRangerAdminPlugin {
-  def apply(serviceName: String, appId: String): SparkRangerAdminPlugin = {
-    val plugin = new SparkRangerAdminPlugin(serviceName, appId)
-    plugin.basePlugin =
+  def getRangerBasePlugin: RangerBasePlugin = getRangerBasePlugin(None)
+
+  def getRangerBasePlugin(catalog: Option[String]): RangerBasePlugin = {
+    catalog match {
+      case None | Some("spark_catalog") =>
+        basePlugin
+      case Some(catalogName) =>
+        val serviceName = catalogName match {
+          case "spark_catalog" =>
+            null
+          case _ =>
+            val defaultPlugin = basePlugin
+            val serviceNameForCatalog = getRangerConfFromPlugin(defaultPlugin)
+              .get(s"ranger.plugin.spark.catalog.$catalogName.service.name")
+            serviceNameForCatalog match {
+              case s: String if StringUtils.isBlank(s) =>
+                throw new RuntimeException(
+                  s"config ranger.plugin.spark.catalog.$catalogName.service.name not found")
+              case _ => serviceNameForCatalog
+            }
+        }
+
+        val appId = catalogName match {
+          case "spark_catalog" =>
+            defaultAppId
+          case _ =>
+            catalogName
+        }
+
+        catalog2pluginMap.getOrElseUpdate(
+          catalogName, {
+            val plugin: RangerBasePlugin =
+              if (isRanger21orGreater) {
+                classOf[RangerBasePlugin]
+                  .getConstructor(classOf[String], classOf[String], classOf[String])
+                  .newInstance(serviceType, serviceName, appId)
+              } else {
+                // ignoring serviceName for Ranger 2.0 and below,
+                // fallbacking to service name in ranger config of serviceType
+                classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String])
+                  .newInstance(serviceType, appId)
+              }
+            plugin.init()
+            plugin
+          })
+    }
+  }
+
+  def init(): Unit = {
+
+    // init default ranger base plugin
+    val defaultServiceName = null
+    basePlugin =
       if (isRanger21orGreater) {
         classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
-          .newInstance(serviceType, serviceName, appId)
+          .newInstance(serviceType, defaultServiceName, defaultAppId)
       } else {
         // ignoring serviceName for Ranger 2.0 and below,
         // fallbacking to service name in ranger config of serviceType
         classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String])
-          .newInstance(serviceType, appId)
+          .newInstance(serviceType, defaultAppId)
       }
-    plugin.basePlugin.init()
-    plugin
+    basePlugin.init()
   }
 }

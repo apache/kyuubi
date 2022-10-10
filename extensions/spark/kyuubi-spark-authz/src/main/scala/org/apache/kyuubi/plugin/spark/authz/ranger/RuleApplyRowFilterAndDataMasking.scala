@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.getRangerPlugin
+
 import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
@@ -71,7 +71,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       plan: LogicalPlan,
       identifier: TableIdentifier,
       spark: SparkSession): LogicalPlan = {
-    val rangerPlugin = getRangerPlugin()
+    val rangerPlugin = SparkRangerAdminPlugin
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = OperationType(plan.nodeName)
     val parse = spark.sessionState.sqlParser.parseExpression _
