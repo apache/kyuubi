@@ -30,18 +30,18 @@ class SparkRangerAdminPluginFactorySuite extends AnyFunSuite {
 
     val rangerPlugin1 = SparkRangerAdminPluginFactory.getRangerPlugin()
     assertResult((serviceType, "hive_jenkins", defaultAppId))(
-      (getFieldVal[String](rangerPlugin1.r, "serviceType"),
-        getFieldVal[String](rangerPlugin1.r, "serviceName"),
-        getFieldVal[String](rangerPlugin1.r, "appId")
-      ))
+      (
+        getFieldVal[String](rangerPlugin1.basePlugin, "serviceType"),
+        getFieldVal[String](rangerPlugin1.basePlugin, "serviceName"),
+        getFieldVal[String](rangerPlugin1.basePlugin, "appId")))
 
     val catalog2 = "catalog2"
     val rangerPlugin2 = SparkRangerAdminPluginFactory.getRangerPlugin(catalog = Some(catalog2))
     assertResult((serviceType, s"hive_jenkins_$catalog2", catalog2))(
-      (getFieldVal[String](rangerPlugin2.r, "serviceType"),
-        getFieldVal[String](rangerPlugin2.r, "serviceName"),
-        getFieldVal[String](rangerPlugin2.r, "appId")
-      ))
+      (
+        getFieldVal[String](rangerPlugin2.basePlugin, "serviceType"),
+        getFieldVal[String](rangerPlugin2.basePlugin, "serviceName"),
+        getFieldVal[String](rangerPlugin2.basePlugin, "appId")))
   }
 
   test("[KYUUBI #3594] same service type of Ranger plugin for catalogs for Ranger 2.0 and below") {
@@ -49,17 +49,17 @@ class SparkRangerAdminPluginFactorySuite extends AnyFunSuite {
 
     val rangerPlugin1 = SparkRangerAdminPluginFactory.getRangerPlugin()
     assertResult((serviceType, "hive_jenkins", defaultAppId))(
-      (getFieldVal[String](rangerPlugin1.r, "serviceType"),
-        getFieldVal[String](rangerPlugin1.r, "serviceName"),
-        getFieldVal[String](rangerPlugin1.r, "appId")
-      ))
+      (
+        getFieldVal[String](rangerPlugin1.basePlugin, "serviceType"),
+        getFieldVal[String](rangerPlugin1.basePlugin, "serviceName"),
+        getFieldVal[String](rangerPlugin1.basePlugin, "appId")))
 
     val catalog2 = "catalog2"
     val rangerPlugin2 = SparkRangerAdminPluginFactory.getRangerPlugin(catalog = Some(catalog2))
     assertResult((serviceType, s"hive_jenkins", catalog2))(
-      (getFieldVal[String](rangerPlugin2.r, "serviceType"),
-        getFieldVal[String](rangerPlugin2.r, "serviceName"),
-        getFieldVal[String](rangerPlugin2.r, "appId")
-      ))
+      (
+        getFieldVal[String](rangerPlugin2.basePlugin, "serviceType"),
+        getFieldVal[String](rangerPlugin2.basePlugin, "serviceName"),
+        getFieldVal[String](rangerPlugin2.basePlugin, "appId")))
   }
 }

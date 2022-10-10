@@ -20,8 +20,8 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.collection.concurrent.{Map, TrieMap}
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.apache.spark.internal.Logging
-
 
 object SparkRangerAdminPluginFactory extends Logging {
 
@@ -70,5 +70,9 @@ object SparkRangerAdminPluginFactory extends Logging {
         val plugin = SparkRangerAdminPlugin(serviceName = serviceName, appId = appId)
         plugin
       })
+  }
+
+  def getRangerBasePlugin(catalog: Option[String] = None): RangerBasePlugin = {
+    getRangerPlugin(catalog).basePlugin
   }
 }

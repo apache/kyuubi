@@ -37,7 +37,7 @@ trait RangerConfigProvider {
   def getRangerConf: Configuration = {
     try {
       // for Ranger 2.1+
-      val basePlugin = getFieldVal[RangerBasePlugin](this, "r")
+      val basePlugin = getFieldVal[RangerBasePlugin](this, "basePlugin")
       invoke(basePlugin, "getConfig").asInstanceOf[Configuration]
     } catch {
       case _: NoSuchMethodException =>

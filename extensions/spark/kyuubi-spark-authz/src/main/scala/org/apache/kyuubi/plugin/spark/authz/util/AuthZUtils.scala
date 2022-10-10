@@ -27,7 +27,6 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.connector.catalog.Identifier
 
-
 private[authz] object AuthZUtils {
 
   /**
