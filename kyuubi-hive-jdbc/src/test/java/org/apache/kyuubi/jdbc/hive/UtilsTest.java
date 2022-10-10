@@ -33,23 +33,39 @@ public class UtilsTest {
 
   private String expectedHost;
   private String expectedPort;
+  private String expectedCatalog;
+  private String expectedDb;
   private String uri;
 
   @Parameterized.Parameters
   public static Collection<String[]> data() {
     return Arrays.asList(
         new String[][] {
-          {"localhost", "10009", "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3"},
-          {"localhost", "10009", "jdbc:hive2:///"},
-          {"localhost", "10009", "jdbc:kyuubi://"},
-          {"localhost", "10009", "jdbc:hive2://"},
-          {"hostname", "10018", "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3"}
+          {"localhost", "10009", null, "db", "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3"},
+          {"localhost", "10009", null, "default", "jdbc:hive2:///"},
+          {"localhost", "10009", null, "default", "jdbc:kyuubi://"},
+          {"localhost", "10009", null, "default", "jdbc:hive2://"},
+          {"hostname", "10018", null, "db", "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3"},
+          {
+            "hostname",
+            "10018",
+            "catalog",
+            "db",
+            "jdbc:hive2://hostname:10018/catalog/db;k1=v1?k2=v2#k3=v3"
+          }
         });
   }
 
-  public UtilsTest(String expectedHost, String expectedPort, String uri) {
+  public UtilsTest(
+      String expectedHost,
+      String expectedPort,
+      String expectedCatalog,
+      String expectedDb,
+      String uri) {
     this.expectedHost = expectedHost;
     this.expectedPort = expectedPort;
+    this.expectedCatalog = expectedCatalog;
+    this.expectedDb = expectedDb;
     this.uri = uri;
   }
 
@@ -58,5 +74,7 @@ public class UtilsTest {
     JdbcConnectionParams jdbcConnectionParams1 = extractURLComponents(uri, new Properties());
     assertEquals(expectedHost, jdbcConnectionParams1.getHost());
     assertEquals(Integer.parseInt(expectedPort), jdbcConnectionParams1.getPort());
+    assertEquals(expectedCatalog, jdbcConnectionParams1.getCatalogName());
+    assertEquals(expectedDb, jdbcConnectionParams1.getDbName());
   }
 }

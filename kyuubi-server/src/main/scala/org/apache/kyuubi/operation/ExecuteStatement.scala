@@ -27,7 +27,7 @@ import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Session}
+import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
     session: Session,
@@ -51,6 +51,7 @@ class ExecuteStatement(
     OperationLog.setCurrentOperationLog(_operationLog)
     setHasResultSet(true)
     setState(OperationState.PENDING)
+    sendCredentialsIfNeeded()
   }
 
   override protected def afterRun(): Unit = {
@@ -126,15 +127,6 @@ class ExecuteStatement(
       // see if anymore log could be fetched
       fetchQueryLog()
     } catch onError()
-
-  private def sendCredentialsIfNeeded(): Unit = {
-    val appUser = session.asInstanceOf[KyuubiSessionImpl].engine.appUser
-    val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
-    sessionManager.credentialsManager.sendCredentialsIfNeeded(
-      session.handle.identifier.toString,
-      appUser,
-      client.sendCredentials)
-  }
 
   private def fetchQueryLog(): Unit = {
     getOperationLog.foreach { logger =>

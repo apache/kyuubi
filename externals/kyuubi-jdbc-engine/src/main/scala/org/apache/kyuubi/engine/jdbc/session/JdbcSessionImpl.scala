@@ -16,12 +16,13 @@
  */
 package org.apache.kyuubi.engine.jdbc.session
 
-import java.sql.Connection
+import java.sql.{Connection, DatabaseMetaData}
 
 import scala.util.{Failure, Success, Try}
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.session.{AbstractSession, SessionManager}
 
@@ -36,15 +37,36 @@ class JdbcSessionImpl(
 
   private[jdbc] var sessionConnection: Connection = _
 
+  private var databaseMetaData: DatabaseMetaData = _
+
   private val kyuubiConf = sessionManager.getConf
 
   override def open(): Unit = {
     info(s"Starting to open jdbc session.")
     if (sessionConnection == null) {
       sessionConnection = ConnectionProvider.create(kyuubiConf)
+      databaseMetaData = sessionConnection.getMetaData
     }
     super.open()
     info(s"The jdbc session is started.")
+  }
+
+  override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
+    assert(databaseMetaData != null, "JDBC session has not been initialized")
+    infoType match {
+      case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
+        TGetInfoValue.stringValue(databaseMetaData.getDatabaseProductName)
+      case TGetInfoType.CLI_DBMS_VER =>
+        TGetInfoValue.stringValue(databaseMetaData.getDatabaseProductVersion)
+      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
+      case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN =>
+        TGetInfoValue.lenValue(databaseMetaData.getMaxColumnNameLength)
+      case TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN =>
+        TGetInfoValue.lenValue(databaseMetaData.getMaxSchemaNameLength)
+      case TGetInfoType.CLI_MAX_TABLE_NAME_LEN =>
+        TGetInfoValue.lenValue(databaseMetaData.getMaxTableNameLength)
+      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
+    }
   }
 
   override def close(): Unit = {

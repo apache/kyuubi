@@ -16,9 +16,47 @@
  */
 package org.apache.kyuubi.engine.jdbc.doris
 
+import org.apache.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
+
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = jdbcConnectionUrl
+
+  test("Test for Jdbc engine getInfo") {
+    val metaData = ConnectionProvider.create(kyuubiConf).getMetaData
+
+    withSessionConf(Map(KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TGetInfoReq()
+        req.setSessionHandle(handle)
+        req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+        assert(client.GetInfo(req).getInfoValue.getStringValue == metaData.getDatabaseProductName)
+
+        val req2 = new TGetInfoReq()
+        req2.setSessionHandle(handle)
+        req2.setInfoType(TGetInfoType.CLI_DBMS_VER)
+        assert(
+          client.GetInfo(req2).getInfoValue.getStringValue == metaData.getDatabaseProductVersion)
+
+        val req3 = new TGetInfoReq()
+        req3.setSessionHandle(handle)
+        req3.setInfoType(TGetInfoType.CLI_MAX_COLUMN_NAME_LEN)
+        assert(client.GetInfo(req3).getInfoValue.getLenValue == metaData.getMaxColumnNameLength)
+
+        val req4 = new TGetInfoReq()
+        req4.setSessionHandle(handle)
+        req4.setInfoType(TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN)
+        assert(client.GetInfo(req4).getInfoValue.getLenValue == metaData.getMaxSchemaNameLength)
+
+        val req5 = new TGetInfoReq()
+        req5.setSessionHandle(handle)
+        req5.setInfoType(TGetInfoType.CLI_MAX_TABLE_NAME_LEN)
+        assert(client.GetInfo(req5).getInfoValue.getLenValue == metaData.getMaxTableNameLength)
+      }
+    }
+  }
 }

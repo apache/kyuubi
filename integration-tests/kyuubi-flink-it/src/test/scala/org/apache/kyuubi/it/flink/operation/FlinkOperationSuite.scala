@@ -48,6 +48,14 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
     }
   }
 
+  test("execute statement - create/alter/drop table") {
+    withJdbcStatement()({ statement =>
+      statement.executeQuery("create table tbl_a (a string) with ('connector' = 'blackhole')")
+      assert(statement.execute("alter table tbl_a rename to tbl_b"))
+      assert(statement.execute("drop table tbl_b"))
+    })
+  }
+
   test("execute statement - select column name with dots") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select 'tmp.hello'")

@@ -23,6 +23,7 @@ import java.util.UUID
 
 import scala.collection.JavaConverters._
 
+import org.apache.flink.api.common.JobID
 import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -33,6 +34,7 @@ import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.operation.{HiveJDBCTestHelper, NoneMode}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.service.ServiceState._
@@ -67,13 +69,97 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("get columns") {
-    withJdbcStatement() { statement =>
-      val exceptionMsg = intercept[Exception](statement.getConnection.getMetaData.getColumns(
-        null,
-        null,
-        null,
-        null)).getMessage
-      assert(exceptionMsg.contains(s"Unsupported Operation type GetColumns"))
+    val tableName = "flink_get_col_operation"
+
+    withJdbcStatement(tableName) { statement =>
+      statement.execute(
+        s"""
+           | create table $tableName (
+           |  c0 boolean,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer,
+           |  c4 bigint,
+           |  c5 float,
+           |  c6 double,
+           |  c7 decimal(38,20),
+           |  c8 decimal(10,2),
+           |  c9 string,
+           |  c10 array<bigint>,
+           |  c11 array<string>,
+           |  c12 map<smallint, tinyint>,
+           |  c13 date,
+           |  c14 timestamp,
+           |  c15 binary
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      val metaData = statement.getConnection.getMetaData
+
+      Seq("%", null, ".*", "c.*") foreach { columnPattern =>
+        val rowSet = metaData.getColumns("", "", tableName, columnPattern)
+
+        import java.sql.Types._
+        val expectedJavaTypes = Seq(
+          BOOLEAN,
+          TINYINT,
+          SMALLINT,
+          INTEGER,
+          BIGINT,
+          FLOAT,
+          DOUBLE,
+          DECIMAL,
+          DECIMAL,
+          VARCHAR,
+          ARRAY,
+          ARRAY,
+          JAVA_OBJECT,
+          DATE,
+          TIMESTAMP,
+          BINARY)
+
+        val expectedSqlType = Seq(
+          "BOOLEAN",
+          "TINYINT",
+          "SMALLINT",
+          "INT",
+          "BIGINT",
+          "FLOAT",
+          "DOUBLE",
+          "DECIMAL(38, 20)",
+          "DECIMAL(10, 2)",
+          "STRING",
+          "ARRAY<BIGINT>",
+          "ARRAY<STRING>",
+          "MAP<SMALLINT, TINYINT>",
+          "DATE",
+          "TIMESTAMP(6)",
+          "BINARY(1)")
+
+        var pos = 0
+
+        while (rowSet.next()) {
+          assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+          assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+          assert(rowSet.getString(TABLE_NAME) === tableName)
+          assert(rowSet.getString(COLUMN_NAME) === s"c$pos")
+          assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))
+          assert(rowSet.getString(TYPE_NAME) === expectedSqlType(pos))
+          assert(rowSet.getInt(BUFFER_LENGTH) === 0)
+          assert(rowSet.getInt(NULLABLE) === 1)
+          assert(rowSet.getInt(ORDINAL_POSITION) === pos)
+          assert(rowSet.getString(IS_NULLABLE) === "YES")
+          assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
+          pos += 1
+        }
+
+        assert(pos === expectedSqlType.length, "all columns should have been verified")
+      }
+      val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
+      assert(!rowSet.next())
     }
   }
 
@@ -660,7 +746,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         "create table tbl_src (a int) with ('connector' = 'datagen', 'number-of-rows' = '100')")
       val resultSet = statement.executeQuery(s"select count(a) from tbl_src")
       assert(resultSet.next())
-      assert(resultSet.getInt(1) === 100)
+      assert(resultSet.getInt(1) <= 100)
     }
   }
 
@@ -701,11 +787,20 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
-  test("execute statement - create/alter/drop catalog") {
-    // TODO: validate table results after FLINK-25558 is resolved
+  test("execute statement - create/drop catalog") {
     withJdbcStatement()({ statement =>
-      statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
-      assert(statement.execute("drop catalog cat_a"))
+      val createResult = {
+        statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
+      }
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(createResult.next())
+        assert(createResult.getString(1) === "OK")
+      }
+      val dropResult = statement.executeQuery("drop catalog cat_a")
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(dropResult.next())
+        assert(dropResult.getString(1) === "OK")
+      }
     })
   }
 
@@ -726,11 +821,22 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("execute statement - create/alter/drop database") {
-    // TODO: validate table results after FLINK-25558 is resolved
     withJdbcStatement()({ statement =>
-      statement.executeQuery("create database db_a")
-      assert(statement.execute("alter database db_a set ('k1' = 'v1')"))
-      assert(statement.execute("drop database db_a"))
+      val createResult = statement.executeQuery("create database db_a")
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(createResult.next())
+        assert(createResult.getString(1) === "OK")
+      }
+      val alterResult = statement.executeQuery("alter database db_a set ('k1' = 'v1')")
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(alterResult.next())
+        assert(alterResult.getString(1) === "OK")
+      }
+      val dropResult = statement.executeQuery("drop database db_a")
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(dropResult.next())
+        assert(dropResult.getString(1) === "OK")
+      }
     })
   }
 
@@ -751,20 +857,44 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("execute statement - create/alter/drop table") {
-    // TODO: validate table results after FLINK-25558 is resolved
     withJdbcStatement()({ statement =>
-      statement.executeQuery("create table tbl_a (a string) with ('connector' = 'blackhole')")
-      assert(statement.execute("alter table tbl_a rename to tbl_b"))
-      assert(statement.execute("drop table tbl_b"))
+      val createResult = {
+        statement.executeQuery("create table tbl_a (a string) with ('connector' = 'blackhole')")
+      }
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(createResult.next())
+        assert(createResult.getString(1) === "OK")
+      }
+      val alterResult = statement.executeQuery("alter table tbl_a rename to tbl_b")
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(alterResult.next())
+        assert(alterResult.getString(1) === "OK")
+      }
+      val dropResult = statement.executeQuery("drop table tbl_b")
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(dropResult.next())
+        assert(dropResult.getString(1) === "OK")
+      }
     })
   }
 
   test("execute statement - create/alter/drop view") {
-    // TODO: validate table results after FLINK-25558 is resolved
     withMultipleConnectionJdbcStatement()({ statement =>
-      statement.executeQuery("create view view_a as select 1")
-      assert(statement.execute("alter view view_a rename to view_b"))
-      assert(statement.execute("drop view view_b"))
+      val createResult = statement.executeQuery("create view view_a as select 1")
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(createResult.next())
+        assert(createResult.getString(1) === "OK")
+      }
+      val alterResult = statement.executeQuery("alter view view_a rename to view_b")
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(alterResult.next())
+        assert(alterResult.getString(1) === "OK")
+      }
+      val dropResult = statement.executeQuery("drop view view_b")
+      if (isFlinkVersionAtLeast("1.15")) {
+        assert(dropResult.next())
+        assert(dropResult.getString(1) === "OK")
+      }
     })
   }
 
@@ -927,6 +1057,18 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
     withThriftClient { client =>
       assertDefaultDatabase(client, "default_database", true)
+    }
+  }
+
+  test("get query id") {
+    withJdbcStatement("tbl_a") { stmt =>
+      stmt.executeQuery("create table tbl_a (a int) with ('connector' = 'blackhole')")
+      assert(stmt.asInstanceOf[KyuubiStatement].getQueryId === null)
+      stmt.executeQuery("insert into tbl_a values (1)")
+      val queryId = stmt.asInstanceOf[KyuubiStatement].getQueryId
+      assert(queryId !== null)
+      // parse the string to check if it's valid Flink job id
+      assert(JobID.fromHexString(queryId) !== null)
     }
   }
 }

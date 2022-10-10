@@ -18,13 +18,15 @@
 package org.apache.kyuubi.events
 
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
 import scala.reflect.{classTag, ClassTag}
 import scala.util.Try
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ASYNC_EVENT_HANDLER_KEEPALIVE_TIME, ASYNC_EVENT_HANDLER_POLL_SIZE, ASYNC_EVENT_HANDLER_WAIT_QUEUE_SIZE}
 import org.apache.kyuubi.events.handler.EventHandler
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * The [[EventBus]] is responsible for triggering Kyuubi event, registering event handlers and
@@ -42,6 +44,18 @@ sealed trait EventBus {
 
 object EventBus extends Logging {
   private val defaultEventBus = EventBusLive()
+  private val conf: KyuubiConf = KyuubiConf().loadFileDefaults()
+
+  private val poolSize = conf.get(ASYNC_EVENT_HANDLER_POLL_SIZE)
+  private val waitQueueSize = conf.get(ASYNC_EVENT_HANDLER_WAIT_QUEUE_SIZE)
+  private val keepAliveMs = conf.get(ASYNC_EVENT_HANDLER_KEEPALIVE_TIME)
+
+  implicit private lazy val asyncEventExecutionContext: ExecutionContextExecutorService =
+    ExecutionContext.fromExecutorService(ThreadUtils.newDaemonQueuedThreadPool(
+      poolSize,
+      waitQueueSize,
+      keepAliveMs,
+      "async-event-handler-pool"))
 
   def apply(): EventBus = EventBusLive()
 

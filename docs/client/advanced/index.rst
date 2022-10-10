@@ -21,5 +21,5 @@ Client Commons
 
     configurations
     logging
-    kerberized_kyuubi
+    kerberos
     features/index

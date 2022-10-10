@@ -265,6 +265,15 @@ kyuubi.engine.user.isolated.spark.session.idle.interval|PT1M|The interval to che
 kyuubi.engine.user.isolated.spark.session.idle.timeout|PT6H|If kyuubi.engine.user.isolated.spark.session is false, we will release the spark session if its corresponding user is inactive after this configured timeout.|duration|1.6.0
 
 
+### Event
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.event.async.pool.keepalive.time|PT1M|Time(ms) that an idle async thread of the async event handler thread pool will wait for a new task to arrive before terminating|duration|1.7.0
+kyuubi.event.async.pool.size|8|Number of threads in the async event handler thread pool|int|1.7.0
+kyuubi.event.async.pool.wait.queue.size|100|Size of the wait queue for the async event handler thread pool|int|1.7.0
+
+
 ### Frontend
 
 Key | Default | Meaning | Type | Since
@@ -272,7 +281,7 @@ Key | Default | Meaning | Type | Since
 kyuubi.frontend.backoff.slot.length|PT0.1S|(deprecated) Time to back off during login to the thrift frontend service.|duration|1.0.0
 kyuubi.frontend.bind.host|&lt;undefined&gt;|(deprecated) Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.|string|1.0.0
 kyuubi.frontend.bind.port|10009|(deprecated) Port of the machine on which to run the thrift frontend service via binary protocol.|int|1.0.0
-kyuubi.frontend.connection.url.use.hostname|true|When true, frontend services prefer hostname, otherwise, ip address|boolean|1.5.0
+kyuubi.frontend.connection.url.use.hostname|true|When true, frontend services prefer hostname, otherwise, ip address. Note that, the default value is set to `false` when engine running on Kubernetes to prevent potential network issue.|boolean|1.5.0
 kyuubi.frontend.login.timeout|PT20S|(deprecated) Timeout for Thrift clients during login to the thrift frontend service.|duration|1.0.0
 kyuubi.frontend.max.message.size|104857600|(deprecated) Maximum message size in bytes a Kyuubi server will accept.|int|1.0.0
 kyuubi.frontend.max.worker.threads|999|(deprecated) Maximum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.0.0

@@ -31,6 +31,7 @@ import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThriftUtils
 
 object OperationLog extends Logging {
   final private val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
@@ -87,6 +88,8 @@ class OperationLog(path: Path) {
   private lazy val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
   private lazy val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
 
+  @volatile private var initialized: Boolean = false
+
   private lazy val extraPaths: ListBuffer[Path] = ListBuffer()
   private lazy val extraReaders: ListBuffer[BufferedReader] = ListBuffer()
   private var lastSeekReadPos = 0
@@ -108,9 +111,14 @@ class OperationLog(path: Path) {
     try {
       writer.write(msg)
       writer.flush()
+      initOperationLogIfNecessary()
     } catch {
       case _: IOException => // TODO: better do nothing?
     }
+  }
+
+  private[log] def initOperationLogIfNecessary(): Unit = {
+    if (!initialized) initialized = true
   }
 
   private def readLogs(
@@ -148,6 +156,7 @@ class OperationLog(path: Path) {
    * @param maxRows maximum result number can reach
    */
   def read(maxRows: Int): TRowSet = synchronized {
+    if (!initialized) return ThriftUtils.newEmptyRowSet
     val (logs, lines) = readLogs(reader, maxRows, maxRows)
     var lastRows = maxRows - lines
     for (extraReader <- extraReaders if lastRows > 0 || maxRows <= 0) {
@@ -160,6 +169,7 @@ class OperationLog(path: Path) {
   }
 
   def read(from: Int, size: Int): TRowSet = synchronized {
+    if (!initialized) return ThriftUtils.newEmptyRowSet
     var pos = from
     if (pos < 0) {
       // just fetch forward
