@@ -20,6 +20,8 @@ import java.sql.DriverManager
 
 import scala.util.Try
 
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
+
 // scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
@@ -179,7 +181,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   test("[KYUUBI #3424] MERGE INTO") {
     assume(isSparkV31OrGreater)
 
-    val rangerPlugin = SparkRangerAdminPlugin
+    val rangerPlugin = SparkRangerAdminPlugin.getRangerBasePlugin
 
     val mergeIntoSql =
       s"""
@@ -199,8 +201,8 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
       s" on [$namespace1/$table1/id]"))
 
     try {
-      rangerPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${rangerPlugin.defaultBasePlugin.getServiceType}.authorize.in.single.call",
+      getRangerConf(rangerPlugin).setBoolean(
+        s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
         true)
       val e2 = intercept[AccessControlException](
         doAs(
@@ -211,8 +213,8 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
         s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
         s" [update] privilege on [$namespace1/$outputTable1]"))
     } finally {
-      rangerPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${rangerPlugin.defaultBasePlugin.getServiceType}.authorize.in.single.call",
+      getRangerConf(rangerPlugin).setBoolean(
+        s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
         false)
     }
   }

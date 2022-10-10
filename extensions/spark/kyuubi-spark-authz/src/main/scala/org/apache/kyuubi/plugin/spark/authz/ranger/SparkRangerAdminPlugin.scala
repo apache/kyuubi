@@ -27,11 +27,9 @@ import org.apache.ranger.plugin.service.RangerBasePlugin
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider
-import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider.getRangerConfFromPlugin
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 
-object SparkRangerAdminPlugin
-  extends RangerConfigProvider {
+object SparkRangerAdminPlugin {
 
   val serviceType: String = "spark"
   val defaultAppId: String = "sparkSql"
@@ -50,7 +48,7 @@ object SparkRangerAdminPlugin
    * This configuration controls whether to verify the privilege objects in single call or
    * to verify them one by one.
    */
-  def authorizeInSingleCall: Boolean = getRangerConf.getBoolean(
+  def authorizeInSingleCall: Boolean = getRangerConf(defaultBasePlugin).getBoolean(
     s"ranger.plugin.${defaultBasePlugin.getServiceType}.authorize.in.single.call",
     false)
 
@@ -152,7 +150,7 @@ object SparkRangerAdminPlugin
         defaultBasePlugin
       case Some(catalogName) =>
         val serviceName = {
-          val serviceNameForCatalog = getRangerConfFromPlugin(defaultBasePlugin)
+          val serviceNameForCatalog = getRangerConf(defaultBasePlugin)
             .get(s"ranger.plugin.spark.catalog.$catalogName.service.name")
           if (StringUtils.isNotBlank(serviceNameForCatalog)) {
             serviceNameForCatalog

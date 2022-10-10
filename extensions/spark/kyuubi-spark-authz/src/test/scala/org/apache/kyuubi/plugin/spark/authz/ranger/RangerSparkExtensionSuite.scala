@@ -31,6 +31,8 @@ import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -786,7 +788,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val srcTable1 = "hive_src1"
     val srcTable2 = "hive_src2"
     val sinkTable1 = "hive_sink1"
-    val rangerPlugin = SparkRangerAdminPlugin
+    val rangerPlugin = SparkRangerAdminPlugin.getRangerBasePlugin
 
     withCleanTmpResources(Seq(
       (s"$db1.$srcTable1", "table"),
@@ -816,7 +818,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
 
       try {
-        rangerPlugin.getRangerConf.setBoolean(
+        getRangerConf(rangerPlugin).setBoolean(
           "ranger.plugin" +
             s".${SparkRangerAdminPlugin.getRangerBasePlugin.getServiceType}" +
             ".authorize.in.single.call",
@@ -829,8 +831,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s" [update] privilege on [$db1/$sinkTable1]"))
       } finally {
         // revert to default value
-        rangerPlugin.getRangerConf.setBoolean(
-          s"ranger.plugin.${rangerPlugin.defaultBasePlugin.getServiceType}.authorize.in.single.call",
+        getRangerConf(rangerPlugin).setBoolean(
+          s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
           false)
       }
     }

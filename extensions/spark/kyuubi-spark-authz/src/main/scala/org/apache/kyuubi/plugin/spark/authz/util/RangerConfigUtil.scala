@@ -18,12 +18,12 @@
 package org.apache.kyuubi.plugin.spark.authz.util
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.ranger.authorization.hadoop.config.RangerConfiguration
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigProvider.getRangerConfFromPlugin
 
-trait RangerConfigProvider {
+object RangerConfigUtil {
 
   /**
    * Get plugin config of different Ranger versions
@@ -31,29 +31,17 @@ trait RangerConfigProvider {
    * @return instance of
    *         org.apache.ranger.authorization.hadoop.config.RangerPluginConfig
    *         for Ranger 2.1 and above,
-   *         or instance of
+   *         or static instance of
    *         org.apache.ranger.authorization.hadoop.config.RangerConfiguration
    *         for Ranger 2.0 and below
    */
-  def getRangerConf: Configuration = {
-    val basePlugin = getFieldVal[RangerBasePlugin](this, "defaultBasePlugin")
-    getRangerConfFromPlugin(basePlugin)
-  }
-
-}
-
-object RangerConfigProvider {
-  def getRangerConfFromPlugin(basePlugin: RangerBasePlugin): Configuration = {
-    try {
+  def getRangerConf(plugin: RangerBasePlugin): Configuration = {
+    if (isRanger21orGreater) {
       // for Ranger 2.1+
-      invoke(basePlugin, "getConfig").asInstanceOf[Configuration]
-    } catch {
-      case _: NoSuchMethodException =>
-        // for Ranger 2.0 and below
-        invokeStatic(
-          Class.forName("org.apache.ranger.authorization.hadoop.config.RangerConfiguration"),
-          "getInstance")
-          .asInstanceOf[Configuration]
+      invoke(plugin, "getConfig").asInstanceOf[Configuration]
+    } else {
+      // for Ranger 2.0 and below
+      invokeStatic(classOf[RangerConfiguration], "getInstance").asInstanceOf[Configuration]
     }
   }
 }
