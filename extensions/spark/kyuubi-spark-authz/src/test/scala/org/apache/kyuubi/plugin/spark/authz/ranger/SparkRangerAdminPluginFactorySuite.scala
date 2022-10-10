@@ -25,7 +25,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isRanger21orGreater
 
 class SparkRangerAdminPluginFactorySuite extends AnyFunSuite {
 // scalastyle:on
-  test("[KYUUBI #3594] get or create Ranger plugin by catalog name for Ranger 2.1+") {
+  test("[KYUUBI #3594] get or create Ranger plugin by catalog name with Ranger 2.1+") {
     assume(isRanger21orGreater)
 
     val rangerPlugin1 = getRangerPlugin()
@@ -42,7 +42,7 @@ class SparkRangerAdminPluginFactorySuite extends AnyFunSuite {
       rangerPlugin2.getAppId))
   }
 
-  test("[KYUUBI #3594] same service type of Ranger plugin for catalogs for Ranger 2.0 and below") {
+  test("[KYUUBI #3594] same service name of Ranger plugin for catalogs with Ranger 2.0 and below") {
     assume(!isRanger21orGreater)
 
     val rangerPlugin1 = getRangerPlugin()
