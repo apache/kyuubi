@@ -21,7 +21,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPluginFactory.{defaultAppId, serviceType}
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{getFieldVal, isRanger21orGreater}
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isRanger21orGreater
 
 class SparkRangerAdminPluginFactorySuite extends AnyFunSuite {
 // scalastyle:on
@@ -29,37 +29,33 @@ class SparkRangerAdminPluginFactorySuite extends AnyFunSuite {
     assume(isRanger21orGreater)
 
     val rangerPlugin1 = SparkRangerAdminPluginFactory.getRangerPlugin()
-    assertResult((serviceType, "hive_jenkins", defaultAppId))(
-      (
-        getFieldVal[String](rangerPlugin1.basePlugin, "serviceType"),
-        getFieldVal[String](rangerPlugin1.basePlugin, "serviceName"),
-        getFieldVal[String](rangerPlugin1.basePlugin, "appId")))
+    assertResult((serviceType, "hive_jenkins", defaultAppId))((
+      rangerPlugin1.basePlugin.getServiceType,
+      rangerPlugin1.basePlugin.getServiceName,
+      rangerPlugin1.basePlugin.getAppId))
 
     val catalog2 = "catalog2"
     val rangerPlugin2 = SparkRangerAdminPluginFactory.getRangerPlugin(catalog = Some(catalog2))
-    assertResult((serviceType, s"hive_jenkins_$catalog2", catalog2))(
-      (
-        getFieldVal[String](rangerPlugin2.basePlugin, "serviceType"),
-        getFieldVal[String](rangerPlugin2.basePlugin, "serviceName"),
-        getFieldVal[String](rangerPlugin2.basePlugin, "appId")))
+    assertResult((serviceType, s"hive_jenkins_$catalog2", catalog2))((
+      rangerPlugin2.basePlugin.getServiceType,
+      rangerPlugin2.basePlugin.getServiceName,
+      rangerPlugin2.basePlugin.getAppId))
   }
 
   test("[KYUUBI #3594] same service type of Ranger plugin for catalogs for Ranger 2.0 and below") {
     assume(!isRanger21orGreater)
 
     val rangerPlugin1 = SparkRangerAdminPluginFactory.getRangerPlugin()
-    assertResult((serviceType, "hive_jenkins", defaultAppId))(
-      (
-        getFieldVal[String](rangerPlugin1.basePlugin, "serviceType"),
-        getFieldVal[String](rangerPlugin1.basePlugin, "serviceName"),
-        getFieldVal[String](rangerPlugin1.basePlugin, "appId")))
+    assertResult((serviceType, "hive_jenkins", defaultAppId))((
+      rangerPlugin1.basePlugin.getServiceType,
+      rangerPlugin1.basePlugin.getServiceName,
+      rangerPlugin1.basePlugin.getAppId))
 
     val catalog2 = "catalog2"
     val rangerPlugin2 = SparkRangerAdminPluginFactory.getRangerPlugin(catalog = Some(catalog2))
-    assertResult((serviceType, s"hive_jenkins", catalog2))(
-      (
-        getFieldVal[String](rangerPlugin2.basePlugin, "serviceType"),
-        getFieldVal[String](rangerPlugin2.basePlugin, "serviceName"),
-        getFieldVal[String](rangerPlugin2.basePlugin, "appId")))
+    assertResult((serviceType, s"hive_jenkins", catalog2))((
+      rangerPlugin2.basePlugin.getServiceType,
+      rangerPlugin2.basePlugin.getServiceName,
+      rangerPlugin2.basePlugin.getAppId))
   }
 }
