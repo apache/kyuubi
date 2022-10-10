@@ -20,16 +20,15 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.{Map, TrieMap}
 import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
-
 import org.apache.commons.lang3.StringUtils
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
-
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
+import org.apache.spark.internal.Logging
 
-object SparkRangerAdminPlugin {
+object SparkRangerAdminPlugin extends Logging{
 
   val serviceType: String = "spark"
   val defaultAppId: String = "sparkSql"
@@ -149,19 +148,18 @@ object SparkRangerAdminPlugin {
       case None | Some("spark_catalog") =>
         defaultBasePlugin
       case Some(catalogName) =>
-        val serviceName = {
-          val serviceNameForCatalog = getRangerConf(defaultBasePlugin)
-            .get(s"ranger.plugin.spark.catalog.$catalogName.service.name")
-          if (StringUtils.isNotBlank(serviceNameForCatalog)) {
-            serviceNameForCatalog
-          } else {
-            throw new RuntimeException(
-              s"config ranger.plugin.spark.catalog.$catalogName.service.name not found")
-          }
+        val serviceName = getRangerConf(defaultBasePlugin)
+          .get(s"ranger.plugin.spark.catalog.$catalogName.service.name")
+        serviceName match {
+          case _ if StringUtils.isBlank(serviceName) =>
+            logWarning(s"config ranger.plugin.spark.catalog.$catalogName.service.name not found," +
+              s" default ranger plugin is used")
+            defaultBasePlugin
+          case _ =>
+            catalog2pluginMap.getOrElseUpdate(
+              catalogName,
+              initRangerBasePlugin(serviceName = serviceName, appId = catalogName))
         }
-        catalog2pluginMap.getOrElseUpdate(
-          catalogName,
-          initRangerBasePlugin(serviceName = serviceName, appId = catalogName))
     }
   }
 
