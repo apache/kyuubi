@@ -147,7 +147,6 @@ object SparkSQLEngine extends Logging {
     _sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
     _sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     _sparkConf.setIfMissing("spark.master", "local")
-    _sparkConf.setIfMissing("spark.ui.port", "0")
     _sparkConf.set(
       "spark.redaction.regex",
       _sparkConf.get("spark.redaction.regex", "(?i)secret|password|token|access[.]key")
@@ -169,6 +168,8 @@ object SparkSQLEngine extends Logging {
 
     if (Utils.isOnK8s) {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
+    } else {
+      _sparkConf.setIfMissing("spark.ui.port", "0")
     }
 
     // Pass kyuubi config from spark with `spark.kyuubi`
