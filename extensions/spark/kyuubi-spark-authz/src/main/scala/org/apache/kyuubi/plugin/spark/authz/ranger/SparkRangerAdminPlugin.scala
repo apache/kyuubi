@@ -65,7 +65,7 @@ object SparkRangerAdminPlugin extends Logging {
 
   def getMaskingExpr(req: AccessRequest): Option[String] = {
     val col = req.getResource.asInstanceOf[AccessResource].getColumn
-    val result = defaultBasePlugin.evalDataMaskPolicies(req, null)
+    val result = getRangerPlugin().evalDataMaskPolicies(req, null)
     Option(result).filter(_.isMaskEnabled).map { res =>
       if ("MASK_NULL".equalsIgnoreCase(res.getMaskType)) {
         "NULL"
@@ -118,7 +118,7 @@ object SparkRangerAdminPlugin extends Logging {
       requests: Seq[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
     if (requests.nonEmpty) {
-      val results = defaultBasePlugin.isAccessAllowed(requests.asJava, auditHandler)
+      val results = getRangerPlugin().isAccessAllowed(requests.asJava, auditHandler)
       if (results != null) {
         val indices = results.asScala.zipWithIndex.filter { case (result, idx) =>
           result != null && !result.getIsAllowed
