@@ -60,9 +60,7 @@ object IcebergCommands extends Enumeration {
       getFieldValOpt[LogicalPlan](plan, "table"),
       getFieldValOpt[LogicalPlan](plan, "targetTable"),
       getFieldValOpt[LogicalPlan](plan, "sourceTable"))
-      .collect {
-        case t if t.isDefined => t.get
-      } intersect plan.children
+      .flatten intersect plan.children
   }
 
   /**

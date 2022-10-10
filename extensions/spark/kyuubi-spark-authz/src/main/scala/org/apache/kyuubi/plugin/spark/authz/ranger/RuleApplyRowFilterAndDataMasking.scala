@@ -31,20 +31,14 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
   private def mapPlanChildren(plan: LogicalPlan)(f: LogicalPlan => LogicalPlan): LogicalPlan = {
-    val planChildren = plan.children
-    if (planChildren.isEmpty) {
-      plan
-    } else {
-      val skippedMapChildren = plan match {
-        case _ if IcebergCommands.accept(plan.nodeName) =>
-          IcebergCommands.skipMappedChildren(plan)
-        case _ =>
-          Seq.empty
-      }
-
-      val mappedChildren = (planChildren diff skippedMapChildren).map(f)
-      plan.withNewChildren(skippedMapChildren ++ mappedChildren)
+    val newChildren = plan match {
+      case _ if IcebergCommands.accept(plan.nodeName) =>
+        val skipped = IcebergCommands.skipMappedChildren(plan)
+        skipped ++ (plan.children diff skipped).map(f)
+      case _ =>
+        plan.children.map(f)
     }
+    plan.withNewChildren(newChildren)
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
