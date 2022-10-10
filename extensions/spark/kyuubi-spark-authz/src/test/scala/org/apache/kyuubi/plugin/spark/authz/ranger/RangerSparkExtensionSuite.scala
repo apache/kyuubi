@@ -31,14 +31,14 @@ import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
-
-import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getRangerPlugin
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
@@ -788,7 +788,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val srcTable1 = "hive_src1"
     val srcTable2 = "hive_src2"
     val sinkTable1 = "hive_sink1"
-    val rangerPlugin = SparkRangerAdminPlugin.getRangerBasePlugin
+    val rangerPlugin = getRangerPlugin()
 
     withCleanTmpResources(Seq(
       (s"$db1.$srcTable1", "table"),
@@ -820,7 +820,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       try {
         getRangerConf(rangerPlugin).setBoolean(
           "ranger.plugin" +
-            s".${SparkRangerAdminPlugin.getRangerBasePlugin.getServiceType}" +
+            s".${SparkRangerAdminPlugin.getRangerPlugin().getServiceType}" +
             ".authorize.in.single.call",
           true)
         val e2 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))

@@ -26,6 +26,7 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getRangerPlugin
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
 
@@ -35,7 +36,7 @@ object AccessRequest {
       user: UserGroupInformation,
       opType: OperationType,
       accessType: AccessType): AccessRequest = {
-    val plugin = SparkRangerAdminPlugin.getRangerBasePlugin
+    val plugin = getRangerPlugin()
     val userName = user.getShortUserName
     val groups = user.getGroupNames.toSet.asJava
     val req = new AccessRequest(accessType)

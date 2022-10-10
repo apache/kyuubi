@@ -20,10 +20,10 @@ import java.sql.DriverManager
 
 import scala.util.Try
 
-import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
-
 // scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getRangerPlugin
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 
 /**
  * Tests for RangerSparkExtensionSuite
@@ -181,7 +181,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   test("[KYUUBI #3424] MERGE INTO") {
     assume(isSparkV31OrGreater)
 
-    val rangerPlugin = SparkRangerAdminPlugin.getRangerBasePlugin
+    val rangerPlugin = getRangerPlugin()
 
     val mergeIntoSql =
       s"""

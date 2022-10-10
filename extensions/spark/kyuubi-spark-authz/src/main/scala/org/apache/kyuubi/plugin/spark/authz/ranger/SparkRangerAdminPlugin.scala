@@ -37,7 +37,9 @@ object SparkRangerAdminPlugin {
   /**
    * delegated ranger base plugin
    */
-  var defaultBasePlugin: RangerBasePlugin = _
+  lazy val defaultBasePlugin: RangerBasePlugin = {
+    initRangerBasePlugin(serviceName = null, appId = defaultAppId)
+  }
 
   val catalog2pluginMap: Map[String, RangerBasePlugin] = TrieMap()
 
@@ -142,9 +144,7 @@ object SparkRangerAdminPlugin {
     }
   }
 
-  def getRangerBasePlugin: RangerBasePlugin = getRangerBasePlugin(None)
-
-  def getRangerBasePlugin(catalog: Option[String]): RangerBasePlugin = {
+  def getRangerPlugin(catalog: Option[String] = None): RangerBasePlugin = {
     catalog match {
       case None | Some("spark_catalog") =>
         defaultBasePlugin
@@ -163,10 +163,6 @@ object SparkRangerAdminPlugin {
           catalogName,
           initRangerBasePlugin(serviceName = serviceName, appId = catalogName))
     }
-  }
-
-  def init(): Unit = {
-    defaultBasePlugin = initRangerBasePlugin(serviceName = null, appId = defaultAppId)
   }
 
   def initRangerBasePlugin(serviceName: String, appId: String): RangerBasePlugin = {
