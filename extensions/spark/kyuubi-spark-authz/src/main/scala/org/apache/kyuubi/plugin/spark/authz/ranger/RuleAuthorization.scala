@@ -28,7 +28,6 @@ import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
-
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._;
 class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
