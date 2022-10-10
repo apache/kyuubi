@@ -168,11 +168,12 @@ object SparkSQLEngine extends Logging {
 
     if (Utils.isOnK8s) {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
-      sys.env.get("SPARK_APPLICATION_ID").foreach(_ =>
-        _sparkConf.setIfMissing("spark.ui.port", "4040"))
     }
+
     // set web ui port 0 when no deploy k8s cluster mode
-    _sparkConf.setIfMissing("spark.ui.port", "0")
+    if (!isOnKubernetesUsingClusterMode) {
+      _sparkConf.setIfMissing("spark.ui.port", "0")
+    }
 
     // Pass kyuubi config from spark with `spark.kyuubi`
     val sparkToKyuubiPrefix = "spark.kyuubi."
@@ -312,4 +313,7 @@ object SparkSQLEngine extends Logging {
       },
       "CreateSparkTimeoutChecker").start()
   }
+
+  private def isOnKubernetesUsingClusterMode: Boolean =
+    Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
 }
