@@ -144,15 +144,14 @@ object SparkRangerAdminPlugin {
   def apply(serviceName: String, appId: String): SparkRangerAdminPlugin = {
     val plugin = new SparkRangerAdminPlugin(serviceName, appId)
     plugin.basePlugin =
-      try {
-        // for Ranger 2.1
+      if (isRanger21orGreater) {
         classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
           .newInstance(serviceType, serviceName, appId)
-      } catch {
-        // for Ranger 2.0 and below, ignoring service name
-        case _: NoSuchMethodException =>
-          classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String])
-            .newInstance(serviceType, appId)
+      } else {
+        // ignoring serviceName for Ranger 2.0 and below,
+        // fallbacking to service name in ranger config of serviceType
+        classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String])
+          .newInstance(serviceType, appId)
       }
     plugin.basePlugin.init()
     plugin
