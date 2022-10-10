@@ -20,15 +20,17 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.{Map, TrieMap}
 import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
+
 import org.apache.commons.lang3.StringUtils
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
+import org.apache.spark.internal.Logging
+
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
-import org.apache.spark.internal.Logging
 
-object SparkRangerAdminPlugin extends Logging{
+object SparkRangerAdminPlugin extends Logging {
 
   val serviceType: String = "spark"
   val defaultAppId: String = "sparkSql"
