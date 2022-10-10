@@ -58,7 +58,7 @@ object AccessResource {
         resource.setValue("database", firstLevelResource)
         resource.setValue("table", secondLevelResource)
     }
-    resource.setServiceDef(SparkRangerAdminPlugin.basePlugin.getServiceDef)
+    resource.setServiceDef(SparkRangerAdminPlugin.getRangerBasePlugin.getServiceDef)
     resource
   }
 

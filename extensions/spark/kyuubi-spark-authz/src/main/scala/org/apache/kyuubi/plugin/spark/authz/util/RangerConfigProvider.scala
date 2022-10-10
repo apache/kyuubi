@@ -36,7 +36,7 @@ trait RangerConfigProvider {
    *         for Ranger 2.0 and below
    */
   def getRangerConf: Configuration = {
-    val basePlugin = getFieldVal[RangerBasePlugin](this, "basePlugin")
+    val basePlugin = getFieldVal[RangerBasePlugin](this, "defaultBasePlugin")
     getRangerConfFromPlugin(basePlugin)
   }
 

@@ -58,7 +58,7 @@ case class FilteredShowTablesCommand(delegated: RunnableCommand)
     val resource = AccessResource(objectType, database, table, null)
     val accessType = if (isExtended) AccessType.SELECT else AccessType.USE
     val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, accessType)
-    val result = SparkRangerAdminPlugin.basePlugin.isAccessAllowed(request)
+    val result = SparkRangerAdminPlugin.getRangerBasePlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
 }
@@ -70,7 +70,7 @@ case class FilteredShowDatabasesCommand(delegated: RunnableCommand)
     val database = r.getString(0)
     val resource = AccessResource(ObjectType.DATABASE, database, null, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
-    val result = SparkRangerAdminPlugin.basePlugin.isAccessAllowed(request)
+    val result = SparkRangerAdminPlugin.getRangerBasePlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
 }
@@ -104,7 +104,7 @@ case class FilteredShowFunctionsCommand(delegated: RunnableCommand)
 
     val resource = AccessResource(ObjectType.FUNCTION, items(0), items(1), null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWFUNCTIONS, AccessType.USE)
-    val result = SparkRangerAdminPlugin.basePlugin.isAccessAllowed(request)
+    val result = SparkRangerAdminPlugin.getRangerBasePlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
 }
@@ -125,7 +125,7 @@ case class FilteredShowColumnsCommand(delegated: RunnableCommand)
   override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val resource = AccessResource(ObjectType.COLUMN, r.getString(0), r.getString(1), r.getString(2))
     val request = AccessRequest(resource, ugi, OperationType.SHOWCOLUMNS, AccessType.USE)
-    val result = SparkRangerAdminPlugin.basePlugin.isAccessAllowed(request)
+    val result = SparkRangerAdminPlugin.getRangerBasePlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
   }
 }

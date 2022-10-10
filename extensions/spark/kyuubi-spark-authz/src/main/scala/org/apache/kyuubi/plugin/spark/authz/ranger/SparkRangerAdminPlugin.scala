@@ -39,7 +39,7 @@ object SparkRangerAdminPlugin
   /**
    * delegated ranger base plugin
    */
-  var basePlugin: RangerBasePlugin = _
+  var defaultBasePlugin: RangerBasePlugin = _
 
   val catalog2pluginMap: Map[String, RangerBasePlugin] = TrieMap()
 
@@ -51,11 +51,11 @@ object SparkRangerAdminPlugin
    * to verify them one by one.
    */
   def authorizeInSingleCall: Boolean = getRangerConf.getBoolean(
-    s"ranger.plugin.${basePlugin.getServiceType}.authorize.in.single.call",
+    s"ranger.plugin.${defaultBasePlugin.getServiceType}.authorize.in.single.call",
     false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
-    val result = basePlugin.evalRowFilterPolicies(req, null)
+    val result = defaultBasePlugin.evalRowFilterPolicies(req, null)
     Option(result)
       .filter(_.isRowFilterEnabled)
       .map(_.getFilterExpr)
@@ -64,7 +64,7 @@ object SparkRangerAdminPlugin
 
   def getMaskingExpr(req: AccessRequest): Option[String] = {
     val col = req.getResource.asInstanceOf[AccessResource].getColumn
-    val result = basePlugin.evalDataMaskPolicies(req, null)
+    val result = defaultBasePlugin.evalDataMaskPolicies(req, null)
     Option(result).filter(_.isMaskEnabled).map { res =>
       if ("MASK_NULL".equalsIgnoreCase(res.getMaskType)) {
         "NULL"
@@ -117,7 +117,7 @@ object SparkRangerAdminPlugin
       requests: Seq[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
     if (requests.nonEmpty) {
-      val results = basePlugin.isAccessAllowed(requests.asJava, auditHandler)
+      val results = defaultBasePlugin.isAccessAllowed(requests.asJava, auditHandler)
       if (results != null) {
         val indices = results.asScala.zipWithIndex.filter { case (result, idx) =>
           result != null && !result.getIsAllowed
@@ -149,63 +149,40 @@ object SparkRangerAdminPlugin
   def getRangerBasePlugin(catalog: Option[String]): RangerBasePlugin = {
     catalog match {
       case None | Some("spark_catalog") =>
-        basePlugin
+        defaultBasePlugin
       case Some(catalogName) =>
-        val serviceName = catalogName match {
-          case "spark_catalog" =>
-            null
-          case _ =>
-            val defaultPlugin = basePlugin
-            val serviceNameForCatalog = getRangerConfFromPlugin(defaultPlugin)
-              .get(s"ranger.plugin.spark.catalog.$catalogName.service.name")
-            serviceNameForCatalog match {
-              case s: String if StringUtils.isBlank(s) =>
-                throw new RuntimeException(
-                  s"config ranger.plugin.spark.catalog.$catalogName.service.name not found")
-              case _ => serviceNameForCatalog
-            }
+        val serviceName = {
+          val serviceNameForCatalog = getRangerConfFromPlugin(defaultBasePlugin)
+            .get(s"ranger.plugin.spark.catalog.$catalogName.service.name")
+          if (StringUtils.isNotBlank(serviceNameForCatalog)) {
+            serviceNameForCatalog
+          } else {
+            throw new RuntimeException(
+              s"config ranger.plugin.spark.catalog.$catalogName.service.name not found")
+          }
         }
-
-        val appId = catalogName match {
-          case "spark_catalog" =>
-            defaultAppId
-          case _ =>
-            catalogName
-        }
-
         catalog2pluginMap.getOrElseUpdate(
-          catalogName, {
-            val plugin: RangerBasePlugin =
-              if (isRanger21orGreater) {
-                classOf[RangerBasePlugin]
-                  .getConstructor(classOf[String], classOf[String], classOf[String])
-                  .newInstance(serviceType, serviceName, appId)
-              } else {
-                // ignoring serviceName for Ranger 2.0 and below,
-                // fallbacking to service name in ranger config of serviceType
-                classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String])
-                  .newInstance(serviceType, appId)
-              }
-            plugin.init()
-            plugin
-          })
+          catalogName,
+          initRangerBasePlugin(serviceName = serviceName, appId = catalogName))
     }
   }
 
   def init(): Unit = {
+    defaultBasePlugin = initRangerBasePlugin(serviceName = null, appId = defaultAppId)
+  }
 
-    // init default ranger base plugin
-    val defaultServiceName = null
-    basePlugin =
+  def initRangerBasePlugin(serviceName: String, appId: String): RangerBasePlugin = {
+    val basePlugin =
       if (isRanger21orGreater) {
         classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
-          .newInstance(serviceType, defaultServiceName, defaultAppId)
+          .newInstance(serviceType, serviceName, appId)
       } else {
         // ignoring serviceName for Ranger 2.0 and below,
-        // fallbacking to service name in ranger config of serviceType
+        // fallback to service name in ranger config of serviceType
         classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String])
-          .newInstance(serviceType, defaultAppId)
+          .newInstance(serviceType, appId)
       }
     basePlugin.init()
+    basePlugin
   }
 }

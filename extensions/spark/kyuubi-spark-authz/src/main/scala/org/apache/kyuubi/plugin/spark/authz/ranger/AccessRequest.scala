@@ -35,7 +35,7 @@ object AccessRequest {
       user: UserGroupInformation,
       opType: OperationType,
       accessType: AccessType): AccessRequest = {
-    val plugin = SparkRangerAdminPlugin
+    val plugin = SparkRangerAdminPlugin.getRangerBasePlugin
     val userName = user.getShortUserName
     val groups = user.getGroupNames.toSet.asJava
     val req = new AccessRequest(accessType)

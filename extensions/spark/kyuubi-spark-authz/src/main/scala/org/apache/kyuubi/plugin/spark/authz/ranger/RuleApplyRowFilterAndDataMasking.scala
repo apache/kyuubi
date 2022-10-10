@@ -70,18 +70,18 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       plan: LogicalPlan,
       identifier: TableIdentifier,
       spark: SparkSession): LogicalPlan = {
-    val rangerPlugin = SparkRangerAdminPlugin
+    val plugin = SparkRangerAdminPlugin
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = OperationType(plan.nodeName)
     val parse = spark.sessionState.sqlParser.parseExpression _
     val are = AccessResource(ObjectType.TABLE, identifier.database.orNull, identifier.table, null)
     val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
-    val filterExprStr = rangerPlugin.getFilterExpr(art)
+    val filterExprStr = plugin.getFilterExpr(art)
     val newOutput = plan.output.map { attr =>
       val are =
         AccessResource(ObjectType.COLUMN, identifier.database.orNull, identifier.table, attr.name)
       val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
-      val maskExprStr = rangerPlugin.getMaskingExpr(art)
+      val maskExprStr = plugin.getMaskingExpr(art)
       if (maskExprStr.isEmpty) {
         attr
       } else {
