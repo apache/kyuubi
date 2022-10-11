@@ -35,14 +35,10 @@ object SparkRangerAdminPlugin extends Logging {
   val serviceType: String = "spark"
   val defaultAppId: String = "sparkSql"
 
-  /**
-   * delegated ranger base plugin
-   */
-  lazy val defaultBasePlugin: RangerBasePlugin = {
+  private lazy val defaultBasePlugin: RangerBasePlugin =
     initRangerBasePlugin(serviceName = null, appId = defaultAppId)
-  }
 
-  val catalog2pluginMap: Map[String, RangerBasePlugin] = TrieMap()
+  private lazy val catalog2pluginMap: Map[String, RangerBasePlugin] = TrieMap()
 
   /**
    * For a Spark SQL query, it may contain 0 or more privilege objects to verify, e.g. a typical
@@ -65,7 +61,7 @@ object SparkRangerAdminPlugin extends Logging {
 
   def getMaskingExpr(req: AccessRequest): Option[String] = {
     val col = req.getResource.asInstanceOf[AccessResource].getColumn
-    val result = getRangerPlugin().evalDataMaskPolicies(req, null)
+    val result = getOrCreateRangerPlugin().evalDataMaskPolicies(req, null)
     Option(result).filter(_.isMaskEnabled).map { res =>
       if ("MASK_NULL".equalsIgnoreCase(res.getMaskType)) {
         "NULL"
@@ -118,7 +114,7 @@ object SparkRangerAdminPlugin extends Logging {
       requests: Seq[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
     if (requests.nonEmpty) {
-      val results = getRangerPlugin().isAccessAllowed(requests.asJava, auditHandler)
+      val results = getOrCreateRangerPlugin().isAccessAllowed(requests.asJava, auditHandler)
       if (results != null) {
         val indices = results.asScala.zipWithIndex.filter { case (result, idx) =>
           result != null && !result.getIsAllowed
@@ -145,7 +141,7 @@ object SparkRangerAdminPlugin extends Logging {
     }
   }
 
-  def getRangerPlugin(catalog: Option[String] = None): RangerBasePlugin = {
+  def getOrCreateRangerPlugin(catalog: Option[String] = None): RangerBasePlugin = synchronized {
     catalog match {
       case None | Some("spark_catalog") =>
         defaultBasePlugin
