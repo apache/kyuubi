@@ -131,4 +131,5 @@ object FlinkProcessBuilder {
   final val APP_KEY = "yarn.application.name"
   final val TAG_KEY = "yarn.tags"
   final val FLINK_HADOOP_CLASSPATH_KEY = "FLINK_HADOOP_CLASSPATH"
+  final val FLINK_PROXY_USER_KEY = "HADOOP_PROXY_USER"
 }
