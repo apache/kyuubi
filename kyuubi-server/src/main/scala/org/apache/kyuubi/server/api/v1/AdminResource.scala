@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.EngineType
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
@@ -68,8 +69,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @Path("engine")
   def deleteEngine(
       @QueryParam("type") engineType: String,
-      @QueryParam("subdomain") engineSubdomain: String,
-      @QueryParam("sharelevel") engineShareLevel: String,
+      @QueryParam("sharelevel") shareLevel: String,
+      @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
     val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
@@ -83,39 +84,36 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
 
     // use default value from kyuubi conf when param is not provided
-    val normalizedEngineType = Some(engineType)
-      .filter(_ != null).filter(_.nonEmpty)
+    val normalizedEngineType = Option(engineType).map(EngineType.withName)
       .getOrElse(fe.getConf.get(ENGINE_TYPE))
-    val normalizedEngineSubdomain = Some(engineSubdomain)
-      .filter(_ != null).filter(_.nonEmpty)
-      .getOrElse(fe.getConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse("default"))
-    val normalizedEngineShareLevel = Some(engineShareLevel)
-      .filter(_ != null).filter(_.nonEmpty)
+    val engineSubdomain = Option(subdomain).filter(_.nonEmpty)
+      .orElse(fe.getConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+      .getOrElse("default")
+    val engineShareLevel = Option(shareLevel).filter(_.nonEmpty)
       .getOrElse(fe.getConf.get(ENGINE_SHARE_LEVEL))
 
     val engineSpace = DiscoveryPaths.makePath(
-      s"${fe.getConf.get(HA_NAMESPACE)}_" +
-        s"${KYUUBI_VERSION}_" +
-        s"${normalizedEngineShareLevel}_${normalizedEngineType}",
+      s"${fe.getConf.get(HA_NAMESPACE)}_${KYUUBI_VERSION}_" +
+        s"${engineShareLevel}_$normalizedEngineType",
       userName,
-      Array(normalizedEngineSubdomain))
+      Array(engineSubdomain))
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
-      val serviceNodes = discoveryClient.getServiceNodesInfo(engineSpace)
-      serviceNodes.foreach { node =>
-        val nodePath = s"$engineSpace/${node.nodeName}"
-        info(s"Deleting zookeeper engine node:$nodePath")
+      val engineNodes = discoveryClient.getChildren(engineSpace)
+      engineNodes.foreach { node =>
+        val nodePath = s"$engineSpace/$node"
+        info(s"Deleting engine node:$nodePath")
         try {
           discoveryClient.delete(nodePath)
         } catch {
           case e: Exception =>
-            error(s"Failed to delete zookeeper engine node:$nodePath", e)
-            throw new NotFoundException(s"Failed to delete zookeeper engine node:$nodePath," +
+            error(s"Failed to delete engine node:$nodePath", e)
+            throw new NotFoundException(s"Failed to delete engine node:$nodePath," +
               s"${e.getMessage}")
         }
       }
     }
 
-    Response.ok(s"Engine ${engineSpace} is deleted successfully.").build()
+    Response.ok(s"Engine $engineSpace is deleted successfully.").build()
   }
 }
