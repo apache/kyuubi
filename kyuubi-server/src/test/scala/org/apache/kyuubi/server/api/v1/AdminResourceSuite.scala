@@ -56,7 +56,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
-    val engine = new EngineRef(conf, Utils.currentUser, id, null)
+    val engine = new EngineRef(conf.clone, Utils.currentUser, id, null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
@@ -76,8 +76,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
           s"$adminUser:".getBytes()),
         "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
-        .queryParam("user", adminUser)
-        .queryParam("namespace", "kyuubi_test")
         .queryParam("sharelevel", "USER")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
@@ -87,9 +85,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(client.pathExists(engineSpace))
       child = client.getChildren(engineSpace)
       assert(child.size == 0)
-
-      val result = response.readEntity(classOf[String])
-      assert(result.contains(s"Engine ${engineSpace} is deleted successfully."))
     }
   }
 

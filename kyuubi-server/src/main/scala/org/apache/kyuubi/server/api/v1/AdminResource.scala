@@ -31,6 +31,7 @@ import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -66,22 +67,20 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("engine")
   def deleteEngine(
-      @QueryParam("user") user: String,
       @QueryParam("type") engineType: String,
       @QueryParam("subdomain") engineSubdomain: String,
       @QueryParam("sharelevel") engineShareLevel: String,
-      @QueryParam("version") version: String,
-      @QueryParam("namespace") namespace: String): Response = {
-    val userName = fe.getUserName(Map.empty)
-    val ipAddress = fe.getIpAddress
-    info(s"Received delete engine request from $userName/$ipAddress")
-    if (!userName.equals(administrator)) {
-      throw new NotAllowedException(
-        s"$userName is not allowed to delete kyuubi engine")
-    }
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
+    val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
+      Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
 
-    // validate parameters
-    require(user != null && !user.isEmpty, "user is a required parameter")
+    var userName: String = null
+    try {
+      userName = fe.getUserName(sessionConf)
+    } catch {
+      case t: Throwable =>
+        throw new NotAllowedException(t.getMessage)
+    }
 
     // use default value from kyuubi conf when param is not provided
     val normalizedEngineType = Some(engineType)
@@ -93,18 +92,12 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val normalizedEngineShareLevel = Some(engineShareLevel)
       .filter(_ != null).filter(_.nonEmpty)
       .getOrElse(fe.getConf.get(ENGINE_SHARE_LEVEL))
-    val normalizedNamespace = Some(namespace)
-      .filter(_ != null).filter(_.nonEmpty)
-      .getOrElse(fe.getConf.get(HA_NAMESPACE))
-    val normalizedVersion = Some(version)
-      .filter(_ != null).filter(_.nonEmpty)
-      .getOrElse(KYUUBI_VERSION)
 
     val engineSpace = DiscoveryPaths.makePath(
-      s"${normalizedNamespace}_" +
-        s"${normalizedVersion}_" +
+      s"${fe.getConf.get(HA_NAMESPACE)}_" +
+        s"${KYUUBI_VERSION}_" +
         s"${normalizedEngineShareLevel}_${normalizedEngineType}",
-      user,
+      userName,
       Array(normalizedEngineSubdomain))
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
