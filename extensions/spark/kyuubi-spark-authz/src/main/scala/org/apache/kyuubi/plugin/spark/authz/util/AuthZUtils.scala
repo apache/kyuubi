@@ -129,16 +129,6 @@ private[authz] object AuthZUtils {
     SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
   }
 
-  lazy val isRanger21orGreater: Boolean = {
-    try {
-      classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
-      true
-    } catch {
-      case _: NoSuchMethodException =>
-        false
-    }
-  }
-
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
       part
@@ -149,5 +139,15 @@ private[authz] object AuthZUtils {
 
   def quote(parts: Seq[String]): String = {
     parts.map(quoteIfNeeded).mkString(".")
+  }
+
+  lazy val isRanger21orGreater: Boolean = {
+    try {
+      classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String], classOf[String])
+      true
+    } catch {
+      case _: NoSuchMethodException =>
+        false
+    }
   }
 }
