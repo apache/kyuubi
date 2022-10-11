@@ -64,11 +64,8 @@ object v2Commands extends Enumeration {
       val command = v2Commands.withName(commandName)
 
       // check spark version requirements
-      def passSparkVersionCheck: Boolean =
-        (command.mostVer.isEmpty || isSparkVersionAtMost(command.mostVer.get)) &&
-          (command.leastVer.isEmpty || isSparkVersionAtLeast(command.leastVer.get))
+      passSparkVersionCheck(command.mostVer, command.leastVer)
 
-      passSparkVersionCheck
     } catch {
       case _: NoSuchElementException => false
     }

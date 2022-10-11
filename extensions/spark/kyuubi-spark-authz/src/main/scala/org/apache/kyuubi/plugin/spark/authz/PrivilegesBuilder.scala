@@ -212,6 +212,9 @@ object PrivilegesBuilder {
       case v2Cmd if v2Commands.accept(v2Cmd) =>
         v2Commands.withName(v2Cmd).buildPrivileges(plan, inputObjs, outputObjs)
 
+      case icebergCmd if IcebergCommands.accept(icebergCmd) =>
+        IcebergCommands.withName(icebergCmd).buildPrivileges(plan, inputObjs, outputObjs)
+
       case "AlterDatabasePropertiesCommand" |
           "AlterDatabaseSetLocationCommand" |
           "CreateDatabaseCommand" |

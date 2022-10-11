@@ -24,16 +24,27 @@ import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[LogicalPlan] {
 
+  private def mapPlanChildren(plan: LogicalPlan)(f: LogicalPlan => LogicalPlan): LogicalPlan = {
+    val newChildren = plan match {
+      case _ if IcebergCommands.accept(plan.nodeName) =>
+        val skipped = IcebergCommands.skipMappedChildren(plan)
+        skipped ++ (plan.children diff skipped).map(f)
+      case _ =>
+        plan.children.map(f)
+    }
+    plan.withNewChildren(newChildren)
+  }
+
   override def apply(plan: LogicalPlan): LogicalPlan = {
     // Apply FilterAndMasking and wrap HiveTableRelation/LogicalRelation/DataSourceV2Relation with
     // RowFilterAndDataMaskingMarker if it is not wrapped yet.
-    plan mapChildren {
+    mapPlanChildren(plan) {
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
