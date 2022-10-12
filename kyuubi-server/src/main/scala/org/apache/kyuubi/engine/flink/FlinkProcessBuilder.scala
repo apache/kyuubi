@@ -55,6 +55,9 @@ class FlinkProcessBuilder(
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
+  override def env: Map[String, String] = conf.getEnvs +
+    (FLINK_PROXY_USER_KEY -> proxyUser)
+
   override protected val commands: Array[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
