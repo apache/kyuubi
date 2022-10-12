@@ -1328,7 +1328,9 @@ object KyuubiConf {
 
   val FRONTEND_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.connection.url.use.hostname")
-      .doc("When true, frontend services prefer hostname, otherwise, ip address")
+      .doc("When true, frontend services prefer hostname, otherwise, ip address. Note that, " +
+        "the default value is set to `false` when engine running on Kubernetes to prevent " +
+        "potential network issue.")
       .version("1.5.0")
       .fallbackConf(ENGINE_CONNECTION_URL_USE_HOSTNAME)
 

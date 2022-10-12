@@ -147,7 +147,6 @@ object SparkSQLEngine extends Logging {
     _sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
     _sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     _sparkConf.setIfMissing("spark.master", "local")
-    _sparkConf.setIfMissing("spark.ui.port", "0")
     _sparkConf.set(
       "spark.redaction.regex",
       _sparkConf.get("spark.redaction.regex", "(?i)secret|password|token|access[.]key")
@@ -166,8 +165,17 @@ object SparkSQLEngine extends Logging {
     val defaultCat = if (KyuubiSparkUtil.hiveClassesArePresent) "hive" else "in-memory"
     _sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
 
-    kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    kyuubiConf.setIfMissing(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
+
+    if (Utils.isOnK8s) {
+      kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
+    }
+
+    // Set web ui port 0 to avoid port conflicts during non-k8s cluster mode
+    if (!isOnK8sClusterMode) {
+      _sparkConf.setIfMissing("spark.ui.port", "0")
+    }
 
     // Pass kyuubi config from spark with `spark.kyuubi`
     val sparkToKyuubiPrefix = "spark.kyuubi."
@@ -306,5 +314,10 @@ object SparkSQLEngine extends Logging {
         }
       },
       "CreateSparkTimeoutChecker").start()
+  }
+
+  private def isOnK8sClusterMode: Boolean = {
+    // only spark driver pod will build with `SPARK_APPLICATION_ID` env.
+    Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
   }
 }

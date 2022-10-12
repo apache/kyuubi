@@ -98,7 +98,7 @@ class SparkProcessBuilder(
           buffer += CONF
           buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
           buffer += CONF
-          buffer += s"spark.kubernetes.executorEnv.SPARK_USER_NAME=$userName"
+          buffer += s"spark.executorEnv.SPARK_USER_NAME=$userName"
         }
       })
     }

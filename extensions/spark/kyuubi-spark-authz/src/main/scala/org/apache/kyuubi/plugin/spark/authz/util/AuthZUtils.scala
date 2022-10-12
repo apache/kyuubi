@@ -44,6 +44,8 @@ private[authz] object AuthZUtils {
     }
   }
 
+  def getFieldValOpt[T](o: Any, name: String): Option[T] = Try(getFieldVal[T](o, name)).toOption
+
   def invoke(
       obj: AnyRef,
       methodName: String,
@@ -127,6 +129,19 @@ private[authz] object AuthZUtils {
   def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
     SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
   }
+
+  /**
+   * check if spark version satisfied
+   * first param is option of supported most  spark version,
+   * and secont param is option of supported least spark version
+   *
+   * @return
+   */
+  def passSparkVersionCheck: (Option[String], Option[String]) => Boolean =
+    (mostSparkVersion, leastSparkVersion) => {
+      mostSparkVersion.forall(isSparkVersionAtMost) &&
+      leastSparkVersion.forall(isSparkVersionAtLeast)
+    }
 
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {

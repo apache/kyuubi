@@ -32,6 +32,8 @@ trait SparkSessionProvider {
   protected val isSparkV33OrGreater: Boolean = isSparkVersionAtLeast("3.3")
 
   protected val extension: SparkSessionExtensions => Unit = _ => Unit
+  protected val sqlExtensions: String = ""
+
   protected lazy val spark: SparkSession = {
     val metastore = {
       val path = Files.createTempDirectory("hms")
@@ -46,6 +48,7 @@ trait SparkSessionProvider {
       .config(
         "spark.sql.warehouse.dir",
         Files.createTempDirectory("spark-warehouse").toString)
+      .config("spark.sql.extensions", sqlExtensions)
       .withExtensions(extension)
       .getOrCreate()
   }

@@ -25,7 +25,7 @@ import org.apache.hadoop.net.NetUtils
 
 import org.apache.kyuubi.{BatchTestHelper, KyuubiException, Logging, Utils, WithKyuubiServer, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
@@ -113,7 +113,6 @@ class SparkClusterModeOnKubernetesSuiteBase
       .set("spark.kubernetes.authenticate.driver.serviceAccountName", "spark")
       .set("spark.kubernetes.driver.podTemplateFile", driverTemplate.getPath)
       .set(ZK_CLIENT_PORT_ADDRESS.key, localhostAddress)
-      .set(FRONTEND_CONNECTION_URL_USE_HOSTNAME.key, "false")
       .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, localhostAddress)
   }
 }

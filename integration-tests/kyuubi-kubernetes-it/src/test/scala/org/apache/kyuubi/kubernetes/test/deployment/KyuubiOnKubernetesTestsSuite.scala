@@ -21,7 +21,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.net.NetUtils
 
 import org.apache.kyuubi.{Utils, WithSimpleDFSService}
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
 import org.apache.kyuubi.kubernetes.test.WithKyuubiServerOnKubernetes
 import org.apache.kyuubi.operation.SparkQueryTests
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
@@ -115,7 +115,6 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
         "spark.kubernetes.authenticate.driver.serviceAccountName" -> "spark",
         "spark.kubernetes.driver.podTemplateFile" -> driverTemplate.getPath,
         ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress,
-        FRONTEND_CONNECTION_URL_USE_HOSTNAME.key -> "false",
         FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
   }
 }

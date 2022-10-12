@@ -121,10 +121,10 @@ kubernetes-model-scheduling/5.12.1//kubernetes-model-scheduling-5.12.1.jar
 kubernetes-model-storageclass/5.12.1//kubernetes-model-storageclass-5.12.1.jar
 libfb303/0.9.3//libfb303-0.9.3.jar
 libthrift/0.9.3//libthrift-0.9.3.jar
-log4j-1.2-api/2.18.0//log4j-1.2-api-2.18.0.jar
-log4j-api/2.18.0//log4j-api-2.18.0.jar
-log4j-core/2.18.0//log4j-core-2.18.0.jar
-log4j-slf4j-impl/2.18.0//log4j-slf4j-impl-2.18.0.jar
+log4j-1.2-api/2.19.0//log4j-1.2-api-2.19.0.jar
+log4j-api/2.19.0//log4j-api-2.19.0.jar
+log4j-core/2.19.0//log4j-core-2.19.0.jar
+log4j-slf4j-impl/2.19.0//log4j-slf4j-impl-2.19.0.jar
 logging-interceptor/3.12.12//logging-interceptor-3.12.12.jar
 metrics-core/4.2.8//metrics-core-4.2.8.jar
 metrics-jmx/4.2.8//metrics-jmx-4.2.8.jar
