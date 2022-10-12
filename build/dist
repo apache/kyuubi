@@ -101,6 +101,7 @@ while (( "$#" )); do
   esac
   shift
 done
+
 # Setup java
 if [[ -z "$JAVA_HOME" ]]; then
   # Fallback on JAVA_HOME from rpm, if found
@@ -112,9 +113,11 @@ if [[ -z "$JAVA_HOME" ]]; then
     fi
   fi
 
-  if [[ `command -v java` ]]; then
-    # If java is in /usr/bin/java, we want /usr
-    JAVA_HOME="$(dirname $(dirname $(which java)))"
+  if [ -z "$JAVA_HOME" ]; then
+    if [[ `command -v java` ]]; then
+      # If java is in /usr/bin/java, we want /usr
+      JAVA_HOME="$(dirname $(dirname $(which java)))"
+    fi
   fi
 fi
 
@@ -123,6 +126,7 @@ if [[ -z "$JAVA_HOME" ]]; then
   exit -1
 fi
 
+export JAVA_HOME="$JAVA_HOME"
 echo "JAVA_HOME is set to $JAVA_HOME"
 
 if [[ $(command -v git) ]]; then
@@ -141,7 +145,6 @@ if [ ! "$(command -v "$MVN")" ] ; then
 fi
 
 echo "MVN is set to $MVN"
-
 
 VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null\
     | grep -v "INFO"\
