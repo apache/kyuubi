@@ -117,26 +117,44 @@ class KyuubiSessionImpl(
         openEngineSessionConf =
           optimizedConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
       }
-      val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
       val passwd =
         if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
           InternalSecurityAccessor.get().issueToken()
         } else {
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }
-      try {
-        _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
-        _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
-      } catch {
-        case e: Throwable =>
-          error(
-            s"Opening engine [${engine.defaultEngineName} $host:$port]" +
-              s" for $user session failed",
-            e)
-          throw e
+
+      val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
+      val retryInterval = sessionManager.getConf.get(ENGINE_OPEN_INTERVAL)
+      var attempt = 0
+      var shouldRetry = true
+      while (attempt <= maxAttempts && shouldRetry) {
+        val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
+        try {
+          _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
+          _engineSessionHandle = _client.openSession(protocol, user, passwd, openEngineSessionConf)
+          logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
+            s" with ${_engineSessionHandle}]")
+          shouldRetry = false
+        } catch {
+          case e: org.apache.thrift.transport.TTransportException
+              if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
+                e.getCause.getMessage.contains("Connection refused (Connection refused)") =>
+            warn(
+              s"Failed to opening [${engine.defaultEngineName} $host:$port] after $attempt/$maxAttempts times, retrying",
+              e.getCause)
+            Thread.sleep(retryInterval)
+            shouldRetry = true
+          case e: Throwable =>
+            error(
+              s"Opening engine [${engine.defaultEngineName} $host:$port]" +
+                s" for $user session failed",
+              e)
+            throw e
+        } finally {
+          attempt += 1
+        }
       }
-      logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
-        s" with ${_engineSessionHandle}]")
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
       _client.engineId.foreach(e => sessionEvent.engineId = e)

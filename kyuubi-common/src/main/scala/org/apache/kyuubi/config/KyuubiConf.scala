@@ -955,6 +955,20 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
+  val ENGINE_OPEN_MAX_ATTEMPTS: ConfigEntry[Int] =
+    buildConf("kyuubi.session.engine.open.max.attempts")
+      .doc("The number of times an open engine will retry when encountering a special error.")
+      .version("1.7.0")
+      .intConf
+      .createWithDefault(9)
+
+  val ENGINE_OPEN_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.open.interval")
+      .doc("The interval for opening engine.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
+
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
     .version("1.0.0")
