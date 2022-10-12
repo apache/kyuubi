@@ -141,7 +141,8 @@ class KyuubiSessionImpl(
               if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
                 e.getCause.getMessage.contains("Connection refused (Connection refused)") =>
             warn(
-              s"Failed to opening [${engine.defaultEngineName} $host:$port] after $attempt/$maxAttempts times, retrying",
+              s"Failed to opening [${engine.defaultEngineName} $host:$port] after" +
+                s" $attempt/$maxAttempts times, retrying",
               e.getCause)
             Thread.sleep(retryInterval)
             shouldRetry = true
