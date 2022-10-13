@@ -47,6 +47,8 @@ Returns all the batches.
 
 ### POST /batches
 
+Create a new batch.
+
 #### Request Body
 
 | Name      | Description                                        | Type             |
@@ -57,7 +59,6 @@ Returns all the batches.
 | name      | The name of this batch.                            | String           |
 | conf      | Configuration properties                           | Map of key=val   |
 | args      | Command line arguments for the application         | List of Strings  |
-
 
 #### Response Body
 
