@@ -62,10 +62,10 @@ case class EngineTab(
 
   sparkUI.foreach { ui =>
     try {
-      // Spark shade the jetty package so here we use reflect
-      val sparkServletContextHandler = loadSparkServletContextHandler
+      // Spark shade the jetty package so here we use reflection
+      val sparkServletContextHandlerClz = loadSparkServletContextHandler
       Class.forName("org.apache.spark.ui.SparkUI")
-        .getMethod("attachHandler", sparkServletContextHandler)
+        .getMethod("attachHandler", sparkServletContextHandlerClz)
         .invoke(
           ui,
           Class.forName("org.apache.spark.ui.JettyUtils")
@@ -78,12 +78,16 @@ case class EngineTab(
               classOf[scala.collection.immutable.Set[String]])
             .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST")))
     } catch {
-      case NonFatal(e) =>
-        warn(
-          "Failed to attach handler using SparkUI, please check the Spark version. " +
-            s"So the config '${KyuubiConf.ENGINE_UI_STOP_ENABLED.key}' does not work.",
-          e)
+      case NonFatal(cause) => reportInstallError(cause)
+      case cause: NoClassDefFoundError => reportInstallError(cause)
     }
+  }
+
+  def reportInstallError(cause: Throwable): Unit = {
+    warn(
+      "Failed to attach handler using SparkUI, please check the Spark version. " +
+        s"So the config '${KyuubiConf.ENGINE_UI_STOP_ENABLED.key}' does not work.",
+      cause)
   }
 
   def loadSparkServletContextHandler: Class[_] = {
