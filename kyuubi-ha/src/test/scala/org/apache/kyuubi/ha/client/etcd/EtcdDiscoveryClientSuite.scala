@@ -38,7 +38,7 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
 
   override def getConnectString: String = _connectString
 
-  val conf: KyuubiConf = {
+  var conf: KyuubiConf = {
     KyuubiConf()
       .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
   }

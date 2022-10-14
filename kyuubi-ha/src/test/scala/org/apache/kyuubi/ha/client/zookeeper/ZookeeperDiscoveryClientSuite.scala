@@ -42,24 +42,23 @@ import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests with KerberizedTestHelper {
 
-  val zkServer = new EmbeddedZookeeper()
-  override val conf: KyuubiConf = KyuubiConf()
+  private var zkServer: EmbeddedZookeeper = _
+  override var conf: KyuubiConf = KyuubiConf()
 
   override def getConnectString: String = zkServer.getConnectString
 
-  override def beforeAll(): Unit = {
+  override def beforeEach(): Unit = {
     conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
+    zkServer = new EmbeddedZookeeper()
     zkServer.initialize(conf)
     zkServer.start()
-    super.beforeAll()
+    conf = new KyuubiConf().set(HA_ADDRESSES, getConnectString)
+    super.beforeEach()
   }
 
-  override def afterAll(): Unit = {
-    conf.unset(KyuubiConf.SERVER_KEYTAB)
-    conf.unset(KyuubiConf.SERVER_PRINCIPAL)
-    conf.unset(HA_ADDRESSES)
+  override def afterEach(): Unit = {
+    super.afterEach()
     zkServer.stop()
-    super.afterAll()
   }
 
   test("acl for zookeeper") {
