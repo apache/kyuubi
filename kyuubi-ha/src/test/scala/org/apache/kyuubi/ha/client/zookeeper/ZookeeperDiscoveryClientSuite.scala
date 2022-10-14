@@ -25,17 +25,18 @@ import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
+import org.apache.curator.framework.CuratorFrameworkFactory
+import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.hadoop.util.StringUtils
 import org.apache.zookeeper.ZooDefs
 import org.apache.zookeeper.data.ACL
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.KerberizedTestHelper
+import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.AuthTypes
-import org.apache.kyuubi.ha.client.DiscoveryClientTests
-import org.apache.kyuubi.ha.client.EngineServiceDiscovery
+import org.apache.kyuubi.ha.client._
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.service._
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
@@ -153,6 +154,67 @@ class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests with Kerberized
       }
     } finally {
       zkServer.stop()
+    }
+  }
+
+  test("watcher for zookeeper") {
+    val namespace = "kyuubiwatcher"
+    var discovery: ServiceDiscovery = null
+    val service = new NoopTBinaryFrontendServer() {
+      override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
+        new NoopTBinaryFrontendService(this) {
+          override val discoveryService: Option[Service] = {
+            discovery = new EngineServiceDiscovery(this)
+            Some(discovery)
+          }
+        })
+    }
+
+    conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
+      .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
+      .set(HA_ZK_SESSION_TIMEOUT, 2000)
+      .set(HA_ADDRESSES, getConnectString)
+      .set(HA_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    service.initialize(conf)
+    service.start()
+    assert(service.getServiceState === ServiceState.STARTED)
+
+    val basePath = s"/$namespace"
+    try {
+      withDiscoveryClient(conf) { discoveryClient =>
+        assert(discoveryClient.pathExists(basePath))
+        val children = discoveryClient.getChildren(basePath)
+        assert(children.head ===
+          s"serviceUri=${service.frontendServices.head.connectionUrl};" +
+          s"version=$KYUUBI_VERSION;sequence=0000000000")
+
+        children.foreach { child =>
+          val childPath = s"""$basePath/$child"""
+          val nodeData = discoveryClient.getData(childPath)
+
+          val zkClient = CuratorFrameworkFactory.builder()
+            .connectString(getConnectString)
+            .sessionTimeoutMs(5000)
+            .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+            .build
+          zkClient.start()
+
+          // Trigger the NodeDataChanged event
+          zkClient.setData().forPath(childPath, nodeData)
+          Thread.sleep(3000)
+          // Trigger the NodeDeleted event
+          zkClient.delete().forPath(childPath)
+          zkClient.close()
+        }
+        eventually(timeout(10.seconds), interval(100.millis)) {
+          assert(discovery.getServiceState === ServiceState.STOPPED)
+          assert(service.getServiceState === ServiceState.STOPPED)
+        }
+      }
+    } finally {
+      service.stop()
+      discovery.stop()
     }
   }
 }
