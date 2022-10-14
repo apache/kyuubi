@@ -347,15 +347,18 @@ object PrivilegesBuilder {
         buildQuery(getQuery, inputObjs)
 
       case "CreateFunctionCommand" |
-          "DropFunctionCommand" |
-          "RefreshFunctionCommand" =>
+          "DropFunctionCommand" =>
         val db = getPlanField[Option[String]]("databaseName")
         val functionName = getPlanField[String]("functionName")
-        val isTemp = spark.sessionState.catalog.isTemporaryFunction(
-          FunctionIdentifier(functionName, db))
+        val isTemp = getPlanField[Boolean]("isTemp")
         if (!isTemp) {
           outputObjs += functionPrivileges(db.orNull, functionName)
         }
+
+      case "RefreshFunctionCommand" =>
+        val db = getPlanField[Option[String]]("databaseName")
+        val functionName = getPlanField[String]("functionName")
+        outputObjs += functionPrivileges(db.orNull, functionName)
 
       case "CreateFunction" | "DropFunction" | "RefreshFunction" =>
         val child = getPlanField("child")
@@ -390,8 +393,8 @@ object PrivilegesBuilder {
 
       case "DescribeFunctionCommand" =>
         val func = getPlanField[FunctionIdentifier]("functionName")
-        val isTemp = spark.sessionState.catalog.isTemporaryFunction(func)
-        if (!isTemp) {
+        val isPersistentFunction = spark.sessionState.catalog.isPersistentFunction(func)
+        if (isPersistentFunction) {
           inputObjs += functionPrivileges(func.database.orNull, func.funcName)
         }
 
