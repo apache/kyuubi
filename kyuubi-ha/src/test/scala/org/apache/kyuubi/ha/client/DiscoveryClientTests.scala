@@ -33,7 +33,7 @@ import org.apache.kyuubi.service.Service
 import org.apache.kyuubi.service.ServiceState
 
 trait DiscoveryClientTests extends KyuubiFunSuite {
-  protected val conf: KyuubiConf
+  protected var conf: KyuubiConf
 
   protected def getConnectString: String
 
