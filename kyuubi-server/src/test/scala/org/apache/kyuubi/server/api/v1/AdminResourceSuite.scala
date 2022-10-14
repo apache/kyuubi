@@ -77,6 +77,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "USER")
+        .queryParam("type", "spark_sql")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
         .delete()

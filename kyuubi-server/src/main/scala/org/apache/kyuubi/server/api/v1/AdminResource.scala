@@ -25,8 +25,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.EngineType
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.DiscoveryPaths
@@ -84,13 +84,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
 
     // use default value from kyuubi conf when param is not provided
-    val normalizedEngineType = Option(engineType).map(EngineType.withName)
-      .getOrElse(fe.getConf.get(ENGINE_TYPE))
-    val engineSubdomain = Option(subdomain).filter(_.nonEmpty)
-      .orElse(fe.getConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
-      .getOrElse("default")
-    val engineShareLevel = Option(shareLevel).filter(_.nonEmpty)
-      .getOrElse(fe.getConf.get(ENGINE_SHARE_LEVEL))
+    val clonedConf: KyuubiConf = fe.getConf.clone
+    Option(engineType).foreach(clonedConf.set(ENGINE_TYPE, _))
+    Option(subdomain).filter(_.nonEmpty)
+      .foreach(_ => clonedConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN, Option(subdomain)))
+    Option(shareLevel).filter(_.nonEmpty).foreach(clonedConf.set(ENGINE_SHARE_LEVEL, _))
+
+    val normalizedEngineType = clonedConf.get(ENGINE_TYPE)
+    val engineSubdomain = clonedConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse("default")
+    val engineShareLevel = clonedConf.get(ENGINE_SHARE_LEVEL)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"${fe.getConf.get(HA_NAMESPACE)}_${KYUUBI_VERSION}_" +
