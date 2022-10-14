@@ -191,62 +191,73 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       }.nonEmpty || rSize == 0)
     }
 
-    withTable("t", "input1", "input2") {
-      withSQLConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS.key -> "true") {
-        sql(s"CREATE TABLE t (c1 int, c2 long) USING PARQUET PARTITIONED BY (p string)")
-        sql(s"CREATE TABLE input1 USING PARQUET AS SELECT * FROM VALUES(1,2),(1,3)")
-        sql(s"CREATE TABLE input2 USING PARQUET AS SELECT * FROM VALUES(1,3),(1,3)")
+    withView("v") {
+      withTable("t", "input1", "input2") {
+        withSQLConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS.key -> "true") {
+          sql(s"CREATE TABLE t (c1 int, c2 long) USING PARQUET PARTITIONED BY (p string)")
+          sql(s"CREATE TABLE input1 USING PARQUET AS SELECT * FROM VALUES(1,2),(1,3)")
+          sql(s"CREATE TABLE input2 USING PARQUET AS SELECT * FROM VALUES(1,3),(1,3)")
+          sql(s"CREATE VIEW v as SELECT col1, count(*) as col2 FROM input1 GROUP BY col1")
 
-        val df0 = sql(
-          s"""
-             |INSERT INTO TABLE t PARTITION(p='a')
-             |SELECT /*+ broadcast(input2) */ input1.col1, input2.col1
-             |FROM input1
-             |JOIN input2
-             |ON input1.col1 = input2.col1
-             |""".stripMargin)
-        checkShuffleAndSort(df0.queryExecution.analyzed, 1, 1)
+          val df0 = sql(
+            s"""
+               |INSERT INTO TABLE t PARTITION(p='a')
+               |SELECT /*+ broadcast(input2) */ input1.col1, input2.col1
+               |FROM input1
+               |JOIN input2
+               |ON input1.col1 = input2.col1
+               |""".stripMargin)
+          checkShuffleAndSort(df0.queryExecution.analyzed, 1, 1)
 
-        val df1 = sql(
-          s"""
-             |INSERT INTO TABLE t PARTITION(p='a')
-             |SELECT /*+ broadcast(input2) */ input1.col1, input1.col2
-             |FROM input1
-             |LEFT JOIN input2
-             |ON input1.col1 = input2.col1 and input1.col2 = input2.col2
-             |""".stripMargin)
-        checkShuffleAndSort(df1.queryExecution.analyzed, 1, 2)
+          val df1 = sql(
+            s"""
+               |INSERT INTO TABLE t PARTITION(p='a')
+               |SELECT /*+ broadcast(input2) */ input1.col1, input1.col2
+               |FROM input1
+               |LEFT JOIN input2
+               |ON input1.col1 = input2.col1 and input1.col2 = input2.col2
+               |""".stripMargin)
+          checkShuffleAndSort(df1.queryExecution.analyzed, 1, 2)
 
-        val df2 = sql(
-          s"""
-             |INSERT INTO TABLE t PARTITION(p='a')
-             |SELECT col1 as c1, count(*) as c2
-             |FROM input1
-             |GROUP BY col1
-             |HAVING count(*) > 0
-             |""".stripMargin)
-        checkShuffleAndSort(df2.queryExecution.analyzed, 1, 1)
+          val df2 = sql(
+            s"""
+               |INSERT INTO TABLE t PARTITION(p='a')
+               |SELECT col1 as c1, count(*) as c2
+               |FROM input1
+               |GROUP BY col1
+               |HAVING count(*) > 0
+               |""".stripMargin)
+          checkShuffleAndSort(df2.queryExecution.analyzed, 1, 1)
 
-        // dynamic partition
-        val df3 = sql(
-          s"""
-             |INSERT INTO TABLE t PARTITION(p)
-             |SELECT /*+ broadcast(input2) */ input1.col1, input1.col2, input1.col2
-             |FROM input1
-             |JOIN input2
-             |ON input1.col1 = input2.col1
-             |""".stripMargin)
-        checkShuffleAndSort(df3.queryExecution.analyzed, 0, 1)
+          // dynamic partition
+          val df3 = sql(
+            s"""
+               |INSERT INTO TABLE t PARTITION(p)
+               |SELECT /*+ broadcast(input2) */ input1.col1, input1.col2, input1.col2
+               |FROM input1
+               |JOIN input2
+               |ON input1.col1 = input2.col1
+               |""".stripMargin)
+          checkShuffleAndSort(df3.queryExecution.analyzed, 0, 1)
 
-        // non-deterministic
-        val df4 = sql(
-          s"""
-             |INSERT INTO TABLE t PARTITION(p='a')
-             |SELECT col1 + rand(), count(*) as c2
-             |FROM input1
-             |GROUP BY col1
-             |""".stripMargin)
-        checkShuffleAndSort(df4.queryExecution.analyzed, 0, 0)
+          // non-deterministic
+          val df4 = sql(
+            s"""
+               |INSERT INTO TABLE t PARTITION(p='a')
+               |SELECT col1 + rand(), count(*) as c2
+               |FROM input1
+               |GROUP BY col1
+               |""".stripMargin)
+          checkShuffleAndSort(df4.queryExecution.analyzed, 0, 0)
+
+          // view
+          val df5 = sql(
+            s"""
+               |INSERT INTO TABLE t PARTITION(p='a')
+               |SELECT * FROM v
+               |""".stripMargin)
+          checkShuffleAndSort(df5.queryExecution.analyzed, 1, 1)
+        }
       }
     }
   }
