@@ -247,6 +247,21 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     doAs("admin", assert(Try(sql(create0)).isSuccess))
   }
 
+  test("auth: call functions") {
+    val db = "default"
+    val func = "func"
+    val functionCall0 = s"SELECT $db.$func('data')"
+    val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS " +
+      s"'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'"
+    doAs("admin", assert(Try(sql(create0)).isSuccess))
+    doAs(
+      "kent", {
+        val e = intercept[AccessControlException](sql(functionCall0))
+        assert(e.getMessage === errorMessage("select", "default/func"))
+      })
+    doAs("admin", assert(Try(sql(functionCall0)).isSuccess))
+  }
+
   test("row level filter") {
     val db = "default"
     val table = "src"

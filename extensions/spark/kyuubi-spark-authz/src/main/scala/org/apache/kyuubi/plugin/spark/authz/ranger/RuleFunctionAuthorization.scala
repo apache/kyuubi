@@ -20,27 +20,17 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.trees.TreeNodeTag
+import org.apache.spark.sql.hive.HiveFunctionPrivilegeBuilder
 
-import org.apache.kyuubi.plugin.spark.authz._
-import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
-
-class RuleAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
+class RuleFunctionAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-    case p if !plan.getTagValue(KYUUBI_AUTHZ_TAG).contains(true) =>
-      RuleAuthorization.checkPrivileges(spark, p)
-      p.setTagValue(KYUUBI_AUTHZ_TAG, true)
+    case p =>
+      RuleFunctionAuthorization.checkPrivileges(spark, p)
       p
-    case p => p // do nothing if checked privileges already.
   }
 }
 
-object RuleAuthorization extends RuleAuthorizationProvider {
+object RuleFunctionAuthorization extends RuleAuthorizationProvider {
 
-  val KYUUBI_AUTHZ_TAG = TreeNodeTag[Boolean]("__KYUUBI_AUTHZ_TAG")
-
-  override val privilegeBuilder
-      : (LogicalPlan, SparkSession) => (Seq[PrivilegeObject], Seq[PrivilegeObject]) =
-    PrivilegesBuilder.build
-
+  override val privilegeBuilder = HiveFunctionPrivilegeBuilder.build
 }
