@@ -73,7 +73,7 @@ case class EngineTab(
               "createRedirectHandler",
               classOf[String],
               classOf[String],
-              classOf[(HttpServletRequest) => Unit],
+              classOf[HttpServletRequest => Unit],
               classOf[String],
               classOf[scala.collection.immutable.Set[String]])
             .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST")))
@@ -83,14 +83,14 @@ case class EngineTab(
     }
   }
 
-  def reportInstallError(cause: Throwable): Unit = {
+  private def reportInstallError(cause: Throwable): Unit = {
     warn(
       "Failed to attach handler using SparkUI, please check the Spark version. " +
         s"So the config '${KyuubiConf.ENGINE_UI_STOP_ENABLED.key}' does not work.",
       cause)
   }
 
-  def loadSparkServletContextHandler: Class[_] = {
+  private def loadSparkServletContextHandler: Class[_] = {
     // [KYUUBI #3627]: the official spark release uses the shaded and relocated jetty classes,
     // but if use sbt to build for testing, e.g. docker image, it still uses vanilla jetty classes.
     val shaded = "org.sparkproject.jetty.servlet.ServletContextHandler"
