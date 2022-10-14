@@ -73,11 +73,13 @@ abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
       s" (key int, value string, pid string) USING parquet" +
       s"  PARTITIONED BY(pid)")
     // scalastyle:off
-    (0 until functionCount).foreach { index => {
-      sql(s"CREATE FUNCTION ${reusedDb}.kyuubi_fun_${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
-      sql(s"CREATE FUNCTION ${reusedDb2}.kyuubi_fun_${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
-      sql(s"CREATE TEMPORARY FUNCTION kyuubi_temp_fun_${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
-    }}
+    (0 until functionCount).foreach { index =>
+      {
+        sql(s"CREATE FUNCTION ${reusedDb}.kyuubi_fun_${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
+        sql(s"CREATE FUNCTION ${reusedDb2}.kyuubi_fun_${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
+        sql(s"CREATE TEMPORARY FUNCTION kyuubi_temp_fun_${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
+      }
+    }
     sql(s"USE ${reusedDb2}")
     // scalastyle:on
     super.beforeAll()
@@ -88,7 +90,7 @@ abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
       sql(s"DROP TABLE IF EXISTS $t")
     }
 
-    Seq(reusedDb,  reusedDb2).foreach { db =>
+    Seq(reusedDb, reusedDb2).foreach { db =>
       (0 until functionCount).foreach { index =>
         sql(s"DROP FUNCTION kyuubi_fun_${index}")
       }
