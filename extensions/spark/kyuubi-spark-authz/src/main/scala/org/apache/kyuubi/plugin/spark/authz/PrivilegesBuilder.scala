@@ -348,10 +348,10 @@ object PrivilegesBuilder {
 
       case "CreateFunctionCommand" |
           "DropFunctionCommand" =>
-        val db = getPlanField[Option[String]]("databaseName")
-        val functionName = getPlanField[String]("functionName")
         val isTemp = getPlanField[Boolean]("isTemp")
         if (!isTemp) {
+          val db = getPlanField[Option[String]]("databaseName")
+          val functionName = getPlanField[String]("functionName")
           outputObjs += functionPrivileges(db.orNull, functionName)
         }
 
