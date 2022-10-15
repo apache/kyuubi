@@ -28,7 +28,7 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeO
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.{CommandType, HasChildAsIdentifier, HasQueryAsLogicalPlan, HasTableAsIdentifier, HasTableAsIdentifierOption, HasTableNameAsIdentifier}
+import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType._
 
 /**
  * Building privilege objects
@@ -314,7 +314,7 @@ object v2Commands extends Enumeration {
     commandTypes = Seq(HasChildAsIdentifier))
 
   val ShowTableProperties: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
-    operationType = SHOW_CREATETABLE,
+    operationType = SHOW_TBLPROPERTIES,
     commandTypes = Seq(HasTableAsIdentifier))
 
   val TruncateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
