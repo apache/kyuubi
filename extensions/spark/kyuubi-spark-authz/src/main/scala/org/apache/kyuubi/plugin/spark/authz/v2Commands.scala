@@ -289,6 +289,7 @@ object v2Commands extends Enumeration {
         }
       outputObjs += v2TablePrivileges(tableIdent)
     })
+
   val MergeIntoTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     buildInput = (plan, inputObjs, _) => {
       val table = getFieldVal[DataSourceV2Relation](plan, "sourceTable")
@@ -306,6 +307,11 @@ object v2Commands extends Enumeration {
   val RepairTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
+    commandTypes = Seq(HasChildAsIdentifier))
+
+  val ShowCreateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
+    operationType = SHOW_CREATETABLE,
+    leastVer = Some("3.1"),
     commandTypes = Seq(HasChildAsIdentifier))
 
   val TruncateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(

@@ -100,8 +100,7 @@ object OperationType extends Enumeration {
           "ShowTables" => SHOWTABLES
       case "ShowColumnsCommand" => SHOWCOLUMNS
       case "ShowCreateTableAsSerdeCommand" |
-          "ShowCreateTableCommand" |
-          "ShowCreateTable" => SHOW_CREATETABLE
+          "ShowCreateTableCommand" => SHOW_CREATETABLE
       case "ShowFunctionsCommand" => SHOWFUNCTIONS
       case "ShowPartitionsCommand" => SHOWPARTITIONS
       case "ShowTablePropertiesCommand" |

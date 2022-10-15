@@ -493,18 +493,6 @@ object PrivilegesBuilder {
           table,
           Nil)
 
-      case "ShowCreateTable" =>
-        val resolvedTable = getPlanField[Any]("child")
-        val identifier = getFieldVal[AnyRef](resolvedTable, "identifier")
-        val namespace = invoke(identifier, "namespace").asInstanceOf[Array[String]]
-        val table = invoke(identifier, "name").asInstanceOf[String]
-        inputObjs += PrivilegeObject(
-          TABLE_OR_VIEW,
-          PrivilegeObjectActionType.OTHER,
-          quote(namespace),
-          table,
-          Nil)
-
       case "ShowFunctionsCommand" =>
 
       case "ShowPartitionsCommand" =>

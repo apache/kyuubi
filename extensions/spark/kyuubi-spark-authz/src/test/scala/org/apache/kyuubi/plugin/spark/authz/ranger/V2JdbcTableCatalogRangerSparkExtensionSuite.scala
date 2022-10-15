@@ -341,6 +341,19 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
         sql(s"COMMENT ON TABLE $catalogV2.$namespace1.$table1 IS 'xYz' ").explain()))
     assert(e3.getMessage.contains(s"does not have [alter] privilege" +
       s" on [$namespace1/$table1]"))
+  }
 
+  test("[KYUUBI #3424] SHOW CREATE TABLE") {
+    assume(isSparkV32OrGreater)
+    doAs(
+      "admin",
+      sql(s"SHOW CREATE TABLE $catalogV2.$namespace1.$table1"))
+
+    val e1 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"SHOW CREATE TABLE $catalogV2.$namespace1.$table1")))
+    assert(e1.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1]"))
   }
 }
