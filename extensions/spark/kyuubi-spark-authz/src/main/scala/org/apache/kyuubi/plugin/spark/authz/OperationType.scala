@@ -103,8 +103,7 @@ object OperationType extends Enumeration {
           "ShowCreateTableCommand" => SHOW_CREATETABLE
       case "ShowFunctionsCommand" => SHOWFUNCTIONS
       case "ShowPartitionsCommand" => SHOWPARTITIONS
-      case "ShowTablePropertiesCommand" |
-          "ShowTableProperties" => SHOW_TBLPROPERTIES
+      case "ShowTablePropertiesCommand" => SHOW_TBLPROPERTIES
       case "TruncateTableCommand" => TRUNCATETABLE
       case "UncacheTableCommand" => DROPVIEW
       case _ => QUERY

@@ -311,8 +311,11 @@ object v2Commands extends Enumeration {
 
   val ShowCreateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = SHOW_CREATETABLE,
-    leastVer = Some("3.1"),
     commandTypes = Seq(HasChildAsIdentifier))
+
+  val ShowTableProperties: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
+    operationType = SHOW_CREATETABLE,
+    commandTypes = Seq(HasTableAsIdentifier))
 
   val TruncateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     leastVer = Some("3.2"),

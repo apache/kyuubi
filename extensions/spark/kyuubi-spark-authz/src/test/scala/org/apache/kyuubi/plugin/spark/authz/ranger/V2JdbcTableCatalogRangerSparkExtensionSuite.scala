@@ -356,4 +356,18 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1]"))
   }
+
+  test("[KYUUBI #3424] SHOW TBLPROPERTIES") {
+    assume(isSparkV32OrGreater)
+    doAs(
+      "admin",
+      sql(s"SHOW TBLPROPERTIES $catalogV2.$namespace1.$table1"))
+
+    val e1 = intercept[AccessControlException](
+      doAs(
+        "someone",
+        sql(s"SHOW TBLPROPERTIES $catalogV2.$namespace1.$table1")))
+    assert(e1.getMessage.contains(s"does not have [select] privilege" +
+      s" on [$namespace1/$table1]"))
+  }
 }
