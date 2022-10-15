@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionInfo, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -81,6 +81,12 @@ object PrivilegesBuilder {
     }
 
     spark.sessionState.catalog.isTempView(parts)
+  }
+
+  private def isPersistentFunction(
+      functionIdent: FunctionIdentifier,
+      spark: SparkSession): Boolean = {
+    spark.sessionState.catalog.isPersistentFunction(functionIdent)
   }
 
   /**
@@ -400,9 +406,9 @@ object PrivilegesBuilder {
             val funcIdent = getPlanField[FunctionIdentifier]("functionName")
             (funcIdent.database, funcIdent.funcName)
           }
-        val isPersistentFunction = spark.sessionState.catalog.isPersistentFunction(func)
-        if (isPersistentFunction) {
-          inputObjs += functionPrivileges(func.database.orNull, func.funcName)
+        val isPersistentFun = isPersistentFunction(FunctionIdentifier(funName, db), spark)
+        if (isPersistentFun) {
+          inputObjs += functionPrivileges(db.orNull, funName)
         }
 
       case "DropNamespace" =>
