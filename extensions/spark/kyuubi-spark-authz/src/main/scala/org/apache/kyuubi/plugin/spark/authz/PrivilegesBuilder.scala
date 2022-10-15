@@ -392,7 +392,14 @@ object PrivilegesBuilder {
         inputObjs += databasePrivileges(quote(database))
 
       case "DescribeFunctionCommand" =>
-        val func = getPlanField[FunctionIdentifier]("functionName")
+        val (db: Option[String], funName: String) =
+          if (isSparkVersionAtLeast("3.3")) {
+            val info = getPlanField[ExpressionInfo]("info")
+            (Some(info.getDb), info.getName)
+          } else {
+            val funcIdent = getPlanField[FunctionIdentifier]("functionName")
+            (funcIdent.database, funcIdent.funcName)
+          }
         val isPersistentFunction = spark.sessionState.catalog.isPersistentFunction(func)
         if (isPersistentFunction) {
           inputObjs += functionPrivileges(func.database.orNull, func.funcName)
