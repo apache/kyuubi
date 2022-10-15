@@ -32,10 +32,12 @@ trait RuleAuthorizationProvider {
 
   val privilegeBuilder: (LogicalPlan, SparkSession) => (Seq[PrivilegeObject], Seq[PrivilegeObject])
 
+  val operationTypeBuilder: (String) => OperationType.OperationType = OperationType.apply
+
   def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
     val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
-    val opType = OperationType(plan.nodeName)
+    val opType = operationTypeBuilder(plan.nodeName)
     val (inputs, outputs) = privilegeBuilder(plan, spark)
     val requests = new ArrayBuffer[AccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {

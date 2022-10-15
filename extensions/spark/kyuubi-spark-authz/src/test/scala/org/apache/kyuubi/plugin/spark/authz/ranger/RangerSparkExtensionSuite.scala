@@ -55,7 +55,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     super.afterAll()
   }
 
-  private def errorMessage(
+  protected def errorMessage(
       privilege: String,
       resource: String = "default/src",
       user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
@@ -245,21 +245,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         assert(e.getMessage === errorMessage("create", "default/func"))
       })
     doAs("admin", assert(Try(sql(create0)).isSuccess))
-  }
-
-  test("auth: call functions") {
-    val db = "default"
-    val func = "func"
-    val functionCall0 = s"SELECT $db.$func('data')"
-    val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS " +
-      s"'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'"
-    doAs("admin", assert(Try(sql(create0)).isSuccess))
-    doAs(
-      "kent", {
-        val e = intercept[AccessControlException](sql(functionCall0))
-        assert(e.getMessage === errorMessage("select", "default/func"))
-      })
-    doAs("admin", assert(Try(sql(functionCall0)).isSuccess))
   }
 
   test("row level filter") {
@@ -695,6 +680,21 @@ class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite
 
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+
+  test("auth: call functions") {
+    val db = "default"
+    val func = "kyuubi_func"
+    val functionCall0 = s"SELECT $db.$func('data')"
+    val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS " +
+      s"'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'"
+    doAs("admin", assert(Try(sql(create0)).isSuccess))
+    doAs(
+      "kent", {
+        val e = intercept[AccessControlException](sql(functionCall0))
+        assert(e.getMessage === errorMessage("select", "default/kyuubi_func"))
+      })
+    doAs("admin", assert(Try(sql(functionCall0)).isSuccess))
+  }
 
   test("table stats must be specified") {
     val table = "hive_src"

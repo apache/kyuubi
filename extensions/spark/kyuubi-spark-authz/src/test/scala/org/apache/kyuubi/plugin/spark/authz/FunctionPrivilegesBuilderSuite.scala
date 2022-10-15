@@ -23,6 +23,9 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType.QUERY
+import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessType, RuleFunctionAuthorization}
+
 abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
   // scalastyle:on
@@ -63,6 +66,8 @@ abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
   protected val reusedPartTable: String = reusedTable + "_part"
   protected val reusedPartTableShort: String = reusedPartTable.split("\\.").last
   protected val functionCount = 3
+  protected val functionNamePrefix = "kyuubi_fun_"
+  protected val tempFunNamePrefix = "kyuubi_temp_fun_"
 
   override def beforeAll(): Unit = {
     sql(s"CREATE DATABASE IF NOT EXISTS $reusedDb")
@@ -75,9 +80,9 @@ abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
     // scalastyle:off
     (0 until functionCount).foreach { index =>
       {
-        sql(s"CREATE FUNCTION ${reusedDb}.kyuubi_fun_${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
-        sql(s"CREATE FUNCTION ${reusedDb2}.kyuubi_fun_${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
-        sql(s"CREATE TEMPORARY FUNCTION kyuubi_temp_fun_${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
+        sql(s"CREATE FUNCTION ${reusedDb}.${functionNamePrefix}${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
+        sql(s"CREATE FUNCTION ${reusedDb2}.${functionNamePrefix}${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
+        sql(s"CREATE TEMPORARY FUNCTION ${tempFunNamePrefix}${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
       }
     }
     sql(s"USE ${reusedDb2}")
@@ -92,7 +97,7 @@ abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
 
     Seq(reusedDb, reusedDb2).foreach { db =>
       (0 until functionCount).foreach { index =>
-        sql(s"DROP FUNCTION kyuubi_fun_${index}")
+        sql(s"DROP FUNCTION ${db}.${functionNamePrefix}${index}")
       }
       sql(s"DROP DATABASE IF EXISTS ${db}")
     }
@@ -119,7 +124,17 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
       s"kyuubi_temp_fun_2(key) " +
       s"FROM $reusedTable").queryExecution.analyzed
     val (inputs, _) = HiveFunctionPrivilegeBuilder.build(plan, spark)
-    inputs.foreach(line => println(line))
+    assert(inputs.size === 3)
+    val operationType = RuleFunctionAuthorization.operationTypeBuilder(plan.nodeName)
+    assert(operationType === QUERY)
+    inputs.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+      assert(po.dbname startsWith reusedDb.toLowerCase)
+      assert(po.objectName startsWith functionNamePrefix.toLowerCase)
+      val accessType = ranger.AccessType(po, operationType, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
   }
 
   test("Simple Function Call Query") {
@@ -130,22 +145,45 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
       s"kyuubi_temp_fun_1('data2')," +
       s"kyuubi_temp_fun_2('key') ").queryExecution.analyzed
     val (inputs, _) = HiveFunctionPrivilegeBuilder.build(plan, spark)
-    inputs.foreach(line => println(line))
+    assert(inputs.size === 4)
+    val operationType = RuleFunctionAuthorization.operationTypeBuilder(plan.nodeName)
+    assert(operationType === QUERY)
+    inputs.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+      assert(po.dbname startsWith reusedDb.toLowerCase)
+      assert(po.objectName startsWith functionNamePrefix.toLowerCase)
+      val accessType = ranger.AccessType(po, operationType, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
   }
 
   test("Function Call In CAST Command") {
-    val plan = sql(s"CREATE TABLE castTable " +
-      s"SELECT kyuubi_fun_1('data') col1, " +
-      s"${reusedDb2}.kyuubi_fun_2(value) col2, " +
-      s"kyuubi_fun_0(value) col3, " +
-      s"kyuubi_fun_2('value') col4, " +
-      s"${reusedDb}.kyuubi_fun_2('value') col5, " +
-      s"${reusedDb}.kyuubi_fun_1('value') col6, " +
-      s"kyuubi_temp_fun_1('data2') col7, " +
-      s"kyuubi_temp_fun_2(key) col8 " +
-      s"FROM ${reusedTable} WHERE ${reusedDb2}.kyuubi_fun_1(key)='123'").queryExecution.analyzed
-    val (inputs, _) = HiveFunctionPrivilegeBuilder.build(plan, spark)
-    inputs.foreach(line => println(line))
+    val table = "castTable"
+    withTable(table) { table =>
+      val plan = sql(s"CREATE TABLE ${table} " +
+        s"SELECT kyuubi_fun_1('data') col1, " +
+        s"${reusedDb2}.kyuubi_fun_2(value) col2, " +
+        s"kyuubi_fun_0(value) col3, " +
+        s"kyuubi_fun_2('value') col4, " +
+        s"${reusedDb}.kyuubi_fun_2('value') col5, " +
+        s"${reusedDb}.kyuubi_fun_1('value') col6, " +
+        s"kyuubi_temp_fun_1('data2') col7, " +
+        s"kyuubi_temp_fun_2(key) col8 " +
+        s"FROM ${reusedTable} WHERE ${reusedDb2}.kyuubi_fun_1(key)='123'").queryExecution.analyzed
+      val (inputs, _) = HiveFunctionPrivilegeBuilder.build(plan, spark)
+      assert(inputs.size === 7)
+      val operationType = RuleFunctionAuthorization.operationTypeBuilder(plan.nodeName)
+      assert(operationType === QUERY)
+      inputs.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
+        assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+        assert(po.dbname startsWith reusedDb.toLowerCase)
+        assert(po.objectName startsWith functionNamePrefix.toLowerCase)
+        val accessType = ranger.AccessType(po, operationType, isInput = true)
+        assert(accessType === AccessType.SELECT)
+      }
+    }
   }
 
 }

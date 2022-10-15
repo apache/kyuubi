@@ -22,6 +22,8 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.hive.HiveFunctionPrivilegeBuilder
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType
+
 class RuleFunctionAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
     case p =>
@@ -33,4 +35,10 @@ class RuleFunctionAuthorization(spark: SparkSession) extends Rule[LogicalPlan] {
 object RuleFunctionAuthorization extends RuleAuthorizationProvider {
 
   override val privilegeBuilder = HiveFunctionPrivilegeBuilder.build
+
+  /**
+   * All function call operation are Query operation, no matter the function used in DQL or DML
+   */
+  override val operationTypeBuilder: String => OperationType.Value =
+    (nodeName: String) => OperationType.QUERY
 }
