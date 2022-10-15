@@ -547,21 +547,21 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(tuple._2.size === 0)
   }
 
-  test("Drop Temporary Function") {
-    val plan = sql("DROP TEMPORARY FUNCTION CreateTempFunction")
-      .queryExecution.analyzed
-    val operationType = OperationType(plan.nodeName)
-    assert(operationType === DROPFUNCTION)
-    val tuple = PrivilegesBuilder.build(plan, spark)
-    assert(tuple._1.size === 0)
-    assert(tuple._2.size === 0)
-  }
-
   test("Describe Temporary Function") {
     val plan = sql("DESCRIBE FUNCTION CreateTempFunction")
       .queryExecution.analyzed
     val operationType = OperationType(plan.nodeName)
     assert(operationType === DESCFUNCTION)
+    val tuple = PrivilegesBuilder.build(plan, spark)
+    assert(tuple._1.size === 0)
+    assert(tuple._2.size === 0)
+  }
+
+  test("Drop Temporary Function") {
+    val plan = sql("DROP TEMPORARY FUNCTION CreateTempFunction")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === DROPFUNCTION)
     val tuple = PrivilegesBuilder.build(plan, spark)
     assert(tuple._1.size === 0)
     assert(tuple._2.size === 0)

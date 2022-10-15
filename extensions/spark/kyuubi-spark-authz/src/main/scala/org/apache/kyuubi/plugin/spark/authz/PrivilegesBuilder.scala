@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
@@ -86,7 +87,22 @@ object PrivilegesBuilder {
   private def isPersistentFunction(
       functionIdent: FunctionIdentifier,
       spark: SparkSession): Boolean = {
-    spark.sessionState.catalog.isPersistentFunction(functionIdent)
+    val (db, funcName) = functionIdent.database match {
+      case Some(db) =>
+        (db, functionIdent.funcName)
+      case _ =>
+        Try {
+          spark.sessionState.catalog.lookupFunctionInfo(functionIdent)
+        } match {
+          case Success(funInfo) => (funInfo.getDb, funInfo.getName)
+          case Failure(_) => (null, functionIdent.funcName)
+        }
+    }
+    if (db == null) {
+      false
+    } else {
+      spark.sessionState.catalog.isPersistentFunction(FunctionIdentifier(funcName, Some(db)))
+    }
   }
 
   /**
