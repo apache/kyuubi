@@ -88,7 +88,7 @@ object OperationType extends Enumeration {
       case "LoadDataCommand" => LOAD
       case "SetCommand" => SHOWCONF
       case "RefreshFunctionCommand" | "RefreshFunction" => RELOADFUNCTION
-      case "RefreshTableCommand" => QUERY
+      case "RefreshTableCommand" | "RefreshTable" => QUERY
       case "SetCatalogCommand" |
           "SetCatalogAndNamespace" |
           "SetNamespaceCommand" |

@@ -304,7 +304,8 @@ object PrivilegesBuilder {
         inputObjs += tablePrivileges(table, cols)
 
       case "AnalyzeTableCommand" |
-          "RefreshTableCommand" =>
+          "RefreshTableCommand" |
+          "RefreshTable" =>
         inputObjs += tablePrivileges(getTableIdent)
 
       case "AnalyzeTablesCommand" =>

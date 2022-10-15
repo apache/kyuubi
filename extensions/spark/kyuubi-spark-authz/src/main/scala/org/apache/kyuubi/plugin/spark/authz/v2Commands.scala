@@ -74,11 +74,6 @@ object v2Commands extends Enumeration {
   val defaultBuildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[CommandType]) => Unit =
     (plan, inputObjs, commandTypes) => {
       commandTypes.foreach {
-        case HasChildAsIdentifier =>
-          val table = getFieldVal[LogicalPlan](plan, "child")
-          val tableIdent = getFieldVal[Identifier](table, "identifier")
-          inputObjs += v2TablePrivileges(tableIdent)
-
         case HasQueryAsLogicalPlan =>
           val query = getFieldVal[LogicalPlan](plan, "query")
           buildQuery(query, inputObjs)
@@ -308,10 +303,6 @@ object v2Commands extends Enumeration {
           actionType = PrivilegeObjectActionType.UPDATE)
       }
     })
-
-  val RefreshTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
-    operationType = QUERY,
-    commandTypes = Seq(HasChildAsIdentifier))
 
   val RepairTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_ADDPARTS,
