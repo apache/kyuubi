@@ -68,7 +68,7 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       kyuubiConf.set(k, v)
     }
     val udfJar = TestUserClassLoaderJar.createJarFile(
-      Utils.createTempDir(namePrefix = "test-jar").toFile,
+      Utils.createTempDir("test-jar").toFile,
       "test-classloader-udf.jar",
       GENERATED_UDF_CLASS,
       GENERATED_UDF_CODE)

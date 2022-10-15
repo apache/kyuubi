@@ -37,7 +37,7 @@ trait SparkSessionProvider {
 
   protected lazy val spark: SparkSession = {
     val metastore = {
-      val path = Utils.createTempDir(namePrefix = "hms")
+      val path = Utils.createTempDir("hms")
       Files.delete(path)
       path
     }
@@ -48,7 +48,7 @@ trait SparkSessionProvider {
       .config("spark.sql.catalogImplementation", catalogImpl)
       .config(
         "spark.sql.warehouse.dir",
-        Utils.createTempDir(namePrefix = "spark-warehouse").toString)
+        Utils.createTempDir("spark-warehouse").toString)
       .config("spark.sql.extensions", sqlExtensions)
       .withExtensions(extension)
       .getOrCreate()

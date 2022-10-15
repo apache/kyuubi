@@ -136,9 +136,9 @@ object Utils extends Logging {
    * automatically deleted when the VM shuts down.
    */
   def createTempDir(
-      root: String = System.getProperty("java.io.tmpdir"),
-      namePrefix: String = "kyuubi"): Path = {
-    val dir = createDirectory(root, namePrefix)
+      prefix: String = "kyuubi",
+      root: String = System.getProperty("java.io.tmpdir")): Path = {
+    val dir = createDirectory(root, prefix)
     dir.toFile.deleteOnExit()
     dir
   }

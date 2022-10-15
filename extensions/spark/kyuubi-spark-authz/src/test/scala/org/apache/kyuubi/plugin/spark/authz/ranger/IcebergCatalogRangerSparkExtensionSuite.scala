@@ -44,7 +44,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
       spark.conf.set(
         s"spark.sql.catalog.$catalogV2.warehouse",
-        Utils.createTempDir(namePrefix = "iceberg-hadoop").toString)
+        Utils.createTempDir("iceberg-hadoop").toString)
 
       super.beforeAll()
 

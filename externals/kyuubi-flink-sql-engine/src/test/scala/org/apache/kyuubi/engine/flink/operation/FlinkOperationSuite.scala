@@ -999,7 +999,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   test("execute statement - add/remove/show jar") {
     val jarName = s"newly-added-${UUID.randomUUID()}.jar"
     val newJar = TestUserClassLoaderJar.createJarFile(
-      Utils.createTempDir(namePrefix = "add-jar-test").toFile,
+      Utils.createTempDir("add-jar-test").toFile,
       jarName,
       GENERATED_UDF_CLASS,
       GENERATED_UDF_CODE).toPath

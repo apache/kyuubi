@@ -27,8 +27,8 @@ import scala.collection.JavaConverters._
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
-
 import org.apache.kyuubi._
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
 import org.apache.kyuubi.operation.log.OperationLog
@@ -125,10 +125,10 @@ trait ProcBuilder {
       if (Files.isDirectory(working)) {
         working
       } else {
-        Utils.createTempDir(rootAbs, proxyUser)
+        Utils.createTempDir(prefix = proxyUser, root = rootAbs)
       }
     }.getOrElse {
-      Utils.createTempDir(namePrefix = proxyUser)
+      Utils.createTempDir(proxyUser)
     }
   }
 

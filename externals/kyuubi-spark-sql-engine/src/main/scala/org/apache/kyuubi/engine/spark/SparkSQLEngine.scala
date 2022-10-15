@@ -143,7 +143,7 @@ object SparkSQLEngine extends Logging {
     _sparkConf = new SparkConf()
     _kyuubiConf = KyuubiConf()
     val rootDir = _sparkConf.getOption("spark.repl.classdir").getOrElse(getLocalDir(_sparkConf))
-    val outputDir = Utils.createTempDir(root = rootDir, namePrefix = "repl")
+    val outputDir = Utils.createTempDir(prefix = "repl", root = rootDir)
     _sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
     _sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     _sparkConf.setIfMissing("spark.master", "local")
