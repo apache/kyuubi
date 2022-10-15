@@ -21,6 +21,7 @@ import java.nio.file.Files
 
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait SparkSessionProvider {
@@ -36,7 +37,7 @@ trait SparkSessionProvider {
 
   protected lazy val spark: SparkSession = {
     val metastore = {
-      val path = Files.createTempDirectory("hms")
+      val path = Utils.createTempDir(namePrefix = "hms")
       Files.delete(path)
       path
     }
@@ -47,7 +48,7 @@ trait SparkSessionProvider {
       .config("spark.sql.catalogImplementation", catalogImpl)
       .config(
         "spark.sql.warehouse.dir",
-        Files.createTempDirectory("spark-warehouse").toString)
+        Utils.createTempDir(namePrefix = "spark-warehouse").toString)
       .config("spark.sql.extensions", sqlExtensions)
       .withExtensions(extension)
       .getOrCreate()
