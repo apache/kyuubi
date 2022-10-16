@@ -87,21 +87,22 @@ object PrivilegesBuilder {
   private def isPersistentFunction(
       functionIdent: FunctionIdentifier,
       spark: SparkSession): Boolean = {
-    val (db, funcName) = functionIdent.database match {
-      case Some(db) =>
-        (db, functionIdent.funcName)
+    val (database, funcName) = functionIdent.database match {
+      case Some(_) =>
+        (functionIdent.database, functionIdent.funcName)
       case _ =>
         Try {
           spark.sessionState.catalog.lookupFunctionInfo(functionIdent)
         } match {
-          case Success(funInfo) => (funInfo.getDb, funInfo.getName)
-          case Failure(_) => (null, functionIdent.funcName)
+          case Success(funInfo) => (Option(funInfo.getDb), funInfo.getName)
+          case Failure(_) => (None, functionIdent.funcName)
         }
     }
-    if (db == null) {
+
+    if (database.isEmpty) {
       false
     } else {
-      spark.sessionState.catalog.isPersistentFunction(FunctionIdentifier(funcName, Some(db)))
+      spark.sessionState.catalog.isPersistentFunction(FunctionIdentifier(funcName, database))
     }
   }
 
@@ -417,7 +418,7 @@ object PrivilegesBuilder {
         val (db: Option[String], funName: String) =
           if (isSparkVersionAtLeast("3.3")) {
             val info = getPlanField[ExpressionInfo]("info")
-            (Some(info.getDb), info.getName)
+            (Option(info.getDb), info.getName)
           } else {
             val funcIdent = getPlanField[FunctionIdentifier]("functionName")
             (funcIdent.database, funcIdent.funcName)
