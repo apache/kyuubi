@@ -1385,6 +1385,13 @@ object KyuubiConf {
     .intConf
     .createWithDefault(-1)
 
+  val ENGINE_POOL_BALANCE_POLICY: ConfigEntry[String] = buildConf("engine.pool.balance.policy")
+    .doc("The balance policy of queries in engine pool.")
+    .version("1.7.0")
+    .stringConf
+    .checkValue(Set("RANDOM", "SEQUENTIAL").apply(_), "Unsupported balance policy")
+    .createWithDefault("RANDOM")
+
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.initialize.sql")
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
