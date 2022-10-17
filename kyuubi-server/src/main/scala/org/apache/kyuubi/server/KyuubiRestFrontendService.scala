@@ -21,6 +21,7 @@ import java.util.EnumSet
 import java.util.concurrent.{Future, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.servlet.DispatcherType
+import javax.ws.rs.NotAllowedException
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
@@ -176,7 +177,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
 
-    getUserName(sessionConf)
+    var userName: String = null
+    try {
+      userName = getUserName(sessionConf)
+    } catch {
+      case t: Throwable => throw new NotAllowedException(t.getMessage)
+    }
+    userName
   }
 
   def getUserName(sessionConf: Map[String, String]): String = {

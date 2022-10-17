@@ -20,6 +20,7 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import io.swagger.v3.oas.annotations.media.Content
@@ -27,6 +28,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
+import org.apache.kyuubi.client.api.v1.dto.{Engine, ListEnginesResponse}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
@@ -74,8 +76,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
     val userName = fe.getUserName(hs2ProxyUser)
-    val engineSpace =
-      getEngineSpace(userName, engineType, shareLevel, subdomain, "default")
+    val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
+    val engineSpace = getEngineSpace(engine)
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       val engineNodes = discoveryClient.getChildren(engineSpace)
@@ -107,12 +109,13 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("type") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[ServiceNodeInfo] = {
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): ListEnginesResponse = {
     val userName = fe.getUserName(hs2ProxyUser)
-    val engineSpace = getEngineSpace(userName, engineType, shareLevel, subdomain, "")
+    val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
+    val engineSpace = getEngineSpace(engine)
 
     var engineNodes = ListBuffer[ServiceNodeInfo]()
-    Option(subdomain) match {
+    Option(subdomain).filter(_.nonEmpty) match {
       case Some(_) =>
         withDiscoveryClient(fe.getConf) { discoveryClient =>
           info(s"Listing engine nodes for $engineSpace")
@@ -126,15 +129,23 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
         }
     }
-    engineNodes
+    val engines = engineNodes.map(node =>
+      new Engine(
+        engine.getVersion,
+        engine.getUser,
+        engine.getEngineType,
+        engine.getSharelevel,
+        node.namespace.split("/").last,
+        node.instance))
+    new ListEnginesResponse(engines.asJava)
   }
 
-  private def getEngineSpace(
+  private def getEngine(
       userName: String,
       engineType: String,
       shareLevel: String,
       subdomain: String,
-      subdomainDefault: String): String = {
+      subdomainDefault: String): Engine = {
     // use default value from kyuubi conf when param is not provided
     val clonedConf: KyuubiConf = fe.getConf.clone
     Option(engineType).foreach(clonedConf.set(ENGINE_TYPE, _))
@@ -142,14 +153,24 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       .foreach(_ => clonedConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN, Option(subdomain)))
     Option(shareLevel).filter(_.nonEmpty).foreach(clonedConf.set(ENGINE_SHARE_LEVEL, _))
 
-    val serverSpace = clonedConf.get(HA_NAMESPACE)
     val normalizedEngineType = clonedConf.get(ENGINE_TYPE)
     val engineSubdomain = clonedConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse(subdomainDefault)
     val engineShareLevel = clonedConf.get(ENGINE_SHARE_LEVEL)
 
-    DiscoveryPaths.makePath(
-      s"${serverSpace}_${KYUUBI_VERSION}_${engineShareLevel}_$normalizedEngineType",
+    new Engine(
+      KYUUBI_VERSION,
       userName,
-      Array(engineSubdomain))
+      normalizedEngineType,
+      engineShareLevel,
+      engineSubdomain,
+      null)
+  }
+
+  private def getEngineSpace(engine: Engine): String = {
+    val serverSpace = fe.getConf.get(HA_NAMESPACE)
+    DiscoveryPaths.makePath(
+      s"${serverSpace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}",
+      engine.getUser,
+      Array(engine.getSubdomain))
   }
 }
