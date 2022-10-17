@@ -32,10 +32,8 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
-import org.apache.kyuubi.server.{KyuubiRestFrontendService, KyuubiServer}
+import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.server.api.v1.AdminResource._
-import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -51,7 +49,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @POST
   @Path("refresh/hadoop_conf")
   def refreshFrontendHadoopConf(): Response = {
-    val userName = fe.getUserName(Map.empty)
+    val userName = fe.getUserName(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh Kyuubi server hadoop conf request from $userName/$ipAddress")
     if (!userName.equals(administrator)) {
@@ -75,9 +73,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
-    val userName = getUserName(fe, hs2ProxyUser)
+    val userName = fe.getUserName(hs2ProxyUser)
     val engineSpace =
-      getEngineSpace(userName, engineType, shareLevel, subdomain, "default", fe.getConf)
+      getEngineSpace(userName, engineType, shareLevel, subdomain, "default")
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       val engineNodes = discoveryClient.getChildren(engineSpace)
@@ -110,8 +108,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[ServiceNodeInfo] = {
-    val userName = getUserName(fe, hs2ProxyUser)
-    val engineSpace = getEngineSpace(userName, engineType, shareLevel, subdomain, "", fe.getConf)
+    val userName = fe.getUserName(hs2ProxyUser)
+    val engineSpace = getEngineSpace(userName, engineType, shareLevel, subdomain, "")
 
     var engineNodes = ListBuffer[ServiceNodeInfo]()
     Option(subdomain) match {
@@ -130,45 +128,27 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
     engineNodes
   }
-}
 
-object AdminResource {
-
-  def getUserName(fe: KyuubiRestFrontendService, hs2ProxyUser: String): String = {
-    val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
-      Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
-
-    var userName: String = null
-    try {
-      userName = fe.getUserName(sessionConf)
-    } catch {
-      case t: Throwable =>
-        throw new NotAllowedException(t.getMessage)
-    }
-    userName
-  }
-
-  def getEngineSpace(
+  private def getEngineSpace(
       userName: String,
       engineType: String,
       shareLevel: String,
       subdomain: String,
-      subdomainDefault: String,
-      conf: KyuubiConf): String = {
+      subdomainDefault: String): String = {
     // use default value from kyuubi conf when param is not provided
-    val clonedConf: KyuubiConf = conf.clone
+    val clonedConf: KyuubiConf = fe.getConf.clone
     Option(engineType).foreach(clonedConf.set(ENGINE_TYPE, _))
     Option(subdomain).filter(_.nonEmpty)
       .foreach(_ => clonedConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN, Option(subdomain)))
     Option(shareLevel).filter(_.nonEmpty).foreach(clonedConf.set(ENGINE_SHARE_LEVEL, _))
 
+    val serverSpace = clonedConf.get(HA_NAMESPACE)
     val normalizedEngineType = clonedConf.get(ENGINE_TYPE)
     val engineSubdomain = clonedConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).getOrElse(subdomainDefault)
     val engineShareLevel = clonedConf.get(ENGINE_SHARE_LEVEL)
 
     DiscoveryPaths.makePath(
-      s"${clonedConf.get(HA_NAMESPACE)}_${KYUUBI_VERSION}_" +
-        s"${engineShareLevel}_$normalizedEngineType",
+      s"${serverSpace}_${KYUUBI_VERSION}_${engineShareLevel}_$normalizedEngineType",
       userName,
       Array(engineSubdomain))
   }
