@@ -391,11 +391,6 @@ object PrivilegesBuilder {
         val func = getPlanField[FunctionIdentifier]("functionName")
         inputObjs += functionPrivileges(func.database.orNull, func.funcName)
 
-      case "DropNamespace" =>
-        val child = getPlanField[Any]("namespace")
-        val database = getFieldVal[Seq[String]](child, "namespace")
-        outputObjs += databasePrivileges(quote(database))
-
       case "DropTableCommand" =>
         if (!isTempView(getPlanField[TableIdentifier]("tableName"), spark)) {
           outputObjs += tablePrivileges(getTableName)
@@ -435,8 +430,6 @@ object PrivilegesBuilder {
         val cols = getPlanField[Option[TablePartitionSpec]]("partition")
           .map(_.keySet).getOrElse(Nil)
         outputObjs += tablePrivileges(table, cols.toSeq, actionType = actionType)
-
-      case "MergeIntoTable" =>
 
       case "RepairTableCommand" =>
         val enableAddPartitions = getPlanField[Boolean]("enableAddPartitions")
