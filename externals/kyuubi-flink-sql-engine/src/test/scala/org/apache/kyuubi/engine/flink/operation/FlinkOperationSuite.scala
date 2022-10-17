@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.nio.file.Files
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
@@ -29,6 +28,7 @@ import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
@@ -999,7 +999,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   test("execute statement - add/remove/show jar") {
     val jarName = s"newly-added-${UUID.randomUUID()}.jar"
     val newJar = TestUserClassLoaderJar.createJarFile(
-      Files.createTempDirectory("add-jar-test").toFile,
+      Utils.createTempDir("add-jar-test").toFile,
       jarName,
       GENERATED_UDF_CLASS,
       GENERATED_UDF_CODE).toPath

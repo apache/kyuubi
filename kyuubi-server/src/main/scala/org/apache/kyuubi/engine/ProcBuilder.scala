@@ -125,10 +125,10 @@ trait ProcBuilder {
       if (Files.isDirectory(working)) {
         working
       } else {
-        Utils.createTempDir(rootAbs, proxyUser)
+        Utils.createTempDir(prefix = proxyUser, root = rootAbs)
       }
     }.getOrElse {
-      Utils.createTempDir(namePrefix = proxyUser)
+      Utils.createTempDir(proxyUser)
     }
   }
 
