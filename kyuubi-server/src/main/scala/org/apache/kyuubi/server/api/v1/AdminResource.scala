@@ -20,6 +20,8 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.collection.mutable.ListBuffer
+
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -100,10 +102,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
-    description = "delete kyuubi engine")
+    description = "list kyuubi engines")
   @GET
   @Path("engine")
-  def listEngine(
+  def listEngines(
       @QueryParam("type") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
@@ -111,19 +113,18 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = getUserName(fe, hs2ProxyUser)
     val engineSpace = getEngineSpace(userName, engineType, shareLevel, subdomain, "", fe.getConf)
 
-    var engineNodes = Seq.empty[ServiceNodeInfo]
+    var engineNodes = ListBuffer[ServiceNodeInfo]()
     Option(subdomain) match {
       case Some(_) =>
         withDiscoveryClient(fe.getConf) { discoveryClient =>
           info(s"Listing engine nodes for $engineSpace")
-          engineNodes = engineNodes ++
-            discoveryClient.getServiceNodesInfo(engineSpace)
+          engineNodes ++= discoveryClient.getServiceNodesInfo(engineSpace)
         }
       case None =>
         withDiscoveryClient(fe.getConf) { discoveryClient =>
           discoveryClient.getChildren(engineSpace).map { child =>
             info(s"Listing engine nodes for $engineSpace/$child")
-            engineNodes = engineNodes ++ discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
           }
         }
     }
