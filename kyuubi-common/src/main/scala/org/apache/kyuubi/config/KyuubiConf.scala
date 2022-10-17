@@ -962,9 +962,9 @@ object KyuubiConf {
       .intConf
       .createWithDefault(9)
 
-  val ENGINE_OPEN_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.session.engine.open.interval")
-      .doc("The interval for opening engine.")
+  val ENGINE_OPEN_RETRY_WAIT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.open.retry.wait")
+      .doc("How long to wait before retrying to open engine after a failure.")
       .version("1.7.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(10).toMillis)

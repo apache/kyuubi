@@ -125,7 +125,7 @@ class KyuubiSessionImpl(
         }
 
       val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
-      val retryInterval = sessionManager.getConf.get(ENGINE_OPEN_INTERVAL)
+      val retryWait = sessionManager.getConf.get(ENGINE_OPEN_RETRY_WAIT)
       var attempt = 0
       var shouldRetry = true
       while (attempt <= maxAttempts && shouldRetry) {
@@ -141,10 +141,10 @@ class KyuubiSessionImpl(
               if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
                 e.getCause.getMessage.contains("Connection refused (Connection refused)") =>
             warn(
-              s"Failed to opening [${engine.defaultEngineName} $host:$port] after" +
+              s"Failed to open [${engine.defaultEngineName} $host:$port] after" +
                 s" $attempt/$maxAttempts times, retrying",
               e.getCause)
-            Thread.sleep(retryInterval)
+            Thread.sleep(retryWait)
             shouldRetry = true
           case e: Throwable =>
             error(
