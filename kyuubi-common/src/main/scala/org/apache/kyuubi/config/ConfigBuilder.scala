@@ -30,6 +30,7 @@ private[kyuubi] case class ConfigBuilder(key: String) {
   private[config] var _onCreate: Option[ConfigEntry[_] => Unit] = None
   private[config] var _type = ""
   private[config] var _internal = false
+  private[config] var _alternatives = List.empty[String]
 
   def internal: ConfigBuilder = {
     _internal = true
@@ -48,6 +49,11 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def onCreate(callback: ConfigEntry[_] => Unit): ConfigBuilder = {
     _onCreate = Option(callback)
+    this
+  }
+
+  def withAlternative(key: String): ConfigBuilder = {
+    _alternatives = _alternatives :+ key
     this
   }
 
