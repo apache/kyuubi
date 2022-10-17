@@ -296,9 +296,16 @@ kyuubi.frontend.protocols|THRIFT_BINARY|A comma separated list for all frontend 
 kyuubi.frontend.proxy.http.client.ip.header|X-Real-IP|The http header to record the real client ip address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. Note that, because the header value can be specified to any ip address, so it will not be used for authentication.|string|1.6.0
 kyuubi.frontend.rest.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the REST frontend service.|string|1.4.0
 kyuubi.frontend.rest.bind.port|10099|Port of the machine on which to run the REST frontend service.|int|1.4.0
+kyuubi.frontend.ssl.include.ciphersuites||A comma separated list of include SSL cipher suite names.|seq|1.7.0
+kyuubi.frontend.ssl.keystore.algorithm|&lt;undefined&gt;|SSL certificate keystore algorithm.|string|1.7.0
+kyuubi.frontend.ssl.keystore.password|&lt;undefined&gt;|SSL certificate keystore password.|string|1.7.0
+kyuubi.frontend.ssl.keystore.path|&lt;undefined&gt;|SSL certificate keystore location.|string|1.7.0
+kyuubi.frontend.ssl.keystore.type|&lt;undefined&gt;|SSL certificate keystore type.|string|1.7.0
+kyuubi.frontend.ssl.protocol.excludes|SSLv2,SSLv3|SSL Versions to disable.|seq|1.7.0
 kyuubi.frontend.thrift.backoff.slot.length|PT0.1S|Time to back off during login to the thrift frontend service.|duration|1.4.0
 kyuubi.frontend.thrift.binary.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.|string|1.4.0
 kyuubi.frontend.thrift.binary.bind.port|10009|Port of the machine on which to run the thrift frontend service via binary protocol.|int|1.4.0
+kyuubi.frontend.thrift.binary.ssl.enabled|false|Set this to true for using SSL encryption in thrift binary frontend server.|boolean|1.7.0
 kyuubi.frontend.thrift.http.allow.user.substitution|true|Allow alternate user to be specified as part of open connection request when using HTTP transport mode.|boolean|1.6.0
 kyuubi.frontend.thrift.http.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the thrift frontend service via http protocol.|string|1.6.0
 kyuubi.frontend.thrift.http.bind.port|10010|Port of the machine on which to run the thrift frontend service via http protocol.|int|1.6.0

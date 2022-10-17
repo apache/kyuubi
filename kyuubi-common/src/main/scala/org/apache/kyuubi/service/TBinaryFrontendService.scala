@@ -17,12 +17,15 @@
 
 package org.apache.kyuubi.service
 
+import java.security.KeyStore
+import java.util.Locale
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
+import javax.net.ssl.{KeyManagerFactory, SSLServerSocket}
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.server.{TServer, TThreadPoolServer}
-import org.apache.thrift.transport.TServerSocket
+import org.apache.thrift.transport.{TServerSocket, TSSLTransportFactory}
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
@@ -65,7 +68,34 @@ abstract class TBinaryFrontendService(name: String)
         new NamedThreadFactory(name + "Handler-Pool", false))
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)
-      val tServerSocket = new TServerSocket(serverSocket)
+      val tServerSocket =
+        if (!isServer() || !conf.get(FRONTEND_THRIFT_BINARY_SSL_ENABLED)) {
+          new TServerSocket(serverSocket)
+        } else {
+          val keyStorePath = conf.get(FRONTEND_SSL_KEYSTORE_PATH)
+          val keyStorePassword = conf.get(FRONTEND_SSL_KEYSTORE_PASSWORD)
+          val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
+          val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
+          val sslVersionExcludes = conf.get(FRONTEND_SSL_PROTOCOL_EXCLUDES)
+          val includeCipherSuites = conf.get(FRONTEND_SSL_INCLUDE_CIPHER_SUITES)
+
+          if (keyStorePath.isEmpty) {
+            throw new IllegalArgumentException(
+              s"${FRONTEND_SSL_KEYSTORE_PATH.key} not configured for SSL connection")
+          }
+          if (keyStorePassword.isEmpty) {
+            throw new IllegalArgumentException(
+              s"${FRONTEND_SSL_KEYSTORE_PASSWORD.key} not configured for SSL connection")
+          }
+
+          getServerSSLSocket(
+            keyStorePath.get,
+            keyStorePassword.get,
+            keyStoreType,
+            keyStoreAlgorithm,
+            sslVersionExcludes,
+            includeCipherSuites)
+        }
       val maxMessageSize = conf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
       val requestTimeout = conf.get(FRONTEND_THRIFT_LOGIN_TIMEOUT).toInt
       val beBackoffSlotLength = conf.get(FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH).toInt
@@ -92,6 +122,46 @@ abstract class TBinaryFrontendService(name: String)
           e)
     }
     super.initialize(conf)
+  }
+
+  private def getServerSSLSocket(
+      keyStorePath: String,
+      keyStorePassword: String,
+      keyStoreType: Option[String],
+      keyStoreAlgorithm: Option[String],
+      sslVersionExcludes: Seq[String],
+      includeCipherSuites: Seq[String]): TServerSocket = {
+    val params = if (includeCipherSuites.nonEmpty) {
+      new TSSLTransportFactory.TSSLTransportParameters("TLS", includeCipherSuites.toArray)
+    } else {
+      new TSSLTransportFactory.TSSLTransportParameters()
+    }
+    params.setKeyStore(
+      keyStorePath,
+      keyStorePassword,
+      keyStoreAlgorithm.getOrElse(KeyManagerFactory.getDefaultAlgorithm),
+      keyStoreType.getOrElse(KeyStore.getDefaultType))
+
+    val tServerSocket =
+      TSSLTransportFactory.getServerSocket(portNum, 0, serverSocket.getInetAddress, params)
+
+    tServerSocket.getServerSocket match {
+      case sslServerSocket: SSLServerSocket =>
+        val sslVersionBlacklistLocal = sslVersionExcludes.map(_.toLowerCase(Locale.ROOT))
+        val enabledProtocols = sslServerSocket.getEnabledProtocols.flatMap { protocol =>
+          if (sslVersionBlacklistLocal.contains(protocol.toLowerCase(Locale.ROOT))) {
+            debug(s"Disabling SSL Protocol: $protocol")
+            None
+          } else {
+            Some(protocol)
+          }
+        }
+        sslServerSocket.setEnabledProtocols(enabledProtocols)
+        info(s"SSL Server Socket enabled protocols: $enabledProtocols")
+
+      case _ =>
+    }
+    tServerSocket
   }
 
   override def run(): Unit =

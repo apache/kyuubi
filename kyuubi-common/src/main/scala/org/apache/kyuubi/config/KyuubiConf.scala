@@ -379,6 +379,57 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_BIND_HOST)
 
+  val FRONTEND_THRIFT_BINARY_SSL_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.enabled")
+      .doc("Set this to true for using SSL encryption in thrift binary frontend server.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FRONTEND_SSL_KEYSTORE_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.path")
+      .doc("SSL certificate keystore location.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_KEYSTORE_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.password")
+      .doc("SSL certificate keystore password.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_KEYSTORE_TYPE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.type")
+      .doc("SSL certificate keystore type.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_KEYSTORE_ALGORITHM: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.algorithm")
+      .doc("SSL certificate keystore algorithm.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_PROTOCOL_EXCLUDES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.ssl.protocol.excludes")
+      .doc("SSL Versions to disable.")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Seq("SSLv2", "SSLv3"))
+
+  val FRONTEND_SSL_INCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.ssl.include.ciphersuites")
+      .doc("A comma separated list of include SSL cipher suite names.")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
   @deprecated("using kyuubi.frontend.thrift.binary.bind.port instead", "1.4.0")
   val FRONTEND_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.bind.port")
     .doc("(deprecated) Port of the machine on which to run the thrift frontend service " +
