@@ -27,7 +27,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 class HiveCatalogDatabaseOperationSuite extends HiveJDBCTestHelper {
 
   override def beforeAll(): Unit = {
-    val metastore = Utils.createTempDir(getClass.getSimpleName)
+    val metastore = Utils.createTempDir(namePrefix = getClass.getSimpleName)
     metastore.toFile.delete()
     val args = Array(
       "--conf",

@@ -29,7 +29,7 @@ class KyuubiOperationHiveEnginePerConnectionSuite extends WithKyuubiServer with 
   val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   override protected val conf: KyuubiConf = {
-    val metastore = Utils.createTempDir(getClass.getSimpleName)
+    val metastore = Utils.createTempDir(namePrefix = getClass.getSimpleName)
     metastore.toFile.delete()
     val currentUser = Utils.currentUser
     KyuubiConf()
