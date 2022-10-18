@@ -19,6 +19,7 @@ package org.apache.kyuubi.config
 
 trait ConfigEntry[T] {
   def key: String
+  def alternatives: List[String]
   def valueConverter: String => T
   def strConverter: T => String
   def doc: String
@@ -34,7 +35,7 @@ trait ConfigEntry[T] {
   }
 
   final protected def readString(provider: ConfigProvider): Option[String] = {
-    provider.get(key)
+    alternatives.foldLeft(provider.get(key))((res, nextKey) => res.orElse(provider.get(nextKey)))
   }
 
   def readFrom(conf: ConfigProvider): T
@@ -44,6 +45,7 @@ trait ConfigEntry[T] {
 
 class OptionalConfigEntry[T](
     _key: String,
+    _alternatives: List[String],
     rawValueConverter: String => T,
     rawStrConverter: T => String,
     _doc: String,
@@ -70,6 +72,8 @@ class OptionalConfigEntry[T](
 
   override def key: String = _key
 
+  override def alternatives: List[String] = _alternatives
+
   override def doc: String = _doc
 
   override def version: String = _version
@@ -81,6 +85,7 @@ class OptionalConfigEntry[T](
 
 class ConfigEntryWithDefault[T](
     _key: String,
+    _alternatives: List[String],
     _defaultVal: T,
     _valueConverter: String => T,
     _strConverter: T => String,
@@ -98,6 +103,8 @@ class ConfigEntryWithDefault[T](
 
   override def key: String = _key
 
+  override def alternatives: List[String] = _alternatives
+
   override def valueConverter: String => T = _valueConverter
 
   override def strConverter: T => String = _strConverter
@@ -113,6 +120,7 @@ class ConfigEntryWithDefault[T](
 
 class ConfigEntryWithDefaultString[T](
     _key: String,
+    _alternatives: List[String],
     _defaultVal: String,
     _valueConverter: String => T,
     _strConverter: T => String,
@@ -131,6 +139,8 @@ class ConfigEntryWithDefaultString[T](
 
   override def key: String = _key
 
+  override def alternatives: List[String] = _alternatives
+
   override def valueConverter: String => T = _valueConverter
 
   override def strConverter: T => String = _strConverter
@@ -146,6 +156,7 @@ class ConfigEntryWithDefaultString[T](
 
 class ConfigEntryFallback[T](
     _key: String,
+    _alternatives: List[String],
     _doc: String,
     _version: String,
     _internal: Boolean,
@@ -159,6 +170,8 @@ class ConfigEntryFallback[T](
   }
 
   override def key: String = _key
+
+  override def alternatives: List[String] = _alternatives
 
   override def valueConverter: String => T = fallback.valueConverter
 

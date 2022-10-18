@@ -18,14 +18,32 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.{Ascending, Attribute, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical._
 
 trait RepartitionBuilderWithRebalance extends RepartitionBuilder {
   override def buildRepartition(
       dynamicPartitionColumns: Seq[Attribute],
       query: LogicalPlan): LogicalPlan = {
-    RebalancePartitions(dynamicPartitionColumns, query)
+    if (!conf.getConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS) ||
+      dynamicPartitionColumns.nonEmpty) {
+      RebalancePartitions(dynamicPartitionColumns, query)
+    } else {
+      val maxColumns = conf.getConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS_MAX_COLUMNS)
+      val inferred = InferRebalanceAndSortOrders.infer(query)
+      if (inferred.isDefined) {
+        val (partitioning, ordering) = inferred.get
+        val rebalance = RebalancePartitions(partitioning.take(maxColumns), query)
+        if (ordering.nonEmpty) {
+          val sortOrders = ordering.take(maxColumns).map(o => SortOrder(o, Ascending))
+          Sort(sortOrders, false, rebalance)
+        } else {
+          rebalance
+        }
+      } else {
+        RebalancePartitions(dynamicPartitionColumns, query)
+      }
+    }
   }
 
   override def canInsertRepartitionByExpression(plan: LogicalPlan): Boolean = {

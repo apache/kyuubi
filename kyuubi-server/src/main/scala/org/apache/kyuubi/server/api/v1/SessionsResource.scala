@@ -353,7 +353,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[OperationHandle]))),
-    description = "Create an operation with GET_FUNCTIONS type")
+    description = "Create an operation with GET_PRIMARY_KEY type")
   @POST
   @Path("{sessionHandle}/operations/primaryKeys")
   def getPrimaryKeys(
@@ -378,7 +378,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[OperationHandle]))),
-    description = "Create an operation with GET_FUNCTIONS type")
+    description = "Create an operation with GET_CROSS_REFERENCE type")
   @POST
   @Path("{sessionHandle}/operations/crossReference")
   def getCrossReference(
