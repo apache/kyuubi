@@ -68,10 +68,9 @@ abstract class TBinaryFrontendService(name: String)
         new NamedThreadFactory(name + "Handler-Pool", false))
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)
-      val tServerSocket =
-        if (!isServer() || !conf.get(FRONTEND_THRIFT_BINARY_SSL_ENABLED)) {
-          new TServerSocket(serverSocket)
-        } else {
+      val tServerSocket = {
+        // only enable ssl for server side
+        if (isServer() && conf.get(FRONTEND_THRIFT_BINARY_SSL_ENABLED)) {
           val keyStorePath = conf.get(FRONTEND_SSL_KEYSTORE_PATH)
           val keyStorePassword = conf.get(FRONTEND_SSL_KEYSTORE_PASSWORD)
           val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
@@ -95,7 +94,10 @@ abstract class TBinaryFrontendService(name: String)
             keyStoreAlgorithm,
             sslVersionExcludes,
             includeCipherSuites)
+        } else {
+          new TServerSocket(serverSocket)
         }
+      }
       val maxMessageSize = conf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
       val requestTimeout = conf.get(FRONTEND_THRIFT_LOGIN_TIMEOUT).toInt
       val beBackoffSlotLength = conf.get(FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH).toInt
