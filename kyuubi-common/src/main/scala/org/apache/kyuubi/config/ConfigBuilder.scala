@@ -123,7 +123,7 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def fallbackConf[T](fallback: ConfigEntry[T]): ConfigEntry[T] = {
     val entry =
-      new ConfigEntryFallback[T](key, _doc, _version, _internal, fallback)
+      new ConfigEntryFallback[T](key, _alternatives, _doc, _version, _internal, fallback)
     _onCreate.foreach(_(entry))
     entry
   }
@@ -183,6 +183,7 @@ private[kyuubi] case class TypedConfigBuilder[T](
   def createOptional: OptionalConfigEntry[T] = {
     val entry = new OptionalConfigEntry(
       parent.key,
+      parent._alternatives,
       fromStr,
       toStr,
       parent._doc,
@@ -199,6 +200,7 @@ private[kyuubi] case class TypedConfigBuilder[T](
       val d = fromStr(toStr(default))
       val entry = new ConfigEntryWithDefault(
         parent.key,
+        parent._alternatives,
         d,
         fromStr,
         toStr,
@@ -213,6 +215,7 @@ private[kyuubi] case class TypedConfigBuilder[T](
   def createWithDefaultString(default: String): ConfigEntryWithDefaultString[T] = {
     val entry = new ConfigEntryWithDefaultString(
       parent.key,
+      parent._alternatives,
       default,
       fromStr,
       toStr,
