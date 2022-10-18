@@ -18,12 +18,12 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.util.{Base64, UUID}
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{GenericType, MediaType}
 
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, RestFrontendTestHelper, Utils}
-import org.apache.kyuubi.client.api.v1.dto.ListEnginesResponse
+import org.apache.kyuubi.client.api.v1.dto.Engine
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationState, EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
@@ -179,12 +179,11 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         .get
 
       assert(200 == response.getStatus)
-      val result = response.readEntity(classOf[ListEnginesResponse])
-      val engines = result.getEngines
+      val engines = response.readEntity(new GenericType[Seq[Engine]]() {})
       assert(engines.size == 1)
-      assert(engines.get(0).getEngineType == "SPARK_SQL")
-      assert(engines.get(0).getSharelevel == "USER")
-      assert(engines.get(0).getSubdomain == "default")
+      assert(engines(0).getEngineType == "SPARK_SQL")
+      assert(engines(0).getSharelevel == "USER")
+      assert(engines(0).getSubdomain == "default")
 
       // kill the engine application
       engineMgr.killApplication(None, id)
@@ -240,8 +239,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
         .get
       assert(200 == response.getStatus)
-      val result = response.readEntity(classOf[ListEnginesResponse])
-      assert(result.getEngines.size == 2)
+      val result = response.readEntity(new GenericType[Seq[Engine]]() {})
+      assert(result.size == 2)
 
       val response1 = webTarget.path("api/v1/admin/engine")
         .queryParam("type", "spark_sql")
@@ -250,8 +249,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
         .get
       assert(200 == response1.getStatus)
-      val result1 = response1.readEntity(classOf[ListEnginesResponse])
-      assert(result1.getEngines.size == 1)
+      val result1 = response1.readEntity(new GenericType[Seq[Engine]]() {})
+      assert(result1.size == 1)
 
       // kill the engine application
       engineMgr.killApplication(None, id1)

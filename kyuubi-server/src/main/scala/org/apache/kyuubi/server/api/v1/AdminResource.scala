@@ -20,7 +20,6 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import io.swagger.v3.oas.annotations.media.Content
@@ -28,7 +27,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.{Engine, ListEnginesResponse}
+import org.apache.kyuubi.client.api.v1.dto.Engine
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
@@ -109,7 +108,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("type") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): ListEnginesResponse = {
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
     val userName = fe.getUserName(hs2ProxyUser)
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
     val engineSpace = getEngineSpace(engine)
@@ -129,7 +128,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
         }
     }
-    val engines = engineNodes.map(node =>
+    engineNodes.map(node =>
       new Engine(
         engine.getVersion,
         engine.getUser,
@@ -137,7 +136,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         engine.getSharelevel,
         node.namespace.split("/").last,
         node.instance))
-    new ListEnginesResponse(engines.asJava)
   }
 
   private def getEngine(
