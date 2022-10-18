@@ -26,7 +26,7 @@ import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.table.client.gateway.context.DefaultContext
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 
@@ -70,7 +70,7 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       kyuubiConf.set(k, v)
     }
     val udfJar = TestUserClassLoaderJar.createJarFile(
-      Files.createTempDirectory("test-jar").toFile,
+      Utils.createTempDir("test-jar").toFile,
       "test-classloader-udf.jar",
       GENERATED_UDF_CLASS,
       GENERATED_UDF_CODE)

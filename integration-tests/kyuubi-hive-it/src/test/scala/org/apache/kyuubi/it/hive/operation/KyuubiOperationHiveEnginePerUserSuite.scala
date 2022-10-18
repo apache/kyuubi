@@ -28,7 +28,7 @@ class KyuubiOperationHiveEnginePerUserSuite extends WithKyuubiServer with HiveEn
   val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   override protected val conf: KyuubiConf = {
-    val metastore = Utils.createTempDir(namePrefix = getClass.getSimpleName)
+    val metastore = Utils.createTempDir(prefix = getClass.getSimpleName)
     metastore.toFile.delete()
     KyuubiConf()
       .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
