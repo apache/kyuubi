@@ -289,6 +289,8 @@ Returns all the batches.
 
 ### POST /batches
 
+Create a new batch.
+
 #### Request Body
 
 | Name      | Description                                        | Type             |
