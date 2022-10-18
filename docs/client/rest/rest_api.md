@@ -31,9 +31,9 @@ Get the list of all live sessions
 |:-----------|:---------------------------------------------------------|:-------|
 | identifier | The session identifier                                   | String |
 | user       | The user name that created the session                   | String |
-| ipAddr     | The user name that created the batch                     | String |
+| ipAddr     | The client IP address that created the session           | String |
 | conf       | The configuration of the session                         | Map    |
-| createTime | The session that created after this timestamp            | Long   |
+| createTime | The session that created at this timestamp               | Long   |
 | duration   | The interval that last access time subtract created time | Long   |
 | idleTime   | The interval of no operation                             | Long   |
 
@@ -51,9 +51,9 @@ Get an information detail of a session
 
 #### Request Parameters
 
-| Name     | Description                          | Type |
-|:---------|:-------------------------------------|:-----|
-| infoType | The type of Hive Thrift getting info | Int  |
+| Name     | Description                   | Type |
+|:---------|:------------------------------|:-----|
+| infoType | The id of Hive Thrift GetInfo | Int  |
 
 #### Response Body
 
