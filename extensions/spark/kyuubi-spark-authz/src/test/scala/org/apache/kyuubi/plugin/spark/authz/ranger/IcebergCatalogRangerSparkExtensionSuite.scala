@@ -17,7 +17,6 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 // scalastyle:off
-import java.nio.file.Files
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
