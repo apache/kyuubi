@@ -77,7 +77,7 @@ abstract class TBinaryFrontendService(name: String)
           val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
           val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
           val sslVersionExcludes = conf.get(FRONTEND_SSL_PROTOCOL_EXCLUDES)
-          val includeCipherSuites = conf.get(FRONTEND_SSL_INCLUDE_CIPHER_SUITES)
+          val includeCipherSuites = conf.get(FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES)
 
           if (keyStorePath.isEmpty) {
             throw new IllegalArgumentException(

@@ -132,14 +132,24 @@ final class KyuubiTHttpFrontendService(
           }
 
           val sslContextFactory = new SslContextFactory.Server
-          val excludedProtocols = conf.get(FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST).split(",")
+          val excludedProtocols = conf.get(FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST)
+          val excludeCipherSuites = conf.get(FRONTEND_THRIFT_HTTP_SSL_EXCLUDE_CIPHER_SUITES)
+          val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
+          val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
           info("Thrift HTTP Server SSL: adding excluded protocols: " +
             String.join(",", excludedProtocols: _*))
           sslContextFactory.addExcludeProtocols(excludedProtocols: _*)
           info("Thrift HTTP Server SSL: SslContextFactory.getExcludeProtocols = " +
             String.join(",", sslContextFactory.getExcludeProtocols: _*))
+          info("Thrift HTTP Server SSL: setting excluded cipher Suites: " +
+            String.join(",", excludeCipherSuites: _*))
+          sslContextFactory.setExcludeCipherSuites(excludeCipherSuites: _*)
+          info("Thrift HTTP Server SSL: SslContextFactory.getExcludeCipherSuites = " +
+            String.join(",", sslContextFactory.getExcludeCipherSuites: _*))
           sslContextFactory.setKeyStorePath(keyStorePath.get)
           sslContextFactory.setKeyStorePassword(keyStorePassword.get)
+          keyStoreType.foreach(sslContextFactory.setKeyStoreType)
+          keyStoreAlgorithm.foreach(sslContextFactory.setKeyManagerFactoryAlgorithm)
           new ServerConnector(
             server.get,
             sslContextFactory,

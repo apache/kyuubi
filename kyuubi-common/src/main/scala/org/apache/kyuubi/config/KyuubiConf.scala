@@ -422,9 +422,9 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Seq("SSLv2", "SSLv3"))
 
-  val FRONTEND_SSL_INCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.frontend.ssl.include.ciphersuites")
-      .doc("A comma separated list of include SSL cipher suite names.")
+  val FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.include.ciphersuites")
+      .doc("A comma separated list of include SSL cipher suite names for thrift binary frontend.")
       .version("1.7.0")
       .stringConf
       .toSequence()
@@ -647,13 +647,22 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST: ConfigEntry[String] =
+  val FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.frontend.thrift.http.ssl.protocol.blacklist")
       .doc("SSL Versions to disable when using HTTP transport mode.")
       .version("1.6.0")
       .withAlternative("kyuubi.frontend.ssl.protocol.excludes")
       .stringConf
-      .createWithDefault("SSLv2,SSLv3")
+      .toSequence()
+      .createWithDefault(Seq("SSLv2", "SSLv3"))
+
+  val FRONTEND_THRIFT_HTTP_SSL_EXCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.thrift.http.ssl.exclude.ciphersuites")
+      .doc("A comma separated list of exclude SSL cipher suite names for thrift http frontend.")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
 
   val FRONTEND_THRIFT_HTTP_ALLOW_USER_SUBSTITUTION: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.thrift.http.allow.user.substitution")
