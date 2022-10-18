@@ -185,7 +185,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
   test("support alternative keys in ConfigBuilder") {
     val config = new ConfigEntryWithDefaultString[Double](
       "kyuubi.key",
-      List("kyuubi.key.alternative"),
+      List("kyuubi.key.alternative", "kyuubi.key.alternative2"),
       "3.0",
       s => java.lang.Double.valueOf(s),
       v => v.toString,
@@ -198,6 +198,11 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     KyuubiConf.register(config)
     assert(conf.get(config) == 3.0)
     conf.set("kyuubi.key.alternative", "4.0")
+    conf.set("kyuubi.key.alternative2", "5.0")
     assert(conf.get(config) == 4.0)
+    conf.unset("kyuubi.key.alternative")
+    assert(conf.get(config) == 5.0)
+    conf.unset("kyuubi.key.alternative2")
+    assert(conf.get(config) == 3.0)
   }
 }
