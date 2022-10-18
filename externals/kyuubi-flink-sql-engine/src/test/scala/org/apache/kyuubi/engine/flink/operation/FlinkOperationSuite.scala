@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.nio.file.Files
 import java.sql.DatabaseMetaData
 import java.util.UUID
 

@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.flink
 
-import java.nio.file.Files
-
 import scala.collection.JavaConverters._
 
 import org.apache.flink.client.cli.{CustomCommandLine, DefaultCLI}
