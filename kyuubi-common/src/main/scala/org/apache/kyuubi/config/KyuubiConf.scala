@@ -635,6 +635,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.thrift.http.ssl.keystore.path")
       .doc("SSL certificate keystore location.")
       .version("1.6.0")
+      .withAlternative("kyuubi.frontend.ssl.keystore.path")
       .stringConf
       .createOptional
 
@@ -642,6 +643,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.thrift.http.ssl.keystore.password")
       .doc("SSL certificate keystore password.")
       .version("1.6.0")
+      .withAlternative("kyuubi.frontend.ssl.keystore.password")
       .stringConf
       .createOptional
 
@@ -649,6 +651,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.thrift.http.ssl.protocol.blacklist")
       .doc("SSL Versions to disable when using HTTP transport mode.")
       .version("1.6.0")
+      .withAlternative("kyuubi.frontend.ssl.protocol.excludes")
       .stringConf
       .createWithDefault("SSLv2,SSLv3")
 
