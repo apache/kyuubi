@@ -131,11 +131,12 @@ abstract class TBinaryFrontendService(name: String)
       keyStoreAlgorithm: Option[String],
       sslVersionExcludes: Seq[String],
       includeCipherSuites: Seq[String]): TServerSocket = {
-    val params = if (includeCipherSuites.nonEmpty) {
-      new TSSLTransportFactory.TSSLTransportParameters("TLS", includeCipherSuites.toArray)
-    } else {
-      new TSSLTransportFactory.TSSLTransportParameters()
-    }
+    val params =
+      if (includeCipherSuites.nonEmpty) {
+        new TSSLTransportFactory.TSSLTransportParameters("TLS", includeCipherSuites.toArray)
+      } else {
+        new TSSLTransportFactory.TSSLTransportParameters()
+      }
     params.setKeyStore(
       keyStorePath,
       keyStorePassword,
