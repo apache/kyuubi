@@ -17,8 +17,8 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 // scalastyle:off
-import java.nio.file.Files
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
 /**
@@ -45,7 +45,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
       spark.conf.set(
         s"spark.sql.catalog.$catalogV2.warehouse",
-        Files.createTempDirectory("iceberg-hadoop").toString)
+        Utils.createTempDir("iceberg-hadoop").toString)
 
       super.beforeAll()
 
