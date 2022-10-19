@@ -19,11 +19,10 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.security.PrivilegedExceptionAction
 import java.sql.Timestamp
-
 import scala.util.Try
-
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
@@ -674,9 +673,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   }
 
   test("[KYUUBI #3607] Support {OWNER} variable defined in Ranger Policy") {
-    // For now, only hive catalog is supported
-    assume(catalogImpl == "hive")
-
     val db = "default"
     val table = "owner_variable"
 
@@ -688,6 +684,9 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
         assert(Try {
           sql(s"CREATE TABLE $db.$table (key int, value int) USING $format")
         }.isSuccess))
+
+      val (inputs, _) = PrivilegesBuilder.build(sql(select).queryExecution.analyzed, spark)
+      assume(inputs.nonEmpty && inputs.head.owner.isDefined)
 
       doAs(
         defaultTableOwner,
