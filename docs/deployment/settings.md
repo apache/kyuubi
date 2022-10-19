@@ -369,6 +369,7 @@ kyuubi.kinit.principal|&lt;undefined&gt;|Name of the Kerberos principal.|string|
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+kyuubi.kubernetes.client.build.preferFromPodEnv|false|If enabled, kyuubi will build kubernetes client from pod env and service account files. (only when kyuubi run in kubernetes pod)|boolean|1.7.0
 kyuubi.kubernetes.context|&lt;undefined&gt;|The desired context from your kubernetes config file used to configure the K8S client for interacting with the cluster.|string|1.6.0
 
 
