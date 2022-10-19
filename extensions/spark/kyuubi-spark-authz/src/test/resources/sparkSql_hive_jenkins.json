@@ -345,7 +345,58 @@
           ],
           "users": [
             "bob",
-            "perm_view_user"
+            "perm_view_user",
+            "{OWNER}"
+          ],
+          "groups": [],
+          "conditions": [],
+          "delegateAdmin": false
+        }, {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": false
+            },
+            {
+              "type": "update",
+              "isAllowed": false
+            },
+            {
+              "type": "create",
+              "isAllowed": true
+            },
+            {
+              "type": "drop",
+              "isAllowed": false
+            },
+            {
+              "type": "alter",
+              "isAllowed": false
+            },
+            {
+              "type": "index",
+              "isAllowed": false
+            },
+            {
+              "type": "lock",
+              "isAllowed": false
+            },
+            {
+              "type": "all",
+              "isAllowed": false
+            },
+            {
+              "type": "read",
+              "isAllowed": false
+            },
+            {
+              "type": "write",
+              "isAllowed": false
+            }
+          ],
+          "users": [
+            "default_table_owner",
+            "create_only_user"
           ],
           "groups": [],
           "conditions": [],

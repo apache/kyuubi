@@ -672,6 +672,36 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
     doAs("admin", assert(sql("show tables from global_temp").collect().length == 0))
   }
+
+  test("[KYUUBI #3607] Support {OWNER} variable defined in Ranger Policy") {
+    // For now, only hive catalog is supported
+    assume(catalogImpl == "hive")
+
+    val db = "default"
+    val table = "owner_variable"
+
+    val select = s"SELECT key FROM $db.$table"
+
+    withCleanTmpResources(Seq((s"$db.$table", "table"))) {
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(s"CREATE TABLE $db.$table (key int, value int) USING $format")
+        }.isSuccess))
+
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(select).collect()
+        }.isSuccess))
+
+      doAs(
+        "create_only_user", {
+          val e = intercept[AccessControlException](sql(select).collect())
+          assert(e.getMessage === errorMessage("select", s"$db/$table/key"))
+        })
+    }
+  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {

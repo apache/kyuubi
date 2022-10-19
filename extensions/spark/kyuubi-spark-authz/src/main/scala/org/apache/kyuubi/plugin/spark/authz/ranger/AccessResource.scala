@@ -42,7 +42,8 @@ object AccessResource {
       objectType: ObjectType,
       firstLevelResource: String,
       secondLevelResource: String,
-      thirdLevelResource: String): AccessResource = {
+      thirdLevelResource: String,
+      owner: Option[String] = None): AccessResource = {
     val resource = new AccessResource(objectType)
 
     resource.objectType match {
@@ -59,6 +60,7 @@ object AccessResource {
         resource.setValue("table", secondLevelResource)
     }
     resource.setServiceDef(SparkRangerAdminPlugin.getServiceDef)
+    owner.foreach(resource.setOwnerUser)
     resource
   }
 
@@ -67,6 +69,6 @@ object AccessResource {
   }
 
   def apply(obj: PrivilegeObject, opType: OperationType): AccessResource = {
-    apply(ObjectType(obj, opType), obj.dbname, obj.objectName, obj.columns.mkString(","))
+    apply(ObjectType(obj, opType), obj.dbname, obj.objectName, obj.columns.mkString(","), obj.owner)
   }
 }

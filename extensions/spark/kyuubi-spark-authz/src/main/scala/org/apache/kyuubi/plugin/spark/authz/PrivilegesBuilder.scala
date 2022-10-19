@@ -45,8 +45,9 @@ object PrivilegesBuilder {
   private def tablePrivileges(
       table: TableIdentifier,
       columns: Seq[String] = Nil,
+      owner: Option[String] = None,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns)
+    PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns, owner)
   }
 
   private def functionPrivileges(
@@ -97,14 +98,16 @@ object PrivilegesBuilder {
       conditionList: Seq[NamedExpression] = Nil): Unit = {
 
     def mergeProjection(table: CatalogTable, plan: LogicalPlan): Unit = {
+      val tableOwner = Option(table.owner).filter(_.nonEmpty)
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table.identifier,
-          table.schema.fieldNames)
+          table.schema.fieldNames,
+          tableOwner)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivileges(table.identifier, cols)
+        privilegeObjects += tablePrivileges(table.identifier, cols, tableOwner)
       }
     }
 
