@@ -37,7 +37,7 @@ import org.apache.kyuubi.engine.jdbc.JdbcProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
-import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths}
+import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
@@ -72,26 +72,13 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
+  private val enginePoolBalancePolicy: String = conf.get(ENGINE_POOL_BALANCE_POLICY)
+
   // In case the multi kyuubi instances have the small gap of timeout, here we add
   // a small amount of time for timeout
   private val LOCK_TIMEOUT_SPAN_FACTOR = if (Utils.isTesting) 0.5 else 0.1
 
   private var builder: ProcBuilder = _
-
-  @VisibleForTesting
-  private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
-    case Some(_subdomain) => _subdomain
-    case None if clientPoolSize > 0 =>
-      val poolSize = math.min(clientPoolSize, poolThreshold)
-      if (poolSize < clientPoolSize) {
-        warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
-          s"system threshold $poolThreshold")
-      }
-      // TODO: Currently, we use random policy, and later we can add a sequential policy,
-      //  such as AtomicInteger % poolSize.
-      s"$clientPoolName-${Random.nextInt(poolSize)}"
-    case _ => "default" // [KYUUBI #1293]
-  }
 
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
@@ -107,6 +94,47 @@ private[kyuubi] class EngineRef(
           user
       }
     case _ => user
+  }
+
+  @VisibleForTesting
+  private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
+    case Some(_subdomain) => _subdomain
+    case None if clientPoolSize > 0 =>
+      val poolSize = math.min(clientPoolSize, poolThreshold)
+      if (poolSize < clientPoolSize) {
+        warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
+          s"system threshold $poolThreshold")
+      }
+      val seqNum = enginePoolBalancePolicy match {
+        case "POLLING" =>
+          info(s"The engine pool balance policy is POLLING.")
+          val snPath =
+            DiscoveryPaths.makePath(
+              s"${serverSpace}_$shareLevel",
+              "seq_num",
+              Array(appUser, clientPoolName))
+          val snLockPath =
+            DiscoveryPaths.makePath(
+              s"${serverSpace}_$shareLevel",
+              "seq_num_lock",
+              Array(appUser, clientPoolName))
+          DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+            client.tryWithLock(snLockPath, timeout) {
+              if (client.pathNonExists(snPath)) {
+                client.create(snPath, "PERSISTENT")
+                client.setData(snPath, String.valueOf(0).getBytes)
+              }
+              val seqNum = new String(client.getData(snPath)).toInt
+              client.setData(snPath, String.valueOf(seqNum + 1).getBytes)
+              seqNum
+            }
+          }
+        case "RANDOM" =>
+          info(s"The engine pool balance policy is RANDOM.")
+          Random.nextInt(poolSize)
+      }
+      s"$clientPoolName-${seqNum % poolSize}"
+    case _ => "default" // [KYUUBI #1293]
   }
 
   /**

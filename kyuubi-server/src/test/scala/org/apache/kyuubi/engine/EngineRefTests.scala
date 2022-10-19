@@ -209,6 +209,21 @@ trait EngineRefTests extends KyuubiFunSuite {
     conf.set(ENGINE_POOL_SIZE, 3)
     val engine6 = new EngineRef(conf, user, id, null)
     assert(engine6.subdomain.startsWith(s"$enginePoolName-"))
+
+    // set(ENGINE_POOL_BALANCE_POLICY, "POLLING")
+    conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    conf.set(ENGINE_POOL_SIZE, 5)
+    val pool_name = "pool_default_name"
+    conf.set(ENGINE_POOL_NAME, pool_name)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
+    conf.set(ENGINE_POOL_BALANCE_POLICY, "POLLING")
+    (0 until (10)).foreach { i =>
+      val engine7 = new EngineRef(conf, user, id, null)
+      // print(engine7.subdomain +",i:" + i + "\n")
+      val engineNumber = Integer.parseInt(engine7.subdomain.substring(pool_name.length + 1))
+      assert(engineNumber == (i % conf.get(ENGINE_POOL_SIZE)))
+    }
   }
 
   test("start and get engine address with lock") {

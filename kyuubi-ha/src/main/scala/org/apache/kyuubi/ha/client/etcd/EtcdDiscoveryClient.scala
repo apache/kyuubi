@@ -124,6 +124,11 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     }
   }
 
+  def setData(path: String, data: Array[Byte]): Boolean = {
+    val response = kvClient.put(ByteSequence.from(path.getBytes), ByteSequence.from(data))
+    response.isDone
+  }
+
   def getChildren(path: String): List[String] = {
     val kvs = kvClient.get(
       ByteSequence.from(path.getBytes()),

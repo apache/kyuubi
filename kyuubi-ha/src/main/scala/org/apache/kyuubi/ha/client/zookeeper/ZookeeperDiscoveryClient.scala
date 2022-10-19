@@ -86,6 +86,10 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     zkClient.getData.forPath(path)
   }
 
+  def setData(path: String, data: Array[Byte]): Boolean = {
+    zkClient.setData().forPath(path, data) != null
+  }
+
   def getChildren(path: String): List[String] = {
     zkClient.getChildren.forPath(path).asScala.toList
   }
