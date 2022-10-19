@@ -21,14 +21,13 @@ import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 
 class KyuubiOperationThriftBinarySSLSuite extends WithKyuubiServer with HiveJDBCTestHelper {
-  override protected def jdbcUrl: String = getJdbcUrl.stripSuffix(";") // +
-  s";ssl=true"
-  // + s";sslTrustStore=$trustStoreLocation;trustStorePassword=$TRUST_STORE_PASSWORD"
-
   val keyStoreLocation = getClass.getResource("/ssl/keystore.jks").getPath
   val trustStoreLocation = getClass.getResource("/ssl/truststore.jks").getPath
-  val KEY_STORE_PASSWORD = "KyuubiJDBC"
-  val TRUST_STORE_PASSWORD = "KyuubiJDBC"
+  private val KEY_STORE_PASSWORD = "KyuubiJDBC"
+  private val TRUST_STORE_PASSWORD = "KyuubiJDBC"
+
+  override protected def jdbcUrl: String = getJdbcUrl.stripSuffix(";") +
+    s";ssl=true;sslTrustStore=$trustStoreLocation;trustStorePassword=$TRUST_STORE_PASSWORD"
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
