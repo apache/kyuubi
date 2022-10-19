@@ -54,6 +54,7 @@ class SparkBatchProcessBuilder(
       buffer += s"${convertConfigKey(k)}=$v"
     }
 
+    setSparkUserName(proxyUser, buffer)
     buffer += PROXY_USER
     buffer += proxyUser
 
