@@ -414,8 +414,8 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val FRONTEND_SSL_PROTOCOL_EXCLUDES: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.frontend.ssl.protocol.excludes")
+  val FRONTEND_SSL_EXCLUDE_PROTOCOLS: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.ssl.exclude.protocols")
       .doc("SSL Versions to disable.")
       .version("1.7.0")
       .stringConf
