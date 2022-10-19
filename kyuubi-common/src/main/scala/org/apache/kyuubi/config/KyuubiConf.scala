@@ -828,6 +828,21 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
+  val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.context")
+      .doc("The desired context from your kubernetes config file used to configure the K8S " +
+        "client for interacting with the cluster.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val SERVER_PREFER_BUILD_K8S_CLIENT_FROM_POD_ENV: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.client.build.preferFromPodEnv")
+      .doc("")
+      .version("1.6.1")
+      .booleanConf
+      .createWithDefault(false)
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -1949,14 +1964,6 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
-
-  val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
-    buildConf("kyuubi.kubernetes.context")
-      .doc("The desired context from your kubernetes config file used to configure the K8S " +
-        "client for interacting with the cluster.")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
 
   private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
     FRONTEND_BIND_HOST,
