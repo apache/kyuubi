@@ -838,8 +838,9 @@ object KyuubiConf {
 
   val SERVER_PREFER_BUILD_K8S_CLIENT_FROM_POD_ENV: ConfigEntry[Boolean] =
     buildConf("kyuubi.kubernetes.client.build.preferFromPodEnv")
-      .doc("")
-      .version("1.6.1")
+      .doc("If enabled, kyuubi will build kubernetes client from pod env " +
+        "and service account files. (only when kyuubi run in kubernetes pod)")
+      .version("1.7.0")
       .booleanConf
       .createWithDefault(false)
 
