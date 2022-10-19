@@ -56,7 +56,7 @@ trait SparkSessionProvider {
       .withExtensions(extension)
       .getOrCreate()
     if (catalogImpl == "hive") {
-      // Ensure HiveExternalCatalog is initialized by defaultHiveTableOwner
+      // Ensure HiveExternalCatalog.client.userName is defaultHiveTableOwner
       UserGroupInformation.createRemoteUser(defaultTableOwner).doAs(
         new PrivilegedExceptionAction[Unit] {
           override def run(): Unit = ret.catalog.listDatabases()
