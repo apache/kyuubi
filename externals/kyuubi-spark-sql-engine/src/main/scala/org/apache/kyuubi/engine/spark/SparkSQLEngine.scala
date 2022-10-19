@@ -276,14 +276,14 @@ object SparkSQLEngine extends Logging {
           countDownLatch.await()
         } catch {
           case e: KyuubiException => currentEngine match {
-            case Some(engine) =>
-              engine.stop()
-              val event = EngineEvent(engine)
-                .copy(endTime = System.currentTimeMillis(), diagnostic = e.getMessage)
-              EventBus.post(event)
-              error(event, e)
-            case _ => error("Current SparkSQLEngine is not created.")
-          }
+              case Some(engine) =>
+                engine.stop()
+                val event = EngineEvent(engine)
+                  .copy(endTime = System.currentTimeMillis(), diagnostic = e.getMessage)
+                EventBus.post(event)
+                error(event, e)
+              case _ => error("Current SparkSQLEngine is not created.")
+            }
 
         }
       } catch {
