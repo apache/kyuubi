@@ -74,7 +74,13 @@ object RuleAuthorization {
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
           resource.getColumns.map { col =>
-            val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
+            val cr =
+              AccessResource(
+                COLUMN,
+                resource.getDatabase,
+                resource.getTable,
+                col,
+                Option(resource.getOwnerUser))
             AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
           }
         case _ => Seq(request)
