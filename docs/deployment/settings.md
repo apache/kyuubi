@@ -457,6 +457,8 @@ kyuubi.session.engine.initialize.timeout|PT3M|Timeout for starting the backgroun
 kyuubi.session.engine.launch.async|true|When opening kyuubi session, whether to launch backend engine asynchronously. When true, the Kyuubi server will set up the connection with the client without delay as the backend engine will be created asynchronously.|boolean|1.4.0
 kyuubi.session.engine.log.timeout|PT24H|If we use Spark as the engine then the session submit log is the console output of spark-submit. We will retain the session submit log until over the config value.|duration|1.1.0
 kyuubi.session.engine.login.timeout|PT15S|The timeout of creating the connection to remote sql query engine|duration|1.0.0
+kyuubi.session.engine.open.max.attempts|9|The number of times an open engine will retry when encountering a special error.|int|1.7.0
+kyuubi.session.engine.open.retry.wait|PT10S|How long to wait before retrying to open engine after a failure.|duration|1.7.0
 kyuubi.session.engine.share.level|USER|(deprecated) - Using kyuubi.engine.share.level instead|string|1.0.0
 kyuubi.session.engine.spark.main.resource|&lt;undefined&gt;|The package used to create Spark SQL engine remote application. If it is undefined, Kyuubi will use the default|string|1.0.0
 kyuubi.session.engine.spark.max.lifetime|PT0S|Max lifetime for spark engine, the engine will self-terminate when it reaches the end of life. 0 or negative means not to self-terminate.|duration|1.6.0
