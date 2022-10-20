@@ -35,7 +35,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
-import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
@@ -879,9 +878,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         assert(Try {
           sql(s"CREATE TABLE $db.$table (key int, value int) USING $format")
         }.isSuccess))
-
-      val (inputs, _) = PrivilegesBuilder.build(sql(select).queryExecution.analyzed, spark)
-      assume(inputs.nonEmpty && inputs.head.owner.isDefined)
 
       doAs(
         defaultTableOwner,
