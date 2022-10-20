@@ -73,9 +73,13 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
   }
 
   test("Test kyuubi application Manager tag spark on kubernetes application") {
-    val conf: KyuubiConf = KyuubiConf().set("", "")
+    val conf: KyuubiConf = KyuubiConf()
     val tag = "kyuubi-test-tag"
-    KyuubiApplicationManager.tagApplication(tag, "SPARK", Some("k8s://kyuubi-test:8443"), conf)
+    KyuubiApplicationManager.tagApplication(
+      tag,
+      "SPARK",
+      Some("k8s://https://kyuubi-test:8443"),
+      conf)
 
     val kubernetesTag = conf.getOption("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY)
     val yarnTag = conf.getOption("spark.yarn.tags")
