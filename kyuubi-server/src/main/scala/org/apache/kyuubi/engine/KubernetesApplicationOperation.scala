@@ -24,7 +24,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, PENDING, RUNNING}
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.SPARK_APP_SELECTOR
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.SPARK_APP_ID_LABEL
 import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
@@ -37,7 +37,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     jpsOperation = new JpsApplicationOperation
     jpsOperation.initialize(conf)
 
-    info("Start Initialize Kubernetes Client.")
+    info("Start initializing Kubernetes Client.")
     kubernetesClient = KubernetesUtils.buildKubernetesClient(conf)
     if (kubernetesClient == null) {
       warn("Fail to init Kubernetes Client for Kubernetes Application Operation")
@@ -85,7 +85,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           val pod = podList.get(0)
           val info = ApplicationInfo(
             // spark pods always tag label `spark-app-selector:<spark-app-id>`
-            id = pod.getMetadata.getLabels.get(SPARK_APP_SELECTOR),
+            id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
             name = pod.getMetadata.getName,
             state = KubernetesApplicationOperation.toApplicationState(pod.getStatus.getPhase),
             error = Option(pod.getStatus.getReason))
@@ -128,7 +128,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
 object KubernetesApplicationOperation extends Logging {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
-  val SPARK_APP_SELECTOR = "spark-app-selector"
+  val SPARK_APP_ID_LABEL = "spark-app-selector"
 
   def toApplicationState(state: String): ApplicationState = state match {
     // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go#L2396
