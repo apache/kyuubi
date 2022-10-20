@@ -29,7 +29,6 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
  */
 class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
-  override protected val hasTableOwner: Boolean = false
 
   val catalogV2 = "testcat"
   val jdbcCatalogV2 = "jdbc2"

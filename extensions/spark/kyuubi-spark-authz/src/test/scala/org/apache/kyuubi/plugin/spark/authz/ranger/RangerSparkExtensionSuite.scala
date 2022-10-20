@@ -673,48 +673,14 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
     doAs("admin", assert(sql("show tables from global_temp").collect().length == 0))
   }
-
-  test("[KYUUBI #3607] Support {OWNER} variable defined in Ranger Policy") {
-    assume(hasTableOwner)
-
-    val db = "default"
-    val table = "owner_variable"
-
-    val select = s"SELECT key FROM $db.$table"
-
-    withCleanTmpResources(Seq((s"$db.$table", "table"))) {
-      doAs(
-        defaultTableOwner,
-        assert(Try {
-          sql(s"CREATE TABLE $db.$table (key int, value int) USING $format")
-        }.isSuccess))
-
-      val (inputs, _) = PrivilegesBuilder.build(sql(select).queryExecution.analyzed, spark)
-      assume(inputs.nonEmpty && inputs.head.owner.isDefined)
-
-      doAs(
-        defaultTableOwner,
-        assert(Try {
-          sql(select).collect()
-        }.isSuccess))
-
-      doAs(
-        "create_only_user", {
-          val e = intercept[AccessControlException](sql(select).collect())
-          assert(e.getMessage === errorMessage("select", s"$db/$table/key"))
-        })
-    }
-  }
 }
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
-  override protected val hasTableOwner: Boolean = false
 }
 
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
-  override protected val hasTableOwner: Boolean = true
 
   test("table stats must be specified") {
     val table = "hive_src"
@@ -898,6 +864,36 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs("admin", sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
         doAs("someone", sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
       }
+    }
+  }
+
+  test("[KYUUBI #3608] Support {OWNER} variable for queries") {
+    val db = "default"
+    val table = "owner_variable"
+
+    val select = s"SELECT key FROM $db.$table"
+
+    withCleanTmpResources(Seq((s"$db.$table", "table"))) {
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(s"CREATE TABLE $db.$table (key int, value int) USING $format")
+        }.isSuccess))
+
+      val (inputs, _) = PrivilegesBuilder.build(sql(select).queryExecution.analyzed, spark)
+      assume(inputs.nonEmpty && inputs.head.owner.isDefined)
+
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(select).collect()
+        }.isSuccess))
+
+      doAs(
+        "create_only_user", {
+          val e = intercept[AccessControlException](sql(select).collect())
+          assert(e.getMessage === errorMessage("select", s"$db/$table/key"))
+        })
     }
   }
 }

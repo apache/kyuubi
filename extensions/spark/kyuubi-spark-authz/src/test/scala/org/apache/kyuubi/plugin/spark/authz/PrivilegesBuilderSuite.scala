@@ -68,7 +68,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   protected def checkTableOwner(po: PrivilegeObject): Unit = {
-    if (hasTableOwner && po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW) {
+    if (catlogImpl == "hive" && po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW) {
       assert(po.owner.isDefined)
       assert(po.owner.get === defaultTableOwner)
     }
@@ -1212,7 +1212,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
 
 class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   override protected val catalogImpl: String = "in-memory"
-  override protected val hasTableOwner: Boolean = false
 
   // some hive version does not support set database location
   test("AlterDatabaseSetLocationCommand") {
@@ -1273,7 +1272,6 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
   override protected val catalogImpl: String = if (isSparkV2) "in-memory" else "hive"
-  override protected val hasTableOwner: Boolean = catalogImpl == "hive"
 
   test("AlterTableSerDePropertiesCommand") {
     assume(!isSparkV2)
