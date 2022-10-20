@@ -75,7 +75,7 @@ abstract class TBinaryFrontendService(name: String)
           val keyStorePassword = conf.get(FRONTEND_SSL_KEYSTORE_PASSWORD)
           val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
           val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
-          val excludeSslProtocols = conf.get(FRONTEND_SSL_EXCLUDE_PROTOCOLS)
+          val disallowedSslProtocols = conf.get(FRONTEND_THRIFT_BINARY_SSL_DISALLOWED_PROTOCOLS)
           val includeCipherSuites = conf.get(FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES)
 
           if (keyStorePath.isEmpty) {
@@ -92,7 +92,7 @@ abstract class TBinaryFrontendService(name: String)
             keyStorePassword.get,
             keyStoreType,
             keyStoreAlgorithm,
-            excludeSslProtocols,
+            disallowedSslProtocols,
             includeCipherSuites)
         } else {
           new TServerSocket(serverSocket)
@@ -130,7 +130,7 @@ abstract class TBinaryFrontendService(name: String)
       keyStorePassword: String,
       keyStoreType: Option[String],
       keyStoreAlgorithm: Option[String],
-      excludeSslProtocols: Seq[String],
+      disallowedSslProtocols: Seq[String],
       includeCipherSuites: Seq[String]): TServerSocket = {
     val params =
       if (includeCipherSuites.nonEmpty) {
@@ -149,9 +149,9 @@ abstract class TBinaryFrontendService(name: String)
 
     tServerSocket.getServerSocket match {
       case sslServerSocket: SSLServerSocket =>
-        val lowerExcludeSslProtocols = excludeSslProtocols.map(_.toLowerCase(Locale.ROOT))
+        val lowerDisallowedSslProtocols = disallowedSslProtocols.map(_.toLowerCase(Locale.ROOT))
         val enabledProtocols = sslServerSocket.getEnabledProtocols.flatMap { protocol =>
-          if (lowerExcludeSslProtocols.contains(protocol.toLowerCase(Locale.ROOT))) {
+          if (lowerDisallowedSslProtocols.contains(protocol.toLowerCase(Locale.ROOT))) {
             debug(s"Disabling SSL Protocol: $protocol")
             None
           } else {

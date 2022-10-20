@@ -414,9 +414,9 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val FRONTEND_SSL_EXCLUDE_PROTOCOLS: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.frontend.ssl.exclude.protocols")
-      .doc("SSL Versions to disable.")
+  val FRONTEND_THRIFT_BINARY_SSL_DISALLOWED_PROTOCOLS: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.disallowed.protocols")
+      .doc("SSL versions to disallow for Kyuubi thrift binary frontend.")
       .version("1.7.0")
       .stringConf
       .toSequence()
@@ -651,7 +651,6 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.thrift.http.ssl.protocol.blacklist")
       .doc("SSL Versions to disable when using HTTP transport mode.")
       .version("1.6.0")
-      .withAlternative("kyuubi.frontend.ssl.protocol.excludes")
       .stringConf
       .toSequence()
       .createWithDefault(Seq("SSLv2", "SSLv3"))
