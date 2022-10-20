@@ -91,26 +91,14 @@ class SparkProcessBuilder(
       buffer += s"${convertConfigKey(k)}=$v"
     }
 
-    // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
-    def setSparkUserName(userName: String): Unit = {
-      clusterManager().foreach(cm => {
-        if (cm.startsWith("k8s://")) {
-          buffer += CONF
-          buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
-          buffer += CONF
-          buffer += s"spark.executorEnv.SPARK_USER_NAME=$userName"
-        }
-      })
-    }
-
     // if the keytab is specified, PROXY_USER is not supported
     tryKeytab() match {
       case None =>
-        setSparkUserName(proxyUser)
+        setSparkUserName(proxyUser, buffer)
         buffer += PROXY_USER
         buffer += proxyUser
       case Some(name) =>
-        setSparkUserName(name)
+        setSparkUserName(name, buffer)
     }
 
     mainResource.foreach { r => buffer += r }
@@ -185,6 +173,17 @@ class SparkProcessBuilder(
 
   override def validateConf: Unit = Validator.validateConf(conf)
 
+  // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
+  def setSparkUserName(userName: String, buffer: ArrayBuffer[String]): Unit = {
+    clusterManager().foreach { cm =>
+      if (cm.toUpperCase.startsWith("K8S")) {
+        buffer += CONF
+        buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
+        buffer += CONF
+        buffer += s"spark.executorEnv.SPARK_USER_NAME=$userName"
+      }
+    }
+  }
 }
 
 object SparkProcessBuilder {
