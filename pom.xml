@@ -101,6 +101,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.17</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
+        <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
         <antlr4.version>4.8</antlr4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
@@ -309,6 +310,12 @@
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
                 <version>${scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.scala-lang.modules</groupId>
+                <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
+                <version>${scala-collection-compat.version}</version>
             </dependency>
 
             <dependency>
