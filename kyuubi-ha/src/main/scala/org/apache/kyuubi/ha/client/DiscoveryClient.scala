@@ -169,6 +169,13 @@ trait DiscoveryClient extends Logging {
       basePath: String,
       initData: String,
       useProtection: Boolean = false): Unit
+
+  /**
+   * Atomically get an Int number and add one
+   * @param path the path of stored data
+   * @return the stored data under path
+   */
+  def getAndInc(path: String): Int
 }
 
 object DiscoveryClient {

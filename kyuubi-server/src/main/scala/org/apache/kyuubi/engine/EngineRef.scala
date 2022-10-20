@@ -110,24 +110,11 @@ private[kyuubi] class EngineRef(
           info(s"The engine pool balance policy is POLLING.")
           val snPath =
             DiscoveryPaths.makePath(
-              s"${serverSpace}_$shareLevel",
+              s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType",
               "seq_num",
               Array(appUser, clientPoolName))
-          val snLockPath =
-            DiscoveryPaths.makePath(
-              s"${serverSpace}_$shareLevel",
-              "seq_num_lock",
-              Array(appUser, clientPoolName))
           DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
-            client.tryWithLock(snLockPath, timeout) {
-              if (client.pathNonExists(snPath)) {
-                client.create(snPath, "PERSISTENT")
-                client.setData(snPath, String.valueOf(0).getBytes)
-              }
-              val seqNum = new String(client.getData(snPath)).toInt
-              client.setData(snPath, String.valueOf(seqNum + 1).getBytes)
-              seqNum
-            }
+            client.getAndInc(snPath)
           }
         case "RANDOM" =>
           info(s"The engine pool balance policy is RANDOM.")

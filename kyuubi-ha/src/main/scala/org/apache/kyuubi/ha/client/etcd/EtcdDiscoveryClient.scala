@@ -125,8 +125,8 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   def setData(path: String, data: Array[Byte]): Boolean = {
-    val response = kvClient.put(ByteSequence.from(path.getBytes), ByteSequence.from(data))
-    response.isDone
+    val response = kvClient.put(ByteSequence.from(path.getBytes), ByteSequence.from(data)).get()
+    response != null
   }
 
   def getChildren(path: String): List[String] = {
@@ -293,6 +293,19 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     client.getKVClient.put(
       ByteSequence.from(basePath.getBytes()),
       ByteSequence.from(initData.getBytes())).get()
+  }
+
+  def getAndInc(path: String): Int = {
+    val lockPath = s"${path}_tmp_for_lock"
+    tryWithLock(lockPath, 60 * 1000) {
+      if (pathNonExists(path)) {
+        create(path, "PERSISTENT")
+        setData(path, String.valueOf(0).getBytes)
+      }
+      val s = new String(getData(path)).toInt
+      setData(path, String.valueOf(s + 1).getBytes)
+      s
+    }
   }
 
   private def createPersistentNode(

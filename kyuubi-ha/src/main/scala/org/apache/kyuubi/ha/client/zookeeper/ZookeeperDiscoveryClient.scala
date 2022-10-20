@@ -26,6 +26,7 @@ import scala.collection.JavaConverters._
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
+import org.apache.curator.framework.recipes.atomic.DistributedAtomicInteger
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.framework.recipes.nodes.PersistentNode
 import org.apache.curator.framework.state.ConnectionState
@@ -33,6 +34,7 @@ import org.apache.curator.framework.state.ConnectionState.CONNECTED
 import org.apache.curator.framework.state.ConnectionState.LOST
 import org.apache.curator.framework.state.ConnectionState.RECONNECTED
 import org.apache.curator.framework.state.ConnectionStateListener
+import org.apache.curator.retry.RetryForever
 import org.apache.curator.utils.ZKPaths
 import org.apache.zookeeper.CreateMode
 import org.apache.zookeeper.CreateMode.PERSISTENT
@@ -292,6 +294,11 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       basePath,
       initData.getBytes(StandardCharsets.UTF_8))
     secretNode.start()
+  }
+
+  def getAndInc(path: String): Int = {
+    val dai = new DistributedAtomicInteger(zkClient, path, new RetryForever(1000))
+    dai.increment().preValue().intValue()
   }
 
   /**
