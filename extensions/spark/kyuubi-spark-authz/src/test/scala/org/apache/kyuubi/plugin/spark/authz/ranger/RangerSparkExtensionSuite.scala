@@ -675,6 +675,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   }
 
   test("[KYUUBI #3607] Support {OWNER} variable defined in Ranger Policy") {
+    assume(hasTableOwner)
+
     val db = "default"
     val table = "owner_variable"
 
@@ -707,10 +709,12 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
 class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
+  override protected val hasTableOwner: Boolean = false
 }
 
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val hasTableOwner: Boolean = true
 
   test("table stats must be specified") {
     val table = "hive_src"

@@ -36,6 +36,7 @@ trait SparkSessionProvider {
   protected val extension: SparkSessionExtensions => Unit = _ => Unit
   protected val sqlExtensions: String = ""
 
+  protected val hasTableOwner: Boolean = true
   protected val defaultTableOwner = "default_table_owner"
 
   protected lazy val spark: SparkSession = {
@@ -55,7 +56,7 @@ trait SparkSessionProvider {
       .config("spark.sql.extensions", sqlExtensions)
       .withExtensions(extension)
       .getOrCreate()
-    if (catalogImpl == "hive") {
+    if (hasTableOwner) {
       // Ensure HiveExternalCatalog.client.userName is defaultHiveTableOwner
       UserGroupInformation.createRemoteUser(defaultTableOwner).doAs(
         new PrivilegedExceptionAction[Unit] {
