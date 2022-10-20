@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 
 class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
   test("application access path") {
@@ -69,5 +70,20 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
         appConf,
         localDirLimitConf)
     }
+  }
+
+  test("Test kyuubi application Manager tag spark on kubernetes application") {
+    val conf: KyuubiConf = KyuubiConf()
+    val tag = "kyuubi-test-tag"
+    KyuubiApplicationManager.tagApplication(
+      tag,
+      "SPARK",
+      Some("k8s://https://kyuubi-test:8443"),
+      conf)
+
+    val kubernetesTag = conf.getOption("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY)
+    val yarnTag = conf.getOption("spark.yarn.tags")
+    assert(kubernetesTag.nonEmpty && tag.equals(kubernetesTag.get))
+    assert(yarnTag.isEmpty)
   }
 }

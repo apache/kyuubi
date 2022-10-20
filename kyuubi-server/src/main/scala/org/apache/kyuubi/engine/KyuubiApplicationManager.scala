@@ -160,7 +160,7 @@ object KyuubiApplicationManager {
       conf: KyuubiConf): Unit = {
     (applicationType.toUpperCase, resourceManager.map(_.toUpperCase())) match {
       case ("SPARK", Some("YARN")) => setupSparkYarnTag(applicationTag, conf)
-      case ("SPARK", Some("K8S")) => setupSparkK8sTag(applicationTag, conf)
+      case ("SPARK", Some(rm)) if rm.startsWith("K8S") => setupSparkK8sTag(applicationTag, conf)
       case ("SPARK", _) =>
         // if the master is not identified ahead, add all tags
         setupSparkYarnTag(applicationTag, conf)
