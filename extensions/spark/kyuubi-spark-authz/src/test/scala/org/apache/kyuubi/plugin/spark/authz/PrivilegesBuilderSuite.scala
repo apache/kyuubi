@@ -68,7 +68,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   protected def checkTableOwner(po: PrivilegeObject): Unit = {
-    if (catlogImpl == "hive" && po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW) {
+    if (catalogImpl == "hive" && po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW) {
       assert(po.owner.isDefined)
       assert(po.owner.get === defaultTableOwner)
     }

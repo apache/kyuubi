@@ -56,7 +56,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     super.afterAll()
   }
 
-  private def errorMessage(
+  protected def errorMessage(
       privilege: String,
       resource: String = "default/src",
       user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
