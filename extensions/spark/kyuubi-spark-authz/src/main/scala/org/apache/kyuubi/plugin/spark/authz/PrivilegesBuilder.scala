@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionInfo, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -82,6 +82,16 @@ object PrivilegesBuilder {
     }
 
     spark.sessionState.catalog.isTempView(parts)
+  }
+
+  private def isPersistentFunction(
+      functionIdent: FunctionIdentifier,
+      spark: SparkSession): Boolean = {
+    val (database, funcName) = functionIdent.database match {
+      case Some(_) => (functionIdent.database, functionIdent.funcName)
+      case _ => (Some(spark.catalog.currentDatabase), functionIdent.funcName)
+    }
+    spark.sessionState.catalog.isPersistentFunction(FunctionIdentifier(funcName, database))
   }
 
   /**
@@ -353,8 +363,15 @@ object PrivilegesBuilder {
         buildQuery(getQuery, inputObjs)
 
       case "CreateFunctionCommand" |
-          "DropFunctionCommand" |
-          "RefreshFunctionCommand" =>
+          "DropFunctionCommand" =>
+        val isTemp = getPlanField[Boolean]("isTemp")
+        if (!isTemp) {
+          val db = getPlanField[Option[String]]("databaseName")
+          val functionName = getPlanField[String]("functionName")
+          outputObjs += functionPrivileges(db.orNull, functionName)
+        }
+
+      case "RefreshFunctionCommand" =>
         val db = getPlanField[Option[String]]("databaseName")
         val functionName = getPlanField[String]("functionName")
         outputObjs += functionPrivileges(db.orNull, functionName)
@@ -391,8 +408,18 @@ object PrivilegesBuilder {
         inputObjs += databasePrivileges(quote(database))
 
       case "DescribeFunctionCommand" =>
-        val func = getPlanField[FunctionIdentifier]("functionName")
-        inputObjs += functionPrivileges(func.database.orNull, func.funcName)
+        val (db: Option[String], funName: String) =
+          if (isSparkVersionAtLeast("3.3")) {
+            val info = getPlanField[ExpressionInfo]("info")
+            (Option(info.getDb), info.getName)
+          } else {
+            val funcIdent = getPlanField[FunctionIdentifier]("functionName")
+            (funcIdent.database, funcIdent.funcName)
+          }
+        val isPersistentFun = isPersistentFunction(FunctionIdentifier(funName, db), spark)
+        if (isPersistentFun) {
+          inputObjs += functionPrivileges(db.orNull, funName)
+        }
 
       case "DropTableCommand" =>
         if (!isTempView(getPlanField[TableIdentifier]("tableName"), spark)) {

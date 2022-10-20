@@ -547,6 +547,37 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     }
   }
 
+  test("Create Temporary Function") {
+    val plan = sql("CREATE TEMPORARY FUNCTION CreateTempFunction AS" +
+      "'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === CREATEFUNCTION)
+    val tuple = PrivilegesBuilder.build(plan, spark)
+    assert(tuple._1.size === 0)
+    assert(tuple._2.size === 0)
+  }
+
+  test("Describe Temporary Function") {
+    val plan = sql("DESCRIBE FUNCTION CreateTempFunction")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === DESCFUNCTION)
+    val tuple = PrivilegesBuilder.build(plan, spark)
+    assert(tuple._1.size === 0)
+    assert(tuple._2.size === 0)
+  }
+
+  test("Drop Temporary Function") {
+    val plan = sql("DROP TEMPORARY FUNCTION CreateTempFunction")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === DROPFUNCTION)
+    val tuple = PrivilegesBuilder.build(plan, spark)
+    assert(tuple._1.size === 0)
+    assert(tuple._2.size === 0)
+  }
+
   test("CreateFunctionCommand") {
     val plan = sql("CREATE FUNCTION CreateFunctionCommand AS 'class_name'")
       .queryExecution.analyzed
@@ -564,6 +595,16 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.CREATE)
+  }
+
+  test("Describe Persistent Function") {
+    val plan = sql("DESCRIBE FUNCTION CreateFunctionCommand")
+      .queryExecution.analyzed
+    val operationType = OperationType(plan.nodeName)
+    assert(operationType === DESCFUNCTION)
+    val tuple = PrivilegesBuilder.build(plan, spark)
+    assert(tuple._1.size === 1)
+    assert(tuple._2.size === 0)
   }
 
   test("DropFunctionCommand") {
