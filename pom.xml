@@ -141,7 +141,7 @@
         <httpclient.version>4.5.13</httpclient.version>
         <httpcore.version>4.4.15</httpcore.version>
         <hudi.version>0.12.0</hudi.version>
-        <iceberg.version>0.14.1</iceberg.version>
+        <iceberg.version>1.0.0</iceberg.version>
         <jackson.version>2.13.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
