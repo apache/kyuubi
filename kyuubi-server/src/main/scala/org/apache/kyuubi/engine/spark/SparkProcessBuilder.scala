@@ -176,7 +176,7 @@ class SparkProcessBuilder(
   // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
   def setSparkUserName(userName: String, buffer: ArrayBuffer[String]): Unit = {
     clusterManager().foreach(cm => {
-      if (cm.startsWith("k8s://")) {
+      if (cm.toUpperCase.startsWith("K8S")) {
         buffer += CONF
         buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
         buffer += CONF
