@@ -296,7 +296,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     secretNode.start()
   }
 
-  def getAndInc(path: String): Int = {
+  def getAndIncrement(path: String): Int = {
     val dai = new DistributedAtomicInteger(zkClient, path, new RetryForever(1000))
     dai.increment().preValue().intValue()
   }

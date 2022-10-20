@@ -295,7 +295,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       ByteSequence.from(initData.getBytes())).get()
   }
 
-  def getAndInc(path: String): Int = {
+  def getAndIncrement(path: String): Int = {
     val lockPath = s"${path}_tmp_for_lock"
     tryWithLock(lockPath, 60 * 1000) {
       if (pathNonExists(path)) {

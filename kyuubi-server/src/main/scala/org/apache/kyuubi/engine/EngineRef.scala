@@ -107,17 +107,15 @@ private[kyuubi] class EngineRef(
       }
       val seqNum = enginePoolBalancePolicy match {
         case "POLLING" =>
-          info(s"The engine pool balance policy is POLLING.")
           val snPath =
             DiscoveryPaths.makePath(
               s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType",
               "seq_num",
               Array(appUser, clientPoolName))
           DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
-            client.getAndInc(snPath)
+            client.getAndIncrement(snPath)
           }
         case "RANDOM" =>
-          info(s"The engine pool balance policy is RANDOM.")
           Random.nextInt(poolSize)
       }
       s"$clientPoolName-${seqNum % poolSize}"

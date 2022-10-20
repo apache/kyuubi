@@ -172,10 +172,11 @@ trait DiscoveryClient extends Logging {
 
   /**
    * Atomically get an Int number and add one
-   * @param path the path of stored data
+   * @param path the path of stored data,
+   *             If the path does not exist, it will be created and initialized to 0
    * @return the stored data under path
    */
-  def getAndInc(path: String): Int
+  def getAndIncrement(path: String): Int
 }
 
 object DiscoveryClient {
