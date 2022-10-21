@@ -29,15 +29,15 @@ import okhttp3.{Dispatcher, OkHttpClient}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{KUBERNETES_AUTHENTICATE_CA_CERT_FILE, KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE, KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE, KUBERNETES_AUTHENTICATE_OAUTH_TOKEN, KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE, KUBERNETES_CONTEXT, KUBERNETES_MASTER, KUBERNETES_NAMESPACE, KUBERNETES_TRUST_CERTIFICATES}
+import org.apache.kyuubi.config.KyuubiConf._
 
 object KubernetesUtils extends Logging {
 
-  def buildKubernetesClient(conf: KyuubiConf): KubernetesClient = {
+  def buildKubernetesClient(conf: KyuubiConf): Option[KubernetesClient] = {
     val master = masterAddress(conf)
     if (master == null || master.isEmpty) {
       warn("Need set kubernetes master url, if you want to set up kubernetes client")
-      return null
+      return None
     }
 
     val namespace = conf.get(KUBERNETES_NAMESPACE)
@@ -98,7 +98,7 @@ object KubernetesUtils extends Logging {
 
     debug("Kubernetes client config: " +
       new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config))
-    new DefaultKubernetesClient(factoryWithCustomDispatcher.createHttpClient(config), config)
+    Some(new DefaultKubernetesClient(factoryWithCustomDispatcher.createHttpClient(config), config))
   }
 
   implicit private class OptionConfigurableConfigBuilder(val configBuilder: ConfigBuilder)

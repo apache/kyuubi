@@ -838,48 +838,59 @@ object KyuubiConf {
 
   val KUBERNETES_NAMESPACE: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.namespace")
+      .doc("The namespace that will be used for running the kyuubi pods and find engines.")
       .version("1.7.0")
       .stringConf
       .createWithDefault("default")
 
   val KUBERNETES_MASTER: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.master.address")
-      .doc("kubernetes master address for build kubernetes client")
+      .doc("The internal Kubernetes master (API server) address to be used for kyuubi.")
       .version("1.7.0")
       .stringConf
       .createOptional
 
   val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.authenticate.oauthTokenFile")
-      .doc("kubernetes client authenticate oauth token file")
+      .doc("Path to the file containing the OAuth token to use when authenticating against " +
+        "the Kubernetes API server. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
       .version("1.7.0")
       .stringConf
       .createOptional
 
   val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.authenticate.oauthToken")
-      .doc("kubernetes client authenticate oauth token value")
+      .doc("The OAuth token to use when authenticating against the Kubernetes API server. " +
+        "Note that unlike the other authentication options, this must be the exact string value " +
+        "of the token to use for the authentication.")
       .version("1.7.0")
       .stringConf
       .createOptional
 
   val KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.authenticate.clientKeyFile")
-      .doc("kubernetes client authenticate client key file")
+      .doc("Path to the client key file for connecting to the Kubernetes API server " +
+        "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
       .version("1.7.0")
       .stringConf
       .createOptional
 
   val KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.authenticate.clientCertFile")
-      .doc("kubernetes client authenticate client cert file")
+      .doc("Path to the client cert file for connecting to the Kubernetes API server " +
+        "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
       .version("1.7.0")
       .stringConf
       .createOptional
 
   val KUBERNETES_AUTHENTICATE_CA_CERT_FILE: OptionalConfigEntry[String] =
-    buildConf("kyuubi.kubernetes.authenticate.ca cert file")
-      .doc("kubernetes client authenticate ca cert file")
+    buildConf("kyuubi.kubernetes.authenticate.caCertFile")
+      .doc("Path to the CA cert file for connecting to the Kubernetes API server " +
+        "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
       .version("1.7.0")
       .stringConf
       .createOptional

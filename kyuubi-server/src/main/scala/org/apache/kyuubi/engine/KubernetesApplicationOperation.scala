@@ -38,11 +38,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     jpsOperation.initialize(conf)
 
     info("Start initializing Kubernetes Client.")
-    kubernetesClient = KubernetesUtils.buildKubernetesClient(conf)
-    if (kubernetesClient == null) {
-      warn("Fail to init Kubernetes Client for Kubernetes Application Operation")
-    } else {
-      info(s"Initialized Kubernetes Client connect to: ${kubernetesClient.getMasterUrl}")
+    kubernetesClient = KubernetesUtils.buildKubernetesClient(conf) match {
+      case Some(client) =>
+        info(s"Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
+        client
+      case None =>
+        warn("Fail to init Kubernetes Client for Kubernetes Application Operation")
+        null
     }
   }
 
