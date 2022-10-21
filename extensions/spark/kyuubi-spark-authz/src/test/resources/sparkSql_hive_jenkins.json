@@ -279,7 +279,8 @@
         "database": {
           "values": [
             "default",
-            "spark_catalog"
+            "spark_catalog",
+            "iceberg_ns"
           ],
           "isExcludes": false,
           "isRecursive": false

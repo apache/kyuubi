@@ -151,8 +151,15 @@ object v2Commands extends Enumeration {
   def v2TablePrivileges(
       table: Identifier,
       columns: Seq[String] = Nil,
+      owner: Option[String] = None,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(TABLE_OR_VIEW, actionType, quote(table.namespace()), table.name(), columns)
+    PrivilegeObject(
+      TABLE_OR_VIEW,
+      actionType,
+      quote(table.namespace()),
+      table.name(),
+      columns,
+      owner)
   }
 
   // namespace commands

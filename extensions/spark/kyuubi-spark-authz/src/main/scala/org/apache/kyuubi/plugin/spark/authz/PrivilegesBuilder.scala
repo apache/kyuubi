@@ -121,13 +121,16 @@ object PrivilegesBuilder {
       }
     }
 
-    def mergeProjectionV2Table(table: Identifier, plan: LogicalPlan): Unit = {
+    def mergeProjectionV2Table(
+        table: Identifier,
+        plan: LogicalPlan,
+        owner: Option[String] = None): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name))
+        privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name), owner)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += v2TablePrivileges(table, cols)
+        privilegeObjects += v2TablePrivileges(table, cols, owner)
       }
     }
 
@@ -166,7 +169,10 @@ object PrivilegesBuilder {
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
         if (tableIdent.isDefined) {
-          mergeProjectionV2Table(tableIdent.get, plan)
+          mergeProjectionV2Table(
+            tableIdent.get,
+            plan,
+            getDatasourceV2TableOwner(datasourceV2Relation))
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>

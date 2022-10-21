@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
+import java.util
+
 import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -103,6 +105,12 @@ private[authz] object AuthZUtils {
 
   def getDatasourceV2Identifier(plan: LogicalPlan): Option[Identifier] = {
     getFieldVal[Option[Identifier]](plan, "identifier")
+  }
+
+  def getDatasourceV2TableOwner(plan: LogicalPlan): Option[String] = {
+    val table = getFieldVal[AnyRef](plan, "table")
+    val properties = invoke(table, "properties").asInstanceOf[util.Map[String, String]]
+    Option(properties.get("owner"))
   }
 
   def getTableIdentifierFromV2Identifier(id: Identifier): TableIdentifier = {

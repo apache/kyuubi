@@ -17,6 +17,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 // scalastyle:off
+import scala.util.Try
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
@@ -33,7 +34,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     else ""
 
   val catalogV2 = "local"
-  val namespace1 = "ns1"
+  val namespace1 = "iceberg_ns"
   val table1 = "table1"
   val outputTable1 = "outputTable1"
 
@@ -141,5 +142,32 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s" on [$namespace1/$table1]"))
 
     doAs("admin", sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
+  }
+
+  test("[KYUUBI #3666] Support {OWNER} variable for queries run on CatalogV2") {
+    assume(isSparkV32OrGreater)
+
+    val table = "owner_variable"
+    val select = s"SELECT key FROM $catalogV2.$namespace1.$table"
+
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(s"CREATE TABLE $catalogV2.$namespace1.$table (key int, value int) USING iceberg")
+        }.isSuccess))
+
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(select).collect()
+        }.isSuccess))
+
+      doAs(
+        "create_only_user", {
+          val e = intercept[AccessControlException](sql(select).collect())
+          assert(e.getMessage === errorMessage("select", s"$namespace1/$table/key"))
+        })
+    }
   }
 }
