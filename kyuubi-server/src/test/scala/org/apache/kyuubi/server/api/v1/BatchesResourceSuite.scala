@@ -82,7 +82,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     val proxyUserResponse = webTarget.path("api/v1/batches")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
-    assert(500 == proxyUserResponse.getStatus)
+    assert(405 == proxyUserResponse.getStatus)
 
     var getBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId()}")
       .request(MediaType.APPLICATION_JSON_TYPE)

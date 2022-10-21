@@ -27,7 +27,8 @@ public class JdbcConnectionParams {
   // Prefer using a shorter camelCase param name instead of using the same name as the
   // corresponding
   // HiveServer2 config.
-  // For a jdbc url: jdbc:hive2://<host>:<port>/dbName;sess_var_list?hive_conf_list#hive_var_list,
+  // For a jdbc url:
+  // jdbc:hive2://<host>:<port>/catalogName/dbName;sess_var_list?hive_conf_list#hive_var_list,
   // client side params are specified in sess_var_list
 
   // Client param names:
@@ -115,6 +116,7 @@ public class JdbcConnectionParams {
   private String host = null;
   private int port = 0;
   private String jdbcUriString;
+  private String catalogName;
   private String dbName = Utils.DEFAULT_DATABASE;
   private Map<String, String> hiveConfs = new LinkedHashMap<>();
   private Map<String, String> hiveVars = new LinkedHashMap<>();
@@ -130,6 +132,7 @@ public class JdbcConnectionParams {
     this.host = params.host;
     this.port = params.port;
     this.jdbcUriString = params.jdbcUriString;
+    this.catalogName = params.catalogName;
     this.dbName = params.dbName;
     this.hiveConfs.putAll(params.hiveConfs);
     this.hiveVars.putAll(params.hiveVars);
@@ -150,6 +153,10 @@ public class JdbcConnectionParams {
 
   public String getJdbcUriString() {
     return jdbcUriString;
+  }
+
+  public String getCatalogName() {
+    return catalogName;
   }
 
   public String getDbName() {
@@ -194,6 +201,10 @@ public class JdbcConnectionParams {
 
   public void setJdbcUriString(String jdbcUriString) {
     this.jdbcUriString = jdbcUriString;
+  }
+
+  public void setCatalogName(String catalogName) {
+    this.catalogName = catalogName;
   }
 
   public void setDbName(String dbName) {

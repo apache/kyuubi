@@ -160,4 +160,20 @@ object KyuubiSQLConf {
       .version("1.5.0")
       .booleanConf
       .createWithDefault(false)
+
+  val INFER_REBALANCE_AND_SORT_ORDERS =
+    buildConf("spark.sql.optimizer.inferRebalanceAndSortOrders.enabled")
+      .doc("When ture, infer columns for rebalance and sort orders from original query, " +
+        "e.g. the join keys from join. It can avoid compression ratio regression.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val INFER_REBALANCE_AND_SORT_ORDERS_MAX_COLUMNS =
+    buildConf("spark.sql.optimizer.inferRebalanceAndSortOrdersMaxColumns")
+      .doc("The max columns of inferred columns.")
+      .version("1.7.0")
+      .intConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(3)
 }

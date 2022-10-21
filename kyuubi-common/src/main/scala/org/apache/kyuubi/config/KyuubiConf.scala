@@ -955,6 +955,20 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
+  val ENGINE_OPEN_MAX_ATTEMPTS: ConfigEntry[Int] =
+    buildConf("kyuubi.session.engine.open.max.attempts")
+      .doc("The number of times an open engine will retry when encountering a special error.")
+      .version("1.7.0")
+      .intConf
+      .createWithDefault(9)
+
+  val ENGINE_OPEN_RETRY_WAIT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.open.retry.wait")
+      .doc("How long to wait before retrying to open engine after a failure.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
+
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
     .version("1.0.0")
@@ -1328,7 +1342,9 @@ object KyuubiConf {
 
   val FRONTEND_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.connection.url.use.hostname")
-      .doc("When true, frontend services prefer hostname, otherwise, ip address")
+      .doc("When true, frontend services prefer hostname, otherwise, ip address. Note that, " +
+        "the default value is set to `false` when engine running on Kubernetes to prevent " +
+        "potential network issue.")
       .version("1.5.0")
       .fallbackConf(ENGINE_CONNECTION_URL_USE_HOSTNAME)
 
@@ -1529,7 +1545,7 @@ object KyuubiConf {
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
-        " events go. We use spark logger by default.<ul>" +
+        " events go.<ul>" +
         " <li>SPARK: the events will be written to the spark listener bus.</li>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
@@ -2078,7 +2094,7 @@ object KyuubiConf {
   val ENGINE_SPARK_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.spark.event.loggers")
       .doc("A comma separated list of engine loggers, where engine/session/operation etc" +
-        " events go. We use spark logger by default.<ul>" +
+        " events go.<ul>" +
         " <li>SPARK: the events will be written to the spark listener bus.</li>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
@@ -2090,7 +2106,7 @@ object KyuubiConf {
   val ENGINE_HIVE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.hive.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
-        " events go. We use spark logger by default.<ul>" +
+        " events go.<ul>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         " <li>JDBC: to be done</li>" +
@@ -2107,7 +2123,7 @@ object KyuubiConf {
   val ENGINE_TRINO_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.trino.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
-        " events go. We use spark logger by default.<ul>" +
+        " events go.<ul>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         " <li>JDBC: to be done</li>" +

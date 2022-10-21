@@ -136,9 +136,9 @@ object Utils extends Logging {
    * automatically deleted when the VM shuts down.
    */
   def createTempDir(
-      root: String = System.getProperty("java.io.tmpdir"),
-      namePrefix: String = "kyuubi"): Path = {
-    val dir = createDirectory(root, namePrefix)
+      prefix: String = "kyuubi",
+      root: String = System.getProperty("java.io.tmpdir")): Path = {
+    val dir = createDirectory(root, prefix)
     dir.toFile.deleteOnExit()
     dir
   }
@@ -329,4 +329,6 @@ object Utils extends Logging {
    */
   def getContextOrKyuubiClassLoader: ClassLoader =
     Option(Thread.currentThread().getContextClassLoader).getOrElse(getKyuubiClassLoader)
+
+  def isOnK8s: Boolean = Files.exists(Paths.get("/var/run/secrets/kubernetes.io"))
 }

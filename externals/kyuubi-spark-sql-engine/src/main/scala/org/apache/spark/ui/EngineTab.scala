@@ -26,6 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 import org.apache.kyuubi.service.ServiceState
+import org.apache.kyuubi.util.ClassUtils
 
 /**
  * Note that [[SparkUITab]] is private for Spark
@@ -61,9 +62,10 @@ case class EngineTab(
 
   sparkUI.foreach { ui =>
     try {
-      // Spark shade the jetty package so here we use reflect
+      // Spark shade the jetty package so here we use reflection
+      val sparkServletContextHandlerClz = loadSparkServletContextHandler
       Class.forName("org.apache.spark.ui.SparkUI")
-        .getMethod("attachHandler", classOf[org.sparkproject.jetty.servlet.ServletContextHandler])
+        .getMethod("attachHandler", sparkServletContextHandlerClz)
         .invoke(
           ui,
           Class.forName("org.apache.spark.ui.JettyUtils")
@@ -71,16 +73,32 @@ case class EngineTab(
               "createRedirectHandler",
               classOf[String],
               classOf[String],
-              classOf[(HttpServletRequest) => Unit],
+              classOf[HttpServletRequest => Unit],
               classOf[String],
               classOf[scala.collection.immutable.Set[String]])
             .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST")))
     } catch {
-      case NonFatal(e) =>
-        warn(
-          "Failed to attach handler using SparkUI, please check the Spark version. " +
-            s"So the config '${KyuubiConf.ENGINE_UI_STOP_ENABLED.key}' does not work.",
-          e)
+      case NonFatal(cause) => reportInstallError(cause)
+      case cause: NoClassDefFoundError => reportInstallError(cause)
+    }
+  }
+
+  private def reportInstallError(cause: Throwable): Unit = {
+    warn(
+      "Failed to attach handler using SparkUI, please check the Spark version. " +
+        s"So the config '${KyuubiConf.ENGINE_UI_STOP_ENABLED.key}' does not work.",
+      cause)
+  }
+
+  private def loadSparkServletContextHandler: Class[_] = {
+    // [KYUUBI #3627]: the official spark release uses the shaded and relocated jetty classes,
+    // but if use sbt to build for testing, e.g. docker image, it still uses vanilla jetty classes.
+    val shaded = "org.sparkproject.jetty.servlet.ServletContextHandler"
+    val vanilla = "org.eclipse.jetty.servlet.ServletContextHandler"
+    if (ClassUtils.classIsLoadable(shaded)) {
+      Class.forName(shaded)
+    } else {
+      Class.forName(vanilla)
     }
   }
 

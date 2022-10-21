@@ -222,11 +222,11 @@ kyuubi.engine.deregister.exception.messages||A comma separated list of exception
 kyuubi.engine.deregister.exception.ttl|PT30M|Time to live(TTL) for exceptions pattern specified in kyuubi.engine.deregister.exception.classes and kyuubi.engine.deregister.exception.messages to deregister engines. Once the total error count hits the kyuubi.engine.deregister.job.max.failures within the TTL, an engine will deregister itself and wait for self-terminated. Otherwise, we suppose that the engine has recovered from temporary failures.|duration|1.2.0
 kyuubi.engine.deregister.job.max.failures|4|Number of failures of job before deregistering the engine.|int|1.2.0
 kyuubi.engine.event.json.log.path|file:///tmp/kyuubi/events|The location of all the engine events go for the builtin JSON logger.<ul><li>Local Path: start with 'file://'</li><li>HDFS Path: start with 'hdfs://'</li></ul>|string|1.3.0
-kyuubi.engine.event.loggers|SPARK|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.3.0
+kyuubi.engine.event.loggers|SPARK|A comma separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.3.0
 kyuubi.engine.flink.extra.classpath|&lt;undefined&gt;|The extra classpath for the flink sql engine, for configuring location of hadoop client jars, etc|string|1.6.0
 kyuubi.engine.flink.java.options|&lt;undefined&gt;|The extra java options for the flink sql engine|string|1.6.0
 kyuubi.engine.flink.memory|1g|The heap memory for the flink sql engine|string|1.6.0
-kyuubi.engine.hive.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
+kyuubi.engine.hive.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
 kyuubi.engine.hive.extra.classpath|&lt;undefined&gt;|The extra classpath for the hive query engine, for configuring location of hadoop client jars, etc|string|1.6.0
 kyuubi.engine.hive.java.options|&lt;undefined&gt;|The extra java options for the hive query engine|string|1.6.0
 kyuubi.engine.hive.memory|1g|The heap memory for the hive query engine|string|1.6.0
@@ -251,8 +251,8 @@ kyuubi.engine.share.level|USER|Engines will be shared in different levels, avail
 kyuubi.engine.share.level.sub.domain|&lt;undefined&gt;|(deprecated) - Using kyuubi.engine.share.level.subdomain instead|string|1.2.0
 kyuubi.engine.share.level.subdomain|&lt;undefined&gt;|Allow end-users to create a subdomain for the share level of an engine. A subdomain is a case-insensitive string values that must be a valid zookeeper sub path. For example, for `USER` share level, an end-user can share a certain engine within a subdomain, not for all of its clients. End-users are free to create multiple engines in the `USER` share level. When disable engine pool, use 'default' if absent.|string|1.4.0
 kyuubi.engine.single.spark.session|false|When set to true, this engine is running in a single session mode. All the JDBC/ODBC connections share the temporary views, function registries, SQL configuration and the current database.|boolean|1.3.0
-kyuubi.engine.spark.event.loggers|SPARK|A comma separated list of engine loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
-kyuubi.engine.trino.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
+kyuubi.engine.spark.event.loggers|SPARK|A comma separated list of engine loggers, where engine/session/operation etc events go.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
+kyuubi.engine.trino.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
 kyuubi.engine.trino.extra.classpath|&lt;undefined&gt;|The extra classpath for the trino query engine, for configuring other libs which may need by the trino engine |string|1.6.0
 kyuubi.engine.trino.java.options|&lt;undefined&gt;|The extra java options for the trino query engine|string|1.6.0
 kyuubi.engine.trino.memory|1g|The heap memory for the trino query engine|string|1.6.0
@@ -281,7 +281,7 @@ Key | Default | Meaning | Type | Since
 kyuubi.frontend.backoff.slot.length|PT0.1S|(deprecated) Time to back off during login to the thrift frontend service.|duration|1.0.0
 kyuubi.frontend.bind.host|&lt;undefined&gt;|(deprecated) Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.|string|1.0.0
 kyuubi.frontend.bind.port|10009|(deprecated) Port of the machine on which to run the thrift frontend service via binary protocol.|int|1.0.0
-kyuubi.frontend.connection.url.use.hostname|true|When true, frontend services prefer hostname, otherwise, ip address|boolean|1.5.0
+kyuubi.frontend.connection.url.use.hostname|true|When true, frontend services prefer hostname, otherwise, ip address. Note that, the default value is set to `false` when engine running on Kubernetes to prevent potential network issue.|boolean|1.5.0
 kyuubi.frontend.login.timeout|PT20S|(deprecated) Timeout for Thrift clients during login to the thrift frontend service.|duration|1.0.0
 kyuubi.frontend.max.message.size|104857600|(deprecated) Maximum message size in bytes a Kyuubi server will accept.|int|1.0.0
 kyuubi.frontend.max.worker.threads|999|(deprecated) Maximum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.0.0
@@ -457,6 +457,8 @@ kyuubi.session.engine.initialize.timeout|PT3M|Timeout for starting the backgroun
 kyuubi.session.engine.launch.async|true|When opening kyuubi session, whether to launch backend engine asynchronously. When true, the Kyuubi server will set up the connection with the client without delay as the backend engine will be created asynchronously.|boolean|1.4.0
 kyuubi.session.engine.log.timeout|PT24H|If we use Spark as the engine then the session submit log is the console output of spark-submit. We will retain the session submit log until over the config value.|duration|1.1.0
 kyuubi.session.engine.login.timeout|PT15S|The timeout of creating the connection to remote sql query engine|duration|1.0.0
+kyuubi.session.engine.open.max.attempts|9|The number of times an open engine will retry when encountering a special error.|int|1.7.0
+kyuubi.session.engine.open.retry.wait|PT10S|How long to wait before retrying to open engine after a failure.|duration|1.7.0
 kyuubi.session.engine.share.level|USER|(deprecated) - Using kyuubi.engine.share.level instead|string|1.0.0
 kyuubi.session.engine.spark.main.resource|&lt;undefined&gt;|The package used to create Spark SQL engine remote application. If it is undefined, Kyuubi will use the default|string|1.0.0
 kyuubi.session.engine.spark.max.lifetime|PT0S|Max lifetime for spark engine, the engine will self-terminate when it reaches the end of life. 0 or negative means not to self-terminate.|duration|1.6.0

@@ -34,9 +34,8 @@ import org.ietf.jgss.{GSSContext, GSSException, GSSManager, GSSName}
 import org.scalatest.time.SpanSugar._
 
 trait KerberizedTestHelper extends KyuubiFunSuite {
-  val baseDir: File = Utils.createTempDir(
-    Utils.getCodeSourceLocation(getClass),
-    "kyuubi-kdc").toFile
+  val baseDir: File =
+    Utils.createTempDir("kyuubi-kdc", Utils.getCodeSourceLocation(getClass)).toFile
   val kdcConf = MiniKdc.createConf()
   val hostName = "localhost"
   kdcConf.setProperty(MiniKdc.INSTANCE, this.getClass.getSimpleName)

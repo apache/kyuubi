@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
+import java.util
+
 import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -44,6 +46,8 @@ private[authz] object AuthZUtils {
         throw new RuntimeException(s"$name not in $candidates", e)
     }
   }
+
+  def getFieldValOpt[T](o: Any, name: String): Option[T] = Try(getFieldVal[T](o, name)).toOption
 
   def invoke(
       obj: AnyRef,
@@ -104,6 +108,12 @@ private[authz] object AuthZUtils {
     getFieldVal[Option[Identifier]](plan, "identifier")
   }
 
+  def getDatasourceV2TableOwner(plan: LogicalPlan): Option[String] = {
+    val table = getFieldVal[AnyRef](plan, "table")
+    val properties = invoke(table, "properties").asInstanceOf[util.Map[String, String]]
+    Option(properties.get("owner"))
+  }
+
   def getTableIdentifierFromV2Identifier(id: Identifier): TableIdentifier = {
     TableIdentifier(id.name(), Some(quote(id.namespace())))
   }
@@ -128,6 +138,19 @@ private[authz] object AuthZUtils {
   def isSparkVersionEqualTo(targetVersionString: String): Boolean = {
     SemanticVersion(SPARK_VERSION).isVersionEqualTo(targetVersionString)
   }
+
+  /**
+   * check if spark version satisfied
+   * first param is option of supported most  spark version,
+   * and secont param is option of supported least spark version
+   *
+   * @return
+   */
+  def passSparkVersionCheck: (Option[String], Option[String]) => Boolean =
+    (mostSparkVersion, leastSparkVersion) => {
+      mostSparkVersion.forall(isSparkVersionAtMost) &&
+      leastSparkVersion.forall(isSparkVersionAtLeast)
+    }
 
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {

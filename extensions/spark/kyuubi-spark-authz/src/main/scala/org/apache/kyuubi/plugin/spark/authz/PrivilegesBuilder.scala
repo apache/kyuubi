@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionInfo, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -45,8 +45,9 @@ object PrivilegesBuilder {
   private def tablePrivileges(
       table: TableIdentifier,
       columns: Seq[String] = Nil,
+      owner: Option[String] = None,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns)
+    PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns, owner)
   }
 
   private def functionPrivileges(
@@ -83,6 +84,16 @@ object PrivilegesBuilder {
     spark.sessionState.catalog.isTempView(parts)
   }
 
+  private def isPersistentFunction(
+      functionIdent: FunctionIdentifier,
+      spark: SparkSession): Boolean = {
+    val (database, funcName) = functionIdent.database match {
+      case Some(_) => (functionIdent.database, functionIdent.funcName)
+      case _ => (Some(spark.catalog.currentDatabase), functionIdent.funcName)
+    }
+    spark.sessionState.catalog.isPersistentFunction(FunctionIdentifier(funcName, database))
+  }
+
   /**
    * Build PrivilegeObjects from Spark LogicalPlan
    *
@@ -97,24 +108,29 @@ object PrivilegesBuilder {
       conditionList: Seq[NamedExpression] = Nil): Unit = {
 
     def mergeProjection(table: CatalogTable, plan: LogicalPlan): Unit = {
+      val tableOwner = Option(table.owner).filter(_.nonEmpty)
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table.identifier,
-          table.schema.fieldNames)
+          table.schema.fieldNames,
+          tableOwner)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivileges(table.identifier, cols)
+        privilegeObjects += tablePrivileges(table.identifier, cols, tableOwner)
       }
     }
 
-    def mergeProjectionV2Table(table: Identifier, plan: LogicalPlan): Unit = {
+    def mergeProjectionV2Table(
+        table: Identifier,
+        plan: LogicalPlan,
+        owner: Option[String] = None): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name))
+        privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name), owner)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += v2TablePrivileges(table, cols)
+        privilegeObjects += v2TablePrivileges(table, cols, owner)
       }
     }
 
@@ -153,7 +169,10 @@ object PrivilegesBuilder {
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
         if (tableIdent.isDefined) {
-          mergeProjectionV2Table(tableIdent.get, plan)
+          mergeProjectionV2Table(
+            tableIdent.get,
+            plan,
+            getDatasourceV2TableOwner(datasourceV2Relation))
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
@@ -211,6 +230,9 @@ object PrivilegesBuilder {
     plan.nodeName match {
       case v2Cmd if v2Commands.accept(v2Cmd) =>
         v2Commands.withName(v2Cmd).buildPrivileges(plan, inputObjs, outputObjs)
+
+      case icebergCmd if IcebergCommands.accept(icebergCmd) =>
+        IcebergCommands.withName(icebergCmd).buildPrivileges(plan, inputObjs, outputObjs)
 
       case "AlterDatabasePropertiesCommand" |
           "AlterDatabaseSetLocationCommand" |
@@ -347,8 +369,15 @@ object PrivilegesBuilder {
         buildQuery(getQuery, inputObjs)
 
       case "CreateFunctionCommand" |
-          "DropFunctionCommand" |
-          "RefreshFunctionCommand" =>
+          "DropFunctionCommand" =>
+        val isTemp = getPlanField[Boolean]("isTemp")
+        if (!isTemp) {
+          val db = getPlanField[Option[String]]("databaseName")
+          val functionName = getPlanField[String]("functionName")
+          outputObjs += functionPrivileges(db.orNull, functionName)
+        }
+
+      case "RefreshFunctionCommand" =>
         val db = getPlanField[Option[String]]("databaseName")
         val functionName = getPlanField[String]("functionName")
         outputObjs += functionPrivileges(db.orNull, functionName)
@@ -385,13 +414,18 @@ object PrivilegesBuilder {
         inputObjs += databasePrivileges(quote(database))
 
       case "DescribeFunctionCommand" =>
-        val func = getPlanField[FunctionIdentifier]("functionName")
-        inputObjs += functionPrivileges(func.database.orNull, func.funcName)
-
-      case "DropNamespace" =>
-        val child = getPlanField[Any]("namespace")
-        val database = getFieldVal[Seq[String]](child, "namespace")
-        outputObjs += databasePrivileges(quote(database))
+        val (db: Option[String], funName: String) =
+          if (isSparkVersionAtLeast("3.3")) {
+            val info = getPlanField[ExpressionInfo]("info")
+            (Option(info.getDb), info.getName)
+          } else {
+            val funcIdent = getPlanField[FunctionIdentifier]("functionName")
+            (funcIdent.database, funcIdent.funcName)
+          }
+        val isPersistentFun = isPersistentFunction(FunctionIdentifier(funName, db), spark)
+        if (isPersistentFun) {
+          inputObjs += functionPrivileges(db.orNull, funName)
+        }
 
       case "DropTableCommand" =>
         if (!isTempView(getPlanField[TableIdentifier]("tableName"), spark)) {
@@ -432,8 +466,6 @@ object PrivilegesBuilder {
         val cols = getPlanField[Option[TablePartitionSpec]]("partition")
           .map(_.keySet).getOrElse(Nil)
         outputObjs += tablePrivileges(table, cols.toSeq, actionType = actionType)
-
-      case "MergeIntoTable" =>
 
       case "RepairTableCommand" =>
         val enableAddPartitions = getPlanField[Boolean]("enableAddPartitions")
