@@ -145,8 +145,9 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #3666] Support {OWNER} variable for queries run on CatalogV2") {
-    val table = "owner_variable"
+    assume(isSparkV32OrGreater)
 
+    val table = "owner_variable"
     val select = s"SELECT key FROM $catalogV2.$namespace1.$table"
 
     withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
