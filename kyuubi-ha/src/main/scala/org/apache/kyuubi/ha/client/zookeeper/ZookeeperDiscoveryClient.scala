@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
-import org.apache.curator.framework.recipes.atomic.DistributedAtomicInteger
+import org.apache.curator.framework.recipes.atomic.{AtomicValue, DistributedAtomicInteger}
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.framework.recipes.nodes.PersistentNode
 import org.apache.curator.framework.state.ConnectionState
@@ -298,7 +298,11 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
   def getAndIncrement(path: String): Int = {
     val dai = new DistributedAtomicInteger(zkClient, path, new RetryForever(1000))
-    dai.increment().preValue().intValue()
+    var atomicVal: AtomicValue[Integer] = null
+    do {
+      atomicVal = dai.increment()
+    } while (atomicVal == null || !atomicVal.succeeded())
+    atomicVal.preValue().intValue()
   }
 
   /**
