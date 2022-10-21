@@ -120,9 +120,8 @@ object KubernetesUtils extends Logging {
   }
 
   /**
-   * if user not set kubernetes master
+   * if can't load master address from config or context
    * find kubernetes master which run this kyuubi pod
-   * set null when kyuubi not in pod
    * (tcp://XXX:XXX) => (https://XXX:XXX)
    */
   def loadMasterAddressFromEnv: Option[String] = {
