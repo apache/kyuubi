@@ -34,6 +34,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 object KubernetesUtils extends Logging {
 
   def buildKubernetesClient(conf: KyuubiConf): Option[KubernetesClient] = {
+    val master = conf.get(KUBERNETES_MASTER)
     val namespace = conf.get(KUBERNETES_NAMESPACE)
     val serviceAccountToken =
       Some(new File(Config.KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH)).filter(_.exists)
@@ -65,10 +66,9 @@ object KubernetesUtils extends Logging {
 
     val config = new ConfigBuilder(autoConfigure(kubeContext.orNull))
       .withApiVersion("v1")
-      .withOption(Some(masterAddress(conf))) {
+      .withOption(master) {
         (master, configBuilder) => configBuilder.withMasterUrl(master)
-      }
-      .withNamespace(namespace)
+      }.withNamespace(namespace)
       .withTrustCerts(conf.get(KUBERNETES_TRUST_CERTIFICATES))
       .withOption(oauthTokenValue) {
         (token, configBuilder) => configBuilder.withOauthToken(token)
@@ -83,10 +83,10 @@ object KubernetesUtils extends Logging {
         (file, configBuilder) => configBuilder.withClientCertFile(file)
       }.build()
 
-    // kyuubi need context or config set kubernetes master address
-    if (config.getMasterUrl == null || config.getMasterUrl.isEmpty) {
-      warn("Need set kubernetes master url, if you want to set up kubernetes client")
-      return None
+    (master, kubeContext, loadMasterAddressFromEnv) match {
+      case (None, None, Some(url)) =>
+        debug(s"Set kubernetes master address $url from env KUBERNETES_PORT")
+        config.setMasterUrl(url)
     }
 
     // https://github.com/fabric8io/kubernetes-client/issues/3547
@@ -119,14 +119,13 @@ object KubernetesUtils extends Logging {
     opt2.foreach { _ => require(opt1.isEmpty, errMessage) }
   }
 
-  def masterAddress(conf: KyuubiConf): String = {
-    conf.get(KUBERNETES_MASTER).getOrElse {
-      // if user not set kubernetes master
-      // find kubernetes master which run this kyuubi pod
-      // set null when kyuubi not in pod
-      // (tcp://XXX:XXX) => (https://XXX:XXX)
-      debug("Try find kubernetes master address from env")
-      sys.env.get("KUBERNETES_PORT").map(_.replace("tcp", "https")).orNull
-    }
+  /**
+   * if user not set kubernetes master
+   * find kubernetes master which run this kyuubi pod
+   * set null when kyuubi not in pod
+   * (tcp://XXX:XXX) => (https://XXX:XXX)
+   */
+  def loadMasterAddressFromEnv: Option[String] = {
+    sys.env.get("KUBERNETES_PORT").map(_.replace("tcp", "https"))
   }
 }
