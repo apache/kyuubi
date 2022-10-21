@@ -17,71 +17,77 @@
 
 package org.apache.kyuubi.util
 
-import java.io.{File, FileNotFoundException}
+import java.io.File
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import io.fabric8.kubernetes.client.{Config, ConfigBuilder, DefaultKubernetesClient, KubernetesClient, KubernetesClientException}
+import io.fabric8.kubernetes.client.{Config, ConfigBuilder, DefaultKubernetesClient, KubernetesClient}
+import io.fabric8.kubernetes.client.Config.autoConfigure
 import io.fabric8.kubernetes.client.okhttp.OkHttpClientFactory
 import okhttp3.{Dispatcher, OkHttpClient}
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.KUBERNETES_CONTEXT
+import org.apache.kyuubi.config.KyuubiConf.{KUBERNETES_AUTHENTICATE_CA_CERT_FILE, KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE, KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE, KUBERNETES_AUTHENTICATE_OAUTH_TOKEN, KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE, KUBERNETES_CONTEXT, KUBERNETES_MASTER, KUBERNETES_NAMESPACE, KUBERNETES_TRUST_CERTIFICATES}
 
 object KubernetesUtils extends Logging {
 
   def buildKubernetesClient(conf: KyuubiConf): KubernetesClient = {
-    if (conf.get(KyuubiConf.SERVER_PREFER_BUILD_K8S_CLIENT_FROM_POD_ENV) && Utils.isOnK8s) {
-      try {
-        buildKubernetesClientFromPodEnv
-      } catch {
-        case e: KubernetesClientException =>
-          error("Fail to build kubernetes client for kubernetes application operation", e)
-          null
-        case e: FileNotFoundException =>
-          error(
-            "Fail to build kubernetes client for kubernetes application operation, " +
-              "due to file not found",
-            e)
-          null
-      }
-    } else {
-      val contextOpt = conf.get(KUBERNETES_CONTEXT)
-      if (contextOpt.isEmpty) {
-        warn("Skip initialize kubernetes client, because of context not set.")
-        null
-      } else {
-        try {
-          val client = new DefaultKubernetesClient(Config.autoConfigure(contextOpt.get))
-          info(s"Initialized kubernetes client connect to: ${client.getMasterUrl}")
-          client
-        } catch {
-          case e: KubernetesClientException =>
-            error("Fail to init kubernetes client for kubernetes application operation", e)
-            null
-        }
-      }
+    val master = masterAddress(conf)
+    if (master == null || master.isEmpty) {
+      warn("Need set kubernetes master url, if you want to set up kubernetes client")
+      return null
     }
-  }
 
-  private def buildKubernetesClientFromPodEnv: KubernetesClient = {
-    val nsFile = new File("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+    val namespace = conf.get(KUBERNETES_NAMESPACE)
+    val serviceAccountToken =
+      Some(new File(Config.KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH)).filter(_.exists)
+    val serviceAccountCaCrt =
+      Some(new File(Config.KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH)).filter(_.exists)
 
-    // use service account for client ca and token
-    val ca = new File("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-    val token = new File("/var/run/secrets/kubernetes.io/serviceaccount/token")
+    val oauthTokenFile = conf.get(KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE)
+      .map(new File(_))
+      .orElse(serviceAccountToken)
+    val oauthTokenValue = conf.get(KUBERNETES_AUTHENTICATE_OAUTH_TOKEN)
 
-    // (tcp://XXX:XXX) => (https://XXX:XXX)
-    val master = sys.env("KUBERNETES_PORT").replace("tcp", "https")
+    KubernetesUtils.requireNandDefined(
+      oauthTokenFile,
+      oauthTokenValue,
+      s"Cannot specify OAuth token through both a oauth token file and a " +
+        s"oauth token value.")
 
-    val config = new ConfigBuilder()
+    val caCertFile = conf
+      .get(KUBERNETES_AUTHENTICATE_CA_CERT_FILE)
+      .orElse(serviceAccountCaCrt.map(_.getAbsolutePath))
+    val clientKeyFile = conf.get(KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE)
+    val clientCertFile = conf.get(KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE)
+
+    // Allow for specifying a context used to auto-configure from the users K8S config file
+    val kubeContext = conf.get(KUBERNETES_CONTEXT).filter(_.nonEmpty)
+    info("Auto-configuring K8S client using " +
+      kubeContext.map("context " + _).getOrElse("current context") +
+      " from users K8S config file")
+
+    val config = new ConfigBuilder(autoConfigure(kubeContext.orNull))
+      .withApiVersion("v1")
       .withMasterUrl(master)
-      .withNamespace(Files.asCharSource(nsFile, Charsets.UTF_8).readFirstLine())
-      .withOauthToken(Files.asCharSource(token, Charsets.UTF_8).readFirstLine())
-      .withCaCertFile(ca.getAbsolutePath)
-      .build()
+      .withNamespace(namespace)
+      .withTrustCerts(conf.get(KUBERNETES_TRUST_CERTIFICATES))
+      .withOption(oauthTokenValue) {
+        (token, configBuilder) => configBuilder.withOauthToken(token)
+      }.withOption(oauthTokenFile) {
+        (file, configBuilder) =>
+          configBuilder.withOauthToken(Files.asCharSource(file, Charsets.UTF_8).read())
+      }.withOption(caCertFile) {
+        (file, configBuilder) => configBuilder.withCaCertFile(file)
+      }.withOption(clientKeyFile) {
+        (file, configBuilder) => configBuilder.withClientKeyFile(file)
+      }.withOption(clientCertFile) {
+        (file, configBuilder) => configBuilder.withClientCertFile(file)
+      }.build()
 
+    // https://github.com/fabric8io/kubernetes-client/issues/3547
     val dispatcher = new Dispatcher(
       ThreadUtils.newDaemonCachedThreadPool("kubernetes-dispatcher"))
     val factoryWithCustomDispatcher = new OkHttpClientFactory() {
@@ -90,6 +96,35 @@ object KubernetesUtils extends Logging {
       }
     }
 
+    debug("Kubernetes client config: " +
+      new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config))
     new DefaultKubernetesClient(factoryWithCustomDispatcher.createHttpClient(config), config)
+  }
+
+  implicit private class OptionConfigurableConfigBuilder(val configBuilder: ConfigBuilder)
+    extends AnyVal {
+
+    def withOption[T](option: Option[T])(configurator: ((T, ConfigBuilder) => ConfigBuilder))
+        : ConfigBuilder = {
+      option.map { opt =>
+        configurator(opt, configBuilder)
+      }.getOrElse(configBuilder)
+    }
+  }
+
+  def requireNandDefined(opt1: Option[_], opt2: Option[_], errMessage: String): Unit = {
+    opt1.foreach { _ => require(opt2.isEmpty, errMessage) }
+    opt2.foreach { _ => require(opt1.isEmpty, errMessage) }
+  }
+
+  def masterAddress(conf: KyuubiConf): String = {
+    conf.get(KUBERNETES_MASTER).getOrElse {
+      // if user not set kubernetes master
+      // find kubernetes master which run this kyuubi pod
+      // set null when kyuubi not in pod
+      // (tcp://XXX:XXX) => (https://XXX:XXX)
+      debug("Try find kubernetes master address from env")
+      sys.env.get("KUBERNETES_PORT").map(_.replace("tcp", "https")).orNull
+    }
   }
 }

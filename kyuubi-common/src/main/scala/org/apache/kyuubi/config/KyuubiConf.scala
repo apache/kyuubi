@@ -836,10 +836,57 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val SERVER_PREFER_BUILD_K8S_CLIENT_FROM_POD_ENV: ConfigEntry[Boolean] =
-    buildConf("kyuubi.kubernetes.client.build.preferFromPodEnv")
-      .doc("If enabled, kyuubi will build kubernetes client from pod env " +
-        "and service account files. (only when kyuubi run in kubernetes pod)")
+  val KUBERNETES_NAMESPACE: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.namespace")
+      .version("1.7.0")
+      .stringConf
+      .createWithDefault("default")
+
+  val KUBERNETES_MASTER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.master.address")
+      .doc("kubernetes master address for build kubernetes client")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.oauthTokenFile")
+      .doc("kubernetes client authenticate oauth token file")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.oauthToken")
+      .doc("kubernetes client authenticate oauth token value")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.clientKeyFile")
+      .doc("kubernetes client authenticate client key file")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.clientCertFile")
+      .doc("kubernetes client authenticate client cert file")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_CA_CERT_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.ca cert file")
+      .doc("kubernetes client authenticate ca cert file")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_TRUST_CERTIFICATES: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.trust.certificates")
+      .doc("If set to true then client can submit to kubernetes cluster only with token")
       .version("1.7.0")
       .booleanConf
       .createWithDefault(false)
