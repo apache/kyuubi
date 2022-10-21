@@ -38,6 +38,7 @@ import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.{HiveMetadataTests, SparkQueryTests}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
+import org.apache.kyuubi.util.SparkVersionUtil.isSparkVersionAtLeast
 
 class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with SparkQueryTests {
 
@@ -457,12 +458,19 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       val req = new TOpenSessionReq()
       req.setUsername("kentyao")
       req.setPassword("anonymous")
-      val conf = Map("use:database" -> "default2")
+      val dbName = "default2"
+      val conf = Map("use:database" -> dbName)
       req.setConfiguration(conf.asJava)
       val tOpenSessionResp = client.OpenSession(req)
       val status = tOpenSessionResp.getStatus
+      val errorMessage = status.getErrorMessage
       assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(status.getErrorMessage.contains("Database 'default2' not found"))
+      if (isSparkVersionAtLeast("3.4")) {
+        assert(errorMessage.contains("[SCHEMA_NOT_FOUND]"))
+        assert(errorMessage.contains(s"The schema `$dbName` cannot be found."))
+      } else {
+        assert(errorMessage.contains(s"Database '$dbName' not found"))
+      }
     }
   }
 

@@ -29,6 +29,7 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsRe
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.SemanticVersion
+import org.apache.kyuubi.util.SparkVersionUtil.isSparkVersionAtLeast
 
 trait SparkQueryTests extends HiveJDBCTestHelper {
 
@@ -474,6 +475,14 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
     val setkey = "SET kyuubi.operation.plan.only.mode"
     withJdbcStatement("t") { statement =>
       try {
+        val assertTableOrViewNotfound: (Exception, String) => Unit = (e, tableName) => {
+          if (isSparkVersionAtLeast("3.4")) {
+            assert(e.getMessage.contains("[TABLE_OR_VIEW_NOT_FOUND]"))
+            assert(e.getMessage.contains(s"The table or view `${tableName}` cannot be found."))
+          } else {
+            assert(e.getMessage.contains("Table or view not found"))
+          }
+        }
         statement.execute("SET kyuubi.operation.plan.only.mode=optimize")
         val set = statement.executeQuery(ddl)
         assert(set.next())
@@ -482,10 +491,10 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
         assert(set0.next())
         assert(set0.getString(2) === "optimize")
         val e1 = intercept[SQLException](statement.executeQuery(dql))
-        assert(e1.getMessage.contains("Table or view not found"))
+        assertTableOrViewNotfound(e1, "t")
         statement.execute("SET kyuubi.operation.plan.only.mode=analyze")
         val e2 = intercept[SQLException](statement.executeQuery(dql))
-        assert(e2.getMessage.contains("Table or view not found"))
+        assertTableOrViewNotfound(e1, "t")
         statement.execute("SET kyuubi.operation.plan.only.mode=parse")
         val set1 = statement.executeQuery(dql)
         assert(set1.next())
