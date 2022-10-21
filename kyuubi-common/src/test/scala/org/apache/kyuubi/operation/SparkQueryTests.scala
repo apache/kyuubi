@@ -25,8 +25,8 @@ import scala.collection.JavaConverters._
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
-
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.util.SparkVersionUtil.isSparkVersionAtLeast
@@ -470,15 +470,16 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
   }
 
   test("KYUUBI #1059: Plan only operations") {
-    val ddl = "create table t(a int) using parquet"
-    val dql = "select * from t"
+    val tableName = "t"
+    val ddl = s"create table $tableName(a int) using parquet"
+    val dql = s"select * from $tableName"
     val setkey = "SET kyuubi.operation.plan.only.mode"
     withJdbcStatement("t") { statement =>
       try {
         val assertTableOrViewNotfound: (Exception, String) => Unit = (e, tableName) => {
           if (isSparkVersionAtLeast("3.4")) {
             assert(e.getMessage.contains("[TABLE_OR_VIEW_NOT_FOUND]"))
-            assert(e.getMessage.contains(s"The table or view `${tableName}` cannot be found."))
+            assert(e.getMessage.contains(s"The table or view `$tableName` cannot be found."))
           } else {
             assert(e.getMessage.contains("Table or view not found"))
           }
@@ -491,10 +492,10 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
         assert(set0.next())
         assert(set0.getString(2) === "optimize")
         val e1 = intercept[SQLException](statement.executeQuery(dql))
-        assertTableOrViewNotfound(e1, "t")
+        assertTableOrViewNotfound(e1, tableName)
         statement.execute("SET kyuubi.operation.plan.only.mode=analyze")
         val e2 = intercept[SQLException](statement.executeQuery(dql))
-        assertTableOrViewNotfound(e1, "t")
+        assertTableOrViewNotfound(e2, tableName)
         statement.execute("SET kyuubi.operation.plan.only.mode=parse")
         val set1 = statement.executeQuery(dql)
         assert(set1.next())
