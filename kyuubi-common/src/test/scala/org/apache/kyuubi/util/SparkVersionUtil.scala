@@ -21,7 +21,9 @@ import org.apache.kyuubi.SPARK_COMPILE_VERSION
 import org.apache.kyuubi.engine.SemanticVersion
 
 object SparkVersionUtil {
+  lazy val sparkSemanticVersion: SemanticVersion = SemanticVersion(SPARK_COMPILE_VERSION)
+
   def isSparkVersionAtLeast(ver: String): Boolean = {
-    SemanticVersion(SPARK_COMPILE_VERSION).isVersionAtLeast(ver)
+    sparkSemanticVersion.isVersionAtLeast(ver)
   }
 }
