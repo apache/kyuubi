@@ -87,6 +87,8 @@ object KubernetesUtils extends Logging {
       case (None, None, Some(url)) =>
         debug(s"Set kubernetes master address $url from env KUBERNETES_PORT")
         config.setMasterUrl(url)
+      case _ =>
+        // do noting
     }
 
     // https://github.com/fabric8io/kubernetes-client/issues/3547
