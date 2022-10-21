@@ -34,12 +34,6 @@ import org.apache.kyuubi.config.KyuubiConf._
 object KubernetesUtils extends Logging {
 
   def buildKubernetesClient(conf: KyuubiConf): Option[KubernetesClient] = {
-    val master = masterAddress(conf)
-    if (master == null || master.isEmpty) {
-      warn("Need set kubernetes master url, if you want to set up kubernetes client")
-      return None
-    }
-
     val namespace = conf.get(KUBERNETES_NAMESPACE)
     val serviceAccountToken =
       Some(new File(Config.KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH)).filter(_.exists)
@@ -71,7 +65,9 @@ object KubernetesUtils extends Logging {
 
     val config = new ConfigBuilder(autoConfigure(kubeContext.orNull))
       .withApiVersion("v1")
-      .withMasterUrl(master)
+      .withOption(Some(masterAddress(conf))) {
+        (master, configBuilder) => configBuilder.withMasterUrl(master)
+      }
       .withNamespace(namespace)
       .withTrustCerts(conf.get(KUBERNETES_TRUST_CERTIFICATES))
       .withOption(oauthTokenValue) {
@@ -86,6 +82,12 @@ object KubernetesUtils extends Logging {
       }.withOption(clientCertFile) {
         (file, configBuilder) => configBuilder.withClientCertFile(file)
       }.build()
+
+    // kyuubi need context or config set kubernetes master address
+    if (config.getMasterUrl == null || config.getMasterUrl.isEmpty) {
+      warn("Need set kubernetes master url, if you want to set up kubernetes client")
+      return None
+    }
 
     // https://github.com/fabric8io/kubernetes-client/issues/3547
     val dispatcher = new Dispatcher(
