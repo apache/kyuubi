@@ -166,8 +166,8 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
       val path = "/setData_test"
       discoveryClient.create(path, "PERSISTENT")
       discoveryClient.setData(path, data.getBytes)
-      val getSata = new String(discoveryClient.getData(path))
-      assert(data.equals(getSata))
+      val dataFormGet = new String(discoveryClient.getData(path))
+      assert(data == dataFormGet)
     }
   }
 }
