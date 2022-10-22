@@ -33,6 +33,8 @@ import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLeve
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
 import org.apache.kyuubi.engine.jdbc.JdbcProcessBuilder
+import org.apache.kyuubi.engine.reblance.RebalancedEnginePolicy
+import org.apache.kyuubi.engine.reblance.RebalancedEnginePolicy.{SessionNodeUtil, UserSpaceInfo}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
@@ -108,6 +110,13 @@ private[kyuubi] class EngineRef(
           }
         case "RANDOM" =>
           Random.nextInt(poolSize)
+        case "ADAPTIVE" =>
+          val commonParent = s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
+          RebalancedEnginePolicy.getAdaptiveSpaceIndex(
+            conf,
+            UserSpaceInfo(commonParent, user),
+            clientPoolName,
+            engineRefId)
       }
       s"$clientPoolName-${seqNum % poolSize}"
     case _ => "default" // [KYUUBI #1293]
@@ -145,6 +154,9 @@ private[kyuubi] class EngineRef(
       case _ => DiscoveryPaths.makePath(commonParent, appUser, Array(subdomain))
     }
   }
+
+  def getCommonSpacePrefix: String = s"${serverSpace}" +
+    s"_${KYUUBI_VERSION}_${shareLevel}_$engineType"
 
   /**
    * The distributed lock path used to ensure only once engine being created for non-CONNECTION
@@ -227,6 +239,7 @@ private[kyuubi] class EngineRef(
                      |""".stripMargin,
                   builder.getError)
               }
+              removeFailedHandleSpace()
             }
           }
         }
@@ -234,6 +247,7 @@ private[kyuubi] class EngineRef(
         if (started + timeout <= System.currentTimeMillis()) {
           val killMessage = engineManager.killApplication(builder.clusterManager(), engineRefId)
           process.destroyForcibly()
+          removeFailedHandleSpace()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
             s"Timeout($timeout ms, you can modify ${ENGINE_INIT_TIMEOUT.key} to change it) to" +
@@ -248,6 +262,15 @@ private[kyuubi] class EngineRef(
       // we have a log capture thread in process builder.
       builder.close()
     }
+  }
+
+  private def removeFailedHandleSpace(): Unit = {
+    val sessionRecordNode = SessionNodeUtil.combine2SessionNode(engineSpace)
+    val closeHandleSpace = s"$sessionRecordNode/$engineRefId"
+    RebalancedEnginePolicy.deleteCloseSessionHandleNode(
+      conf,
+      closeHandleSpace,
+      UserSpaceInfo(getCommonSpacePrefix, user))
   }
 
   /**

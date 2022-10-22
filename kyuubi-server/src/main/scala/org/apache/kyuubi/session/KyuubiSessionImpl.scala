@@ -30,6 +30,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.reblance.RebalancedEnginePolicy
+import org.apache.kyuubi.engine.reblance.RebalancedEnginePolicy.UserSpaceInfo
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -176,6 +178,8 @@ class KyuubiSessionImpl(
           attempt += 1
         }
       }
+      val handleNode = s"${engine.engineSpace}-session/${handle.identifier}"
+      sessionManager.sessionHandleSpaceMap.put(handle.identifier.toString, handleNode)
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
       _client.engineId.foreach(e => sessionEvent.engineId = e)
@@ -228,6 +232,11 @@ class KyuubiSessionImpl(
   override def close(): Unit = {
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
+    val handleSpace = sessionManager.sessionHandleSpaceMap.remove(handle.identifier.toString)
+    RebalancedEnginePolicy.deleteCloseSessionHandleNode(
+      sessionConf,
+      handleSpace,
+      UserSpaceInfo(engine.getCommonSpacePrefix, user))
     try {
       if (_client != null) _client.closeSession()
     } finally {

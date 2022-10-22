@@ -1626,7 +1626,7 @@ object KyuubiConf {
       .version("1.7.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
-      .checkValues(Set("RANDOM", "POLLING"))
+      .checkValues(Set("RANDOM", "POLLING", "ADAPTIVE"))
       .createWithDefault("RANDOM")
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
@@ -2389,4 +2389,12 @@ object KyuubiConf {
       .version("1.7.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(60).toMillis)
+
+  val ENGINE_POOL_BALANCE_EXPAND_THRESHOLD: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.expand.threshold")
+      .doc("engin expand threshold, when engin app over this value , " +
+        "new engin app will be launched")
+      .version("1.7.0")
+      .intConf
+      .createWithDefault(3)
 }

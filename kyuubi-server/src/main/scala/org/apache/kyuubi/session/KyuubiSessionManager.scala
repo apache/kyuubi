@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.util.concurrent.ConcurrentHashMap
+
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
@@ -43,6 +45,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
+  val sessionHandleSpaceMap: ConcurrentHashMap[String, String] =
+    new ConcurrentHashMap[String, String]()
+
   val applicationManager = new KyuubiApplicationManager()
   private lazy val metadataManager: Option[MetadataManager] = {
     // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,

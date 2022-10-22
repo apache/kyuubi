@@ -224,6 +224,7 @@ kyuubi.engine.deregister.exception.ttl|PT30M|Time to live(TTL) for exceptions pa
 kyuubi.engine.deregister.job.max.failures|4|Number of failures of job before deregistering the engine.|int|1.2.0
 kyuubi.engine.event.json.log.path|file:///tmp/kyuubi/events|The location of all the engine events go for the builtin JSON logger.<ul><li>Local Path: start with 'file://'</li><li>HDFS Path: start with 'hdfs://'</li></ul>|string|1.3.0
 kyuubi.engine.event.loggers|SPARK|A comma separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.3.0
+kyuubi.engine.expand.threshold|3|engin expand threshold, when engin app over this value , new engin app will be launched|int|1.7.0
 kyuubi.engine.flink.extra.classpath|&lt;undefined&gt;|The extra classpath for the flink sql engine, for configuring location of hadoop client jars, etc|string|1.6.0
 kyuubi.engine.flink.java.options|&lt;undefined&gt;|The extra java options for the flink sql engine|string|1.6.0
 kyuubi.engine.flink.memory|1g|The heap memory for the flink sql engine|string|1.6.0
