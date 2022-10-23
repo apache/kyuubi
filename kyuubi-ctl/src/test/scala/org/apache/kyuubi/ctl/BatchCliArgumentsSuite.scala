@@ -17,6 +17,7 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.ctl.cli.ControlCliArguments
 import org.apache.kyuubi.ctl.util.DateTimeUtils._
 
 class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
@@ -116,6 +117,18 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
         "batch")
       testPrematureExitForControlCliArgs(args, s"Must specify batchId for ${op} batch command")
     }
+  }
+
+  test("delete batch with hs2ProxyUser") {
+    val args = Array(
+      "delete",
+      "batch",
+      "f7fd702c-e54e-11ec-8fea-0242ac120002",
+      "--hs2ProxyUser",
+      "b_user")
+    val opArgs = new ControlCliArguments(args)
+    assert(opArgs.cliConfig.batchOpts.batchId == "f7fd702c-e54e-11ec-8fea-0242ac120002")
+    assert(opArgs.cliConfig.commonOpts.hs2ProxyUser == "b_user")
   }
 
   test("test list batch option") {

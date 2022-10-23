@@ -15,23 +15,34 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ctl
+package org.apache.kyuubi.ctl.cli
 
 import scopt.OParser
 
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.cmd.delete.AdminDeleteEngineCommand
+import org.apache.kyuubi.ctl.cmd.list.AdminListEngineCommand
 import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommand
+import org.apache.kyuubi.ctl.opt.{AdminCommandLine, CliConfig, ControlAction, ControlObject}
 
 class AdminControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
   extends ControlCliArguments(args, env) {
   override def parser(): OParser[Unit, CliConfig] = {
     val builder = OParser.builder[CliConfig]
-    CommandLine.getAdminCtlOptionParser(builder)
+    AdminCommandLine.getAdminCtlOptionParser(builder)
   }
 
   override protected def getCommand(cliConfig: CliConfig): Command[_] = {
     cliConfig.action match {
+      case ControlAction.LIST => cliConfig.resource match {
+          case ControlObject.ENGINE => new AdminListEngineCommand(cliConfig)
+          case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
+        }
+      case ControlAction.DELETE => cliConfig.resource match {
+          case ControlObject.ENGINE => new AdminDeleteEngineCommand(cliConfig)
+          case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
+        }
       case ControlAction.REFRESH => cliConfig.resource match {
           case ControlObject.CONFIG => new RefreshConfigCommand(cliConfig)
           case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
@@ -42,6 +53,14 @@ class AdminControlCliArguments(args: Seq[String], env: Map[String, String] = sys
 
   override def toString: String = {
     cliConfig.resource match {
+      case ControlObject.ENGINE =>
+        s"""Parsed arguments:
+           |  action                  ${cliConfig.action}
+           |  resource                ${cliConfig.resource}
+           |  type                    ${cliConfig.engineOpts.engineType}
+           |  sharelevel              ${cliConfig.engineOpts.engineShareLevel}
+           |  sharesubdomain          ${cliConfig.engineOpts.engineSubdomain}
+        """.stripMargin
       case ControlObject.CONFIG =>
         s"""Parsed arguments:
            |  action                  ${cliConfig.action}

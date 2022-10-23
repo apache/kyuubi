@@ -22,7 +22,7 @@ import java.nio.file.{Files, Paths}
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.KyuubiException
-import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.opt.CliConfig
 
 private[ctl] object Validator {
 

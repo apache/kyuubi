@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl
+package org.apache.kyuubi.ctl.opt
 
-import org.apache.kyuubi.ctl.ControlAction.ControlAction
-import org.apache.kyuubi.ctl.ControlObject.ControlObject
+import org.apache.kyuubi.ctl.opt.ControlAction.ControlAction
+import org.apache.kyuubi.ctl.opt.ControlObject.ControlObject
 
 private[ctl] object ControlAction extends Enumeration {
   type ControlAction = Value
@@ -47,7 +47,8 @@ case class CommonOpts(
     authSchema: String = null,
     username: String = null,
     password: String = null,
-    spnegoHost: String = null)
+    spnegoHost: String = null,
+    hs2ProxyUser: String = null)
 
 case class ZookeeperOpts(
     zkQuorum: String = null,
@@ -69,7 +70,6 @@ case class BatchOpts(
     endTime: Long = 0,
     from: Int = -1,
     size: Int = 100,
-    hs2ProxyUser: String = null,
     waitCompletion: Boolean = true)
 
 case class EngineOpts(

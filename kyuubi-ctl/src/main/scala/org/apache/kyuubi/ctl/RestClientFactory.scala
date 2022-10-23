@@ -24,6 +24,7 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.client.KyuubiRestClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ctl.CtlConf._
+import org.apache.kyuubi.ctl.opt.CliConfig
 
 object RestClientFactory {
 

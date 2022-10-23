@@ -135,7 +135,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         engine.getEngineType,
         engine.getSharelevel,
         node.namespace.split("/").last,
-        node.instance))
+        node.instance,
+        node.namespace))
   }
 
   private def getEngine(
@@ -161,6 +162,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       normalizedEngineType,
       engineShareLevel,
       engineSubdomain,
+      null,
       null)
   }
 

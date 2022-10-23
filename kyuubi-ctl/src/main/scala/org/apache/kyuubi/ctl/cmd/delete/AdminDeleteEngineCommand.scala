@@ -14,31 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl.cmd.get
 
-import org.apache.kyuubi.client.BatchRestApi
-import org.apache.kyuubi.client.api.v1.dto.Batch
+package org.apache.kyuubi.ctl.cmd.delete
+
+import org.apache.kyuubi.client.AdminRestApi
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
-import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.cmd.AdminCtlCommand
 import org.apache.kyuubi.ctl.opt.CliConfig
-import org.apache.kyuubi.ctl.util.Render
+import org.apache.kyuubi.ctl.util.Tabulator
 
-class GetBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {
+class AdminDeleteEngineCommand(cliConfig: CliConfig) extends AdminCtlCommand[String](cliConfig) {
 
-  def validate(): Unit = {
-    if (normalizedCliConfig.batchOpts.batchId == null) {
-      fail("Must specify batchId for get batch command.")
-    }
-  }
+  override def validate(): Unit = {}
 
-  def doRun(): Batch = {
+  def doRun(): String = {
     withKyuubiRestClient(normalizedCliConfig, null, conf) { kyuubiRestClient =>
-      val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
-      batchRestApi.getBatchById(normalizedCliConfig.batchOpts.batchId)
+      val adminRestApi = new AdminRestApi(kyuubiRestClient)
+      adminRestApi.deleteEngine(
+        normalizedCliConfig.engineOpts.engineType,
+        normalizedCliConfig.engineOpts.engineShareLevel,
+        normalizedCliConfig.engineOpts.engineSubdomain,
+        normalizedCliConfig.commonOpts.hs2ProxyUser)
     }
   }
 
-  def render(batch: Batch): Unit = {
-    info(Render.renderBatchInfo(batch))
+  def render(resp: String): Unit = {
+    info(Tabulator.format("", Array("Response"), Array(Array(resp))))
   }
+
 }

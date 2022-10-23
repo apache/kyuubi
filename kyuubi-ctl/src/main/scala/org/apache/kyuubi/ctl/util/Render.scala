@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.client.api.v1.dto.{Batch, GetBatchesResponse}
+import org.apache.kyuubi.client.api.v1.dto.{Batch, Engine, GetBatchesResponse}
 import org.apache.kyuubi.ctl.util.DateTimeUtils._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
@@ -29,6 +29,15 @@ private[ctl] object Render {
     val header = Array("Namespace", "Host", "Port", "Version")
     val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
       Array(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
+    }.toArray
+    Tabulator.format(title, header, rows)
+  }
+
+  def renderEngineNodesInfo(engineNodesInfo: Seq[Engine]): String = {
+    val title = s"Engine Node List (total ${engineNodesInfo.size})"
+    val header = Array("Namespace", "Instance", "Version")
+    val rows = engineNodesInfo.map { engine =>
+      Array(engine.getNamespace, engine.getInstance, engine.getVersion)
     }.toArray
     Tabulator.format(title, header, rows)
   }

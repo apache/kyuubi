@@ -15,22 +15,48 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ctl
+package org.apache.kyuubi.ctl.cli
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.ctl.{ControlCliException, KyuubiOEffectSetup}
 import org.apache.kyuubi.ctl.util.CommandLineUtils
 
-class AdminControlCli extends ControlCli {
-  override protected def parseArguments(args: Array[String]): AdminControlCliArguments = {
-    new AdminControlCliArguments(args)
+/**
+ * Main gateway of launching a Kyuubi Ctl action.
+ */
+private[kyuubi] class ControlCli extends Logging {
+
+  def doAction(args: Array[String]): Unit = {
+    // Initialize logging if it hasn't been done yet.
+    // Set log level ERROR
+    initializeLoggerIfNecessary(true)
+
+    val ctlArgs = parseArguments(args)
+
+    // when parse failed, exit
+    if (ctlArgs.cliConfig == null) {
+      sys.exit(1)
+    }
+
+    val verbose = ctlArgs.cliConfig.commonOpts.verbose
+    if (verbose) {
+      super.info(ctlArgs.toString)
+    }
+
+    ctlArgs.command.run()
   }
+
+  protected def parseArguments(args: Array[String]): ControlCliArguments = {
+    new ControlCliArguments(args)
+  }
+
 }
 
-object AdminControlCli extends CommandLineUtils with Logging {
+object ControlCli extends CommandLineUtils with Logging {
   override def main(args: Array[String]): Unit = {
-    val adminCtl = new AdminControlCli() { self =>
-      override protected def parseArguments(args: Array[String]): AdminControlCliArguments = {
-        new AdminControlCliArguments(args) {
+    val ctl = new ControlCli() { self =>
+      override protected def parseArguments(args: Array[String]): ControlCliArguments = {
+        new ControlCliArguments(args) {
           override def info(msg: => Any): Unit = self.info(msg)
           override def warn(msg: => Any): Unit = self.warn(msg)
           override def error(msg: => Any): Unit = self.error(msg)
@@ -58,6 +84,7 @@ object AdminControlCli extends CommandLineUtils with Logging {
       }
     }
 
-    adminCtl.doAction(args)
+    ctl.doAction(args)
   }
+
 }

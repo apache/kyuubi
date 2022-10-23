@@ -29,6 +29,7 @@ public class Engine {
   private String sharelevel;
   private String subdomain;
   private String instance;
+  private String namespace;
 
   public Engine() {}
 
@@ -38,13 +39,15 @@ public class Engine {
       String engineType,
       String sharelevel,
       String subdomain,
-      String instance) {
+      String instance,
+      String namespace) {
     this.version = version;
     this.user = user;
     this.engineType = engineType;
     this.sharelevel = sharelevel;
     this.subdomain = subdomain;
     this.instance = instance;
+    this.namespace = namespace;
   }
 
   public String getVersion() {
@@ -93,6 +96,14 @@ public class Engine {
 
   public void setInstance(String instance) {
     this.instance = instance;
+  }
+
+  public String getNamespace() {
+    return namespace;
+  }
+
+  public void setNamespace(String namespace) {
+    this.namespace = namespace;
   }
 
   @Override
