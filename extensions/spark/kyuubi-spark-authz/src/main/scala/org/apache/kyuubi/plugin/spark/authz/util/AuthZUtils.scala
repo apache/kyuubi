@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import java.util
-
 import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.security.UserGroupInformation
