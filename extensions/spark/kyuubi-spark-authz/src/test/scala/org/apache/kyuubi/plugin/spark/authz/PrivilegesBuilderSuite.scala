@@ -349,7 +349,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     if (isSparkV32OrGreater) {
-      // ignore this check as it behaves differently across spark versions
+      // Query in AlterViewAsCommand can not be resolved before SPARK-34698
       assert(po0.columns === Seq("key", "value", "pid"))
       checkTableOwner(po0)
     }
