@@ -21,7 +21,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
+import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.{Expression, ExpressionInfo, NamedExpression}
@@ -232,8 +232,14 @@ object PrivilegesBuilder {
         columns: Seq[String] = Nil,
         actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER)
         : PrivilegeObject = {
-      val table = spark.sessionState.catalog.getTableMetadata(tableId)
-      val owner = extractTableOwner(table)
+      val owner =
+        try {
+          val table = spark.sessionState.catalog.getTableMetadata(tableId)
+          extractTableOwner(table)
+        } catch {
+          case _: NoSuchTableException =>
+            None
+        }
       tablePrivileges(tableId, columns, owner, actionType)
     }
 
