@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
-import java.util
-
 import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -26,7 +24,7 @@ import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
-import org.apache.spark.sql.connector.catalog.Identifier
+import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, Table, TableCatalog}
 
 private[authz] object AuthZUtils {
 
@@ -91,6 +89,10 @@ private[authz] object AuthZUtils {
     getFieldVal[CatalogTable](plan, "tableMeta")
   }
 
+  def extractTableOwner(table: CatalogTable): Option[String] = {
+    Option(table.owner).filter(_.nonEmpty)
+  }
+
   def hasResolvedDatasourceTable(plan: LogicalPlan): Boolean = {
     plan.nodeName == "LogicalRelation" && plan.resolved
   }
@@ -108,13 +110,24 @@ private[authz] object AuthZUtils {
   }
 
   def getDatasourceV2TableOwner(plan: LogicalPlan): Option[String] = {
-    val table = getFieldVal[AnyRef](plan, "table")
-    val properties = invoke(table, "properties").asInstanceOf[util.Map[String, String]]
-    Option(properties.get("owner"))
+    val table = getFieldVal[Table](plan, "table")
+    Option(table.properties.get("owner"))
   }
 
   def getTableIdentifierFromV2Identifier(id: Identifier): TableIdentifier = {
     TableIdentifier(id.name(), Some(quote(id.namespace())))
+  }
+
+  def getTableOwnerFromV2Plan(
+      child: Any,
+      identifier: Identifier,
+      catalogField: String = "catalog"): Option[String] = {
+    getFieldVal[CatalogPlugin](child, catalogField) match {
+      case tableCatalog: TableCatalog =>
+        val table = tableCatalog.loadTable(identifier)
+        Option(table.properties().get("owner"))
+      case _ => None
+    }
   }
 
   def hasResolvedPermanentView(plan: LogicalPlan): Boolean = {

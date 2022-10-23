@@ -123,24 +123,34 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
 
   test("AlterTableRenameCommand") {
     withTable(s"$reusedDb.efg") { t =>
-      sql(s"CREATE TABLE IF NOT EXISTS ${reusedTable}_old" +
-        s" (key int, value string) USING parquet")
-      // toLowerCase because of: SPARK-38587
-      val plan =
-        sql(s"ALTER TABLE ${reusedDb.toLowerCase}.${getClass.getSimpleName}_old" +
-          s" RENAME TO $t").queryExecution.analyzed
-      val operationType = OperationType(plan.nodeName)
-      assert(operationType === ALTERTABLE_RENAME)
-      val tuple = PrivilegesBuilder.build(plan, spark)
-      assert(tuple._1.isEmpty)
-      assert(tuple._2.size === 2)
-      tuple._2.foreach { po =>
-        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-        assert(po.dbname equalsIgnoreCase reusedDb)
-        assert(Set(reusedDb + "_old", "efg").contains(po.objectName))
-        assert(po.columns.isEmpty)
-        val accessType = ranger.AccessType(po, operationType, isInput = false)
-        assert(Set(AccessType.CREATE, AccessType.DROP).contains(accessType))
+      withTable(s"${reusedTable}_old") { oldTable =>
+        val oldTableShort = oldTable.split("\\.").last
+        val create = s"CREATE TABLE IF NOT EXISTS $oldTable" +
+          s" (key int, value string) USING parquet"
+        sql(create)
+        // toLowerCase because of: SPARK-38587
+        val plan =
+          sql(s"ALTER TABLE ${reusedDb.toLowerCase}.$oldTableShort" +
+            s" RENAME TO $t").queryExecution.analyzed
+        // re-create oldTable because we needs to get table owner from table metadata later
+        sql(create)
+
+        val operationType = OperationType(plan.nodeName)
+        assert(operationType === ALTERTABLE_RENAME)
+        val tuple = PrivilegesBuilder.build(plan, spark)
+        assert(tuple._1.isEmpty)
+        assert(tuple._2.size === 2)
+        tuple._2.foreach { po =>
+          assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+          assert(po.dbname equalsIgnoreCase reusedDb)
+          assert(Set(oldTableShort, "efg").contains(po.objectName))
+          assert(po.columns.isEmpty)
+          val accessType = ranger.AccessType(po, operationType, isInput = false)
+          assert(Set(AccessType.CREATE, AccessType.DROP).contains(accessType))
+          if (accessType === AccessType.DROP) {
+            checkTableOwner(po)
+          }
+        }
       }
     }
   }
@@ -198,6 +208,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
+    checkTableOwner(po)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
@@ -216,6 +227,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
+    checkTableOwner(po)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
@@ -249,6 +261,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
         assert(po.dbname equalsIgnoreCase reusedDb)
         assert(po.objectName equalsIgnoreCase tableName.split("\\.").last)
         assert(po.columns.isEmpty)
+        checkTableOwner(po)
         val accessType = ranger.AccessType(po, operationType, isInput = false)
         assert(accessType === AccessType.ALTER)
       }
@@ -272,6 +285,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
+    checkTableOwner(po)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
@@ -293,6 +307,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.dbname === reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
+    checkTableOwner(po)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
@@ -314,6 +329,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assert(po.dbname === reusedDb)
       assert(po.objectName === reusedTable.split("\\.").last)
       assert(po.columns.isEmpty)
+      checkTableOwner(po)
       val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.ALTER)
     }
@@ -332,8 +348,11 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
-    // ignore this check as it behaves differently across spark versions
-    // assert(po0.columns === Seq("key", "value", "pid"))
+    if (isSparkV32OrGreater) {
+      // Query in AlterViewAsCommand can not be resolved before SPARK-34698
+      assert(po0.columns === Seq("key", "value", "pid"))
+      checkTableOwner(po0)
+    }
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
@@ -343,6 +362,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assert(po.dbname === (if (isSparkV2) null else "default"))
     assert(po.objectName === "AlterViewAsCommand")
+    checkTableOwner(po)
     assert(po.columns.isEmpty)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
@@ -362,6 +382,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns === Seq("key"))
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
@@ -382,6 +403,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns === Seq("pid"))
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
@@ -402,6 +424,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns.isEmpty)
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
@@ -441,6 +464,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedDb)
     assert(po0.columns.isEmpty)
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
@@ -662,6 +686,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
       assert(po0.columns.isEmpty)
+      checkTableOwner(po0)
       val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
       assert(accessType0 === AccessType.SELECT)
 
@@ -693,6 +718,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
       assert(po0.columns.isEmpty)
+      checkTableOwner(po0)
       val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
       assert(accessType0 === AccessType.SELECT)
 
@@ -731,6 +757,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po.columns === Seq("key"))
+    checkTableOwner(po)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.SELECT)
 
@@ -749,6 +776,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po.columns.isEmpty)
+    checkTableOwner(po)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.SELECT)
 
@@ -810,6 +838,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
+    checkTableOwner(po)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.UPDATE)
   }
@@ -826,6 +855,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns.isEmpty)
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
 
     assert(accessType0 === AccessType.SELECT)
@@ -844,6 +874,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns.isEmpty)
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
@@ -862,6 +893,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po0.columns.isEmpty)
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
@@ -890,6 +922,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.dbname equalsIgnoreCase reusedDb)
     assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
     assert(po0.columns === Seq("pid"))
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
@@ -925,6 +958,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
         assert(po.dbname equalsIgnoreCase reusedDb)
         assert(po.objectName equalsIgnoreCase tableName.split("\\.").last)
         assert(po.columns.isEmpty)
+        checkTableOwner(po)
         val accessType = ranger.AccessType(po, operationType, isInput = false)
         assert(accessType === AccessType.UPDATE)
       }
@@ -1227,6 +1261,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === getClass.getSimpleName)
     assert(po.columns.head === "a")
+    checkTableOwner(po)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
@@ -1246,6 +1281,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === getClass.getSimpleName)
     assert(po.columns.head === "value")
+    checkTableOwner(po)
     val accessType = ranger.AccessType(po, operationType, isInput = false)
     assert(accessType === AccessType.ALTER)
   }
@@ -1333,6 +1369,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po.dbname === "default")
       assert(po.objectName === t)
       assert(po.columns.head === "pid")
+      checkTableOwner(po)
       val accessType = ranger.AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.ALTER)
     }
@@ -1415,6 +1452,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase tableName.split("\\.").last)
       assert(po0.columns.isEmpty)
+      checkTableOwner(po0)
       val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
       assert(accessType0 === AccessType.UPDATE)
     }
@@ -1498,6 +1536,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assert(po.dbname equalsIgnoreCase "default")
         assert(po.objectName equalsIgnoreCase tableName)
         assert(po.columns.isEmpty)
+        checkTableOwner(po)
         val accessType = ranger.AccessType(po, operationType, isInput = false)
         assert(accessType === AccessType.UPDATE)
 
@@ -1586,6 +1625,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assert(po.dbname equalsIgnoreCase "default")
         assert(po.objectName equalsIgnoreCase tableName)
         assert(po.columns.isEmpty)
+        checkTableOwner(po)
         val accessType = ranger.AccessType(po, operationType, isInput = false)
         assert(accessType === AccessType.UPDATE)
       }
@@ -1607,6 +1647,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po0.dbname === "default")
       assert(po0.objectName === t)
       assert(po0.columns.isEmpty)
+      checkTableOwner(po0)
       val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
       assert(accessType0 === AccessType.SELECT)
 
