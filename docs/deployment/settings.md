@@ -369,14 +369,14 @@ kyuubi.kinit.principal|&lt;undefined&gt;|Name of the Kerberos principal.|string|
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-kyuubi.kubernetes.authenticate.ca cert file|&lt;undefined&gt;|kubernetes client authenticate ca cert file|string|1.7.0
-kyuubi.kubernetes.authenticate.clientCertFile|&lt;undefined&gt;|kubernetes client authenticate client cert file|string|1.7.0
-kyuubi.kubernetes.authenticate.clientKeyFile|&lt;undefined&gt;|kubernetes client authenticate client key file|string|1.7.0
-kyuubi.kubernetes.authenticate.oauthToken|&lt;undefined&gt;|kubernetes client authenticate oauth token value|string|1.7.0
-kyuubi.kubernetes.authenticate.oauthTokenFile|&lt;undefined&gt;|kubernetes client authenticate oauth token file|string|1.7.0
+kyuubi.kubernetes.authenticate.caCertFile|&lt;undefined&gt;|Path to the CA cert file for connecting to the Kubernetes API server over TLS from the kyuubi. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
+kyuubi.kubernetes.authenticate.clientCertFile|&lt;undefined&gt;|Path to the client cert file for connecting to the Kubernetes API server over TLS from the kyuubi. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
+kyuubi.kubernetes.authenticate.clientKeyFile|&lt;undefined&gt;|Path to the client key file for connecting to the Kubernetes API server over TLS from the kyuubi. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
+kyuubi.kubernetes.authenticate.oauthToken|&lt;undefined&gt;|The OAuth token to use when authenticating against the Kubernetes API server. Note that unlike the other authentication options, this must be the exact string value of the token to use for the authentication.|string|1.7.0
+kyuubi.kubernetes.authenticate.oauthTokenFile|&lt;undefined&gt;|Path to the file containing the OAuth token to use when authenticating against the Kubernetes API server. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
 kyuubi.kubernetes.context|&lt;undefined&gt;|The desired context from your kubernetes config file used to configure the K8S client for interacting with the cluster.|string|1.6.0
-kyuubi.kubernetes.master.address|&lt;undefined&gt;|kubernetes master address for build kubernetes client|string|1.7.0
-kyuubi.kubernetes.namespace|default||string|1.7.0
+kyuubi.kubernetes.master.address|&lt;undefined&gt;|The internal Kubernetes master (API server) address to be used for kyuubi.|string|1.7.0
+kyuubi.kubernetes.namespace|default|The namespace that will be used for running the kyuubi pods and find engines.|string|1.7.0
 kyuubi.kubernetes.trust.certificates|false|If set to true then client can submit to kubernetes cluster only with token|boolean|1.7.0
 
 

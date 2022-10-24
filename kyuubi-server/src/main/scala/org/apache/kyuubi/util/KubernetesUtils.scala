@@ -66,21 +66,20 @@ object KubernetesUtils extends Logging {
 
     val config = new ConfigBuilder(autoConfigure(kubeContext.orNull))
       .withApiVersion("v1")
-      .withOption(master) {
-        (master, configBuilder) => configBuilder.withMasterUrl(master)
+      .withOption(master) { (master, configBuilder) =>
+        configBuilder.withMasterUrl(master)
       }.withNamespace(namespace)
       .withTrustCerts(conf.get(KUBERNETES_TRUST_CERTIFICATES))
-      .withOption(oauthTokenValue) {
-        (token, configBuilder) => configBuilder.withOauthToken(token)
-      }.withOption(oauthTokenFile) {
-        (file, configBuilder) =>
-          configBuilder.withOauthToken(Files.asCharSource(file, Charsets.UTF_8).read())
-      }.withOption(caCertFile) {
-        (file, configBuilder) => configBuilder.withCaCertFile(file)
-      }.withOption(clientKeyFile) {
-        (file, configBuilder) => configBuilder.withClientKeyFile(file)
-      }.withOption(clientCertFile) {
-        (file, configBuilder) => configBuilder.withClientCertFile(file)
+      .withOption(oauthTokenValue) { (token, configBuilder) =>
+        configBuilder.withOauthToken(token)
+      }.withOption(oauthTokenFile) { (file, configBuilder) =>
+        configBuilder.withOauthToken(Files.asCharSource(file, Charsets.UTF_8).read())
+      }.withOption(caCertFile) { (file, configBuilder) =>
+        configBuilder.withCaCertFile(file)
+      }.withOption(clientKeyFile) { (file, configBuilder) =>
+        configBuilder.withClientKeyFile(file)
+      }.withOption(clientCertFile) { (file, configBuilder) =>
+        configBuilder.withClientCertFile(file)
       }.build()
 
     // https://github.com/fabric8io/kubernetes-client/issues/3547
