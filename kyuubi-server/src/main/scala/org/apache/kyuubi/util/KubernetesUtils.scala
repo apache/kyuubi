@@ -83,14 +83,6 @@ object KubernetesUtils extends Logging {
         (file, configBuilder) => configBuilder.withClientCertFile(file)
       }.build()
 
-    (master, kubeContext, loadMasterAddressFromEnv) match {
-      case (None, None, Some(url)) =>
-        debug(s"Set kubernetes master address $url from env KUBERNETES_PORT")
-        config.setMasterUrl(url)
-      case _ =>
-        // do noting
-    }
-
     // https://github.com/fabric8io/kubernetes-client/issues/3547
     val dispatcher = new Dispatcher(
       ThreadUtils.newDaemonCachedThreadPool("kubernetes-dispatcher"))
@@ -119,14 +111,5 @@ object KubernetesUtils extends Logging {
   def requireNandDefined(opt1: Option[_], opt2: Option[_], errMessage: String): Unit = {
     opt1.foreach { _ => require(opt2.isEmpty, errMessage) }
     opt2.foreach { _ => require(opt1.isEmpty, errMessage) }
-  }
-
-  /**
-   * if can't load master address from config or context
-   * find kubernetes master which run this kyuubi pod
-   * (tcp://XXX:XXX) => (https://XXX:XXX)
-   */
-  def loadMasterAddressFromEnv: Option[String] = {
-    sys.env.get("KUBERNETES_PORT").map(_.replace("tcp", "https"))
   }
 }
