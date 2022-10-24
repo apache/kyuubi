@@ -219,8 +219,10 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val (host, port) = DiscoveryClient.parseInstanceHostPort(instance)
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
         val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
+        val extraInfo = p.split(";").map(_.split("=")).filter(_.size == 2).map(kv =>
+          (kv.head, kv.last)).toMap.filterNot(kv => Set("version", "refId").contains(kv._1))
         info(s"Get service instance:$instance and version:$version under $namespace")
-        ServiceNodeInfo(namespace, p, host, port, version, engineRefId)
+        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, extraInfo)
       }
     } catch {
       case _: Exception if silent => Nil
