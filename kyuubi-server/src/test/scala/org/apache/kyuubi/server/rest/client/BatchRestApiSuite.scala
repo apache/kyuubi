@@ -58,6 +58,13 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     val closeResp = batchRestApi.deleteBatch(batch.getId(), null)
     assert(closeResp.getMsg.nonEmpty)
 
+    // delete batch - error
+    val e = intercept[KyuubiRestException] {
+      batchRestApi.deleteBatch(batch.getId(), "fake")
+    }
+    assert(e.getCause.toString.contains(
+      s"Failed to validate proxy privilege of ${ldapUser} for fake"))
+
     basicKyuubiRestClient.close()
   }
 

@@ -21,7 +21,8 @@ import java.util.EnumSet
 import java.util.concurrent.{Future, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.servlet.DispatcherType
-import javax.ws.rs.NotAllowedException
+import javax.ws.rs.WebApplicationException
+import javax.ws.rs.core.Response.Status
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.conf.Configuration
@@ -187,7 +188,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     try {
       getProxyUser(sessionConf, ipAddress, realUser)
     } catch {
-      case t: Throwable => throw new NotAllowedException(t.getMessage)
+      case t: Throwable => throw new WebApplicationException(
+          t.getMessage,
+          Status.METHOD_NOT_ALLOWED)
     }
   }
 

@@ -21,6 +21,7 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import javax.ws.rs._
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response.Status
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
@@ -313,8 +314,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       if (userName != batchSession.user) {
-        throw new NotAllowedException(
-          s"$userName is not allowed to close the session belong to ${batchSession.user}")
+        throw new WebApplicationException(
+          s"$userName is not allowed to close the session belong to ${batchSession.user}",
+          Status.METHOD_NOT_ALLOWED)
       }
       sessionManager.closeSession(batchSession.handle)
       val (success, msg) = batchSession.batchJobSubmissionOp.getKillMessage
@@ -322,8 +324,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }.getOrElse {
       Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
         if (userName != metadata.username) {
-          throw new NotAllowedException(
-            s"$userName is not allowed to close the session belong to ${metadata.username}")
+          throw new WebApplicationException(
+            s"$userName is not allowed to close the session belong to ${metadata.username}",
+            Status.METHOD_NOT_ALLOWED)
         } else if (OperationState.isTerminal(OperationState.withName(metadata.state)) ||
           metadata.kyuubiInstance == fe.connectionUrl) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
