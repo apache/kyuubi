@@ -240,7 +240,13 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       external: Boolean = false): Unit = {
     val instance = serviceDiscovery.fe.connectionUrl
     watcher = new DeRegisterWatcher(instance, serviceDiscovery)
-    serviceNode = createPersistentNode(conf, namespace, instance, version, external, serviceDiscovery.fe.extraServiceInfo)
+    serviceNode = createPersistentNode(
+      conf,
+      namespace,
+      instance,
+      version,
+      external,
+      serviceDiscovery.fe.extraServiceInfo)
     // Set a watch on the serviceNode
     watchNode()
   }
@@ -363,7 +369,8 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val extraInfo = extraServiceInfo.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "")
     val pathPrefix = ZKPaths.makePath(
       namespace,
-      s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)}$extraInfo;${session}sequence=")
+      s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)}" +
+        s"$extraInfo;${session}sequence=")
     var localServiceNode: PersistentNode = null
     val createMode =
       if (external) CreateMode.PERSISTENT_SEQUENTIAL
