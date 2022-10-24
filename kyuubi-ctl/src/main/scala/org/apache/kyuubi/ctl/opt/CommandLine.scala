@@ -14,14 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.ctl
+
+package org.apache.kyuubi.ctl.opt
 
 import scopt.{OParser, OParserBuilder}
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException}
-import org.apache.kyuubi.ctl.util.DateTimeUtils._
+import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.ctl.util.DateTimeUtils.dateStringToMillis
 
-object CommandLine {
+object CommandLine extends CommonCommandLine {
 
   def getCtlOptionParser(builder: OParserBuilder[CliConfig]): OParser[Unit, CliConfig] = {
     import builder._
@@ -45,55 +46,6 @@ object CommandLine {
       }),
       note(""),
       help('h', "help").text("Show help message and exit."))
-  }
-
-  def getAdminCtlOptionParser(builder: OParserBuilder[CliConfig]): OParser[Unit, CliConfig] = {
-    import builder._
-    OParser.sequence(
-      programName("kyuubi-admin"),
-      head("kyuubi", KYUUBI_VERSION),
-      common(builder),
-      refresh(builder),
-      checkConfig(f => {
-        if (f.action == null) {
-          failure("Must specify action command: [refresh].")
-        } else {
-          success
-        }
-      }),
-      note(""),
-      help('h', "help").text("Show help message and exit."))
-  }
-
-  private def common(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
-    import builder._
-    OParser.sequence(
-      opt[Unit]('b', "verbose")
-        .action((_, c) => c.copy(commonOpts = c.commonOpts.copy(verbose = true)))
-        .text("Print additional debug output."),
-      opt[String]("hostUrl")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(hostUrl = v)))
-        .text("Host url for rest api."),
-      opt[String]("authSchema")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(authSchema = v)))
-        .text("Auth schema for rest api, valid values are basic, spnego."),
-      opt[String]("username")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(username = v)))
-        .text("Username for basic authentication."),
-      opt[String]("password")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(password = v)))
-        .text("Password for basic authentication."),
-      opt[String]("spnegoHost")
-        .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(spnegoHost = v)))
-        .text("Spnego host for spnego authentication."),
-      opt[String]("conf")
-        .action((v, c) => {
-          v.split("=", 2).toSeq match {
-            case Seq(k, v) => c.copy(conf = c.conf ++ Map(k -> v))
-            case _ => throw new KyuubiException(s"Kyuubi config without '=': $v")
-          }
-        })
-        .text("Kyuubi config property pair, formatted key=value."))
   }
 
   private def zooKeeper(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -203,17 +155,6 @@ object CommandLine {
           submitBatchCmd(builder).text("\topen batch session and wait for completion.")))
   }
 
-  private def refresh(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
-    import builder._
-    OParser.sequence(
-      note(""),
-      cmd("refresh")
-        .text("\tRefresh the resource.")
-        .action((_, c) => c.copy(action = ControlAction.REFRESH))
-        .children(
-          refreshConfigCmd(builder).text("\tRefresh the config with specified type.")))
-  }
-
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
     cmd("server").action((_, c) => c.copy(resource = ControlObject.SERVER))
@@ -259,10 +200,7 @@ object CommandLine {
         arg[String]("<batchId>")
           .optional()
           .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(batchId = v)))
-          .text("Batch id."),
-        opt[String]("hs2ProxyUser")
-          .action((v, c) => c.copy(createOpts = c.createOpts.copy(filename = v)))
-          .text("The value of hive.server2.proxy.user config."))
+          .text("Batch id."))
   }
 
   private def listBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
@@ -353,13 +291,4 @@ object CommandLine {
             "when the batch is no longer in PENDING state."))
   }
 
-  private def refreshConfigCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
-    import builder._
-    cmd("config").action((_, c) => c.copy(resource = ControlObject.CONFIG))
-      .children(
-        arg[String]("<configType>")
-          .optional()
-          .action((v, c) => c.copy(adminConfigOpts = c.adminConfigOpts.copy(configType = v)))
-          .text("The valid config type can be one of the following: hadoopConf."))
-  }
 }

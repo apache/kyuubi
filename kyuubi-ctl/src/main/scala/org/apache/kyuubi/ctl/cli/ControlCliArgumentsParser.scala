@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ctl
+package org.apache.kyuubi.ctl.cli
 
 import scopt.OParser
+
+import org.apache.kyuubi.ctl.opt.CliConfig
 
 abstract private[kyuubi] class ControlCliArgumentsParser {
 

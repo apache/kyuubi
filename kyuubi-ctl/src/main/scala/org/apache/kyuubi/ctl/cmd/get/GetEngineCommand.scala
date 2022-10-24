@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.ctl.cmd.get
 
-import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.opt.CliConfig
 
 class GetEngineCommand(cliConfig: CliConfig) extends GetCommand(cliConfig) {
 

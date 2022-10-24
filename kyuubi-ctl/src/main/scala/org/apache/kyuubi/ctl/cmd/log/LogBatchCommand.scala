@@ -23,10 +23,10 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, OperationLog}
 import org.apache.kyuubi.client.util.BatchUtils
-import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.CtlConf._
 import org.apache.kyuubi.ctl.RestClientFactory.{withKyuubiInstanceRestClient, withKyuubiRestClient}
 import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.Render
 
 class LogBatchCommand(

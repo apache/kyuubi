@@ -19,6 +19,8 @@ package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
+import org.apache.kyuubi.ctl.cli.ControlCliArguments
+import org.apache.kyuubi.ctl.opt.ControlAction
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 
 class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
@@ -363,6 +365,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  --username <value>       Username for basic authentication.
          |  --password <value>       Password for basic authentication.
          |  --spnegoHost <value>     Spnego host for spnego authentication.
+         |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
          |  --conf <value>           Kyuubi config property pair, formatted key=value.
          |  -zk, --zk-quorum <value>
          |                           $zkHelpString
@@ -398,10 +401,9 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |
          |Command: delete [batch|server|engine] <args>...
          |${"\t"}Delete resources.
-         |Command: delete batch [options] [<batchId>]
+         |Command: delete batch [<batchId>]
          |${"\t"}Close batch session.
          |  <batchId>                Batch id.
-         |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
          |Command: delete server
          |${"\t"}Delete the specified service node for a domain
          |Command: delete engine [options]

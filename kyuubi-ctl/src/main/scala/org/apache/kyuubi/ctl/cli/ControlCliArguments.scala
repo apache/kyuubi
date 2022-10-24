@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ctl
+package org.apache.kyuubi.ctl.cli
 
 import scopt.OParser
 
 import org.apache.kyuubi.{KyuubiException, Logging}
+import org.apache.kyuubi.ctl.{opt, KyuubiOEffectSetup}
 import org.apache.kyuubi.ctl.cmd._
 import org.apache.kyuubi.ctl.cmd.create.{CreateBatchCommand, CreateServerCommand}
 import org.apache.kyuubi.ctl.cmd.delete.{DeleteBatchCommand, DeleteEngineCommand, DeleteServerCommand}
@@ -27,6 +28,7 @@ import org.apache.kyuubi.ctl.cmd.get.{GetBatchCommand, GetEngineCommand, GetServ
 import org.apache.kyuubi.ctl.cmd.list.{ListBatchCommand, ListEngineCommand, ListServerCommand}
 import org.apache.kyuubi.ctl.cmd.log.LogBatchCommand
 import org.apache.kyuubi.ctl.cmd.submit.SubmitBatchCommand
+import org.apache.kyuubi.ctl.opt.{CliConfig, CommandLine, ControlAction, ControlObject}
 
 class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
   extends ControlCliArgumentsParser with Logging {
@@ -48,7 +50,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
   private[kyuubi] lazy val effectSetup = new KyuubiOEffectSetup
 
   override def parse(args: Seq[String]): Unit = {
-    OParser.runParser(cliParser, args, CliConfig()) match {
+    OParser.runParser(cliParser, args, opt.CliConfig()) match {
       case (result, effects) =>
         OParser.runEffects(effects, effectSetup)
         result match {
