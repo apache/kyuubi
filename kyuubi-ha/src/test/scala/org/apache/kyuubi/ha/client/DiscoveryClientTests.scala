@@ -150,4 +150,24 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
       assert(e.getMessage contains s"Timeout to lock on path [$lockPath]")
     }
   }
+
+  test("getAndIncrement method test") {
+    withDiscoveryClient(conf) { discoveryClient =>
+      (0 until 10).foreach { i =>
+        val ii = discoveryClient.getAndIncrement("/get_and_increment_test")
+        assert(i == ii)
+      }
+    }
+  }
+
+  test("setData method test") {
+    withDiscoveryClient(conf) { discoveryClient =>
+      val data = "abc";
+      val path = "/setData_test"
+      discoveryClient.create(path, "PERSISTENT")
+      discoveryClient.setData(path, data.getBytes)
+      val dataFromGet = new String(discoveryClient.getData(path))
+      assert(data == dataFromGet)
+    }
+  }
 }

@@ -26,6 +26,7 @@ import scala.collection.JavaConverters._
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
+import org.apache.curator.framework.recipes.atomic.{AtomicValue, DistributedAtomicInteger}
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.framework.recipes.nodes.PersistentNode
 import org.apache.curator.framework.state.ConnectionState
@@ -33,6 +34,7 @@ import org.apache.curator.framework.state.ConnectionState.CONNECTED
 import org.apache.curator.framework.state.ConnectionState.LOST
 import org.apache.curator.framework.state.ConnectionState.RECONNECTED
 import org.apache.curator.framework.state.ConnectionStateListener
+import org.apache.curator.retry.RetryForever
 import org.apache.curator.utils.ZKPaths
 import org.apache.zookeeper.CreateMode
 import org.apache.zookeeper.CreateMode.PERSISTENT
@@ -84,6 +86,10 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
   def getData(path: String): Array[Byte] = {
     zkClient.getData.forPath(path)
+  }
+
+  def setData(path: String, data: Array[Byte]): Boolean = {
+    zkClient.setData().forPath(path, data) != null
   }
 
   def getChildren(path: String): List[String] = {
@@ -288,6 +294,15 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       basePath,
       initData.getBytes(StandardCharsets.UTF_8))
     secretNode.start()
+  }
+
+  def getAndIncrement(path: String): Int = {
+    val dai = new DistributedAtomicInteger(zkClient, path, new RetryForever(1000))
+    var atomicVal: AtomicValue[Integer] = null
+    do {
+      atomicVal = dai.increment()
+    } while (atomicVal == null || !atomicVal.succeeded())
+    atomicVal.preValue().intValue()
   }
 
   /**
