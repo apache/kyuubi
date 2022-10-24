@@ -820,7 +820,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       try {
         getRangerConf(rangerPlugin).setBoolean(
           "ranger.plugin" +
-            s".${SparkRangerAdminPlugin.getOrCreateRangerPlugin().getServiceType}" +
+            s".${getOrCreateRangerPlugin().getServiceType}" +
             ".authorize.in.single.call",
           true)
         val e2 = intercept[AccessControlException](doAs("someone", sql(insertSql1)))

@@ -52,7 +52,7 @@ object SparkRangerAdminPlugin extends Logging {
     false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
-    val result = defaultBasePlugin.evalRowFilterPolicies(req, null)
+    val result = getOrCreateRangerPlugin().evalRowFilterPolicies(req, null)
     Option(result)
       .filter(_.isRowFilterEnabled)
       .map(_.getFilterExpr)

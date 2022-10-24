@@ -21,6 +21,8 @@ import scala.util.Try
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getOrCreateRangerPlugin
+import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 
 /**
  * Tests for RangerSparkExtensionSuite
@@ -93,9 +95,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1/id]"))
 
+    val rangerPlugin = getOrCreateRangerPlugin()
     try {
-      SparkRangerAdminPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+      getRangerConf(rangerPlugin).setBoolean(
+        s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
         true)
       val e2 = intercept[AccessControlException](
         doAs(
@@ -106,8 +109,8 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
         s" [update] privilege on [$namespace1/$outputTable1]"))
     } finally {
-      SparkRangerAdminPlugin.getRangerConf.setBoolean(
-        s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call",
+      getRangerConf(rangerPlugin).setBoolean(
+        s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
         false)
     }
 
