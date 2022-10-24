@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -30,6 +32,7 @@ public class Engine {
   private String subdomain;
   private String instance;
   private String namespace;
+  private Map<String, String> extraInfo;
 
   public Engine() {}
 
@@ -40,7 +43,8 @@ public class Engine {
       String sharelevel,
       String subdomain,
       String instance,
-      String namespace) {
+      String namespace,
+      Map<String, String> extraInfo) {
     this.version = version;
     this.user = user;
     this.engineType = engineType;
@@ -48,6 +52,7 @@ public class Engine {
     this.subdomain = subdomain;
     this.instance = instance;
     this.namespace = namespace;
+    this.extraInfo = extraInfo;
   }
 
   public String getVersion() {
@@ -106,6 +111,17 @@ public class Engine {
     this.namespace = namespace;
   }
 
+  public Map<String, String> getExtraInfo() {
+    if (null == extraInfo) {
+      return Collections.emptyMap();
+    }
+    return extraInfo;
+  }
+
+  public void setExtraInfo(Map<String, String> extraInfo) {
+    this.extraInfo = extraInfo;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -116,13 +132,22 @@ public class Engine {
         && Objects.equals(getEngineType(), that.getEngineType())
         && Objects.equals(getSharelevel(), that.getSharelevel())
         && Objects.equals(getSubdomain(), that.getSubdomain())
-        && Objects.equals(getInstance(), that.getInstance());
+        && Objects.equals(getInstance(), that.getInstance())
+        && Objects.equals(getNamespace(), that.getNamespace())
+        && Objects.equals(getExtraInfo(), that.getExtraInfo());
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        getVersion(), getUser(), getEngineType(), getSharelevel(), getSubdomain(), getInstance());
+        getVersion(),
+        getUser(),
+        getEngineType(),
+        getSharelevel(),
+        getSubdomain(),
+        getInstance(),
+        getNamespace(),
+        getExtraInfo());
   }
 
   @Override
