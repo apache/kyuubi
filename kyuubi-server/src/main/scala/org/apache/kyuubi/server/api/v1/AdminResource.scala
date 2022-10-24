@@ -17,9 +17,11 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.util.Collections
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import io.swagger.v3.oas.annotations.media.Content
@@ -136,7 +138,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         engine.getSharelevel,
         node.namespace.split("/").last,
         node.instance,
-        node.namespace))
+        node.namespace,
+        node.extraInfo.asJava))
   }
 
   private def getEngine(
@@ -163,7 +166,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       engineShareLevel,
       engineSubdomain,
       null,
-      null)
+      null,
+      Collections.emptyMap())
   }
 
   private def getEngineSpace(engine: Engine): String = {
