@@ -29,6 +29,38 @@ import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 
 class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
 
+  test("basic batch rest client with invalid user") {
+    val totalConnections =
+      MetricsSystem.counterValue(MetricsConstants.REST_CONN_TOTAL).getOrElse(0L)
+    val failedConnections =
+      MetricsSystem.counterValue(MetricsConstants.REST_CONN_FAIL).getOrElse(0L)
+
+    val basicKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
+        .username(customUser)
+        .password(customPasswd)
+        .socketTimeout(30000)
+        .build()
+    val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
+
+    val e = intercept[KyuubiRestException] {
+      // get batch by id
+      batchRestApi.getBatchById("1")
+    }
+    assert(e.getCause.toString.contains(s"Error validating LDAP user: uid=${customUser}"))
+
+    basicKyuubiRestClient.close()
+
+    eventually(timeout(3.seconds), interval(200.milliseconds)) {
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections === 1)
+      assert(MetricsSystem.counterValue(MetricsConstants.REST_CONN_OPEN).getOrElse(0L) === 0)
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.REST_CONN_FAIL).getOrElse(0L) - failedConnections === 1)
+    }
+  }
+
   test("basic batch rest client") {
     val basicKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
@@ -66,38 +98,6 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
       s"Failed to validate proxy privilege of ${ldapUser} for fake"))
 
     basicKyuubiRestClient.close()
-  }
-
-  test("basic batch rest client with invalid user") {
-    val totalConnections =
-      MetricsSystem.counterValue(MetricsConstants.REST_CONN_TOTAL).getOrElse(0L)
-    val failedConnections =
-      MetricsSystem.counterValue(MetricsConstants.REST_CONN_FAIL).getOrElse(0L)
-
-    val basicKyuubiRestClient: KyuubiRestClient =
-      KyuubiRestClient.builder(baseUri.toString)
-        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
-        .username(customUser)
-        .password(customPasswd)
-        .socketTimeout(30000)
-        .build()
-    val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
-
-    val e = intercept[KyuubiRestException] {
-      // get batch by id
-      batchRestApi.getBatchById("1")
-    }
-    assert(e.getCause.toString.contains(s"Error validating LDAP user: uid=${customUser}"))
-
-    basicKyuubiRestClient.close()
-
-    eventually(timeout(3.seconds), interval(200.milliseconds)) {
-      assert(MetricsSystem.counterValue(
-        MetricsConstants.REST_CONN_TOTAL).getOrElse(0L) - totalConnections === 1)
-      assert(MetricsSystem.counterValue(MetricsConstants.REST_CONN_OPEN).getOrElse(0L) === 0)
-      assert(MetricsSystem.counterValue(
-        MetricsConstants.REST_CONN_FAIL).getOrElse(0L) - failedConnections === 1)
-    }
   }
 
   test("spnego batch rest client") {
