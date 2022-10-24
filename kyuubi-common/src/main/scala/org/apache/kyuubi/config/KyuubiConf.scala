@@ -379,6 +379,57 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_BIND_HOST)
 
+  val FRONTEND_THRIFT_BINARY_SSL_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.enabled")
+      .doc("Set this to true for using SSL encryption in thrift binary frontend server.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FRONTEND_SSL_KEYSTORE_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.path")
+      .doc("SSL certificate keystore location.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_KEYSTORE_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.password")
+      .doc("SSL certificate keystore password.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_KEYSTORE_TYPE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.type")
+      .doc("SSL certificate keystore type.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_KEYSTORE_ALGORITHM: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.algorithm")
+      .doc("SSL certificate keystore algorithm.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_THRIFT_BINARY_SSL_DISALLOWED_PROTOCOLS: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.disallowed.protocols")
+      .doc("SSL versions to disallow for Kyuubi thrift binary frontend.")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Seq("SSLv2", "SSLv3"))
+
+  val FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.include.ciphersuites")
+      .doc("A comma separated list of include SSL cipher suite names for thrift binary frontend.")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
   @deprecated("using kyuubi.frontend.thrift.binary.bind.port instead", "1.4.0")
   val FRONTEND_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.bind.port")
     .doc("(deprecated) Port of the machine on which to run the thrift frontend service " +
@@ -584,6 +635,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.thrift.http.ssl.keystore.path")
       .doc("SSL certificate keystore location.")
       .version("1.6.0")
+      .withAlternative("kyuubi.frontend.ssl.keystore.path")
       .stringConf
       .createOptional
 
@@ -591,15 +643,25 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.thrift.http.ssl.keystore.password")
       .doc("SSL certificate keystore password.")
       .version("1.6.0")
+      .withAlternative("kyuubi.frontend.ssl.keystore.password")
       .stringConf
       .createOptional
 
-  val FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST: ConfigEntry[String] =
+  val FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.frontend.thrift.http.ssl.protocol.blacklist")
       .doc("SSL Versions to disable when using HTTP transport mode.")
       .version("1.6.0")
       .stringConf
-      .createWithDefault("SSLv2,SSLv3")
+      .toSequence()
+      .createWithDefault(Seq("SSLv2", "SSLv3"))
+
+  val FRONTEND_THRIFT_HTTP_SSL_EXCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.thrift.http.ssl.exclude.ciphersuites")
+      .doc("A comma separated list of exclude SSL cipher suite names for thrift http frontend.")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
 
   val FRONTEND_THRIFT_HTTP_ALLOW_USER_SUBSTITUTION: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.thrift.http.allow.user.substitution")
@@ -2007,7 +2069,9 @@ object KyuubiConf {
     SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS,
     SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS,
     SERVER_LIMIT_CONNECTIONS_PER_USER,
-    SESSION_LOCAL_DIR_ALLOW_LIST)
+    SESSION_LOCAL_DIR_ALLOW_LIST,
+    FRONTEND_SSL_KEYSTORE_PASSWORD,
+    FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD)
 
   /**
    * Holds information about keys that have been deprecated.
