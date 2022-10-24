@@ -84,10 +84,10 @@ object v2Commands extends Enumeration {
   val defaultBuildOutput: (
       LogicalPlan,
       ArrayBuffer[PrivilegeObject],
-      Boolean,
       Seq[CommandType],
-      PrivilegeObjectActionType) => Unit =
-    (plan, outputObjs, resolveTableOwner, commandTypes, outputObjsActionType) => {
+      PrivilegeObjectActionType,
+      Boolean) => Unit =
+    (plan, outputObjs, commandTypes, outputObjsActionType, resolveTableOwner) => {
       commandTypes.foreach {
         case HasTableNameAsIdentifier =>
           val table = invoke(plan, "tableName").asInstanceOf[Identifier]
@@ -146,10 +146,11 @@ object v2Commands extends Enumeration {
       buildOutput: (
           LogicalPlan,
           ArrayBuffer[PrivilegeObject],
-          Boolean,
           Seq[CommandType],
-          PrivilegeObjectActionType) => Unit = defaultBuildOutput,
-      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER)
+          PrivilegeObjectActionType,
+          Boolean) => Unit = defaultBuildOutput,
+      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER,
+      resolveOutputTableOwner: Boolean = true)
     extends super.Val {
 
     def buildPrivileges(
@@ -160,9 +161,9 @@ object v2Commands extends Enumeration {
       this.buildOutput(
         plan,
         outputObjs,
-        operationType != CREATETABLE,
         commandTypes,
-        outputActionType)
+        outputActionType,
+        resolveOutputTableOwner)
     }
   }
 
@@ -208,24 +209,29 @@ object v2Commands extends Enumeration {
   val CreateTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
     commandTypes = Seq(HasTableNameAsIdentifier),
-    leastVer = Some("3.3"))
+    leastVer = Some("3.3"),
+    resolveOutputTableOwner = false)
 
   val CreateV2Table: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
     commandTypes = Seq(HasTableNameAsIdentifier),
-    mostVer = Some("3.2"))
+    mostVer = Some("3.2"),
+    resolveOutputTableOwner = false)
 
   val CreateTableAsSelect: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
-    commandTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicalPlan))
+    commandTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicalPlan),
+    resolveOutputTableOwner = false)
 
   val ReplaceTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
-    commandTypes = Seq(HasTableNameAsIdentifier))
+    commandTypes = Seq(HasTableNameAsIdentifier),
+    resolveOutputTableOwner = false)
 
   val ReplaceTableAsSelect: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = CREATETABLE,
-    commandTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicalPlan))
+    commandTypes = Seq(HasTableNameAsIdentifier, HasQueryAsLogicalPlan),
+    resolveOutputTableOwner = false)
 
   // with V2WriteCommand
 

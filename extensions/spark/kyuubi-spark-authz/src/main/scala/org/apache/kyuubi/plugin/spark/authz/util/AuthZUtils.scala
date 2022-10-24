@@ -40,7 +40,7 @@ private[authz] object AuthZUtils {
       case Success(value) => value.asInstanceOf[T]
       case Failure(e) =>
         val candidates = o.getClass.getDeclaredFields.map(_.getName).mkString("[", ",", "]")
-        throw new RuntimeException(s"$name not in ${o.getClass}$candidates", e)
+        throw new RuntimeException(s"$name not in ${o.getClass} $candidates", e)
     }
   }
 
