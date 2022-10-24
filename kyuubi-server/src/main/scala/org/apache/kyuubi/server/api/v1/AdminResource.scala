@@ -139,7 +139,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.namespace.split("/").last,
         node.instance,
         node.namespace,
-        node.extraInfo.asJava))
+        node.details.asJava))
   }
 
   private def getEngine(
