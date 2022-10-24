@@ -135,6 +135,7 @@ object v2Commands extends Enumeration {
    * @param buildInput       input [[PrivilegeObject]] for privilege check
    * @param buildOutput      output [[PrivilegeObject]] for privilege check
    * @param outputActionType [[PrivilegeObjectActionType]] for output [[PrivilegeObject]]
+   * @param resolveOutputTableOwner Whether to resolve table owner for output [[PrivilegeObject]]
    */
   case class CmdPrivilegeBuilder(
       operationType: OperationType = QUERY,

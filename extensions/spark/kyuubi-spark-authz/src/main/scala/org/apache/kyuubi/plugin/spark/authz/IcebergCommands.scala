@@ -73,6 +73,7 @@ object IcebergCommands extends Enumeration {
    * @param buildInput       input [[PrivilegeObject]] for privilege check
    * @param buildOutput      output [[PrivilegeObject]] for privilege check
    * @param outputActionType [[PrivilegeObjectActionType]] for output [[PrivilegeObject]]
+   * @param resolveOutputTableOwner Whether to resolve table owner for output [[PrivilegeObject]]
    */
   case class CmdPrivilegeBuilder(
       operationType: OperationType = QUERY,
@@ -84,10 +85,11 @@ object IcebergCommands extends Enumeration {
       buildOutput: (
           LogicalPlan,
           ArrayBuffer[PrivilegeObject],
-          Boolean,
           Seq[CommandType],
-          PrivilegeObjectActionType) => Unit = v2Commands.defaultBuildOutput,
-      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER)
+          PrivilegeObjectActionType,
+          Boolean) => Unit = v2Commands.defaultBuildOutput,
+      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER,
+      resolveOutputTableOwner: Boolean = true)
     extends super.Val {
 
     def buildPrivileges(
@@ -98,9 +100,9 @@ object IcebergCommands extends Enumeration {
       this.buildOutput(
         plan,
         outputObjs,
-        operationType != CREATETABLE,
         commandTypes,
-        outputActionType)
+        outputActionType,
+        resolveOutputTableOwner)
     }
   }
 
