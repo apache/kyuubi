@@ -328,7 +328,8 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
     val session = conf.get(HA_ENGINE_REF_ID)
       .map(refId => s"refId=$refId;").getOrElse("")
-    val extraInfo = extraServiceInfo.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "")
+    val extraInfo =
+      extraServiceInfo.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "").stripSuffix(";")
     val pathPrefix = DiscoveryPaths.makePath(
       namespace,
       s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)}" +
