@@ -67,10 +67,12 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     checkColumns(sql(query).queryExecution.optimizedPlan, cols)
   }
 
-  protected def checkTableOwner(po: PrivilegeObject): Unit = {
+  protected def checkTableOwner(
+      po: PrivilegeObject,
+      expectedOwner: String = defaultTableOwner): Unit = {
     if (catalogImpl == "hive" && po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW) {
       assert(po.owner.isDefined)
-      assert(po.owner.get === defaultTableOwner)
+      assert(po.owner.get === expectedOwner)
     }
   }
 
@@ -91,12 +93,14 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   override def afterAll(): Unit = {
-    Seq(reusedTable, reusedPartTable).foreach { t =>
-      sql(s"DROP TABLE IF EXISTS $t")
+    try {
+      Seq(reusedTable, reusedPartTable).foreach { t =>
+        sql(s"DROP TABLE IF EXISTS $t")
+      }
+      sql(s"DROP DATABASE IF EXISTS $reusedDb")
+    } finally {
+      spark.stop()
     }
-    sql(s"DROP DATABASE IF EXISTS $reusedDb")
-    spark.stop()
-    super.afterAll()
   }
 
   override def beforeEach(): Unit = {

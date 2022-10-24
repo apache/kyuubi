@@ -84,6 +84,7 @@ object IcebergCommands extends Enumeration {
       buildOutput: (
           LogicalPlan,
           ArrayBuffer[PrivilegeObject],
+          Boolean,
           Seq[CommandType],
           PrivilegeObjectActionType) => Unit = v2Commands.defaultBuildOutput,
       outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER)
@@ -94,7 +95,12 @@ object IcebergCommands extends Enumeration {
         inputObjs: ArrayBuffer[PrivilegeObject],
         outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
       this.buildInput(plan, inputObjs, commandTypes)
-      this.buildOutput(plan, outputObjs, commandTypes, outputActionType)
+      this.buildOutput(
+        plan,
+        outputObjs,
+        operationType != CREATETABLE,
+        commandTypes,
+        outputActionType)
     }
   }
 
