@@ -28,22 +28,23 @@ class KubernetesUtilsTest extends KyuubiFunSuite {
 
   test("Test kubernetesUtils build Kubernetes client") {
     val testMaster = "https://localhost:12345/"
-    System.setProperty(Config.KUBERNETES_MASTER_SYSTEM_PROPERTY, testMaster)
-    val conf = KyuubiConf()
-    val client1 = KubernetesUtils.buildKubernetesClient(conf)
-    assert(client1.nonEmpty && client1.get.getMasterUrl.toString.equals(testMaster))
+    withSystemProperty(Map(Config.KUBERNETES_MASTER_SYSTEM_PROPERTY -> testMaster)) {
+      val conf = KyuubiConf()
+      val client1 = KubernetesUtils.buildKubernetesClient(conf)
+      assert(client1.nonEmpty && client1.get.getMasterUrl.toString.equals(testMaster))
 
-    // start up minikube
-    MiniKube.getIp
-    conf.set(KUBERNETES_CONTEXT.key, "minikube")
-    val client2 = KubernetesUtils.buildKubernetesClient(conf)
-    assert(client2.nonEmpty && client2.get.getMasterUrl.equals(
-      MiniKube.getKubernetesClient.getMasterUrl))
+      // start up minikube
+      MiniKube.getIp
+      conf.set(KUBERNETES_CONTEXT.key, "minikube")
+      val client2 = KubernetesUtils.buildKubernetesClient(conf)
+      assert(client2.nonEmpty && client2.get.getMasterUrl.equals(
+        MiniKube.getKubernetesClient.getMasterUrl))
 
-    // user set master uri should replace uri in context
-    val master = "https://kyuubi-test:8443/"
-    conf.set(KUBERNETES_MASTER.key, master)
-    val client3 = KubernetesUtils.buildKubernetesClient(conf)
-    assert(client3.nonEmpty && client3.get.getMasterUrl.toString.equals(master))
+      // user set master uri should replace uri in context
+      val master = "https://kyuubi-test:8443/"
+      conf.set(KUBERNETES_MASTER.key, master)
+      val client3 = KubernetesUtils.buildKubernetesClient(conf)
+      assert(client3.nonEmpty && client3.get.getMasterUrl.toString.equals(master))
+    }
   }
 }
