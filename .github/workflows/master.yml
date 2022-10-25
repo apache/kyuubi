@@ -53,15 +53,15 @@ jobs:
         comment: ["normal"]
         include:
           - java: 8
-            spark: '3.2'
+            spark: '3.3'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.3 -Dspark.archive.name=spark-3.1.3-bin-hadoop3.2.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
             comment: 'verify-on-spark-3.1-binary'
           - java: 8
-            spark: '3.2'
-            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.3.0 -Dspark.archive.name=spark-3.3.0-bin-hadoop3.tgz'
+            spark: '3.3'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.2 -Dspark.archive.name=spark-3.2.2-bin-hadoop3.2.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
-            comment: 'verify-on-spark-3.3-binary'
+            comment: 'verify-on-spark-3.2-binary'
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -385,10 +385,12 @@ jobs:
           kubectl create serviceaccount spark
           kubectl create clusterrolebinding spark-role --clusterrole=edit --serviceaccount=default:spark --namespace=default
           kubectl get serviceaccount
+      # TODO Support more Spark version
       - name: integration tests
         run: >-
           ./build/mvn ${MVN_OPT} clean install
           -Pflink-provided,hive-provided
+          -Pspark-3.2
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.spark
       - name: Print Driver Pod logs

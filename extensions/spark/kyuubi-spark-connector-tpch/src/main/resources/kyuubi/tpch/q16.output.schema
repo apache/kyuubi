@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`p_brand` STRING,`p_type` STRING,`p_size` INT,`supplier_cnt` BIGINT NOT NULL
+p_brand STRING,p_type STRING,p_size INT,supplier_cnt BIGINT NOT NULL

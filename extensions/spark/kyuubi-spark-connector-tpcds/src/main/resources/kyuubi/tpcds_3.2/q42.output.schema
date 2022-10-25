@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`d_year` INT,`i_category_id` INT,`i_category` STRING,`sum(ss_ext_sales_price)` DECIMAL(17,2)
+d_year INT,i_category_id INT,i_category STRING,`sum(ss_ext_sales_price)` DECIMAL(17,2)

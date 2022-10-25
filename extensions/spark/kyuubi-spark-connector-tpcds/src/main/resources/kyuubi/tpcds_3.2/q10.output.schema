@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`cd_gender` STRING,`cd_marital_status` STRING,`cd_education_status` STRING,`cnt1` BIGINT NOT NULL,`cd_purchase_estimate` INT,`cnt2` BIGINT NOT NULL,`cd_credit_rating` STRING,`cnt3` BIGINT NOT NULL,`cd_dep_count` INT,`cnt4` BIGINT NOT NULL,`cd_dep_employed_count` INT,`cnt5` BIGINT NOT NULL,`cd_dep_college_count` INT,`cnt6` BIGINT NOT NULL
+cd_gender STRING,cd_marital_status STRING,cd_education_status STRING,cnt1 BIGINT NOT NULL,cd_purchase_estimate INT,cnt2 BIGINT NOT NULL,cd_credit_rating STRING,cnt3 BIGINT NOT NULL,cd_dep_count INT,cnt4 BIGINT NOT NULL,cd_dep_employed_count INT,cnt5 BIGINT NOT NULL,cd_dep_college_count INT,cnt6 BIGINT NOT NULL

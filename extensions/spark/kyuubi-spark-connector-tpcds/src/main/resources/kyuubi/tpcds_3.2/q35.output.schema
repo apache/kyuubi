@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`ca_state` STRING,`cd_gender` STRING,`cd_marital_status` STRING,`cd_dep_count` INT,`cnt1` BIGINT NOT NULL,`avg(cd_dep_count)` DOUBLE,`max(cd_dep_count)` INT,`sum(cd_dep_count)` BIGINT,`cd_dep_employed_count` INT,`cnt2` BIGINT NOT NULL,`avg(cd_dep_employed_count)` DOUBLE,`max(cd_dep_employed_count)` INT,`sum(cd_dep_employed_count)` BIGINT,`cd_dep_college_count` INT,`cnt3` BIGINT NOT NULL,`avg(cd_dep_college_count)` DOUBLE,`max(cd_dep_college_count)` INT,`sum(cd_dep_college_count)` BIGINT
+ca_state STRING,cd_gender STRING,cd_marital_status STRING,cd_dep_count INT,cnt1 BIGINT NOT NULL,`avg(cd_dep_count)` DOUBLE,`max(cd_dep_count)` INT,`sum(cd_dep_count)` BIGINT,cd_dep_employed_count INT,cnt2 BIGINT NOT NULL,`avg(cd_dep_employed_count)` DOUBLE,`max(cd_dep_employed_count)` INT,`sum(cd_dep_employed_count)` BIGINT,cd_dep_college_count INT,cnt3 BIGINT NOT NULL,`avg(cd_dep_college_count)` DOUBLE,`max(cd_dep_college_count)` INT,`sum(cd_dep_college_count)` BIGINT

@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`gross_margin` DECIMAL(37,20),`i_category` STRING,`i_class` STRING,`lochierarchy` TINYINT NOT NULL,`rank_within_parent` INT NOT NULL
+gross_margin DECIMAL(37,20),i_category STRING,i_class STRING,lochierarchy TINYINT NOT NULL,rank_within_parent INT NOT NULL

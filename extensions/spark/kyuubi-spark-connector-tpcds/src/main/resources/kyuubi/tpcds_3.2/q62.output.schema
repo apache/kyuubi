@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`substr(w_warehouse_name, 1, 20)` STRING,`sm_type` STRING,`web_name` STRING,`30 days` BIGINT,`31-60 days` BIGINT,`61-90 days` BIGINT,`91-120 days` BIGINT,`>120 days` BIGINT
+`substr(w_warehouse_name, 1, 20)` STRING,sm_type STRING,web_name STRING,`30 days` BIGINT,`31-60 days` BIGINT,`61-90 days` BIGINT,`91-120 days` BIGINT,`>120 days` BIGINT

@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`item_id` STRING NOT NULL,`sr_item_qty` BIGINT,`sr_dev` DOUBLE,`cr_item_qty` BIGINT,`cr_dev` DOUBLE,`wr_item_qty` BIGINT,`wr_dev` DOUBLE,`average` DECIMAL(27,6)
+item_id STRING NOT NULL,sr_item_qty BIGINT,sr_dev DOUBLE,cr_item_qty BIGINT,cr_dev DOUBLE,wr_item_qty BIGINT,wr_dev DOUBLE,average DECIMAL(27,6)

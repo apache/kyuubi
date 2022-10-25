@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`i_item_id` STRING NOT NULL,`i_item_desc` STRING,`s_store_id` STRING NOT NULL,`s_store_name` STRING,`store_sales_quantity` BIGINT,`store_returns_quantity` BIGINT,`catalog_sales_quantity` BIGINT
+i_item_id STRING NOT NULL,i_item_desc STRING,s_store_id STRING NOT NULL,s_store_name STRING,store_sales_quantity BIGINT,store_returns_quantity BIGINT,catalog_sales_quantity BIGINT

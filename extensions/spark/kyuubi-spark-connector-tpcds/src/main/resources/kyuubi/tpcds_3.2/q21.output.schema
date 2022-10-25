@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`w_warehouse_name` STRING,`i_item_id` STRING NOT NULL,`inv_before` BIGINT,`inv_after` BIGINT
+w_warehouse_name STRING,i_item_id STRING NOT NULL,inv_before BIGINT,inv_after BIGINT
