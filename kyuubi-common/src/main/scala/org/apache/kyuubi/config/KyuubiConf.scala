@@ -890,6 +890,80 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
+  val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.context")
+      .doc("The desired context from your kubernetes config file used to configure the K8S " +
+        "client for interacting with the cluster.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_NAMESPACE: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.namespace")
+      .doc("The namespace that will be used for running the kyuubi pods and find engines.")
+      .version("1.7.0")
+      .stringConf
+      .createWithDefault("default")
+
+  val KUBERNETES_MASTER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.master.address")
+      .doc("The internal Kubernetes master (API server) address to be used for kyuubi.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.oauthTokenFile")
+      .doc("Path to the file containing the OAuth token to use when authenticating against " +
+        "the Kubernetes API server. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.oauthToken")
+      .doc("The OAuth token to use when authenticating against the Kubernetes API server. " +
+        "Note that unlike the other authentication options, this must be the exact string value " +
+        "of the token to use for the authentication.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.clientKeyFile")
+      .doc("Path to the client key file for connecting to the Kubernetes API server " +
+        "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.clientCertFile")
+      .doc("Path to the client cert file for connecting to the Kubernetes API server " +
+        "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_CA_CERT_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.caCertFile")
+      .doc("Path to the CA cert file for connecting to the Kubernetes API server " +
+        "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_TRUST_CERTIFICATES: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.trust.certificates")
+      .doc("If set to true then client can submit to kubernetes cluster only with token")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -2036,14 +2110,6 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(true)
-
-  val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
-    buildConf("kyuubi.kubernetes.context")
-      .doc("The desired context from your kubernetes config file used to configure the K8S " +
-        "client for interacting with the cluster.")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
 
   private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
     FRONTEND_BIND_HOST,
