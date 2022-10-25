@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.kubernetes.test
 
-import io.fabric8.kubernetes.client.{Config, DefaultKubernetesClient}
+import io.fabric8.kubernetes.client.{Config, KubernetesClient, KubernetesClientBuilder}
 
 /**
  * This code copied from Aapache Spark
@@ -44,7 +44,7 @@ object MiniKube {
     executeMinikube(true, "ip").head
   }
 
-  def getKubernetesClient: DefaultKubernetesClient = {
+  def getKubernetesClient: KubernetesClient = {
     // only the three-part version number is matched (the optional suffix like "-beta.0" is dropped)
     val versionArrayOpt = "\\d+\\.\\d+\\.\\d+".r
       .findFirstIn(minikubeVersionString.split(VERSION_PREFIX)(1))
@@ -66,6 +66,6 @@ object MiniKube {
             "non-numeric suffix is intentionally dropped)")
     }
 
-    new DefaultKubernetesClient(Config.autoConfigure("minikube"))
+    new KubernetesClientBuilder().withConfig(Config.autoConfigure("minikube")).build()
   }
 }

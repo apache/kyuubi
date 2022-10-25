@@ -17,9 +17,8 @@
 
 package org.apache.kyuubi.engine
 
-import io.fabric8.kubernetes.api.model.{Pod, PodList}
+import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.KubernetesClient
-import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
@@ -57,23 +56,20 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     if (kubernetesClient != null) {
       debug(s"Deleting application info from Kubernetes cluster by $tag tag")
       try {
-        // Need driver only
-        val operation = findDriverPodByTag(tag)
-        val podList = operation.list().getItems
-        if (podList.size() != 0) {
-          toApplicationState(podList.get(0).getStatus.getPhase) match {
-            case FAILED | UNKNOWN =>
-              (
-                false,
-                s"Target Pod ${podList.get(0).getMetadata.getName} is in FAILED or UNKNOWN status")
-            case _ =>
-              (
-                operation.delete(),
-                s"Operation of deleted appId: ${podList.get(0).getMetadata.getName} is completed")
-          }
-        } else {
-          // client mode
-          jpsOperation.killApplicationByTag(tag)
+        findDriverPodByTag(tag) match {
+          case Some(pod) =>
+            val podName = pod.getMetadata.getName
+            toApplicationState(pod.getStatus.getPhase) match {
+              case FAILED | UNKNOWN =>
+                (false, s"Target Driver Pod $podName is in FAILED or UNKNOWN status")
+              case _ =>
+                (
+                  kubernetesClient.pods().inNamespace(podName).withName(
+                    pod.getMetadata.getName).delete(),
+                  s"Operation of deleted app: $podName is completed")
+            }
+          case None =>
+            jpsOperation.killApplicationByTag(tag)
         }
       } catch {
         case e: Exception =>
@@ -88,21 +84,18 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     if (kubernetesClient != null) {
       debug(s"Getting application info from Kubernetes cluster by $tag tag")
       try {
-        val operation = findDriverPodByTag(tag)
-        val podList = operation.list().getItems
-        if (podList.size() != 0) {
-          val pod = podList.get(0)
-          val info = ApplicationInfo(
-            // spark pods always tag label `spark-app-selector:<spark-app-id>`
-            id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
-            name = pod.getMetadata.getName,
-            state = KubernetesApplicationOperation.toApplicationState(pod.getStatus.getPhase),
-            error = Option(pod.getStatus.getReason))
-          debug(s"Successfully got application info by $tag: $info")
-          info
-        } else {
-          // client mode
-          jpsOperation.getApplicationInfoByTag(tag)
+        findDriverPodByTag(tag) match {
+          case Some(pod) =>
+            val info = ApplicationInfo(
+              // spark pods always tag label `spark-app-selector:<spark-app-id>`
+              id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
+              name = pod.getMetadata.getName,
+              state = KubernetesApplicationOperation.toApplicationState(pod.getStatus.getPhase),
+              error = Option(pod.getStatus.getReason))
+            debug(s"Successfully got application info by $tag: $info")
+            info
+          case None =>
+            jpsOperation.getApplicationInfoByTag(tag)
         }
       } catch {
         case e: Exception =>
@@ -114,14 +107,21 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  private def findDriverPodByTag(tag: String): FilterWatchListDeletable[Pod, PodList] = {
+  private def findDriverPodByTag(tag: String): Option[Pod] = {
     val operation = kubernetesClient.pods()
       .withLabel(KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY, tag)
-    val size = operation.list().getItems.size()
-    if (size != 1) {
-      warn(s"Get Tag: ${tag} Driver Pod In Kubernetes size: ${size}, we expect 1")
+    val podList = operation.list().getItems
+    val size = podList.size()
+    size match {
+      case 0 =>
+        warn(s"Can't find Driver pod with tag $tag")
+        None
+      case 1 =>
+        Some(podList.get(0))
+      case _ =>
+        warn(s"Get Tag: $tag Driver Pod In Kubernetes size: $size, we expect 1")
+        Some(podList.get(0))
     }
-    operation
   }
 
   override def stop(): Unit = {
