@@ -69,3 +69,51 @@ Usage: ``bin/kyuubi-admin refresh config [options] [<configType>]``
      - Description
    * - hadoopConf
      - The hadoop conf used for proxy user verification.
+
+.. _list_engine:
+
+List Engines
+-------------------------------------
+
+Prints a table of the key information about the specified engines.
+
+Usage: ``bin/kyuubi-admin list engine [options]``
+
+.. list-table::
+   :widths: 20 80
+   :header-rows: 1
+
+   * - Options
+     - Description
+   * - -et, --engine-type
+     - The engine type. If not specified, it will read the configuration item kyuubi.engine.type from kyuubi-defaults.conf.
+   * - -esl, --engine-share-level
+     - The engine share level. If not specified, it will read the configuration item kyuubi.engine.share.level from kyuubi-defaults.conf.
+   * - -es, --engine-subdomain
+     - The subdomain for the share level of an engine. If not specified, it will read the configuration item kyuubi.engine.share.level.subdomain from kyuubi-defaults.conf.
+   * - --hs2ProxyUser
+     - The proxy user to impersonate. When specified, it will list engines for the hs2ProxyUser.
+
+.. _delete_engine:
+
+Delete an Engine
+-------------------------------------
+
+Delete the specified engine.
+
+Usage: ``bin/kyuubi-admin delete engine [options]``
+
+.. list-table::
+   :widths: 20 80
+   :header-rows: 1
+
+   * - Options
+     - Description
+   * - -et, --engine-type
+     - The engine type. If not specified, it will read the configuration item kyuubi.engine.type from kyuubi-defaults.conf.
+   * - -esl, --engine-share-level
+     - The engine share level. If not specified, it will read the configuration item kyuubi.engine.share.level from kyuubi-defaults.conf.
+   * - -es, --engine-subdomain
+     - The subdomain for the share level of an engine. If not specified, it will read the configuration item kyuubi.engine.share.level.subdomain from kyuubi-defaults.conf. Default value is "default".
+   * - --hs2ProxyUser
+     - The proxy user to impersonate. When specified, it will delete engines for the hs2ProxyUser.

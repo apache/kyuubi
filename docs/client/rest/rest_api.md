@@ -349,6 +349,43 @@ Gets the local log lines from this batch.
 | logRowSet | The log lines     | List of sting |
 | rowCount  | The log row count | Int           |
 
+## Admin Resource
+
+### POST /admin/refresh/hadoop_conf
+
+Refresh the Hadoop configurations of the Kyuubi server.
+
+### DELETE /admin/engine
+
+Delete the specified engine.
+
+#### Request Parameters
+
+| Name                    | Description                   | Type             |
+|:------------------------|:------------------------------| :--------------- |
+| type                    | the engine type               | String(optional) |
+| sharelevel              | the engine share level        | String(optional) |
+| subdomain               | the engine subdomain          | String(optional) |
+| hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
+
+### GET /admin/engine
+
+Get a list of satisfied engines.
+
+#### Request Parameters
+
+| Name                    | Description                   | Type             |
+|:------------------------|:------------------------------| :--------------- |
+| type                    | the engine type               | String(optional) |
+| sharelevel              | the engine share level        | String(optional) |
+| subdomain               | the engine subdomain          | String(optional) |
+| hive.server2.proxy.user | the proxy user to impersonate | String(optional) |
+
+#### Response Body
+The [Engine](#engine) List.
+
+## REST Objects
+
 ### Batch
 
 | Name           | Description                                                       | Type   |
@@ -386,3 +423,15 @@ Gets the local log lines from this batch.
 | totalOperations | How many queries and meta calls                                                                                     | Int       |
 | exception       | The session exception, such as the exception that occur when opening session                                        | Throwable |
 | eventType       | The type of session event                                                                                           | String    |
+
+### Engine
+
+| Name           | Description                                                        | Type   |
+| :------------- |:-------------------------------------------------------------------| :----- |
+| version        | The version of the Kyuubi server that creates this engine instance | String |
+| user           | The user created the engine                                        | String |
+| engineType     | The engine type                                                    | String |
+| sharelevel     | The engine share level                                             | String |
+| subdomain      | The engine subdomain                                               | String |
+| instance       | host:port for the engine node                                      | String |
+| namespace      | The namespace used to expose the engine to KyuubiServers           | String |
