@@ -72,7 +72,7 @@ Usage: ``bin/kyuubi-admin refresh config [options] [<configType>]``
 
 .. _list_engine:
 
-List Engine
+List Engines
 -------------------------------------
 
 Prints a table of the key information about the specified engines.
@@ -96,7 +96,7 @@ Usage: ``bin/kyuubi-admin list engine [options]``
 
 .. _delete_engine:
 
-Delete Engine
+Delete an Engine
 -------------------------------------
 
 Delete the specified engine.

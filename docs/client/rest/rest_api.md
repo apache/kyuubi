@@ -353,11 +353,11 @@ Gets the local log lines from this batch.
 
 ### POST /admin/refresh/hadoop_conf
 
-Refresh the Kyuubi server hadoop conf.
+Refresh the Hadoop configurations of the Kyuubi server.
 
 ### DELETE /admin/engine
 
-Delete specified engine.
+Delete the specified engine.
 
 #### Request Parameters
 
@@ -370,7 +370,7 @@ Delete specified engine.
 
 ### GET /admin/engine
 
-Get a list of engines.
+Get a list of satisfied engines.
 
 #### Request Parameters
 
@@ -426,12 +426,12 @@ The [Engine](#engine) List.
 
 ### Engine
 
-| Name           | Description                                              | Type   |
-| :------------- |:---------------------------------------------------------| :----- |
-| version        | The kyuubi version                                       | String |
-| user           | The user created the engine                              | String |
-| engineType     | The engine type                                          | String |
-| sharelevel     | The engine share level                                   | String |
-| subdomain      | The engine subdomain                                     | String |
-| instance       | host:port for the engine node                            | String |
-| namespace      | The namespace used to expose the engine to KyuubiServers | String |
+| Name           | Description                                                        | Type   |
+| :------------- |:-------------------------------------------------------------------| :----- |
+| version        | The version of the Kyuubi server that creates this engine instance | String |
+| user           | The user created the engine                                        | String |
+| engineType     | The engine type                                                    | String |
+| sharelevel     | The engine share level                                             | String |
+| subdomain      | The engine subdomain                                               | String |
+| instance       | host:port for the engine node                                      | String |
+| namespace      | The namespace used to expose the engine to KyuubiServers           | String |
