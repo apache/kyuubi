@@ -38,6 +38,11 @@ class PlanOnlyStatement(
   private val lineSeparator: String = System.lineSeparator()
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
+  override protected def beforeRun(): Unit = {
+    OperationLog.setCurrentOperationLog(operationLog)
+    super.beforeRun()
+  }
+
   override protected def runInternal(): Unit = {
     try {
       val operation = executor.parseStatement(sessionId, statement)
