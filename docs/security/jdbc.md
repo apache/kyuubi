@@ -59,6 +59,10 @@ kyuubi.authentication=JDBC
 kyuubi.authentication.jdbc.driver.class = org.h2.Driver
 kyuubi.authentication.jdbc.url = jdbc:h2:mem:
 kyuubi.authentication.jdbc.user = no_user
-kyuubi.authentication.jdbc.query = SELECT 1 FROM (SELECT ${user} as username, 'secret_key' as secret_key, SUBSTRING(${password}, 0, 12) as expire_time, SUBSTRING(${password}, 13) as signed
-) WHERE signed = RAWTOHEX(HASH('MD5', CONCAT(secret_key, username, expire_time))) AND PARSEDATETIME(expire_time,'yyyyMMddHHmm') > NOW();
+kyuubi.authentication.jdbc.query = SELECT 1 FROM ( \
+  SELECT ${user} as username, 'secret_key' as secret_key, \
+  SUBSTRING(${password}, 0, 12) as expire_time, \
+  SUBSTRING(${password}, 13) as signed \
+  ) WHERE signed = RAWTOHEX(HASH('MD5', CONCAT(secret_key, username, expire_time))) \
+  AND PARSEDATETIME(expire_time,'yyyyMMddHHmm') > NOW()
 ```
