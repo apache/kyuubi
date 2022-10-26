@@ -29,6 +29,13 @@ import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 
 class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
 
+  override protected def afterEach(): Unit = {
+    eventually(timeout(5.seconds), interval(200.milliseconds)) {
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.REST_CONN_OPEN).getOrElse(0L) === 0)
+    }
+  }
+
   test("basic batch rest client") {
     val basicKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
