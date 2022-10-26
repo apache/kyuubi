@@ -48,17 +48,17 @@ kyuubi.authentication.jdbc.password = bowenliang123@kyuubi
 kyuubi.authentication.jdbc.query = SELECT 1 FROM auth_table WHERE user=${user} AND passwd=MD5(CONCAT(salt,${password}))
 ```
 
-## Authentication with In Memory Database
+## Authentication with In-memory Database
 
 Used with auto created in-memory database, JDBC authentication could be applied for token validation without start up a dedicated database service or custom plugin. 
 
-Consider an authentication for a username and a token which contacted with an `expire_time` in timestamp and a signature for sequence of `expire_time`, `username` and a secret key. With the following example, an H2 in-memory database will be auto crated with Kyuubi Server and used for authentication with its system function `HASH` and checking token expire time with `NOW()`.
+Consider authenticating a pair of a username and a token which contacted with an `expire_time` in 'yyyyMMddHHmm' format and a MD5 signature generated with sequence of `expire_time`, `username` and a secret key. With the following example, an H2 in-memory database will be auto crated with Kyuubi Server and used for authentication with its system function `HASH` and checking token expire time with `NOW()`.
 
 ```properties
 kyuubi.authentication=JDBC
 kyuubi.authentication.jdbc.driver.class = org.h2.Driver
 kyuubi.authentication.jdbc.url = jdbc:h2:mem:
 kyuubi.authentication.jdbc.user = no_user
-kyuubi.authentication.jdbc.query = SELECT 1 FROM (SELECT RAWTOHEX(HASH('MD5', STRINGTOUTF8(CONCAT(SUBSTR(input.token, 34), input.sign_key)))) AS valid_sign, input.username AS input_user, SUBSTR(input.token, 1, 32) AS token_sign, SUBSTR(input.token, 34, LENGTH(input.username)) AS token_user, CAST(SUBSTR(input.token, 35 + LENGTH(input.username), 19) AS TIMESTAMP) AS token_expire FROM (SELECT CAST('dgAuthKey' AS VARCHAR) AS sign_key, CAST(${user} AS VARCHAR) AS username, CAST(${password} AS VARCHAR) AS token ) input ) result WHERE token_user = input_user AND token_sign = valid_sign AND token_expire > NOW();
-
+kyuubi.authentication.jdbc.query = SELECT 1 FROM (SELECT ${user} as username, 'secret_key' as secret_key, SUBSTRING(${password}, 0, 12) as expire_time, SUBSTRING(${password}, 13) as signed
+) WHERE signed = RAWTOHEX(HASH('MD5', CONCAT(secret_key, username, expire_time))) AND PARSEDATETIME(expire_time,'yyyyMMddHHmm') > NOW();
 ```
