@@ -50,9 +50,9 @@ kyuubi.authentication.jdbc.query = SELECT 1 FROM auth_table WHERE user=${user} A
 
 ## Authentication with In-memory Database
 
-Used with auto created in-memory database, JDBC authentication could be applied for token validation without start up a dedicated database service or custom plugin. 
+Used with auto created in-memory database, JDBC authentication could be applied for token validation without starting up a dedicated database service or setting up a custom plugin. 
 
-Consider authenticating a pair of a username and a token which contacted with an `expire_time` in 'yyyyMMddHHmm' format and a MD5 signature generated with sequence of `expire_time`, `username` and a secret key. With the following example, an H2 in-memory database will be auto crated with Kyuubi Server and used for authentication with its system function `HASH` and checking token expire time with `NOW()`.
+Consider authentication for a pair of a username and a token which contacted with an `expire_time` in 'yyyyMMddHHmm' format and a MD5 signature generated with sequence of `expire_time`, `username` and a secret key. With the following example, an H2 in-memory database will be auto crated with Kyuubi Server and used for authentication with its system function `HASH` and checking token expire time with `NOW()`.
 
 ```properties
 kyuubi.authentication=JDBC
