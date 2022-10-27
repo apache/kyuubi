@@ -176,7 +176,7 @@
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.2.1</swagger.version>
-        <swagger-ui.version>4.1.0</swagger-ui.version>
+        <swagger-ui.version>4.9.1</swagger-ui.version>
         <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
         <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
