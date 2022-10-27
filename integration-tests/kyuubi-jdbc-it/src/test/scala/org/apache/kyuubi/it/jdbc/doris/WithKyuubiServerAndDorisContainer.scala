@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.it.jdbc.doris
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import java.nio.file.{Files, Path, Paths}
+
+import org.apache.kyuubi.{SCALA_COMPILE_VERSION, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
 import org.apache.kyuubi.engine.jdbc.doris.WithDorisEngine
@@ -27,13 +29,28 @@ trait WithKyuubiServerAndDorisContainer extends WithKyuubiServer with WithDorisE
   private val kyuubiHome: String = Utils
     .getCodeSourceLocation(getClass).split("integration-tests").head
 
+  private val mysqlJdbcConnectorPath: String = {
+    val keyword = "mysql-connector-java"
+
+    val jarsDir = Paths.get(kyuubiHome)
+      .resolve("integration-tests")
+      .resolve("kyuubi-jdbc-it")
+      .resolve("target")
+      .resolve(s"scala-$SCALA_COMPILE_VERSION")
+      .resolve("jars")
+
+    Files.list(jarsDir)
+      .filter { p: Path => p.getFileName.toString contains keyword }
+      .findFirst
+      .orElseThrow { () => new IllegalStateException(s"Can not find $keyword in $jarsDir.") }
+      .toAbsolutePath
+      .toString
+  }
+
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
-      .set(
-        ENGINE_JDBC_EXTRA_CLASSPATH,
-        Utils.getContextOrKyuubiClassLoader.getResource(
-          "mysql/mysql-connector-java-8.0.30.jar").toURI.getPath)
+      .set(ENGINE_JDBC_EXTRA_CLASSPATH, mysqlJdbcConnectorPath)
   }
 
   override def beforeAll(): Unit = {
