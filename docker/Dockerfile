@@ -51,8 +51,9 @@ RUN set -ex && \
     sed -i 's/http:\/\/deb.\(.*\)/https:\/\/deb.\1/g' /etc/apt/sources.list && \
     apt-get update && \
     apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
-    useradd -u ${kyuubi_uid} -g root kyuubi && \
+    useradd -u ${kyuubi_uid} -g root kyuubi -d /home/kyuubi -m && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
+    chown -R kyuubi:root ${KYUUBI_HOME} && \
     chmod ug+rw -R ${KYUUBI_HOME} && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
