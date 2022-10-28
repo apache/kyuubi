@@ -47,8 +47,8 @@ class GetPrimaryKeys(
           impl.getCatalogManager.getSchemaResolver
         case _ =>
           throw new UnsupportedOperationException(
-            "Unsupported Operation type GetColumns. You can execute " +
-              "DESCRIBE statement instead to get column infos.")
+            "Unsupported Operation type GetPrimaryKeys. You can execute " +
+              "DESCRIBE statement instead to get primary keys column infos.")
       }
 
       val catalogName =
