@@ -197,7 +197,6 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
            | )
     """.stripMargin)
 
-
       val metaData = statement.getConnection.getMetaData
 
       Seq(tableName1, tableName2) foreach { tableName =>

@@ -32,9 +32,6 @@ import org.apache.kyuubi.engine.flink.schema.SchemaHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
-
-
-
 class GetPrimaryKeys(
     session: Session,
     catalogNameOrEmpty: String,
@@ -77,11 +74,13 @@ class GetPrimaryKeys(
                 uniqueConstraint
                   .getColumns.asScala.toArray.zipWithIndex
                   .map { case (column, pos) =>
-                    toColumnResult(catalogName,
+                    toColumnResult(
+                      catalogName,
                       schemaName,
                       tableName,
                       uniqueConstraint.getName,
-                      column, pos)
+                      column,
+                      pos)
                   }
               }
           }
@@ -101,12 +100,12 @@ class GetPrimaryKeys(
   }
 
   private def toColumnResult(
-                              catalogName: String,
-                              schemaName: String,
-                              tableName: String,
-                              pkName: String,
-                              columnName: String,
-                              pos: Int): Row = {
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      pkName: String,
+      columnName: String,
+      pos: Int): Row = {
     // format: off
     Row.of(
       catalogName,                                                       // TABLE_CAT
