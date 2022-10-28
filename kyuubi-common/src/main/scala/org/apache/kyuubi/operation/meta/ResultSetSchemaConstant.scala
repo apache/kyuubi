@@ -187,4 +187,14 @@ object ResultSetSchemaConstant {
    * for example with overload functions
    */
   final val SPECIFIC_NAME = "SPECIFIC_NAME"
+
+  /**
+   * Int => KEY_SEQ
+   */
+  final val KEY_SEQ = "KEY_SEQ"
+
+  /**
+   * String => PK_NAME
+   */
+  final val PK_NAME = "PK_NAME"
 }

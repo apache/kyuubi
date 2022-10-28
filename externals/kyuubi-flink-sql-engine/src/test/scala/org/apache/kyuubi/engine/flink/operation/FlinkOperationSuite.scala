@@ -163,6 +163,61 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
+  test("get primary keys") {
+    val tableName1 = "flink_get_primary_keys_operation1"
+    val tableName2 = "flink_get_primary_keys_operation2"
+
+    withJdbcStatement(tableName1, tableName2) { statement =>
+      statement.execute(
+        s"""
+           | create table $tableName1 (
+           |  id1 int,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer,
+           |  CONSTRAINT pk_con primary key(id1) NOT ENFORCED
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      statement.execute(
+        s"""
+           | create table $tableName2 (
+           |  id1 int,
+           |  id2 int,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer,
+           |  CONSTRAINT pk_con primary key(id1,id2) NOT ENFORCED
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+
+      val metaData = statement.getConnection.getMetaData
+
+      Seq(tableName1, tableName2) foreach { tableName =>
+        val rowSet = metaData.getPrimaryKeys("", "", tableName)
+
+        var pos = 1;
+        while (rowSet.next()) {
+          assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+          assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+          assert(rowSet.getString(TABLE_NAME) === tableName)
+          assert(rowSet.getString(COLUMN_NAME) === s"id$pos")
+          assert(rowSet.getInt(KEY_SEQ) === pos)
+          assert(rowSet.getString(PK_NAME) === "pk_con")
+          pos += 1
+        }
+
+      }
+    }
+  }
+
   test("get type info") {
     withJdbcStatement() { statement =>
       val typeInfo = statement.getConnection.getMetaData.getTypeInfo
