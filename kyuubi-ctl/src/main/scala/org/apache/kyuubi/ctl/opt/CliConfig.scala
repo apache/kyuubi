@@ -26,7 +26,7 @@ private[ctl] object ControlAction extends Enumeration {
 
 private[ctl] object ControlObject extends Enumeration {
   type ControlObject = Value
-  val SERVER, ENGINE, BATCH, CONFIG = Value
+  val SERVER, ENGINE, SESSION, BATCH, CONFIG = Value
 }
 
 case class CliConfig(

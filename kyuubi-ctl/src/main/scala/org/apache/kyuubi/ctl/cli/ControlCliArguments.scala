@@ -25,7 +25,7 @@ import org.apache.kyuubi.ctl.cmd._
 import org.apache.kyuubi.ctl.cmd.create.{CreateBatchCommand, CreateServerCommand}
 import org.apache.kyuubi.ctl.cmd.delete.{DeleteBatchCommand, DeleteEngineCommand, DeleteServerCommand}
 import org.apache.kyuubi.ctl.cmd.get.{GetBatchCommand, GetEngineCommand, GetServerCommand}
-import org.apache.kyuubi.ctl.cmd.list.{ListBatchCommand, ListEngineCommand, ListServerCommand}
+import org.apache.kyuubi.ctl.cmd.list.{ListBatchCommand, ListEngineCommand, ListServerCommand, ListSessionCommand}
 import org.apache.kyuubi.ctl.cmd.log.LogBatchCommand
 import org.apache.kyuubi.ctl.cmd.submit.SubmitBatchCommand
 import org.apache.kyuubi.ctl.opt.{CliConfig, CommandLine, ControlAction, ControlObject}
@@ -87,6 +87,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
           case ControlObject.BATCH => new ListBatchCommand(cliConfig)
           case ControlObject.ENGINE => new ListEngineCommand(cliConfig)
           case ControlObject.SERVER => new ListServerCommand(cliConfig)
+          case ControlObject.SESSION => new ListSessionCommand(cliConfig)
           case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
         }
       case ControlAction.LOG => cliConfig.resource match {
