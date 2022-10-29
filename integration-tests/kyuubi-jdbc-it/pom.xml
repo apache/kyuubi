@@ -22,6 +22,7 @@
         <artifactId>integration-tests</artifactId>
         <groupId>org.apache.kyuubi</groupId>
         <version>1.6.2-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -30,7 +31,6 @@
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
-
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
@@ -79,7 +79,34 @@
             <artifactId>testcontainers-scala-scalatest_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>mysql</groupId>
+                                    <artifactId>mysql-connector-java</artifactId>
+                                    <version>${mysql.jdbc.version}</version>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
