@@ -232,7 +232,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("createTime") createTime: Long,
       @QueryParam("endTime") endTime: Long,
       @QueryParam("from") from: Int,
-      @QueryParam("size") size: Int): GetBatchesResponse = {
+      @QueryParam("size") @DefaultValue("100") size: Int): GetBatchesResponse = {
     require(
       createTime >= 0 && endTime >= 0 && (endTime == 0 || createTime <= endTime),
       "Invalid time range")
@@ -264,7 +264,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def getBatchLocalLog(
       @PathParam("batchId") batchId: String,
       @QueryParam("from") @DefaultValue("-1") from: Int,
-      @QueryParam("size") size: Int): OperationLog = {
+      @QueryParam("size") @DefaultValue("100") size: Int): OperationLog = {
     val userName = fe.getUserName(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
