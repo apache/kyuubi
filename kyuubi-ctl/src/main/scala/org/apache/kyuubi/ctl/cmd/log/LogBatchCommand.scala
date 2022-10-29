@@ -57,7 +57,7 @@ class LogBatchCommand(
       withKyuubiInstanceRestClient(kyuubiRestClient, kyuubiInstance) { kyuubiInstanceRestClient =>
         val kyuubiInstanceBatchRestApi: BatchRestApi = new BatchRestApi(kyuubiInstanceRestClient)
 
-        val logThread = new Thread("batch-log-thread") {
+        val logThread = new Thread(s"batch-log-thread-$batchId") {
           override def run(): Unit = {
             var from = math.max(normalizedCliConfig.batchOpts.from, 0)
 
@@ -95,18 +95,11 @@ class LogBatchCommand(
 
         while (!done) {
           try {
-            val (latestBatch, shouldFinishLog) =
-              checkStatus(kyuubiInstanceBatchRestApi, batchId, log)
+            val (latestBatch, shouldFinish) = checkStatus(kyuubiInstanceBatchRestApi, batchId, log)
             batch = latestBatch
-            done = shouldFinishLog
+            done = shouldFinish
           } catch {
-            case e: Exception =>
-              val (latestBatch, shouldFinishLog) = checkStatus(batchRestApi, batchId, log)
-              batch = latestBatch
-              done = shouldFinishLog
-              if (done) {
-                error(s"Error checking batch state: ${e.getMessage}")
-              }
+            case e: Exception => error(s"Error checking batch state: ${e.getMessage}")
           }
 
           if (!done) {
