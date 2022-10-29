@@ -45,25 +45,46 @@ class LogBatchCommand(
     withKyuubiRestClient(normalizedCliConfig, restConfigMap, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchId = normalizedCliConfig.batchOpts.batchId
-      var from = math.max(normalizedCliConfig.batchOpts.from, 0)
       val size = normalizedCliConfig.batchOpts.size
 
+      @volatile
       var log: OperationLog = null
+      @volatile
       var done = false
       var batch = this.batch.getOrElse(batchRestApi.getBatchById(batchId))
       val kyuubiInstance = batch.getKyuubiInstance
 
       withKyuubiInstanceRestClient(kyuubiRestClient, kyuubiInstance) { kyuubiInstanceRestClient =>
         val kyuubiInstanceBatchRestApi: BatchRestApi = new BatchRestApi(kyuubiInstanceRestClient)
+
+        val logThread = new Thread("batch-log-thread") {
+          override def run(): Unit = {
+            var from = math.max(normalizedCliConfig.batchOpts.from, 0)
+            // if it has been done and the last fetched log is empty, break the log loop
+            while (!(done && log != null && log.getRowCount == 0)) {
+              try {
+                log = kyuubiInstanceBatchRestApi.getBatchLocalLog(
+                  batchId,
+                  from,
+                  size)
+                from += log.getLogRowSet.size
+                log.getLogRowSet.asScala.foreach(x => info(x))
+              } catch {
+                case e: Exception => error(s"Error fetching batch logs: ${e.getMessage}")
+              }
+
+              // if it has been done and the last fetched logs is non empty, do not wait a interval
+              if (!done || log.getRowCount > 0) {
+                Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))
+              }
+            }
+          }
+        }
+        logThread.setDaemon(true)
+        logThread.start()
+
         while (!done) {
           try {
-            log = kyuubiInstanceBatchRestApi.getBatchLocalLog(
-              batchId,
-              from,
-              size)
-            from += log.getLogRowSet.size
-            log.getLogRowSet.asScala.foreach(x => info(x))
-
             val (latestBatch, shouldFinishLog) =
               checkStatus(kyuubiInstanceBatchRestApi, batchId, log)
             batch = latestBatch
@@ -74,14 +95,22 @@ class LogBatchCommand(
               batch = latestBatch
               done = shouldFinishLog
               if (done) {
-                error(s"Error fetching batch logs: ${e.getMessage}")
+                error(s"Error checking batch state: ${e.getMessage}")
               }
           }
 
           if (!done) {
-            Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL).toInt)
+            Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))
           }
         }
+
+        // if the batch state is not failed, interrupt the log thread
+        if (!BatchUtils.isTerminalState(batch.getState) || BatchUtils.isFinishedState(
+            batch.getState)) {
+          logThread.interrupt()
+        }
+
+        logThread.join(conf.get(CTL_BATCH_LOG_THREAD_TIMEOUT))
       }
       batch
     }

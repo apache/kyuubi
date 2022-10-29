@@ -85,4 +85,13 @@ object CtlConf {
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(3).toMillis)
+
+  val CTL_BATCH_LOG_THREAD_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.ctl.batch.log.thread.timeout")
+      .doc("The timeout for fetching batch logs thread." +
+        " For log batch command, a log thread is used to fetch batch logs," +
+        " if the batch is failed, the log thread will fetch remaining logs with this timeout.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
 }
