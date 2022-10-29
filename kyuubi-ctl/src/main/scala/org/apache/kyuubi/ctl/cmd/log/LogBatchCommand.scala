@@ -114,7 +114,7 @@ class LogBatchCommand(
           }
         }
 
-        val batchFailed = BatchUtils.isTerminalState(batch.getState) &&
+        val batchFailed = batch != null && BatchUtils.isTerminalState(batch.getState) &&
           !BatchUtils.isFinishedState(batch.getState)
 
         // if the batch state is not failed, interrupt the log thread;
