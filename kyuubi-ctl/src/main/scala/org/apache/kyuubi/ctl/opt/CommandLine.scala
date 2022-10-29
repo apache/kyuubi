@@ -122,6 +122,7 @@ object CommandLine extends CommonCommandLine {
         .action((_, c) => c.copy(action = ControlAction.LIST))
         .children(
           listBatchCmd(builder).text("\tList batch session info."),
+          sessionCmd(builder).text("\tList all the live sessions"),
           serverCmd(builder).text("\tList all the service nodes for a particular domain"),
           engineCmd(builder).text("\tList all the engine nodes for a user")))
 
@@ -153,6 +154,11 @@ object CommandLine extends CommonCommandLine {
             .action((v, c) => c.copy(createOpts = c.createOpts.copy(filename = v)))
             .text("Filename to use to create the resource"),
           submitBatchCmd(builder).text("\topen batch session and wait for completion.")))
+  }
+
+  private def sessionCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("session").action((_, c) => c.copy(resource = ControlObject.SESSION))
   }
 
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
