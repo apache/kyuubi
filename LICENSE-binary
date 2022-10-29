@@ -321,9 +321,6 @@ io.vertx:vertx-core
 io.vertx:vertx-grpc
 org.apache.zookeeper:zookeeper
 
-
-kyuubi-server/src/main/resources/org/apache/kyuubi/ui/swagger/*
-
 BSD
 ------------
 jline:jline
