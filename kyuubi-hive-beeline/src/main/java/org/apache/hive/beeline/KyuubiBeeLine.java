@@ -22,13 +22,13 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Driver;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.hive.beeline.hs2connection.BeelineConfFileParseException;
+import org.apache.hive.beeline.hs2connection.DefaultConnectionUrlParser;
+import org.apache.hive.beeline.hs2connection.HS2ConnectionFileUtils;
 
 public class KyuubiBeeLine extends BeeLine {
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER =
@@ -159,6 +159,10 @@ public class KyuubiBeeLine extends BeeLine {
       }
     }
 
+    if (!connSuccessful && !exit) {
+      connSuccessful = defaultKyuubiBeelineConnect(cl);
+    }
+
     int code = 0;
     if (cl.getOptionValues('e') != null) {
       commands = Arrays.asList(cl.getOptionValues('e'));
@@ -190,5 +194,27 @@ public class KyuubiBeeLine extends BeeLine {
       }
     }
     return code;
+  }
+
+  private boolean defaultKyuubiBeelineConnect(CommandLine cl) {
+    String url;
+    try {
+      url = this.getDefaultKyuubiConnectionUrl(cl);
+      if (url == null) {
+        this.debug("Cannot construct default connection url by kyuubi conf.");
+        return false;
+      }
+    } catch (BeelineConfFileParseException var4) {
+      this.error((Throwable) var4);
+      return false;
+    }
+
+    return this.dispatch("!connect " + url);
+  }
+
+  private String getDefaultKyuubiConnectionUrl(CommandLine cl)
+      throws BeelineConfFileParseException {
+    Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
+    return HS2ConnectionFileUtils.getUrl(properties);
   }
 }
