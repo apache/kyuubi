@@ -269,23 +269,23 @@ Returns all the batches.
 
 #### Request Parameters
 
-| Name       | Description                                                                                             | Type   |
-| :--------- |:--------------------------------------------------------------------------------------------------------| :----- |
-| batchType  | The batch type, such as spark/flink, if no batchType is specified,<br/> return all types                | String |
-| batchState | The valid batch state can be one of the following:<br/> PENDING, RUNNING, FINISHED, ERROR, CANCELED     | String |
-| batchUser  | The user name that created the batch                                                                    | String |
-| createTime | Return the batch that created after this timestamp                                                      | Long   |
-| endTime    | Return the batch that ended before this timestamp                                                       | Long   |
-| from       | The start index to fetch sessions                                                                       | Int    |
-| size       | Number of sessions to fetch                                                                             | Int    |
+| Name       | Description                                                                                         | Type   |
+| :--------- |:----------------------------------------------------------------------------------------------------| :----- |
+| batchType  | The batch type, such as spark/flink, if no batchType is specified,<br/> return all types            | String |
+| batchState | The valid batch state can be one of the following:<br/> PENDING, RUNNING, FINISHED, ERROR, CANCELED | String |
+| batchUser  | The user name that created the batch                                                                | String |
+| createTime | Return the batch that created after this timestamp                                                  | Long   |
+| endTime    | Return the batch that ended before this timestamp                                                   | Long   |
+| from       | The start index to fetch batches                                                                    | Int    |
+| size       | Number of batches to fetch, 100 by default                                                          | Int    |
 
 #### Response Body
 
-| Name    | Description                         | Type |
-| :------ | :---------------------------------- | :--- |
-| from    | The start index of fetched sessions | Int  |
-| total   | Number of sessions fetched          | Int  |
-| batches | [Batch](#batch) List                | List |
+| Name    | Description                        | Type |
+| :------ |:-----------------------------------| :--- |
+| from    | The start index of fetched batches | Int  |
+| total   | Number of batches fetched          | Int  |
+| batches | [Batch](#batch) List               | List |
 
 ### POST /batches
 
@@ -337,10 +337,10 @@ Gets the local log lines from this batch.
 
 #### Request Parameters
 
-| Name | Description                       | Type |
-| :--- | :-------------------------------- | :--- |
-| from | Offset                            | Int  |
-| size | Max number of log lines to return | Int  |
+| Name | Description                                       | Type |
+| :--- |:--------------------------------------------------| :--- |
+| from | Offset                                            | Int  |
+| size | Max number of log lines to return, 100 by default | Int  |
 
 #### Response Body
 
