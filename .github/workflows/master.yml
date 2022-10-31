@@ -365,3 +365,4 @@ jobs:
           path: |
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
+            **/kyuubi-spark-batch-submit.log*
