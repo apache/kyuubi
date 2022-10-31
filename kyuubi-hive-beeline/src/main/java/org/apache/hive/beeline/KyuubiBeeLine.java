@@ -17,18 +17,20 @@
 
 package org.apache.hive.beeline;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.sql.Driver;
-import java.util.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hive.beeline.hs2connection.BeelineConfFileParseException;
 import org.apache.hive.beeline.hs2connection.DefaultConnectionUrlParser;
 import org.apache.hive.beeline.hs2connection.HS2ConnectionFileUtils;
+import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.sql.Driver;
+import java.util.*;
 
 public class KyuubiBeeLine extends BeeLine {
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER =
@@ -215,6 +217,20 @@ public class KyuubiBeeLine extends BeeLine {
   private String getDefaultKyuubiConnectionUrl(CommandLine cl)
       throws BeelineConfFileParseException {
     Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
+
+    String userName = cl.getOptionValue("n");
+    if (userName != null) {
+      properties.setProperty(JdbcConnectionParams.AUTH_USER, userName);
+    }
+    String password = cl.getOptionValue("p");
+    if (password != null) {
+      properties.setProperty(JdbcConnectionParams.AUTH_PASSWD, userName);
+    }
+    String auth = cl.getOptionValue("a");
+    if (auth != null) {
+      properties.setProperty(JdbcConnectionParams.AUTH_TYPE, userName);
+    }
+
     return HS2ConnectionFileUtils.getUrl(properties);
   }
 }

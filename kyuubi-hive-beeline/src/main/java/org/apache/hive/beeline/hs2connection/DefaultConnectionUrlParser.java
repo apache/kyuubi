@@ -58,7 +58,13 @@ public class DefaultConnectionUrlParser {
   }
 
   private void addDefaultHS2Hosts(Properties props) {
-    String host = conf.get(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST()).getOrElse(() -> null);
+    String host = null;
+    String protocols = conf.get(KyuubiConf.FRONTEND_PROTOCOLS()).mkString();
+    if (protocols.contains("THRIFT_BINARY")) {
+      host = conf.get(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST()).getOrElse(() -> null);
+    } else if (protocols.contains("THRIFT_HTTP")) {
+      host = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_BIND_HOST()).getOrElse(() -> null);
+    }
 
     if (host == null) {
       InetAddress server = Utils.findLocalInetAddress();
@@ -66,7 +72,13 @@ public class DefaultConnectionUrlParser {
       host = useHostname ? server.getCanonicalHostName() : server.getAddress().toString();
     }
 
-    int portNum = (int) conf.get(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT());
+    int portNum = 0;
+    if (protocols.contains("THRIFT_BINARY")) {
+      portNum = (int) conf.get(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT());
+    } else if (protocols.contains("THRIFT_HTTP")) {
+      portNum = (int) conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_BIND_PORT());
+    }
+
     props.setProperty("hosts", host + ":" + portNum);
   }
 
