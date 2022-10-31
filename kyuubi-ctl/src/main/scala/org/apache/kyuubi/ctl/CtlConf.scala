@@ -89,7 +89,7 @@ object CtlConf {
   val CTL_BATCH_LOG_ON_FAILURE_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.ctl.batch.log.on.failure.timeout")
       .doc("The timeout for fetching remaining batch logs if the batch failed.")
-      .version("1.7.0")
+      .version("1.6.1")
       .timeConf
       .createWithDefault(Duration.ofSeconds(10).toMillis)
 }
