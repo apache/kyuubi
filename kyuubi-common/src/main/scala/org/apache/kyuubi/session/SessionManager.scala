@@ -100,8 +100,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       val handle = session.handle
       session.open()
       setSession(handle, session)
-      info(s"$user's session with " +
-        s"$handle${session.name.map("/" + _).getOrElse("")}/${session.connectionUrl} is opened," +
+      info(s"$user's session with $handle${session.name.map("/" + _).getOrElse("")} is opened," +
         s" current opening sessions $getOpenSessionCount")
       handle
     } catch {

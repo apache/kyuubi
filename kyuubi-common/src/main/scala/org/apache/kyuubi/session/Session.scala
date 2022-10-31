@@ -33,7 +33,6 @@ trait Session {
   def user: String
   def password: String
   def ipAddress: String
-  def connectionUrl: String
 
   def createTime: Long
   def lastAccessTime: Long
