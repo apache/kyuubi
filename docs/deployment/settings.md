@@ -192,6 +192,7 @@ kyuubi.credentials.update.wait.timeout|PT1M|How long to wait until credentials a
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+kyuubi.ctl.batch.log.on.failure.timeout|PT10S|The timeout for fetching remaining batch logs if the batch failed.|duration|1.7.0
 kyuubi.ctl.batch.log.query.interval|PT3S|The interval for fetching batch logs.|duration|1.6.0
 kyuubi.ctl.rest.auth.schema|basic|The authentication schema. Valid values are: basic, spnego.|string|1.6.0
 kyuubi.ctl.rest.base.url|&lt;undefined&gt;|The REST API base URL, which contains the scheme (http:// or https://), host name, port number|string|1.6.0

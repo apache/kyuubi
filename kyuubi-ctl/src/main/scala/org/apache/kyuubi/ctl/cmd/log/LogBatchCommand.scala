@@ -55,15 +55,17 @@ class LogBatchCommand(
 
       withKyuubiInstanceRestClient(kyuubiRestClient, kyuubiInstance) { kyuubiInstanceRestClient =>
         val kyuubiInstanceBatchRestApi: BatchRestApi = new BatchRestApi(kyuubiInstanceRestClient)
+
+        def retrieveOperationLog(): OperationLog = {
+          val log = kyuubiInstanceBatchRestApi.getBatchLocalLog(batchId, from, size)
+          from += log.getLogRowSet.size
+          log.getLogRowSet.asScala.foreach(x => info(x))
+          log
+        }
+
         while (!done) {
           try {
-            log = kyuubiInstanceBatchRestApi.getBatchLocalLog(
-              batchId,
-              from,
-              size)
-            from += log.getLogRowSet.size
-            log.getLogRowSet.asScala.foreach(x => info(x))
-
+            log = retrieveOperationLog()
             val (latestBatch, shouldFinishLog) =
               checkStatus(kyuubiInstanceBatchRestApi, batchId, log)
             batch = latestBatch
@@ -79,7 +81,27 @@ class LogBatchCommand(
           }
 
           if (!done) {
-            Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL).toInt)
+            Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))
+          }
+        }
+
+        // if the batch failed, show remaining batch logs with timeout
+        if (batch != null && BatchUtils.isTerminalState(
+            batch.getState) && !BatchUtils.isFinishedState(batch.getState)) {
+          val startTime = System.currentTimeMillis()
+          val timeout = conf.get(CTL_BATCH_LOG_ON_FAILURE_TIMEOUT)
+          var hasRemainingLogs = true
+          while (hasRemainingLogs && System.currentTimeMillis() - startTime < timeout) {
+            try {
+              if (retrieveOperationLog().getLogRowSet.size == 0) {
+                hasRemainingLogs = false
+              }
+            } catch {
+              case e: Exception => error(s"Error fetching batch logs: ${e.getMessage}")
+            }
+          }
+          if (hasRemainingLogs) {
+            info(s"See the complete logs with command `kyuubi-ctl log batch $batchId --forward`.")
           }
         }
       }
