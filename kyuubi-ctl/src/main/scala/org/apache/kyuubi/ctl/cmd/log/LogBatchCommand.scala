@@ -56,7 +56,7 @@ class LogBatchCommand(
       withKyuubiInstanceRestClient(kyuubiRestClient, kyuubiInstance) { kyuubiInstanceRestClient =>
         val kyuubiInstanceBatchRestApi: BatchRestApi = new BatchRestApi(kyuubiInstanceRestClient)
 
-        def getOperationLogOnce(): OperationLog = {
+        def retrieveOperationLog(): OperationLog = {
           val log = kyuubiInstanceBatchRestApi.getBatchLocalLog(batchId, from, size)
           from += log.getLogRowSet.size
           log.getLogRowSet.asScala.foreach(x => info(x))
@@ -65,7 +65,7 @@ class LogBatchCommand(
 
         while (!done) {
           try {
-            log = getOperationLogOnce()
+            log = retrieveOperationLog()
             val (latestBatch, shouldFinishLog) =
               checkStatus(kyuubiInstanceBatchRestApi, batchId, log)
             batch = latestBatch
@@ -93,7 +93,7 @@ class LogBatchCommand(
           var hasRemainingLogs = true
           while (hasRemainingLogs && System.currentTimeMillis() - startTime < timeout) {
             try {
-              if (getOperationLogOnce().getLogRowSet.size == 0) {
+              if (retrieveOperationLog().getLogRowSet.size == 0) {
                 hasRemainingLogs = false
               }
             } catch {
