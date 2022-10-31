@@ -32,7 +32,7 @@ public class Engine {
   private String subdomain;
   private String instance;
   private String namespace;
-  private Map<String, String> details;
+  private Map<String, String> attributes;
 
   public Engine() {}
 
@@ -44,7 +44,7 @@ public class Engine {
       String subdomain,
       String instance,
       String namespace,
-      Map<String, String> details) {
+      Map<String, String> attributes) {
     this.version = version;
     this.user = user;
     this.engineType = engineType;
@@ -52,7 +52,7 @@ public class Engine {
     this.subdomain = subdomain;
     this.instance = instance;
     this.namespace = namespace;
-    this.details = details;
+    this.attributes = attributes;
   }
 
   public String getVersion() {
@@ -111,15 +111,15 @@ public class Engine {
     this.namespace = namespace;
   }
 
-  public Map<String, String> getDetails() {
-    if (null == details) {
+  public Map<String, String> getAttributes() {
+    if (null == attributes) {
       return Collections.emptyMap();
     }
-    return details;
+    return attributes;
   }
 
-  public void setDetails(Map<String, String> details) {
-    this.details = details;
+  public void setAttributes(Map<String, String> attributes) {
+    this.attributes = attributes;
   }
 
   @Override
@@ -134,7 +134,7 @@ public class Engine {
         && Objects.equals(getSubdomain(), that.getSubdomain())
         && Objects.equals(getInstance(), that.getInstance())
         && Objects.equals(getNamespace(), that.getNamespace())
-        && Objects.equals(getDetails(), that.getDetails());
+        && Objects.equals(getAttributes(), that.getAttributes());
   }
 
   @Override
@@ -147,7 +147,7 @@ public class Engine {
         getSubdomain(),
         getInstance(),
         getNamespace(),
-        getDetails());
+        getAttributes());
   }
 
   @Override

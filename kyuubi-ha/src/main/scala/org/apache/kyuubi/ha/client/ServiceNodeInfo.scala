@@ -24,6 +24,6 @@ case class ServiceNodeInfo(
     port: Int,
     version: Option[String],
     engineRefId: Option[String],
-    details: Map[String, String] = Map.empty) {
+    attributes: Map[String, String] = Map.empty) {
   def instance: String = s"$host:$port"
 }

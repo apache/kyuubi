@@ -35,13 +35,13 @@ private[ctl] object Render {
 
   def renderEngineNodesInfo(engineNodesInfo: Seq[Engine]): String = {
     val title = s"Engine Node List (total ${engineNodesInfo.size})"
-    val header = Array("Namespace", "Instance", "Version", "Details")
+    val header = Array("Namespace", "Instance", "Version", "Attributes")
     val rows = engineNodesInfo.map { engine =>
       Array(
         engine.getNamespace,
         engine.getInstance,
         engine.getVersion,
-        engine.getDetails.asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n"))
+        engine.getAttributes.asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n"))
     }.toArray
     Tabulator.format(title, header, rows)
   }

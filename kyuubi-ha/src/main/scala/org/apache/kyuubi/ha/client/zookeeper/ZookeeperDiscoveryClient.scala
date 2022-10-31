@@ -219,10 +219,10 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val (host, port) = DiscoveryClient.parseInstanceHostPort(instance)
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
         val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
-        val details =
+        val attributes =
           p.split(";").map(_.split("=")).filter(_.size == 2).map(kv => (kv.head, kv.last)).toMap
         info(s"Get service instance:$instance and version:$version under $namespace")
-        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, details)
+        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
       }
     } catch {
       case _: Exception if silent => Nil
@@ -246,7 +246,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       instance,
       version,
       external,
-      serviceDiscovery.fe.extraServiceInfo)
+      serviceDiscovery.fe.attributes)
     // Set a watch on the serviceNode
     watchNode()
   }

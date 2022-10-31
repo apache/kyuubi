@@ -43,7 +43,7 @@ trait FrontendService {
   val discoveryService: Option[Service]
 
   /**
-   * An map for [[FrontendService]] to expose it's extra information
+   * Attributes map for [[FrontendService]] to expose
    */
-  def extraServiceInfo: Map[String, String] = Map.empty
+  def attributes: Map[String, String] = Map.empty
 }
