@@ -28,64 +28,45 @@ import org.apache.flink.table.catalog.{Column, UniqueConstraint}
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
-import org.apache.kyuubi.engine.flink.schema.SchemaHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetPrimaryKeys(
     session: Session,
     catalogNameOrEmpty: String,
-    schemaNamePattern: String,
-    tableNamePattern: String)
+    schemaNameOrEmpty: String,
+    tableName: String)
   extends FlinkOperation(session) {
 
   override protected def runInternal(): Unit = {
     try {
       val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      val resolver = tableEnv match {
-        case impl: StreamTableEnvironmentImpl =>
-          impl.getCatalogManager.getSchemaResolver
-        case _ =>
-          throw new UnsupportedOperationException(
-            "Unsupported Operation type GetPrimaryKeys. You can execute " +
-              "DESCRIBE statement instead to get primary keys column infos.")
-      }
 
       val catalogName =
         if (StringUtils.isEmpty(catalogNameOrEmpty)) tableEnv.getCurrentCatalog
         else catalogNameOrEmpty
+      val catalog = tableEnv.getCatalog(catalogName).get()
 
-      val schemaNameRegex = toJavaRegex(schemaNamePattern)
-      val tableNameRegex = toJavaRegex(tableNamePattern)
+      val schemaName =
+        if (StringUtils.isEmpty(schemaNameOrEmpty)) catalog.getDefaultDatabase
+        else schemaNameOrEmpty
 
-      val columns = tableEnv.getCatalog(catalogName).asScala.toArray.flatMap { flinkCatalog =>
-        SchemaHelper.getSchemasWithPattern(flinkCatalog, schemaNameRegex)
-          .flatMap { schemaName =>
-            SchemaHelper.getFlinkTablesWithPattern(
-              flinkCatalog,
-              catalogName,
-              schemaName,
-              tableNameRegex)
-              .filter { _._2.isDefined }
-              .flatMap { case (tableName, flinkTable) =>
-                val resolvedSchema = flinkTable.get.getUnresolvedSchema.resolve(resolver)
-                val uniqueConstraint = resolvedSchema.getPrimaryKey.orElse(
-                  UniqueConstraint.primaryKey("null_pri", Collections.emptyList()))
-                uniqueConstraint
-                  .getColumns.asScala.toArray.zipWithIndex
-                  .map { case (column, pos) =>
-                    toColumnResult(
-                      catalogName,
-                      schemaName,
-                      tableName,
-                      uniqueConstraint.getName,
-                      column,
-                      pos)
-                  }
-              }
-          }
-      }
+      val flinkTable = tableEnv.from(s"`$catalogName`.`$schemaName`.`$tableName`")
 
+      val resolvedSchema = flinkTable.getResolvedSchema
+      val uniqueConstraint = resolvedSchema.getPrimaryKey.orElse(
+        UniqueConstraint.primaryKey("null_pri", Collections.emptyList()))
+      val columns = uniqueConstraint
+        .getColumns.asScala.toArray.zipWithIndex
+        .map { case (column, pos) =>
+          toColumnResult(
+            catalogName,
+            schemaName,
+            tableName,
+            uniqueConstraint.getName,
+            column,
+            pos)
+        }
       resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(
           Column.physical(TABLE_CAT, DataTypes.STRING),
@@ -96,6 +77,7 @@ class GetPrimaryKeys(
           Column.physical(PK_NAME, DataTypes.STRING))
         .data(columns)
         .build
+
     } catch onError()
   }
 
@@ -108,12 +90,12 @@ class GetPrimaryKeys(
       pos: Int): Row = {
     // format: off
     Row.of(
-      catalogName,                                                       // TABLE_CAT
-      schemaName,                                                        // TABLE_SCHEM
-      tableName,                                                         // TABLE_NAME
-      columnName,                                                        // COLUMN_NAME
-      Integer.valueOf(pos + 1),                                              // KEY_SEQ
-      pkName                                                             // PK_NAME
+      catalogName, // TABLE_CAT
+      schemaName, // TABLE_SCHEM
+      tableName, // TABLE_NAME
+      columnName, // COLUMN_NAME
+      Integer.valueOf(pos + 1), // KEY_SEQ
+      pkName // PK_NAME
     )
     // format: on
   }
