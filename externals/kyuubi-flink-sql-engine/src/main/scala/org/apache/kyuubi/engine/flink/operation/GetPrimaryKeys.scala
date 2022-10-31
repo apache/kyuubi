@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.util.Collections
-
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.api.{DataTypes, ResultKind}
-import org.apache.flink.table.catalog.{Column, UniqueConstraint}
+import org.apache.flink.table.catalog.Column
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
@@ -53,19 +52,22 @@ class GetPrimaryKeys(
       val flinkTable = tableEnv.from(s"`$catalogName`.`$schemaName`.`$tableName`")
 
       val resolvedSchema = flinkTable.getResolvedSchema
-      val uniqueConstraint = resolvedSchema.getPrimaryKey.orElse(
-        UniqueConstraint.primaryKey("null_pri", Collections.emptyList()))
-      val columns = uniqueConstraint
-        .getColumns.asScala.toArray.zipWithIndex
-        .map { case (column, pos) =>
-          toColumnResult(
-            catalogName,
-            schemaName,
-            tableName,
-            uniqueConstraint.getName,
-            column,
-            pos)
-        }
+      val primaryKeySchema = resolvedSchema.getPrimaryKey
+      var columns = ArrayBuffer.empty[Row].toArray;
+      if (primaryKeySchema.isPresent) {
+        val uniqueConstraint = primaryKeySchema.get()
+        columns = uniqueConstraint
+          .getColumns.asScala.toArray.zipWithIndex
+          .map { case (column, pos) =>
+            toColumnResult(
+              catalogName,
+              schemaName,
+              tableName,
+              uniqueConstraint.getName,
+              column,
+              pos)
+          }
+      }
       resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(
           Column.physical(TABLE_CAT, DataTypes.STRING),
