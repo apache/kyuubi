@@ -265,7 +265,7 @@ Create an operation with GET_SCHEMAS type
 
 ### GET /operations/${operationHandle}/event
 
-Get an event of operation
+Get the current event of the operation by the specified operation handle.
 
 #### Response Body
 
@@ -283,7 +283,7 @@ Put an action to the operation
 
 ### GET /operations/${operationHandle}/resultsetmetadata
 
-Get a result set of metadata 
+Get the result set schema of the operation by the specified operation handle.
 
 #### Response Body
 
@@ -293,7 +293,7 @@ Get a result set of metadata
 
 ### GET /operations/${operationHandle}/log
 
-Get a set of operation logs
+Get a list of operation log lines of the running operation by the specified operation handle.
 
 #### Request Parameters
 
@@ -310,7 +310,7 @@ Get a set of operation logs
 
 ### GET /operations/${operationHandle}/rowset
 
-Get a set of result rows
+Get the operation result as a list of rows by the specified operation handle.
 
 #### Request Parameters
 
