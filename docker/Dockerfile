@@ -53,9 +53,6 @@ RUN set -ex && \
     apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
     useradd -u ${kyuubi_uid} -g root kyuubi -d /home/kyuubi -m && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
-    chown -R kyuubi:root ${KYUUBI_HOME} && \
-    chmod ug+rw -R ${KYUUBI_HOME} && \
-    chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
 
 COPY bin ${KYUUBI_HOME}/bin
@@ -64,6 +61,9 @@ COPY beeline-jars ${KYUUBI_HOME}/beeline-jars
 COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
 
 WORKDIR ${KYUUBI_HOME}
+RUN chown -R kyuubi:root ${KYUUBI_HOME} && \
+    chmod ug+rw -R ${KYUUBI_HOME} && \
+    chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT}
 
 CMD [ "./bin/kyuubi", "run" ]
 
