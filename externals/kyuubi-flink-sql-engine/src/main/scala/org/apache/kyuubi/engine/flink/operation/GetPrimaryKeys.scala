@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.api.{DataTypes, ResultKind}
-import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl
 import org.apache.flink.table.catalog.{Column, UniqueConstraint}
 import org.apache.flink.types.Row
 
