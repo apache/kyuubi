@@ -45,85 +45,42 @@ class LogBatchCommand(
     withKyuubiRestClient(normalizedCliConfig, restConfigMap, conf) { kyuubiRestClient =>
       val batchRestApi: BatchRestApi = new BatchRestApi(kyuubiRestClient)
       val batchId = normalizedCliConfig.batchOpts.batchId
+      var from = math.max(normalizedCliConfig.batchOpts.from, 0)
       val size = normalizedCliConfig.batchOpts.size
 
-      @volatile
       var log: OperationLog = null
-      @volatile
       var done = false
       var batch = this.batch.getOrElse(batchRestApi.getBatchById(batchId))
       val kyuubiInstance = batch.getKyuubiInstance
 
       withKyuubiInstanceRestClient(kyuubiRestClient, kyuubiInstance) { kyuubiInstanceRestClient =>
         val kyuubiInstanceBatchRestApi: BatchRestApi = new BatchRestApi(kyuubiInstanceRestClient)
-
-        val logThread = new Thread(s"batch-log-thread-$batchId") {
-          override def run(): Unit = {
-            var from = math.max(normalizedCliConfig.batchOpts.from, 0)
-
-            /**
-             * Break the log thread with below cases:
-             * - it does not forward and the log fetched
-             * - it forwards, the log batch command is done and the last fetched log is empty
-             */
-            def breakLogThread: Boolean = {
-              (!normalizedCliConfig.logOpts.forward && log != null) ||
-              (done && log != null && log.getRowCount == 0)
-            }
-
-            while (!breakLogThread) {
-              try {
-                log = kyuubiInstanceBatchRestApi.getBatchLocalLog(
-                  batchId,
-                  from,
-                  size)
-                from += log.getLogRowSet.size
-                log.getLogRowSet.asScala.foreach(x => info(x))
-              } catch {
-                case e: Exception => error(s"Error fetching batch logs: ${e.getMessage}")
-              }
-
-              // if it has been done and the last fetched logs is non empty, do not wait a interval
-              if (!done || (log != null && log.getRowCount > 0)) {
-                try {
-                  Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))
-                } catch {
-                  case _: InterruptedException =>
-                    debug("Batch log thread is interrupted, since the command is done")
-                }
-              }
-            }
-          }
-        }
-        logThread.setDaemon(true)
-        logThread.start()
-
         while (!done) {
           try {
-            val (latestBatch, shouldFinish) = checkStatus(kyuubiInstanceBatchRestApi, batchId, log)
+            log = kyuubiInstanceBatchRestApi.getBatchLocalLog(
+              batchId,
+              from,
+              size)
+            from += log.getLogRowSet.size
+            log.getLogRowSet.asScala.foreach(x => info(x))
+
+            val (latestBatch, shouldFinishLog) =
+              checkStatus(kyuubiInstanceBatchRestApi, batchId, log)
             batch = latestBatch
-            done = shouldFinish
+            done = shouldFinishLog
           } catch {
-            case e: Exception => error(s"Error checking batch state: ${e.getMessage}")
+            case e: Exception =>
+              val (latestBatch, shouldFinishLog) = checkStatus(batchRestApi, batchId, log)
+              batch = latestBatch
+              done = shouldFinishLog
+              if (done) {
+                error(s"Error fetching batch logs: ${e.getMessage}")
+              }
           }
 
           if (!done) {
             Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))
           }
-        }
-
-        val batchFailed = batch != null && BatchUtils.isTerminalState(batch.getState) &&
-          !BatchUtils.isFinishedState(batch.getState)
-
-        // if the batch state is not failed, interrupt the log thread;
-        // otherwise, show the reaming logs with timeout.
-        if (!batchFailed) {
-          logThread.interrupt()
-        }
-        logThread.join(conf.get(CTL_BATCH_LOG_THREAD_TIMEOUT))
-        if (batchFailed) {
-          info(s"If the log shown incomplete," +
-            s" see more with command `kyuubi-ctl log batch $batchId --forward`.")
         }
       }
       batch
@@ -143,7 +100,7 @@ class LogBatchCommand(
     var batch: Batch = null
 
     if (!normalizedCliConfig.logOpts.forward) {
-      return (batch, log != null)
+      return (batch, true)
     }
 
     if (normalizedCliConfig.batchOpts.waitCompletion) {
