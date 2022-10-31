@@ -166,16 +166,16 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   test("get primary keys") {
     val tableName1 = "flink_get_primary_keys_operation1"
     val tableName2 = "flink_get_primary_keys_operation2"
+    val tableName3 = "flink_get_primary_keys_operation3"
 
-    withJdbcStatement(tableName1, tableName2) { statement =>
+    withJdbcStatement(tableName1, tableName2, tableName3) { statement =>
       statement.execute(
         s"""
            | create table $tableName1 (
            |  id1 int,
            |  c1 tinyint,
            |  c2 smallint,
-           |  c3 integer,
-           |  CONSTRAINT pk_con primary key(id1) NOT ENFORCED
+           |  c3 integer
            | )
            | with (
            |   'connector' = 'filesystem'
@@ -197,20 +197,38 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
            | )
     """.stripMargin)
 
+      statement.execute(
+        s"""
+           | create table $tableName3 (
+           |  id1 int,
+           |  id2 int,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
       val metaData = statement.getConnection.getMetaData
 
-      Seq(tableName1, tableName2) foreach { tableName =>
+      Seq(tableName1, tableName2, tableName3) foreach { tableName =>
         val rowSet = metaData.getPrimaryKeys("", "", tableName)
 
-        var pos = 1;
-        while (rowSet.next()) {
-          assert(rowSet.getString(TABLE_CAT) === "default_catalog")
-          assert(rowSet.getString(TABLE_SCHEM) === "default_database")
-          assert(rowSet.getString(TABLE_NAME) === tableName)
-          assert(rowSet.getString(COLUMN_NAME) === s"id$pos")
-          assert(rowSet.getInt(KEY_SEQ) === pos)
-          assert(rowSet.getString(PK_NAME) === "pk_con")
-          pos += 1
+        if (tableName.equals(tableName3)) {
+          assert(rowSet.next() == false)
+        } else {
+          var pos = 1;
+          while (rowSet.next()) {
+            assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+            assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+            assert(rowSet.getString(TABLE_NAME) === tableName)
+            assert(rowSet.getString(COLUMN_NAME) === s"id$pos")
+            assert(rowSet.getInt(KEY_SEQ) === pos)
+            assert(rowSet.getString(PK_NAME) === "pk_con")
+            pos += 1
+          }
         }
 
       }
