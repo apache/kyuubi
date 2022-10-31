@@ -85,7 +85,12 @@ class LogBatchCommand(
 
               // if it has been done and the last fetched logs is non empty, do not wait a interval
               if (!done || (log != null && log.getRowCount > 0)) {
-                Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))
+                try {
+                  Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))
+                } catch {
+                  case _: InterruptedException =>
+                    debug("Batch log thread is interrupted, since the command is done")
+                }
               }
             }
           }
