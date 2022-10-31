@@ -411,6 +411,7 @@ jobs:
           path: |
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
+            **/kyuubi-spark-batch-submit.log*
 
   zookeeper-it:
     name: Zookeeper Integration Test
