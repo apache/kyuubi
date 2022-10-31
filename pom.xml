@@ -587,7 +587,11 @@
                 <artifactId>kubernetes-client</artifactId>
                 <version>${kubernetes-client.version}</version>
             </dependency>
-            <!-- according to https://github.com/fabric8io/kubernetes-client/blob/master/doc/MIGRATION-v6.md#okhttp-httpclient -->
+            <!--
+              according to kubernetes-client MIGRATION-v6.md, we should include this dependency
+              for doing any customization to OkHttp clients.
+              https://github.com/fabric8io/kubernetes-client/blob/master/doc/MIGRATION-v6.md#okhttp-httpclient
+            -->
             <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-httpclient-okhttp</artifactId>
