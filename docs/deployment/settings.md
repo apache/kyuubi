@@ -192,8 +192,8 @@ kyuubi.credentials.update.wait.timeout|PT1M|How long to wait until credentials a
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+kyuubi.ctl.batch.log.on.failure.timeout|PT10S|The timeout for fetching remaining batch logs if the batch failed.|duration|1.7.0
 kyuubi.ctl.batch.log.query.interval|PT3S|The interval for fetching batch logs.|duration|1.6.0
-kyuubi.ctl.batch.log.thread.timeout|PT10S|The timeout for fetching batch logs thread. For log batch command, a log thread is used to fetch batch logs, if the batch is failed, the log thread will fetch remaining logs with this timeout.|duration|1.7.0
 kyuubi.ctl.rest.auth.schema|basic|The authentication schema. Valid values are: basic, spnego.|string|1.6.0
 kyuubi.ctl.rest.base.url|&lt;undefined&gt;|The REST API base URL, which contains the scheme (http:// or https://), host name, port number|string|1.6.0
 kyuubi.ctl.rest.connect.timeout|PT30S|The timeout[ms] for establishing the connection with the kyuubi server.A timeout value of zero is interpreted as an infinite timeout.|duration|1.6.0
