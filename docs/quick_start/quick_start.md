@@ -176,8 +176,10 @@ To enable the Trino engine, the `kyuubi.engine.type` need to be set as `TRINO`. 
 
 ```bash
 kyuubi.engine.type TRINO
-kyuubi.session.engine.trino.connection.url http://localhost:8080    # Your trino cluster server url
-kyuubi.session.engine.trino.connection.catalog hive   # The default catalog connect to.
+# Your trino cluster server url
+kyuubi.session.engine.trino.connection.url http://localhost:8080
+# The default catalog connect to
+kyuubi.session.engine.trino.connection.catalog hive
 ```
 
 ### Starting Kyuubi
