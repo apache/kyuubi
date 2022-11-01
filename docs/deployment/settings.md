@@ -217,6 +217,7 @@ kyuubi.delegation.token.renew.interval|PT168H|unused yet|duration|1.0.0
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+kyuubi.engine.cluster.name|default|When a kyuubi service connects to multiple engine clusters, use this parameter to specify the unique identity name of the engine to be accessed. The unique identity name of the engine and related personalized information can be configured in conf/engine-cluster-env.yaml|string|1.7.0
 kyuubi.engine.connection.url.use.hostname|true|(deprecated) When true, engine register with hostname to zookeeper. When spark run on k8s with cluster mode, set to false to ensure that server can connect to engine|boolean|1.3.0
 kyuubi.engine.deregister.exception.classes||A comma separated list of exception classes. If there is any exception thrown, whose class matches the specified classes, the engine would deregister itself.|seq|1.2.0
 kyuubi.engine.deregister.exception.messages||A comma separated list of exception messages. If there is any exception thrown, whose message or stacktrace matches the specified message list, the engine would deregister itself.|seq|1.2.0

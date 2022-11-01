@@ -1555,6 +1555,15 @@ object KyuubiConf {
       .checkValues(Set("RANDOM", "POLLING"))
       .createWithDefault("RANDOM")
 
+  val ENGINE_CLUSTER_NAME: ConfigEntry[String] = buildConf("kyuubi.engine.cluster.name")
+    .doc("When a kyuubi service connects to multiple engine clusters, " +
+      "use this parameter to specify the unique identity name of the engine to be accessed. " +
+      "The unique identity name of the engine and related personalized information " +
+      "can be configured in conf/engine-cluster-env.yaml")
+    .version("1.7.0")
+    .stringConf
+    .createWithDefault("default")
+
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.initialize.sql")
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
