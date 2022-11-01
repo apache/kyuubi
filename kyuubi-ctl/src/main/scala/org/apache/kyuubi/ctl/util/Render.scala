@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.client.api.v1.dto.{Batch, Engine, GetBatchesResponse}
+import org.apache.kyuubi.client.api.v1.dto.{Batch, Engine, GetBatchesResponse, SessionData}
 import org.apache.kyuubi.ctl.util.DateTimeUtils._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
@@ -38,6 +38,29 @@ private[ctl] object Render {
     val header = Array("Namespace", "Instance", "Version")
     val rows = engineNodesInfo.map { engine =>
       Array(engine.getNamespace, engine.getInstance, engine.getVersion)
+    }.toArray
+    Tabulator.format(title, header, rows)
+  }
+
+  def renderSessionDataListInfo(sessions: Seq[SessionData]): String = {
+    val title = s"Live Session List (total ${sessions.size})"
+    val header = Array(
+      "Identifier",
+      "User",
+      "Ip Address",
+      "Conf",
+      "Create Time",
+      "Duration[ms]",
+      "Idle Time[ms]")
+    val rows = sessions.map { session =>
+      Array(
+        session.getIdentifier,
+        session.getUser,
+        session.getIpAddr,
+        session.getConf.toString,
+        millisToDateString(session.getCreateTime, "yyyy-MM-dd HH:mm:ss"),
+        session.getDuration.toString,
+        session.getIdleTime.toString)
     }.toArray
     Tabulator.format(title, header, rows)
   }

@@ -137,7 +137,7 @@ object OperationUtils {
    * Runs a RemoveJarOperation with the executor. Only jars added by AddJarOperation could
    * be removed.
    *
-   * @param removeJarOperation Add-jar operation.
+   * @param removeJarOperation Remove-jar operation.
    * @param executor A gateway for communicating with Flink and other external systems.
    * @param sessionId Id of the session.
    * @return A ResultSet of RemoveJarOperation execution.

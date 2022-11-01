@@ -196,7 +196,7 @@ class BatchJobSubmission(
   private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
     try {
-      info(s"Submitting $batchType batch[$batchId] job: $builder")
+      info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
       applicationInfo = currentApplicationInfo
       while (!applicationFailed(applicationInfo) && process.isAlive) {
