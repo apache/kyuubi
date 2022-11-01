@@ -165,7 +165,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
 
 class KyuubiOperationKubernetesClusterClusterModeSuite
   extends SparkClusterModeOnKubernetesSuiteBase {
-  private val k8sOperation: KubernetesApplicationOperation = {
+  private lazy val k8sOperation: KubernetesApplicationOperation = {
     val operation = new KubernetesApplicationOperation
     operation.initialize(conf)
     operation
