@@ -42,7 +42,6 @@ class GetPrimaryKeys(
       val catalogName =
         if (StringUtils.isEmpty(catalogNameOrEmpty)) tableEnv.getCurrentCatalog
         else catalogNameOrEmpty
-      val catalog = tableEnv.getCatalog(catalogName).get()
 
       val schemaName =
         if (StringUtils.isEmpty(schemaNameOrEmpty)) tableEnv.getCurrentDatabase
