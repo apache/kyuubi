@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.api.{DataTypes, ResultKind}
@@ -53,10 +52,8 @@ class GetPrimaryKeys(
 
       val resolvedSchema = flinkTable.getResolvedSchema
       val primaryKeySchema = resolvedSchema.getPrimaryKey
-      var columns = ArrayBuffer.empty[Row].toArray;
-      if (primaryKeySchema.isPresent) {
-        val uniqueConstraint = primaryKeySchema.get()
-        columns = uniqueConstraint
+      val columns = primaryKeySchema.asScala.map { uniqueConstraint =>
+        uniqueConstraint
           .getColumns.asScala.toArray.zipWithIndex
           .map { case (column, pos) =>
             toColumnResult(
@@ -67,7 +64,8 @@ class GetPrimaryKeys(
               column,
               pos)
           }
-      }
+      }.getOrElse(Array.empty)
+
       resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(
           Column.physical(TABLE_CAT, DataTypes.STRING),
@@ -91,12 +89,12 @@ class GetPrimaryKeys(
       pos: Int): Row = {
     // format: off
     Row.of(
-      catalogName, // TABLE_CAT
-      schemaName, // TABLE_SCHEM
-      tableName, // TABLE_NAME
-      columnName, // COLUMN_NAME
+      catalogName,              // TABLE_CAT
+      schemaName,               // TABLE_SCHEM
+      tableName,                // TABLE_NAME
+      columnName,               // COLUMN_NAME
       Integer.valueOf(pos + 1), // KEY_SEQ
-      pkName // PK_NAME
+      pkName                    // PK_NAME
     )
     // format: on
   }
