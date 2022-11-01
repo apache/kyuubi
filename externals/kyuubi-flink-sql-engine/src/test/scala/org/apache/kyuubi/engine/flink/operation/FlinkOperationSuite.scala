@@ -217,7 +217,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         val rowSet = metaData.getPrimaryKeys("", "", tableName)
 
         if (tableName.equals(tableName3)) {
-          assert(rowSet.next() == false)
+          assert(!rowSet.next())
         } else {
           var pos = 1;
           while (rowSet.next()) {
