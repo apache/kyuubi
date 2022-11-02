@@ -109,7 +109,7 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |  --password <value>       Password for basic authentication.
          |  --spnegoHost <value>     Spnego host for spnego authentication.
          |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
-         |  --conf <value>           Kyuubi config property pair, formatted key=value.
+         |  --conf <value>           Kyuubi config property pairs, formatted key1=value1,key2=value2...
          |
          |Command: list [engine]
          |	List information about resources.

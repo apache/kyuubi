@@ -372,7 +372,7 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
          |  --password <value>       Password for basic authentication.
          |  --spnegoHost <value>     Spnego host for spnego authentication.
          |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
-         |  --conf <value>           Kyuubi config property pair, formatted key=value.
+         |  --conf <value>           Kyuubi config property pairs, formatted key1=value1,key2=value2...
          |  -zk, --zk-quorum <value>
          |                           $zkHelpString
          |  -n, --namespace <value>  The namespace, using kyuubi-defaults/conf if absent.
@@ -500,12 +500,13 @@ class ControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "--hostUrl",
       "https://kyuubi.test.com",
       "--conf",
-      s"${CtlConf.CTL_REST_CLIENT_CONNECT_TIMEOUT.key}=5000")
+      s"${CtlConf.CTL_REST_CLIENT_CONNECT_TIMEOUT.key}=5000," +
+        s"${CtlConf.CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS.key}=1")
     val opArgs = new ControlCliArguments(args)
     withKyuubiRestClient(opArgs.cliConfig, null, opArgs.command.conf) { kyuubiRestClient =>
       assert(kyuubiRestClient.getConf.getConnectTimeout == 5000)
       assert(kyuubiRestClient.getConf.getSocketTimeout == 120000)
-      assert(kyuubiRestClient.getConf.getMaxAttempts == 3)
+      assert(kyuubiRestClient.getConf.getMaxAttempts == 1)
       assert(kyuubiRestClient.getConf.getAttemptWaitTime == 3000)
     }
   }
