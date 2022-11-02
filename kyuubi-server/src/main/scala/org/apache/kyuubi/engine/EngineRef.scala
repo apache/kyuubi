@@ -17,17 +17,13 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.{File, FileInputStream}
-import java.util
 import java.util.concurrent.TimeUnit
 
-import scala.collection.JavaConverters._
 import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.security.UserGroupInformation
-import org.yaml.snakeyaml.Yaml
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -59,8 +55,6 @@ private[kyuubi] class EngineRef(
     engineRefId: String,
     engineManager: KyuubiApplicationManager)
   extends Logging {
-  initEngineClusterEnv()
-
   // The corresponding ServerSpace where the engine belongs to
   private val serverSpace: String = conf.get(HA_NAMESPACE)
 
@@ -289,42 +283,6 @@ private[kyuubi] class EngineRef(
       } catch {
         case e: Exception =>
           warn(s"Error closing engine builder, engineRefId: $engineRefId", e)
-      }
-    }
-  }
-
-  /**
-   * Initialize the engine cluster environment using the configuration in engine-cluster-env.yaml
-   */
-  def initEngineClusterEnv(): Unit = {
-    val file = new File("conf/engine-cluster-env.yaml")
-    if (file.exists()) {
-      val stream = new FileInputStream(file)
-      val clusterEnvMap = new Yaml().load(stream)
-        .asInstanceOf[util.HashMap[String, util.HashMap[String, util.HashMap[String, String]]]]
-      val clusterName = conf.get(ENGINE_CLUSTER_NAME)
-      if (clusterEnvMap.containsKey(clusterName)) {
-        val clusterEnv = clusterEnvMap.get(clusterName)
-        if (clusterEnv != null) {
-          val confMap = clusterEnv.get("conf")
-          if (confMap != null) {
-            confMap.entrySet().asScala.foreach { e =>
-              conf.setIfMissing(e.getKey, e.getValue)
-            }
-          }
-          val envMap = clusterEnv.get("env")
-          if (envMap != null) {
-            envMap.entrySet().asScala.foreach { e =>
-              conf.setIfMissing(s"${KYUUBI_ENGINE_ENV_PREFIX}.${e.getKey}", e.getValue)
-            }
-          }
-        }
-      } else {
-        clusterName match {
-          case "default" =>
-          case _ =>
-            throw KyuubiSQLException(s"$clusterName is an invalid engine cluster name!")
-        }
       }
     }
   }

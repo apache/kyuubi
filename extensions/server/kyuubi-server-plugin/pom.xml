@@ -29,6 +29,14 @@
 
     <artifactId>kyuubi-server-plugin</artifactId>
     <name>Kyuubi Project Server Plugin</name>
+    <dependencies>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.30</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
     <packaging>jar</packaging>
     <url>https://kyuubi.apache.org/</url>
 
