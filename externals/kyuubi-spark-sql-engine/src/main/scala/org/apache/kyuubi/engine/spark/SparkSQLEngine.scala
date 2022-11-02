@@ -168,8 +168,6 @@ object SparkSQLEngine extends Logging {
 
     if (Utils.isOnK8s) {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
-      val podNamePrefix = s"kyuubi-${user}-${Instant.now().toEpochMilli}"
-      _sparkConf.setIfMissing("spark.kubernetes.executor.podNamePrefix", podNamePrefix)
     }
 
     // Set web ui port 0 to avoid port conflicts during non-k8s cluster mode
