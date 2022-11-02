@@ -43,14 +43,4 @@ object SparkUtilsHelper extends Logging {
   def getLocalDir(conf: SparkConf): String = {
     Utils.getLocalDir(conf)
   }
-
-  def lineageClassesArePresent: Boolean = {
-    try {
-      Utils.classForName(
-        "org.apache.kyuubi.plugin.lineage.SparkOperationLineageQueryExecutionListener")
-      true
-    } catch {
-      case _: ClassNotFoundException | _: NoClassDefFoundError => false
-    }
-  }
 }
