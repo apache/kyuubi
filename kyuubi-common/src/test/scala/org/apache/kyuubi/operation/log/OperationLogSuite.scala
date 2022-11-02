@@ -262,7 +262,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     assert(msg == msg1)
   }
 
-  test("recreate seekable reader when adding extra log") {
+  test("closing existing seekable reader when adding extra log") {
     val file = Utils.createTempDir().resolve("f")
     val writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)
     val extraFile = Utils.createTempDir().resolve("e")
