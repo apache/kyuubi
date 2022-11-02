@@ -304,13 +304,4 @@ trait EngineRefTests extends KyuubiFunSuite {
       executor.shutdown()
     }
   }
-
-  test("with engine cluster env") {
-    val id = UUID.randomUUID().toString
-    conf.set(ENGINE_CLUSTER_NAME, "cluster-a")
-    val engine1 = new EngineRef(conf, user, id, null)
-    conf.set(ENGINE_CLUSTER_NAME, "cluster-b")
-    val engine2 = new EngineRef(conf, user, id, null)
-
-  }
 }
