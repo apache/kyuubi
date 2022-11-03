@@ -30,25 +30,25 @@ import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType
 
 class MetadataManagerSuite extends KyuubiFunSuite {
-  var metadataManager: MetadataManager = _
-  var metricsSystem: MetricsSystem = _
+  val metadataManager = new MetadataManager()
+  val metricsSystem = new MetricsSystem()
   val conf = KyuubiConf().set(KyuubiConf.METADATA_REQUEST_RETRY_INTERVAL, 100L)
 
-  override def beforeEach(): Unit = {
-    metadataManager = new MetadataManager()
-    metricsSystem = new MetricsSystem()
+  override def beforeAll(): Unit = {
+    super.beforeAll()
     metricsSystem.initialize(conf)
     metricsSystem.start()
     metadataManager.initialize(conf)
     metadataManager.start()
   }
 
-  override def afterEach(): Unit = {
+  override def afterAll(): Unit = {
     metadataManager.getBatches(null, null, null, 0, 0, 0, Int.MaxValue).foreach { batch =>
       metadataManager.cleanupMetadataById(batch.getId)
     }
     metadataManager.stop()
     metricsSystem.stop()
+    super.afterAll()
   }
 
   test("retry the metadata store requests") {
