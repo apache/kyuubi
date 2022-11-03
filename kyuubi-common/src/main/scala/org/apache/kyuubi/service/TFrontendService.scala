@@ -160,8 +160,9 @@ abstract class TFrontendService(name: String)
     val userName = getUserName(req)
     val ipAddress = getIpAddress
     val configuration =
-      Map(KYUUBI_CLIENT_IP_KEY -> ipAddress, KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl) ++
-        Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
+      Map(KYUUBI_CLIENT_IP_KEY -> ipAddress) ++
+        Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
+        Map(KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl)
     val sessionHandle = be.openSession(
       protocol,
       userName,
