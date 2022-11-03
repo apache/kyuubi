@@ -262,6 +262,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
+  def getActiveSessionsFromMetadataStore(): Seq[Metadata] = {
+    metadataManager.map(_.getSessions(SessionState.ACTIVE.toString, 0, Int.MaxValue))
+      .getOrElse(Seq.empty)
+  }
+
   override protected def isServer: Boolean = true
 
   private def initSessionLimiter(conf: KyuubiConf): Unit = {

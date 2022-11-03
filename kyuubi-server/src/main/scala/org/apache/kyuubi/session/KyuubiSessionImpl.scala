@@ -34,6 +34,7 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
 
@@ -102,6 +103,21 @@ class KyuubiSessionImpl(
     }
 
     checkSessionAccessPathURIs()
+
+    // insert session to metastore
+    val metaData = Metadata(
+      identifier = handle.identifier.toString,
+      sessionType = sessionType,
+      realUser = user,
+      username = user,
+      ipAddress = ipAddress,
+      kyuubiInstance = connectionUrl,
+      state = SessionState.ACTIVE.toString,
+      requestName = engine.defaultEngineName,
+      requestConf = normalizedConf,
+      createTime = createTime,
+      engineType = sessionConf.get(ENGINE_TYPE))
+    sessionManager.insertMetadata(metaData)
 
     // we should call super.open before running launch engine operation
     super.open()
@@ -208,6 +224,13 @@ class KyuubiSessionImpl(
   override def close(): Unit = {
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
+
+    val metadataToUpdate = Metadata(
+      identifier = handle.identifier.toString,
+      state = SessionState.TERMINATED.toString,
+      endTime = lastAccessTime)
+    sessionManager.updateMetadata(metadataToUpdate)
+
     try {
       if (_client != null) _client.closeSession()
     } finally {

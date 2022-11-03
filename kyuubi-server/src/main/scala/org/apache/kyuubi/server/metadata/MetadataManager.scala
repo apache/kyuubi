@@ -156,6 +156,11 @@ class MetadataManager extends AbstractService("MetadataManager") {
     withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, true))
   }
 
+  def getSessions(state: String, from: Int, size: Int): Seq[Metadata] = {
+    val filter = MetadataFilter(state = state)
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, false))
+  }
+
   def updateMetadata(metadata: Metadata, retryOnError: Boolean = true): Unit = {
     try {
       withMetadataRequestMetrics(_metadataStore.updateMetadata(metadata))

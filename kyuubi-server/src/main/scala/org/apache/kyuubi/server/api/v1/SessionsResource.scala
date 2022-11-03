@@ -36,14 +36,13 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.KyuubiSession
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, SessionHandle}
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext with Logging {
   implicit def toSessionHandle(str: String): SessionHandle = SessionHandle.fromUUID(str)
-  private def sessionManager = fe.be.sessionManager
+  private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   @ApiResponse(
     responseCode = "200",
@@ -53,16 +52,17 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "get the list of all live sessions")
   @GET
   def sessions(): Seq[SessionData] = {
-    sessionManager.allSessions().map { session =>
+    val sessions = sessionManager.getActiveSessionsFromMetadataStore()
+    sessions.map { metadata =>
       new SessionData(
-        session.handle.identifier.toString,
-        session.user,
-        session.ipAddress,
-        session.conf.asJava,
-        session.createTime,
-        session.lastAccessTime - session.createTime,
-        session.getNoOperationTime)
-    }.toSeq
+        metadata.identifier,
+        metadata.username,
+        metadata.ipAddress,
+        metadata.requestConf.asJava,
+        metadata.createTime,
+        0,
+        0)
+    }
   }
 
   @ApiResponse(
