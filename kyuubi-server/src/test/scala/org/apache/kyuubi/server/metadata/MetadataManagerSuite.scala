@@ -51,6 +51,13 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     super.afterAll()
   }
 
+  override protected def afterEach(): Unit = {
+    eventually(timeout(5.seconds), interval(200.milliseconds)) {
+      assert(MetricsSystem.counterValue(
+        MetricsConstants.METADATA_REQUEST_OPENED).getOrElse(0L) === 0)
+    }
+  }
+
   test("retry the metadata store requests") {
     val metadata = Metadata(
       identifier = UUID.randomUUID().toString,
