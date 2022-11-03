@@ -44,8 +44,13 @@ class GetPrimaryKeys(
         else catalogNameOrEmpty
 
       val schemaName =
-        if (StringUtils.isEmpty(schemaNameOrEmpty)) tableEnv.getCurrentDatabase
-        else schemaNameOrEmpty
+        if (StringUtils.isEmpty(schemaNameOrEmpty)) {
+          if (catalogName != tableEnv.getCurrentCatalog) {
+            tableEnv.getCatalog(catalogName).get().getDefaultDatabase
+          } else {
+            tableEnv.getCurrentDatabase
+          }
+        } else schemaNameOrEmpty
 
       val flinkTable = tableEnv.from(s"`$catalogName`.`$schemaName`.`$tableName`")
 
