@@ -20,6 +20,7 @@ package org.apache.kyuubi.session
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.operation.{NoopOperationManager, OperationManager}
 
 class NoopSessionManager extends SessionManager("noop") {
@@ -27,6 +28,7 @@ class NoopSessionManager extends SessionManager("noop") {
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddress: String,

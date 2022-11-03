@@ -27,6 +27,7 @@ import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet}
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.THRIFT_BINARY
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.NoopSessionManager
 import org.apache.kyuubi.util.ThriftUtils
@@ -41,6 +42,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      THRIFT_BINARY,
       "kyuubi",
       "passwd",
       "localhost",
@@ -92,6 +94,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      THRIFT_BINARY,
       "kyuubi",
       "passwd",
       "localhost",
@@ -132,6 +135,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      THRIFT_BINARY,
       "kyuubi",
       "passwd",
       "localhost",
@@ -182,6 +186,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      THRIFT_BINARY,
       "kyuubi",
       "passwd",
       "localhost",
@@ -242,6 +247,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      THRIFT_BINARY,
       "kyuubi",
       "passwd",
       "localhost",

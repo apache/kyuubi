@@ -24,6 +24,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
@@ -131,6 +132,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddress: String,

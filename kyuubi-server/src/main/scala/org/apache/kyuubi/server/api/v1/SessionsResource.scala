@@ -145,6 +145,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     val ipAddress = fe.getIpAddress
     val handle = fe.be.openSession(
       TProtocolVersion.findByValue(request.getProtocolVersion),
+      fe.frontendProtocol,
       userName,
       request.getPassword,
       ipAddress,

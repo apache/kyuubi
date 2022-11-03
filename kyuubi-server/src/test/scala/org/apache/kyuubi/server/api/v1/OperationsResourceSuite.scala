@@ -52,6 +52,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   test("apply an action for an operation") {
     val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
+      fe.frontendProtocol,
       "admin",
       "123456",
       "localhost",
@@ -129,6 +130,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   def getOpHandleStr(statement: String = "show tables"): String = {
     val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
+      fe.frontendProtocol,
       "admin",
       "123456",
       "localhost",

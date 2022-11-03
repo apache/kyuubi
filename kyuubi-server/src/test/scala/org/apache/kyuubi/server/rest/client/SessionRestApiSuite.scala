@@ -28,6 +28,7 @@ class SessionRestApiSuite extends RestClientTestHelper {
   test("list session") {
     fe.be.sessionManager.openSession(
       TProtocolVersion.findByValue(1),
+      fe.frontendProtocol,
       "admin",
       "123456",
       "localhost",

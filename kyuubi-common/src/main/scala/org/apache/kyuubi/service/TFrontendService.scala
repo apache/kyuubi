@@ -175,6 +175,7 @@ abstract class TFrontendService(name: String)
           KYUUBI_SESSION_REAL_USER_KEY -> realUser)
     val sessionHandle = be.openSession(
       protocol,
+      frontendProtocol,
       sessionUser,
       req.getPassword,
       ipAddress,

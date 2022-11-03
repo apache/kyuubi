@@ -29,6 +29,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
@@ -83,6 +84,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   protected def createSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddress: String,
@@ -90,12 +92,13 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def openSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
     info(s"Opening session for $user@$ipAddress")
-    val session = createSession(protocol, user, password, ipAddress, conf)
+    val session = createSession(protocol, frontendProtocol, user, password, ipAddress, conf)
     try {
       val handle = session.handle
       session.open()

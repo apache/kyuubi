@@ -27,11 +27,13 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
+import org.apache.kyuubi.parser.KyuubiParser
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.Metadata
@@ -58,6 +60,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   private var limiter: Option[SessionLimiter] = None
 
+  private val parser = new KyuubiParser()
+
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
     addService(applicationManager)
@@ -69,22 +73,26 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
     new KyuubiSessionImpl(
       protocol,
+      frontendProtocol,
       user,
       password,
       ipAddress,
       conf,
       this,
-      this.getConf.getUserDefaults(user))
+      this.getConf.getUserDefaults(user),
+      parser)
   }
 
   override def openSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddress: String,
@@ -92,7 +100,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
     try {
-      super.openSession(protocol, username, password, ipAddress, conf)
+      super.openSession(protocol, frontendProtocol, username, password, ipAddress, conf)
     } catch {
       case e: Throwable =>
         MetricsSystem.tracing { ms =>

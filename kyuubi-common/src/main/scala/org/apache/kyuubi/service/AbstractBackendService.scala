@@ -24,6 +24,7 @@ import scala.concurrent.CancellationException
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.SessionHandle
@@ -38,11 +39,12 @@ abstract class AbstractBackendService(name: String)
 
   override def openSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddr: String,
       configs: Map[String, String]): SessionHandle = {
-    sessionManager.openSession(protocol, user, password, ipAddr, configs)
+    sessionManager.openSession(protocol, frontendProtocol, user, password, ipAddr, configs)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

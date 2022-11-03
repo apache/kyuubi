@@ -306,4 +306,19 @@ class MySQLSparkQuerySuite extends WithKyuubiServer with MySQLJDBCTestHelper {
       assert(session.connectionUrl == server.frontendServices.head.connectionUrl)
     }
   }
+
+  test("Translate RENAME TABLE syntax") {
+    withJdbcStatement() { statement =>
+      statement.execute("CREATE TABLE T1 (id int) USING PARQUET")
+      val set1 = statement.executeQuery("SHOW TABLES")
+      assert(set1.next())
+      assert(set1.getString(2) == "t1")
+
+      statement.execute("RENAME TABLE T1 TO T2")
+      val set2 = statement.executeQuery("SHOW TABLES")
+      assert(set2.next())
+      assert(set2.getString(2) == "t2")
+      statement.execute("DROP TABLE T2")
+    }
+  }
 }

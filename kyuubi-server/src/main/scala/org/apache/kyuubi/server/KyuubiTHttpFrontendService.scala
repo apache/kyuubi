@@ -38,6 +38,7 @@ import org.eclipse.jetty.util.thread.ExecutorThreadPool
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.{FrontendProtocol, THRIFT_HTTP}
 import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_HTTP_CONN_FAIL, THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.ThriftHttpServlet
@@ -64,6 +65,8 @@ final class KyuubiTHttpFrontendService(
   private val APPLICATION_THRIFT = "application/x-thrift"
 
   override protected def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
+
+  def frontendProtocol: FrontendProtocol = THRIFT_HTTP
 
   /**
    * Configure Jetty to serve http requests. Example of a client connection URL:

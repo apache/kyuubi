@@ -26,6 +26,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.{FrontendProtocol, MYSQL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
@@ -34,17 +35,22 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.parser.KyuubiParser
+import org.apache.kyuubi.parser.node.{RunnableNode, TranslateNode}
+import org.apache.kyuubi.parser.node.translate.TranslateUtils
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
+    frontendProtocol: FrontendProtocol,
     user: String,
     password: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
-    sessionConf: KyuubiConf)
+    sessionConf: KyuubiConf,
+    parser: KyuubiParser)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override val sessionType: SessionType = SessionType.SQL
@@ -60,6 +66,8 @@ class KyuubiSessionImpl(
       normalizedConf
     }
   }
+
+  private[kyuubi] val kyuubiConf = sessionConf
 
   // TODO: needs improve the hardcode
   optimizedConf.foreach {
@@ -227,5 +235,30 @@ class KyuubiSessionImpl(
         }
       case unknown => throw new IllegalArgumentException(s"Unknown server info provider $unknown")
     }
+  }
+
+  override def executeStatement(
+      statement: String,
+      confOverlay: Map[String, String],
+      runAsync: Boolean,
+      queryTimeout: Long): OperationHandle = {
+    val kyuubiNode = parser.parsePlan(statement)
+    kyuubiNode match {
+      case command: RunnableNode =>
+        val operation = sessionManager.operationManager.newExecuteOnServerOperation(
+          this,
+          command.shouldRunAsync,
+          command)
+        runOperation(operation)
+      case trans: TranslateNode if frontendProtocol == MYSQL =>
+        super.executeStatement(
+          TranslateUtils.translate(trans, engine.getEngineType),
+          confOverlay,
+          runAsync,
+          queryTimeout)
+      case _ =>
+        super.executeStatement(statement, confOverlay, runAsync, queryTimeout)
+    }
+
   }
 }

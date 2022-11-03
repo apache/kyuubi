@@ -20,6 +20,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine
 import org.apache.kyuubi.engine.jdbc.operation.JdbcOperationManager
@@ -42,6 +43,7 @@ class JdbcSessionManager(name: String)
 
   override protected def createSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddress: String,

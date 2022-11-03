@@ -29,6 +29,7 @@ import io.netty.handler.logging.{LoggingHandler, LogLevel}
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.{FrontendProtocol, MYSQL}
 import org.apache.kyuubi.server.mysql._
 import org.apache.kyuubi.server.mysql.NettyUtils._
 import org.apache.kyuubi.server.mysql.authentication.MySQLAuthHandler
@@ -83,7 +84,11 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
           .addLast(new MySQLPacketEncoder)
           .addLast(new MySQLAuthHandler)
           .addLast(new MySQLPacketDecoder)
-          .addLast(new MySQLCommandHandler(connectionUrl, serverable.backendService, execPool))
+          .addLast(new MySQLCommandHandler(
+            connectionUrl,
+            serverable.backendService,
+            frontendProtocol,
+            execPool))
       })
     super.initialize(conf)
   }
@@ -129,4 +134,6 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
   }
 
   override val discoveryService: Option[Service] = None
+
+  def frontendProtocol: FrontendProtocol = MYSQL
 }

@@ -39,6 +39,7 @@ class SessionCtlSuite extends RestClientTestHelper with TestPrematureExit {
   test("list sessions") {
     fe.be.sessionManager.openSession(
       TProtocolVersion.findByValue(1),
+      fe.frontendProtocol,
       "admin",
       "123456",
       "localhost",

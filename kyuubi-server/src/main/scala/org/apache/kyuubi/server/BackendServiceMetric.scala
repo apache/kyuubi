@@ -19,6 +19,7 @@ package org.apache.kyuubi.server
 
 import org.apache.hive.service.rpc.thrift._
 
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -29,12 +30,13 @@ trait BackendServiceMetric extends BackendService {
 
   abstract override def openSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddr: String,
       configs: Map[String, String]): SessionHandle = {
     MetricsSystem.timerTracing(MetricsConstants.BS_OPEN_SESSION) {
-      super.openSession(protocol, user, password, ipAddr, configs)
+      super.openSession(protocol, frontendProtocol, user, password, ipAddr, configs)
     }
   }
 

@@ -61,7 +61,7 @@ private[kyuubi] class EngineRef(
   private val timeout: Long = conf.get(ENGINE_INIT_TIMEOUT)
 
   // Share level of the engine
-  private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
+  private[kyuubi] val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
   private val engineType: EngineType = EngineType.withName(conf.get(ENGINE_TYPE))
 
@@ -286,4 +286,6 @@ private[kyuubi] class EngineRef(
       }
     }
   }
+
+  def getEngineType: EngineType = engineType
 }

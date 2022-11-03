@@ -19,6 +19,7 @@ package org.apache.kyuubi.service
 
 import org.apache.hive.service.rpc.thrift._
 
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
@@ -37,6 +38,7 @@ trait BackendService {
 
   def openSession(
       protocol: TProtocolVersion,
+      frontendProtocol: FrontendProtocol,
       user: String,
       password: String,
       ipAddr: String,

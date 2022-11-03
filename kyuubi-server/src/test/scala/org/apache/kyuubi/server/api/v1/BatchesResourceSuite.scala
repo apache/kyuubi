@@ -195,6 +195,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
   test("get batch session list") {
     val sessionManager = server.frontendServices.head
       .be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val frontendProtocol = server.frontendServices.head.frontendProtocol
     sessionManager.allSessions().foreach(_.close())
 
     val response = webTarget.path("api/v1/batches")
@@ -224,12 +225,14 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
         ""))
     sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      frontendProtocol,
       "",
       "",
       "",
       Map.empty)
     sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      frontendProtocol,
       "",
       "",
       "",

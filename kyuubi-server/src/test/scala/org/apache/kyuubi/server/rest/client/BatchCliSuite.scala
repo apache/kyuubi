@@ -246,6 +246,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
     val sessionManager = server.frontendServices.head
       .be.sessionManager.asInstanceOf[KyuubiSessionManager]
     sessionManager.allSessions().foreach(_.close())
+    val frontendProtocol = server.frontendServices.head.frontendProtocol
 
     sessionManager.openBatchSession(
       "kyuubi",
@@ -259,12 +260,14 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
         ""))
     sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      frontendProtocol,
       "",
       "",
       "",
       Map.empty)
     sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      frontendProtocol,
       "",
       "",
       "",
