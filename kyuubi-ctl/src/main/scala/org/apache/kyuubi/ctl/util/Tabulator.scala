@@ -33,7 +33,7 @@ private[kyuubi] object Tabulator {
     }
   }
 
-  private def formatTextTable(header: Array[String], rows: Array[Array[String]]): String = {
+  def formatTextTable(header: Array[String], rows: Array[Array[String]]): String = {
     val normalizedRows = rows.map(row => row.map(Option(_).getOrElse("N/A")))
     FlipTable.of(header, normalizedRows)
   }
