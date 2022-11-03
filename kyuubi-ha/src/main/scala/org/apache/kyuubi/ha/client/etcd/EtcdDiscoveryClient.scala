@@ -322,18 +322,17 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       instance: String,
       version: Option[String] = None,
       external: Boolean = false,
-      extraServiceInfo: Map[String, String] = Map.empty): ServiceNode = {
+      attributes: Map[String, String] = Map.empty): ServiceNode = {
     val ns = DiscoveryPaths.makePath(null, namespace)
     create(ns, "PERSISTENT")
 
     val session = conf.get(HA_ENGINE_REF_ID)
       .map(refId => s"refId=$refId;").getOrElse("")
-    val extraInfo =
-      extraServiceInfo.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "").stripSuffix(";")
+    val extraInfo = attributes.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "")
     val pathPrefix = DiscoveryPaths.makePath(
       namespace,
       s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)}" +
-        s"$extraInfo;${session}sequence=")
+        s"${extraInfo.stripSuffix(";")};${session}sequence=")
     val znode = instance
 
     var leaseId: Long = LEASE_NULL_VALUE

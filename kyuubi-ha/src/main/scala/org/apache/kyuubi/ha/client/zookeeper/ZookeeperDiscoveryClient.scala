@@ -350,7 +350,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       instance: String,
       version: Option[String] = None,
       external: Boolean = false,
-      extraServiceInfo: Map[String, String] = Map.empty): PersistentNode = {
+      attributes: Map[String, String] = Map.empty): PersistentNode = {
     val ns = ZKPaths.makePath(null, namespace)
     try {
       zkClient
@@ -366,12 +366,11 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
     val session = conf.get(HA_ENGINE_REF_ID)
       .map(refId => s"refId=$refId;").getOrElse("")
-    val extraInfo =
-      extraServiceInfo.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "").stripSuffix(";")
+    val extraInfo = attributes.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "")
     val pathPrefix = ZKPaths.makePath(
       namespace,
       s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)}" +
-        s"$extraInfo;${session}sequence=")
+        s"${extraInfo.stripSuffix(";")};${session}sequence=")
     var localServiceNode: PersistentNode = null
     val createMode =
       if (external) CreateMode.PERSISTENT_SEQUENTIAL
