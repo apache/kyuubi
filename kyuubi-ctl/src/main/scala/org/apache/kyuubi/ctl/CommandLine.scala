@@ -87,6 +87,7 @@ object CommandLine {
         .action((v, c) => c.copy(commonOpts = c.commonOpts.copy(spnegoHost = v)))
         .text("Spnego host for spnego authentication."),
       opt[String]("conf")
+        .unbounded()
         .action((v, c) => {
           v.split("=", 2).toSeq match {
             case Seq(k, v) => c.copy(conf = c.conf ++ Map(k -> v))
