@@ -34,7 +34,7 @@ import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI_SESSION_CONNECTION_URL_KEY}
 import org.apache.kyuubi.engine.ApplicationInfo
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
@@ -98,7 +98,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       appUrl,
       appState,
       appDiagnostic,
-      fe.connectionUrl,
+      session.connectionUrl,
       batchOpStatus.state.toString,
       session.createTime,
       batchOpStatus.completed)
@@ -169,7 +169,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val userName = fe.getUserName(request.getConf.asScala.toMap)
     val ipAddress = fe.getIpAddress
     request.setConf(
-      (request.getConf.asScala ++ Map(KYUUBI_CLIENT_IP_KEY -> ipAddress)).asJava)
+      (request.getConf.asScala ++ Map(
+        KYUUBI_CLIENT_IP_KEY -> ipAddress,
+        KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl)).asJava)
     val sessionHandle = sessionManager.openBatchSession(
       userName,
       "anonymous",
