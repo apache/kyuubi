@@ -92,6 +92,10 @@ class SparkTBinaryFrontendService(
       None
     }
   }
+
+  override def attributes: Map[String, String] = {
+    Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
+  }
 }
 
 object SparkTBinaryFrontendService extends Logging {
