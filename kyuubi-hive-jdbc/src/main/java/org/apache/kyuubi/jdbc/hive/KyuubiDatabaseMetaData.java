@@ -82,7 +82,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     }
     Utils.verifySuccess(catalogResp.getStatus());
 
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setSessionHandle(sessHandle)
         .setStmtHandle(catalogResp.getOperationHandle())
@@ -201,7 +201,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     }
     Utils.verifySuccess(colResp.getStatus());
     // build the resultset from response
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setSessionHandle(sessHandle)
         .setStmtHandle(colResp.getOperationHandle())
@@ -259,7 +259,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     }
     Utils.verifySuccess(getFKResp.getStatus());
 
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setSessionHandle(sessHandle)
         .setStmtHandle(getFKResp.getOperationHandle())
@@ -341,7 +341,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     }
     Utils.verifySuccess(funcResp.getStatus());
 
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setSessionHandle(sessHandle)
         .setStmtHandle(funcResp.getOperationHandle())
@@ -356,7 +356,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
   @Override
   public ResultSet getImportedKeys(String catalog, String schema, String table)
       throws SQLException {
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setEmptyResultSet(true)
         .setSchema(
@@ -397,7 +397,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
   public ResultSet getIndexInfo(
       String catalog, String schema, String table, boolean unique, boolean approximate)
       throws SQLException {
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setEmptyResultSet(true)
         .setSchema(
@@ -467,7 +467,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     }
     Utils.verifySuccess(getPKResp.getStatus());
 
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setSessionHandle(sessHandle)
         .setStmtHandle(getPKResp.getOperationHandle())
@@ -480,7 +480,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
       throws SQLException {
     // Hive doesn't support primary keys
     // using local schema with empty resultset
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setEmptyResultSet(true)
         .setSchema(
@@ -539,7 +539,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
       throws SQLException {
     // Hive doesn't support primary keys
     // using local schema with empty resultset
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setEmptyResultSet(true)
         .setSchema(
@@ -611,7 +611,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     }
     Utils.verifySuccess(schemaResp.getStatus());
 
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setSessionHandle(sessHandle)
         .setStmtHandle(schemaResp.getOperationHandle())
@@ -644,7 +644,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     }
     Utils.verifySuccess(tableTypeResp.getStatus());
 
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setSessionHandle(sessHandle)
         .setStmtHandle(tableTypeResp.getOperationHandle())
@@ -673,7 +673,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
     if (tStatus.getStatusCode() != TStatusCode.SUCCESS_STATUS) {
       throw new KyuubiSQLException(tStatus);
     }
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setSessionHandle(sessHandle)
         .setStmtHandle(getTableResp.getOperationHandle())
@@ -729,7 +729,7 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
       throw new KyuubiSQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(getTypeInfoResp.getStatus());
-    return new KyuubiQueryResultSet.Builder(connection)
+    return new KyuubiArrowQueryResultSet.Builder(connection)
         .setClient(client)
         .setSessionHandle(sessHandle)
         .setStmtHandle(getTypeInfoResp.getOperationHandle())

@@ -15,28 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive;
+package org.apache.spark.sql.kyuubi
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import org.apache.kyuubi.jdbc.hive.adapter.SQLCallableStatement;
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.Dataset
 
-/** KyuubiCallableStatement. */
-public class KyuubiCallableStatement implements SQLCallableStatement {
-  private final Connection connection;
-
-  public KyuubiCallableStatement(Connection connection) {
-    this.connection = connection;
-  }
-
-  @Override
-  public Connection getConnection() throws SQLException {
-    return this.connection;
-  }
-
-  @Override
-  public ResultSet executeQuery() throws SQLException {
-    return new KyuubiArrowQueryResultSet.Builder(this).build();
+object SparkDatesetHelper {
+  def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
+    ds.toArrowBatchRdd
   }
 }

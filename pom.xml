@@ -115,6 +115,7 @@
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
+        <arrow.version>10.0.0</arrow.version>
         <antlr4.version>4.8</antlr4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
@@ -215,7 +216,7 @@
         <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
         <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
         <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
-        <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
+        <maven.plugin.scala.version>4.7.1</maven.plugin.scala.version>
         <maven.plugin.surefire.version>3.0.0-M7</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
@@ -247,10 +248,35 @@
         <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
         <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
         <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
+        <CodeCacheSize>128m</CodeCacheSize>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-vector</artifactId>
+                <version>${arrow.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-common</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-netty</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
@@ -1730,13 +1756,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven.plugin.compiler.version}</version>
+                    <version>3.10.1</version>
                     <configuration>
-                        <maxmem>1024m</maxmem>
-                        <fork>true</fork>
-                        <compilerArgs>
-                            <arg>-Xlint:all,-serial,-path</arg>
-                        </compilerArgs>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <skipMain>true</skipMain> <!-- skip compile -->
+                        <skip>true</skip> <!-- skip testCompile -->
                     </configuration>
                 </plugin>
 
@@ -1746,21 +1771,25 @@
                     <version>${maven.plugin.scala.version}</version>
                     <configuration>
                         <scalaVersion>${scala.version}</scalaVersion>
+                        <checkMultipleScalaVersions>true</checkMultipleScalaVersions>
+                        <failOnMultipleScalaVersions>true</failOnMultipleScalaVersions>
                         <recompileMode>incremental</recompileMode>
                         <args>
                             <arg>-unchecked</arg>
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
-                            <arg>-Yno-adapted-args</arg>
-                            <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
+                            <arg>-target:jvm-1.8</arg>
                             <arg>-Xfatal-warnings</arg>
                             <arg>-Ywarn-unused:imports</arg>
+                            <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
                         </args>
                         <jvmArgs>
-                            <jvmArg>-Xms1024m</jvmArg>
-                            <jvmArg>-Xmx1024m</jvmArg>
-                            <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
+                            <jvmArg>-Xss128m</jvmArg>
+                            <jvmArg>-Xms4g</jvmArg>
+                            <jvmArg>-Xmx4g</jvmArg>
+                            <jvmArg>-XX:MaxMetaspaceSize=2g</jvmArg>
+                            <jvmArg>-XX:ReservedCodeCacheSize=${CodeCacheSize}</jvmArg>
                         </jvmArgs>
                         <javacArgs>
                             <javacArg>-source</javacArg>
@@ -1773,7 +1802,7 @@
                             <compilerPlugin>
                                 <groupId>com.github.ghik</groupId>
                                 <artifactId>silencer-plugin_${scala.version}</artifactId>
-                                <version>${maven.plugin.silencer.version}</version>
+                                <version>1.7.10</version>
                             </compilerPlugin>
                         </compilerPlugins>
                     </configuration>

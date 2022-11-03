@@ -49,7 +49,7 @@ abstract class SparkOperation(session: Session)
     }.getOrElse(ZoneId.systemDefault())
   }
 
-  protected var iter: FetchIterator[Row] = _
+  protected var iter: FetchIterator[_] = _
 
   protected var result: DataFrame = _
 
@@ -160,9 +160,20 @@ abstract class SparkOperation(session: Session)
           case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
           case FETCH_FIRST => iter.fetchAbsolute(0);
         }
-        val taken = iter.take(rowSetSize)
+        val arrowTransform = session.conf.getOrElse("arrowTransform", "true")
         resultRowSet =
-          RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion, timeZone)
+          if (arrowTransform.equalsIgnoreCase("true")) {
+            // todo:(fchen) arrow每次fetch一条
+            val taken = iter.next().asInstanceOf[Array[Byte]]
+            RowSet.toTRowSet(taken, getProtocolVersion)
+          } else {
+            val taken = iter.take(rowSetSize)
+            RowSet.toTRowSet(
+              taken.toList.asInstanceOf[List[Row]],
+              resultSchema,
+              getProtocolVersion,
+              timeZone)
+          }
         resultRowSet.setStartRowOffset(iter.getPosition)
       } catch onError(cancel = true)
 
@@ -170,6 +181,7 @@ abstract class SparkOperation(session: Session)
     }
 
   override def shouldRunAsync: Boolean = false
+
 }
 
 object SparkOperation {

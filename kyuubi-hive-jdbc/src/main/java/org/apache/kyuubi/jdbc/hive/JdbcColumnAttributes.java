@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-class JdbcColumnAttributes {
+public class JdbcColumnAttributes {
   public int precision = 0;
   public int scale = 0;
 

@@ -17,21 +17,36 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.channels.Channels;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.VectorLoader;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ReadChannel;
+import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
+import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnVector;
+import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatch;
+import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
 import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
 import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
+import org.apache.kyuubi.jdbc.util.ArrowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class KyuubiQueryResultSet extends KyuubiBaseResultSet {
+public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
 
-  public static final Logger LOG = LoggerFactory.getLogger(KyuubiQueryResultSet.class);
+  public static final Logger LOG = LoggerFactory.getLogger(KyuubiArrowQueryResultSet.class);
 
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle;
@@ -41,8 +56,7 @@ class KyuubiQueryResultSet extends KyuubiBaseResultSet {
   private int fetchSize;
   private int rowsFetched = 0;
 
-  private RowSet fetchedRows;
-  private Iterator<Object[]> fetchedRowsItr;
+  private Iterator<ArrowColumnarBatchRow> fetchedRowsItr;
   private boolean isClosed = false;
   private boolean emptyResultSet = false;
   private boolean isScrollable = false;
@@ -145,8 +159,8 @@ class KyuubiQueryResultSet extends KyuubiBaseResultSet {
       return this;
     }
 
-    public KyuubiQueryResultSet build() throws SQLException {
-      return new KyuubiQueryResultSet(this);
+    public KyuubiArrowQueryResultSet build() throws SQLException {
+      return new KyuubiArrowQueryResultSet(this);
     }
 
     public TProtocolVersion getProtocolVersion() throws SQLException {
@@ -154,7 +168,7 @@ class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     }
   }
 
-  protected KyuubiQueryResultSet(Builder builder) throws SQLException {
+  protected KyuubiArrowQueryResultSet(Builder builder) throws SQLException {
     this.statement = builder.statement;
     this.client = builder.client;
     this.stmtHandle = builder.stmtHandle;
@@ -248,6 +262,10 @@ class KyuubiQueryResultSet extends KyuubiBaseResultSet {
         System.out.println(getColumnAttributes(primitiveTypeEntry));
         columnAttributes.add(getColumnAttributes(primitiveTypeEntry));
       }
+      arrowSchema = ArrowUtils.toArrowSchemaJava(columnNames, columnTypes, columnAttributes, null);
+      allocator =
+          ArrowUtils.rootAllocator().newChildAllocator("KyuubiResultSet", 0, Long.MAX_VALUE);
+      root = VectorSchemaRoot.create(arrowSchema, allocator);
     } catch (SQLException eS) {
       throw eS; // rethrow the SQLException as is
     } catch (Exception ex) {
@@ -323,24 +341,42 @@ class KyuubiQueryResultSet extends KyuubiBaseResultSet {
       ((KyuubiStatement) statement).waitForOperationToComplete();
     }
 
+
     try {
       TFetchOrientation orientation = TFetchOrientation.FETCH_NEXT;
       if (fetchFirst) {
         // If we are asked to start from begining, clear the current fetched resultset
         orientation = TFetchOrientation.FETCH_FIRST;
-        fetchedRows = null;
         fetchedRowsItr = null;
         fetchFirst = false;
+        initArrowSchemaAndAllocator();
       }
-      if (fetchedRows == null || !fetchedRowsItr.hasNext()) {
+
+      if (fetchedRowsItr == null || !fetchedRowsItr.hasNext()) {
+
         TFetchResultsReq fetchReq = new TFetchResultsReq(stmtHandle, orientation, fetchSize);
         TFetchResultsResp fetchResp;
         fetchResp = client.FetchResults(fetchReq);
         Utils.verifySuccessWithInfo(fetchResp.getStatus());
 
         TRowSet results = fetchResp.getResults();
-        fetchedRows = RowSetFactory.create(results, protocol);
-        fetchedRowsItr = fetchedRows.iterator();
+//        results.getColumns().get(0).getBinaryVal().getValues()
+        if (results == null) {
+          return false;
+        }
+        TColumn arrowColumn = results.getColumns().get(0);
+        byte[] batchBytes = arrowColumn.getBinaryVal().getValues().get(0).array();
+        ArrowRecordBatch recordBatch = loadArrowBatch(batchBytes, allocator);
+        VectorLoader vectorLoader = new VectorLoader(root);
+        vectorLoader.load(recordBatch);
+        recordBatch.close();
+        java.util.List<ArrowColumnVector> columns = root.getFieldVectors()
+            .stream()
+            .map(vector -> new ArrowColumnVector(vector))
+            .collect(Collectors.toList());
+        ArrowColumnarBatch batch =
+            new ArrowColumnarBatch(columns.toArray(new ArrowColumnVector[0]), root.getRowCount());
+        fetchedRowsItr = batch.rowIterator();
       }
 
       if (fetchedRowsItr.hasNext()) {
@@ -358,6 +394,13 @@ class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     }
     // NOTE: fetchOne doesn't throw new SQLFeatureNotSupportedException("Method not supported").
     return true;
+  }
+
+  private ArrowRecordBatch loadArrowBatch(byte[] batchBytes, BufferAllocator allocator)
+      throws IOException {
+    ByteArrayInputStream in = new ByteArrayInputStream(batchBytes);
+    return MessageSerializer.deserializeRecordBatch(
+        new ReadChannel(Channels.newChannel(in)), allocator);
   }
 
   @Override
