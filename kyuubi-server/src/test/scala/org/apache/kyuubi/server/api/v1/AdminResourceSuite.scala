@@ -73,13 +73,12 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
-    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN, Some(id))
     val engine = new EngineRef(conf.clone, Utils.currentUser, id, null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
       Utils.currentUser,
-      Array(id))
+      Array("default"))
 
     withDiscoveryClient(conf) { client =>
       engine.getOrCreate(client)
@@ -94,7 +93,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         "UTF-8")
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "USER")
-        .queryParam("subdomain", id)
         .queryParam("type", "spark_sql")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
@@ -102,7 +100,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       assert(200 == response.getStatus)
       assert(client.pathExists(engineSpace))
-      assert(client.getChildren(engineSpace).size == 0, s"refId same with $id?")
+      eventually(timeout(5.seconds), interval(100.milliseconds)) {
+        assert(client.getChildren(engineSpace).size == 0, s"refId same with $id?")
+      }
 
       // kill the engine application
       engineMgr.killApplication(None, id)
