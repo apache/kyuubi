@@ -49,13 +49,11 @@ trait CommonCommandLine {
         .text("The value of hive.server2.proxy.user config."),
       opt[String]("conf")
         .action((v, c) => {
-          c.copy(conf = c.conf ++ v.split(",").map { pair =>
-            pair.split("=", 2).toSeq match {
-              case Seq(k, v) => (k -> v)
-              case _ => throw new KyuubiException(s"Kyuubi config without '=': $v")
-            }
-          })
+          v.split("=", 2).toSeq match {
+            case Seq(k, v) => c.copy(conf = c.conf ++ Map(k -> v))
+            case _ => throw new KyuubiException(s"Kyuubi config without '=': $v")
+          }
         })
-        .text("Kyuubi config property pairs, formatted key1=value1,key2=value2..."))
+        .text("Kyuubi config property pair, formatted key=value."))
   }
 }
