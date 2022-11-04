@@ -17,20 +17,22 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.kyuubi.session.Session
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.operation.ArrayFetchIterator
-import org.apache.spark.api.python.KyuubiPythonGatewayServer
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.types.StructType
-
 import java.io.{BufferedReader, File, FileOutputStream, InputStreamReader, PrintWriter}
 import java.lang.ProcessBuilder.Redirect
 import java.nio.file.{Files, Path}
 import java.util.concurrent.atomic.AtomicBoolean
+
 import scala.collection.JavaConverters._
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.apache.spark.api.python.KyuubiPythonGatewayServer
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.StructType
+
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.operation.ArrayFetchIterator
+import org.apache.kyuubi.session.Session
 
 class ExecutePython(
     session: Session,
@@ -56,7 +58,8 @@ class ExecutePython(
     val ename = response.map(_.content.getEname()).getOrElse("")
     val evalue = response.map(_.content.getEvalue()).getOrElse("")
     val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
-    iter = new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
+    iter =
+      new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
   }
 
 }
@@ -66,7 +69,8 @@ case class SessionPythonWorker(
     t2: Thread,
     workerProcess: Process) {
   private val stdin: PrintWriter = new PrintWriter(workerProcess.getOutputStream)
-  private val stdout: BufferedReader = new BufferedReader(new InputStreamReader(workerProcess.getInputStream), 1)
+  private val stdout: BufferedReader =
+    new BufferedReader(new InputStreamReader(workerProcess.getInputStream), 1)
 
   def runCode(code: String): Option[PythonReponse] = {
     val input = ExecutePython.toJson(Map("code" -> code, "cmd" -> "run_code"))
@@ -112,7 +116,9 @@ object ExecutePython extends Logging {
   }
 
   def createSessionPythonWorker(): SessionPythonWorker = {
-    val builder = new ProcessBuilder(Seq(pythonExec, s"${ExecutePython.kyuubiPythonPath}/execute_python.py").asJava)
+    val builder = new ProcessBuilder(Seq(
+      pythonExec,
+      s"${ExecutePython.kyuubiPythonPath}/execute_python.py").asJava)
     val env = builder.environment()
     val pythonPath = sys.env.getOrElse("PYTHONPATH", "")
       .split(File.pathSeparator)
@@ -148,7 +154,6 @@ object ExecutePython extends Logging {
     processWatcherThread.start()
     processWatcherThread
   }
-
 
   private def writeTempPyFile(pythonPath: Path, pyfile: String): File = {
     val source = getClass.getClassLoader.getResourceAsStream(s"python/$pyfile")

@@ -17,12 +17,12 @@
 
 package org.apache.spark.api.python
 
-import org.apache.spark.SparkConf
-import org.apache.spark.internal.Logging
-
 import java.io.{DataOutputStream, File, FileOutputStream}
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
+
+import org.apache.spark.SparkConf
+import org.apache.spark.internal.Logging
 
 object KyuubiPythonGatewayServer extends Logging {
 
@@ -45,8 +45,10 @@ object KyuubiPythonGatewayServer extends Logging {
     // Communicate the connection information back to the python process by writing the
     // information in the requested file. This needs to match the read side in java_gateway.py.
     val connectionInfoPath = new File(CONNECTION_FILE_PATH)
-    val tmpPath = Files.createTempFile(connectionInfoPath.getParentFile().toPath(),
-      "connection", ".info").toFile()
+    val tmpPath = Files.createTempFile(
+      connectionInfoPath.getParentFile().toPath(),
+      "connection",
+      ".info").toFile()
 
     val dos = new DataOutputStream(new FileOutputStream(tmpPath))
     dos.writeInt(boundPort)

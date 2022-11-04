@@ -617,26 +617,30 @@ public class KyuubiCommands extends Commands {
 
   @Override
   public String handleMultiLineCmd(String line) throws IOException {
-    int[] startQuote = new int[]{-1};
-    Character mask = System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal") ? null : '\u0000';
+    int[] startQuote = new int[] {-1};
+    Character mask =
+        System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal")
+            ? null
+            : '\u0000';
 
-    while(isMultiLine(line) && this.beeLine.getOpts().isAllowMultiLineCommand()) {
+    while (isMultiLine(line) && this.beeLine.getOpts().isAllowMultiLineCommand()) {
       StringBuilder prompt = new StringBuilder(this.beeLine.getPrompt());
       if (!this.beeLine.getOpts().isSilent()) {
-        for(int i = 0; i < prompt.length() - 1; ++i) {
+        for (int i = 0; i < prompt.length() - 1; ++i) {
           if (prompt.charAt(i) != '>') {
-            prompt.setCharAt(i, (char)(i % 2 == 0 ? '.' : ' '));
+            prompt.setCharAt(i, (char) (i % 2 == 0 ? '.' : ' '));
           }
         }
       }
 
       if (this.beeLine.getConsoleReader() == null) {
-        throw new RuntimeException("Console reader not initialized. This could happen when there is a multi-line command using -e option and which requires further reading from console");
+        throw new RuntimeException(
+            "Console reader not initialized. This could happen when there is a multi-line command using -e option and which requires further reading from console");
       }
 
       String extra;
       if (this.beeLine.getOpts().isSilent() && this.beeLine.getOpts().getScriptFile() != null) {
-        extra = this.beeLine.getConsoleReader().readLine((String)null, mask);
+        extra = this.beeLine.getConsoleReader().readLine((String) null, mask);
       } else {
         extra = this.beeLine.getConsoleReader().readLine(prompt.toString());
       }
@@ -657,7 +661,7 @@ public class KyuubiCommands extends Commands {
     line = line.trim();
     if (!line.endsWith(this.beeLine.getOpts().getDelimiter()) && !this.beeLine.isComment(line)) {
       List<String> cmds = this.getCmdList(line, false);
-      return cmds.isEmpty() || !((String)cmds.get(cmds.size() - 1)).trim().startsWith("--");
+      return cmds.isEmpty() || !((String) cmds.get(cmds.size() - 1)).trim().startsWith("--");
     } else {
       return false;
     }
