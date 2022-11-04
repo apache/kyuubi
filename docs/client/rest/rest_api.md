@@ -273,13 +273,13 @@ The [KyuubiOperationEvent](#kyuubioperationevent).
 
 ### PUT /operations/${operationHandle}
 
-Put an action to the operation
+Perform an action to the pending or running operation.
 
 #### Request Body
 
-| Name   | Description                                                                 | Type   |
-|:-------|:----------------------------------------------------------------------------|:-------|
-| action | The action that is applied the operation, for example: 'cancel' and 'close' | String |
+| Name   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Type   |
+|:-------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------|
+| action | The action that is performed to the operation. Currently, supported actions are 'cancel' and 'close'. <ul><li>Cancel: to cancel the operation, which means the operation and its corresponding background task will be stopped, and its state will be switched to CANCELED. A CANCELED operation's status can still be fetched by client requests.</li><li>Close: to close the operation, which means the operation and its corresponding background task will be stopped, and its state will be switched to CLOSED. A CLOSED operation's status will be removed on the server side and can not be fetched anymore.</li><ul> | String |
 
 ### GET /operations/${operationHandle}/resultsetmetadata
 
