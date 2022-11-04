@@ -189,8 +189,29 @@ def execute_request(content):
 
     return execute_reply_ok(result)
 
-import findspark
-findspark.init()
+# import findspark
+# findspark.init()
+
+spark_home = os.environ.get("SPARK_HOME", "")
+os.environ["PYSPARK_PYTHON"] = os.environ.get("PYSPARK_PYTHON", sys.executable)
+
+# add pyspark to sys.path
+
+if "pyspark" not in sys.modules:
+    spark_python = os.path.join(spark_home, "python")
+    try:
+        py4j = glob(os.path.join(spark_python, "lib", "py4j-*.zip"))[0]
+    except IndexError:
+        raise Exception(
+            "Unable to find py4j in {}, your SPARK_HOME may not be configured correctly".format(
+                spark_python
+            )
+        )
+    sys.path[:0] = sys_path = [spark_python, py4j]
+else:
+    # already imported, no need to patch sys.path
+    sys_path = None
+
 import kyuubi_util
 spark = kyuubi_util.get_spark()
 global_dict['spark'] = spark
