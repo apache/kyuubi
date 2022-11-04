@@ -59,14 +59,14 @@ class GetPrimaryKeys(
       val columns = primaryKeySchema.asScala.map { uniqueConstraint =>
         uniqueConstraint
           .getColumns.asScala.toArray.zipWithIndex
-          .map { case (column, pos) =>
+          .map { case (columnName, pos) =>
             toColumnResult(
               catalogName,
               schemaName,
               tableName,
-              uniqueConstraint.getName,
-              column,
-              pos)
+              columnName,
+              pos,
+              uniqueConstraint.getName)
           }
       }.getOrElse(Array.empty)
 
@@ -88,9 +88,9 @@ class GetPrimaryKeys(
       catalogName: String,
       schemaName: String,
       tableName: String,
-      pkName: String,
       columnName: String,
-      pos: Int): Row = {
+      pos: Int,
+      pkConstraintName: String): Row = {
     // format: off
     Row.of(
       catalogName,              // TABLE_CAT
@@ -98,7 +98,7 @@ class GetPrimaryKeys(
       tableName,                // TABLE_NAME
       columnName,               // COLUMN_NAME
       Integer.valueOf(pos + 1), // KEY_SEQ
-      pkName                    // PK_NAME
+      pkConstraintName          // PK_NAME
     )
     // format: on
   }
