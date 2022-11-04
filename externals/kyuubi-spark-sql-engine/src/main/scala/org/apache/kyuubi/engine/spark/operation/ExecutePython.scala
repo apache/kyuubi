@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.io.{BufferedReader, File, FileOutputStream, InputStreamReader, PrintWriter}
+import java.io.{BufferedReader, File, FilenameFilter, FileOutputStream, InputStreamReader, PrintWriter}
 import java.lang.ProcessBuilder.Redirect
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
@@ -124,7 +124,7 @@ object ExecutePython extends Logging {
       .split(File.pathSeparator)
       .++(ExecutePython.kyuubiPythonPath.toString)
     env.put("PYTHONPATH", pythonPath.mkString(File.pathSeparator))
-    env.put("SPARK_HOME", sys.env.getOrElse("SPARK_HOME", "."))
+    env.put("SPARK_HOME", sys.env.getOrElse("SPARK_HOME", defaultSparkHome()))
     logger.info(
       s"""
          |launch python worker command: ${builder.command().asScala.mkString(" ")}
@@ -134,6 +134,22 @@ object ExecutePython extends Logging {
     builder.redirectError(Redirect.PIPE)
     val process = builder.start()
     SessionPythonWorker(start_stderr_steam_reader(process), start_watcher(process), process)
+  }
+
+  // for test
+  def defaultSparkHome(): String = {
+    val homeDirFilter: FilenameFilter = (dir: File, name: String) =>
+      dir.isDirectory && name.contains("spark-") && !name.contains("-engine")
+    // 3. get from kyuubi-server/../externals/kyuubi-download/target
+    new File(getClass.getProtectionDomain.getCodeSource.getLocation.toURI).getPath
+      .split("kyuubi-spark-sql-engine").flatMap { cwd =>
+        val candidates = Paths.get(cwd, "kyuubi-download", "target")
+          .toFile.listFiles(homeDirFilter)
+        if (candidates == null) None else candidates.map(_.toPath).headOption
+      }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+      .getOrElse {
+        throw new IllegalStateException("SPARK_HOME not found!")
+      }
   }
 
   private def start_stderr_steam_reader(process: Process): Thread = {

@@ -683,6 +683,16 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     }
   }
 
+  test("pyspark support") {
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.executeQuery("SET kyuubi.operation.language=python")
+      val resultSet = statement.executeQuery("print(1)")
+      assert(resultSet.next())
+      assert(resultSet.getString("output") === "1")
+      assert(resultSet.getString("status") === "ok")
+    })
+  }
+
   private def whenMetaStoreURIsSetTo(uris: String)(func: String => Unit): Unit = {
     val conf = spark.sparkContext.hadoopConfiguration
     val origin = conf.get("hive.metastore.uris", "")
