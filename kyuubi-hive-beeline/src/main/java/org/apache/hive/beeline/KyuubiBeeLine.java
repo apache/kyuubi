@@ -17,20 +17,18 @@
 
 package org.apache.hive.beeline;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.hive.beeline.hs2connection.BeelineConfFileParseException;
-import org.apache.hive.beeline.hs2connection.DefaultConnectionUrlParser;
-import org.apache.hive.beeline.hs2connection.HS2ConnectionFileUtils;
-import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Driver;
 import java.util.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.hive.beeline.hs2connection.DefaultConnectionUrlParser;
+import org.apache.hive.beeline.hs2connection.HS2ConnectionUtils;
+import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 
 public class KyuubiBeeLine extends BeeLine {
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER =
@@ -198,24 +196,27 @@ public class KyuubiBeeLine extends BeeLine {
     return code;
   }
 
+  /*
+   * Attempts to make a connection using default HS2 connection config file if available
+   * if there connection is not made return false
+   *
+   */
   private boolean defaultKyuubiBeelineConnect(CommandLine cl) {
     String url;
     try {
-      url = this.getDefaultKyuubiConnectionUrl(cl);
+      url = getDefaultKyuubiConnectionUrl(cl);
       if (url == null) {
-        this.debug("Cannot construct default connection url by kyuubi conf.");
+        debug("Default hs2 connection config file not found");
         return false;
       }
-    } catch (BeelineConfFileParseException var4) {
-      this.error((Throwable) var4);
+    } catch (KyuubiBeelineException e) {
+      error(e);
       return false;
     }
-
-    return this.dispatch("!connect " + url);
+    return dispatch("!connect " + url);
   }
 
-  private String getDefaultKyuubiConnectionUrl(CommandLine cl)
-      throws BeelineConfFileParseException {
+  private String getDefaultKyuubiConnectionUrl(CommandLine cl) throws KyuubiBeelineException {
     Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
 
     String userName = cl.getOptionValue("n");
@@ -231,6 +232,6 @@ public class KyuubiBeeLine extends BeeLine {
       properties.setProperty(JdbcConnectionParams.AUTH_TYPE, userName);
     }
 
-    return HS2ConnectionFileUtils.getUrl(properties);
+    return HS2ConnectionUtils.getUrl(properties);
   }
 }

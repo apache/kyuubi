@@ -19,76 +19,116 @@
 package org.apache.hive.beeline;
 
 import java.util.Properties;
-import org.apache.hive.beeline.hs2connection.BeelineHS2ConnectionFileParseException;
 import org.apache.hive.beeline.hs2connection.DefaultConnectionUrlParser;
-import org.apache.hive.beeline.hs2connection.HS2ConnectionFileUtils;
+import org.apache.hive.beeline.hs2connection.HS2ConnectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class DefaultConnectionUrlParserTest {
 
   @Test
-  public void testDefaultUrl_thrift_binary() throws BeelineHS2ConnectionFileParseException {
-    System.setProperty("kyuubi.frontend.thrift.binary.bind.host", "kyuubi.test.com");
-    System.setProperty("kyuubi.frontend.protocols", "THRIFT_BINARY");
+  public void testDefaultUrl_thrift_binary() throws KyuubiBeelineException {
+    System.setProperty("kyuubi.beeline.thrift.binary.bind.host", "kyuubi.test.com");
 
     Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
-    String url = HS2ConnectionFileUtils.getUrl(properties);
+    String url = HS2ConnectionUtils.getUrl(properties);
     String expected = "jdbc:hive2://kyuubi.test.com:10009/default";
     Assert.assertEquals(expected, url);
 
-    System.clearProperty("kyuubi.frontend.thrift.binary.bind.host");
-    System.clearProperty("kyuubi.frontend.protocols");
+    System.clearProperty("kyuubi.beeline.thrift.binary.bind.host");
   }
 
   @Test
-  public void testDefaultUrl_thrift_http() throws BeelineHS2ConnectionFileParseException {
-    System.setProperty("kyuubi.frontend.thrift.http.bind.host", "kyuubi.test.com");
-    System.setProperty("kyuubi.frontend.thrift.http.bind.port", "10010");
-    System.setProperty("kyuubi.frontend.protocols", "THRIFT_HTTP");
+  public void testDefaultUrl_thrift_http() throws KyuubiBeelineException {
+    System.setProperty("kyuubi.beeline.thrift.http.bind.host", "kyuubi.test.com");
+    System.setProperty("kyuubi.beeline.thrift.http.bind.port", "10010");
+    System.setProperty("kyuubi.beeline.thrift.transport.mode", "THRIFT_HTTP");
 
     Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
-    String url = HS2ConnectionFileUtils.getUrl(properties);
-    String expected = "jdbc:hive2://kyuubi.test.com:10010/default;httpPath=cliservice;transportMode=http";
+    String url = HS2ConnectionUtils.getUrl(properties);
+    String expected =
+        "jdbc:hive2://kyuubi.test.com:10010/default;httpPath=cliservice;transportMode=http";
     Assert.assertEquals(expected, url);
 
-    System.clearProperty("kyuubi.frontend.thrift.http.bind.host");
-    System.clearProperty("kyuubi.frontend.thrift.http.bind.port");
-    System.clearProperty("kyuubi.frontend.protocols");
+    System.clearProperty("kyuubi.beeline.thrift.http.bind.host");
+    System.clearProperty("kyuubi.beeline.thrift.http.bind.port");
+    System.clearProperty("kyuubi.beeline.thrift.transport.mode");
   }
 
   @Test
-  public void testDefaultUrl_zookeeper() throws BeelineHS2ConnectionFileParseException {
-    System.setProperty("kyuubi.ha.addresses", "zk-node-1:2181,zk-node-2:2181,zk-node-3:2181");
-    System.setProperty("kyuubi.ha.namespace", "kyuubi_test");
+  public void testDefaultUrl_zookeeper() throws KyuubiBeelineException {
+    System.setProperty(
+        "kyuubi.beeline.ha.addresses", "zk-node-1:2181,zk-node-2:2181,zk-node-3:2181");
+    System.setProperty("kyuubi.beeline.ha.namespace", "kyuubi_test");
 
     Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
-    String url = HS2ConnectionFileUtils.getUrl(properties);
-    String expected = "jdbc:hive2://zk-node-1:2181,zk-node-2:2181,zk-node-3:2181/default;" +
-            "serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi_test";
+    String url = HS2ConnectionUtils.getUrl(properties);
+    String expected =
+        "jdbc:hive2://zk-node-1:2181,zk-node-2:2181,zk-node-3:2181/default;"
+            + "serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi_test";
     Assert.assertEquals(expected, url);
 
-    System.clearProperty("kyuubi.ha.addresses");
-    System.clearProperty("kyuubi.ha.namespace");
+    System.clearProperty("kyuubi.beeline.ha.addresses");
+    System.clearProperty("kyuubi.beeline.ha.namespace");
   }
 
   @Test
-  public void testDefaultUrl_kerberos() throws BeelineHS2ConnectionFileParseException {
-    System.setProperty("kyuubi.frontend.thrift.binary.bind.host", "kyuubi.test.com");
-    System.setProperty("kyuubi.authentication", "KERBEROS, LDAP");
-    System.setProperty("kyuubi.kinit.principal", "kyuubi/kyuubi.test.com@DEFAULT.TEST.COM");
+  public void testDefaultUrl_kerberos() throws KyuubiBeelineException {
+    System.setProperty("kyuubi.beeline.thrift.binary.bind.host", "kyuubi.test.com");
+    System.setProperty("kyuubi.beeline.authentication", "KERBEROS, LDAP");
+    System.setProperty(
+        "kyuubi.beeline.kerberos.principal", "kyuubi/kyuubi.test.com@DEFAULT.TEST.COM");
 
     Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
-    String url = HS2ConnectionFileUtils.getUrl(properties);
-    String expected = "jdbc:hive2://kyuubi.test.com:10009/default;" +
-            "principal=kyuubi/kyuubi.test.com@DEFAULT.TEST.COM";
+    String url = HS2ConnectionUtils.getUrl(properties);
+    String expected =
+        "jdbc:hive2://kyuubi.test.com:10009/default;"
+            + "principal=kyuubi/kyuubi.test.com@DEFAULT.TEST.COM";
     Assert.assertEquals(expected, url);
 
-    System.clearProperty("kyuubi.frontend.thrift.binary.bind.host");
-    System.clearProperty("kyuubi.authentication");
-    System.clearProperty("kyuubi.kinit.principal");
+    System.clearProperty("kyuubi.beeline.thrift.binary.bind.host");
+    System.clearProperty("kyuubi.beeline.authentication");
+    System.clearProperty("kyuubi.beeline.kerberos.principal");
   }
 
-  // TODO: add ssl test
+  @Test
+  public void testDefaultUrl_var_and_conf() throws KyuubiBeelineException {
+    System.setProperty("kyuubi.beeline.thrift.binary.bind.host", "kyuubi.test.com");
+    System.setProperty("kyuubi.beeline.session.confs", "hive.server2.proxy.user=b_kyuubi");
+    System.setProperty("kyuubi.beeline.kyuubi.confs", "kyuubi.engine.share.level=CONNECTION");
+    System.setProperty(
+        "kyuubi.beeline.kyuubi.vars", "spark.yarn.queue=infra-test,spark.ui.enabled=false");
 
+    Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
+    String url = HS2ConnectionUtils.getUrl(properties);
+    String expected =
+        "jdbc:hive2://kyuubi.test.com:10009/default;hive.server2.proxy.user=b_kyuubi"
+            + "?kyuubi.engine.share.level=CONNECTION#spark.yarn.queue=infra-test;spark.ui.enabled=false";
+    Assert.assertEquals(expected, url);
+
+    System.clearProperty("kyuubi.beeline.thrift.binary.bind.host");
+    System.clearProperty("kyuubi.beeline.session.confs");
+    System.clearProperty("kyuubi.beeline.kyuubi.confs");
+    System.clearProperty("kyuubi.beeline.kyuubi.vars");
+  }
+
+  @Test
+  public void testDefaultUrl_ssl() throws KyuubiBeelineException {
+    System.setProperty("kyuubi.beeline.thrift.binary.bind.host", "kyuubi.test.com");
+    System.setProperty("kyuubi.beeline.use.SSL", "true");
+    System.setProperty("kyuubi.beeline.ssl.truststore", "/user/kyuubi/gateway.jks");
+    System.setProperty("kyuubi.beeline.ssl.truststore.password", "testPassword");
+
+    Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
+    String url = HS2ConnectionUtils.getUrl(properties);
+    String expected =
+        "jdbc:hive2://kyuubi.test.com:10009/default;ssl=true;"
+            + "sslTrustStore=/user/kyuubi/gateway.jks;trustStorePassword=testPassword";
+    Assert.assertEquals(expected, url);
+
+    System.clearProperty("kyuubi.beeline.thrift.binary.bind.host");
+    System.clearProperty("kyuubi.beeline.use.SSL");
+    System.clearProperty("kyuubi.beeline.ssl.truststore");
+    System.clearProperty("kyuubi.beeline.ssl.truststore.password");
+  }
 }

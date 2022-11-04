@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.{KyuubiFunSuite, TestUtils, Utils}
+import org.apache.kyuubi.beeline.BeelineConf
 import org.apache.kyuubi.ctl.CtlConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.metrics.MetricsConf
@@ -70,6 +71,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
 
   test("Check all kyuubi configs") {
     KyuubiConf
+    BeelineConf
     CtlConf
     HighAvailabilityConf
     JDBCMetadataStoreConf

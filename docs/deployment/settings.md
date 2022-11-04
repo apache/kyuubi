@@ -174,6 +174,30 @@ kyuubi.batch.application.check.interval|PT5S|The interval to check batch job app
 kyuubi.batch.conf.ignore.list||A comma separated list of ignored keys for batch conf. If the batch conf contains any of them, the key and the corresponding value will be removed silently during batch job submission. Note that this rule is for server-side protection defined via administrators to prevent some essential configs from tampering. You can also pre-define some config for batch job submission with prefix: kyuubi.batchConf.[batchType]. For example, you can pre-define `spark.master` for spark batch job with key `kyuubi.batchConf.spark.spark.master`.|seq|1.6.0
 
 
+### Beeline
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.beeline.authentication|NONE|A comma separated list of client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>CUSTOM: User-defined authentication.</li> <li>JDBC: JDBC query authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul> Note that: For KERBEROS, it is SASL/GSSAPI mechanism, and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism. If only NOSASL is specified, the authentication will be NOSASL. For SASL authentication, KERBEROS and PLAIN auth type are supported at the same time, and only the first specified PLAIN auth type is valid.|seq|1.7.0
+kyuubi.beeline.db.name|default|Optional database name to set the current database to run the query against, use `default` if absent.|string|1.7.0
+kyuubi.beeline.ha.addresses||The connection string for the discovery ensemble.|string|1.7.0
+kyuubi.beeline.ha.namespace|kyuubi|The root directory for the service to deploy its instance uri.|string|1.7.0
+kyuubi.beeline.kerberos.principal||Name of the Kerberos principal.|string|1.7.0
+kyuubi.beeline.kyuubi.confs|&lt;undefined&gt;|Optional `Semicolon(;)` separated `key=value` parameters for Kyuubi server to create the corresponding engine, dismissed if engine exists.|string|1.7.0
+kyuubi.beeline.kyuubi.vars|&lt;undefined&gt;|Optional `Semicolon(;)` separated `key=value` parameters for Spark/Hive variables used for variable substitution.|string|1.7.0
+kyuubi.beeline.sasl.qop|auth|Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul>|string|1.7.0
+kyuubi.beeline.session.confs|&lt;undefined&gt;|Optional `Semicolon(;)` separated `key=value` parameters for the JDBC/ODBC driver. Such as `user`, `password` and `hive.server2.proxy.user`.|string|1.7.0
+kyuubi.beeline.ssl.truststore|&lt;undefined&gt;|The path to the SSL TrustStore.|string|1.7.0
+kyuubi.beeline.ssl.truststore.password|&lt;undefined&gt;|The password to the SSL TrustStore.|string|1.7.0
+kyuubi.beeline.thrift.binary.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.|string|1.7.0
+kyuubi.beeline.thrift.binary.bind.port|10009|Port of the machine on which to run the thrift frontend service via binary protocol.|int|1.7.0
+kyuubi.beeline.thrift.http.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the thrift frontend service via http protocol.|string|1.7.0
+kyuubi.beeline.thrift.http.bind.port|10010|Port of the machine on which to run the thrift frontend service via http protocol.|int|1.7.0
+kyuubi.beeline.thrift.http.path|cliservice|Path component of URL endpoint when in HTTP mode.|string|1.7.0
+kyuubi.beeline.thrift.transport.mode|thrift_binary|Transport mode of HiveServer2: <ul> <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li> <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li></ul>|string|1.7.0
+kyuubi.beeline.use.SSL|false|Set this to true for using SSL encryption.|boolean|1.7.0
+
+
 ### Credentials
 
 Key | Default | Meaning | Type | Since
