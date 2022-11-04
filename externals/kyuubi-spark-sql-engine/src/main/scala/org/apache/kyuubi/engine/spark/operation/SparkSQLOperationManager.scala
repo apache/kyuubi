@@ -18,9 +18,7 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.ConcurrentHashMap
-
 import scala.collection.JavaConverters._
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
@@ -40,10 +38,16 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)
 
   private val sessionToRepl = new ConcurrentHashMap[SessionHandle, KyuubiSparkILoop]().asScala
+  private val sessionToPythonProcess = new ConcurrentHashMap[SessionHandle, SessionPythonWorker]().asScala
 
   def closeILoop(session: SessionHandle): Unit = {
     val maybeRepl = sessionToRepl.remove(session)
     maybeRepl.foreach(_.close())
+  }
+
+  def closePythonProcess(session: SessionHandle): Unit = {
+    val maybeProcess = sessionToPythonProcess.remove(session)
+    maybeProcess.foreach(_.close)
   }
 
   override def newExecuteStatementOperation(
@@ -82,6 +86,10 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
         case OperationLanguages.SCALA =>
           val repl = sessionToRepl.getOrElseUpdate(session.handle, KyuubiSparkILoop(spark))
           new ExecuteScala(session, repl, statement)
+        case OperationLanguages.PYTHON =>
+          ExecutePython.init()
+          val worker = sessionToPythonProcess.getOrElseUpdate(session.handle, ExecutePython.createSessionPythonWorker())
+          new ExecutePython(session, statement, worker)
         case OperationLanguages.UNKNOWN =>
           spark.conf.unset(OPERATION_LANGUAGE.key)
           throw KyuubiSQLException(s"The operation language $lang" +

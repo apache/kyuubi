@@ -1867,9 +1867,10 @@ object KyuubiConf {
 
   object OperationLanguages extends Enumeration with Logging {
     type OperationLanguage = Value
-    val SQL, SCALA, UNKNOWN = Value
+    val PYTHON, SQL, SCALA, UNKNOWN = Value
     def apply(language: String): OperationLanguage = {
       language.toUpperCase(Locale.ROOT) match {
+        case "PYTHON" => PYTHON
         case "SQL" => SQL
         case "SCALA" => SCALA
         case other =>

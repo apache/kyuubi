@@ -45,7 +45,7 @@ public class KyuubiCommands extends Commands {
 
   /** Extract and clean up the first command in the input. */
   private String getFirstCmd(String cmd, int length) {
-    return cmd.substring(length).trim();
+    return cmd.substring(length);
   }
 
   private String[] tokenizeCmd(String cmd) {
@@ -97,7 +97,6 @@ public class KyuubiCommands extends Commands {
       }
       String[] cmds = lines.split(";");
       for (String c : cmds) {
-        c = c.trim();
         if (!executeInternal(c, false)) {
           return false;
         }
@@ -261,10 +260,9 @@ public class KyuubiCommands extends Commands {
       beeLine.handleException(e);
     }
 
-    line = line.trim();
     List<String> cmdList = getCmdList(line, entireLineAsCommand);
     for (int i = 0; i < cmdList.size(); i++) {
-      String sql = cmdList.get(i).trim();
+      String sql = cmdList.get(i);
       if (sql.length() != 0) {
         if (!executeInternal(sql, call)) {
           return false;
@@ -614,6 +612,54 @@ public class KyuubiCommands extends Commands {
       } finally {
         commands.showRemainingLogsIfAny(kyuubiLoggable);
       }
+    }
+  }
+
+  @Override
+  public String handleMultiLineCmd(String line) throws IOException {
+    int[] startQuote = new int[]{-1};
+    Character mask = System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal") ? null : '\u0000';
+
+    while(isMultiLine(line) && this.beeLine.getOpts().isAllowMultiLineCommand()) {
+      StringBuilder prompt = new StringBuilder(this.beeLine.getPrompt());
+      if (!this.beeLine.getOpts().isSilent()) {
+        for(int i = 0; i < prompt.length() - 1; ++i) {
+          if (prompt.charAt(i) != '>') {
+            prompt.setCharAt(i, (char)(i % 2 == 0 ? '.' : ' '));
+          }
+        }
+      }
+
+      if (this.beeLine.getConsoleReader() == null) {
+        throw new RuntimeException("Console reader not initialized. This could happen when there is a multi-line command using -e option and which requires further reading from console");
+      }
+
+      String extra;
+      if (this.beeLine.getOpts().isSilent() && this.beeLine.getOpts().getScriptFile() != null) {
+        extra = this.beeLine.getConsoleReader().readLine((String)null, mask);
+      } else {
+        extra = this.beeLine.getConsoleReader().readLine(prompt.toString());
+      }
+
+      if (extra == null) {
+        break;
+      }
+
+      if (extra != null && !extra.isEmpty()) {
+        line = line + "\n" + extra;
+      }
+    }
+
+    return line;
+  }
+
+  private boolean isMultiLine(String line) {
+    line = line.trim();
+    if (!line.endsWith(this.beeLine.getOpts().getDelimiter()) && !this.beeLine.isComment(line)) {
+      List<String> cmds = this.getCmdList(line, false);
+      return cmds.isEmpty() || !((String)cmds.get(cmds.size() - 1)).trim().startsWith("--");
+    } else {
+      return false;
     }
   }
 }
