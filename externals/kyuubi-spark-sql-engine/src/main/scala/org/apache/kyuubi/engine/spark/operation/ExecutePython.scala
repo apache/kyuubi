@@ -124,6 +124,13 @@ object ExecutePython extends Logging {
       .split(File.pathSeparator)
       .++(ExecutePython.kyuubiPythonPath.toString)
     env.put("PYTHONPATH", pythonPath.mkString(File.pathSeparator))
+    env.put("SPARK_HOME", sys.env.getOrElse("SPARK_HOME", "."))
+    logger.info(
+      s"""
+         |launch python worker command: ${builder.command().asScala.mkString(" ")}
+         |environment:
+         |${builder.environment().asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n")}
+         |""".stripMargin)
     builder.redirectError(Redirect.PIPE)
     val process = builder.start()
     SessionPythonWorker(start_stderr_steam_reader(process), start_watcher(process), process)
