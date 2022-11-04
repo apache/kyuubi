@@ -61,7 +61,7 @@ private[ctl] object Render {
         session.getIdentifier,
         session.getUser,
         session.getIpAddr,
-        session.getConf.toString,
+        session.getConf.asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n"),
         millisToDateString(session.getCreateTime, "yyyy-MM-dd HH:mm:ss"),
         session.getDuration.toString,
         session.getIdleTime.toString)
