@@ -74,13 +74,6 @@ def connect_to_exist_gateway():
 
     return gateway
 
-
-def connect_to_exist_spark():
-    gateway = connect_to_exist_gateway()
-    SparkContext._ensure_initialized(gateway=gateway)
-    spark = SparkSession.builder.master('local').appName('test').getOrCreate()
-    return spark
-
 def _get_exist_spark_context(self, jconf):
     """
     Initialize SparkContext in function to allow subclass specific initialization
@@ -92,7 +85,5 @@ def get_spark():
     gateway = connect_to_exist_gateway()
     SparkContext._ensure_initialized(gateway=gateway)
     spark = SparkSession.builder.master('local').appName('test').getOrCreate()
-    # register sql magic
-    globals()['__notebook_spark__'] = spark
     return spark
 
