@@ -87,7 +87,7 @@ public class DefaultConnectionUrlParser {
 
     if (host == null) {
       InetAddress server = Utils.findLocalInetAddress();
-      host = server.getAddress().toString();
+      host = server.getHostAddress();
     }
 
     props.setProperty(HOST_PROPERTY_KEY, host + ":" + portNum);
