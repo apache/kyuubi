@@ -32,7 +32,7 @@ import org.apache.thrift.transport.TTransport
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI_SESSION_CONNECTION_URL_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
@@ -136,13 +136,13 @@ abstract class TFrontendService(name: String)
     }
   }
 
-  protected def getUserName(req: TOpenSessionReq): String = {
+  protected def getUserName(req: TOpenSessionReq): (String, String) = {
     val realUser: String =
       ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
     if (req.getConfiguration == null) {
-      realUser
+      realUser -> realUser
     } else {
-      getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
+      realUser -> getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
     }
   }
   protected def getIpAddress: String = {
@@ -157,12 +157,14 @@ abstract class TFrontendService(name: String)
   protected def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
-    val userName = getUserName(req)
+    val (realUser, userName) = getUserName(req)
     val ipAddress = getIpAddress
     val configuration =
       Map(KYUUBI_CLIENT_IP_KEY -> ipAddress) ++
         Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
-        Map(KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl)
+        Map(
+          KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl,
+          KYUUBI_SESSION_REAL_USER_KEY -> realUser)
     val sessionHandle = be.openSession(
       protocol,
       userName,
