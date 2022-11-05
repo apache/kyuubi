@@ -97,11 +97,10 @@ case class SessionPythonWorker(
 }
 
 object ExecutePython extends Logging {
-  //  val pythonExec = "/usr/local/share/anaconda3/envs/pyspark-3.3.1-py36/bin/python"
 
   // TODO:(fchen) get from conf
-  val pythonExec = sys.env.get("PYSPARK_PYTHON")
-    .getOrElse("python")
+  val pythonExec =
+    sys.env.getOrElse("PYSPARK_PYTHON", sys.env.getOrElse("PYSPARK_DRIVER_PYTHON", "python3"))
   private val isPythonGatewayStart = new AtomicBoolean(false)
   val kyuubiPythonPath = Files.createTempDirectory("")
   def init(): Unit = {
@@ -140,7 +139,7 @@ object ExecutePython extends Logging {
   def defaultSparkHome(): String = {
     val homeDirFilter: FilenameFilter = (dir: File, name: String) =>
       dir.isDirectory && name.contains("spark-") && !name.contains("-engine")
-    // 3. get from kyuubi-server/../externals/kyuubi-download/target
+    // get from kyuubi-server/../externals/kyuubi-download/target
     new File(getClass.getProtectionDomain.getCodeSource.getLocation.toURI).getPath
       .split("kyuubi-spark-sql-engine").flatMap { cwd =>
         val candidates = Paths.get(cwd, "kyuubi-download", "target")
