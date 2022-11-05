@@ -24,7 +24,6 @@ import javax.ws.rs.core.MediaType
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -33,32 +32,16 @@ import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, Ses
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthenticationHandler.AUTHORIZATION_HEADER
 import org.apache.kyuubi.server.http.authentication.AuthSchemes
-import org.apache.kyuubi.service.authentication.{InternalSecurityAccessor, UserDefineAuthenticationProviderImpl}
+import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.KyuubiSession
 
 class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
-  override protected lazy val conf: KyuubiConf = {
-    val config = new Configuration()
-    val authType = "hadoop.security.authentication"
-    config.set(authType, "KERBEROS")
-    System.setProperty("java.security.krb5.conf", krb5ConfPath)
-    UserGroupInformation.setConfiguration(config)
-    assert(UserGroupInformation.isSecurityEnabled)
-
-    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
-      .set(KyuubiConf.SERVER_KEYTAB.key, testKeytab)
-      .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
-      .set(KyuubiConf.SERVER_SPNEGO_KEYTAB, testKeytab)
-      .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testSpnegoPrincipal)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
-      .set(
-        KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
-        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
-      // allow to impersonate other users with negotiate
-      .set(s"hadoop.proxyuser.client.groups", "*")
-      .set(s"hadoop.proxyuser.client.hosts", "*")
+  override protected val otherConfigs: Map[String, String] = {
+    // allow to impersonate other users with spnego authentication
+    Map(
+      s"hadoop.proxyuser.$principalUserName.groups" -> "*",
+      s"hadoop.proxyuser.$principalUserName.hosts" -> "*")
   }
 
   test("test with LDAP authorization") {
@@ -143,6 +126,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
   }
 
   test("test with ugi wrapped open session") {
+    val proxyUser = "user1"
     UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
     var token = generateToken(hostName)
     val sessionOpenRequest = new SessionOpenRequest(
@@ -152,7 +136,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
       "localhost",
       Map(
         KyuubiConf.ENGINE_SHARE_LEVEL.key -> "CONNECTION",
-        "hive.server2.proxy.user" -> "user1").asJava)
+        "hive.server2.proxy.user" -> proxyUser).asJava)
 
     var response = webTarget.path("api/v1/sessions")
       .request()
@@ -164,8 +148,8 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
     val session = server.backendService.sessionManager.getSession(
       org.apache.kyuubi.session.SessionHandle.fromUUID(sessionHandle.getIdentifier.toString))
       .asInstanceOf[KyuubiSession]
-    assert(session.realUser === "client")
-    assert(session.user === "user1")
+    assert(session.realUser === principalUserName)
+    assert(session.user === proxyUser)
 
     token = generateToken(hostName)
     response = webTarget.path(s"api/v1/sessions/${sessionHandle.getIdentifier}")
