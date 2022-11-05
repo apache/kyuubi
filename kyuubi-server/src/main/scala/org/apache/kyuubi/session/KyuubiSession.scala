@@ -33,7 +33,7 @@ abstract class KyuubiSession(
 
   val sessionType: SessionType
 
-  val connectionUrl = conf.get(KYUUBI_SESSION_CONNECTION_URL_KEY).orNull
+  val connectionUrl = conf.get(KYUUBI_SESSION_CONNECTION_URL_KEY).getOrElse("")
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 
