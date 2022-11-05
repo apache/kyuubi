@@ -75,12 +75,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-hive-beeline</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-api</artifactId>
         </dependency>
@@ -269,6 +263,13 @@
             <artifactId>kyuubi-download</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-hive-beeline</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
