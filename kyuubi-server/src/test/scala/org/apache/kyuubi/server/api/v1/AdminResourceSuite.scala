@@ -100,7 +100,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       assert(200 == response.getStatus)
       assert(client.pathExists(engineSpace))
-      assert(client.getChildren(engineSpace).size == 0)
+      eventually(timeout(5.seconds), interval(100.milliseconds)) {
+        assert(client.getChildren(engineSpace).size == 0, s"refId same with $id?")
+      }
 
       // kill the engine application
       engineMgr.killApplication(None, id)
