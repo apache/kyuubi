@@ -114,8 +114,7 @@ class KyuubiBatchSessionImpl(
       val metaData = Metadata(
         identifier = handle.identifier.toString,
         sessionType = sessionType,
-        // TODO: support real user
-        realUser = user,
+        realUser = realUser,
         username = user,
         ipAddress = ipAddress,
         kyuubiInstance = connectionUrl,
