@@ -21,7 +21,6 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import javax.ws.rs._
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response.Status
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
@@ -309,6 +308,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @Path("{batchId}")
   def closeBatchSession(
       @PathParam("batchId") batchId: String,
+      @deprecated("not needed, will check the impersonation for session user automatically")
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
     val sessionHandle = formatSessionHandle(batchId)
 
