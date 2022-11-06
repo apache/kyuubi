@@ -17,58 +17,95 @@
 
 package org.apache.hive.beeline.hs2connection;
 
+import com.google.common.base.Joiner;
+import java.io.File;
 import java.net.InetAddress;
-import java.util.Properties;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.apache.kyuubi.Utils;
 import org.apache.kyuubi.beeline.BeelineConf;
 import org.apache.kyuubi.config.KyuubiConf;
+import org.apache.logging.log4j.util.Strings;
 
 public class DefaultConnectionUrlParser {
 
-  public static String URL_PREFIX_PROPERTY_KEY = "url_prefix";
-  public static String DB_NAME_PROPERTY_KEY = "dbName";
-  public static String HOST_PROPERTY_KEY = "hosts";
-  public static String SESSION_CONF_PROPERTY_KEY = "sessionconf";
-  public static String KYUUBI_CONF_PROPERTY_KEY = "kyuubiconf";
-  public static String KYUUBI_VAR_PROPERTY_KEY = "kyuubivar";
-
   private KyuubiConf conf;
+
+  private String host;
+  private String dbName;
+  private Map<String, String> sessionConfs = new LinkedHashMap<>();
+  private Map<String, String> kyuubiConfs = new LinkedHashMap<>();
+  private Map<String, String> kyuubiVars = new LinkedHashMap<>();
 
   public DefaultConnectionUrlParser() {
     this.conf = new KyuubiConf(true).loadFileDefaults();
+    setHosts();
+    setDb();
+    setSSL();
+    setKerberos();
+    setHttp();
+    setSessionConfs();
+    setKyuubiConfs();
+    setKyuubiVars();
   }
 
-  public Properties getConnectionProperties() {
-    Properties props = new Properties();
-    props.setProperty(URL_PREFIX_PROPERTY_KEY, "jdbc:hive2://");
-    this.addHosts(props);
-    this.addDb(props);
-    this.addSSL(props);
-    this.addKerberos(props);
-    this.addHttp(props);
-    this.addSessionConfs(props);
-    this.addKyuubiConfs(props);
-    this.addKyuubiVars(props);
-    return props;
+  /**
+   * JDBC URLs have the following format:
+   * jdbc:hive2://<host>:<port>/<dbName>;<sessionVars>?<kyuubiConfs>#<[spark|hive]Vars>
+   */
+  public String getConnectionUrl() {
+    if (Strings.isBlank(host) || Strings.isBlank(dbName)) {
+      return null;
+    }
+
+    StringBuilder urlSb = new StringBuilder();
+    urlSb.append("jdbc:hive2://");
+    urlSb.append(this.host.trim());
+    urlSb.append(File.separator);
+    urlSb.append(this.dbName.trim());
+
+    if (this.sessionConfs.size() > 0) {
+      urlSb.append(";");
+      String sessionConfStr = Joiner.on(";").withKeyValueSeparator("=").join(this.sessionConfs);
+      urlSb.append(sessionConfStr);
+    }
+
+    if (this.kyuubiConfs.size() > 0) {
+      urlSb.append("?");
+      String kyuubiConfStr = Joiner.on(";").withKeyValueSeparator("=").join(this.kyuubiConfs);
+      urlSb.append(kyuubiConfStr);
+    }
+
+    if (this.kyuubiVars.size() > 0) {
+      urlSb.append("#");
+      String kyuubiVarStr = Joiner.on(";").withKeyValueSeparator("=").join(this.kyuubiVars);
+      urlSb.append(kyuubiVarStr);
+    }
+
+    return urlSb.toString();
   }
 
-  private void addHosts(Properties props) {
+  public void addSessionConfs(String key, String value) {
+    this.sessionConfs.put(key, value);
+  }
+
+  private void setHosts() {
     if (StringUtils.isNotBlank(conf.get(BeelineConf.BEELINE_HA_ADDRESSES()))
         && StringUtils.isNotBlank(conf.get(BeelineConf.BEELINE_HA_NAMESPACE()))) {
-      this.addZKServiceDiscoveryHosts(props);
+      this.addZKServiceDiscoveryHosts();
     } else {
-      this.addDefaultHS2Hosts(props);
+      this.addDefaultHS2Hosts();
     }
   }
 
-  private void addZKServiceDiscoveryHosts(Properties props) {
-    props.setProperty("serviceDiscoveryMode", "zooKeeper");
-    props.setProperty("zooKeeperNamespace", conf.get(BeelineConf.BEELINE_HA_NAMESPACE()));
-    props.setProperty("hosts", conf.get(BeelineConf.BEELINE_HA_ADDRESSES()));
+  private void addZKServiceDiscoveryHosts() {
+    this.host = conf.get(BeelineConf.BEELINE_HA_ADDRESSES());
+    this.sessionConfs.put("serviceDiscoveryMode", "zooKeeper");
+    this.sessionConfs.put("zooKeeperNamespace", conf.get(BeelineConf.BEELINE_HA_NAMESPACE()));
   }
 
-  private void addDefaultHS2Hosts(Properties props) {
+  private void addDefaultHS2Hosts() {
     String host = null;
     int portNum = 0;
     String protocol = conf.get(BeelineConf.BEELINE_THRIFT_TRANSPORT_MODE());
@@ -90,59 +127,59 @@ public class DefaultConnectionUrlParser {
       host = server.getHostAddress();
     }
 
-    props.setProperty(HOST_PROPERTY_KEY, host + ":" + portNum);
+    this.host = host + ":" + portNum;
   }
 
-  private void addDb(Properties props) {
-    props.setProperty(DB_NAME_PROPERTY_KEY, conf.get(BeelineConf.BEELINE_DB_NAME()));
+  private void setDb() {
+    this.dbName = conf.get(BeelineConf.BEELINE_DB_NAME());
   }
 
-  private void addHttp(Properties props) {
+  private void setHttp() {
     String protocol = conf.get(BeelineConf.BEELINE_THRIFT_TRANSPORT_MODE());
     if (protocol.equalsIgnoreCase("THRIFT_HTTP")) {
-      props.setProperty("transportMode", "http");
-      props.setProperty("httpPath", conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_PATH()));
+      this.sessionConfs.put("transportMode", "http");
+      this.sessionConfs.put("httpPath", conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_PATH()));
     }
   }
 
-  private void addKerberos(Properties props) {
+  private void setKerberos() {
     String authMethods = conf.get(BeelineConf.BEELINE_AUTHENTICATION_METHOD()).mkString();
     if (authMethods.contains("KERBEROS")) {
-      props.setProperty("principal", conf.get(BeelineConf.BEELINE_KERBEROS_PRINCIPAL()));
+      this.sessionConfs.put("principal", conf.get(BeelineConf.BEELINE_KERBEROS_PRINCIPAL()));
     }
   }
 
-  private void addSSL(Properties props) {
+  private void setSSL() {
     if ((boolean) conf.get(BeelineConf.BEELINE_USE_SSL())) {
-      props.setProperty("ssl", "true");
+      this.sessionConfs.put("ssl", "true");
 
       conf.get(BeelineConf.BEELINE_SSL_TRUSTSTORE())
           .filter(StringUtils::isNotBlank)
-          .foreach(v -> props.setProperty("sslTrustStore", v));
+          .foreach(v -> this.sessionConfs.put("sslTrustStore", v));
 
       conf.get(BeelineConf.BEELINE_SSL_TRUSTSTORE_PASSWORD())
           .filter(StringUtils::isNotBlank)
-          .foreach(v -> props.setProperty("trustStorePassword", v));
+          .foreach(v -> this.sessionConfs.put("trustStorePassword", v));
 
       String saslQop = conf.get(BeelineConf.BEELINE_SASL_QOP());
       if (!"auth".equalsIgnoreCase(saslQop)) {
-        props.setProperty("sasl.qop", saslQop);
+        this.sessionConfs.put("sasl.qop", saslQop);
       }
     }
   }
 
-  private void addSessionConfs(Properties props) {
-    conf.get(BeelineConf.BEELINE_SESSION_CONFS())
-        .foreach(v -> props.setProperty(SESSION_CONF_PROPERTY_KEY, v));
+  private void setSessionConfs() {
+    Map<String, String> sessionConfs = BeelineConf.getBeelineSessionConfs(conf);
+    this.sessionConfs.putAll(sessionConfs);
   }
 
-  private void addKyuubiConfs(Properties props) {
-    conf.get(BeelineConf.BEELINE_KYUUBI_CONFS())
-        .foreach(v -> props.setProperty(KYUUBI_CONF_PROPERTY_KEY, v));
+  private void setKyuubiConfs() {
+    Map<String, String> sessionConfs = BeelineConf.getBeelineKyuubiConfs(conf);
+    this.kyuubiConfs.putAll(sessionConfs);
   }
 
-  private void addKyuubiVars(Properties props) {
-    conf.get(BeelineConf.BEELINE_KYUUBI_VARS())
-        .foreach(v -> props.setProperty(KYUUBI_VAR_PROPERTY_KEY, v));
+  private void setKyuubiVars() {
+    Map<String, String> sessionConfs = BeelineConf.getBeelineKyuubiVars(conf);
+    this.kyuubiVars.putAll(sessionConfs);
   }
 }

@@ -22,12 +22,14 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Driver;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hive.beeline.hs2connection.DefaultConnectionUrlParser;
-import org.apache.hive.beeline.hs2connection.HS2ConnectionUtils;
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 
 public class KyuubiBeeLine extends BeeLine {
@@ -197,8 +199,7 @@ public class KyuubiBeeLine extends BeeLine {
   }
 
   /*
-   * Attempts to make a connection using default HS2 connection config file if available
-   * if there connection is not made return false
+   * Attempts to make a connection using beeline conf in kyuubi-defaults.conf if available
    *
    */
   private boolean defaultKyuubiBeelineConnect(CommandLine cl) {
@@ -206,32 +207,31 @@ public class KyuubiBeeLine extends BeeLine {
     try {
       url = getDefaultKyuubiConnectionUrl(cl);
       if (url == null) {
-        debug("Default hs2 connection config file not found");
         return false;
       }
-    } catch (KyuubiBeelineException e) {
+    } catch (Exception e) {
       error(e);
       return false;
     }
     return dispatch("!connect " + url);
   }
 
-  private String getDefaultKyuubiConnectionUrl(CommandLine cl) throws KyuubiBeelineException {
-    Properties properties = new DefaultConnectionUrlParser().getConnectionProperties();
+  private String getDefaultKyuubiConnectionUrl(CommandLine cl) {
+    DefaultConnectionUrlParser parser = new DefaultConnectionUrlParser();
 
     String userName = cl.getOptionValue("n");
     if (userName != null) {
-      properties.setProperty(JdbcConnectionParams.AUTH_USER, userName);
+      parser.addSessionConfs(JdbcConnectionParams.AUTH_USER, userName);
     }
     String password = cl.getOptionValue("p");
     if (password != null) {
-      properties.setProperty(JdbcConnectionParams.AUTH_PASSWD, userName);
+      parser.addSessionConfs(JdbcConnectionParams.AUTH_PASSWD, userName);
     }
     String auth = cl.getOptionValue("a");
     if (auth != null) {
-      properties.setProperty(JdbcConnectionParams.AUTH_TYPE, userName);
+      parser.addSessionConfs(JdbcConnectionParams.AUTH_TYPE, userName);
     }
 
-    return HS2ConnectionUtils.getUrl(properties);
+    return parser.getConnectionUrl();
   }
 }

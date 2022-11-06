@@ -17,12 +17,31 @@
 
 package org.apache.kyuubi.beeline
 
+import java.util.{Map => JMap}
 import java.util.Locale
+
+import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 object BeelineConf {
+
+  final val BEELINE_SESSION_CONF_PREFIX = "kyuubi.beeline.sessionConf"
+  final val BEELINE_KYUUBI_CONF_PREFIX = "kyuubi.beeline.kyuubiConf"
+  final val BEELINE_KYUUBI_VAR_PREFIX = "kyuubi.beeline.kyuubiVar"
+
+  def getBeelineSessionConfs(conf: KyuubiConf): JMap[String, String] = {
+    conf.getAllWithPrefix(BEELINE_SESSION_CONF_PREFIX, "").asJava
+  }
+
+  def getBeelineKyuubiConfs(conf: KyuubiConf): JMap[String, String] = {
+    conf.getAllWithPrefix(BEELINE_KYUUBI_CONF_PREFIX, "").asJava
+  }
+
+  def getBeelineKyuubiVars(conf: KyuubiConf): JMap[String, String] = {
+    conf.getAllWithPrefix(BEELINE_KYUUBI_VAR_PREFIX, "").asJava
+  }
 
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
@@ -161,29 +180,5 @@ object BeelineConf {
     .checkValues(SaslQOP.values.map(_.toString))
     .transform(_.toLowerCase(Locale.ROOT))
     .createWithDefault(SaslQOP.AUTH.toString)
-
-  val BEELINE_SESSION_CONFS: OptionalConfigEntry[String] =
-    buildConf("kyuubi.beeline.session.confs")
-      .doc("Optional `Semicolon(;)` separated `key=value` parameters for the JDBC/ODBC driver." +
-        " Such as `user`, `password` and `hive.server2.proxy.user`.")
-      .version("1.7.0")
-      .stringConf
-      .createOptional
-
-  val BEELINE_KYUUBI_CONFS: OptionalConfigEntry[String] =
-    buildConf("kyuubi.beeline.kyuubi.confs")
-      .doc("Optional `Semicolon(;)` separated `key=value` parameters for Kyuubi server" +
-        " to create the corresponding engine, dismissed if engine exists.")
-      .version("1.7.0")
-      .stringConf
-      .createOptional
-
-  val BEELINE_KYUUBI_VARS: OptionalConfigEntry[String] =
-    buildConf("kyuubi.beeline.kyuubi.vars")
-      .doc("Optional `Semicolon(;)` separated `key=value` parameters for" +
-        " Spark/Hive variables used for variable substitution.")
-      .version("1.7.0")
-      .stringConf
-      .createOptional
 
 }

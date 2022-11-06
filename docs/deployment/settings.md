@@ -183,10 +183,7 @@ kyuubi.beeline.db.name|default|Optional database name to set the current databas
 kyuubi.beeline.ha.addresses||The connection string for the discovery ensemble.|string|1.7.0
 kyuubi.beeline.ha.namespace|kyuubi|The root directory for the service to deploy its instance uri.|string|1.7.0
 kyuubi.beeline.kerberos.principal||Name of the Kerberos principal.|string|1.7.0
-kyuubi.beeline.kyuubi.confs|&lt;undefined&gt;|Optional `Semicolon(;)` separated `key=value` parameters for Kyuubi server to create the corresponding engine, dismissed if engine exists.|string|1.7.0
-kyuubi.beeline.kyuubi.vars|&lt;undefined&gt;|Optional `Semicolon(;)` separated `key=value` parameters for Spark/Hive variables used for variable substitution.|string|1.7.0
 kyuubi.beeline.sasl.qop|auth|Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul>|string|1.7.0
-kyuubi.beeline.session.confs|&lt;undefined&gt;|Optional `Semicolon(;)` separated `key=value` parameters for the JDBC/ODBC driver. Such as `user`, `password` and `hive.server2.proxy.user`.|string|1.7.0
 kyuubi.beeline.ssl.truststore|&lt;undefined&gt;|The path to the SSL TrustStore.|string|1.7.0
 kyuubi.beeline.ssl.truststore.password|&lt;undefined&gt;|The password to the SSL TrustStore.|string|1.7.0
 kyuubi.beeline.thrift.binary.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.|string|1.7.0
