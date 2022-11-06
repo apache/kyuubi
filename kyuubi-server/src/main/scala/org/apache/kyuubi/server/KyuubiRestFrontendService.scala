@@ -36,7 +36,7 @@ import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, Kyuub
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSessionManager, Session, SessionHandle}
 import org.apache.kyuubi.util.ThreadUtils
 
 /**
@@ -174,13 +174,15 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     super.stop()
   }
 
-  def checkSessionAccessPermission(sessionHandle: SessionHandle): Unit = {
+  def checkSessionAccessPermission(sessionHandleStr: String): Unit = {
     val userName = getUserName()
-    val session = sessionManager.getSessionOption(sessionHandle)
-    if (session.isEmpty) {
-      throw new NotFoundException(s"Session $sessionHandle not found.")
+    var session: Session = null
+    try {
+      session = sessionManager.getSession(SessionHandle.fromUUID(sessionHandleStr))
+    } catch {
+      case e: Throwable => throw new NotFoundException(e.getMessage)
     }
-    val sessionOwner = session.get.user
+    val sessionOwner = session.user
     checkSessionOwner(userName, sessionOwner)
   }
 

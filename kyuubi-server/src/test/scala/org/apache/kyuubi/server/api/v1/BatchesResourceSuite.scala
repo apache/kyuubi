@@ -83,8 +83,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
     assert(405 == proxyUserResponse.getStatus)
-    var errorMessage = "Failed to validate proxy privilege of anonymous for root"
-    assert(proxyUserResponse.readEntity(classOf[String]).contains(errorMessage))
 
     var getBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId()}")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -140,8 +138,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       .header(AUTHORIZATION_HEADER, s"BASIC $encodeAuthorization")
       .delete()
     assert(405 == deleteBatchResponse.getStatus)
-    errorMessage = s"${batch.getId()} is not allowed to close the session belong to anonymous"
-    assert(deleteBatchResponse.readEntity(classOf[String]).contains(errorMessage))
 
     // invalid batchId
     deleteBatchResponse = webTarget.path(s"api/v1/batches/notValidUUID")
@@ -161,8 +157,6 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       .request(MediaType.APPLICATION_JSON_TYPE)
       .delete()
     assert(405 == deleteBatchResponse.getStatus)
-    errorMessage = "Failed to validate proxy privilege of anonymous for invalidProxy"
-    assert(deleteBatchResponse.readEntity(classOf[String]).contains(errorMessage))
 
     // check close batch session
     deleteBatchResponse = webTarget.path(s"api/v1/batches/${batch.getId()}")
