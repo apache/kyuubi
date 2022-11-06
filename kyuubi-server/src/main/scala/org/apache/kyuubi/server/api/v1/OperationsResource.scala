@@ -32,12 +32,23 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
+import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, Operation, OperationHandle}
 import org.apache.kyuubi.server.api.ApiRequestContext
 
 @Tag(name = "Operation")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class OperationsResource extends ApiRequestContext with Logging {
+  private def checkOperationAccessPermission(operationHandleStr: String): Unit = {
+    var operation: Operation = null
+    try {
+      val opHandle = OperationHandle(operationHandleStr)
+      operation = fe.be.sessionManager.operationManager.getOperation(opHandle)
+    } catch {
+      case _: Throwable => throw new NotFoundException(s"Operation $operationHandleStr not found")
+    }
+    val sessionOwner = operation.getSession.user
+    fe.checkSessionOwner(fe.getUserName(), sessionOwner)
+  }
 
   @ApiResponse(
     responseCode = "200",
@@ -50,6 +61,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @Path("{operationHandle}/event")
   def getOperationEvent(
       @PathParam("operationHandle") operationHandleStr: String): KyuubiOperationEvent = {
+    checkOperationAccessPermission(operationHandleStr)
     try {
       val opHandle = OperationHandle(operationHandleStr)
       val operation = fe.be.sessionManager.operationManager.getOperation(opHandle)
@@ -73,6 +85,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   def applyOpAction(
       request: OpActionRequest,
       @PathParam("operationHandle") operationHandleStr: String): Response = {
+    checkOperationAccessPermission(operationHandleStr)
     try {
       val operationHandle = OperationHandle(operationHandleStr)
       request.getAction.toLowerCase() match {
@@ -101,6 +114,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @Path("{operationHandle}/resultsetmetadata")
   def getResultSetMetadata(
       @PathParam("operationHandle") operationHandleStr: String): ResultSetMetaData = {
+    checkOperationAccessPermission(operationHandleStr)
     try {
       val operationHandle = OperationHandle(operationHandleStr)
       new ResultSetMetaData(
@@ -142,6 +156,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   def getOperationLog(
       @PathParam("operationHandle") operationHandleStr: String,
       @QueryParam("maxrows") maxRows: Int): OperationLog = {
+    checkOperationAccessPermission(operationHandleStr)
     try {
       val rowSet = fe.be.sessionManager.operationManager.getOperationLogRowSet(
         OperationHandle(operationHandleStr),
@@ -171,6 +186,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       @QueryParam("maxrows") @DefaultValue("100") maxRows: Int,
       @QueryParam("fetchorientation") @DefaultValue("FETCH_NEXT")
       fetchOrientation: String): ResultRowSet = {
+    checkOperationAccessPermission(operationHandleStr)
     try {
       val rowSet = fe.be.fetchResults(
         OperationHandle(operationHandleStr),

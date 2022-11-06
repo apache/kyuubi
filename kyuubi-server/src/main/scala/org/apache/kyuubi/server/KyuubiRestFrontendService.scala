@@ -175,7 +175,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   def checkSessionAccessPermission(sessionHandle: SessionHandle): Unit = {
-    val userName = getUserName(null.asInstanceOf[String])
+    val userName = getUserName()
     val session = sessionManager.getSessionOption(sessionHandle)
     if (session.isEmpty) {
       throw new NotFoundException(s"Session $sessionHandle not found.")
@@ -198,7 +198,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
-  def getUserName(hs2ProxyUser: String): String = {
+  def getUserName(hs2ProxyUser: String = null): String = {
     val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
     getUserName(sessionConf)
