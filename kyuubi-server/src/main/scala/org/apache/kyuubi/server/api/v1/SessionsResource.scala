@@ -44,6 +44,14 @@ import org.apache.kyuubi.session.SessionHandle
 private[v1] class SessionsResource extends ApiRequestContext with Logging {
   implicit def toSessionHandle(str: String): SessionHandle = SessionHandle.fromUUID(str)
   private def sessionManager = fe.be.sessionManager
+  private def checkSessionPermission(sessionHandle: String, hs2ProxyUser: String): Unit = {
+    val userName = fe.getUserName(hs2ProxyUser)
+    val sessionOwner = sessionManager.getSession(sessionHandle).user
+    if (sessionOwner != userName) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to access the session owned by $sessionOwner")
+    }
+  }
 
   @ApiResponse(
     responseCode = "200",
@@ -73,7 +81,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "get a session event via session handle identifier")
   @GET
   @Path("{sessionHandle}")
-  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiEvent = {
+  def sessionInfo(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): KyuubiEvent = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       sessionManager.getSession(sessionHandleStr)
         .asInstanceOf[KyuubiSession].getSessionEvent.get
@@ -95,7 +106,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/info/{infoType}")
   def getInfo(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      @PathParam("infoType") infoType: Int): InfoDetail = {
+      @PathParam("infoType") infoType: Int,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): InfoDetail = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       val info = TGetInfoType.findByValue(infoType)
       val infoValue = fe.be.getInfo(sessionHandleStr, info)
@@ -161,7 +174,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "Close a session")
   @DELETE
   @Path("{sessionHandle}")
-  def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
+  def closeSession(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     fe.be.closeSession(sessionHandleStr)
     Response.ok().build()
   }
@@ -176,7 +192,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/statement")
   def executeStatement(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: StatementRequest): OperationHandle = {
+      request: StatementRequest,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       fe.be.executeStatement(
         sessionHandleStr,
@@ -200,7 +218,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "Create an operation with GET_TYPE_INFO type")
   @POST
   @Path("{sessionHandle}/operations/typeInfo")
-  def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+  def getTypeInfo(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       fe.be.getTypeInfo(sessionHandleStr)
     } catch {
@@ -219,7 +240,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "Create an operation with GET_CATALOGS type")
   @POST
   @Path("{sessionHandle}/operations/catalogs")
-  def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+  def getCatalogs(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       fe.be.getCatalogs(sessionHandleStr)
     } catch {
@@ -240,7 +264,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/schemas")
   def getSchemas(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetSchemasRequest): OperationHandle = {
+      request: GetSchemasRequest,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       val operationHandle = fe.be.getSchemas(
         sessionHandleStr,
@@ -265,7 +291,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/tables")
   def getTables(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetTablesRequest): OperationHandle = {
+      request: GetTablesRequest,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       fe.be.getTables(
         sessionHandleStr,
@@ -289,7 +317,10 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "Create an operation with GET_TABLE_TYPES type")
   @POST
   @Path("{sessionHandle}/operations/tableTypes")
-  def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+  def getTableTypes(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       fe.be.getTableTypes(sessionHandleStr)
     } catch {
@@ -310,7 +341,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/columns")
   def getColumns(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetColumnsRequest): OperationHandle = {
+      request: GetColumnsRequest,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       fe.be.getColumns(
         sessionHandleStr,
@@ -336,7 +369,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/functions")
   def getFunctions(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetFunctionsRequest): OperationHandle = {
+      request: GetFunctionsRequest,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       fe.be.getFunctions(
         sessionHandleStr,
@@ -361,7 +396,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/primaryKeys")
   def getPrimaryKeys(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetPrimaryKeysRequest): OperationHandle = {
+      request: GetPrimaryKeysRequest,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       fe.be.getPrimaryKeys(
         sessionHandleStr,
@@ -386,7 +423,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations/crossReference")
   def getCrossReference(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetCrossReferenceRequest): OperationHandle = {
+      request: GetCrossReferenceRequest,
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): OperationHandle = {
+    checkSessionPermission(sessionHandleStr, hs2ProxyUser)
     try {
       fe.be.getCrossReference(
         sessionHandleStr,
