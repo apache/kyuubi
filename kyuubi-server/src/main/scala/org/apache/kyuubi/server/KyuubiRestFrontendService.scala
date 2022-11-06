@@ -181,6 +181,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       throw new NotFoundException(s"Session $sessionHandle not found.")
     }
     val sessionOwner = session.get.user
+    checkSessionOwner(userName, sessionOwner)
+  }
+
+  def checkSessionOwner(userName: String, sessionOwner: String): Unit = {
     if (userName != sessionOwner) {
       try {
         KyuubiAuthenticationFactory.verifyProxyAccess(

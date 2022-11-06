@@ -315,21 +315,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val userName = fe.getUserName(hs2ProxyUser)
 
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
-      if (userName != batchSession.user) {
-        throw new WebApplicationException(
-          s"$userName is not allowed to close the session belong to ${batchSession.user}",
-          Status.METHOD_NOT_ALLOWED)
-      }
+      fe.checkSessionOwner(userName, batchSession.user)
       sessionManager.closeSession(batchSession.handle)
       val (success, msg) = batchSession.batchJobSubmissionOp.getKillMessage
       new CloseBatchResponse(success, msg)
     }.getOrElse {
       Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
-        if (userName != metadata.username) {
-          throw new WebApplicationException(
-            s"$userName is not allowed to close the session belong to ${metadata.username}",
-            Status.METHOD_NOT_ALLOWED)
-        } else if (OperationState.isTerminal(OperationState.withName(metadata.state)) ||
+        fe.checkSessionOwner(userName, metadata.username)
+        if (OperationState.isTerminal(OperationState.withName(metadata.state)) ||
           metadata.kyuubiInstance == fe.connectionUrl) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
         } else {
