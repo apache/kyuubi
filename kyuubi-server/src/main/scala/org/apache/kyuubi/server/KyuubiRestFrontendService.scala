@@ -21,7 +21,7 @@ import java.util.EnumSet
 import java.util.concurrent.{Future, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.servlet.DispatcherType
-import javax.ws.rs.WebApplicationException
+import javax.ws.rs.{NotAllowedException, NotFoundException, WebApplicationException}
 import javax.ws.rs.core.Response.Status
 
 import com.google.common.annotations.VisibleForTesting
@@ -172,6 +172,26 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       server.stop()
     }
     super.stop()
+  }
+
+  def checkSessionAccessPermission(sessionHandle: SessionHandle): Unit = {
+    val userName = getUserName(null.asInstanceOf[String])
+    val session = sessionManager.getSessionOption(sessionHandle)
+    if (session.isEmpty) {
+      throw new NotFoundException(s"Session $sessionHandle not found.")
+    }
+    val sessionOwner = session.get.user
+    if (userName != sessionOwner) {
+      try {
+        KyuubiAuthenticationFactory.verifyProxyAccess(
+          userName,
+          sessionOwner,
+          AuthenticationFilter.getUserIpAddress,
+          hadoopConf)
+      } catch {
+        case e: Throwable => throw new NotAllowedException(e.getMessage)
+      }
+    }
   }
 
   def getUserName(hs2ProxyUser: String): String = {
