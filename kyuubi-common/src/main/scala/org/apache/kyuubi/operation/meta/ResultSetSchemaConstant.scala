@@ -189,6 +189,16 @@ object ResultSetSchemaConstant {
   final val SPECIFIC_NAME = "SPECIFIC_NAME"
 
   /**
+   * Int => KEY_SEQ
+   */
+  final val KEY_SEQ = "KEY_SEQ"
+
+  /**
+   * String => PK_NAME
+   */
+  final val PK_NAME = "PK_NAME"
+
+  /**
    * String => The types catalog.
    */
   final val TYPE_CAT = "TYPE_CAT"
