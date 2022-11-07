@@ -27,7 +27,7 @@ import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.mysql.MySQLCommandHandler._
@@ -107,7 +107,9 @@ class MySQLCommandHandler(connectionUrl: String, be: BackendService, execPool: T
         user,
         "",
         remoteIp,
-        sessionConf ++ Map(KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl))
+        sessionConf ++ Map(
+          KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl,
+          KYUUBI_SESSION_REAL_USER_KEY -> user))
       sessionHandle
     } catch {
       case rethrow: Exception =>

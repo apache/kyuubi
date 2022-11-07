@@ -34,7 +34,7 @@ import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI_SESSION_CONNECTION_URL_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
 import org.apache.kyuubi.engine.ApplicationInfo
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
@@ -166,12 +166,13 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     require(request.getClassName != null, "classname is a required parameter")
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
 
-    val userName = fe.getUserName(request.getConf.asScala.toMap)
+    val userName = fe.getSessionUser(request.getConf.asScala.toMap)
     val ipAddress = fe.getIpAddress
     request.setConf(
       (request.getConf.asScala ++ Map(
         KYUUBI_CLIENT_IP_KEY -> ipAddress,
-        KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl)).asJava)
+        KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
+        KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
     val sessionHandle = sessionManager.openBatchSession(
       userName,
       "anonymous",
@@ -190,7 +191,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @GET
   @Path("{batchId}")
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
-    val userName = fe.getUserName(Map.empty[String, String])
+    val userName = fe.getSessionUser(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       buildBatch(batchSession)
@@ -267,7 +268,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @PathParam("batchId") batchId: String,
       @QueryParam("from") @DefaultValue("-1") from: Int,
       @QueryParam("size") @DefaultValue("100") size: Int): OperationLog = {
-    val userName = fe.getUserName(Map.empty[String, String])
+    val userName = fe.getSessionUser(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       try {
@@ -312,7 +313,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
     val sessionHandle = formatSessionHandle(batchId)
 
-    val userName = fe.getUserName(hs2ProxyUser)
+    val userName = fe.getSessionUser(hs2ProxyUser)
 
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       if (userName != batchSession.user) {

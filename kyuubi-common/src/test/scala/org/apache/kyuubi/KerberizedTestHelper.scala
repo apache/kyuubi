@@ -34,6 +34,7 @@ import org.ietf.jgss.{GSSContext, GSSException, GSSManager, GSSName}
 import org.scalatest.time.SpanSugar._
 
 trait KerberizedTestHelper extends KyuubiFunSuite {
+  val clientPrincipalUser = "client"
   val baseDir: File =
     Utils.createTempDir("kyuubi-kdc", Utils.getCodeSourceLocation(getClass)).toFile
   val kdcConf = MiniKdc.createConf()
@@ -74,7 +75,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
           throw e
       }
     }
-    val tempTestPrincipal = s"client/$hostName"
+    val tempTestPrincipal = s"$clientPrincipalUser/$hostName"
     val tempSpnegoPrincipal = s"HTTP/$hostName"
     kdc.createPrincipal(keytabFile, tempTestPrincipal, tempSpnegoPrincipal)
     rewriteKrb5Conf()

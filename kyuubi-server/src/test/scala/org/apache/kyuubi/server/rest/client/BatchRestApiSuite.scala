@@ -26,8 +26,16 @@ import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
+import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 
 class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
+
+  override protected val otherConfigs: Map[String, String] = {
+    // allow to impersonate other users with spnego authentication
+    Map(
+      s"hadoop.proxyuser.$clientPrincipalUser.groups" -> "*",
+      s"hadoop.proxyuser.$clientPrincipalUser.hosts" -> "*")
+  }
 
   override protected def afterEach(): Unit = {
     eventually(timeout(5.seconds), interval(200.milliseconds)) {
@@ -108,6 +116,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
   }
 
   test("spnego batch rest client") {
+    val proxyUser = "user1"
     val spnegoKyuubiRestClient: KyuubiRestClient =
       KyuubiRestClient.builder(baseUri.toString)
         .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
@@ -115,11 +124,16 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
         .build()
     val batchRestApi: BatchRestApi = new BatchRestApi(spnegoKyuubiRestClient)
     // create batch
-    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
+    val requestObj =
+      newSparkBatchRequest(Map("spark.master" -> "local", "hive.server2.proxy.user" -> proxyUser))
 
     var batch: Batch = batchRestApi.createBatch(requestObj)
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "SPARK")
+    val session = server.backendService.sessionManager.getSession(
+      SessionHandle.fromUUID(batch.getId)).asInstanceOf[KyuubiSession]
+    assert(session.realUser === clientPrincipalUser)
+    assert(session.user === proxyUser)
 
     // get batch by id
     batch = batchRestApi.getBatchById(batch.getId())
@@ -131,7 +145,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(log.getRowCount == 1)
 
     // delete batch
-    val closeResp = batchRestApi.deleteBatch(batch.getId(), null)
+    val closeResp = batchRestApi.deleteBatch(batch.getId(), proxyUser)
     assert(closeResp.getMsg.nonEmpty)
 
     // list batches
