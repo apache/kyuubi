@@ -17,7 +17,11 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.io.PrintWriter
+import java.nio.file.Files
+
 import scala.collection.JavaConverters._
+import scala.sys.process._
 import scala.util.Random
 
 import org.apache.hadoop.hdfs.security.token.delegation.{DelegationTokenIdentifier => HDFSTokenIdent}
@@ -684,6 +688,30 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
   }
 
   test("pyspark support") {
+    def withTempFile(code: String)(op: (String) => Unit): Unit = {
+      val tempPyFile = Files.createTempFile("", ".py").toFile
+      try {
+        new PrintWriter(tempPyFile) {
+          write(code)
+          close
+        }
+        op(tempPyFile.getPath)
+      } finally {
+        Files.delete(tempPyFile.toPath)
+      }
+    }
+
+    val code =
+      """
+        |import sys
+        |print(".".join(map(str, sys.version_info[:2])))
+        |""".stripMargin
+    withTempFile(code) {
+      pyfile: String =>
+        val pythonVersion = s"python3 $pyfile".!!.toDouble
+        assert(pythonVersion > 3.0)
+    }
+
     withMultipleConnectionJdbcStatement()({ statement =>
       statement.executeQuery("SET kyuubi.operation.language=python")
       val resultSet = statement.executeQuery("print(1)")
