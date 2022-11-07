@@ -261,4 +261,40 @@ class OperationLogSuite extends KyuubiFunSuite {
     val msg = log1.read(1).getColumns.get(0).getStringVal.getValues.asScala.head
     assert(msg == msg1)
   }
+
+  test("closing existing seekable reader when adding extra log") {
+    val file = Utils.createTempDir().resolve("f")
+    val writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)
+    val extraFile = Utils.createTempDir().resolve("e")
+    val extraWriter = Files.newBufferedWriter(extraFile, StandardCharsets.UTF_8)
+
+    try {
+      writer.write(s"log")
+      writer.flush()
+      writer.close()
+
+      extraWriter.write("extra_log")
+      extraWriter.flush()
+      extraWriter.close()
+
+      def compareResult(rows: TRowSet, expected: Seq[String]): Unit = {
+        val res = rows.getColumns.get(0).getStringVal.getValues.asScala
+        assert(res.size == expected.size)
+        res.zip(expected).foreach { case (l, r) =>
+          assert(l == r)
+        }
+      }
+
+      val log = new OperationLog(file)
+      // The operation log file is created externally and should be initialized actively.
+      log.initOperationLogIfNecessary()
+
+      compareResult(log.read(0, 1), Seq("log"))
+      log.addExtraLog(extraFile)
+      compareResult(log.read(1, 1), Seq("extra_log"))
+    } finally {
+      Utils.deleteDirectoryRecursively(file.toFile)
+      Utils.deleteDirectoryRecursively(extraFile.toFile)
+    }
+  }
 }

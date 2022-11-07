@@ -80,6 +80,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
   }
 
   private def withMetadataRequestMetrics[T](block: => T): T = {
+    MetricsSystem.tracing(_.incCount(MetricsConstants.METADATA_REQUEST_OPENED))
     try {
       block
     } catch {
@@ -87,6 +88,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
         MetricsSystem.tracing(_.markMeter(MetricsConstants.METADATA_REQUEST_FAIL))
         throw e
     } finally {
+      MetricsSystem.tracing(_.decCount(MetricsConstants.METADATA_REQUEST_OPENED))
       MetricsSystem.tracing(_.markMeter(MetricsConstants.METADATA_REQUEST_TOTAL))
     }
   }

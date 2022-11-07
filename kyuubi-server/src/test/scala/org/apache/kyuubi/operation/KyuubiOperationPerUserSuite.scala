@@ -314,4 +314,11 @@ class KyuubiOperationPerUserSuite
     }
   }
 
+  test("transfer connection url when opening connection") {
+    withJdbcStatement() { _ =>
+      val session =
+        server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+      assert(session.connectionUrl == server.frontendServices.head.connectionUrl)
+    }
+  }
 }

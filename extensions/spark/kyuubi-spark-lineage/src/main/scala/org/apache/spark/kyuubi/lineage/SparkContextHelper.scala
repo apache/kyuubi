@@ -15,26 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ctl.util
+package org.apache.spark.kyuubi.lineage
 
-import com.jakewharton.fliptables.FlipTable
-import org.apache.commons.lang3.StringUtils
+import org.apache.spark.SparkContext
+import org.apache.spark.scheduler.SparkListenerEvent
+import org.apache.spark.sql.SparkSession
 
-private[kyuubi] object Tabulator {
-  def format(title: String, header: Array[String], rows: Array[Array[String]]): String = {
-    val textTable = formatTextTable(header, rows)
-    val footer = s"${rows.size} row(s)\n"
-    if (StringUtils.isBlank(title)) {
-      textTable + footer
-    } else {
-      val rowWidth = textTable.split("\n").head.size
-      val titleNewLine = "\n" + StringUtils.center(title, rowWidth) + "\n"
-      titleNewLine + textTable + footer
-    }
+object SparkContextHelper {
+
+  def globalSparkContext: SparkContext = SparkSession.active.sparkContext
+
+  def postEventToSparkListenerBus(
+      event: SparkListenerEvent,
+      sc: SparkContext = globalSparkContext) {
+    sc.listenerBus.post(event)
   }
 
-  def formatTextTable(header: Array[String], rows: Array[Array[String]]): String = {
-    val normalizedRows = rows.map(row => row.map(Option(_).getOrElse("N/A")))
-    FlipTable.of(header, normalizedRows)
-  }
 }

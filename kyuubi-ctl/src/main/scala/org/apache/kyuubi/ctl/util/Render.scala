@@ -35,9 +35,12 @@ private[ctl] object Render {
 
   def renderEngineNodesInfo(engineNodesInfo: Seq[Engine]): String = {
     val title = s"Engine Node List (total ${engineNodesInfo.size})"
-    val header = Array("Namespace", "Instance", "Version")
+    val header = Array("Namespace", "Instance", "Attributes")
     val rows = engineNodesInfo.map { engine =>
-      Array(engine.getNamespace, engine.getInstance, engine.getVersion)
+      Array(
+        engine.getNamespace + "\n" + renderEngineNamespaceDetails(engine),
+        engine.getInstance,
+        engine.getAttributes.asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n"))
     }.toArray
     Tabulator.format(title, header, rows)
   }
@@ -57,7 +60,7 @@ private[ctl] object Render {
         session.getIdentifier,
         session.getUser,
         session.getIpAddr,
-        session.getConf.toString,
+        session.getConf.asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n"),
         millisToDateString(session.getCreateTime, "yyyy-MM-dd HH:mm:ss"),
         session.getDuration.toString,
         session.getIdleTime.toString)
@@ -120,5 +123,12 @@ private[ctl] object Render {
       batchAppInfo += s"App Diagnostic: ${batch.getAppDiagnostic}"
     }
     batchAppInfo.toList
+  }
+
+  private def renderEngineNamespaceDetails(engine: Engine): String = {
+    val header = Array("EngineType", "ShareLevel", "Subdomain")
+    Tabulator.formatTextTable(
+      header,
+      Array(Array(engine.getEngineType, engine.getSharelevel, engine.getSubdomain)))
   }
 }

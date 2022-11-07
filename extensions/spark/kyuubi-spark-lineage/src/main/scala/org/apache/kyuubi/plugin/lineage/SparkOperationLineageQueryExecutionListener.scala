@@ -17,10 +17,10 @@
 
 package org.apache.kyuubi.plugin.lineage
 
+import org.apache.spark.kyuubi.lineage.SparkContextHelper
 import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.util.QueryExecutionListener
 
-import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.plugin.lineage.events.OperationLineageEvent
 import org.apache.kyuubi.plugin.lineage.helper.SparkSQLLineageParseHelper
 
@@ -29,12 +29,12 @@ class SparkOperationLineageQueryExecutionListener extends QueryExecutionListener
   override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
     val lineage =
       SparkSQLLineageParseHelper(qe.sparkSession).transformToLineage(qe.id, qe.optimizedPlan)
-    val eventTime = System.currentTimeMillis()
-    EventBus.post(OperationLineageEvent(qe.id, eventTime, lineage, None))
+    val event = OperationLineageEvent(qe.id, System.currentTimeMillis(), lineage, None)
+    SparkContextHelper.postEventToSparkListenerBus(event)
   }
 
   override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {
-    val eventTime = System.currentTimeMillis()
-    EventBus.post(OperationLineageEvent(qe.id, eventTime, None, Some(exception)))
+    val event = OperationLineageEvent(qe.id, System.currentTimeMillis(), None, Some(exception))
+    SparkContextHelper.postEventToSparkListenerBus(event)
   }
 }
