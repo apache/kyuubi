@@ -47,7 +47,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       case _: Throwable => throw new NotFoundException(s"Operation $operationHandleStr not found")
     }
     val sessionOwner = operation.getSession.user
-    fe.checkSessionOwner(fe.getUserName(), sessionOwner)
+    fe.checkSessionPermission(fe.getUserName(), sessionOwner)
   }
 
   @ApiResponse(

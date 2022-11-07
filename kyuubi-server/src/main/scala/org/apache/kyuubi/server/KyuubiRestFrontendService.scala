@@ -174,7 +174,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     super.stop()
   }
 
-  def checkSessionOwner(userName: String, sessionOwner: String): Unit = {
+  def checkSessionPermission(userName: String, sessionOwner: String): Unit = {
     if (userName != sessionOwner) {
       try {
         KyuubiAuthenticationFactory.verifyProxyAccess(

@@ -52,7 +52,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       case e: Throwable => throw new NotFoundException(e.getMessage)
     }
     val sessionOwner = session.user
-    fe.checkSessionOwner(userName, sessionOwner)
+    fe.checkSessionPermission(userName, sessionOwner)
   }
 
   @ApiResponse(

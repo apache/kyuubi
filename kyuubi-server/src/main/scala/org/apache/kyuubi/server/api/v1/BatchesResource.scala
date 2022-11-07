@@ -315,13 +315,13 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val userName = fe.getUserName(hs2ProxyUser)
 
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
-      fe.checkSessionOwner(userName, batchSession.user)
+      fe.checkSessionPermission(userName, batchSession.user)
       sessionManager.closeSession(batchSession.handle)
       val (success, msg) = batchSession.batchJobSubmissionOp.getKillMessage
       new CloseBatchResponse(success, msg)
     }.getOrElse {
       Option(sessionManager.getBatchMetadata(batchId)).map { metadata =>
-        fe.checkSessionOwner(userName, metadata.username)
+        fe.checkSessionPermission(userName, metadata.username)
         if (OperationState.isTerminal(OperationState.withName(metadata.state)) ||
           metadata.kyuubiInstance == fe.connectionUrl) {
           new CloseBatchResponse(false, s"The batch[$metadata] has been terminated.")
