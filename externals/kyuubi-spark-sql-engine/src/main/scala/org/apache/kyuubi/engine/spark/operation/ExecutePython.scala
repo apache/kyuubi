@@ -65,9 +65,9 @@ class ExecutePython(
 }
 
 case class SessionPythonWorker(
-     errorReader: Thread,
-     pythonWorkerMonitor: Thread,
-     workerProcess: Process) {
+    errorReader: Thread,
+    pythonWorkerMonitor: Thread,
+    workerProcess: Process) {
   private val stdin: PrintWriter = new PrintWriter(workerProcess.getOutputStream)
   private val stdout: BufferedReader =
     new BufferedReader(new InputStreamReader(workerProcess.getInputStream), 1)
