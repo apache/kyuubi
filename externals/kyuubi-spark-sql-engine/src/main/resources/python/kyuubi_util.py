@@ -27,9 +27,6 @@ import tempfile
 import time
 from subprocess import Popen, PIPE
 
-if sys.version >= '3':
-    xrange = range
-
 from py4j.java_gateway import java_import, JavaGateway, JavaObject, GatewayParameters
 from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
 from pyspark.context import SparkContext
@@ -38,7 +35,9 @@ from pyspark.sql import SparkSession
 
 
 def connect_to_exist_gateway():
-    conn_info_file = os.environ.get("PYTHON_GATEWAY_CONNECTION_INFO", "/tmp/connection.info")
+    conn_info_file = os.environ.get("PYTHON_GATEWAY_CONNECTION_INFO")
+    if conn_info_file is None:
+       raise SystemExit("the python gateway connection information file not found!")
     with open(conn_info_file, "rb") as info:
         gateway_port = read_int(info)
         gateway_secret = UTF8Deserializer().loads(info)

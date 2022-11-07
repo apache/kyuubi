@@ -24,13 +24,6 @@ import traceback
 import re
 import os
 
-
-if sys.version >= '3':
-    unicode = str
-else:
-    import cStringIO
-    import StringIO
-
 TOP_FRAME_REGEX = re.compile(r'\s*File "<stdin>".*in <module>')
 
 global_dict = {}
@@ -140,8 +133,8 @@ def execute_reply_error(exc_type, exc_value, tb):
             break
 
     return execute_reply('error', {
-        'ename': unicode(exc_type.__name__),
-        'evalue': unicode(exc_value),
+        'ename': str(exc_type.__name__),
+        'evalue': str(exc_value),
         'traceback': formatted_tb,
     })
 

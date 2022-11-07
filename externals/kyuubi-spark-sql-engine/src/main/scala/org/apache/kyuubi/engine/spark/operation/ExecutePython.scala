@@ -65,9 +65,9 @@ class ExecutePython(
 }
 
 case class SessionPythonWorker(
-    t1: Thread,
-    t2: Thread,
-    workerProcess: Process) {
+     errorReader: Thread,
+     pythonWorkerMonitor: Thread,
+     workerProcess: Process) {
   private val stdin: PrintWriter = new PrintWriter(workerProcess.getOutputStream)
   private val stdout: BufferedReader =
     new BufferedReader(new InputStreamReader(workerProcess.getInputStream), 1)
@@ -90,8 +90,8 @@ case class SessionPythonWorker(
     stdin.flush()
     stdin.close()
     stdout.close()
-    t1.interrupt()
-    t2.interrupt()
+    errorReader.interrupt()
+    pythonWorkerMonitor.interrupt()
     workerProcess.destroy()
   }
 }
@@ -133,7 +133,7 @@ object ExecutePython extends Logging {
          |""".stripMargin)
     builder.redirectError(Redirect.PIPE)
     val process = builder.start()
-    SessionPythonWorker(start_stderr_steam_reader(process), start_watcher(process), process)
+    SessionPythonWorker(startStderrSteamReader(process), startWatcher(process), process)
   }
 
   // for test
@@ -152,7 +152,7 @@ object ExecutePython extends Logging {
       }
   }
 
-  private def start_stderr_steam_reader(process: Process): Thread = {
+  private def startStderrSteamReader(process: Process): Thread = {
     val stderrThread = new Thread("process stderr thread") {
       override def run() = {
         val lines = scala.io.Source.fromInputStream(process.getErrorStream).getLines()
@@ -164,7 +164,7 @@ object ExecutePython extends Logging {
     stderrThread
   }
 
-  def start_watcher(process: Process): Thread = {
+  def startWatcher(process: Process): Thread = {
     val processWatcherThread = new Thread("process watcher thread") {
       override def run() = {
         val exitCode = process.waitFor()
