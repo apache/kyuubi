@@ -36,14 +36,24 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.KyuubiSession
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.{KyuubiSession, Session, SessionHandle}
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext with Logging {
   implicit def toSessionHandle(str: String): SessionHandle = SessionHandle.fromUUID(str)
   private def sessionManager = fe.be.sessionManager
+  def checkSessionAccessPermission(sessionHandleStr: String): Unit = {
+    val userName = fe.getUserName()
+    var session: Session = null
+    try {
+      session = sessionManager.getSession(SessionHandle.fromUUID(sessionHandleStr))
+    } catch {
+      case e: Throwable => throw new NotFoundException(e.getMessage)
+    }
+    val sessionOwner = session.user
+    fe.checkSessionOwner(userName, sessionOwner)
+  }
 
   @ApiResponse(
     responseCode = "200",
@@ -74,7 +84,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @GET
   @Path("{sessionHandle}")
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiEvent = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       sessionManager.getSession(sessionHandleStr)
         .asInstanceOf[KyuubiSession].getSessionEvent.get
@@ -97,7 +107,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def getInfo(
       @PathParam("sessionHandle") sessionHandleStr: String,
       @PathParam("infoType") infoType: Int): InfoDetail = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       val info = TGetInfoType.findByValue(infoType)
       val infoValue = fe.be.getInfo(sessionHandleStr, info)
@@ -164,7 +174,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     fe.be.closeSession(sessionHandleStr)
     Response.ok().build()
   }
@@ -180,7 +190,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def executeStatement(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: StatementRequest): OperationHandle = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       fe.be.executeStatement(
         sessionHandleStr,
@@ -205,7 +215,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Path("{sessionHandle}/operations/typeInfo")
   def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       fe.be.getTypeInfo(sessionHandleStr)
     } catch {
@@ -225,7 +235,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Path("{sessionHandle}/operations/catalogs")
   def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       fe.be.getCatalogs(sessionHandleStr)
     } catch {
@@ -247,7 +257,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def getSchemas(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetSchemasRequest): OperationHandle = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       val operationHandle = fe.be.getSchemas(
         sessionHandleStr,
@@ -297,7 +307,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Path("{sessionHandle}/operations/tableTypes")
   def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       fe.be.getTableTypes(sessionHandleStr)
     } catch {
@@ -319,7 +329,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def getColumns(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetColumnsRequest): OperationHandle = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       fe.be.getColumns(
         sessionHandleStr,
@@ -346,7 +356,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def getFunctions(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetFunctionsRequest): OperationHandle = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       fe.be.getFunctions(
         sessionHandleStr,
@@ -372,7 +382,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def getPrimaryKeys(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetPrimaryKeysRequest): OperationHandle = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       fe.be.getPrimaryKeys(
         sessionHandleStr,
@@ -398,7 +408,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   def getCrossReference(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetCrossReferenceRequest): OperationHandle = {
-    fe.checkSessionAccessPermission(sessionHandleStr)
+    checkSessionAccessPermission(sessionHandleStr)
     try {
       fe.be.getCrossReference(
         sessionHandleStr,

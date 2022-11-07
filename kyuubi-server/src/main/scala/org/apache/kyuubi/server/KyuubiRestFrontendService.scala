@@ -21,7 +21,7 @@ import java.util.EnumSet
 import java.util.concurrent.{Future, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.servlet.DispatcherType
-import javax.ws.rs.{NotAllowedException, NotFoundException, WebApplicationException}
+import javax.ws.rs.{NotAllowedException, WebApplicationException}
 import javax.ws.rs.core.Response.Status
 
 import com.google.common.annotations.VisibleForTesting
@@ -36,7 +36,7 @@ import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, Kyuub
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
-import org.apache.kyuubi.session.{KyuubiSessionManager, Session, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.util.ThreadUtils
 
 /**
@@ -174,18 +174,6 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     super.stop()
   }
 
-  def checkSessionAccessPermission(sessionHandleStr: String): Unit = {
-    val userName = getUserName()
-    var session: Session = null
-    try {
-      session = sessionManager.getSession(SessionHandle.fromUUID(sessionHandleStr))
-    } catch {
-      case e: Throwable => throw new NotFoundException(e.getMessage)
-    }
-    val sessionOwner = session.user
-    checkSessionOwner(userName, sessionOwner)
-  }
-
   def checkSessionOwner(userName: String, sessionOwner: String): Unit = {
     if (userName != sessionOwner) {
       try {
@@ -200,13 +188,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
-  def getUserName(hs2ProxyUser: String = null): String = {
+  def getUserName(hs2ProxyUser: String): String = {
     val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
     getUserName(sessionConf)
   }
 
-  def getUserName(sessionConf: Map[String, String]): String = {
+  def getUserName(sessionConf: Map[String, String] = Map.empty): String = {
     // using the remote ip address instead of that in proxy http header for authentication
     val ipAddress = AuthenticationFilter.getUserIpAddress
     val realUser: String = ServiceUtils.getShortName(
