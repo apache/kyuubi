@@ -22,6 +22,6 @@
 
 * Since Kyuubi 1.7, Kyuubi returns engine's information for `GetInfo` request instead of server. 
 To restore the previous behavior, set `kyuubi.server.info.provider` to `SERVER`.
-* Since Kyuubi 1.7, `kyuubi.kinit.principal` & `kyuubi.kinit.keytab` are filter out from Kyuubi engine's conf for better security. 
+* Since Kyuubi 1.7, `kyuubi.kinit.principal` & `kyuubi.kinit.keytab` are filtered out from Kyuubi engine's conf for better security. 
 In order to do kerberos authentication with zookeeper, we need to set `kyuubi.ha.zookeeper.engine.auth.type` to `KERBEROS`
 and set `kyuubi.ha.zookeeper.auth.principal` & `kyuubi.ha.zookeeper.auth.keytab`.
