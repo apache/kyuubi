@@ -26,7 +26,7 @@ import org.apache.spark.internal.Logging
 
 object KyuubiPythonGatewayServer extends Logging {
 
-  val CONNECTION_FILE_PATH = "/tmp/connection.info"
+  val CONNECTION_FILE_PATH = Files.createTempDirectory("") + "/connection.info"
 
   def start(): Unit = {
 

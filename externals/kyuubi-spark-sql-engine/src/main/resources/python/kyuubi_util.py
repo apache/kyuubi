@@ -38,7 +38,7 @@ from pyspark.sql import SparkSession
 
 
 def connect_to_exist_gateway():
-    conn_info_file = '/tmp/connection.info'
+    conn_info_file = os.environ.get("PYTHON_GATEWAY_CONNECTION_INFO", "/tmp/connection.info")
     with open(conn_info_file, "rb") as info:
         gateway_port = read_int(info)
         gateway_secret = UTF8Deserializer().loads(info)

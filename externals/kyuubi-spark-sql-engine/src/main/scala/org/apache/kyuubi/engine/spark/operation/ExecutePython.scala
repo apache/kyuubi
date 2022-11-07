@@ -124,6 +124,7 @@ object ExecutePython extends Logging {
       .++(ExecutePython.kyuubiPythonPath.toString)
     env.put("PYTHONPATH", pythonPath.mkString(File.pathSeparator))
     env.put("SPARK_HOME", sys.env.getOrElse("SPARK_HOME", defaultSparkHome()))
+    env.put("PYTHON_GATEWAY_CONNECTION_INFO", KyuubiPythonGatewayServer.CONNECTION_FILE_PATH)
     logger.info(
       s"""
          |launch python worker command: ${builder.command().asScala.mkString(" ")}
