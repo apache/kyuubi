@@ -45,7 +45,7 @@ public class KyuubiCommands extends Commands {
 
   /** Extract and clean up the first command in the input. */
   private String getFirstCmd(String cmd, int length) {
-    return cmd.substring(length);
+    return cmd.substring(length).trim();
   }
 
   private String[] tokenizeCmd(String cmd) {
@@ -97,6 +97,7 @@ public class KyuubiCommands extends Commands {
       }
       String[] cmds = lines.split(";");
       for (String c : cmds) {
+        c = c.trim();
         if (!executeInternal(c, false)) {
           return false;
         }
@@ -260,9 +261,10 @@ public class KyuubiCommands extends Commands {
       beeLine.handleException(e);
     }
 
+    line = line.trim();
     List<String> cmdList = getCmdList(line, entireLineAsCommand);
     for (int i = 0; i < cmdList.size(); i++) {
-      String sql = cmdList.get(i);
+      String sql = cmdList.get(i).trim();
       if (sql.length() != 0) {
         if (!executeInternal(sql, call)) {
           return false;
@@ -618,12 +620,13 @@ public class KyuubiCommands extends Commands {
   @Override
   public String handleMultiLineCmd(String line) throws IOException {
     int[] startQuote = new int[] {-1};
+    line = HiveStringUtils.removeComments(line, startQuote);
     Character mask =
         System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal")
             ? null
             : '\u0000';
 
-    while (isMultiLine(line) && this.beeLine.getOpts().isAllowMultiLineCommand()) {
+    while (this.isMultiLine(line) && this.beeLine.getOpts().isAllowMultiLineCommand()) {
       StringBuilder prompt = new StringBuilder(this.beeLine.getPrompt());
       if (!this.beeLine.getOpts().isSilent()) {
         for (int i = 0; i < prompt.length() - 1; ++i) {
@@ -649,6 +652,7 @@ public class KyuubiCommands extends Commands {
         break;
       }
 
+      extra = HiveStringUtils.removeComments(extra, startQuote);
       if (extra != null && !extra.isEmpty()) {
         line = line + "\n" + extra;
       }
