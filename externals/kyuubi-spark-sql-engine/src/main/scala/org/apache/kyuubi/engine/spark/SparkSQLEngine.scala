@@ -102,7 +102,10 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
             frontendServices.flatMap(_.discoveryService).foreach(_.stop())
           }
 
-          if (backendService.sessionManager.getOpenSessionCount <= 0) {
+          val openSessionCount = backendService.sessionManager.getOpenSessionCount
+          if (openSessionCount > 0) {
+            info(s"${openSessionCount} connection(s) are active, delay shutdown")
+          } else {
             info(s"Spark engine has been running for more than $maxLifetime ms" +
               s" and no open session now, terminating")
             stop()
