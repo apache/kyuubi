@@ -136,7 +136,13 @@ abstract class TFrontendService(name: String)
     }
   }
 
-  protected def getUserName(req: TOpenSessionReq): (String, String) = {
+  /**
+   * Get the real user and the proxy user.
+   * The real user is the user used for session authentication.
+   * The proxy user is the session owner, if proxy user is used, it is the proxy user,
+   * otherwise, it is the real user.
+   */
+  protected def getRealUserAndProxyUser(req: TOpenSessionReq): (String, String) = {
     val realUser: String =
       ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
     if (req.getConfiguration == null) {
@@ -145,6 +151,7 @@ abstract class TFrontendService(name: String)
       realUser -> getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
     }
   }
+
   protected def getIpAddress: String = {
     authFactory.getIpAddress.orNull
   }
@@ -157,7 +164,7 @@ abstract class TFrontendService(name: String)
   protected def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
-    val (realUser, userName) = getUserName(req)
+    val (realUser, proxyUser) = getRealUserAndProxyUser(req)
     val ipAddress = getIpAddress
     val configuration =
       Map(KYUUBI_CLIENT_IP_KEY -> ipAddress) ++
@@ -167,7 +174,7 @@ abstract class TFrontendService(name: String)
           KYUUBI_SESSION_REAL_USER_KEY -> realUser)
     val sessionHandle = be.openSession(
       protocol,
-      userName,
+      proxyUser,
       req.getPassword,
       ipAddress,
       configuration)

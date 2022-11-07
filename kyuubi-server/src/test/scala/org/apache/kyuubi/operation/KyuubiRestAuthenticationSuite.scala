@@ -40,8 +40,8 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
   override protected val otherConfigs: Map[String, String] = {
     // allow to impersonate other users with spnego authentication
     Map(
-      s"hadoop.proxyuser.$principalUserName.groups" -> "*",
-      s"hadoop.proxyuser.$principalUserName.hosts" -> "*")
+      s"hadoop.proxyuser.$clientPrincipalUser.groups" -> "*",
+      s"hadoop.proxyuser.$clientPrincipalUser.hosts" -> "*")
   }
 
   test("test with LDAP authorization") {
@@ -148,7 +148,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
     val session = server.backendService.sessionManager.getSession(
       org.apache.kyuubi.session.SessionHandle.fromUUID(sessionHandle.getIdentifier.toString))
       .asInstanceOf[KyuubiSession]
-    assert(session.realUser === principalUserName)
+    assert(session.realUser === clientPrincipalUser)
     assert(session.user === proxyUser)
 
     token = generateToken(hostName)

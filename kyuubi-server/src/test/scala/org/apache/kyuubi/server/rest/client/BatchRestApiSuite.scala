@@ -33,8 +33,8 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
   override protected val otherConfigs: Map[String, String] = {
     // allow to impersonate other users with spnego authentication
     Map(
-      s"hadoop.proxyuser.$principalUserName.groups" -> "*",
-      s"hadoop.proxyuser.$principalUserName.hosts" -> "*")
+      s"hadoop.proxyuser.$clientPrincipalUser.groups" -> "*",
+      s"hadoop.proxyuser.$clientPrincipalUser.hosts" -> "*")
   }
 
   override protected def afterEach(): Unit = {
@@ -132,7 +132,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(batch.getBatchType === "SPARK")
     val session = server.backendService.sessionManager.getSession(
       SessionHandle.fromUUID(batch.getId)).asInstanceOf[KyuubiSession]
-    assert(session.realUser === principalUserName)
+    assert(session.realUser === clientPrincipalUser)
     assert(session.user === proxyUser)
 
     // get batch by id
