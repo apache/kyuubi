@@ -141,7 +141,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): dto.SessionHandle = {
-    val userName = fe.getUserName(request.getConfigs.asScala.toMap)
+    val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
     val ipAddress = fe.getIpAddress
     val handle = fe.be.openSession(
       TProtocolVersion.findByValue(request.getProtocolVersion),

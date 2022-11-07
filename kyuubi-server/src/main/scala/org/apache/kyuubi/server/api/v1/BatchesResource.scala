@@ -166,7 +166,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     require(request.getClassName != null, "classname is a required parameter")
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
 
-    val userName = fe.getUserName(request.getConf.asScala.toMap)
+    val userName = fe.getSessionUser(request.getConf.asScala.toMap)
     val ipAddress = fe.getIpAddress
     request.setConf(
       (request.getConf.asScala ++ Map(
@@ -191,7 +191,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @GET
   @Path("{batchId}")
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
-    val userName = fe.getUserName(Map.empty[String, String])
+    val userName = fe.getSessionUser(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       buildBatch(batchSession)
@@ -268,7 +268,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @PathParam("batchId") batchId: String,
       @QueryParam("from") @DefaultValue("-1") from: Int,
       @QueryParam("size") @DefaultValue("100") size: Int): OperationLog = {
-    val userName = fe.getUserName(Map.empty[String, String])
+    val userName = fe.getSessionUser(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       try {
@@ -313,7 +313,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): CloseBatchResponse = {
     val sessionHandle = formatSessionHandle(batchId)
 
-    val userName = fe.getUserName(hs2ProxyUser)
+    val userName = fe.getSessionUser(hs2ProxyUser)
 
     Option(sessionManager.getBatchSessionImpl(sessionHandle)).map { batchSession =>
       if (userName != batchSession.user) {

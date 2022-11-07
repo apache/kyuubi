@@ -279,7 +279,7 @@ final class KyuubiTHttpFrontendService(
     // using the remote ip address instead of that in proxy http header for authentication
     val ipAddress: String = SessionManager.getIpAddress
     val sessionUser: String = getProxyUser(req.getConfiguration, ipAddress, realUser)
-    debug(s"Client's real user: $realUser, session user $sessionUser")
+    debug(s"Client's real user: $realUser, session user: $sessionUser")
     realUser -> sessionUser
   }
 

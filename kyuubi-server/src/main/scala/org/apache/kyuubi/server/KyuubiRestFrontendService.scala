@@ -179,13 +179,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       Option(AuthenticationFilter.getUserName).filter(_.nonEmpty).getOrElse("anonymous"))
   }
 
-  def getUserName(hs2ProxyUser: String): String = {
+  def getSessionUser(hs2ProxyUser: String): String = {
     val sessionConf = Option(hs2ProxyUser).filter(_.nonEmpty).map(proxyUser =>
       Map(KyuubiAuthenticationFactory.HS2_PROXY_USER -> proxyUser)).getOrElse(Map())
-    getUserName(sessionConf)
+    getSessionUser(sessionConf)
   }
 
-  def getUserName(sessionConf: Map[String, String]): String = {
+  def getSessionUser(sessionConf: Map[String, String]): String = {
     // using the remote ip address instead of that in proxy http header for authentication
     val ipAddress = AuthenticationFilter.getUserIpAddress
     val realUser: String = getRealUser()
