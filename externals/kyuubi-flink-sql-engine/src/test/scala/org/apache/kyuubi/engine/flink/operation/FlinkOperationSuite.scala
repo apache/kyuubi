@@ -175,7 +175,8 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
            |  id1 int,
            |  c1 tinyint,
            |  c2 smallint,
-           |  c3 integer
+           |  c3 integer,
+           |  CONSTRAINT pk_con primary key(id1) NOT ENFORCED
            | )
            | with (
            |   'connector' = 'filesystem'
@@ -229,6 +230,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
             assert(rowSet.getString(PK_NAME) === "pk_con")
             pos += 1
           }
+          assert(pos > 1)
         }
 
       }
