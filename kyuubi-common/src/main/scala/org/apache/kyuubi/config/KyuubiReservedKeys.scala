@@ -27,6 +27,7 @@ object KyuubiReservedKeys {
   final val KYUUBI_ENGINE_URL = "kyuubi.engine.url"
   final val KYUUBI_ENGINE_SUBMIT_TIME_KEY = "kyuubi.engine.submit.time"
   final val KYUUBI_ENGINE_CREDENTIALS_KEY = "kyuubi.engine.credentials"
+  final val KYUUBI_ENGINE_UI_URL = "kyuubi.engine.ui.url"
   final val KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID =
     "kyuubi.session.engine.launch.handle.guid"
   final val KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET =
