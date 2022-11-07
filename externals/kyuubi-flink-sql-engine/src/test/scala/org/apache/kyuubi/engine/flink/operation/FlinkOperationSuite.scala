@@ -220,17 +220,31 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
         if (tableName.equals(tableName3)) {
           assert(!rowSet.next())
         } else {
-          var pos = 1;
-          while (rowSet.next()) {
+          if (tableName.equals(tableName1)) {
+            assert(rowSet.next())
             assert(rowSet.getString(TABLE_CAT) === "default_catalog")
             assert(rowSet.getString(TABLE_SCHEM) === "default_database")
             assert(rowSet.getString(TABLE_NAME) === tableName)
-            assert(rowSet.getString(COLUMN_NAME) === s"id$pos")
-            assert(rowSet.getInt(KEY_SEQ) === pos)
+            assert(rowSet.getString(COLUMN_NAME) === "id1")
+            assert(rowSet.getInt(KEY_SEQ) === 1)
             assert(rowSet.getString(PK_NAME) === "pk_con")
-            pos += 1
+          } else if (tableName.equals(tableName2)) {
+            assert(rowSet.next())
+            assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+            assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+            assert(rowSet.getString(TABLE_NAME) === tableName)
+            assert(rowSet.getString(COLUMN_NAME) === "id1")
+            assert(rowSet.getInt(KEY_SEQ) === 1)
+            assert(rowSet.getString(PK_NAME) === "pk_con")
+
+            assert(rowSet.next())
+            assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+            assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+            assert(rowSet.getString(TABLE_NAME) === tableName)
+            assert(rowSet.getString(COLUMN_NAME) === "id2")
+            assert(rowSet.getInt(KEY_SEQ) === 2)
+            assert(rowSet.getString(PK_NAME) === "pk_con")
           }
-          assert(pos > 1)
         }
 
       }
