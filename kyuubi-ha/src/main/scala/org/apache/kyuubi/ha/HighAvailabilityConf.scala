@@ -88,7 +88,9 @@ object HighAvailabilityConf {
       .doc("The type of zookeeper authentication for engine, all candidates are " +
         s"${AuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.3.2")
-      .fallbackConf(HA_ZK_AUTH_TYPE)
+      .stringConf
+      .checkValues(AuthTypes.values.map(_.toString))
+      .createWithDefault(AuthTypes.NONE.toString)
 
   val HA_ZK_AUTH_PRINCIPAL: ConfigEntry[Option[String]] =
     buildConf("kyuubi.ha.zookeeper.auth.principal")

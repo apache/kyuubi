@@ -252,7 +252,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
   test("zookeeper kerberos authentication") {
     val conf = KyuubiConf()
-    conf.set(HighAvailabilityConf.HA_ZK_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
+    conf.set(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
     conf.set(HighAvailabilityConf.HA_ZK_AUTH_KEYTAB.key, testKeytab)
     conf.set(HighAvailabilityConf.HA_ZK_AUTH_PRINCIPAL.key, testPrincipal)
 
