@@ -26,10 +26,10 @@ SQL on Data Warehouses and Lakehouses.
 
 Kyuubi builds distributed SQL query engines on top of various kinds of modern
 computing frameworks, e.g.,
-Apache `Spark <http://spark.apache.org/>`_,
-`Flink <http://flink.apache.org/>`_,
-`Doris <http://doris.apache.org/>`_,
-`Hive <http://doris.apache.org/>`_,
+Apache `Spark <https://spark.apache.org/>`_,
+`Flink <https://flink.apache.org/>`_,
+`Doris <https://doris.apache.org/>`_,
+`Hive <https://hive.apache.org/>`_,
 and `Trino <https://trino.io/>`_, etc, to query massive datasets distributed
 over fleets of machines from heterogeneous data sources.
 
@@ -74,12 +74,12 @@ and interoperation between supported clients and a Kyuubi server. The current im
    - A HiveServer2-compatible interface that allows end users to use a thrift
      client(cross-language support, both tcp and http), a `Java Database Connectivity(JDBC) <client/jdbc/index.html>`_ interface over
      thrift, or an `Open Database Connectivity (ODBC) <client/odbc/index.html>`_ interface over a JDBC-to-ODBC bridge to communicate with Kyuubi.
-- MySQL Protocol
-   - A MySQL-compatible interface that allows end users to use MySQL Connectors, such as Connector/J, to communicate with Kyuubi.
 - `RESTful APIs <client/rest/index.html>`_
    - It provides system management APIs, including engines, sessions, operations, and miscellaneous ones.
    - It provides methods that allow clients to submit SQL queries and receive the query results, submit metadata requests and receive metadata results.
    - It enables easy submission of self-contained applications for batch processing, such as Spark jobs.
+- MySQL Protocol
+   - A MySQL-compatible interface that allows end users to use MySQL Connectors, such as Connector/J, to communicate with Kyuubi.
 - We've planned to add more
    - Please join our mailing lists if you have any ideas or questions.
 
