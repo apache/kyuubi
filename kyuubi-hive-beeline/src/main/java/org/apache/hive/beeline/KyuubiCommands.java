@@ -21,6 +21,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
+import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -505,6 +506,61 @@ public class KyuubiCommands extends Commands {
     } catch (IOException ioe) {
       return beeLine.error(ioe);
     }
+  }
+
+  @Override
+  public String handleMultiLineCmd(String line) throws IOException {
+    int[] startQuote = {-1};
+    line = HiveStringUtils.removeComments(line, startQuote);
+    Character mask =
+        (System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal"))
+            ? null
+            : jline.console.ConsoleReader.NULL_MASK;
+
+    while (isMultiLine(line) && beeLine.getOpts().isAllowMultiLineCommand()) {
+      StringBuilder prompt = new StringBuilder(beeLine.getPrompt());
+      if (!beeLine.getOpts().isSilent()) {
+        for (int i = 0; i < prompt.length() - 1; i++) {
+          if (prompt.charAt(i) != '>') {
+            prompt.setCharAt(i, i % 2 == 0 ? '.' : ' ');
+          }
+        }
+      }
+      String extra;
+      // avoid NPE below if for some reason -e argument has multi-line command
+      if (beeLine.getConsoleReader() == null) {
+        throw new RuntimeException(
+            "Console reader not initialized. This could happen when there "
+                + "is a multi-line command using -e option and which requires further reading from console");
+      }
+      if (beeLine.getOpts().isSilent() && beeLine.getOpts().getScriptFile() != null) {
+        extra = beeLine.getConsoleReader().readLine(null, mask);
+      } else {
+        extra = beeLine.getConsoleReader().readLine(prompt.toString());
+      }
+
+      if (extra == null) { // it happens when using -f and the line of cmds does not end with ;
+        break;
+      }
+      extra = HiveStringUtils.removeComments(extra, startQuote);
+      if (!extra.isEmpty()) {
+        line += "\n" + extra;
+      }
+    }
+    return line;
+  }
+
+  // returns true if statement represented by line is not complete and needs additional reading from
+  // console. Used in handleMultiLineCmd method assumes line would never be null when this method is
+  // called
+  private boolean isMultiLine(String line) {
+    line = line.trim();
+    if (line.endsWith(beeLine.getOpts().getDelimiter()) || beeLine.isComment(line)) {
+      return false;
+    }
+    // handles the case like line = show tables; --test comment
+    List<String> cmds = getCmdList(line, false);
+    return cmds.isEmpty() || !cmds.get(cmds.size() - 1).trim().startsWith("--");
   }
 
   static class KyuubiLogRunnable implements Runnable {
