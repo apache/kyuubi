@@ -106,10 +106,12 @@ object ExecutePython extends Logging {
   def init(): Unit = {
     if (!isPythonGatewayStart.get()) {
       synchronized {
-        KyuubiPythonGatewayServer.start()
-        writeTempPyFile(kyuubiPythonPath, "execute_python.py")
-        writeTempPyFile(kyuubiPythonPath, "kyuubi_util.py")
-        isPythonGatewayStart.set(true)
+        if (!isPythonGatewayStart.get()) {
+          KyuubiPythonGatewayServer.start()
+          writeTempPyFile(kyuubiPythonPath, "execute_python.py")
+          writeTempPyFile(kyuubiPythonPath, "kyuubi_util.py")
+          isPythonGatewayStart.set(true)
+        }
       }
     }
   }
