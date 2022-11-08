@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.service
 
+import java.net.ServerSocket
 import java.security.KeyStore
 import java.util.Locale
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
@@ -50,6 +51,8 @@ abstract class TBinaryFrontendService(name: String)
   final override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
 
   protected var server: Option[TServer] = None
+  private var _actualPort: Int = _
+  override protected lazy val actualPort: Int = _actualPort
 
   // Removed OOM hook since Kyuubi #1800 to respect the hive server2 #2383
 
@@ -95,8 +98,9 @@ abstract class TBinaryFrontendService(name: String)
             disallowedSslProtocols,
             includeCipherSuites)
         } else {
-          new TServerSocket(serverSocket)
+          new TServerSocket(new ServerSocket(portNum, -1, serverAddr))
         }
+      _actualPort = tServerSocket.getServerSocket.getLocalPort
       val maxMessageSize = conf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
       val requestTimeout = conf.get(FRONTEND_THRIFT_LOGIN_TIMEOUT).toInt
       val beBackoffSlotLength = conf.get(FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH).toInt
@@ -113,7 +117,7 @@ abstract class TBinaryFrontendService(name: String)
       // TCP Server
       server = Some(new TThreadPoolServer(args))
       server.foreach(_.setServerEventHandler(new FeTServerEventHandler))
-      info(s"Initializing $name on ${serverAddr.getHostName}:${serverSocket.getLocalPort} with" +
+      info(s"Initializing $name on ${serverAddr.getHostName}:${_actualPort} with" +
         s" [$minThreads, $maxThreads] worker threads")
     } catch {
       case e: Throwable =>
@@ -145,7 +149,7 @@ abstract class TBinaryFrontendService(name: String)
       keyStoreType.getOrElse(KeyStore.getDefaultType))
 
     val tServerSocket =
-      TSSLTransportFactory.getServerSocket(portNum, 0, serverSocket.getInetAddress, params)
+      TSSLTransportFactory.getServerSocket(portNum, 0, serverAddr, params)
 
     tServerSocket.getServerSocket match {
       case sslServerSocket: SSLServerSocket =>
