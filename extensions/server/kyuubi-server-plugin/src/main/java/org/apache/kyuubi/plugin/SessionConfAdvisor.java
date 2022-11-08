@@ -24,8 +24,7 @@ import java.util.Map;
 public interface SessionConfAdvisor {
   /** The returned conf will overwrite the session conf */
   @SuppressWarnings("unchecked")
-  default Map<String, String> getConfOverlay(String user, Map<String, String> sessionConf)
-      throws Exception {
+  default Map<String, String> getConfOverlay(String user, Map<String, String> sessionConf) {
     return Collections.EMPTY_MAP;
   }
 }

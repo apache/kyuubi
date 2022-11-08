@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.plugin;
+package org.apache.kyuubi.session;
 
-import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.kyuubi.Utils;
 import org.apache.kyuubi.config.KyuubiConf;
+import org.apache.kyuubi.plugin.SessionConfAdvisor;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FileSessionConfAdvisor implements SessionConfAdvisor {
   @Override
-  public Map<String, String> getConfOverlay(String user, Map<String, String> sessionConf)
-      throws IOException {
+  public Map<String, String> getConfOverlay(String user, Map<String, String> sessionConf) {
     HashMap<String, String> sessionProfileConf = new HashMap<>();
     String sessionProfile = sessionConf.get(KyuubiConf.SESSION_PROFILE().key());
     if (sessionProfile == null) {
@@ -34,9 +35,6 @@ public class FileSessionConfAdvisor implements SessionConfAdvisor {
     }
     String pathName = "conf/kyuubi-session-" + sessionProfile + ".conf";
     File propsFile = new File(pathName);
-    if (!propsFile.exists()) {
-      throw new FileNotFoundException("File: " + pathName + " is not found!");
-    }
     scala.collection.immutable.Map<String, String> propertiesFromFile =
         Utils.getPropertiesFromFile(propsFile);
     propertiesFromFile.foreach(e -> sessionProfileConf.put(e._1, e._2));
