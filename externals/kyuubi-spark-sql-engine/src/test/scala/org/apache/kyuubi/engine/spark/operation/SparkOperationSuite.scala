@@ -17,11 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.io.PrintWriter
-import java.nio.file.Files
-
 import scala.collection.JavaConverters._
-import scala.sys.process._
 import scala.util.Random
 
 import org.apache.hadoop.hdfs.security.token.delegation.{DelegationTokenIdentifier => HDFSTokenIdent}
@@ -44,7 +40,8 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.SparkVersionUtil.isSparkVersionAtLeast
 
-class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with SparkQueryTests {
+class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with SparkQueryTests
+  with PySparkTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map.empty
@@ -685,40 +682,6 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           engineCredentials.getToken(hiveTokenAlias) == creds2.getToken(new Text(metastoreUris)))
       }
     }
-  }
-
-  test("pyspark support") {
-    def withTempFile(code: String)(op: (String) => Unit): Unit = {
-      val tempPyFile = Files.createTempFile("", ".py").toFile
-      try {
-        new PrintWriter(tempPyFile) {
-          write(code)
-          close
-        }
-        op(tempPyFile.getPath)
-      } finally {
-        Files.delete(tempPyFile.toPath)
-      }
-    }
-
-    val code =
-      """
-        |import sys
-        |print(".".join(map(str, sys.version_info[:2])))
-        |""".stripMargin
-    withTempFile(code) {
-      pyfile: String =>
-        val pythonVersion = s"python3 $pyfile".!!.toDouble
-        assert(pythonVersion > 3.0)
-    }
-
-    withMultipleConnectionJdbcStatement()({ statement =>
-      statement.executeQuery("SET kyuubi.operation.language=python")
-      val resultSet = statement.executeQuery("print(1)")
-      assert(resultSet.next())
-      assert(resultSet.getString("output") === "1")
-      assert(resultSet.getString("status") === "ok")
-    })
   }
 
   private def whenMetaStoreURIsSetTo(uris: String)(func: String => Unit): Unit = {
