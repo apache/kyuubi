@@ -34,7 +34,7 @@ class FileSessionConfAdvisor extends SessionConfAdvisor {
       sessionConf: util.Map[String, String]): util.Map[String, String] = {
     val sessionProfile: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
     if (sessionProfile == null) {
-      Collections.EMPTY_MAP
+      return Collections.emptyMap()
     }
     val pathName: String = s"conf/kyuubi-session-${sessionProfile}.conf"
     val propsFile: File = new File(pathName)

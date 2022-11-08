@@ -46,9 +46,11 @@ class PluginLoaderSuite extends KyuubiFunSuite {
   test("test FileSessionConfAdvisor") {
     val conf = new KyuubiConf(false)
     conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[FileSessionConfAdvisor].getName)
+    val advisor = PluginLoader.loadSessionConfAdvisor(conf)
+    val emptyConfig = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    assert(emptyConfig.isEmpty)
     conf.set(KyuubiConf.SESSION_CONF_PROFILE, "non.exists")
     val msg3 = intercept[KyuubiException] {
-      val advisor = PluginLoader.loadSessionConfAdvisor(conf)
       advisor.getConfOverlay("chris", conf.getAll.asJava)
     }.getMessage
     assert(msg3.startsWith("Failed when loading Kyuubi properties"))
