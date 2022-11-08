@@ -97,5 +97,7 @@ class SparkSessionImpl(
     super.close()
     spark.sessionState.catalog.getTempViewNames().foreach(spark.catalog.uncacheTable)
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closeILoop(handle)
+    sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closePythonProcess(
+      handle)
   }
 }

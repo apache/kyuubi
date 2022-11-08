@@ -40,7 +40,8 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.SparkVersionUtil.isSparkVersionAtLeast
 
-class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with SparkQueryTests {
+class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with SparkQueryTests
+  with PySparkTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map.empty
