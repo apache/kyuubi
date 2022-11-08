@@ -993,8 +993,8 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val SESSION_PROFILE: OptionalConfigEntry[String] =
-    buildConf("kyuubi.session.profile")
+  val SESSION_CONF_PROFILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.session.conf.profile")
       .doc("When kyuubi.session.conf.advisor=org.apache.kyuubi.session.FileSessionConfAdvisor," +
         "Specify a session level configuration file, which will be combined with default.conf " +
         "to have an impact. The corresponding configuration file is " +
