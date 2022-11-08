@@ -17,6 +17,10 @@
 
 package org.apache.kyuubi.plugin
 
+import java.io.FileNotFoundException
+
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -37,6 +41,18 @@ class PluginLoaderSuite extends KyuubiFunSuite {
       PluginLoader.loadSessionConfAdvisor(conf)
     }.getMessage
     assert(msg2.startsWith("Error while instantiating 'non.exists'"))
+
+  }
+
+  test("test FileSessionConfAdvisor") {
+    val conf = new KyuubiConf(false)
+    conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[FileSessionConfAdvisor].getName)
+    conf.set(KyuubiConf.SESSION_PROFILE, "non.exists")
+    val msg3 = intercept[FileNotFoundException] {
+      val advisor = PluginLoader.loadSessionConfAdvisor(conf)
+      advisor.getConfOverlay("chris", conf.getAll.asJava)
+    }.getMessage
+    assert(msg3.startsWith("File: conf/kyuubi-session-non.exists.conf is not found!"))
   }
 }
 

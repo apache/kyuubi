@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
 import java.nio.file.{Files, Paths}
-import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -71,7 +70,7 @@ class FlinkProcessBuilder(
     }
 
     buffer += "-cp"
-    val classpathEntries = new util.LinkedHashSet[String]
+    val classpathEntries = new java.util.LinkedHashSet[String]
     // flink engine runtime jar
     mainResource.foreach(classpathEntries.add)
     // flink sql client jar

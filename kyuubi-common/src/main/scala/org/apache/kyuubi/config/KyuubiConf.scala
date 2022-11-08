@@ -993,6 +993,16 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val SESSION_PROFILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.session.profile")
+      .doc("When kyuubi.session.conf.advisor=org.apache.kyuubi.plugin.FileSessionConfAdvisor," +
+        "Specify a session level configuration file, which will be combined with default.conf " +
+        "to have an impact. The corresponding configuration file is " +
+        "conf/kyuubi-session-<profile>.conf")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_SPARK_MAX_LIFETIME: ConfigEntry[Long] =
     buildConf("kyuubi.session.engine.spark.max.lifetime")
       .doc("Max lifetime for spark engine, the engine will self-terminate when it reaches the" +
@@ -1554,15 +1564,6 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(Set("RANDOM", "POLLING"))
       .createWithDefault("RANDOM")
-
-  val ENGINE_CLUSTER_NAME: ConfigEntry[String] = buildConf("kyuubi.engine.cluster.name")
-    .doc("When a kyuubi service connects to multiple engine clusters, " +
-      "use this parameter to specify the unique identity name of the engine to be accessed. " +
-      "The unique identity name of the engine and related personalized information " +
-      "can be configured in conf/engine-cluster-env.yaml")
-    .version("1.7.0")
-    .stringConf
-    .createWithDefault("default")
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.initialize.sql")

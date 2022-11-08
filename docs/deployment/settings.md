@@ -217,7 +217,6 @@ kyuubi.delegation.token.renew.interval|PT168H|unused yet|duration|1.0.0
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-kyuubi.engine.cluster.name|default|When a kyuubi service connects to multiple engine clusters, use this parameter to specify the unique identity name of the engine to be accessed. The unique identity name of the engine and related personalized information can be configured in conf/engine-cluster-env.yaml|string|1.7.0
 kyuubi.engine.connection.url.use.hostname|true|(deprecated) When true, engine register with hostname to zookeeper. When spark run on k8s with cluster mode, set to false to ensure that server can connect to engine|boolean|1.3.0
 kyuubi.engine.deregister.exception.classes||A comma separated list of exception classes. If there is any exception thrown, whose class matches the specified classes, the engine would deregister itself.|seq|1.2.0
 kyuubi.engine.deregister.exception.messages||A comma separated list of exception messages. If there is any exception thrown, whose message or stacktrace matches the specified message list, the engine would deregister itself.|seq|1.2.0
@@ -495,6 +494,7 @@ kyuubi.session.engine.trino.showProgress.debug|false|When true, show the progres
 kyuubi.session.idle.timeout|PT6H|session idle timeout, it will be closed when it's not accessed for this duration|duration|1.2.0
 kyuubi.session.local.dir.allow.list||The local dir list that are allowed to access by the kyuubi session application. User might set some parameters such as `spark.files` and it will upload some local files when launching the kyuubi engine, if the local dir allow list is defined, kyuubi will check whether the path to upload is in the allow list. Note that, if it is empty, there is no limitation for that and please use absolute path list.|seq|1.6.0
 kyuubi.session.name|&lt;undefined&gt;|A human readable name of session and we use empty string by default. This name will be recorded in event. Note that, we only apply this value from session conf.|string|1.4.0
+kyuubi.session.profile|&lt;undefined&gt;|When kyuubi.session.conf.advisor=org.apache.kyuubi.plugin.FileSessionConfAdvisor,Specify a session level configuration file, which will be combined with default.conf to have an impact. The corresponding configuration file is conf/kyuubi-session-<profile>.conf|string|1.7.0
 kyuubi.session.timeout|PT6H|(deprecated)session timeout, it will be closed when it's not accessed for this duration|duration|1.0.0
 
 

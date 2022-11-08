@@ -61,6 +61,10 @@ object Utils extends Logging {
       }
   }
 
+  def getPropertiesFromFile(file: File): Map[String, String] = {
+    getPropertiesFromFile(Option(file))
+  }
+
   def getPropertiesFromFile(file: Option[File]): Map[String, String] = {
     file.map { f =>
       info(s"Loading Kyuubi properties from ${f.getAbsolutePath}")

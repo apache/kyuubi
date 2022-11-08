@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.flink
 
 import java.io.File
-import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
@@ -61,7 +60,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   private def constructClasspathStr(builder: FlinkProcessBuilder) = {
-    val classpathEntries = new util.LinkedHashSet[String]
+    val classpathEntries = new java.util.LinkedHashSet[String]
     builder.mainResource.foreach(classpathEntries.add)
 
     val flinkHome = builder.flinkHome
