@@ -63,20 +63,34 @@ case class EngineTab(
   sparkUI.foreach { ui =>
     try {
       // Spark shade the jetty package so here we use reflection
-      val sparkServletContextHandlerClz = loadSparkServletContextHandler
-      Class.forName("org.apache.spark.ui.SparkUI")
-        .getMethod("attachHandler", sparkServletContextHandlerClz)
+      val attachHandlerMethod = Class.forName("org.apache.spark.ui.SparkUI")
+        .getMethod("attachHandler", classOf[org.sparkproject.jetty.servlet.ServletContextHandler])
+      val createRedirectHandlerMethod = Class.forName("org.apache.spark.ui.JettyUtils")
+        .getMethod(
+          "createRedirectHandler",
+          classOf[String],
+          classOf[String],
+          classOf[(HttpServletRequest) => Unit],
+          classOf[String],
+          classOf[Set[String]])
+
+      attachHandlerMethod
         .invoke(
           ui,
-          Class.forName("org.apache.spark.ui.JettyUtils")
-            .getMethod(
-              "createRedirectHandler",
-              classOf[String],
-              classOf[String],
-              classOf[HttpServletRequest => Unit],
-              classOf[String],
-              classOf[scala.collection.immutable.Set[String]])
+          createRedirectHandlerMethod
             .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST")))
+
+      attachHandlerMethod
+        .invoke(
+          ui,
+          createRedirectHandlerMethod
+            .invoke(
+              null,
+              "/kyuubi/gracefulstop",
+              "/kyuubi",
+              handleGracefulKillRequest _,
+              "",
+              Set("GET", "POST")))
     } catch {
       case NonFatal(cause) => reportInstallError(cause)
       case cause: NoClassDefFoundError => reportInstallError(cause)
@@ -105,6 +119,12 @@ case class EngineTab(
   def handleKillRequest(request: HttpServletRequest): Unit = {
     if (killEnabled && engine.isDefined && engine.get.getServiceState != ServiceState.STOPPED) {
       engine.get.stop()
+    }
+  }
+
+  def handleGracefulKillRequest(request: HttpServletRequest): Unit = {
+    if (killEnabled && engine.isDefined && engine.get.getServiceState != ServiceState.STOPPED) {
+      engine.get.gracefulStop()
     }
   }
 }

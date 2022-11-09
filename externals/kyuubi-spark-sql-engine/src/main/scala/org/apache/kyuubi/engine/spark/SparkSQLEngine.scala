@@ -50,6 +50,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   private val shutdown = new AtomicBoolean(false)
 
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
+  @volatile private var stopEngineExec: Option[ScheduledExecutorService] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -83,6 +84,33 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         checker,
         Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
     })
+    stopEngineExec.foreach(exec => {
+      ThreadUtils.shutdown(
+        exec,
+        Duration(60, TimeUnit.SECONDS))
+    })
+  }
+
+  def gracefulStop(): Unit = {
+    val deregistered = new AtomicBoolean(false)
+    val stopTask: Runnable = () => {
+      if (!shutdown.get) {
+        if (deregistered.compareAndSet(false, true)) {
+          info(s"Spark engine is de-registering from engine discovery space.")
+          frontendServices.flatMap(_.discoveryService).foreach(_.stop())
+        }
+        val openSessionCount = backendService.sessionManager.getOpenSessionCount
+        if (openSessionCount > 0) {
+          info(s"$openSessionCount connection(s) are active, delay shutdown")
+        } else {
+          info(s"Spark engine has no open session now, terminating.")
+          stop()
+        }
+      }
+    }
+    stopEngineExec =
+      Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-graceful-stop"))
+    stopEngineExec.get.scheduleWithFixedDelay(stopTask, 0, 60, TimeUnit.SECONDS)
   }
 
   override protected def stopServer(): Unit = {
@@ -104,7 +132,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
           val openSessionCount = backendService.sessionManager.getOpenSessionCount
           if (openSessionCount > 0) {
-            info(s"${openSessionCount} connection(s) are active, delay shutdown")
+            info(s"$openSessionCount connection(s) are active, delay shutdown")
           } else {
             info(s"Spark engine has been running for more than $maxLifetime ms" +
               s" and no open session now, terminating")
