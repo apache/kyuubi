@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.kyuubi.session
 
 import java.io.File
