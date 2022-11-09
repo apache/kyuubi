@@ -125,8 +125,8 @@ html_theme_options = {
     "extra_navbar": "Version " + release,
 }
 
-html_logo = 'imgs/kyuubi_logo.png'
-html_favicon = 'imgs/kyuubi_logo_red.png'
+html_logo = 'imgs/logo.png'
+html_favicon = 'imgs/logo_red_short.png'
 html_title = 'Apache Kyuubi'
 
 pygments_style = 'sphinx'
