@@ -261,6 +261,71 @@ Create an operation with GET_SCHEMAS type
 |:-----------|:----------------------------|:-------|
 | identifier | The identifier of operation | String |
 
+## Operation Resource
+
+### GET /operations/${operationHandle}/event
+
+Get the current event of the operation by the specified operation handle.
+
+#### Response Body
+
+The [KyuubiOperationEvent](#kyuubioperationevent).
+
+### PUT /operations/${operationHandle}
+
+Perform an action to the pending or running operation.
+
+#### Request Body
+
+| Name   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Type   |
+|:-------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------|
+| action | The action that is performed to the operation. Currently, supported actions are 'cancel' and 'close'. <ul><li>Cancel: to cancel the operation, which means the operation and its corresponding background task will be stopped, and its state will be switched to CANCELED. A CANCELED operation's status can still be fetched by client requests.</li><li>Close: to close the operation, which means the operation and its corresponding background task will be stopped, and its state will be switched to CLOSED. A CLOSED operation's status will be removed on the server side and can not be fetched anymore.</li><ul> | String |
+
+### GET /operations/${operationHandle}/resultsetmetadata
+
+Get the result set schema of the operation by the specified operation handle.
+
+#### Response Body
+
+| Name    | Description                 | Type               |
+|:--------|:----------------------------|:-------------------|
+| columns | The descriptions of columns | List of ColumnDesc |
+
+### GET /operations/${operationHandle}/log
+
+Get a list of operation log lines of the running operation by the specified operation handle.
+
+#### Request Parameters
+
+| Name    | Description                           | Type |
+|:--------|:--------------------------------------|:-----|
+| maxRows | The max row that are pulled each time | Int  |
+
+#### Response Body
+
+| Name      | Description              | Type            |
+|:----------|:-------------------------|:----------------|
+| logRowSet | The set of log set       | List of Strings |
+| rowCount  | The count of log row set | Int             |
+
+### GET /operations/${operationHandle}/rowset
+
+Get the operation result as a list of rows by the specified operation handle.
+
+#### Request Parameters
+
+| Name             | Description                                                                                                            | Type   |
+|:-----------------|:-----------------------------------------------------------------------------------------------------------------------|:-------|
+| maxrows          | The max rows that are pulled each time                                                                                 | Int    |
+| fetchorientation | The orientation of fetch, for example FETCH_NEXT, FETCH_PRIOR, FETCH_FIRST, FETCH_LAST, FETCH_RELATIVE, FETCH_ABSOLUTE | String |
+
+#### Response Body
+
+| Name     | Description       | Type         |
+|:---------|:------------------|:-------------|
+| rows     | The list of rows  | List of Rows |
+| rowCount | The count of rows | Int          |
+
 ## Batch Resource
 
 ### GET /batches
@@ -423,6 +488,47 @@ The [Engine](#engine) List.
 | totalOperations | How many queries and meta calls                                                                                     | Int       |
 | exception       | The session exception, such as the exception that occur when opening session                                        | Throwable |
 | eventType       | The type of session event                                                                                           | String    |
+
+#### KyuubiOperationEvent
+
+| Name           | Description                                                     | Type      |
+|:---------------|:----------------------------------------------------------------|:----------|
+| statementId    | The unique identifier of a single operation                     | String    |
+| remoteId       | The unique identifier of a single operation at engine side      | String    |
+| statement      | The sql that you execute                                        | String    |
+| shouldRunAsync | The flag indicating whether the query runs synchronously or not | Boolean   |                       
+| state          | The current operation state                                     | String    |
+| eventTime      | The time when the event created & logged                        | Long      |
+| createTime     | The time for changing to the current operation state            | Long      |           
+| startTime      | The time the query start to time of this operation              | Long      |          
+| completeTime   | Time time the query ends                                        | Long      |
+| exception      | Caught exception if have                                        | Throwable |
+| sessionId      | The identifier of the parent session                            | String    |
+| sessionUser    | The authenticated client user                                   | String    |
+
+### ColumnDesc
+
+| Name        | Description                            | Type   |
+|:------------|:---------------------------------------|:-------|
+| columnName  | The name of the column                 | String |
+| dataType    | The type descriptor for this column    | String |
+| columnIndex | The index of this column in the schema | Int    |
+| precision   | The precision of the column            | Int    |  
+| scale       | The scale of the column                | Int    |  
+| comment     | The comment of the column              | String |
+
+### Row
+
+| Name   | Description       | Type           |
+|:-------|:------------------|:---------------|
+| fields | The fields of row | List of Fields |
+
+### Field
+
+| Name     | Description         | Type   |
+|:---------|:--------------------|:-------|
+| dataType | The type of column  | String |
+| value    | The value of column | Object |
 
 ### Engine
 
