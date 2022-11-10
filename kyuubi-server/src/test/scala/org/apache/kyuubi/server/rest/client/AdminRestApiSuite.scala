@@ -46,6 +46,7 @@ class AdminRestApiSuite extends RestClientTestHelper {
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.AUTHENTICATION_METHOD, Seq("LDAP", "CUSTOM"))
+    conf.set("spark.ui.enabled", "true")
     val user = ldapUser
     val engine = new EngineRef(conf.clone, user, id, null)
 

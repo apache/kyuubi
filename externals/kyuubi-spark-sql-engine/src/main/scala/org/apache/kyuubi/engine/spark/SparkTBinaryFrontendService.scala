@@ -96,8 +96,11 @@ class SparkTBinaryFrontendService(
   override def attributes: Map[String, String] = {
     var map = Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
     sc.uiWebUrl.foreach { url =>
-      map ++= Map(KYUUBI_ENGINE_UI_URL -> url)
+      val str = url.split("//:")(1)
+      map ++= Map(KYUUBI_ENGINE_UI_URL -> str)
+      info(str)
     }
+    info(map)
     map
   }
 }
