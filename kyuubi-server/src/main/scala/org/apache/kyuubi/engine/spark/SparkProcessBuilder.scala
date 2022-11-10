@@ -95,8 +95,8 @@ class SparkProcessBuilder(
     tryKeytab() match {
       case None =>
         setSparkUserName(proxyUser, buffer)
-//        buffer += PROXY_USER
-//        buffer += proxyUser
+        buffer += PROXY_USER
+        buffer += proxyUser
       case Some(name) =>
         setSparkUserName(name, buffer)
     }
