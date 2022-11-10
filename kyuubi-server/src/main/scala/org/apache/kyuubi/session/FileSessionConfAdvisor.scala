@@ -45,7 +45,7 @@ class FileSessionConfAdvisor extends SessionConfAdvisor with Logging {
               val propsFile = Utils.getPropertiesFile(s"kyuubi-session-$profile.conf")
               propsFile match {
                 case None =>
-                  error("File not found:$KYUUBI_CONF_DIR/" + s"kyuubi-session-<$profile>.conf")
+                  error("File not found: $KYUUBI_CONF_DIR/" + s"kyuubi-session-$profile.conf")
                   Collections.emptyMap()
                 case Some(_) =>
                   val conf = Utils.getPropertiesFromFile(propsFile).asJava
