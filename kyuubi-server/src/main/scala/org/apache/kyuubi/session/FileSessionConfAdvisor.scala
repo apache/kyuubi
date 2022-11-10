@@ -19,36 +19,46 @@ package org.apache.kyuubi.session
 
 import java.util
 import java.util.Collections
+import java.util.concurrent.{Callable, TimeUnit}
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.Utils
+import com.google.common.cache.{Cache, CacheBuilder}
+
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.session.FileSessionConfAdvisor.sessionConfCache
 
-class FileSessionConfAdvisor extends SessionConfAdvisor {
+class FileSessionConfAdvisor extends SessionConfAdvisor with Logging {
   override def getConfOverlay(
       user: String,
       sessionConf: util.Map[String, String]): util.Map[String, String] = {
-    val sessionProfile: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
-    sessionProfile match {
+    val profile: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
+    profile match {
       case null => Collections.emptyMap()
       case _ =>
-        val sessionConfFromCache = sessionConfCache.get(sessionProfile)
-        sessionConfFromCache match {
-          case null =>
-            val profileName = s"kyuubi-session-${sessionProfile}.conf"
-            val propsFile = Utils.getPropertiesFile(profileName)
-            val sessionConf = Utils.getPropertiesFromFile(propsFile).asJava
-            sessionConfCache.put(sessionProfile, sessionConf)
-            sessionConf
-          case _ => sessionConfFromCache
-        }
+        sessionConfCache.get(
+          profile,
+          new Callable[util.Map[String, String]]() {
+            override def call(): util.Map[String, String] = {
+              val propsFile = Utils.getPropertiesFile(s"kyuubi-session-${profile}.conf")
+              propsFile match {
+                case None =>
+                  error("File not found:$KYUUBI_CONF_DIR/" + s"kyuubi-session-<$profile>.conf")
+                  Collections.emptyMap()
+                case Some(_) =>
+                  val conf = Utils.getPropertiesFromFile(propsFile).asJava
+                  sessionConfCache.put(profile, conf)
+                  conf
+              }
+            }
+          })
     }
   }
 }
 
 object FileSessionConfAdvisor {
-  private val sessionConfCache = new util.HashMap[String, util.Map[String, String]]
+  private val sessionConfCache: Cache[String, util.Map[String, String]] =
+    CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.DAYS).build()
 }

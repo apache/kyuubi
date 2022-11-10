@@ -995,10 +995,11 @@ object KyuubiConf {
 
   val SESSION_CONF_PROFILE: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.conf.profile")
-      .doc("When kyuubi.session.conf.advisor=org.apache.kyuubi.session.FileSessionConfAdvisor, " +
-        "Specify a session level configuration file, which will be combined with default.conf " +
-        "to have an impact. The corresponding configuration file is " +
-        "`conf/kyuubi-session-<profile>.conf`")
+      .doc("Specify a profile to load session-level configurations from " +
+        "`$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf`. " +
+        "If the file does not exist, error log will be printed. " +
+        "This configuration only has effect when `kyuubi.session.conf.advisor` " +
+        "is set as `org.apache.kyuubi.session.FileSessionConfAdvisor`.")
       .version("1.7.0")
       .stringConf
       .createOptional
