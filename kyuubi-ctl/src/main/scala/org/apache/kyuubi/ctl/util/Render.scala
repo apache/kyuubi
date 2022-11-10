@@ -70,7 +70,8 @@ private[ctl] object Render {
 
   def renderBatchListInfo(batchListInfo: GetBatchesResponse): String = {
     val title = s"Batch List (from ${batchListInfo.getFrom} total ${batchListInfo.getTotal})"
-    val rows = batchListInfo.getBatches.asScala.sortBy(_.getCreateTime).map(buildBatchRow).toArray
+    val rows = batchListInfo.getBatches.asScala.sortBy(_.getCreateTime)
+      .map(batch => buildBatchRow(batch, false)).toArray
     Tabulator.format(title, batchColumnNames, rows)
   }
 
@@ -94,21 +95,21 @@ private[ctl] object Render {
       "Kyuubi Instance",
       "Time Range")
 
-  private def buildBatchRow(batch: Batch): Array[String] = {
+  private def buildBatchRow(batch: Batch, showDiagnostic: Boolean = true): Array[String] = {
     Array(
       batch.getId,
       batch.getBatchType,
       batch.getName,
       batch.getUser,
       batch.getState,
-      buildBatchAppInfo(batch).mkString("\n"),
+      buildBatchAppInfo(batch, showDiagnostic).mkString("\n"),
       batch.getKyuubiInstance,
       Seq(
         millisToDateString(batch.getCreateTime, "yyyy-MM-dd HH:mm:ss"),
         millisToDateString(batch.getEndTime, "yyyy-MM-dd HH:mm:ss")).mkString("\n~\n"))
   }
 
-  private def buildBatchAppInfo(batch: Batch): List[String] = {
+  private def buildBatchAppInfo(batch: Batch, showDiagnostic: Boolean = true): List[String] = {
     val batchAppInfo = ListBuffer[String]()
     Option(batch.getAppId).foreach { _ =>
       batchAppInfo += s"App Id: ${batch.getAppId}"
@@ -119,8 +120,10 @@ private[ctl] object Render {
     Option(batch.getAppState).foreach { _ =>
       batchAppInfo += s"App State: ${batch.getAppState}"
     }
-    Option(batch.getAppDiagnostic).filter(_.nonEmpty).foreach { _ =>
-      batchAppInfo += s"App Diagnostic: ${batch.getAppDiagnostic}"
+    if (showDiagnostic) {
+      Option(batch.getAppDiagnostic).filter(_.nonEmpty).foreach { _ =>
+        batchAppInfo += s"App Diagnostic: ${batch.getAppDiagnostic}"
+      }
     }
     batchAppInfo.toList
   }
