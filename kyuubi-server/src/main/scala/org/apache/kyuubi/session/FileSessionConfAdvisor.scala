@@ -42,7 +42,7 @@ class FileSessionConfAdvisor extends SessionConfAdvisor with Logging {
           profile,
           new Callable[util.Map[String, String]]() {
             override def call(): util.Map[String, String] = {
-              val propsFile = Utils.getPropertiesFile(s"kyuubi-session-${profile}.conf")
+              val propsFile = Utils.getPropertiesFile(s"kyuubi-session-$profile.conf")
               propsFile match {
                 case None =>
                   error("File not found:$KYUUBI_CONF_DIR/" + s"kyuubi-session-<$profile>.conf")
