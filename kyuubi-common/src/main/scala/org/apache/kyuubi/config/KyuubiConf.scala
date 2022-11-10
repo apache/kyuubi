@@ -997,7 +997,7 @@ object KyuubiConf {
     buildConf("kyuubi.session.conf.profile")
       .doc("Specify a profile to load session-level configurations from " +
         "`$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf`. " +
-        "If the file does not exist, error log will be printed. " +
+        "This configuration will be ignored if the file does not exist. " +
         "This configuration only has effect when `kyuubi.session.conf.advisor` " +
         "is set as `org.apache.kyuubi.session.FileSessionConfAdvisor`.")
       .version("1.7.0")
