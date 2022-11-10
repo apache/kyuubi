@@ -18,14 +18,13 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.RejectedExecutionException
-
 import scala.collection.JavaConverters._
-
 import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
-import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
+import org.apache.spark.SparkContext
+import org.apache.spark.kyuubi.{SQLOperationListener, SparkProgressMonitor}
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.command.AddJarsCommand
 import org.apache.spark.sql.types._
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
@@ -35,6 +34,8 @@ import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, O
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+
+import java.util.regex.Pattern
 
 class ExecuteStatement(
     session: Session,
@@ -85,12 +86,41 @@ class ExecuteStatement(
     OperationLog.removeCurrentOperationLog()
   }
 
+  def checkRepeatJar(session: Session, statement: String): Unit = {
+    def findJarNameIfExists(sparkContext: SparkContext, paths: Seq[String]): Seq[String] = {
+      val existsJarFileNames = sparkContext.listJars().map(_.split("/").last)
+      val addFileNames = paths.map(_.split("/").last)
+      val existsJars = existsJarFileNames.intersect(addFileNames)
+      existsJars
+    }
+
+    def isAddJarCommand: Option[String] = {
+      val regex = "add\\s*jar"
+      val pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE)
+      val matcher = pattern.matcher(statement.trim)
+      if (matcher.lookingAt()) Some(matcher.group) else None
+    }
+
+    if (isAddJarCommand.isDefined) {
+      val addJarCommand = spark.sessionState.sqlParser
+        .parsePlan(statement).asInstanceOf[AddJarsCommand]
+      val checkExistsResult = findJarNameIfExists(spark.sparkContext, addJarCommand.paths)
+      if (checkExistsResult.nonEmpty) {
+        setState(OperationState.CLOSED)
+        throw KyuubiSQLException(
+          s"sql $statement attempt to repeat jar , so discard this jar " +
+            s"and  close this jdbc conn ${session.handle}", null)
+      }
+    }
+  }
+
   private def executeStatement(): Unit = withLocalProperties {
     try {
       setState(OperationState.RUNNING)
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       operationListener.foreach(spark.sparkContext.addSparkListener(_))
+      checkRepeatJar(session, statement)
       result = spark.sql(statement)
       iter =
         if (incrementalCollect) {

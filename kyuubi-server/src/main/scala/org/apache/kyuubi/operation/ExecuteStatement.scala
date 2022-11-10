@@ -98,6 +98,7 @@ class ExecuteStatement(
 
           case CLOSED_STATE =>
             setState(OperationState.CLOSED)
+            session.close()
 
           case CANCELED_STATE =>
             setState(OperationState.CANCELED)
