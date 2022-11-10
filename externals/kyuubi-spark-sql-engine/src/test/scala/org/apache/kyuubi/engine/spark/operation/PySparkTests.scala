@@ -57,6 +57,16 @@ trait PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
     runPySparkTest(code, output)
   }
 
+  test("python version") {
+    val code =
+      """
+        |import sys
+        |print(sys.version_info[:])
+        |""".stripMargin
+    val output = "(3, 9, 15, 'final', 0)"
+    runPySparkTest(code, output)
+  }
+
   private def runPySparkTest(
       pyCode: String,
       output: String): Unit = {
