@@ -24,6 +24,15 @@ import traceback
 import re
 import os
 
+# ast api is changed after python 3.8, see https://github.com/ipython/ipython/pull/11593
+if sys.version_info > (3,8):
+  from ast import Module
+else :
+  # mock the new API, ignore second argument
+  # see https://github.com/ipython/ipython/issues/11590
+  from ast import Module as OriginalModule
+  Module = lambda nodelist, type_ignores: OriginalModule(nodelist)
+
 TOP_FRAME_REGEX = re.compile(r'\s*File "<stdin>".*in <module>')
 
 global_dict = {}
@@ -37,7 +46,7 @@ class NormalNode(object):
 
         try:
             for node in to_run_exec:
-                mod = ast.Module([node])
+                mod = Module([node], [])
                 code = compile(mod, '<stdin>', 'exec')
                 exec(code, global_dict)
 
