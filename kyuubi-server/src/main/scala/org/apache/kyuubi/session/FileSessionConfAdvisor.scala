@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.io.File
 import java.util
 import java.util.Collections
 
@@ -26,17 +25,30 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.plugin.SessionConfAdvisor
+import org.apache.kyuubi.session.FileSessionConfAdvisor.sessionConfCache
 
 class FileSessionConfAdvisor extends SessionConfAdvisor {
   override def getConfOverlay(
       user: String,
       sessionConf: util.Map[String, String]): util.Map[String, String] = {
     val sessionProfile: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
-    if (sessionProfile == null) {
-      return Collections.emptyMap()
+    sessionProfile match {
+      case null => Collections.emptyMap()
+      case _ =>
+        val sessionConfFromCache = sessionConfCache.get(sessionProfile)
+        sessionConfFromCache match {
+          case null =>
+            val profileName = s"kyuubi-session-${sessionProfile}.conf"
+            val propsFile = Utils.getPropertiesFile(profileName)
+            val sessionConf = Utils.getPropertiesFromFile(propsFile).asJava
+            sessionConfCache.put(sessionProfile, sessionConf)
+            sessionConf
+          case _ => sessionConfFromCache
+        }
     }
-    val pathName: String = s"conf/kyuubi-session-${sessionProfile}.conf"
-    val propsFile: File = new File(pathName)
-    Utils.getPropertiesFromFile(Option(propsFile)).asJava
   }
+}
+
+object FileSessionConfAdvisor {
+  private val sessionConfCache = new util.HashMap[String, util.Map[String, String]]
 }

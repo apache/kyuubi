@@ -49,11 +49,21 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     val advisor = PluginLoader.loadSessionConfAdvisor(conf)
     val emptyConfig = advisor.getConfOverlay("chris", conf.getAll.asJava)
     assert(emptyConfig.isEmpty)
+
     conf.set(KyuubiConf.SESSION_CONF_PROFILE, "non.exists")
-    val msg3 = intercept[KyuubiException] {
-      advisor.getConfOverlay("chris", conf.getAll.asJava)
-    }.getMessage
-    assert(msg3.startsWith("Failed when loading Kyuubi properties"))
+    val nonexistsConfig = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    assert(nonexistsConfig.isEmpty)
+
+    conf.set(KyuubiConf.SESSION_CONF_PROFILE, "cluster-a")
+    val clusteraConf = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    assert(clusteraConf.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
+    assert(clusteraConf.get("kyuubi.zk.ha.namespace") == null)
+    assert(clusteraConf.size() == 5)
+
+    val clusteraConfFromCache = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    assert(clusteraConfFromCache.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
+    assert(clusteraConfFromCache.get("kyuubi.zk.ha.namespace") == null)
+    assert(clusteraConfFromCache.size() == 5)
   }
 }
 
