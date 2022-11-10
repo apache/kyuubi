@@ -217,7 +217,7 @@
                             <include>com.google.protobuf:*</include>
                             <include>io.perfmark:perfmark-api</include>
                             <include>io.etcd:*</include>
-                            <include>io.grpc:*:</include>
+                            <include>io.grpc:*</include>
                             <include>io.netty:*</include>
                             <include>io.vertx:*</include>
                             <include>net.jodah:failsafe</include>
