@@ -304,11 +304,19 @@
                             </includes>
                         </relocation>
                         <relocation>
+                            <pattern>io.grpc</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.grpc</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>io.netty</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.io.netty</shadedPattern>
                             <includes>
                                 <include>io.netty.**</include>
                             </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.perfmark</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.perfmark</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>io.vertx</pattern>
@@ -348,14 +356,6 @@
                             <includes>
                                 <include>com.google.protobuf.**</include>
                             </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>io.grpc</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.io.grpc</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>io.perfmark</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.io.perfmark</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>org.codehaus.mojo.animal_sniffer</pattern>
