@@ -27,7 +27,6 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.TABLE_OR_VIEW
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.{CommandType, HasChildAsIdentifier, HasQueryAsLogicalPlan, HasTableAsIdentifier, HasTableAsIdentifierOption, HasTableNameAsIdentifier}
-import org.apache.spark.sql.types.StringType
 
 /**
  * Building privilege objects
@@ -355,36 +354,4 @@ object v2Commands extends Enumeration {
     operationType = ALTERTABLE_RENAMECOL,
     leastVer = Some("3.2"),
     commandTypes = Seq(HasTableAsIdentifier))
-
-  def buildCommandTypes(types: Seq[String]): Seq[CommandType] = {
-    types.map(f => CommandType.withName(f))
-  }
-
-  def getArcticUtil: AnyRef = {
-    Class.forName("com.netease.arctic.spark.sql.utils.ArcticAuthUtil")
-  }
-
-
-  var arcticCmd: String = _
-
-  def buildCmd(commandName: String, commandType: String): this.Value = {
-    arcticCmd = commandName
-    val command = v2Commands.withName(commandType)
-    command
-  }
-
-  val ArcticCommand: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
-    operationType = OperationType.withName(invoke(getArcticUtil,
-      "operationType",
-      (StringType.getClass, arcticCmd)).
-      asInstanceOf[String]),
-    leastVer = Some("3.2"),
-    commandTypes = buildCommandTypes(invoke(getArcticUtil,
-      "commandType",
-      (StringType.getClass, arcticCmd)).
-      asInstanceOf[Seq[String]]),
-    outputActionType = PrivilegeObjectActionType.withName(invoke(getArcticUtil,
-      "actionType",
-      (StringType.getClass, arcticCmd)).
-      asInstanceOf[String]))
 }

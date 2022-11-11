@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import org.apache.kyuubi.plugin.spark.authz.util.ArcticCmdUtils
+
 object OperationType extends Enumeration {
 
   type OperationType = Value
@@ -39,6 +41,8 @@ object OperationType extends Enumeration {
     clzName match {
       case v2Cmd if v2Commands.accept(v2Cmd) =>
         v2Commands.withName(v2Cmd).operationType
+      case arcticCmd if ArcticCmdUtils.accept(arcticCmd) =>
+        ArcticCmdUtils.operationType(arcticCmd)
 
       case "AddArchivesCommand" => EXPLAIN
       case "AddFilesCommand" => EXPLAIN
