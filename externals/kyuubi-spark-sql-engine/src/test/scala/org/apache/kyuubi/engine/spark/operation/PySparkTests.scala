@@ -75,9 +75,9 @@ trait PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
       statement.executeQuery("SET kyuubi.operation.language=python")
       val resultSet = statement.executeQuery(pyCode)
       assert(resultSet.next())
+      assert(false, resultSet.getString("output"))
       assert(resultSet.getString("output") === output)
       assert(resultSet.getString("status") === "ok")
-      assert(false, "test ga")
     })
   }
 
