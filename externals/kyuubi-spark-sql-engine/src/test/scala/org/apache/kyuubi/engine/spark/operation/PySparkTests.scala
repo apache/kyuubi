@@ -30,7 +30,7 @@ trait PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
   test("pyspark support") {
     val code = "print(1)"
     val output = "1"
-    runPySparkTest(code, output)
+    testGA(code, output)
   }
 
   test("pyspark support - multi-line") {
@@ -40,7 +40,7 @@ trait PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
         |    print(i)
         |""".stripMargin
     val output = "1\n2\n3"
-    runPySparkTest(code, output)
+    testGA(code, output)
   }
 
   test("pyspark support - call spark.sql") {
@@ -54,7 +54,7 @@ trait PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
          |+---+
          ||  1|
          |+---+""".stripMargin
-    runPySparkTest(code, output)
+    testGA(code, output)
   }
 
   test("python version") {
