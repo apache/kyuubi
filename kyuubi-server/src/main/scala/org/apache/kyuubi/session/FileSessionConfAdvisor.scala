@@ -17,46 +17,46 @@
 
 package org.apache.kyuubi.session
 
-import java.util
+import java.util.{Map => JMap}
 import java.util.Collections
-import java.util.concurrent.{Callable, TimeUnit}
+import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
-import com.google.common.cache.{Cache, CacheBuilder}
+import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.session.FileSessionConfAdvisor.sessionConfCache
 
-class FileSessionConfAdvisor extends SessionConfAdvisor with Logging {
+class FileSessionConfAdvisor extends SessionConfAdvisor{
   override def getConfOverlay(
       user: String,
-      sessionConf: util.Map[String, String]): util.Map[String, String] = {
+      sessionConf: JMap[String, String]): JMap[String, String] = {
     val profile: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
     profile match {
       case null => Collections.emptyMap()
       case _ =>
-        sessionConfCache.get(
-          profile,
-          new Callable[util.Map[String, String]]() {
-            override def call(): util.Map[String, String] = {
-              val propsFile = Utils.getPropertiesFile(s"kyuubi-session-$profile.conf")
-              propsFile match {
-                case None =>
-                  error("File not found: $KYUUBI_CONF_DIR/" + s"kyuubi-session-$profile.conf")
-                  Collections.emptyMap()
-                case Some(_) =>
-                  Utils.getPropertiesFromFile(propsFile).asJava
-              }
-            }
-          })
+        sessionConfCache.get(profile)
     }
   }
 }
 
-object FileSessionConfAdvisor {
-  private val sessionConfCache: Cache[String, util.Map[String, String]] =
-    CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build()
+object FileSessionConfAdvisor extends Logging {
+  private val sessionConfCache: LoadingCache[String, JMap[String, String]] =
+    CacheBuilder.newBuilder()
+      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .build(new CacheLoader[String, JMap[String, String]] {
+        override def load(profile: String): JMap[String, String] = {
+          val propsFile = Utils.getPropertiesFile(s"kyuubi-session-$profile.conf")
+          propsFile match {
+            case None =>
+              error("File not found: $KYUUBI_CONF_DIR/" + s"kyuubi-session-$profile.conf")
+              Collections.emptyMap()
+            case Some(_) =>
+              Utils.getPropertiesFromFile(propsFile).asJava
+          }
+        }
+      })
 }
