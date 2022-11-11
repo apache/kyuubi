@@ -63,8 +63,9 @@ case class EngineTab(
   sparkUI.foreach { ui =>
     try {
       // Spark shade the jetty package so here we use reflection
+      val sparkServletContextHandlerClz = loadSparkServletContextHandler
       val attachHandlerMethod = Class.forName("org.apache.spark.ui.SparkUI")
-        .getMethod("attachHandler", classOf[org.sparkproject.jetty.servlet.ServletContextHandler])
+        .getMethod("attachHandler", sparkServletContextHandlerClz)
       val createRedirectHandlerMethod = Class.forName("org.apache.spark.ui.JettyUtils")
         .getMethod(
           "createRedirectHandler",

@@ -105,9 +105,9 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
       <ul class="list-unstyled">
         <li>
           <strong>Stop kyuubi engine:</strong>
-          <a href={forceStopLinkUri} onclick={confirmForceStop} class="stop-link">(Force-Kill)</a>
+          <a href={forceStopLinkUri} onclick={confirmForceStop} class="stop-link">(Force kill)</a>
           <a href={gracefulStopLinkUri} onclick={confirmGracefulStop}
-             class="stop-link">(Grace-Kill)</a>
+             class="stop-link">(Graceful kill)</a>
         </li>
       </ul>
     } else {
