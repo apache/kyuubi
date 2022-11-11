@@ -48,9 +48,7 @@ class FileSessionConfAdvisor extends SessionConfAdvisor with Logging {
                   error("File not found: $KYUUBI_CONF_DIR/" + s"kyuubi-session-$profile.conf")
                   Collections.emptyMap()
                 case Some(_) =>
-                  val conf = Utils.getPropertiesFromFile(propsFile).asJava
-                  sessionConfCache.put(profile, conf)
-                  conf
+                  Utils.getPropertiesFromFile(propsFile).asJava
               }
             }
           })
@@ -60,5 +58,5 @@ class FileSessionConfAdvisor extends SessionConfAdvisor with Logging {
 
 object FileSessionConfAdvisor {
   private val sessionConfCache: Cache[String, util.Map[String, String]] =
-    CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.DAYS).build()
+    CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build()
 }
