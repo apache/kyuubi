@@ -64,7 +64,21 @@ trait PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
         |print(sys.version_info[:])
         |""".stripMargin
     val output = "(3, 9, 15, 'final', 0)"
-    runPySparkTest(code, output)
+    testGA(code, output)
+  }
+
+  private def testGA(
+      pyCode: String,
+      output: String): Unit = {
+    checkPythonRuntimeAndVersion()
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.executeQuery("SET kyuubi.operation.language=python")
+      val resultSet = statement.executeQuery(pyCode)
+      assert(resultSet.next())
+      assert(resultSet.getString("output") === output)
+      assert(resultSet.getString("status") === "ok")
+      assert(false, "test ga")
+    })
   }
 
   private def runPySparkTest(
