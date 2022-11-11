@@ -30,7 +30,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.session.FileSessionConfAdvisor.sessionConfCache
 
-class FileSessionConfAdvisor extends SessionConfAdvisor{
+class FileSessionConfAdvisor extends SessionConfAdvisor {
   override def getConfOverlay(
       user: String,
       sessionConf: JMap[String, String]): JMap[String, String] = {
