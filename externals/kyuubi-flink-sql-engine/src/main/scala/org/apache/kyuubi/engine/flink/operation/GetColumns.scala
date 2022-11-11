@@ -21,7 +21,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.api.{DataTypes, ResultKind}
-import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
@@ -42,14 +41,6 @@ class GetColumns(
   override protected def runInternal(): Unit = {
     try {
       val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      val resolver = tableEnv match {
-        case impl: StreamTableEnvironmentImpl =>
-          impl.getCatalogManager.getSchemaResolver
-        case _ =>
-          throw new UnsupportedOperationException(
-            "Unsupported Operation type GetColumns. You can execute " +
-              "DESCRIBE statement instead to get column infos.")
-      }
 
       val catalogName =
         if (StringUtils.isEmpty(catalogNameOrEmpty)) tableEnv.getCurrentCatalog
@@ -68,8 +59,9 @@ class GetColumns(
               schemaName,
               tableNameRegex)
               .filter { _._2.isDefined }
-              .flatMap { case (tableName, flinkTable) =>
-                val resolvedSchema = flinkTable.get.getUnresolvedSchema.resolve(resolver)
+              .flatMap { case (tableName, _) =>
+                val flinkTable = tableEnv.from(s"`$catalogName`.`$schemaName`.`$tableName`")
+                val resolvedSchema = flinkTable.getResolvedSchema
                 resolvedSchema.getColumns.asScala.toArray.zipWithIndex
                   .filter { case (column, _) =>
                     columnNameRegex.pattern.matcher(column.getName).matches()
