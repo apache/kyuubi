@@ -29,3 +29,29 @@ CREATE TABLE metadata(
     INDEX user_name_index(user_name),
     INDEX engine_type_index(engine_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `t_sys_user` (
+                              `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                              `group_id` bigint(20) DEFAULT NULL COMMENT '组ID',
+                              `name` varchar(255) NOT NULL COMMENT '用户名',
+                              `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                              `is_del` tinyint(4) DEFAULT '0' COMMENT '是否软删除',
+                              PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `t_limit_user` (
+                                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                                `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+                                `num` int(20) NOT NULL COMMENT '最大连接数',
+                                `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                `is_del` tinyint(4) DEFAULT '0' COMMENT '是否软删除',
+                                PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `t_sys_group` (
+                               `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                               `name` varchar(255) NOT NULL COMMENT '组名，共享GROUP模式使用的名称',
+                               `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                               `is_del` tinyint(4) DEFAULT '0' COMMENT '是否删除',
+                               PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

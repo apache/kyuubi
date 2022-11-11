@@ -29,6 +29,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
+import org.apache.kyuubi.engine.EngineRef.userGroupMap
 import org.apache.kyuubi.engine.EngineType.{EngineType, FLINK_SQL, HIVE_SQL, JDBC, SPARK_SQL, TRINO}
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
@@ -41,6 +42,7 @@ import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, Di
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.server.metadata.jdbc.JDBCUserCustomStore
 
 /**
  * The description and functionality of an engine at server side
@@ -72,6 +74,8 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
+  private val isCustomGroup: Boolean = conf.get(ENGINE_SHARE_LEVEL_GROUP_CUSTOM_ENABLE)
+
   private val enginePoolBalancePolicy: String = conf.get(ENGINE_POOL_BALANCE_POLICY)
 
   // In case the multi kyuubi instances have the small gap of timeout, here we add
@@ -83,7 +87,9 @@ private[kyuubi] class EngineRef(
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
-    case GROUP =>
+    case GROUP => if (isCustomGroup) {
+        userGroupMap.getOrElse(user, user)
+      } else {
       val clientUGI = UserGroupInformation.createRemoteUser(user)
       // Similar to `clientUGI.getPrimaryGroupName` (avoid IOE) to get the Primary GroupName of
       // the client user mapping to
@@ -93,6 +99,7 @@ private[kyuubi] class EngineRef(
           warn(s"There is no primary group for $user, use the client user name as group directly")
           user
       }
+    }
     case _ => user
   }
 
@@ -286,4 +293,15 @@ private[kyuubi] class EngineRef(
       }
     }
   }
+}
+
+object EngineRef {
+
+  private val userGroupMap: Map[String, String] =
+    try {
+      JDBCUserCustomStore().getUserGroupList.toMap
+    } catch {
+      case _: Throwable => Map()
+    }
+
 }

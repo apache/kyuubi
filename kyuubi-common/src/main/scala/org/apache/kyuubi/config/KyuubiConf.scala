@@ -2030,6 +2030,22 @@ object KyuubiConf {
       .intConf
       .createOptional
 
+  val SERVER_LIMIT_CONNECTIONS_CUSTOM_ENABLE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.server.limit.connections.custom.enable")
+      .doc("Whether to enable custom limit. If it is enabled, Kyuubi will limit the" +
+        " conn's num according to user")
+      .version("1.6.1")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_SHARE_LEVEL_GROUP_CUSTOM_ENABLE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.share.level.group.custom.enable")
+      .doc("Whether to enable custom group share. If it is enabled, Kyuubi will get the" +
+        " user's group by using relation configured in mysql.")
+      .version("1.6.1")
+      .booleanConf
+      .createWithDefault(false)
+
   val SESSION_PROGRESS_ENABLE: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.progress.enabled")
       .doc("Whether to enable the operation progress. When true," +

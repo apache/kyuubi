@@ -31,12 +31,14 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     val userLimit = 30
     val ipAddressLimit = 20
     val userIpAddressLimit = 10
+    val userCustomLimit = 5
+    val userMap: Map[String, Int] = Map({ "user001" -> 5 })
     val threadPool = Executors.newFixedThreadPool(10)
     def checkLimit(
         userIpAddress: UserIpAddress,
         expectedIndex: Int,
         expectedErrorMsg: String): Unit = {
-      val limiter = SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit)
+      val limiter = SessionLimiter(userMap, userLimit, ipAddressLimit, userIpAddressLimit)
       val successAdder = new LongAdder
       val expectedErrorAdder = new LongAdder
       val count = 50
@@ -78,6 +80,13 @@ class SessionLimiterSuite extends KyuubiFunSuite {
       userIpAddressLimit,
       s"Connection limit per user:ipaddress reached" +
         s" (user:ipaddress: $user:$ipAddress limit: $userIpAddressLimit)")
+
+    // user custom limit
+    checkLimit(
+      UserIpAddress(user, null),
+      userCustomLimit,
+      s"Connection limit per user custom reached (user: $user limit: $userCustomLimit)")
+
     threadPool.shutdown()
   }
 
@@ -87,7 +96,8 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     val userLimit = 30
     val ipAddressLimit = 20
     val userIpAddressLimit = 10
-    val limiter = SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit)
+    val userMap: Map[String, Int] = Map({ "user001" -> 5 })
+    val limiter = SessionLimiter(userMap, userLimit, ipAddressLimit, userIpAddressLimit)
     for (i <- 0 until 50) {
       val userIpAddress = UserIpAddress(user, ipAddress)
       limiter.increment(userIpAddress)

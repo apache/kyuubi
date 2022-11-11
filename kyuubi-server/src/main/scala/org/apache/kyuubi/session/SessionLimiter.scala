@@ -31,7 +31,8 @@ trait SessionLimiter {
 
 case class UserIpAddress(user: String, ipAddress: String)
 
-class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit: Int)
+class SessionLimiterImpl(userMap: Map[String, Int], userLimit: Int,
+                         ipAddressLimit: Int, userIpAddressLimit: Int)
   extends SessionLimiter {
 
   private val _counters: java.util.Map[String, AtomicInteger] =
@@ -65,6 +66,14 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
         ipAddressLimit,
         s"Connection limit per ipaddress reached (ipaddress: $ipAddress limit: $ipAddressLimit)")
     }
+    // increment user custom count
+    if (userMap.get(user).nonEmpty) {
+      val userLimit = userMap.get(user).get
+      incrLimitCount(
+        user,
+        userLimit,
+        s"Connection limit per user-defined reached (user: $user limit: $userLimit)")
+    }
   }
 
   override def decrement(userIpAddress: UserIpAddress): Unit = {
@@ -82,6 +91,10 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
     if (userIpAddressLimit > 0 && StringUtils.isNotBlank(user) &&
       StringUtils.isNotBlank(ipAddress)) {
       decrLimitCount(s"$user:$ipAddress")
+    }
+    // decrement user custom count
+    if (userMap.get(user).nonEmpty) {
+      decrLimitCount(user)
     }
   }
 
@@ -103,8 +116,12 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
 
 object SessionLimiter {
 
-  def apply(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit: Int): SessionLimiter = {
-    new SessionLimiterImpl(userLimit, ipAddressLimit, userIpAddressLimit)
+  def apply(
+             userMap: Map[String, Int],
+             userLimit: Int,
+             ipAddressLimit: Int,
+             userIpAddressLimit: Int): SessionLimiter = {
+    new SessionLimiterImpl(userMap, userLimit, ipAddressLimit, userIpAddressLimit)
   }
 
 }
