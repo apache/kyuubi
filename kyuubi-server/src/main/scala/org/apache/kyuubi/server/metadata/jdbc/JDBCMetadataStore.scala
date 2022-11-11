@@ -26,8 +26,6 @@ import scala.collection.mutable.ListBuffer
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.google.common.annotations.VisibleForTesting
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
