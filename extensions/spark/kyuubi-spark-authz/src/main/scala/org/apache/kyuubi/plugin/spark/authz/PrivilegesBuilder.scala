@@ -18,7 +18,6 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
@@ -28,8 +27,7 @@ import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.types.StructField
-
+import org.apache.spark.sql.types.{BooleanType, StructField}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -211,6 +209,12 @@ object PrivilegesBuilder {
     plan.nodeName match {
       case v2Cmd if v2Commands.accept(v2Cmd) =>
         v2Commands.withName(v2Cmd).buildPrivileges(plan, inputObjs, outputObjs)
+
+      case arcticCmd if invoke(
+        Class.forName("com.netease.arctic.spark.sql.utils.ArcticAuthUtil"),
+        "isArcticCommand", (BooleanType.getClass, arcticCmd)).asInstanceOf[Boolean] =>
+        v2Commands.buildCmd(arcticCmd, "ArcticCommand").
+          buildPrivileges(plan, inputObjs, outputObjs)
 
       case "AlterDatabasePropertiesCommand" |
           "AlterDatabaseSetLocationCommand" |
