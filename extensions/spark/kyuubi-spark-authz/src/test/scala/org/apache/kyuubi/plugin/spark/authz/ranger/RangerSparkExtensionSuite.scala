@@ -35,7 +35,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
-import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
+import org.apache.kyuubi.plugin.spark.authz.ranger.RuleRelationAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
@@ -118,7 +118,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
 
   test("[KYUUBI #3226] RuleAuthorization: Should check privileges once only.") {
     val logicalPlan = doAs("admin", sql("SHOW TABLES").queryExecution.logical)
-    val rule = new RuleAuthorization(spark)
+    val rule = new RuleRelationAuthorization(spark)
 
     (1 until 10).foreach { i =>
       if (i == 1) {

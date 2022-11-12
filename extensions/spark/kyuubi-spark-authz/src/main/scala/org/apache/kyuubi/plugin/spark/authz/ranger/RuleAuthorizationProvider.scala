@@ -23,14 +23,16 @@ import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-import org.apache.kyuubi.plugin.spark.authz.{ranger, ObjectType, OperationType, PrivilegeObject}
+import org.apache.kyuubi.plugin.spark.authz.{ranger, ObjectType, OperationType, PrivilegeObject, PrivilegesBuilder}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType.{COLUMN, DATABASE}
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.{authorizeInSingleCall, verify}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getAuthzUgi
 
 trait RuleAuthorizationProvider {
 
-  val privilegeBuilder: (LogicalPlan, SparkSession) => (Seq[PrivilegeObject], Seq[PrivilegeObject])
+  val privilegeBuilder
+      : (LogicalPlan, SparkSession) => (Seq[PrivilegeObject], Seq[PrivilegeObject]) =
+    PrivilegesBuilder.build
 
   val operationTypeBuilder: (String) => OperationType.OperationType = OperationType.apply
 
@@ -64,7 +66,13 @@ trait RuleAuthorizationProvider {
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
           resource.getColumns.map { col =>
-            val cr = AccessResource(COLUMN, resource.getDatabase, resource.getTable, col)
+            val cr =
+              AccessResource(
+                COLUMN,
+                resource.getDatabase,
+                resource.getTable,
+                col,
+                Option(resource.getOwnerUser))
             AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
           }
         case _ => Seq(request)

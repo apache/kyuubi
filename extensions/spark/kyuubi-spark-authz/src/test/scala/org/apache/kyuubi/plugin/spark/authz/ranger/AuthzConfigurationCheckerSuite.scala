@@ -50,7 +50,7 @@ class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvid
     val p7 = sql("set spark.sql.efg=hijk").queryExecution.analyzed
     extension.apply(p7)
     val p8 = sql(
-      s"set spark.sql.optimizer.excludedRules=${classOf[RuleAuthorization].getName}").queryExecution.analyzed
+      s"set spark.sql.optimizer.excludedRules=${classOf[RuleRelationAuthorization].getName}").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p8))
   }
 }

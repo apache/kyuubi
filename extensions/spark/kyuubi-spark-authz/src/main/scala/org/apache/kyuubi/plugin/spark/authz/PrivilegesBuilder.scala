@@ -50,7 +50,7 @@ object PrivilegesBuilder {
     PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns, owner)
   }
 
-  private def functionPrivileges(
+  def functionPrivileges(
       db: String,
       functionName: String): PrivilegeObject = {
     PrivilegeObject(FUNCTION, PrivilegeObjectActionType.OTHER, db, functionName)
@@ -84,7 +84,7 @@ object PrivilegesBuilder {
     spark.sessionState.catalog.isTempView(parts)
   }
 
-  private def isPersistentFunction(
+  def isPersistentFunction(
       functionIdent: FunctionIdentifier,
       spark: SparkSession): Boolean = {
     val (database, funcName) = functionIdent.database match {

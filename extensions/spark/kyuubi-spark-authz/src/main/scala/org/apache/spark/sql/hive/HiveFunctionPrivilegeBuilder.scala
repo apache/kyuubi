@@ -18,14 +18,13 @@
 package org.apache.spark.sql.hive
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-import org.apache.kyuubi.plugin.spark.authz.{PrivilegeObject, PrivilegeObjectActionType}
-import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.FUNCTION
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObject
+import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder.{functionPrivileges, isPersistentFunction}
 
 object HiveFunctionPrivilegeBuilder {
 
@@ -54,31 +53,21 @@ object HiveFunctionPrivilegeBuilder {
       functionFullName: String,
       inputs: ArrayBuffer[PrivilegeObject],
       spark: SparkSession): Unit = {
-
     val (database, functionName) = getFunctionInfo(functionFullName, spark)
-    if (database != null && spark.sessionState.catalog.isPersistentFunction(
-        FunctionIdentifier(functionName, Some(database)))) {
-      inputs += functionPrivileges(database, functionName)
+    if (isPersistentFunction(FunctionIdentifier(functionName, database), spark)) {
+      inputs += functionPrivileges(database.get, functionName)
     }
   }
 
-  private def getFunctionInfo(functionName: String, spark: SparkSession) = {
+  private def getFunctionInfo(
+      functionName: String,
+      sparkSession: SparkSession): (Option[String], String) = {
     val items = functionName.split("\\.")
     if (items.length == 2) {
-      (items(0), items(1))
+      (Some(items(0)), items(1))
     } else {
-      Try {
-        spark.sessionState.catalog.lookupFunctionInfo(FunctionIdentifier(functionName))
-      } match {
-        case Success(functionInfo) => (functionInfo.getDb, functionInfo.getName)
-        case Failure(_) => (null, functionName)
-      }
+      (Some(sparkSession.catalog.currentDatabase), functionName)
     }
   }
 
-  private def functionPrivileges(
-      db: String,
-      functionName: String): PrivilegeObject = {
-    PrivilegeObject(FUNCTION, PrivilegeObjectActionType.OTHER, db, functionName)
-  }
 }
