@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`n_name` STRING,`revenue` DOUBLE
+n_name STRING,revenue DOUBLE

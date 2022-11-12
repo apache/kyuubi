@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`i_item_id` STRING NOT NULL,`i_item_desc` STRING,`s_state` STRING,`store_sales_quantitycount` BIGINT NOT NULL,`store_sales_quantityave` DOUBLE,`store_sales_quantitystdev` DOUBLE,`store_sales_quantitycov` DOUBLE,`store_returns_quantitycount` BIGINT NOT NULL,`store_returns_quantityave` DOUBLE,`store_returns_quantitystdev` DOUBLE,`store_returns_quantitycov` DOUBLE,`catalog_sales_quantitycount` BIGINT NOT NULL,`catalog_sales_quantityave` DOUBLE,`catalog_sales_quantitystdev` DOUBLE,`catalog_sales_quantitycov` DOUBLE
+i_item_id STRING NOT NULL,i_item_desc STRING,s_state STRING,store_sales_quantitycount BIGINT NOT NULL,store_sales_quantityave DOUBLE,store_sales_quantitystdev DOUBLE,store_sales_quantitycov DOUBLE,store_returns_quantitycount BIGINT NOT NULL,store_returns_quantityave DOUBLE,store_returns_quantitystdev DOUBLE,store_returns_quantitycov DOUBLE,catalog_sales_quantitycount BIGINT NOT NULL,catalog_sales_quantityave DOUBLE,catalog_sales_quantitystdev DOUBLE,catalog_sales_quantitycov DOUBLE

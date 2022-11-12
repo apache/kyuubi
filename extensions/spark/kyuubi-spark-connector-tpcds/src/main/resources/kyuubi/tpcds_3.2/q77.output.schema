@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`channel` STRING,`id` BIGINT,`sales` DECIMAL(27,2),`returns` DECIMAL(27,2),`profit` DECIMAL(28,2)
+channel STRING,id BIGINT,sales DECIMAL(27,2),returns DECIMAL(27,2),profit DECIMAL(28,2)

@@ -17,7 +17,7 @@
 #
 
 ## Kyuubi Admin Control Client Entrance
-CLASS="org.apache.kyuubi.ctl.AdminControlCli"
+CLASS="org.apache.kyuubi.ctl.cli.AdminControlCli"
 
 export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
 

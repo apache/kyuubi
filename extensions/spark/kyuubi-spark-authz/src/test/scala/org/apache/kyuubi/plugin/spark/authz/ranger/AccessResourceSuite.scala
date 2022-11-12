@@ -31,11 +31,13 @@ class AccessResourceSuite extends AnyFunSuite {
     assert(resource.getColumn === null)
     assert(resource.getColumns.isEmpty)
 
-    val resource1 = AccessResource(DATABASE, null, "my_table_name", "my_col_1,my_col_2")
+    val resource1 =
+      AccessResource(DATABASE, null, "my_table_name", "my_col_1,my_col_2", Some("Bob"))
     assert(resource1.getDatabase === null)
     assert(resource1.getTable === null)
     assert(resource1.getColumn === null)
     assert(resource1.getColumns.isEmpty)
+    assert(resource1.getOwnerUser === "Bob")
 
     val resource2 = AccessResource(FUNCTION, "my_db_name", "my_func_name", null)
     assert(resource2.getDatabase === "my_db_name")

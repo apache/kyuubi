@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`i_category` STRING,`i_brand` STRING,`d_year` INT,`d_moy` INT,`avg_monthly_sales` DECIMAL(21,6),`sum_sales` DECIMAL(17,2),`psum` DECIMAL(17,2),`nsum` DECIMAL(17,2)
+i_category STRING,i_brand STRING,d_year INT,d_moy INT,avg_monthly_sales DECIMAL(21,6),sum_sales DECIMAL(17,2),psum DECIMAL(17,2),nsum DECIMAL(17,2)

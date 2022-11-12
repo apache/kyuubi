@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`item_id` STRING NOT NULL,`ss_item_rev` DECIMAL(17,2),`ss_dev` DECIMAL(38,13),`cs_item_rev` DECIMAL(17,2),`cs_dev` DECIMAL(38,13),`ws_item_rev` DECIMAL(17,2),`ws_dev` DECIMAL(38,13),`average` DECIMAL(23,6)
+item_id STRING NOT NULL,ss_item_rev DECIMAL(17,2),ss_dev DECIMAL(38,13),cs_item_rev DECIMAL(17,2),cs_dev DECIMAL(38,13),ws_item_rev DECIMAL(17,2),ws_dev DECIMAL(38,13),average DECIMAL(23,6)

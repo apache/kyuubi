@@ -151,7 +151,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   test(s"sub process log should be overwritten") {
     def atomicTest(): Unit = {
       val pool = Executors.newFixedThreadPool(3)
-      val fakeWorkDir = Files.createTempDirectory("fake")
+      val fakeWorkDir = Utils.createTempDir("fake")
       val dir = fakeWorkDir.toFile
       try {
         assert(dir.list().length == 0)
@@ -197,7 +197,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("overwrite log file should cleanup before write") {
-    val fakeWorkDir = Files.createTempDirectory("fake")
+    val fakeWorkDir = Utils.createTempDir("fake")
     val conf = KyuubiConf()
     conf.set(ENGINE_LOG_TIMEOUT, Duration.ofDays(1).toMillis)
     val builder1 = new FakeSparkProcessBuilder(conf) {
@@ -220,7 +220,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("main resource jar should not check when is not a local file") {
-    val workDir = Files.createTempDirectory("resource")
+    val workDir = Utils.createTempDir("resource")
     val jarPath = Paths.get(workDir.toString, "test.jar")
     val hdfsPath = s"hdfs://$jarPath"
 
@@ -252,7 +252,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
   test("zookeeper kerberos authentication") {
     val conf = KyuubiConf()
-    conf.set(HighAvailabilityConf.HA_ZK_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
+    conf.set(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
     conf.set(HighAvailabilityConf.HA_ZK_AUTH_KEYTAB.key, testKeytab)
     conf.set(HighAvailabilityConf.HA_ZK_AUTH_PRINCIPAL.key, testPrincipal)
 

@@ -108,8 +108,7 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     // Check if JDBC parameters valid
     require(driverClass.nonEmpty, "JDBC driver class is not configured.")
     require(authDbJdbcUrl.nonEmpty, "JDBC url is not configured.")
-    require(authDbUser.nonEmpty, "JDBC user is not configured.")
-    // allow empty auth db password
+    // allow empty auth db user or password
     require(authQuery.nonEmpty, "Query SQL is not configured")
 
     val query = authQuery.get.trim.toLowerCase

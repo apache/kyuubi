@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`i_item_id` STRING,`s_state` STRING,`g_state` TINYINT NOT NULL,`agg1` DOUBLE,`agg2` DECIMAL(11,6),`agg3` DECIMAL(11,6),`agg4` DECIMAL(11,6)
+i_item_id STRING,s_state STRING,g_state TINYINT NOT NULL,agg1 DOUBLE,agg2 DECIMAL(11,6),agg3 DECIMAL(11,6),agg4 DECIMAL(11,6)

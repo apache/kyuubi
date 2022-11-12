@@ -29,6 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.zookeeper.ZookeeperConf
 
 class KyuubiOperationPerUserSuite
   extends WithKyuubiServer with SparkQueryTests with WithSimpleDFSService {
@@ -278,6 +279,46 @@ class KyuubiOperationPerUserSuite
         req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
         assert(client.GetInfo(req).getInfoValue.getStringValue === "Spark SQL")
       }
+    }
+  }
+
+  test("the new client should work properly when the engine exits unexpectedly") {
+    assume(!httpMode)
+    withSessionConf(Map(
+      ZookeeperConf.ZK_MAX_SESSION_TIMEOUT.key -> "10000"))(Map.empty)(
+      Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("SET kyuubi.operation.language=scala")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        client.ExecuteStatement(preReq)
+
+        val exitReq = new TExecuteStatementReq()
+        // force kill engine without shutdown hook
+        exitReq.setStatement("java.lang.Runtime.getRuntime().halt(-1)")
+        exitReq.setSessionHandle(handle)
+        exitReq.setRunAsync(true)
+        client.ExecuteStatement(exitReq)
+      }
+      withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("select engine_name()")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        val tExecuteStatementResp = client.ExecuteStatement(preReq)
+        val opHandle = tExecuteStatementResp.getOperationHandle
+        waitForOperationToComplete(client, opHandle)
+        assert(tExecuteStatementResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      }
+    }
+  }
+
+  test("transfer connection url when opening connection") {
+    withJdbcStatement() { _ =>
+      val session =
+        server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+      assert(session.connectionUrl == server.frontendServices.head.connectionUrl)
     }
   }
 }

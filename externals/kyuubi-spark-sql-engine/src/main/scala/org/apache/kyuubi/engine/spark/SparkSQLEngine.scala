@@ -102,7 +102,10 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
             frontendServices.flatMap(_.discoveryService).foreach(_.stop())
           }
 
-          if (backendService.sessionManager.getOpenSessionCount <= 0) {
+          val openSessionCount = backendService.sessionManager.getOpenSessionCount
+          if (openSessionCount > 0) {
+            info(s"${openSessionCount} connection(s) are active, delay shutdown")
+          } else {
             info(s"Spark engine has been running for more than $maxLifetime ms" +
               s" and no open session now, terminating")
             stop()
@@ -143,7 +146,7 @@ object SparkSQLEngine extends Logging {
     _sparkConf = new SparkConf()
     _kyuubiConf = KyuubiConf()
     val rootDir = _sparkConf.getOption("spark.repl.classdir").getOrElse(getLocalDir(_sparkConf))
-    val outputDir = Utils.createTempDir(root = rootDir, namePrefix = "repl")
+    val outputDir = Utils.createTempDir(prefix = "repl", root = rootDir)
     _sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
     _sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     _sparkConf.setIfMissing("spark.master", "local")

@@ -47,5 +47,6 @@ data:
     #
     kyuubi.frontend.bind.host={{ .Values.server.bind.host }}
     kyuubi.frontend.bind.port={{ .Values.server.bind.port }}
+    kyuubi.kubernetes.namespace={{ .Release.Namespace }}
 
     # Details in https://kyuubi.apache.org/docs/latest/deployment/settings.html

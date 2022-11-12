@@ -59,7 +59,7 @@ case class HiveTable(
       catalogTable.stats.map(_.sizeInBytes.toLong).getOrElse(defaultTableSize))
   }
 
-  override def name(): String = catalogTable.identifier.table
+  override def name(): String = catalogTable.identifier.unquotedString
 
   override def schema(): StructType = catalogTable.schema
 

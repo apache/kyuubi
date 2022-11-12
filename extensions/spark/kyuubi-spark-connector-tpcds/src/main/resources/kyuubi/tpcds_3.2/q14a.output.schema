@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`channel` STRING,`i_brand_id` INT,`i_class_id` INT,`i_category_id` INT,`sum(sales)` DECIMAL(38,2),`sum(number_sales)` BIGINT
+channel STRING,i_brand_id INT,i_class_id INT,i_category_id INT,`sum(sales)` DECIMAL(38,2),`sum(number_sales)` BIGINT

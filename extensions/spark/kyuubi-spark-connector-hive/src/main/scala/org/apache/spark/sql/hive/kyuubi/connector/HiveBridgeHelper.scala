@@ -23,6 +23,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.InputFileBlockHolder
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, ExternalCatalogEvent}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Literal}
+import org.apache.spark.sql.catalyst.util.quoteIfNeeded
 import org.apache.spark.sql.connector.catalog.CatalogV2Util
 import org.apache.spark.sql.connector.expressions.{BucketTransform, FieldReference, IdentityTransform, LogicalExpressions, Transform}
 import org.apache.spark.sql.connector.expressions.LogicalExpressions.{bucket, reference}
@@ -114,4 +115,7 @@ object HiveBridgeHelper {
     case l => l.sql
   }
 
+  implicit class NamespaceHelper(namespace: Array[String]) {
+    def quoted: String = namespace.map(quoteIfNeeded).mkString(".")
+  }
 }

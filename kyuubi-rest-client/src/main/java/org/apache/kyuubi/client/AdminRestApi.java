@@ -17,6 +17,12 @@
 
 package org.apache.kyuubi.client;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.kyuubi.client.api.v1.dto.Engine;
+
 public class AdminRestApi {
   private KyuubiRestClient client;
 
@@ -31,6 +37,29 @@ public class AdminRestApi {
   public String refreshHadoopConf() {
     String path = String.format("%s/%s", API_BASE_PATH, "refresh/hadoop_conf");
     return this.getClient().post(path, null, client.getAuthHeader());
+  }
+
+  public String deleteEngine(
+      String engineType, String shareLevel, String subdomain, String hs2ProxyUser) {
+    Map<String, Object> params = new HashMap<>();
+    params.put("type", engineType);
+    params.put("sharelevel", shareLevel);
+    params.put("subdomain", subdomain);
+    params.put("hive.server2.proxy.user", hs2ProxyUser);
+    return this.getClient().delete(API_BASE_PATH + "/engine", params, client.getAuthHeader());
+  }
+
+  public List<Engine> listEngines(
+      String engineType, String shareLevel, String subdomain, String hs2ProxyUser) {
+    Map<String, Object> params = new HashMap<>();
+    params.put("type", engineType);
+    params.put("sharelevel", shareLevel);
+    params.put("subdomain", subdomain);
+    params.put("hive.server2.proxy.user", hs2ProxyUser);
+    Engine[] result =
+        this.getClient()
+            .get(API_BASE_PATH + "/engine", params, Engine[].class, client.getAuthHeader());
+    return Arrays.asList(result);
   }
 
   private IRestClient getClient() {

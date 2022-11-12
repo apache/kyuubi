@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.client.api.v1.dto.{Batch, GetBatchesResponse}
+import org.apache.kyuubi.client.api.v1.dto.{Batch, Engine, GetBatchesResponse, SessionData}
 import org.apache.kyuubi.ctl.util.DateTimeUtils._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
@@ -33,9 +33,45 @@ private[ctl] object Render {
     Tabulator.format(title, header, rows)
   }
 
+  def renderEngineNodesInfo(engineNodesInfo: Seq[Engine]): String = {
+    val title = s"Engine Node List (total ${engineNodesInfo.size})"
+    val header = Array("Namespace", "Instance", "Attributes")
+    val rows = engineNodesInfo.map { engine =>
+      Array(
+        engine.getNamespace + "\n" + renderEngineNamespaceDetails(engine),
+        engine.getInstance,
+        engine.getAttributes.asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n"))
+    }.toArray
+    Tabulator.format(title, header, rows)
+  }
+
+  def renderSessionDataListInfo(sessions: Seq[SessionData]): String = {
+    val title = s"Live Session List (total ${sessions.size})"
+    val header = Array(
+      "Identifier",
+      "User",
+      "Ip Address",
+      "Conf",
+      "Create Time",
+      "Duration[ms]",
+      "Idle Time[ms]")
+    val rows = sessions.map { session =>
+      Array(
+        session.getIdentifier,
+        session.getUser,
+        session.getIpAddr,
+        session.getConf.asScala.map(kv => kv._1 + "=" + kv._2).mkString("\n"),
+        millisToDateString(session.getCreateTime, "yyyy-MM-dd HH:mm:ss"),
+        session.getDuration.toString,
+        session.getIdleTime.toString)
+    }.toArray
+    Tabulator.format(title, header, rows)
+  }
+
   def renderBatchListInfo(batchListInfo: GetBatchesResponse): String = {
     val title = s"Batch List (from ${batchListInfo.getFrom} total ${batchListInfo.getTotal})"
-    val rows = batchListInfo.getBatches.asScala.sortBy(_.getCreateTime).map(buildBatchRow).toArray
+    val rows = batchListInfo.getBatches.asScala.sortBy(_.getCreateTime)
+      .map(batch => buildBatchRow(batch, false)).toArray
     Tabulator.format(title, batchColumnNames, rows)
   }
 
@@ -59,21 +95,21 @@ private[ctl] object Render {
       "Kyuubi Instance",
       "Time Range")
 
-  private def buildBatchRow(batch: Batch): Array[String] = {
+  private def buildBatchRow(batch: Batch, showDiagnostic: Boolean = true): Array[String] = {
     Array(
       batch.getId,
       batch.getBatchType,
       batch.getName,
       batch.getUser,
       batch.getState,
-      buildBatchAppInfo(batch).mkString("\n"),
+      buildBatchAppInfo(batch, showDiagnostic).mkString("\n"),
       batch.getKyuubiInstance,
       Seq(
         millisToDateString(batch.getCreateTime, "yyyy-MM-dd HH:mm:ss"),
         millisToDateString(batch.getEndTime, "yyyy-MM-dd HH:mm:ss")).mkString("\n~\n"))
   }
 
-  private def buildBatchAppInfo(batch: Batch): List[String] = {
+  private def buildBatchAppInfo(batch: Batch, showDiagnostic: Boolean = true): List[String] = {
     val batchAppInfo = ListBuffer[String]()
     Option(batch.getAppId).foreach { _ =>
       batchAppInfo += s"App Id: ${batch.getAppId}"
@@ -84,9 +120,18 @@ private[ctl] object Render {
     Option(batch.getAppState).foreach { _ =>
       batchAppInfo += s"App State: ${batch.getAppState}"
     }
-    Option(batch.getAppDiagnostic).filter(_.nonEmpty).foreach { _ =>
-      batchAppInfo += s"App Diagnostic: ${batch.getAppDiagnostic}"
+    if (showDiagnostic) {
+      Option(batch.getAppDiagnostic).filter(_.nonEmpty).foreach { _ =>
+        batchAppInfo += s"App Diagnostic: ${batch.getAppDiagnostic}"
+      }
     }
     batchAppInfo.toList
+  }
+
+  private def renderEngineNamespaceDetails(engine: Engine): String = {
+    val header = Array("EngineType", "ShareLevel", "Subdomain")
+    Tabulator.formatTextTable(
+      header,
+      Array(Array(engine.getEngineType, engine.getSharelevel, engine.getSubdomain)))
   }
 }

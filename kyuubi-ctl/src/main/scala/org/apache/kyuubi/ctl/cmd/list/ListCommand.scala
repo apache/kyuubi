@@ -16,8 +16,8 @@
  */
 package org.apache.kyuubi.ctl.cmd.list
 
-import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 

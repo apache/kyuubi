@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`channel` STRING NOT NULL,`item` BIGINT NOT NULL,`return_ratio` DECIMAL(35,20),`return_rank` INT NOT NULL,`currency_rank` INT NOT NULL
+channel STRING NOT NULL,item BIGINT NOT NULL,return_ratio DECIMAL(35,20),return_rank INT NOT NULL,currency_rank INT NOT NULL

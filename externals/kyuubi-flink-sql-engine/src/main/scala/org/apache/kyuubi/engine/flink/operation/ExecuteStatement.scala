@@ -84,11 +84,11 @@ class ExecuteStatement(
           resultSet = OperationUtils.runSetOperation(setOperation, executor, sessionId)
         case resetOperation: ResetOperation =>
           resultSet = OperationUtils.runResetOperation(resetOperation, executor, sessionId)
-        case addJarOperation: AddJarOperation =>
+        case addJarOperation: AddJarOperation if isFlinkVersionAtMost("1.15") =>
           resultSet = OperationUtils.runAddJarOperation(addJarOperation, executor, sessionId)
         case removeJarOperation: RemoveJarOperation =>
           resultSet = OperationUtils.runRemoveJarOperation(removeJarOperation, executor, sessionId)
-        case showJarsOperation: ShowJarsOperation =>
+        case showJarsOperation: ShowJarsOperation if isFlinkVersionAtMost("1.15") =>
           resultSet = OperationUtils.runShowJarOperation(showJarsOperation, executor, sessionId)
         case operation: Operation => runOperation(operation)
       }

@@ -132,14 +132,24 @@ final class KyuubiTHttpFrontendService(
           }
 
           val sslContextFactory = new SslContextFactory.Server
-          val excludedProtocols = conf.get(FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST).split(",")
+          val excludedProtocols = conf.get(FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST)
+          val excludeCipherSuites = conf.get(FRONTEND_THRIFT_HTTP_SSL_EXCLUDE_CIPHER_SUITES)
+          val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
+          val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
           info("Thrift HTTP Server SSL: adding excluded protocols: " +
             String.join(",", excludedProtocols: _*))
           sslContextFactory.addExcludeProtocols(excludedProtocols: _*)
           info("Thrift HTTP Server SSL: SslContextFactory.getExcludeProtocols = " +
             String.join(",", sslContextFactory.getExcludeProtocols: _*))
+          info("Thrift HTTP Server SSL: setting excluded cipher Suites: " +
+            String.join(",", excludeCipherSuites: _*))
+          sslContextFactory.setExcludeCipherSuites(excludeCipherSuites: _*)
+          info("Thrift HTTP Server SSL: SslContextFactory.getExcludeCipherSuites = " +
+            String.join(",", sslContextFactory.getExcludeCipherSuites: _*))
           sslContextFactory.setKeyStorePath(keyStorePath.get)
           sslContextFactory.setKeyStorePassword(keyStorePassword.get)
+          keyStoreType.foreach(sslContextFactory.setKeyStoreType)
+          keyStoreAlgorithm.foreach(sslContextFactory.setKeyManagerFactoryAlgorithm)
           new ServerConnector(
             server.get,
             sslContextFactory,
@@ -264,15 +274,13 @@ final class KyuubiTHttpFrontendService(
     Option(SessionManager.getProxyHttpHeaderIpAddress).getOrElse(SessionManager.getIpAddress)
   }
 
-  override protected def getUserName(req: TOpenSessionReq): String = {
-    var userName: String = SessionManager.getUserName
+  override protected def getRealUserAndSessionUser(req: TOpenSessionReq): (String, String) = {
+    val realUser = getShortName(Option(SessionManager.getUserName).getOrElse(req.getUsername))
     // using the remote ip address instead of that in proxy http header for authentication
     val ipAddress: String = SessionManager.getIpAddress
-    if (userName == null) userName = req.getUsername
-    userName = getShortName(userName)
-    val effectiveClientUser: String = getProxyUser(req.getConfiguration, ipAddress, userName)
-    debug("Client's username: " + effectiveClientUser)
-    effectiveClientUser
+    val sessionUser: String = getProxyUser(req.getConfiguration, ipAddress, realUser)
+    debug(s"Client's real user: $realUser, session user: $sessionUser")
+    realUser -> sessionUser
   }
 
   private def getShortName(userName: String): String = {

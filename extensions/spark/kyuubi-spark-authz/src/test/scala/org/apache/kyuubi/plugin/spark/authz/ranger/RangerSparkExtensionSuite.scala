@@ -880,4 +880,31 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
     }
   }
+
+  test("[KYUUBI #3608] Support {OWNER} variable for queries") {
+    val db = "default"
+    val table = "owner_variable"
+
+    val select = s"SELECT key FROM $db.$table"
+
+    withCleanTmpResources(Seq((s"$db.$table", "table"))) {
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(s"CREATE TABLE $db.$table (key int, value int) USING $format")
+        }.isSuccess))
+
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(select).collect()
+        }.isSuccess))
+
+      doAs(
+        "create_only_user", {
+          val e = intercept[AccessControlException](sql(select).collect())
+          assert(e.getMessage === errorMessage("select", s"$db/$table/key"))
+        })
+    }
+  }
 }

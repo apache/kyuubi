@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`ss_sold_year` INT,`ss_item_sk` BIGINT NOT NULL,`ss_customer_sk` BIGINT,`ratio` DOUBLE,`store_qty` BIGINT,`store_wholesale_cost` DECIMAL(17,2),`store_sales_price` DECIMAL(17,2),`other_chan_qty` BIGINT NOT NULL,`other_chan_wholesale_cost` DECIMAL(18,2),`other_chan_sales_price` DECIMAL(18,2)
+ss_sold_year INT,ss_item_sk BIGINT NOT NULL,ss_customer_sk BIGINT,ratio DOUBLE,store_qty BIGINT,store_wholesale_cost DECIMAL(17,2),store_sales_price DECIMAL(17,2),other_chan_qty BIGINT NOT NULL,other_chan_wholesale_cost DECIMAL(18,2),other_chan_sales_price DECIMAL(18,2)

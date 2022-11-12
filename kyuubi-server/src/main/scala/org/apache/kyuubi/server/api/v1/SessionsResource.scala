@@ -32,6 +32,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
@@ -140,14 +141,17 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): dto.SessionHandle = {
-    val userName = fe.getUserName(request.getConfigs.asScala.toMap)
+    val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
     val ipAddress = fe.getIpAddress
     val handle = fe.be.openSession(
       TProtocolVersion.findByValue(request.getProtocolVersion),
       userName,
       request.getPassword,
       ipAddress,
-      request.getConfigs.asScala.toMap)
+      (request.getConfigs.asScala ++ Map(
+        KYUUBI_CLIENT_IP_KEY -> ipAddress,
+        KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
+        KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).toMap)
     new dto.SessionHandle(handle.identifier)
   }
 
@@ -353,7 +357,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[OperationHandle]))),
-    description = "Create an operation with GET_FUNCTIONS type")
+    description = "Create an operation with GET_PRIMARY_KEY type")
   @POST
   @Path("{sessionHandle}/operations/primaryKeys")
   def getPrimaryKeys(
@@ -378,7 +382,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[OperationHandle]))),
-    description = "Create an operation with GET_FUNCTIONS type")
+    description = "Create an operation with GET_CROSS_REFERENCE type")
   @POST
   @Path("{sessionHandle}/operations/crossReference")
   def getCrossReference(

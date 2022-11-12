@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`brand_id` INT,`brand` STRING,`t_hour` INT,`t_minute` INT,`ext_price` DECIMAL(17,2)
+brand_id INT,brand STRING,t_hour INT,t_minute INT,ext_price DECIMAL(17,2)

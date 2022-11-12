@@ -34,11 +34,11 @@ jobs:
     name: License
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup JDK 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
-          distribution: zulu
+          distribution: temurin
           java-version: 8
           cache: 'maven'
           check-latest: false
@@ -48,7 +48,7 @@ jobs:
           -Pspark-3.1 -Pspark-3.2 -Pspark-3.3
       - name: Upload rat report
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: rat-report
           path: "**/target/rat*.txt"

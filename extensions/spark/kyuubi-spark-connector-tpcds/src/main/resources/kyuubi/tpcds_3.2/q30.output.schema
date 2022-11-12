@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`c_customer_id` STRING NOT NULL,`c_salutation` STRING,`c_first_name` STRING,`c_last_name` STRING,`c_preferred_cust_flag` STRING,`c_birth_day` INT,`c_birth_month` INT,`c_birth_year` INT,`c_birth_country` STRING,`c_login` STRING,`c_email_address` STRING,`c_last_review_date_sk` BIGINT,`ctr_total_return` DECIMAL(17,2)
+c_customer_id STRING NOT NULL,c_salutation STRING,c_first_name STRING,c_last_name STRING,c_preferred_cust_flag STRING,c_birth_day INT,c_birth_month INT,c_birth_year INT,c_birth_country STRING,c_login STRING,c_email_address STRING,c_last_review_date_sk BIGINT,ctr_total_return DECIMAL(17,2)

@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.nio.file.Files
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
@@ -29,6 +28,7 @@ import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
@@ -160,6 +160,94 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       }
       val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
       assert(!rowSet.next())
+    }
+  }
+
+  test("get primary keys") {
+    val tableName1 = "flink_get_primary_keys_operation1"
+    val tableName2 = "flink_get_primary_keys_operation2"
+    val tableName3 = "flink_get_primary_keys_operation3"
+
+    withJdbcStatement(tableName1, tableName2, tableName3) { statement =>
+      statement.execute(
+        s"""
+           | create table $tableName1 (
+           |  id1 int,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer,
+           |  CONSTRAINT pk_con primary key(id1) NOT ENFORCED
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      statement.execute(
+        s"""
+           | create table $tableName2 (
+           |  id1 int,
+           |  id2 int,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer,
+           |  CONSTRAINT pk_con primary key(id1,id2) NOT ENFORCED
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      statement.execute(
+        s"""
+           | create table $tableName3 (
+           |  id1 int,
+           |  id2 int,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      val metaData = statement.getConnection.getMetaData
+
+      Seq(tableName1, tableName2, tableName3) foreach { tableName =>
+        val rowSet = metaData.getPrimaryKeys("", "", tableName)
+
+        if (tableName.equals(tableName3)) {
+          assert(!rowSet.next())
+        } else {
+          if (tableName.equals(tableName1)) {
+            assert(rowSet.next())
+            assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+            assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+            assert(rowSet.getString(TABLE_NAME) === tableName)
+            assert(rowSet.getString(COLUMN_NAME) === "id1")
+            assert(rowSet.getInt(KEY_SEQ) === 1)
+            assert(rowSet.getString(PK_NAME) === "pk_con")
+          } else if (tableName.equals(tableName2)) {
+            assert(rowSet.next())
+            assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+            assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+            assert(rowSet.getString(TABLE_NAME) === tableName)
+            assert(rowSet.getString(COLUMN_NAME) === "id1")
+            assert(rowSet.getInt(KEY_SEQ) === 1)
+            assert(rowSet.getString(PK_NAME) === "pk_con")
+
+            assert(rowSet.next())
+            assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+            assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+            assert(rowSet.getString(TABLE_NAME) === tableName)
+            assert(rowSet.getString(COLUMN_NAME) === "id2")
+            assert(rowSet.getInt(KEY_SEQ) === 2)
+            assert(rowSet.getString(PK_NAME) === "pk_con")
+          }
+        }
+
+      }
     }
   }
 
@@ -999,7 +1087,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   test("execute statement - add/remove/show jar") {
     val jarName = s"newly-added-${UUID.randomUUID()}.jar"
     val newJar = TestUserClassLoaderJar.createJarFile(
-      Files.createTempDirectory("add-jar-test").toFile,
+      Utils.createTempDir("add-jar-test").toFile,
       jarName,
       GENERATED_UDF_CLASS,
       GENERATED_UDF_CODE).toPath

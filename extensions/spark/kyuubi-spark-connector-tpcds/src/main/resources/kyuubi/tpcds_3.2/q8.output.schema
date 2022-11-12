@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`s_store_name` STRING,`sum(ss_net_profit)` DECIMAL(17,2)
+s_store_name STRING,`sum(ss_net_profit)` DECIMAL(17,2)

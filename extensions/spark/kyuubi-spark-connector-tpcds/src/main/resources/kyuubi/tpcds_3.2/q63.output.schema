@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`i_manager_id` INT,`sum_sales` DECIMAL(17,2),`avg_monthly_sales` DECIMAL(21,6)
+i_manager_id INT,sum_sales DECIMAL(17,2),avg_monthly_sales DECIMAL(21,6)

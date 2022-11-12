@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.kyuubi.{KYUUBI_VERSION, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
+import org.apache.kyuubi.session.KyuubiSessionImpl
 
 class MySQLSparkQuerySuite extends WithKyuubiServer with MySQLJDBCTestHelper {
 
@@ -295,6 +296,14 @@ class MySQLSparkQuerySuite extends WithKyuubiServer with MySQLJDBCTestHelper {
       val rs = statement.executeQuery("SELECT engine_id()")
       assert(rs.next())
       assert(StringUtils.isNotBlank(rs.getString(1)))
+    }
+  }
+
+  test("transfer connection url when opening connection") {
+    withJdbcStatement() { _ =>
+      val session =
+        server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+      assert(session.connectionUrl == server.frontendServices.head.connectionUrl)
     }
   }
 }

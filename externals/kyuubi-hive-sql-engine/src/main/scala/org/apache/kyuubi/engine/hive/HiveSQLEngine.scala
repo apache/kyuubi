@@ -92,7 +92,7 @@ object HiveSQLEngine extends Logging {
       hiveConf.setBoolean("datanucleus.schema.autoCreateAll", true)
       hiveConf.set(
         "hive.metastore.warehouse.dir",
-        Utils.createTempDir(namePrefix = "kyuubi_hive_warehouse").toString)
+        Utils.createTempDir(prefix = "kyuubi_hive_warehouse").toString)
       hiveConf.set("hive.metastore.fastpath", "true")
     }
 
