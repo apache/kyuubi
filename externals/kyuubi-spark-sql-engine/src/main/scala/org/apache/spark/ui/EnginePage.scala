@@ -93,21 +93,22 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
     val basePath = UIUtils.prependBaseUri(request, parent.basePath)
     if (parent.killEnabled) {
       val confirmForceStop =
-        s"if (window.confirm('Are you sure you want to force kill kyuubi engine ?')) " +
+        s"if (window.confirm('Are you sure you want to stop kyuubi engine immediately ?')) " +
           "{ this.parentNode.submit(); return true; } else { return false; }"
       val forceStopLinkUri = s"$basePath/kyuubi/stop"
 
       val confirmGracefulStop =
-        s"if (window.confirm('Are you sure you want to graceful kill kyuubi engine ?')) " +
+        s"if (window.confirm('Are you sure you want to stop kyuubi engine gracefully ?')) " +
           "{ this.parentNode.submit(); return true; } else { return false; }"
       val gracefulStopLinkUri = s"$basePath/kyuubi/gracefulstop"
 
       <ul class="list-unstyled">
         <li>
           <strong>Stop kyuubi engine:</strong>
-          <a href={forceStopLinkUri} onclick={confirmForceStop} class="stop-link">(Force kill)</a>
-          <a href={gracefulStopLinkUri} onclick={confirmGracefulStop}
-             class="stop-link">(Graceful kill)</a>
+          <a href={forceStopLinkUri} onclick={confirmForceStop} class="stop-link">
+            (Stop Immediately)</a>
+          <a href={gracefulStopLinkUri} onclick={confirmGracefulStop} class="stop-link">
+            (Stop Gracefully)</a>
         </li>
       </ul>
     } else {
