@@ -221,6 +221,10 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
                   prec == null ? HiveDecimal.USER_DEFAULT_PRECISION : prec.getI32Value(),
                   scale == null ? HiveDecimal.USER_DEFAULT_SCALE : scale.getI32Value());
           break;
+        case TIMESTAMP_TYPE:
+          TTypeQualifierValue timeZone = tq.getQualifiers().get("session.timeZone");
+          ret = new JdbcColumnAttributes(timeZone == null ? "" : timeZone.getStringValue());
+          break;
         default:
           break;
       }
@@ -259,6 +263,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         TPrimitiveTypeEntry primitiveTypeEntry =
             columns.get(pos).getTypeDesc().getTypes().get(0).getPrimitiveEntry();
         columnTypes.add(primitiveTypeEntry.getType());
+        System.out.println(getColumnAttributes(primitiveTypeEntry));
         columnAttributes.add(getColumnAttributes(primitiveTypeEntry));
       }
       arrowSchema = ArrowUtils.toArrowSchemaJava(columnNames, columnTypes, columnAttributes, null);

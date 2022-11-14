@@ -98,6 +98,8 @@ object ArrowUtils {
       val (precision, scale) = (jdbcColumnAttributes.get.precision, jdbcColumnAttributes.get.scale)
       ArrowType.Decimal.createDecimal(precision, scale, null)
     case TTypeId.DATE_TYPE => new ArrowType.Date(DateUnit.DAY)
+    case TTypeId.TIMESTAMP_TYPE if jdbcColumnAttributes.isDefined =>
+      new ArrowType.Timestamp(TimeUnit.MICROSECOND, jdbcColumnAttributes.get.timeZone)
     case TTypeId.TIMESTAMP_TYPE if timeZoneId == null =>
       throw new IllegalStateException("Missing timezoneId where it is mandatory.")
     case TTypeId.TIMESTAMP_TYPE => new ArrowType.Timestamp(TimeUnit.MICROSECOND, timeZoneId)

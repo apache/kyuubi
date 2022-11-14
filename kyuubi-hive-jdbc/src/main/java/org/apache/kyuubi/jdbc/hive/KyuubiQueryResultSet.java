@@ -207,6 +207,10 @@ class KyuubiQueryResultSet extends KyuubiBaseResultSet {
                   prec == null ? HiveDecimal.USER_DEFAULT_PRECISION : prec.getI32Value(),
                   scale == null ? HiveDecimal.USER_DEFAULT_SCALE : scale.getI32Value());
           break;
+        case TIMESTAMP_TYPE:
+          TTypeQualifierValue timeZone = tq.getQualifiers().get("session.timeZone");
+          ret = new JdbcColumnAttributes(timeZone == null ? "" : timeZone.getStringValue());
+          break;
         default:
           break;
       }

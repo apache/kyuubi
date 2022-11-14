@@ -146,7 +146,7 @@ abstract class SparkOperation(session: Session)
     }
   }
 
-  override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(resultSchema)
+  override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(resultSchema, timeZone.toString)
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet =
     withLocalProperties {

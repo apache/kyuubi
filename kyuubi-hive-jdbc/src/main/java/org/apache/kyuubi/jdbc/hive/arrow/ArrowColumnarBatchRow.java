@@ -18,6 +18,7 @@
 package org.apache.kyuubi.jdbc.hive.arrow;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 import org.apache.hive.service.rpc.thrift.TTypeId;
 
@@ -110,7 +111,7 @@ public class ArrowColumnarBatchRow {
       case STRING_TYPE:
         return getString(ordinal);
       case TIMESTAMP_TYPE:
-        return getLong(ordinal);
+        return new Timestamp(getLong(ordinal) / 1000);
       case DATE_TYPE:
         return getInt(ordinal);
       default:

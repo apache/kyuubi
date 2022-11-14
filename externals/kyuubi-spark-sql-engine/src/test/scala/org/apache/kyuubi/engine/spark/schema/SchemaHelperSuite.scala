@@ -75,7 +75,7 @@ class SchemaHelperSuite extends KyuubiFunSuite {
   }
 
   test("toTTypeQualifiers") {
-    val qualifiers = toTTypeQualifiers(outerSchema(9).dataType)
+    val qualifiers = toTTypeQualifiers(outerSchema(9).dataType, null)
     val q = qualifiers.getQualifiers
     assert(q.size() === 2)
     assert(q.get(TCLIServiceConstants.PRECISION).getI32Value === 10)
@@ -83,12 +83,12 @@ class SchemaHelperSuite extends KyuubiFunSuite {
 
     outerSchema.foreach {
       case f if f.dataType == DecimalType(10, 8) =>
-      case f => assert(toTTypeQualifiers(f.dataType).getQualifiers.isEmpty)
+      case f => assert(toTTypeQualifiers(f.dataType, null).getQualifiers.isEmpty)
     }
   }
 
   test("toTTableSchema") {
-    val tTableSchema = toTTableSchema(outerSchema)
+    val tTableSchema = toTTableSchema(outerSchema, null)
     assert(tTableSchema.getColumnsSize === outerSchema.size)
     val iter = tTableSchema.getColumns
 
