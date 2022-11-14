@@ -44,6 +44,10 @@ object RowSet {
     }
   }
 
+  def emptyTRowSet(): TRowSet = {
+    new TRowSet(0, new java.util.ArrayList[TRow](0))
+  }
+
   def toColumnBasedSet(data: Array[Byte]): TRowSet = {
     val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](1))
     val tColumn = toTColumn(data)

@@ -162,8 +162,12 @@ abstract class SparkOperation(session: Session)
         }
         resultRowSet =
           if (arrowEnabled) {
-            val taken = iter.next().asInstanceOf[Array[Byte]]
-            RowSet.toTRowSet(taken, getProtocolVersion)
+            if (iter.hasNext) {
+              val taken = iter.next().asInstanceOf[Array[Byte]]
+              RowSet.toTRowSet(taken, getProtocolVersion)
+            } else {
+              RowSet.emptyTRowSet()
+            }
           } else {
             val taken = iter.take(rowSetSize)
             RowSet.toTRowSet(

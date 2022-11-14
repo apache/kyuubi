@@ -359,8 +359,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         Utils.verifySuccessWithInfo(fetchResp.getStatus());
 
         TRowSet results = fetchResp.getResults();
-//        results.getColumns().get(0).getBinaryVal().getValues()
-        if (results == null) {
+        if (results == null || results.getColumnsSize() == 0) {
           return false;
         }
         TColumn arrowColumn = results.getColumns().get(0);

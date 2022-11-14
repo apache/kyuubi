@@ -184,19 +184,20 @@ trait BackendServiceMetric extends BackendService {
     MetricsSystem.timerTracing(MetricsConstants.BS_FETCH_RESULTS) {
       val rowSet = super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
       val rowsSize = 0
-//        if (rowSet.getColumnsSize > 0) {
-//          rowSet.getColumns.get(0).getFieldValue match {
-//            case t: TStringColumn => t.getValues.size()
-//            case t: TDoubleColumn => t.getValues.size()
-//            case t: TI64Column => t.getValues.size()
-//            case t: TI32Column => t.getValues.size()
-//            case t: TI16Column => t.getValues.size()
-//            case t: TBoolColumn => t.getValues.size()
-//            case t: TByteColumn => t.getValues.size()
-//            case t: TBinaryColumn => t.getValues.size()
-//            case _ => 0
-//          }
-//        } else rowSet.getRowsSize
+      // TODO: the statistics are wrong when we enabled the arrow.
+      if (rowSet.getColumnsSize > 0) {
+        rowSet.getColumns.get(0).getFieldValue match {
+          case t: TStringColumn => t.getValues.size()
+          case t: TDoubleColumn => t.getValues.size()
+          case t: TI64Column => t.getValues.size()
+          case t: TI32Column => t.getValues.size()
+          case t: TI16Column => t.getValues.size()
+          case t: TBoolColumn => t.getValues.size()
+          case t: TByteColumn => t.getValues.size()
+          case t: TBinaryColumn => t.getValues.size()
+          case _ => 0
+        }
+      } else rowSet.getRowsSize
 
       MetricsSystem.tracing(_.markMeter(
         if (fetchLog) MetricsConstants.BS_FETCH_LOG_ROWS_RATE
