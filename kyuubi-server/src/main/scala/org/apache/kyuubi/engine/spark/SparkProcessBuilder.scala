@@ -90,9 +90,6 @@ class SparkProcessBuilder(
       buffer += CONF
       buffer += s"${convertConfigKey(k)}=$v"
     }
-    buffer += "--driver-memory"
-    buffer += "6g"
-
 
     // if the keytab is specified, PROXY_USER is not supported
     tryKeytab() match {
