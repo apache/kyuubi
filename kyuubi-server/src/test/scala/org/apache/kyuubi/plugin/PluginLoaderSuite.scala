@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.plugin
 
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.session.FileSessionConfAdvisor
 
 class PluginLoaderSuite extends KyuubiFunSuite {
 
@@ -37,6 +40,30 @@ class PluginLoaderSuite extends KyuubiFunSuite {
       PluginLoader.loadSessionConfAdvisor(conf)
     }.getMessage
     assert(msg2.startsWith("Error while instantiating 'non.exists'"))
+
+  }
+
+  test("test FileSessionConfAdvisor") {
+    val conf = new KyuubiConf(false)
+    conf.set(KyuubiConf.SESSION_CONF_ADVISOR, classOf[FileSessionConfAdvisor].getName)
+    val advisor = PluginLoader.loadSessionConfAdvisor(conf)
+    val emptyConfig = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    assert(emptyConfig.isEmpty)
+
+    conf.set(KyuubiConf.SESSION_CONF_PROFILE, "non.exists")
+    val nonexistsConfig = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    assert(nonexistsConfig.isEmpty)
+
+    conf.set(KyuubiConf.SESSION_CONF_PROFILE, "cluster-a")
+    val clusteraConf = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    assert(clusteraConf.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
+    assert(clusteraConf.get("kyuubi.zk.ha.namespace") == null)
+    assert(clusteraConf.size() == 5)
+
+    val clusteraConfFromCache = advisor.getConfOverlay("chris", conf.getAll.asJava)
+    assert(clusteraConfFromCache.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
+    assert(clusteraConfFromCache.get("kyuubi.zk.ha.namespace") == null)
+    assert(clusteraConfFromCache.size() == 5)
   }
 }
 

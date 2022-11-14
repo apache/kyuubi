@@ -993,6 +993,17 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val SESSION_CONF_PROFILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.session.conf.profile")
+      .doc("Specify a profile to load session-level configurations from " +
+        "`$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf`. " +
+        "This configuration will be ignored if the file does not exist. " +
+        "This configuration only has effect when `kyuubi.session.conf.advisor` " +
+        "is set as `org.apache.kyuubi.session.FileSessionConfAdvisor`.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_SPARK_MAX_LIFETIME: ConfigEntry[Long] =
     buildConf("kyuubi.session.engine.spark.max.lifetime")
       .doc("Max lifetime for spark engine, the engine will self-terminate when it reaches the" +
