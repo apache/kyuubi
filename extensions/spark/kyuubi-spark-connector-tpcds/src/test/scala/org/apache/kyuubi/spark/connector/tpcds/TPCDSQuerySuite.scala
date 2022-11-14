@@ -88,22 +88,4 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
       }
     }
   }
-
-  test("show") {
-    val sparkConf = new SparkConf().setMaster("local[*]")
-      .set("spark.sql.catalogImplementation", "in-memory")
-      .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
-      .set("spark.sql.catalog.tpcds.useTableSchema_2_6", "true")
-    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      spark.sql("show namespaces in tpcds").show(truncate = false)
-      spark.sql("show databases in tpcds.sf100000").show(truncate = false)
-      spark.sql(
-        """
-          |select * from tpcds.sf10.catalog_sales limit 2000000
-          |""".stripMargin)
-        .write
-        .mode("overwrite")
-        .save("/tmp/parquet/tpcds/sf10/catalog_sales_2000000")
-    }
-  }
 }
