@@ -212,7 +212,7 @@ object PrivilegesBuilder {
       case v2Cmd if v2Commands.accept(v2Cmd) =>
         v2Commands.withName(v2Cmd).buildPrivileges(plan, inputObjs, outputObjs)
 
-      case arcticCmd if ArcticCmdUtils.accept(arcticCmd) =>
+      case arcticCmd if arcticCmd.contains("arctic") =>
         ArcticCmdUtils.buildPrivileges(arcticCmd, plan, inputObjs, outputObjs)
 
       case "AlterDatabasePropertiesCommand" |
