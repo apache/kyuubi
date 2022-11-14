@@ -91,14 +91,28 @@ public class ArrowColumnarBatchRow {
     switch (dataType) {
       case BOOLEAN_TYPE:
         return getBoolean(ordinal);
+      case TINYINT_TYPE:
+        return getByte(ordinal);
+      case SMALLINT_TYPE:
+        return getShort(ordinal);
       case INT_TYPE:
         return getInt(ordinal);
-      case BINARY_TYPE:
+      case BIGINT_TYPE:
         return getLong(ordinal);
+      case BINARY_TYPE:
+        return getBinary(ordinal);
+      case FLOAT_TYPE:
+        return getFloat(ordinal);
+      case DOUBLE_TYPE:
+        return getDouble(ordinal);
       case DECIMAL_TYPE:
         return getDecimal(ordinal);
       case STRING_TYPE:
         return getString(ordinal);
+      case TIMESTAMP_TYPE:
+        return getLong(ordinal);
+      case DATE_TYPE:
+        return getInt(ordinal);
       default:
         throw new UnsupportedOperationException("Datatype not supported " + dataType);
     }

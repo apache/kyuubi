@@ -99,10 +99,11 @@ class TPCDSQuerySuite extends KyuubiFunSuite {
       spark.sql("show databases in tpcds.sf100000").show(truncate = false)
       spark.sql(
         """
-          |select * from tpcds.sf10.catalog_sales
+          |select * from tpcds.sf10.catalog_sales limit 2000000
           |""".stripMargin)
         .write
-        .save("/tmp/parquet/tpcds/sf10/catalog_sales")
+        .mode("overwrite")
+        .save("/tmp/parquet/tpcds/sf10/catalog_sales_2000000")
     }
   }
 }

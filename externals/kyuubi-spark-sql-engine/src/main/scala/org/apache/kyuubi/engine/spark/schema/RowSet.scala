@@ -297,11 +297,7 @@ object RowSet {
     }
   }
 
-  // arrow-based transformation
-
   private def toTColumn(data: Array[Byte]): TColumn = {
-    // todo(fchen): improve data.map(ByteBuffer.wrap)
-//    val values = java.util.Arrays.asList(data.map(ByteBuffer.wrap): _*)
     val values = new java.util.ArrayList[ByteBuffer](1)
     values.add(ByteBuffer.wrap(data))
     val nulls = new java.util.BitSet()

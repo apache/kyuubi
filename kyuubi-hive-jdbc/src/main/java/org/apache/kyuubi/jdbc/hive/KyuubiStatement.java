@@ -182,7 +182,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet() && !stmtHandle.isHasResultSet()) {
       return false;
     }
-    LOG.info("kyuubi.beeline.arrow.enabled is set to: " + ((KyuubiConnection) connection).getArrowEnabled());
+    System.out.println("kyuubi.beeline.arrow.enabled: " + ((KyuubiConnection) connection).getArrowEnabled());
     if (((KyuubiConnection) connection).getArrowEnabled()) {
       resultSet =
           new KyuubiArrowQueryResultSet.Builder(this)
@@ -227,7 +227,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet()) {
       return false;
     }
-    LOG.info("kyuubi.beeline.arrow.enabled is set to: " + ((KyuubiConnection) connection).getArrowEnabled());
+    System.out.println("kyuubi.beeline.arrow.enabled: " + ((KyuubiConnection) connection).getArrowEnabled());
     if (((KyuubiConnection) connection).getArrowEnabled()) {
       resultSet =
           new KyuubiArrowQueryResultSet.Builder(this)

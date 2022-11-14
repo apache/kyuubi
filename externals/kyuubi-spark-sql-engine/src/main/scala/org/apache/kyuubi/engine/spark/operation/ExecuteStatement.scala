@@ -94,8 +94,6 @@ class ExecuteStatement(
       operationListener.foreach(spark.sparkContext.addSparkListener(_))
       result = spark.sql(statement)
 
-      val arrowEnabled = session.conf.getOrElse("kyuubi.beeline.arrow.enabled", "true")
-        .equalsIgnoreCase("true")
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")

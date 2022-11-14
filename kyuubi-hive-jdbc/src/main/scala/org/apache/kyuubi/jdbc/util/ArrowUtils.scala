@@ -17,21 +17,14 @@
 
 package org.apache.kyuubi.jdbc.util
 
-import java.io.ByteArrayInputStream
-import java.nio.channels.Channels
-
 import scala.collection.JavaConverters._
 
-import org.apache.arrow.memory.{BufferAllocator, RootAllocator}
-import org.apache.arrow.vector.FieldVector
-import org.apache.arrow.vector.ipc.ReadChannel
-import org.apache.arrow.vector.ipc.message.{ArrowRecordBatch, MessageSerializer}
+import org.apache.arrow.memory.RootAllocator
 import org.apache.arrow.vector.types.{DateUnit, FloatingPointPrecision, IntervalUnit, TimeUnit}
 import org.apache.arrow.vector.types.pojo.{ArrowType, Field, FieldType, Schema}
 import org.apache.hive.service.rpc.thrift.TTypeId
 
 import org.apache.kyuubi.jdbc.hive.JdbcColumnAttributes
-import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnVector
 
 object ArrowUtils {
 
@@ -108,14 +101,9 @@ object ArrowUtils {
     case TTypeId.TIMESTAMP_TYPE if timeZoneId == null =>
       throw new IllegalStateException("Missing timezoneId where it is mandatory.")
     case TTypeId.TIMESTAMP_TYPE => new ArrowType.Timestamp(TimeUnit.MICROSECOND, timeZoneId)
-//    case TTypeId.TIMESTAMP_TYPE => new ArrowType.Timestamp(TimeUnit.MICROSECOND, null)
     case TTypeId.BINARY_TYPE => ArrowType.Binary.INSTANCE
-    //    case CalendarIntervalType => TTypeId.STRING_TYPE
     case TTypeId.INTERVAL_DAY_TIME_TYPE => new ArrowType.Duration(TimeUnit.MICROSECOND)
     case TTypeId.INTERVAL_YEAR_MONTH_TYPE => new ArrowType.Interval(IntervalUnit.YEAR_MONTH)
-    //    case _: ArrayType => TTypeId.ARRAY_TYPE
-    //    case _: MapType => TTypeId.MAP_TYPE
-    //    case _: StructType => TTypeId.STRUCT_TYPE
     case other =>
       throw new IllegalArgumentException(s"Unrecognized type name: ${other.name()}")
   }
@@ -204,68 +192,5 @@ object ArrowUtils {
     val nullable = true
     val fieldType = new FieldType(nullable, toArrowType(tpe, columnAttributes, timeZoneId), null)
     new Field(name, fieldType, Seq.empty[Field].asJava)
-  }
-//
-//  def fromArrowField(field: Field): DataType = {
-//    field.getType match {
-//      case _: ArrowType.Map =>
-//        val elementField = field.getChildren.get(0)
-//        val keyType = fromArrowField(elementField.getChildren.get(0))
-//        val valueType = fromArrowField(elementField.getChildren.get(1))
-//        MapType(keyType, valueType, elementField.getChildren.get(1).isNullable)
-//      case ArrowType.List.INSTANCE =>
-//        val elementField = field.getChildren().get(0)
-//        val elementType = fromArrowField(elementField)
-//        ArrayType(elementType, containsNull = elementField.isNullable)
-//      case ArrowType.Struct.INSTANCE =>
-//        val fields = field.getChildren().asScala.map { child =>
-//          val dt = fromArrowField(child)
-//          StructField(child.getName, dt, child.isNullable)
-//        }
-//        StructType(fields.toSeq)
-//      case arrowType => fromArrowType(arrowType)
-//    }
-//  }
-//
-//  /** Maps schema from Spark to Arrow. NOTE: timeZoneId required for TimestampType in StructType */
-//  def toArrowSchema(schema: StructType, timeZoneId: String): Schema = {
-//    new Schema(schema.map { field =>
-//      toArrowField(field.name, field.dataType, field.nullable, timeZoneId)
-//    }.asJava)
-//  }
-//
-//  def fromArrowSchema(schema: Schema): StructType = {
-//    StructType(schema.getFields.asScala.map { field =>
-//      val dt = fromArrowField(field)
-//      StructField(field.getName, dt, field.isNullable)
-//    }.toSeq)
-//  }
-//
-//  /** Return Map with conf settings to be used in ArrowPythonRunner */
-//  def getPythonRunnerConfMap(conf: SQLConf): Map[String, String] = {
-//    val timeZoneConf = Seq(SQLConf.SESSION_LOCAL_TIMEZONE.key -> conf.sessionLocalTimeZone)
-//    val pandasColsByName = Seq(SQLConf.PANDAS_GROUPED_MAP_ASSIGN_COLUMNS_BY_NAME.key ->
-//      conf.pandasGroupedMapAssignColumnsByName.toString)
-//    val arrowSafeTypeCheck = Seq(SQLConf.PANDAS_ARROW_SAFE_TYPE_CONVERSION.key ->
-//      conf.arrowSafeTypeConversion.toString)
-//    Map(timeZoneConf ++ pandasColsByName ++ arrowSafeTypeCheck: _*)
-//  }
-
-  def loadBatch(
-      batchBytes: Array[Byte],
-      allocator: BufferAllocator): ArrowRecordBatch = {
-    val in = new ByteArrayInputStream(batchBytes)
-    MessageSerializer.deserializeRecordBatch(
-      new ReadChannel(Channels.newChannel(in)),
-      allocator)
-  }
-
-  def toArrowColumnVector(list: java.util.List[FieldVector]): Array[ArrowColumnVector] = {
-    //        val columns = root.getFieldVectors.asScala.map { vector =>
-    //            new ArrowColumnVector(vector).asInstanceOf[ColumnVector]
-    //        }.toArray
-    list.asScala.map { vector =>
-      new ArrowColumnVector(vector)
-    }.toArray
   }
 }

@@ -160,10 +160,8 @@ abstract class SparkOperation(session: Session)
           case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
           case FETCH_FIRST => iter.fetchAbsolute(0);
         }
-        val arrowTransform = session.conf.getOrElse("arrowTransform", "true")
         resultRowSet =
-          if (arrowTransform.equalsIgnoreCase("true")) {
-            // todo:(fchen) arrow每次fetch一条
+          if (arrowEnabled) {
             val taken = iter.next().asInstanceOf[Array[Byte]]
             RowSet.toTRowSet(taken, getProtocolVersion)
           } else {
@@ -181,6 +179,11 @@ abstract class SparkOperation(session: Session)
     }
 
   override def shouldRunAsync: Boolean = false
+
+  protected def arrowEnabled(): Boolean = {
+    session.conf.getOrElse("kyuubi.beeline.arrow.enabled", "true")
+      .equalsIgnoreCase("true")
+  }
 
 }
 

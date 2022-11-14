@@ -216,7 +216,7 @@
         <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
         <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
         <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
-        <maven.plugin.scala.version>4.7.1</maven.plugin.scala.version>
+        <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
         <maven.plugin.surefire.version>3.0.0-M7</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
@@ -248,7 +248,6 @@
         <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
         <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
         <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
-        <CodeCacheSize>128m</CodeCacheSize>
     </properties>
 
     <dependencyManagement>
@@ -1756,12 +1755,15 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.10.1</version>
+                    <version>${maven.plugin.compiler.version}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
                         <skipMain>true</skipMain> <!-- skip compile -->
                         <skip>true</skip> <!-- skip testCompile -->
+                        <maxmem>1024m</maxmem>
+                        <fork>true</fork>
+                        <compilerArgs>
+                            <arg>-Xlint:all,-serial,-path</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
 
@@ -1771,25 +1773,21 @@
                     <version>${maven.plugin.scala.version}</version>
                     <configuration>
                         <scalaVersion>${scala.version}</scalaVersion>
-                        <checkMultipleScalaVersions>true</checkMultipleScalaVersions>
-                        <failOnMultipleScalaVersions>true</failOnMultipleScalaVersions>
                         <recompileMode>incremental</recompileMode>
                         <args>
                             <arg>-unchecked</arg>
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
-                            <arg>-target:jvm-1.8</arg>
+                            <arg>-Yno-adapted-args</arg>
+                            <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
                             <arg>-Xfatal-warnings</arg>
                             <arg>-Ywarn-unused:imports</arg>
-                            <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
                         </args>
                         <jvmArgs>
-                            <jvmArg>-Xss128m</jvmArg>
-                            <jvmArg>-Xms4g</jvmArg>
-                            <jvmArg>-Xmx4g</jvmArg>
-                            <jvmArg>-XX:MaxMetaspaceSize=2g</jvmArg>
-                            <jvmArg>-XX:ReservedCodeCacheSize=${CodeCacheSize}</jvmArg>
+                            <jvmArg>-Xms1024m</jvmArg>
+                            <jvmArg>-Xmx1024m</jvmArg>
+                            <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
                         </jvmArgs>
                         <javacArgs>
                             <javacArg>-source</javacArg>
@@ -1802,7 +1800,7 @@
                             <compilerPlugin>
                                 <groupId>com.github.ghik</groupId>
                                 <artifactId>silencer-plugin_${scala.version}</artifactId>
-                                <version>1.7.10</version>
+                                <version>${maven.plugin.silencer.version}</version>
                             </compilerPlugin>
                         </compilerPlugins>
                     </configuration>

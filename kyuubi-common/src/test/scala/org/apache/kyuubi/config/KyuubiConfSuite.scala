@@ -183,15 +183,4 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(kyuubiConf.getBatchConf("spark") == Map("spark.yarn.tags" -> "kyuubi"))
     assert(kyuubiConf.getBatchConf("flink") == Map("yarn.tags" -> "kyuubi"))
   }
-
-//  test("a") {
-//    var it: Iterator[Any] = null
-//    it = Array(1, 2, 3).toIterator
-//    it match {
-//      case i: Iterator[Int] =>
-//        println(1)
-//      case i: Iterator[String] =>
-//        println(2)
-//    }
-//  }
 }
