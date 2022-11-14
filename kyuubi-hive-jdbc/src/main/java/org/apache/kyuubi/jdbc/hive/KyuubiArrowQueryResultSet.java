@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
-
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -37,8 +36,6 @@ import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnVector;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatch;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
-import org.apache.kyuubi.jdbc.hive.cli.RowSet;
-import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
 import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
 import org.apache.kyuubi.jdbc.util.ArrowUtils;
 import org.slf4j.Logger;
@@ -345,7 +342,6 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
       ((KyuubiStatement) statement).waitForOperationToComplete();
     }
 
-
     try {
       TFetchOrientation orientation = TFetchOrientation.FETCH_NEXT;
       if (fetchFirst) {
@@ -373,10 +369,10 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         VectorLoader vectorLoader = new VectorLoader(root);
         vectorLoader.load(recordBatch);
         recordBatch.close();
-        java.util.List<ArrowColumnVector> columns = root.getFieldVectors()
-            .stream()
-            .map(vector -> new ArrowColumnVector(vector))
-            .collect(Collectors.toList());
+        java.util.List<ArrowColumnVector> columns =
+            root.getFieldVectors().stream()
+                .map(vector -> new ArrowColumnVector(vector))
+                .collect(Collectors.toList());
         ArrowColumnarBatch batch =
             new ArrowColumnarBatch(columns.toArray(new ArrowColumnVector[0]), root.getRowCount());
         fetchedRowsItr = batch.rowIterator();

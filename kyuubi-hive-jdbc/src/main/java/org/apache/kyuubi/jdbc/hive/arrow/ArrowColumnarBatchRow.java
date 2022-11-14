@@ -19,7 +19,6 @@ package org.apache.kyuubi.jdbc.hive.arrow;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-
 import org.apache.hive.service.rpc.thrift.TTypeId;
 
 public class ArrowColumnarBatchRow {
@@ -30,27 +29,45 @@ public class ArrowColumnarBatchRow {
     this.columns = columns;
   }
 
-  public int numFields() { return columns.length; }
+  public int numFields() {
+    return columns.length;
+  }
 
   public boolean anyNull() {
     throw new UnsupportedOperationException();
   }
 
-  public boolean isNullAt(int ordinal) { return columns[ordinal].isNullAt(rowId); }
+  public boolean isNullAt(int ordinal) {
+    return columns[ordinal].isNullAt(rowId);
+  }
 
-  public boolean getBoolean(int ordinal) { return columns[ordinal].getBoolean(rowId); }
+  public boolean getBoolean(int ordinal) {
+    return columns[ordinal].getBoolean(rowId);
+  }
 
-  public byte getByte(int ordinal) { return columns[ordinal].getByte(rowId); }
+  public byte getByte(int ordinal) {
+    return columns[ordinal].getByte(rowId);
+  }
 
-  public short getShort(int ordinal) { return columns[ordinal].getShort(rowId); }
+  public short getShort(int ordinal) {
+    return columns[ordinal].getShort(rowId);
+  }
 
-  public int getInt(int ordinal) { return columns[ordinal].getInt(rowId); }
+  public int getInt(int ordinal) {
+    return columns[ordinal].getInt(rowId);
+  }
 
-  public long getLong(int ordinal) { return columns[ordinal].getLong(rowId); }
+  public long getLong(int ordinal) {
+    return columns[ordinal].getLong(rowId);
+  }
 
-  public float getFloat(int ordinal) { return columns[ordinal].getFloat(rowId); }
+  public float getFloat(int ordinal) {
+    return columns[ordinal].getFloat(rowId);
+  }
 
-  public double getDouble(int ordinal) { return columns[ordinal].getDouble(rowId); }
+  public double getDouble(int ordinal) {
+    return columns[ordinal].getDouble(rowId);
+  }
 
   public BigDecimal getDecimal(int ordinal, int precision, int scale) {
     return columns[ordinal].getDecimal(rowId, precision, scale);
@@ -69,22 +86,22 @@ public class ArrowColumnarBatchRow {
   }
 
   public Object getInterval(int ordinal) {
-//    return columns[ordinal].getInterval(rowId);
+    //    return columns[ordinal].getInterval(rowId);
     throw new UnsupportedOperationException();
   }
 
   public Object getStruct(int ordinal, int numFields) {
-//    return columns[ordinal].getStruct(rowId);
+    //    return columns[ordinal].getStruct(rowId);
     throw new UnsupportedOperationException();
   }
 
   public Object getArray(int ordinal) {
-//    return columns[ordinal].getArray(rowId);
+    //    return columns[ordinal].getArray(rowId);
     throw new UnsupportedOperationException();
   }
 
   public Object getMap(int ordinal) {
-//    return columns[ordinal].getMap(rowId);
+    //    return columns[ordinal].getMap(rowId);
     throw new UnsupportedOperationException();
   }
 

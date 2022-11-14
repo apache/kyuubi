@@ -4,9 +4,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * This class wraps multiple ColumnVectors as a row-wise table. It provides a row view of this
- * batch so that Spark can access the data row by row. Instance of it is meant to be reused during
- * the entire data loading process. A data source may extend this class with customized logic.
+ * This class wraps multiple ColumnVectors as a row-wise table. It provides a row view of this batch
+ * so that Spark can access the data row by row. Instance of it is meant to be reused during the
+ * entire data loading process. A data source may extend this class with customized logic.
  */
 public class ArrowColumnarBatch implements AutoCloseable {
   protected int numRows;
@@ -16,19 +16,17 @@ public class ArrowColumnarBatch implements AutoCloseable {
   protected final ArrowColumnarBatchRow row;
 
   /**
-   * Called to close all the columns in this batch. It is not valid to access the data after
-   * calling this. This must be called at the end to clean up memory allocations.
+   * Called to close all the columns in this batch. It is not valid to access the data after calling
+   * this. This must be called at the end to clean up memory allocations.
    */
   @Override
   public void close() {
-    for (ArrowColumnVector c: columns) {
+    for (ArrowColumnVector c : columns) {
       c.close();
     }
   }
 
-  /**
-   * Returns an iterator over the rows in this batch.
-   */
+  /** Returns an iterator over the rows in this batch. */
   public Iterator<ArrowColumnarBatchRow> rowIterator() {
     final int maxRows = numRows;
     final ArrowColumnarBatchRow row = new ArrowColumnarBatchRow(columns);
@@ -56,33 +54,29 @@ public class ArrowColumnarBatch implements AutoCloseable {
     };
   }
 
-  /**
-   * Sets the number of rows in this batch.
-   */
+  /** Sets the number of rows in this batch. */
   public void setNumRows(int numRows) {
     this.numRows = numRows;
   }
 
-  /**
-   * Returns the number of columns that make up this batch.
-   */
-  public int numCols() { return columns.length; }
+  /** Returns the number of columns that make up this batch. */
+  public int numCols() {
+    return columns.length;
+  }
 
-  /**
-   * Returns the number of rows for read, including filtered rows.
-   */
-  public int numRows() { return numRows; }
+  /** Returns the number of rows for read, including filtered rows. */
+  public int numRows() {
+    return numRows;
+  }
 
-  /**
-   * Returns the column at `ordinal`.
-   */
-  public ArrowColumnVector column(int ordinal) { return columns[ordinal]; }
+  /** Returns the column at `ordinal`. */
+  public ArrowColumnVector column(int ordinal) {
+    return columns[ordinal];
+  }
 
-  /**
-   * Returns the row in this batch at `rowId`. Returned row is reused across calls.
-   */
+  /** Returns the row in this batch at `rowId`. Returned row is reused across calls. */
   public ArrowColumnarBatchRow getRow(int rowId) {
-    assert(rowId >= 0 && rowId < numRows);
+    assert (rowId >= 0 && rowId < numRows);
     row.rowId = rowId;
     return row;
   }
@@ -93,6 +87,7 @@ public class ArrowColumnarBatch implements AutoCloseable {
 
   /**
    * Create a new batch from existing column vectors.
+   *
    * @param columns The columns of this batch
    * @param numRows The number of rows in this batch
    */

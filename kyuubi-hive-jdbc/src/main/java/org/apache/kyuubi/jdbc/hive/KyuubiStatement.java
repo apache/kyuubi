@@ -182,7 +182,8 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet() && !stmtHandle.isHasResultSet()) {
       return false;
     }
-    System.out.println("kyuubi.beeline.arrow.enabled: " + ((KyuubiConnection) connection).getArrowEnabled());
+    System.out.println(
+        "kyuubi.beeline.arrow.enabled: " + ((KyuubiConnection) connection).getArrowEnabled());
     if (((KyuubiConnection) connection).getArrowEnabled()) {
       resultSet =
           new KyuubiArrowQueryResultSet.Builder(this)
@@ -195,14 +196,14 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
               .build();
     } else {
       resultSet =
-              new KyuubiQueryResultSet.Builder(this)
-                  .setClient(client)
-                  .setSessionHandle(sessHandle)
-                  .setStmtHandle(stmtHandle)
-                  .setMaxRows(maxRows)
-                  .setFetchSize(fetchSize)
-                  .setScrollable(isScrollableResultset)
-                  .build();
+          new KyuubiQueryResultSet.Builder(this)
+              .setClient(client)
+              .setSessionHandle(sessHandle)
+              .setStmtHandle(stmtHandle)
+              .setMaxRows(maxRows)
+              .setFetchSize(fetchSize)
+              .setScrollable(isScrollableResultset)
+              .build();
     }
     return true;
   }
@@ -227,7 +228,8 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet()) {
       return false;
     }
-    System.out.println("kyuubi.beeline.arrow.enabled: " + ((KyuubiConnection) connection).getArrowEnabled());
+    System.out.println(
+        "kyuubi.beeline.arrow.enabled: " + ((KyuubiConnection) connection).getArrowEnabled());
     if (((KyuubiConnection) connection).getArrowEnabled()) {
       resultSet =
           new KyuubiArrowQueryResultSet.Builder(this)

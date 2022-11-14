@@ -18,7 +18,6 @@
 package org.apache.kyuubi.jdbc.hive.arrow;
 
 import java.math.BigDecimal;
-
 import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.complex.*;
 import org.apache.arrow.vector.holders.NullableVarCharHolder;

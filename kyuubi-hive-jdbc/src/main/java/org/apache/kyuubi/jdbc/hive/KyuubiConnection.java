@@ -148,10 +148,16 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     port = connParams.getPort();
 
     // todo:(fchen) set via uri
-    if (connParams.getHiveVars().getOrDefault("kyuubi.beeline.arrow.enabled", "true").equalsIgnoreCase("false")) {
+    if (connParams
+        .getHiveVars()
+        .getOrDefault("kyuubi.beeline.arrow.enabled", "true")
+        .equalsIgnoreCase("false")) {
       arrowEnabled = false;
     }
-    if (connParams.getHiveConfs().getOrDefault("kyuubi.beeline.arrow.enabled", "true").equalsIgnoreCase("false")) {
+    if (connParams
+        .getHiveConfs()
+        .getOrDefault("kyuubi.beeline.arrow.enabled", "true")
+        .equalsIgnoreCase("false")) {
       arrowEnabled = false;
     }
 

@@ -98,7 +98,8 @@ class ExecuteStatement(
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
           if (arrowEnabled) {
-            new IterableFetchIterator[Array[Byte]](SparkDatesetHelper.toArrowBatchRdd(result).toLocalIterator.toIterable)
+            new IterableFetchIterator[Array[Byte]](
+              SparkDatesetHelper.toArrowBatchRdd(result).toLocalIterator.toIterable)
           } else {
             new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
           }
@@ -116,7 +117,8 @@ class ExecuteStatement(
             info(s"Execute with max result rows[$resultMaxRows]")
             if (arrowEnabled) {
               // this will introduce shuffle and hurt performance
-              new ArrayFetchIterator(SparkDatesetHelper.toArrowBatchRdd(result.limit(resultMaxRows)).collect())
+              new ArrayFetchIterator(
+                SparkDatesetHelper.toArrowBatchRdd(result.limit(resultMaxRows)).collect())
             } else {
               new ArrayFetchIterator(result.take(resultMaxRows))
             }
