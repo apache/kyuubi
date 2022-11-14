@@ -77,6 +77,7 @@ author = 'Kent Yao'
 # The full version, including alpha/beta/rc tags
 release = subprocess.getoutput("cd .. && build/mvn help:evaluate -Dexpression=project.version|grep -v Using|grep -v INFO|grep -v WARNING|tail -n 1").split('\n')[-1]
 
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
