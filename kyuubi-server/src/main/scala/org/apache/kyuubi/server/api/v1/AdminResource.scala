@@ -23,20 +23,23 @@ import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
-import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-import org.apache.kyuubi.client.api.v1.dto.Engine
+import org.apache.kyuubi.client.api.v1.dto.{Engine, HadoopConfData, Server, ServerLog}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.server.KyuubiServer.getServerLogRowSet
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.util.OSUtils
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -140,6 +143,80 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.instance,
         node.namespace,
         node.attributes.asJava))
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "list kyuubi servers")
+  @GET
+  @Path("servers")
+  def listServers(): Seq[Server] = {
+    val serverSpace = fe.getConf.get(HA_NAMESPACE)
+    val serverNodes = ListBuffer[ServiceNodeInfo]()
+    withDiscoveryClient(fe.getConf) { discoveryClient =>
+      info(s"Listing server nodes for $serverSpace")
+      serverNodes ++= discoveryClient.getServiceNodesInfo(serverSpace)
+      serverNodes.map(node =>
+        new Server(
+          node.nodeName,
+          node.namespace,
+          node.instance,
+          node.host,
+          node.port,
+          node.createTime,
+          OSUtils.memoryTotal(),
+          OSUtils.cpuTotal(),
+          "Running"))
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ServerLog]))),
+    description =
+      "get server log")
+  @GET
+  @Path("server/log")
+  def getServerLog(
+      @QueryParam("maxrows") maxRows: Int): ServerLog = {
+    try {
+      val rowSet = getServerLogRowSet(maxRows)
+      new ServerLog(rowSet, rowSet.size)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = s"Error getting server log"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "get the Kyuubi server hadoop conf")
+  @GET
+  @Path("get_hadoop_conf")
+  def getFrontendHadoopConf(): Seq[HadoopConfData] = {
+    val userName = fe.getUserName(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive get Kyuubi server hadoop conf request from $userName/$ipAddress")
+    if (!userName.equals(administrator)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to get the Kyuubi server hadoop conf")
+    }
+    info(s"Getting the Kyuubi server hadoop conf")
+    val hadoopConf = ListBuffer[HadoopConfData]()
+    val iterator = KyuubiServer.getHadoopConf().iterator()
+    while (iterator.hasNext()) {
+      val element = iterator.next();
+      hadoopConf += new HadoopConfData(element.getKey, element.getValue)
+    }
+    hadoopConf
   }
 
   private def getEngine(

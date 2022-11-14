@@ -28,11 +28,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
+import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle, OperationStatus}
 import org.apache.kyuubi.server.api.ApiRequestContext
 
 @Tag(name = "Operation")
@@ -203,6 +202,76 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
     } catch {
       case NonFatal(e) =>
         val errorMsg = s"Error getting result row set for operation handle $operationHandleStr"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[InfoDetail]))),
+    description =
+      "all the enum values of OperationType")
+  @GET
+  @Path("/operations/types")
+  def getSupportedInfoType(): Seq[InfoDetail] = {
+    try {
+      val infoTypes = TOperationType.values()
+      infoTypes.map(infoType => {
+        new InfoDetail(infoType.toString, infoType.getValue.toString)
+      })
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting all the enum values of OperationType"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationStatus]))),
+    description =
+      "Get the operation status")
+  @GET
+  @Path("{operationHandle}/status")
+  def getOperationStatus(
+      @PathParam("operationHandle") operationHandleStr: String): OperationStatus = {
+    try {
+      val opHandle = OperationHandle(operationHandleStr)
+      val operation = fe.be.sessionManager.operationManager.getOperation(opHandle)
+      operation.getStatus
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting an operation status"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[String]))),
+    description =
+      "Get the query id of the given operation identifier")
+  @GET
+  @Path("{operationHandle}/queryId")
+  def getQueryId(
+      @PathParam("operationHandle") operationHandleStr: String): String = {
+    try {
+      val opHandle = OperationHandle(operationHandleStr)
+      val operation = fe.be.sessionManager.operationManager.getOperation(opHandle)
+      val queryId = fe.be.sessionManager.operationManager.getQueryId(operation)
+      queryId
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting an the query id of operation"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }

@@ -168,7 +168,17 @@ class KyuubiSessionImpl(
       waitForEngineLaunched()
       sessionEvent.totalOperations += 1
     }
-    super.runOperation(operation)
+    try {
+      sessionEvent.runningOperations += 1
+      val OperationHandle = super.runOperation(operation)
+      sessionEvent.runningOperations -= 1
+      OperationHandle
+    } catch {
+      case e: Exception =>
+        sessionEvent.errorOperations += 1
+        throw e
+    }
+
   }
 
   @volatile private var engineLaunched: Boolean = false

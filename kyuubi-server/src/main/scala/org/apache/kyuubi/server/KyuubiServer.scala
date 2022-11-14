@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server
 
+import java.util
+
 import scala.util.Properties
 
 import org.apache.hadoop.conf.Configuration
@@ -30,6 +32,7 @@ import org.apache.kyuubi.events.{EventBus, KyuubiServerInfoEvent, ServerEventHan
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{AuthTypes, ServiceDiscovery}
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
+import org.apache.kyuubi.server.log.ServerLog
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
@@ -101,6 +104,13 @@ object KyuubiServer extends Logging {
     val _hadoopConf = KyuubiHadoopUtils.newHadoopConf(new KyuubiConf().loadFileDefaults())
     hadoopConf = _hadoopConf
   }
+
+  private[kyuubi] def getServerLogRowSet(maxRows: Int): util.ArrayList[String] = {
+    val serverLog = ServerLog.getCurrentServerLog
+    Option(serverLog).map(_.read(maxRows)).getOrElse {
+      throw KyuubiSQLException("failed to generate server log")
+    }
+  }
 }
 
 class KyuubiServer(name: String) extends Serverable(name) {
@@ -126,6 +136,8 @@ class KyuubiServer(name: String) extends Serverable(name) {
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     initLoggerEventHandler(conf)
+    val serverLog = ServerLog.createServerLog(conf)
+    ServerLog.setCurrentServerLog(serverLog)
 
     val kinit = new KinitAuxiliaryService()
     addService(kinit)

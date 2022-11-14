@@ -36,8 +36,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.KyuubiSession
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -404,4 +403,54 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         throw new NotFoundException(errorMsg)
     }
   }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationData]))),
+    description = "get all the operation list hosted a specific session binding via an identifier")
+  @POST
+  @Path("{sessionHandle}/operations")
+  def getOperations(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
+    try {
+      sessionManager.getSession(sessionHandleStr)
+        .allOperations().map { operationHandle =>
+          val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
+          new OperationData(
+            operation.getHandle.identifier,
+            operation.getHandle.toTOperationHandle.getOperationType.name(),
+            operation.getStatus.state.name())
+        }.toSeq
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[InfoDetail]))),
+    description =
+      "get all supported info types by Kyuubi session")
+  @GET
+  @Path("{sessionHandle}/infoTypes")
+  def getSupportedInfoType(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[InfoDetail] = {
+    try {
+      val infoTypes = TGetInfoType.values()
+      infoTypes.map(infoType => {
+        new InfoDetail(infoType.toString, infoType.getValue.toString)
+      })
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
 }

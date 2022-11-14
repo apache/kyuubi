@@ -53,7 +53,9 @@ case class KyuubiSessionEvent(
     var openedTime: Long = -1L,
     var endTime: Long = -1L,
     var totalOperations: Int = 0,
-    var exception: Option[Throwable] = None) extends KyuubiEvent {
+    var exception: Option[Throwable] = None,
+    var runningOperations: Int = 0,
+    var errorOperations: Int = 0) extends KyuubiEvent {
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 }

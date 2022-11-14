@@ -17,44 +17,43 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
-import java.util.List;
 import java.util.Objects;
 
-public class OperationLog {
-  private List<String> logRow;
-  private int rowCount;
+public class HadoopConfData {
+  private String key;
+  private String value;
 
-  public OperationLog(List<String> logRow, int rowCount) {
-    this.logRow = logRow;
-    this.rowCount = rowCount;
+  public HadoopConfData(String key, String value) {
+    this.key = key;
+    this.value = value;
   }
 
-  public List<String> getLogRow() {
-    return logRow;
+  public String getKey() {
+    return key;
   }
 
-  public void setLogRow(List<String> logRow) {
-    this.logRow = logRow;
+  public void setKey(String key) {
+    this.key = key;
   }
 
-  public int getRowCount() {
-    return rowCount;
+  public String getValue() {
+    return value;
   }
 
-  public void setRowCount(int rowCount) {
-    this.rowCount = rowCount;
+  public void setValue(String value) {
+    this.value = value;
   }
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    OperationLog that = (OperationLog) o;
-    return rowCount == that.rowCount && Objects.equals(logRow, that.logRow);
+    HadoopConfData that = (HadoopConfData) o;
+    return Objects.equals(key, that.key) && Objects.equals(value, that.value);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(logRow, rowCount);
+    return Objects.hash(key, value);
   }
 }

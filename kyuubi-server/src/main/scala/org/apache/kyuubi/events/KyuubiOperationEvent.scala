@@ -18,6 +18,7 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_NAME
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 
 /**
@@ -46,6 +47,7 @@ case class KyuubiOperationEvent private (
     remoteId: String,
     statement: String,
     shouldRunAsync: Boolean,
+    operationType: String,
     state: String,
     eventTime: Long,
     createTime: Long,
@@ -53,7 +55,11 @@ case class KyuubiOperationEvent private (
     completeTime: Long,
     exception: Option[Throwable],
     sessionId: String,
-    sessionUser: String) extends KyuubiEvent {
+    sessionUser: String,
+    engineName: String,
+    engineType: String,
+    engineShareLevel: String,
+    resultSchema: String) extends KyuubiEvent {
 
   // operation events are partitioned by the date when the corresponding operations are
   // created.
@@ -69,11 +75,13 @@ object KyuubiOperationEvent {
   def apply(operation: KyuubiOperation): KyuubiOperationEvent = {
     val session = operation.getSession
     val status = operation.getStatus
+    val resultSchema = operation.getResultSetSchema.toString
     new KyuubiOperationEvent(
       operation.statementId,
       Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
       operation.statement,
       operation.shouldRunAsync,
+      operation.remoteOpHandle().getOperationType.name(),
       status.state.name(),
       status.lastModified,
       status.create,
@@ -81,6 +89,10 @@ object KyuubiOperationEvent {
       status.completed,
       status.exception,
       session.handle.identifier.toString,
-      session.user)
+      session.user,
+      session.sessionManager.getConf.getOption(KYUUBI_ENGINE_NAME).orNull,
+      session.sessionManager.getConf.getOption("kyuubi.engine.type").orNull,
+      session.sessionManager.getConf.getOption("kyuubi.engine.share.level").orNull,
+      resultSchema)
   }
 }
