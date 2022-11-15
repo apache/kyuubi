@@ -187,7 +187,9 @@ abstract class SparkOperation(session: Session)
 
   protected def arrowEnabled(): Boolean = {
     session.conf.getOrElse("kyuubi.beeline.arrow.enabled", "true")
-      .equalsIgnoreCase("true")
+      .equalsIgnoreCase("true") &&
+      // TODO: (fchen) make all operation support arrow
+      getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
   }
 
 }
