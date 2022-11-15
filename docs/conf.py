@@ -89,6 +89,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'recommonmark',
     'sphinx_markdown_tables',
+    'sphinx_togglebutton',
     'notfound.extension',
 ]
 

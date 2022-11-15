@@ -17,10 +17,11 @@
 # under the License.
 #
 
-sphinx==4.5.0
-sphinx-book-theme==0.3.2
-sphinx-markdown-tables==0.0.15
-recommonmark==0.7.1
-sphinx-notfound-page==0.8
 # we shall bypass markdown-3.4.1, see details in KYUUBI-3126
 markdown==3.3.7
+recommonmark==0.7.1
+sphinx==4.5.0
+sphinx-book-theme==0.3.3
+sphinx-markdown-tables==0.0.15
+sphinx-notfound-page==0.8
+sphinx-togglebutton===0.3.2
