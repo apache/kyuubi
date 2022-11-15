@@ -26,7 +26,6 @@ import org.apache.kyuubi.plugin.spark.authz.v2Commands.{CommandType, v2TablePriv
 import org.apache.kyuubi.plugin.spark.authz.{OperationType, PrivilegeObject, PrivilegeObjectActionType}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Identifier
-import org.apache.spark.sql.types.{BooleanType, StringType}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -40,7 +39,7 @@ object ArcticCmdUtils {
     try {
       OperationType.withName(invoke(getArcticUtil,
         "operationType",
-        (StringType.getClass, arcticCmd)).
+        (Class.forName("java.lang.String"), arcticCmd)).
         asInstanceOf[String])
     } catch {
       case _: Throwable => QUERY
@@ -93,7 +92,7 @@ object ArcticCmdUtils {
     try {
       val types = invoke(getArcticUtil,
         "commandType",
-        (StringType.getClass, cmd)).
+        (Class.forName("java.lang.String"), cmd)).
         asInstanceOf[Seq[String]]
       types.map(f => CommandType.withName(f))
     } catch {
@@ -105,7 +104,7 @@ object ArcticCmdUtils {
     try {
       PrivilegeObjectActionType.withName(invoke(getArcticUtil,
         "actionType",
-        (StringType.getClass, cmd)).
+        (Class.forName("java.lang.String"), cmd)).
         asInstanceOf[String])
     } catch {
       case _: Throwable => PrivilegeObjectActionType.OTHER
@@ -134,7 +133,7 @@ object ArcticCmdUtils {
     try {
       invoke(
         Class.forName("com.netease.arctic.spark.sql.utils.ArcticAuthUtil"),
-        "isArcticCommand", (BooleanType.getClass, commandName)).asInstanceOf[Boolean]
+        "isArcticCommand", (Boolean.getClass, commandName)).asInstanceOf[Boolean]
     } catch {
       case _: Throwable => false
     }
