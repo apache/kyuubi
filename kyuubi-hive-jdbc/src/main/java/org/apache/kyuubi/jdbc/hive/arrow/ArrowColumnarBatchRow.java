@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.common.DateUtils;
+import org.apache.kyuubi.jdbc.hive.common.HiveIntervalDayTime;
 
 public class ArrowColumnarBatchRow {
   public int rowId;
@@ -132,6 +133,13 @@ public class ArrowColumnarBatchRow {
         return new Timestamp(getLong(ordinal) / 1000);
       case DATE_TYPE:
         return DateUtils.internalToDate(getInt(ordinal));
+      case INTERVAL_DAY_TIME_TYPE:
+        long microseconds = getLong(ordinal);
+        long seconds = microseconds / 1000000;
+        int nanos = (int) (microseconds % 1000000) * 1000;
+        return new HiveIntervalDayTime(seconds, nanos);
+      case INTERVAL_YEAR_MONTH_TYPE:
+        return getInt(ordinal);
       default:
         throw new UnsupportedOperationException("Datatype not supported " + dataType);
     }
