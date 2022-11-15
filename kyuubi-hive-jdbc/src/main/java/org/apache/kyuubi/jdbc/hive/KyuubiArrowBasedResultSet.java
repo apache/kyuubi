@@ -248,8 +248,7 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
   @Override
   public int getInt(int columnIndex) throws SQLException {
     try {
-      //            Object obj = getObject(columnIndex);
-      Object obj = null;
+      Object obj = getObject(columnIndex);
       if (obj instanceof Number) {
         return ((Number) obj).intValue();
       } else if (obj == null) {
@@ -302,9 +301,9 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
     if (row.numFields() == 0) {
       throw new KyuubiSQLException("RowSet does not contain any columns!");
     }
-    //        if (columnIndex > rowBytes.length) {
-    //            throw new KyuubiSQLException("Invalid columnIndex: " + columnIndex);
-    //        }
+    if (columnIndex > columnNames.size()) {
+      throw new KyuubiSQLException("Invalid columnIndex: " + columnIndex);
+    }
     TTypeId columnType = columnTypes.get(columnIndex - 1);
 
     try {

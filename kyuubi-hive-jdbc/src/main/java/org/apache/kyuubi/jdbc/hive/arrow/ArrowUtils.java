@@ -94,6 +94,8 @@ public class ArrowUtils {
         return new ArrowType.Duration(TimeUnit.MICROSECOND);
       case INTERVAL_YEAR_MONTH_TYPE:
         return new ArrowType.Interval(IntervalUnit.YEAR_MONTH);
+      case ARRAY_TYPE:
+        //
       default:
         throw new IllegalArgumentException("Unrecognized type name: " + ttype.name());
     }
