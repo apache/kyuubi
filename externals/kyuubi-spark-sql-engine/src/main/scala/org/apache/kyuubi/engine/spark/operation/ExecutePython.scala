@@ -28,8 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
-import org.apache.spark.launcher.CommandBuilderUtils.firstNonEmpty
-import org.apache.spark.launcher.SparkLauncher
 import org.apache.spark.sql.{Row, RuntimeConfig}
 import org.apache.spark.sql.types.StructType
 
