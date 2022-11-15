@@ -260,7 +260,6 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         TPrimitiveTypeEntry primitiveTypeEntry =
             columns.get(pos).getTypeDesc().getTypes().get(0).getPrimitiveEntry();
         columnTypes.add(primitiveTypeEntry.getType());
-        System.out.println(getColumnAttributes(primitiveTypeEntry));
         columnAttributes.add(getColumnAttributes(primitiveTypeEntry));
       }
       arrowSchema = ArrowUtils.toArrowSchema(columnNames, columnTypes, columnAttributes);
