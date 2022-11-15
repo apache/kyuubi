@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.jdbc.hive.common;
 
+import java.util.TimeZone;
+
 /** DateUtils. Thread-safe class */
 public class DateUtils {
   public static int parseNumericValueWithRange(
@@ -65,4 +67,21 @@ public class DateUtils {
   public static String getFieldName(int field) {
     return FIELD_NAME[field];
   }
+
+  /**
+   * Converts the internal representation of a SQL DATE (int) to the Java type ({@link
+   * java.sql.Date}).
+   */
+  public static java.sql.Date internalToDate(int v) {
+    // note that, in this case, can't handle Daylight Saving Time
+    final long t = v * MILLIS_PER_DAY;
+    return new java.sql.Date(t - TimeZone.getDefault().getOffset(t));
+  }
+
+  /**
+   * The number of milliseconds in a day.
+   *
+   * <p>This is the modulo 'mask' used when converting TIMESTAMP values to DATE and TIME values.
+   */
+  private static final long MILLIS_PER_DAY = 86400000L; // = 24 * 60 * 60 * 1000
 }

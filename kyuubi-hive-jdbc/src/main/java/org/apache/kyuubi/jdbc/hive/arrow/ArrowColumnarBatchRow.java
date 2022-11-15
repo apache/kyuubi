@@ -20,6 +20,7 @@ package org.apache.kyuubi.jdbc.hive.arrow;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import org.apache.hive.service.rpc.thrift.TTypeId;
+import org.apache.kyuubi.jdbc.hive.common.DateUtils;
 
 public class ArrowColumnarBatchRow {
   public int rowId;
@@ -130,7 +131,7 @@ public class ArrowColumnarBatchRow {
       case TIMESTAMP_TYPE:
         return new Timestamp(getLong(ordinal) / 1000);
       case DATE_TYPE:
-        return getInt(ordinal);
+        return DateUtils.internalToDate(getInt(ordinal));
       default:
         throw new UnsupportedOperationException("Datatype not supported " + dataType);
     }
