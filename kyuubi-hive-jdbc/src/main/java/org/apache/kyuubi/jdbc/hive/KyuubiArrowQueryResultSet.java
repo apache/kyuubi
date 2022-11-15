@@ -36,8 +36,8 @@ import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnVector;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatch;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
+import org.apache.kyuubi.jdbc.hive.arrow.ArrowUtils;
 import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
-import org.apache.kyuubi.jdbc.util.ArrowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -263,9 +263,8 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         System.out.println(getColumnAttributes(primitiveTypeEntry));
         columnAttributes.add(getColumnAttributes(primitiveTypeEntry));
       }
-      arrowSchema = ArrowUtils.toArrowSchemaJava(columnNames, columnTypes, columnAttributes, null);
-      allocator =
-          ArrowUtils.rootAllocator().newChildAllocator("KyuubiResultSet", 0, Long.MAX_VALUE);
+      arrowSchema = ArrowUtils.toArrowSchema(columnNames, columnTypes, columnAttributes);
+      allocator = ArrowUtils.rootAllocator.newChildAllocator("KyuubiResultSet", 0, Long.MAX_VALUE);
       root = VectorSchemaRoot.create(arrowSchema, allocator);
     } catch (SQLException eS) {
       throw eS; // rethrow the SQLException as is

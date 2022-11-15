@@ -40,7 +40,6 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
-import org.apache.kyuubi.jdbc.util.ArrowUtils;
 import org.junit.Test;
 
 public class ArrowColumnarBatchRowTest {
@@ -53,7 +52,7 @@ public class ArrowColumnarBatchRowTest {
   public void testInt() throws IOException {
 
     BufferAllocator allocator =
-        ArrowUtils.rootAllocator().newChildAllocator("ReadIntTest", 0, Long.MAX_VALUE);
+        ArrowUtils.rootAllocator.newChildAllocator("ReadIntTest", 0, Long.MAX_VALUE);
 
     byte[] batchBytes = mockData();
     ByteArrayInputStream in = new ByteArrayInputStream(batchBytes);

@@ -31,7 +31,7 @@ import org.apache.hive.service.rpc.thrift.TTableSchema;
 import org.apache.hive.service.rpc.thrift.TTypeId;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLResultSet;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
-import org.apache.kyuubi.jdbc.util.ArrowUtils;
+import org.apache.kyuubi.jdbc.hive.arrow.ArrowUtils;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
 public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
@@ -56,7 +56,7 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
     if (arrowSchema == null) {
       throw new IllegalStateException("arrow schema is null");
     }
-    allocator = ArrowUtils.rootAllocator().newChildAllocator("ArrowResultSet", 0, Long.MAX_VALUE);
+    allocator = ArrowUtils.rootAllocator.newChildAllocator("ArrowResultSet", 0, Long.MAX_VALUE);
     root = VectorSchemaRoot.create(arrowSchema, allocator);
   }
 
