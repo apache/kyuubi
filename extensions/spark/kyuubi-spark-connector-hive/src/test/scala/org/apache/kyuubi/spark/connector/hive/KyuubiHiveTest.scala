@@ -19,14 +19,31 @@ package org.apache.kyuubi.spark.connector.hive
 
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{QueryTest, SparkSession}
+import org.apache.spark.sql.connector.catalog.{SupportsNamespaces, TableCatalog}
 
-import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession
 
-abstract class KyuubiHiveTest extends KyuubiFunSuite with Logging {
+abstract class KyuubiHiveTest extends QueryTest with Logging {
 
-  private var spark: SparkSession = _
+  private var innerSpark: SparkSession = _
+
+  protected val TABLE_RESERVED_PROPERTIES =
+    Seq(
+      TableCatalog.PROP_COMMENT,
+      TableCatalog.PROP_LOCATION,
+      TableCatalog.PROP_PROVIDER,
+      TableCatalog.PROP_OWNER,
+      TableCatalog.PROP_EXTERNAL,
+      TableCatalog.PROP_IS_MANAGED_LOCATION)
+
+  protected val NAMESPACE_RESERVED_PROPERTIES =
+    Seq(
+      SupportsNamespaces.PROP_COMMENT,
+      SupportsNamespaces.PROP_LOCATION,
+      SupportsNamespaces.PROP_OWNER)
+
+  protected def catalogName: String = "hive"
 
   override def beforeEach(): Unit = {
     super.beforeAll()
@@ -35,7 +52,7 @@ abstract class KyuubiHiveTest extends KyuubiFunSuite with Logging {
 
   override def afterEach(): Unit = {
     super.afterAll()
-    LocalSparkSession.stop(spark)
+    LocalSparkSession.stop(innerSpark)
   }
 
   def getOrCreateSpark(): Unit = {
@@ -47,15 +64,17 @@ abstract class KyuubiHiveTest extends KyuubiFunSuite with Logging {
       .set("javax.jdo.option.ConnectionURL", "jdbc:derby:memory:memorydb;create=true")
       .set("javax.jdo.option.ConnectionDriverName", "org.apache.derby.jdbc.EmbeddedDriver")
 
-    spark = SparkSession.builder.config(sparkConf).getOrCreate()
+    innerSpark = SparkSession.builder.config(sparkConf).getOrCreate()
   }
 
   def withSparkSession[T](conf: Map[String, String] = Map.empty[String, String])(
       f: SparkSession => T): T = {
-    assert(spark != null)
+    assert(innerSpark != null)
     conf.foreach {
-      case (k, v) => spark.sessionState.conf.setConfString(k, v)
+      case (k, v) => innerSpark.sessionState.conf.setConfString(k, v)
     }
-    f(spark)
+    f(innerSpark)
   }
+
+  override def spark: SparkSession = innerSpark
 }

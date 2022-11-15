@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`s_store_name` STRING,`i_item_desc` STRING,`revenue` DECIMAL(17,2),`i_current_price` DECIMAL(7,2),`i_wholesale_cost` DECIMAL(7,2),`i_brand` STRING
+s_store_name STRING,i_item_desc STRING,revenue DECIMAL(17,2),i_current_price DECIMAL(7,2),i_wholesale_cost DECIMAL(7,2),i_brand STRING

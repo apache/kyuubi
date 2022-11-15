@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
+import org.apache.hadoop.shaded.com.fasterxml.jackson.databind.util.ClassUtil.classOf
 import org.apache.kyuubi.plugin.spark.authz.OperationType.{OperationType, QUERY}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder.buildQuery
@@ -39,7 +40,7 @@ object ArcticCmdUtils {
     try {
       OperationType.withName(invoke(getArcticUtil,
         "operationType",
-        (Class.forName("java.lang.String"), arcticCmd)).
+        (classOf[String], arcticCmd)).
         asInstanceOf[String])
     } catch {
       case _: Throwable => QUERY
@@ -92,7 +93,7 @@ object ArcticCmdUtils {
     try {
       val types = invoke(getArcticUtil,
         "commandType",
-        (Class.forName("java.lang.String"), cmd)).
+        (classOf[String], cmd)).
         asInstanceOf[Seq[String]]
       types.map(f => CommandType.withName(f))
     } catch {
@@ -104,7 +105,7 @@ object ArcticCmdUtils {
     try {
       PrivilegeObjectActionType.withName(invoke(getArcticUtil,
         "actionType",
-        (Class.forName("java.lang.String"), cmd)).
+        (classOf[String], cmd)).
         asInstanceOf[String])
     } catch {
       case _: Throwable => PrivilegeObjectActionType.OTHER

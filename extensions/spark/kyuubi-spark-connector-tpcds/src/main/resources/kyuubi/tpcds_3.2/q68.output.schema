@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`c_last_name` STRING,`c_first_name` STRING,`ca_city` STRING,`bought_city` STRING,`ss_ticket_number` BIGINT NOT NULL,`extended_price` DECIMAL(17,2),`extended_tax` DECIMAL(17,2),`list_price` DECIMAL(17,2)
+c_last_name STRING,c_first_name STRING,ca_city STRING,bought_city STRING,ss_ticket_number BIGINT NOT NULL,extended_price DECIMAL(17,2),extended_tax DECIMAL(17,2),list_price DECIMAL(17,2)

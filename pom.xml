@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>23</version>
+        <version>27</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -99,8 +99,9 @@
         <maven.version>3.8.6</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <scala.version>2.12.16</scala.version>
+        <scala.version>2.12.17</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
+        <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
         <antlr4.version>4.8</antlr4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
@@ -114,7 +115,7 @@
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
         <etcd.version>0.7.3</etcd.version>
-        <delta.version>2.0.0</delta.version>
+        <delta.version>2.1.1</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flink.version>1.15.2</flink.version>
@@ -141,7 +142,7 @@
         <httpclient.version>4.5.13</httpclient.version>
         <httpcore.version>4.4.15</httpcore.version>
         <hudi.version>0.12.0</hudi.version>
-        <iceberg.version>0.14.1</iceberg.version>
+        <iceberg.version>1.0.0</iceberg.version>
         <jackson.version>2.13.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
@@ -153,11 +154,13 @@
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
-        <log4j.version>2.18.0</log4j.version>
+        <log4j.version>2.19.0</log4j.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
-        <netty.version>4.1.73.Final</netty.version>
+        <netty.version>4.1.84.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
         <prometheus.version>0.16.0</prometheus.version>
+        <protobuf.version>3.21.7</protobuf.version>
+        <py4j.version>0.10.7</py4j.version>
         <ranger.version>2.3.0</ranger.version>
         <scalacheck.version>3.2.9.0</scalacheck.version>
         <scalatest.version>3.2.9</scalatest.version>
@@ -169,12 +172,13 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.2.2</spark.version>
-        <spark.binary.version>3.2</spark.binary.version>
-        <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
+        <spark.version>3.3.1</spark.version>
+        <spark.binary.version>3.3</spark.binary.version>
+        <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.2.1</swagger.version>
+        <swagger-ui.version>4.9.1</swagger-ui.version>
         <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
         <thrift.version>0.9.3</thrift.version>
         <trino.client.version>363</trino.client.version>
@@ -209,7 +213,7 @@
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
-        <maven.plugin.silencer.version>1.7.9</maven.plugin.silencer.version>
+        <maven.plugin.silencer.version>1.7.10</maven.plugin.silencer.version>
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
 
@@ -309,6 +313,12 @@
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
                 <version>${scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.scala-lang.modules</groupId>
+                <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
+                <version>${scala-collection-compat.version}</version>
             </dependency>
 
             <dependency>
@@ -860,6 +870,18 @@
                 </exclusions>
             </dependency>
 
+            <!--
+              1. This library only contains swagger-ui static resource (.html/.css/.js/.png), for more detail, see
+                 https://github.com/swagger-api/swagger-ui/blob/master/dist/
+              2. Note that when trying to upgrade swagger-ui, we should also update the version in the file(
+                 kyuubi-server/src/main/scala/org/apache/kyuubi/server/KyuubiRestFrontendService.scala).
+            -->
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>swagger-ui</artifactId>
+                <version>${swagger-ui.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
@@ -992,6 +1014,12 @@
 
             <dependency>
                 <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
                 <artifactId>netty-transport-classes-epoll</artifactId>
                 <version>${netty.version}</version>
             </dependency>
@@ -1013,12 +1041,6 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-transport-native-unix-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
                 <version>${netty.version}</version>
             </dependency>
 
@@ -1172,6 +1194,18 @@
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-stub</artifactId>
                 <version>${grpc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>${protobuf.version}</version>
             </dependency>
 
             <dependency>
@@ -1600,6 +1634,11 @@
                 <groupId>org.apache.kudu</groupId>
                 <artifactId>kudu-client</artifactId>
                 <version>${kudu.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.sf.py4j</groupId>
+                <artifactId>py4j</artifactId>
+                <version>${py4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -2152,6 +2191,7 @@
                 <spark.version>3.1.3</spark.version>
                 <spark.binary.version>3.1</spark.binary.version>
                 <delta.version>1.0.1</delta.version>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
@@ -2165,7 +2205,8 @@
             <properties>
                 <spark.version>3.2.2</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
-                <delta.version>2.0.0</delta.version>
+                <delta.version>2.0.1</delta.version>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
@@ -2177,10 +2218,6 @@
         <profile>
             <id>spark-3.3</id>
             <properties>
-                <delta.version>2.1.0</delta.version>
-                <spark.version>3.3.0</spark.version>
-                <spark.binary.version>3.3</spark.binary.version>
-                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
@@ -2218,10 +2255,19 @@
                 <flink.module.scala.suffix>_${scala.binary.version}</flink.module.scala.suffix>
             </properties>
         </profile>
+
         <profile>
             <id>flink-1.15</id>
             <properties>
                 <flink.version>1.15.2</flink.version>
+                <flink.module.scala.suffix></flink.module.scala.suffix>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>flink-1.16</id>
+            <properties>
+                <flink.version>1.16.0</flink.version>
                 <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
@@ -2266,6 +2312,16 @@
                         <executions>
                             <execution>
                                 <id>source-release-assembly</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>net.nicoulaj.maven.plugins</groupId>
+                        <artifactId>checksum-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>source-release-checksum</id>
                                 <phase>none</phase>
                             </execution>
                         </executions>

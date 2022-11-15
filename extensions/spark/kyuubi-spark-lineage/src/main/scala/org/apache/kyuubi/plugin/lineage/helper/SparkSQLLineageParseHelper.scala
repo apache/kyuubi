@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.lineage.helper
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
@@ -32,7 +33,6 @@ import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, TableC
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
 
-import org.apache.kyuubi.Logging
 import org.apache.kyuubi.plugin.lineage.events.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
@@ -359,7 +359,7 @@ case class SparkSQLLineageParseHelper(sparkSession: SparkSession) extends Lineag
       plan: LogicalPlan): Option[Lineage] = {
     Try(parse(plan)).recover {
       case e: Exception =>
-        warn(s"Extract Statement[$executionId] columns lineage failed.", e)
+        logWarning(s"Extract Statement[$executionId] columns lineage failed.", e)
         throw e
     }.toOption
   }

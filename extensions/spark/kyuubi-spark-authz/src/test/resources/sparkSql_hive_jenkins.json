@@ -279,7 +279,8 @@
         "database": {
           "values": [
             "default",
-            "spark_catalog"
+            "spark_catalog",
+            "iceberg_ns"
           ],
           "isExcludes": false,
           "isRecursive": false
@@ -344,7 +345,59 @@
             }
           ],
           "users": [
-            "bob"
+            "bob",
+            "perm_view_user",
+            "{OWNER}"
+          ],
+          "groups": [],
+          "conditions": [],
+          "delegateAdmin": false
+        }, {
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": false
+            },
+            {
+              "type": "update",
+              "isAllowed": false
+            },
+            {
+              "type": "create",
+              "isAllowed": true
+            },
+            {
+              "type": "drop",
+              "isAllowed": false
+            },
+            {
+              "type": "alter",
+              "isAllowed": false
+            },
+            {
+              "type": "index",
+              "isAllowed": false
+            },
+            {
+              "type": "lock",
+              "isAllowed": false
+            },
+            {
+              "type": "all",
+              "isAllowed": false
+            },
+            {
+              "type": "read",
+              "isAllowed": false
+            },
+            {
+              "type": "write",
+              "isAllowed": false
+            }
+          ],
+          "users": [
+            "default_table_owner",
+            "create_only_user"
           ],
           "groups": [],
           "conditions": [],
@@ -521,6 +574,63 @@
       "guid": "f588a9ed-f7b1-48f7-9d0d-c12cf2b9b7ed",
       "isEnabled": true,
       "version": 26
+    },{
+      "service": "hive_jenkins",
+      "name": "src_key_less_than_20_perm_view",
+      "policyType": 2,
+      "policyPriority": 0,
+      "description": "",
+      "isAuditEnabled": true,
+      "resources": {
+        "database": {
+          "values": [
+            "default"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "perm_view"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
+      },
+      "policyItems": [],
+      "denyPolicyItems": [],
+      "allowExceptions": [],
+      "denyExceptions": [],
+      "dataMaskPolicyItems": [],
+      "rowFilterPolicyItems": [
+        {
+          "rowFilterInfo": {
+            "filterExpr": "key\u003c20"
+          },
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [
+            "perm_view_user"
+          ],
+          "groups": [],
+          "conditions": [],
+          "delegateAdmin": false
+        }
+      ],
+      "serviceType": "hive",
+      "options": {},
+      "validitySchedules": [],
+      "policyLabels": [
+        ""
+      ],
+      "id": 22,
+      "guid": "c240a7ea-9d26-4db2-b925-d5dbe49bd447 \n",
+      "isEnabled": true,
+      "version": 26
     },
     {
       "service": "hive_jenkins",
@@ -652,7 +762,7 @@
     },
     {
       "service": "hive_jenkins",
-      "name": "src_value_hash",
+      "name": "src_value_hash_perm_view",
       "policyType": 1,
       "policyPriority": 0,
       "description": "",
@@ -712,6 +822,70 @@
       ],
       "id": 5,
       "guid": "ed1868a1-bf79-4721-a3d5-6815cc7d4986",
+      "isEnabled": true,
+      "version": 1
+    },{
+      "service": "hive_jenkins",
+      "name": "src_value_hash",
+      "policyType": 1,
+      "policyPriority": 0,
+      "description": "",
+      "isAuditEnabled": true,
+      "resources": {
+        "database": {
+          "values": [
+            "default",
+            "spark_catalog"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "column": {
+          "values": [
+            "value1"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        },
+        "table": {
+          "values": [
+            "perm_view"
+          ],
+          "isExcludes": false,
+          "isRecursive": false
+        }
+      },
+      "policyItems": [],
+      "denyPolicyItems": [],
+      "allowExceptions": [],
+      "denyExceptions": [],
+      "dataMaskPolicyItems": [
+        {
+          "dataMaskInfo": {
+            "dataMaskType": "MASK_HASH"
+          },
+          "accesses": [
+            {
+              "type": "select",
+              "isAllowed": true
+            }
+          ],
+          "users": [
+            "perm_view_user"
+          ],
+          "groups": [],
+          "conditions": [],
+          "delegateAdmin": false
+        }
+      ],
+      "rowFilterPolicyItems": [],
+      "options": {},
+      "validitySchedules": [],
+      "policyLabels": [
+        ""
+      ],
+      "id": 20,
+      "guid": "bfeddeab-50d0-4902-985f-42559efa39c3",
       "isEnabled": true,
       "version": 1
     },

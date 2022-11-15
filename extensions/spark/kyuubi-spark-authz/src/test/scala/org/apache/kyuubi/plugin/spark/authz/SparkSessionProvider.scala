@@ -18,9 +18,12 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import java.nio.file.Files
+import java.security.PrivilegedExceptionAction
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait SparkSessionProvider {
@@ -32,22 +35,35 @@ trait SparkSessionProvider {
   protected val isSparkV33OrGreater: Boolean = isSparkVersionAtLeast("3.3")
 
   protected val extension: SparkSessionExtensions => Unit = _ => Unit
+  protected val sqlExtensions: String = ""
+
+  protected val defaultTableOwner = "default_table_owner"
+
   protected lazy val spark: SparkSession = {
     val metastore = {
-      val path = Files.createTempDirectory("hms")
+      val path = Utils.createTempDir(prefix = "hms")
       Files.delete(path)
       path
     }
-    SparkSession.builder()
+    val ret = SparkSession.builder()
       .master("local")
       .config("spark.ui.enabled", "false")
       .config("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
       .config("spark.sql.catalogImplementation", catalogImpl)
       .config(
         "spark.sql.warehouse.dir",
-        Files.createTempDirectory("spark-warehouse").toString)
+        Utils.createTempDir("spark-warehouse").toString)
+      .config("spark.sql.extensions", sqlExtensions)
       .withExtensions(extension)
       .getOrCreate()
+    if (catalogImpl == "hive") {
+      // Ensure HiveExternalCatalog.client.userName is defaultTableOwner
+      UserGroupInformation.createRemoteUser(defaultTableOwner).doAs(
+        new PrivilegedExceptionAction[Unit] {
+          override def run(): Unit = ret.catalog.listDatabases()
+        })
+    }
+    ret
   }
 
   protected val sql: String => DataFrame = spark.sql

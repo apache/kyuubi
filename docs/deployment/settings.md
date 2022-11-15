@@ -192,6 +192,7 @@ kyuubi.credentials.update.wait.timeout|PT1M|How long to wait until credentials a
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+kyuubi.ctl.batch.log.on.failure.timeout|PT10S|The timeout for fetching remaining batch logs if the batch failed.|duration|1.6.1
 kyuubi.ctl.batch.log.query.interval|PT3S|The interval for fetching batch logs.|duration|1.6.0
 kyuubi.ctl.rest.auth.schema|basic|The authentication schema. Valid values are: basic, spnego.|string|1.6.0
 kyuubi.ctl.rest.base.url|&lt;undefined&gt;|The REST API base URL, which contains the scheme (http:// or https://), host name, port number|string|1.6.0
@@ -222,11 +223,11 @@ kyuubi.engine.deregister.exception.messages||A comma separated list of exception
 kyuubi.engine.deregister.exception.ttl|PT30M|Time to live(TTL) for exceptions pattern specified in kyuubi.engine.deregister.exception.classes and kyuubi.engine.deregister.exception.messages to deregister engines. Once the total error count hits the kyuubi.engine.deregister.job.max.failures within the TTL, an engine will deregister itself and wait for self-terminated. Otherwise, we suppose that the engine has recovered from temporary failures.|duration|1.2.0
 kyuubi.engine.deregister.job.max.failures|4|Number of failures of job before deregistering the engine.|int|1.2.0
 kyuubi.engine.event.json.log.path|file:///tmp/kyuubi/events|The location of all the engine events go for the builtin JSON logger.<ul><li>Local Path: start with 'file://'</li><li>HDFS Path: start with 'hdfs://'</li></ul>|string|1.3.0
-kyuubi.engine.event.loggers|SPARK|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.3.0
+kyuubi.engine.event.loggers|SPARK|A comma separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.3.0
 kyuubi.engine.flink.extra.classpath|&lt;undefined&gt;|The extra classpath for the flink sql engine, for configuring location of hadoop client jars, etc|string|1.6.0
 kyuubi.engine.flink.java.options|&lt;undefined&gt;|The extra java options for the flink sql engine|string|1.6.0
 kyuubi.engine.flink.memory|1g|The heap memory for the flink sql engine|string|1.6.0
-kyuubi.engine.hive.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
+kyuubi.engine.hive.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
 kyuubi.engine.hive.extra.classpath|&lt;undefined&gt;|The extra classpath for the hive query engine, for configuring location of hadoop client jars, etc|string|1.6.0
 kyuubi.engine.hive.java.options|&lt;undefined&gt;|The extra java options for the hive query engine|string|1.6.0
 kyuubi.engine.hive.memory|1g|The heap memory for the hive query engine|string|1.6.0
@@ -243,6 +244,7 @@ kyuubi.engine.jdbc.memory|1g|The heap memory for the jdbc query engine|string|1.
 kyuubi.engine.jdbc.type|&lt;undefined&gt;|The short name of jdbc type|string|1.6.0
 kyuubi.engine.operation.convert.catalog.database.enabled|true|When set to true, The engine converts the JDBC methods of set/get Catalog and set/get Schema to the implementation of different engines|boolean|1.6.0
 kyuubi.engine.operation.log.dir.root|engine_operation_logs|Root directory for query operation log at engine-side.|string|1.4.0
+kyuubi.engine.pool.balance.policy|RANDOM|The balance policy of queries in engine pool.<ul> <li>RANDOM - Randomly use the engine in the pool</li> <li>POLLING - Polling use the engine in the pool</li> </ul>|string|1.7.0
 kyuubi.engine.pool.name|engine-pool|The name of engine pool.|string|1.5.0
 kyuubi.engine.pool.size|-1|The size of engine pool. Note that, if the size is less than 1, the engine pool will not be enabled; otherwise, the size of the engine pool will be min(this, kyuubi.engine.pool.size.threshold).|int|1.4.0
 kyuubi.engine.pool.size.threshold|9|This parameter is introduced as a server-side parameter, and controls the upper limit of the engine pool.|int|1.4.0
@@ -251,8 +253,8 @@ kyuubi.engine.share.level|USER|Engines will be shared in different levels, avail
 kyuubi.engine.share.level.sub.domain|&lt;undefined&gt;|(deprecated) - Using kyuubi.engine.share.level.subdomain instead|string|1.2.0
 kyuubi.engine.share.level.subdomain|&lt;undefined&gt;|Allow end-users to create a subdomain for the share level of an engine. A subdomain is a case-insensitive string values that must be a valid zookeeper sub path. For example, for `USER` share level, an end-user can share a certain engine within a subdomain, not for all of its clients. End-users are free to create multiple engines in the `USER` share level. When disable engine pool, use 'default' if absent.|string|1.4.0
 kyuubi.engine.single.spark.session|false|When set to true, this engine is running in a single session mode. All the JDBC/ODBC connections share the temporary views, function registries, SQL configuration and the current database.|boolean|1.3.0
-kyuubi.engine.spark.event.loggers|SPARK|A comma separated list of engine loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
-kyuubi.engine.trino.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go. We use spark logger by default.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
+kyuubi.engine.spark.event.loggers|SPARK|A comma separated list of engine loggers, where engine/session/operation etc events go.<ul> <li>SPARK: the events will be written to the spark listener bus.</li> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
+kyuubi.engine.trino.event.loggers|JSON|A comma separated list of engine history loggers, where engine/session/operation etc events go.<ul> <li>JSON: the events will be written to the location of kyuubi.engine.event.json.log.path</li> <li>JDBC: to be done</li> <li>CUSTOM: to be done.</li></ul>|seq|1.7.0
 kyuubi.engine.trino.extra.classpath|&lt;undefined&gt;|The extra classpath for the trino query engine, for configuring other libs which may need by the trino engine |string|1.6.0
 kyuubi.engine.trino.java.options|&lt;undefined&gt;|The extra java options for the trino query engine|string|1.6.0
 kyuubi.engine.trino.memory|1g|The heap memory for the trino query engine|string|1.6.0
@@ -265,6 +267,15 @@ kyuubi.engine.user.isolated.spark.session.idle.interval|PT1M|The interval to che
 kyuubi.engine.user.isolated.spark.session.idle.timeout|PT6H|If kyuubi.engine.user.isolated.spark.session is false, we will release the spark session if its corresponding user is inactive after this configured timeout.|duration|1.6.0
 
 
+### Event
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi.event.async.pool.keepalive.time|PT1M|Time(ms) that an idle async thread of the async event handler thread pool will wait for a new task to arrive before terminating|duration|1.7.0
+kyuubi.event.async.pool.size|8|Number of threads in the async event handler thread pool|int|1.7.0
+kyuubi.event.async.pool.wait.queue.size|100|Size of the wait queue for the async event handler thread pool|int|1.7.0
+
+
 ### Frontend
 
 Key | Default | Meaning | Type | Since
@@ -272,7 +283,7 @@ Key | Default | Meaning | Type | Since
 kyuubi.frontend.backoff.slot.length|PT0.1S|(deprecated) Time to back off during login to the thrift frontend service.|duration|1.0.0
 kyuubi.frontend.bind.host|&lt;undefined&gt;|(deprecated) Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.|string|1.0.0
 kyuubi.frontend.bind.port|10009|(deprecated) Port of the machine on which to run the thrift frontend service via binary protocol.|int|1.0.0
-kyuubi.frontend.connection.url.use.hostname|true|When true, frontend services prefer hostname, otherwise, ip address|boolean|1.5.0
+kyuubi.frontend.connection.url.use.hostname|true|When true, frontend services prefer hostname, otherwise, ip address. Note that, the default value is set to `false` when engine running on Kubernetes to prevent potential network issue.|boolean|1.5.0
 kyuubi.frontend.login.timeout|PT20S|(deprecated) Timeout for Thrift clients during login to the thrift frontend service.|duration|1.0.0
 kyuubi.frontend.max.message.size|104857600|(deprecated) Maximum message size in bytes a Kyuubi server will accept.|int|1.0.0
 kyuubi.frontend.max.worker.threads|999|(deprecated) Maximum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.0.0
@@ -287,9 +298,16 @@ kyuubi.frontend.protocols|THRIFT_BINARY|A comma separated list for all frontend 
 kyuubi.frontend.proxy.http.client.ip.header|X-Real-IP|The http header to record the real client ip address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. Note that, because the header value can be specified to any ip address, so it will not be used for authentication.|string|1.6.0
 kyuubi.frontend.rest.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the REST frontend service.|string|1.4.0
 kyuubi.frontend.rest.bind.port|10099|Port of the machine on which to run the REST frontend service.|int|1.4.0
+kyuubi.frontend.ssl.keystore.algorithm|&lt;undefined&gt;|SSL certificate keystore algorithm.|string|1.7.0
+kyuubi.frontend.ssl.keystore.password|&lt;undefined&gt;|SSL certificate keystore password.|string|1.7.0
+kyuubi.frontend.ssl.keystore.path|&lt;undefined&gt;|SSL certificate keystore location.|string|1.7.0
+kyuubi.frontend.ssl.keystore.type|&lt;undefined&gt;|SSL certificate keystore type.|string|1.7.0
 kyuubi.frontend.thrift.backoff.slot.length|PT0.1S|Time to back off during login to the thrift frontend service.|duration|1.4.0
 kyuubi.frontend.thrift.binary.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.|string|1.4.0
 kyuubi.frontend.thrift.binary.bind.port|10009|Port of the machine on which to run the thrift frontend service via binary protocol.|int|1.4.0
+kyuubi.frontend.thrift.binary.ssl.disallowed.protocols|SSLv2,SSLv3|SSL versions to disallow for Kyuubi thrift binary frontend.|seq|1.7.0
+kyuubi.frontend.thrift.binary.ssl.enabled|false|Set this to true for using SSL encryption in thrift binary frontend server.|boolean|1.7.0
+kyuubi.frontend.thrift.binary.ssl.include.ciphersuites||A comma separated list of include SSL cipher suite names for thrift binary frontend.|seq|1.7.0
 kyuubi.frontend.thrift.http.allow.user.substitution|true|Allow alternate user to be specified as part of open connection request when using HTTP transport mode.|boolean|1.6.0
 kyuubi.frontend.thrift.http.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the thrift frontend service via http protocol.|string|1.6.0
 kyuubi.frontend.thrift.http.bind.port|10010|Port of the machine on which to run the thrift frontend service via http protocol.|int|1.6.0
@@ -303,9 +321,10 @@ kyuubi.frontend.thrift.http.max.idle.time|PT30M|Maximum idle time for a connecti
 kyuubi.frontend.thrift.http.path|cliservice|Path component of URL endpoint when in HTTP mode.|string|1.6.0
 kyuubi.frontend.thrift.http.request.header.size|6144|Request header size in bytes, when using HTTP transport mode. Jetty defaults used.|int|1.6.0
 kyuubi.frontend.thrift.http.response.header.size|6144|Response header size in bytes, when using HTTP transport mode. Jetty defaults used.|int|1.6.0
+kyuubi.frontend.thrift.http.ssl.exclude.ciphersuites||A comma separated list of exclude SSL cipher suite names for thrift http frontend.|seq|1.7.0
 kyuubi.frontend.thrift.http.ssl.keystore.password|&lt;undefined&gt;|SSL certificate keystore password.|string|1.6.0
 kyuubi.frontend.thrift.http.ssl.keystore.path|&lt;undefined&gt;|SSL certificate keystore location.|string|1.6.0
-kyuubi.frontend.thrift.http.ssl.protocol.blacklist|SSLv2,SSLv3|SSL Versions to disable when using HTTP transport mode.|string|1.6.0
+kyuubi.frontend.thrift.http.ssl.protocol.blacklist|SSLv2,SSLv3|SSL Versions to disable when using HTTP transport mode.|seq|1.6.0
 kyuubi.frontend.thrift.http.use.SSL|false|Set this to true for using SSL encryption in http mode.|boolean|1.6.0
 kyuubi.frontend.thrift.http.xsrf.filter.enabled|false|If enabled, Kyuubi will block any requests made to it over http if an X-XSRF-HEADER header is not present|boolean|1.6.0
 kyuubi.frontend.thrift.login.timeout|PT20S|Timeout for Thrift clients during login to the thrift frontend service.|duration|1.4.0
@@ -360,7 +379,15 @@ kyuubi.kinit.principal|&lt;undefined&gt;|Name of the Kerberos principal.|string|
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+kyuubi.kubernetes.authenticate.caCertFile|&lt;undefined&gt;|Path to the CA cert file for connecting to the Kubernetes API server over TLS from the kyuubi. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
+kyuubi.kubernetes.authenticate.clientCertFile|&lt;undefined&gt;|Path to the client cert file for connecting to the Kubernetes API server over TLS from the kyuubi. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
+kyuubi.kubernetes.authenticate.clientKeyFile|&lt;undefined&gt;|Path to the client key file for connecting to the Kubernetes API server over TLS from the kyuubi. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
+kyuubi.kubernetes.authenticate.oauthToken|&lt;undefined&gt;|The OAuth token to use when authenticating against the Kubernetes API server. Note that unlike the other authentication options, this must be the exact string value of the token to use for the authentication.|string|1.7.0
+kyuubi.kubernetes.authenticate.oauthTokenFile|&lt;undefined&gt;|Path to the file containing the OAuth token to use when authenticating against the Kubernetes API server. Specify this as a path as opposed to a URI (i.e. do not provide a scheme)|string|1.7.0
 kyuubi.kubernetes.context|&lt;undefined&gt;|The desired context from your kubernetes config file used to configure the K8S client for interacting with the cluster.|string|1.6.0
+kyuubi.kubernetes.master.address|&lt;undefined&gt;|The internal Kubernetes master (API server) address to be used for kyuubi.|string|1.7.0
+kyuubi.kubernetes.namespace|default|The namespace that will be used for running the kyuubi pods and find engines.|string|1.7.0
+kyuubi.kubernetes.trust.certificates|false|If set to true then client can submit to kubernetes cluster only with token|boolean|1.7.0
 
 
 ### Metadata
@@ -435,6 +462,7 @@ Key | Default | Meaning | Type | Since
 kyuubi.session.check.interval|PT5M|The check interval for session timeout.|duration|1.0.0
 kyuubi.session.conf.advisor|&lt;undefined&gt;|A config advisor plugin for Kyuubi Server. This plugin can provide some custom configs for different user or session configs and overwrite the session configs before open a new session. This config value should be a class which is a child of 'org.apache.kyuubi.plugin.SessionConfAdvisor' which has zero-arg constructor.|string|1.5.0
 kyuubi.session.conf.ignore.list||A comma separated list of ignored keys. If the client connection contains any of them, the key and the corresponding value will be removed silently during engine bootstrap and connection setup. Note that this rule is for server-side protection defined via administrators to prevent some essential configs from tampering but will not forbid users to set dynamic configurations via SET syntax.|seq|1.2.0
+kyuubi.session.conf.profile|&lt;undefined&gt;|Specify a profile to load session-level configurations from `$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf`. This configuration will be ignored if the file does not exist. This configuration only has effect when `kyuubi.session.conf.advisor` is set as `org.apache.kyuubi.session.FileSessionConfAdvisor`.|string|1.7.0
 kyuubi.session.conf.restrict.list||A comma separated list of restricted keys. If the client connection contains any of them, the connection will be rejected explicitly during engine bootstrap and connection setup. Note that this rule is for server-side protection defined via administrators to prevent some essential configs from tampering but will not forbid users to set dynamic configurations via SET syntax.|seq|1.2.0
 kyuubi.session.engine.alive.probe.enabled|false|Whether to enable the engine alive probe, it true, we will create a companion thrift client that sends simple request to check whether the engine is keep alive.|boolean|1.6.0
 kyuubi.session.engine.alive.probe.interval|PT10S|The interval for engine alive probe.|duration|1.6.0
@@ -448,6 +476,8 @@ kyuubi.session.engine.initialize.timeout|PT3M|Timeout for starting the backgroun
 kyuubi.session.engine.launch.async|true|When opening kyuubi session, whether to launch backend engine asynchronously. When true, the Kyuubi server will set up the connection with the client without delay as the backend engine will be created asynchronously.|boolean|1.4.0
 kyuubi.session.engine.log.timeout|PT24H|If we use Spark as the engine then the session submit log is the console output of spark-submit. We will retain the session submit log until over the config value.|duration|1.1.0
 kyuubi.session.engine.login.timeout|PT15S|The timeout of creating the connection to remote sql query engine|duration|1.0.0
+kyuubi.session.engine.open.max.attempts|9|The number of times an open engine will retry when encountering a special error.|int|1.7.0
+kyuubi.session.engine.open.retry.wait|PT10S|How long to wait before retrying to open engine after a failure.|duration|1.7.0
 kyuubi.session.engine.share.level|USER|(deprecated) - Using kyuubi.engine.share.level instead|string|1.0.0
 kyuubi.session.engine.spark.main.resource|&lt;undefined&gt;|The package used to create Spark SQL engine remote application. If it is undefined, Kyuubi will use the default|string|1.0.0
 kyuubi.session.engine.spark.max.lifetime|PT0S|Max lifetime for spark engine, the engine will self-terminate when it reaches the end of life. 0 or negative means not to self-terminate.|duration|1.6.0

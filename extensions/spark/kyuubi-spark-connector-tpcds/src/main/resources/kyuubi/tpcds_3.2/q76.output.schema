@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`channel` STRING NOT NULL,`col_name` STRING NOT NULL,`d_year` INT,`d_qoy` INT,`i_category` STRING,`sales_cnt` BIGINT NOT NULL,`sales_amt` DECIMAL(17,2)
+channel STRING NOT NULL,col_name STRING NOT NULL,d_year INT,d_qoy INT,i_category STRING,sales_cnt BIGINT NOT NULL,sales_amt DECIMAL(17,2)

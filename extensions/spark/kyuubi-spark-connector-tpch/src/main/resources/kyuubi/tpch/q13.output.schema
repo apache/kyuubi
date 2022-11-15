@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`c_count` BIGINT NOT NULL,`custdist` BIGINT NOT NULL
+c_count BIGINT NOT NULL,custdist BIGINT NOT NULL

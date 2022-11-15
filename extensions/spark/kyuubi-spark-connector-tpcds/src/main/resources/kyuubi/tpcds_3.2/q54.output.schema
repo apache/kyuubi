@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`segment` INT,`num_customers` BIGINT NOT NULL,`segment_base` INT
+segment INT,num_customers BIGINT NOT NULL,segment_base INT

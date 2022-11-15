@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`c_name` STRING,`c_custkey` BIGINT,`o_orderkey` BIGINT,`o_orderdate` DATE,`o_totalprice` DOUBLE,`sum(l_quantity)` DOUBLE
+c_name STRING,c_custkey BIGINT,o_orderkey BIGINT,o_orderdate DATE,o_totalprice DOUBLE,`sum(l_quantity)` DOUBLE

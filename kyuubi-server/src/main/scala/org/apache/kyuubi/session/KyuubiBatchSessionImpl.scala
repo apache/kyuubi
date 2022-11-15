@@ -31,7 +31,6 @@ import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
 
@@ -115,12 +114,10 @@ class KyuubiBatchSessionImpl(
       val metaData = Metadata(
         identifier = handle.identifier.toString,
         sessionType = sessionType,
-        // TODO: support real user
-        realUser = user,
+        realUser = realUser,
         username = user,
         ipAddress = ipAddress,
-        // TODO: support to transfer fe connection url when opening session
-        kyuubiInstance = KyuubiRestFrontendService.getConnectionUrl,
+        kyuubiInstance = connectionUrl,
         state = OperationState.PENDING.toString,
         resource = batchRequest.getResource,
         className = batchRequest.getClassName,

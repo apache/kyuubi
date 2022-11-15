@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.nio.file.Files
 import java.sql.DatabaseMetaData
 import java.util.UUID
 
@@ -29,6 +28,7 @@ import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
@@ -69,13 +69,185 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   }
 
   test("get columns") {
-    withJdbcStatement() { statement =>
-      val exceptionMsg = intercept[Exception](statement.getConnection.getMetaData.getColumns(
-        null,
-        null,
-        null,
-        null)).getMessage
-      assert(exceptionMsg.contains(s"Unsupported Operation type GetColumns"))
+    val tableName = "flink_get_col_operation"
+
+    withJdbcStatement(tableName) { statement =>
+      statement.execute(
+        s"""
+           | create table $tableName (
+           |  c0 boolean,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer,
+           |  c4 bigint,
+           |  c5 float,
+           |  c6 double,
+           |  c7 decimal(38,20),
+           |  c8 decimal(10,2),
+           |  c9 string,
+           |  c10 array<bigint>,
+           |  c11 array<string>,
+           |  c12 map<smallint, tinyint>,
+           |  c13 date,
+           |  c14 timestamp,
+           |  c15 binary
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      val metaData = statement.getConnection.getMetaData
+
+      Seq("%", null, ".*", "c.*") foreach { columnPattern =>
+        val rowSet = metaData.getColumns("", "", tableName, columnPattern)
+
+        import java.sql.Types._
+        val expectedJavaTypes = Seq(
+          BOOLEAN,
+          TINYINT,
+          SMALLINT,
+          INTEGER,
+          BIGINT,
+          FLOAT,
+          DOUBLE,
+          DECIMAL,
+          DECIMAL,
+          VARCHAR,
+          ARRAY,
+          ARRAY,
+          JAVA_OBJECT,
+          DATE,
+          TIMESTAMP,
+          BINARY)
+
+        val expectedSqlType = Seq(
+          "BOOLEAN",
+          "TINYINT",
+          "SMALLINT",
+          "INT",
+          "BIGINT",
+          "FLOAT",
+          "DOUBLE",
+          "DECIMAL(38, 20)",
+          "DECIMAL(10, 2)",
+          "STRING",
+          "ARRAY<BIGINT>",
+          "ARRAY<STRING>",
+          "MAP<SMALLINT, TINYINT>",
+          "DATE",
+          "TIMESTAMP(6)",
+          "BINARY(1)")
+
+        var pos = 0
+
+        while (rowSet.next()) {
+          assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+          assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+          assert(rowSet.getString(TABLE_NAME) === tableName)
+          assert(rowSet.getString(COLUMN_NAME) === s"c$pos")
+          assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))
+          assert(rowSet.getString(TYPE_NAME) === expectedSqlType(pos))
+          assert(rowSet.getInt(BUFFER_LENGTH) === 0)
+          assert(rowSet.getInt(NULLABLE) === 1)
+          assert(rowSet.getInt(ORDINAL_POSITION) === pos)
+          assert(rowSet.getString(IS_NULLABLE) === "YES")
+          assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
+          pos += 1
+        }
+
+        assert(pos === expectedSqlType.length, "all columns should have been verified")
+      }
+      val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
+      assert(!rowSet.next())
+    }
+  }
+
+  test("get primary keys") {
+    val tableName1 = "flink_get_primary_keys_operation1"
+    val tableName2 = "flink_get_primary_keys_operation2"
+    val tableName3 = "flink_get_primary_keys_operation3"
+
+    withJdbcStatement(tableName1, tableName2, tableName3) { statement =>
+      statement.execute(
+        s"""
+           | create table $tableName1 (
+           |  id1 int,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer,
+           |  CONSTRAINT pk_con primary key(id1) NOT ENFORCED
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      statement.execute(
+        s"""
+           | create table $tableName2 (
+           |  id1 int,
+           |  id2 int,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer,
+           |  CONSTRAINT pk_con primary key(id1,id2) NOT ENFORCED
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      statement.execute(
+        s"""
+           | create table $tableName3 (
+           |  id1 int,
+           |  id2 int,
+           |  c1 tinyint,
+           |  c2 smallint,
+           |  c3 integer
+           | )
+           | with (
+           |   'connector' = 'filesystem'
+           | )
+    """.stripMargin)
+
+      val metaData = statement.getConnection.getMetaData
+
+      Seq(tableName1, tableName2, tableName3) foreach { tableName =>
+        val rowSet = metaData.getPrimaryKeys("", "", tableName)
+
+        if (tableName.equals(tableName3)) {
+          assert(!rowSet.next())
+        } else {
+          if (tableName.equals(tableName1)) {
+            assert(rowSet.next())
+            assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+            assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+            assert(rowSet.getString(TABLE_NAME) === tableName)
+            assert(rowSet.getString(COLUMN_NAME) === "id1")
+            assert(rowSet.getInt(KEY_SEQ) === 1)
+            assert(rowSet.getString(PK_NAME) === "pk_con")
+          } else if (tableName.equals(tableName2)) {
+            assert(rowSet.next())
+            assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+            assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+            assert(rowSet.getString(TABLE_NAME) === tableName)
+            assert(rowSet.getString(COLUMN_NAME) === "id1")
+            assert(rowSet.getInt(KEY_SEQ) === 1)
+            assert(rowSet.getString(PK_NAME) === "pk_con")
+
+            assert(rowSet.next())
+            assert(rowSet.getString(TABLE_CAT) === "default_catalog")
+            assert(rowSet.getString(TABLE_SCHEM) === "default_database")
+            assert(rowSet.getString(TABLE_NAME) === tableName)
+            assert(rowSet.getString(COLUMN_NAME) === "id2")
+            assert(rowSet.getInt(KEY_SEQ) === 2)
+            assert(rowSet.getString(PK_NAME) === "pk_con")
+          }
+        }
+
+      }
     }
   }
 
@@ -915,7 +1087,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   test("execute statement - add/remove/show jar") {
     val jarName = s"newly-added-${UUID.randomUUID()}.jar"
     val newJar = TestUserClassLoaderJar.createJarFile(
-      Files.createTempDirectory("add-jar-test").toFile,
+      Utils.createTempDir("add-jar-test").toFile,
       jarName,
       GENERATED_UDF_CLASS,
       GENERATED_UDF_CODE).toPath

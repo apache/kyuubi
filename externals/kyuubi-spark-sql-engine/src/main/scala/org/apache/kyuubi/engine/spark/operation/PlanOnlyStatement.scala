@@ -60,6 +60,11 @@ class PlanOnlyStatement(
     } else result.schema
   }
 
+  override protected def beforeRun(): Unit = {
+    OperationLog.setCurrentOperationLog(operationLog)
+    super.beforeRun()
+  }
+
   override protected def runInternal(): Unit = withLocalProperties {
     try {
       SQLConf.withExistingConf(spark.sessionState.conf) {

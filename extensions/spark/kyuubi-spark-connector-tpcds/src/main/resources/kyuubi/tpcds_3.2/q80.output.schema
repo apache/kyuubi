@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`channel` STRING,`id` STRING,`sales` DECIMAL(27,2),`returns` DECIMAL(32,2),`profit` DECIMAL(33,2)
+channel STRING,id STRING,sales DECIMAL(27,2),returns DECIMAL(32,2),profit DECIMAL(33,2)

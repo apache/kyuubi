@@ -26,7 +26,6 @@ import scala.concurrent.duration.Duration
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.TException
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.transport.TSocket
 
@@ -426,33 +425,6 @@ class KyuubiSyncThriftClient private (
 }
 
 private[kyuubi] object KyuubiSyncThriftClient extends Logging {
-
-  private def withRetryingRequestNoLock[T](
-      block: => T,
-      request: String,
-      maxAttempts: Int,
-      remoteEngineBroken: Boolean,
-      isConnectionValid: () => Boolean): (T, Boolean) = {
-    var attemptCount = 1
-
-    var resp: T = null.asInstanceOf[T]
-    var shouldResetEngineBroken = false;
-    while (attemptCount <= maxAttempts && resp == null) {
-      try {
-        resp = block
-        shouldResetEngineBroken = true
-      } catch {
-        case e: TException if attemptCount < maxAttempts && isConnectionValid() =>
-          warn(s"Failed to execute $request after $attemptCount/$maxAttempts times, retrying", e)
-          attemptCount += 1
-          Thread.sleep(100)
-        case e: Throwable =>
-          error(s"Failed to execute $request after $attemptCount/$maxAttempts times, aborting", e)
-          throw e
-      }
-    }
-    (resp, shouldResetEngineBroken)
-  }
 
   private def createTProtocol(
       user: String,

@@ -144,7 +144,7 @@ class SQLOperationListener(
 
   override def onTaskStart(taskStart: SparkListenerTaskStart): Unit = activeStages.synchronized {
     val stageAttempt = StageAttempt(taskStart.stageId, taskStart.stageAttemptId)
-    if (activeStages.contains(stageAttempt)) {
+    if (activeStages.containsKey(stageAttempt)) {
       activeStages.get(stageAttempt).numActiveTasks += 1
       super.onTaskStart(taskStart)
     }
@@ -152,7 +152,7 @@ class SQLOperationListener(
 
   override def onTaskEnd(taskEnd: SparkListenerTaskEnd): Unit = activeStages.synchronized {
     val stageAttempt = StageAttempt(taskEnd.stageId, taskEnd.stageAttemptId)
-    if (activeStages.contains(stageAttempt)) {
+    if (activeStages.containsKey(stageAttempt)) {
       activeStages.get(stageAttempt).numActiveTasks -= 1
       if (taskEnd.reason == org.apache.spark.Success) {
         activeStages.get(stageAttempt).numCompleteTasks += 1

@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`rnk` INT NOT NULL,`best_performing` STRING,`worst_performing` STRING
+rnk INT NOT NULL,best_performing STRING,worst_performing STRING

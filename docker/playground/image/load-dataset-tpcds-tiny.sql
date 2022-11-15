@@ -16,9 +16,9 @@
 
 SET tiny_schema=tpcds.tiny;
 
-CREATE DATABASE IF NOT EXISTS tpcds_tiny;
+CREATE DATABASE IF NOT EXISTS spark_catalog.tpcds_tiny;
 
-USE tpcds_tiny;
+USE spark_catalog.tpcds_tiny;
 
 --
 -- Name: catalog_sales; Type: TABLE; Tablespace:

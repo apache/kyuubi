@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`nation` STRING,`o_year` INT,`sum_profit` DOUBLE
+nation STRING,o_year INT,sum_profit DOUBLE

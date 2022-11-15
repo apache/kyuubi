@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`c_last_name` STRING,`c_first_name` STRING,`substr(s_city, 1, 30)` STRING,`ss_ticket_number` BIGINT NOT NULL,`amt` DECIMAL(17,2),`profit` DECIMAL(17,2)
+c_last_name STRING,c_first_name STRING,`substr(s_city, 1, 30)` STRING,ss_ticket_number BIGINT NOT NULL,amt DECIMAL(17,2),profit DECIMAL(17,2)

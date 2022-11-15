@@ -346,7 +346,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
       namespace: Array[String],
       cascade: Boolean): Boolean = namespace match {
     case Array(db) if catalog.databaseExists(db) =>
-      if (catalog.listTables(db).nonEmpty) {
+      if (catalog.listTables(db).nonEmpty && !cascade) {
         throw new IllegalStateException(s"Namespace ${namespace.quoted} is not empty")
       }
       catalog.dropDatabase(db, ignoreIfNotExists = false, cascade)

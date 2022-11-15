@@ -16,9 +16,9 @@
 
 SET tiny_schema=tpch.tiny;
 
-CREATE DATABASE IF NOT EXISTS tpch_tiny;
+CREATE DATABASE IF NOT EXISTS spark_catalog.tpch_tiny;
 
-USE tpch_tiny;
+USE spark_catalog.tpch_tiny;
 
 --
 -- Name: customer; Type: TABLE; Tablespace:

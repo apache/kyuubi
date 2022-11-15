@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`o_year` INT,`mkt_share` DOUBLE
+o_year INT,mkt_share DOUBLE

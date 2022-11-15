@@ -99,6 +99,8 @@ class OperationLog(path: Path) {
     try {
       extraReaders += Files.newBufferedReader(path, StandardCharsets.UTF_8)
       extraPaths += path
+      Option(seekableReader).foreach(_.close)
+      seekableReader = null
     } catch {
       case _: IOException =>
     }

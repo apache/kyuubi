@@ -40,7 +40,7 @@ object FlinkEngineUtils extends Logging {
   val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options);
 
   val SUPPORTED_FLINK_VERSIONS: Array[SemanticVersion] =
-    Array("1.14", "1.15").map(SemanticVersion.apply)
+    Array("1.14", "1.15", "1.16").map(SemanticVersion.apply)
 
   def checkFlinkVersion(): Unit = {
     val flinkVersion = EnvironmentInformation.getVersion

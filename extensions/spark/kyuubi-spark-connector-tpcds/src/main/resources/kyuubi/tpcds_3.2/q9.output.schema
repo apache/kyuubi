@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`bucket1` DECIMAL(11,6),`bucket2` DECIMAL(11,6),`bucket3` DECIMAL(11,6),`bucket4` DECIMAL(11,6),`bucket5` DECIMAL(11,6)
+bucket1 DECIMAL(11,6),bucket2 DECIMAL(11,6),bucket3 DECIMAL(11,6),bucket4 DECIMAL(11,6),bucket5 DECIMAL(11,6)

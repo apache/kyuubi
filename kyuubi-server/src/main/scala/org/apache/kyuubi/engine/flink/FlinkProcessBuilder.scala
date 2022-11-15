@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
 import java.nio.file.{Files, Paths}
-import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -55,6 +54,9 @@ class FlinkProcessBuilder(
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
+  override def env: Map[String, String] = conf.getEnvs +
+    (FLINK_PROXY_USER_KEY -> proxyUser)
+
   override protected val commands: Array[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     val buffer = new ArrayBuffer[String]()
@@ -68,7 +70,7 @@ class FlinkProcessBuilder(
     }
 
     buffer += "-cp"
-    val classpathEntries = new util.LinkedHashSet[String]
+    val classpathEntries = new java.util.LinkedHashSet[String]
     // flink engine runtime jar
     mainResource.foreach(classpathEntries.add)
     // flink sql client jar
@@ -131,4 +133,5 @@ object FlinkProcessBuilder {
   final val APP_KEY = "yarn.application.name"
   final val TAG_KEY = "yarn.tags"
   final val FLINK_HADOOP_CLASSPATH_KEY = "FLINK_HADOOP_CLASSPATH"
+  final val FLINK_PROXY_USER_KEY = "HADOOP_PROXY_USER"
 }

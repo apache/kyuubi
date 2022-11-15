@@ -69,7 +69,7 @@ Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
-limitations under the License.
+limitations under the License
 '''
 
 author = 'Kent Yao'
@@ -117,13 +117,16 @@ html_theme_options = {
     "repository_branch": "master",
     "path_to_docs": "docs",
     "logo_only": True,
-    "home_page_in_toc": True,
+    "home_page_in_toc": False,
+    "show_navbar_depth": 1,
     "show_toc_level": 2,
     "announcement": "&#129418; Welcome to Kyuubi’s online documentation &#x2728;, v" + release,
+    "toc_title": "",
+    "extra_navbar": "Version " + release,
 }
 
-html_logo = 'imgs/kyuubi_logo.png'
-html_favicon = 'imgs/kyuubi_logo_red.png'
+html_logo = 'imgs/logo.png'
+html_favicon = 'imgs/logo_red_short.png'
 html_title = 'Apache Kyuubi'
 
 pygments_style = 'sphinx'

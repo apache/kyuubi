@@ -55,7 +55,7 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     super.afterAll()
   }
 
-  private def errorMessage(
+  protected def errorMessage(
       privilege: String,
       resource: String = "default/src",
       user: String = UserGroupInformation.getCurrentUser.getShortUserName): String = {
@@ -286,6 +286,44 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
   }
 
+  test("[KYUUBI #3581]: row level filter on permanent view") {
+    assume(isSparkV31OrGreater)
+
+    val db = "default"
+    val table = "src"
+    val permView = "perm_view"
+    val col = "key"
+    val create = s"CREATE TABLE IF NOT EXISTS $db.$table ($col int, value int) USING $format"
+    val createView =
+      s"CREATE OR REPLACE VIEW $db.$permView" +
+        s" AS SELECT * FROM $db.$table"
+
+    withCleanTmpResources(Seq(
+      (s"$db.$table", "table"),
+      (s"$db.$permView", "view"))) {
+      doAs("admin", assert(Try { sql(create) }.isSuccess))
+      doAs("admin", assert(Try { sql(createView) }.isSuccess))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 1, 1"))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 20, 2"))
+      doAs("admin", sql(s"INSERT INTO $db.$table SELECT 30, 3"))
+
+      Seq(
+        s"SELECT value FROM $db.$permView",
+        s"SELECT value as key FROM $db.$permView",
+        s"SELECT max(value) FROM $db.$permView",
+        s"SELECT coalesce(max(value), 1) FROM $db.$permView",
+        s"SELECT value FROM $db.$permView WHERE value in (SELECT value as key FROM $db.$permView)")
+        .foreach { q =>
+          doAs(
+            "perm_view_user", {
+              withClue(q) {
+                assert(sql(q).collect() === Seq(Row(1)))
+              }
+            })
+        }
+    }
+  }
+
   test("data masking") {
     val db = "default"
     val table = "src"
@@ -350,6 +388,49 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           assert(sql(s"SELECT value1 FROM $db.${table}2").collect() ===
             Seq(Row(DigestUtils.md5Hex("1"))))
         })
+    }
+  }
+
+  test("[KYUUBI #3581]: data masking on permanent view") {
+    assume(isSparkV31OrGreater)
+
+    val db = "default"
+    val table = "src"
+    val permView = "perm_view"
+    val col = "key"
+    val create =
+      s"CREATE TABLE IF NOT EXISTS $db.$table" +
+        s" ($col int, value1 int, value2 string)" +
+        s" USING $format"
+
+    val createView =
+      s"CREATE OR REPLACE VIEW $db.$permView" +
+        s" AS SELECT * FROM $db.$table"
+
+    withCleanTmpResources(Seq(
+      (s"$db.$table", "table"),
+      (s"$db.$permView", "view"))) {
+      doAs("admin", assert(Try { sql(create) }.isSuccess))
+      doAs("admin", assert(Try { sql(createView) }.isSuccess))
+      doAs(
+        "admin",
+        sql(
+          s"INSERT INTO $db.$table SELECT 1, 1, 'hello'"))
+
+      Seq(
+        s"SELECT value1, value2 FROM $db.$permView")
+        .foreach { q =>
+          doAs(
+            "perm_view_user", {
+              withClue(q) {
+                assert(sql(q).collect() ===
+                  Seq(
+                    Row(
+                      DigestUtils.md5Hex("1"),
+                      "hello")))
+              }
+            })
+        }
     }
   }
 
@@ -782,6 +863,33 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs("admin", sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
         doAs("someone", sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
       }
+    }
+  }
+
+  test("[KYUUBI #3608] Support {OWNER} variable for queries") {
+    val db = "default"
+    val table = "owner_variable"
+
+    val select = s"SELECT key FROM $db.$table"
+
+    withCleanTmpResources(Seq((s"$db.$table", "table"))) {
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(s"CREATE TABLE $db.$table (key int, value int) USING $format")
+        }.isSuccess))
+
+      doAs(
+        defaultTableOwner,
+        assert(Try {
+          sql(select).collect()
+        }.isSuccess))
+
+      doAs(
+        "create_only_user", {
+          val e = intercept[AccessControlException](sql(select).collect())
+          assert(e.getMessage === errorMessage("select", s"$db/$table/key"))
+        })
     }
   }
 }

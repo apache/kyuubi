@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`c_last_name` STRING,`c_first_name` STRING,`c_salutation` STRING,`c_preferred_cust_flag` STRING,`ss_ticket_number` BIGINT NOT NULL,`cnt` BIGINT NOT NULL
+c_last_name STRING,c_first_name STRING,c_salutation STRING,c_preferred_cust_flag STRING,ss_ticket_number BIGINT NOT NULL,cnt BIGINT NOT NULL

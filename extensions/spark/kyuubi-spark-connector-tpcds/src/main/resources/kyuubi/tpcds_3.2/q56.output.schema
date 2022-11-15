@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`i_item_id` STRING NOT NULL,`total_sales` DECIMAL(27,2)
+i_item_id STRING NOT NULL,total_sales DECIMAL(27,2)

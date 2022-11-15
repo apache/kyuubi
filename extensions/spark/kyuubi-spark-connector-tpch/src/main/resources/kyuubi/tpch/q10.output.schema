@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`c_custkey` BIGINT,`c_name` STRING,`revenue` DOUBLE,`c_acctbal` DOUBLE,`n_name` STRING,`c_address` STRING,`c_phone` STRING,`c_comment` STRING
+c_custkey BIGINT,c_name STRING,revenue DOUBLE,c_acctbal DOUBLE,n_name STRING,c_address STRING,c_phone STRING,c_comment STRING

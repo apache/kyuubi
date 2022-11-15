@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`ty_channel` STRING NOT NULL,`ty_brand` INT,`ty_class` INT,`ty_category` INT,`ty_sales` DECIMAL(28,2),`ty_number_sales` BIGINT NOT NULL,`ly_channel` STRING NOT NULL,`ly_brand` INT,`ly_class` INT,`ly_category` INT,`ly_sales` DECIMAL(28,2),`ly_number_sales` BIGINT NOT NULL
+ty_channel STRING NOT NULL,ty_brand INT,ty_class INT,ty_category INT,ty_sales DECIMAL(28,2),ty_number_sales BIGINT NOT NULL,ly_channel STRING NOT NULL,ly_brand INT,ly_class INT,ly_category INT,ly_sales DECIMAL(28,2),ly_number_sales BIGINT NOT NULL

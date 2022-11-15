@@ -30,6 +30,7 @@ import org.apache.flink.types.Row
 
 import org.apache.kyuubi.engine.flink.result.{ResultSet, ResultSetUtil}
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil.successResultSet
+import org.apache.kyuubi.reflection.DynMethods
 
 object OperationUtils {
 
@@ -124,7 +125,11 @@ object OperationUtils {
       addJarOperation: AddJarOperation,
       executor: Executor,
       sessionId: String): ResultSet = {
-    executor.addJar(sessionId, addJarOperation.getPath)
+    // Removed by FLINK-27790
+    val addJar = DynMethods.builder("addJar")
+      .impl(executor.getClass, classOf[String], classOf[String])
+      .build(executor)
+    addJar.invoke[Void](sessionId, addJarOperation.getPath)
     successResultSet
   }
 
@@ -132,7 +137,7 @@ object OperationUtils {
    * Runs a RemoveJarOperation with the executor. Only jars added by AddJarOperation could
    * be removed.
    *
-   * @param removeJarOperation Add-jar operation.
+   * @param removeJarOperation Remove-jar operation.
    * @param executor A gateway for communicating with Flink and other external systems.
    * @param sessionId Id of the session.
    * @return A ResultSet of RemoveJarOperation execution.
@@ -157,7 +162,11 @@ object OperationUtils {
       showJarsOperation: ShowJarsOperation,
       executor: Executor,
       sessionId: String): ResultSet = {
-    val jars = executor.listJars(sessionId)
+    // Removed by FLINK-27790
+    val listJars = DynMethods.builder("listJars")
+      .impl(executor.getClass, classOf[String])
+      .build(executor)
+    val jars = listJars.invoke[util.List[String]](sessionId)
     ResultSetUtil.stringListToResultSet(jars.asScala.toList, "jar")
   }
 }

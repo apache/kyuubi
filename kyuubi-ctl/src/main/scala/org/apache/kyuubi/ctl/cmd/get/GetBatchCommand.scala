@@ -18,9 +18,9 @@ package org.apache.kyuubi.ctl.cmd.get
 
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.Batch
-import org.apache.kyuubi.ctl.CliConfig
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.Command
+import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.Render
 
 class GetBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {

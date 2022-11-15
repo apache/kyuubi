@@ -379,6 +379,57 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_BIND_HOST)
 
+  val FRONTEND_THRIFT_BINARY_SSL_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.enabled")
+      .doc("Set this to true for using SSL encryption in thrift binary frontend server.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FRONTEND_SSL_KEYSTORE_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.path")
+      .doc("SSL certificate keystore location.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_KEYSTORE_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.password")
+      .doc("SSL certificate keystore password.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_KEYSTORE_TYPE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.type")
+      .doc("SSL certificate keystore type.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_SSL_KEYSTORE_ALGORITHM: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.ssl.keystore.algorithm")
+      .doc("SSL certificate keystore algorithm.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val FRONTEND_THRIFT_BINARY_SSL_DISALLOWED_PROTOCOLS: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.disallowed.protocols")
+      .doc("SSL versions to disallow for Kyuubi thrift binary frontend.")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Seq("SSLv2", "SSLv3"))
+
+  val FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.thrift.binary.ssl.include.ciphersuites")
+      .doc("A comma separated list of include SSL cipher suite names for thrift binary frontend.")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
   @deprecated("using kyuubi.frontend.thrift.binary.bind.port instead", "1.4.0")
   val FRONTEND_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.bind.port")
     .doc("(deprecated) Port of the machine on which to run the thrift frontend service " +
@@ -584,6 +635,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.thrift.http.ssl.keystore.path")
       .doc("SSL certificate keystore location.")
       .version("1.6.0")
+      .withAlternative("kyuubi.frontend.ssl.keystore.path")
       .stringConf
       .createOptional
 
@@ -591,15 +643,25 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.thrift.http.ssl.keystore.password")
       .doc("SSL certificate keystore password.")
       .version("1.6.0")
+      .withAlternative("kyuubi.frontend.ssl.keystore.password")
       .stringConf
       .createOptional
 
-  val FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST: ConfigEntry[String] =
+  val FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.frontend.thrift.http.ssl.protocol.blacklist")
       .doc("SSL Versions to disable when using HTTP transport mode.")
       .version("1.6.0")
       .stringConf
-      .createWithDefault("SSLv2,SSLv3")
+      .toSequence()
+      .createWithDefault(Seq("SSLv2", "SSLv3"))
+
+  val FRONTEND_THRIFT_HTTP_SSL_EXCLUDE_CIPHER_SUITES: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.thrift.http.ssl.exclude.ciphersuites")
+      .doc("A comma separated list of exclude SSL cipher suite names for thrift http frontend.")
+      .version("1.7.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
 
   val FRONTEND_THRIFT_HTTP_ALLOW_USER_SUBSTITUTION: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.thrift.http.allow.user.substitution")
@@ -828,6 +890,80 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
+  val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.context")
+      .doc("The desired context from your kubernetes config file used to configure the K8S " +
+        "client for interacting with the cluster.")
+      .version("1.6.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_NAMESPACE: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.namespace")
+      .doc("The namespace that will be used for running the kyuubi pods and find engines.")
+      .version("1.7.0")
+      .stringConf
+      .createWithDefault("default")
+
+  val KUBERNETES_MASTER: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.master.address")
+      .doc("The internal Kubernetes master (API server) address to be used for kyuubi.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.oauthTokenFile")
+      .doc("Path to the file containing the OAuth token to use when authenticating against " +
+        "the Kubernetes API server. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.oauthToken")
+      .doc("The OAuth token to use when authenticating against the Kubernetes API server. " +
+        "Note that unlike the other authentication options, this must be the exact string value " +
+        "of the token to use for the authentication.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.clientKeyFile")
+      .doc("Path to the client key file for connecting to the Kubernetes API server " +
+        "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.clientCertFile")
+      .doc("Path to the client cert file for connecting to the Kubernetes API server " +
+        "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_AUTHENTICATE_CA_CERT_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.authenticate.caCertFile")
+      .doc("Path to the CA cert file for connecting to the Kubernetes API server " +
+        "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
+        "(i.e. do not provide a scheme)")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val KUBERNETES_TRUST_CERTIFICATES: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.trust.certificates")
+      .doc("If set to true then client can submit to kubernetes cluster only with token")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -854,6 +990,17 @@ object KyuubiConf {
       .doc("The package used to create Spark SQL engine remote application. If it is undefined," +
         " Kyuubi will use the default")
       .version("1.0.0")
+      .stringConf
+      .createOptional
+
+  val SESSION_CONF_PROFILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.session.conf.profile")
+      .doc("Specify a profile to load session-level configurations from " +
+        "`$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf`. " +
+        "This configuration will be ignored if the file does not exist. " +
+        "This configuration only has effect when `kyuubi.session.conf.advisor` " +
+        "is set as `org.apache.kyuubi.session.FileSessionConfAdvisor`.")
+      .version("1.7.0")
       .stringConf
       .createOptional
 
@@ -954,6 +1101,20 @@ object KyuubiConf {
       .version("1.6.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(120).toMillis)
+
+  val ENGINE_OPEN_MAX_ATTEMPTS: ConfigEntry[Int] =
+    buildConf("kyuubi.session.engine.open.max.attempts")
+      .doc("The number of times an open engine will retry when encountering a special error.")
+      .version("1.7.0")
+      .intConf
+      .createWithDefault(9)
+
+  val ENGINE_OPEN_RETRY_WAIT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.open.retry.wait")
+      .doc("How long to wait before retrying to open engine after a failure.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
 
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
@@ -1328,7 +1489,9 @@ object KyuubiConf {
 
   val FRONTEND_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.connection.url.use.hostname")
-      .doc("When true, frontend services prefer hostname, otherwise, ip address")
+      .doc("When true, frontend services prefer hostname, otherwise, ip address. Note that, " +
+        "the default value is set to `false` when engine running on Kubernetes to prevent " +
+        "potential network issue.")
       .version("1.5.0")
       .fallbackConf(ENGINE_CONNECTION_URL_USE_HOSTNAME)
 
@@ -1391,6 +1554,17 @@ object KyuubiConf {
     .version("1.4.0")
     .intConf
     .createWithDefault(-1)
+
+  val ENGINE_POOL_BALANCE_POLICY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.pool.balance.policy")
+      .doc("The balance policy of queries in engine pool.<ul>" +
+        " <li>RANDOM - Randomly use the engine in the pool</li>" +
+        " <li>POLLING - Polling use the engine in the pool</li> </ul>")
+      .version("1.7.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValues(Set("RANDOM", "POLLING"))
+      .createWithDefault("RANDOM")
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.initialize.sql")
@@ -1529,7 +1703,7 @@ object KyuubiConf {
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
-        " events go. We use spark logger by default.<ul>" +
+        " events go.<ul>" +
         " <li>SPARK: the events will be written to the spark listener bus.</li>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
@@ -1704,9 +1878,10 @@ object KyuubiConf {
 
   object OperationLanguages extends Enumeration with Logging {
     type OperationLanguage = Value
-    val SQL, SCALA, UNKNOWN = Value
+    val PYTHON, SQL, SCALA, UNKNOWN = Value
     def apply(language: String): OperationLanguage = {
       language.toUpperCase(Locale.ROOT) match {
+        case "PYTHON" => PYTHON
         case "SQL" => SQL
         case "SCALA" => SCALA
         case other =>
@@ -1948,14 +2123,6 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
-    buildConf("kyuubi.kubernetes.context")
-      .doc("The desired context from your kubernetes config file used to configure the K8S " +
-        "client for interacting with the cluster.")
-      .version("1.6.0")
-      .stringConf
-      .createOptional
-
   private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
     FRONTEND_BIND_HOST,
     FRONTEND_BIND_PORT,
@@ -1980,7 +2147,9 @@ object KyuubiConf {
     SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS,
     SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS,
     SERVER_LIMIT_CONNECTIONS_PER_USER,
-    SESSION_LOCAL_DIR_ALLOW_LIST)
+    SESSION_LOCAL_DIR_ALLOW_LIST,
+    FRONTEND_SSL_KEYSTORE_PASSWORD,
+    FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD)
 
   /**
    * Holds information about keys that have been deprecated.
@@ -2078,7 +2247,7 @@ object KyuubiConf {
   val ENGINE_SPARK_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.spark.event.loggers")
       .doc("A comma separated list of engine loggers, where engine/session/operation etc" +
-        " events go. We use spark logger by default.<ul>" +
+        " events go.<ul>" +
         " <li>SPARK: the events will be written to the spark listener bus.</li>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
@@ -2090,7 +2259,7 @@ object KyuubiConf {
   val ENGINE_HIVE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.hive.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
-        " events go. We use spark logger by default.<ul>" +
+        " events go.<ul>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         " <li>JDBC: to be done</li>" +
@@ -2107,7 +2276,7 @@ object KyuubiConf {
   val ENGINE_TRINO_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.trino.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
-        " events go. We use spark logger by default.<ul>" +
+        " events go.<ul>" +
         " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         " <li>JDBC: to be done</li>" +
@@ -2120,4 +2289,26 @@ object KyuubiConf {
         _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM")),
         "Unsupported event loggers")
       .createWithDefault(Seq("JSON"))
+
+  val ASYNC_EVENT_HANDLER_POLL_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.event.async.pool.size")
+      .doc("Number of threads in the async event handler thread pool")
+      .version("1.7.0")
+      .intConf
+      .createWithDefault(8)
+
+  val ASYNC_EVENT_HANDLER_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.event.async.pool.wait.queue.size")
+      .doc("Size of the wait queue for the async event handler thread pool")
+      .version("1.7.0")
+      .intConf
+      .createWithDefault(100)
+
+  val ASYNC_EVENT_HANDLER_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("kyuubi.event.async.pool.keepalive.time")
+      .doc("Time(ms) that an idle async thread of the async event handler thread pool will wait" +
+        " for a new task to arrive before terminating")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
 }
