@@ -199,7 +199,8 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
    * @param primitiveTypeEntry primitive type
    * @return generated ColumnAttributes, or null
    */
-  private static JdbcColumnAttributes getColumnAttributes(TPrimitiveTypeEntry primitiveTypeEntry, boolean convertComplexTypeToString) {
+  private static JdbcColumnAttributes getColumnAttributes(
+      TPrimitiveTypeEntry primitiveTypeEntry, boolean convertComplexTypeToString) {
     JdbcColumnAttributes ret = null;
     if (primitiveTypeEntry.isSetTypeQualifiers()) {
       TTypeQualifiers tq = primitiveTypeEntry.getTypeQualifiers();
@@ -487,13 +488,18 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
 
   private List<TTypeId> convertComplexTypeToStringType(List<TTypeId> colTypes) {
     if (convertComplexTypeToString) {
-      return colTypes.stream().map(type -> {
-        if (type == TTypeId.ARRAY_TYPE || type == TTypeId.MAP_TYPE || type == TTypeId.STRUCT_TYPE) {
-          return TTypeId.STRING_TYPE;
-        } else {
-          return type;
-        }
-      }).collect(Collectors.toList());
+      return colTypes.stream()
+          .map(
+              type -> {
+                if (type == TTypeId.ARRAY_TYPE
+                    || type == TTypeId.MAP_TYPE
+                    || type == TTypeId.STRUCT_TYPE) {
+                  return TTypeId.STRING_TYPE;
+                } else {
+                  return type;
+                }
+              })
+          .collect(Collectors.toList());
     } else {
       return colTypes;
     }
