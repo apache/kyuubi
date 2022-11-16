@@ -37,6 +37,6 @@ public class KyuubiCallableStatement implements SQLCallableStatement {
 
   @Override
   public ResultSet executeQuery() throws SQLException {
-    return new KyuubiArrowQueryResultSet.Builder(this).build();
+    return new KyuubiQueryResultSet.Builder(this).build();
   }
 }
