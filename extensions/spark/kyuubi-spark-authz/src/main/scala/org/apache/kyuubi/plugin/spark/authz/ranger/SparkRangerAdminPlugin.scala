@@ -173,6 +173,7 @@ object SparkRangerAdminPlugin extends Logging {
           .newInstance(serviceType, serviceName, appId)
       } else {
         // ignoring serviceName for Ranger 2.0 and below,
+        // since it's not supporting different service names with same service type
         // fallback to service name in ranger config of serviceType
         classOf[RangerBasePlugin].getConstructor(classOf[String], classOf[String])
           .newInstance(serviceType, appId)
