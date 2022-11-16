@@ -48,7 +48,7 @@ object SparkRangerAdminPlugin extends Logging {
    * to verify them one by one.
    */
   def authorizeInSingleCall: Boolean = getRangerConf(defaultBasePlugin).getBoolean(
-    s"ranger.plugin.${defaultBasePlugin.getServiceType}.authorize.in.single.call",
+    s"ranger.plugin.$serviceType.authorize.in.single.call",
     false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
