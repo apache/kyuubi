@@ -116,8 +116,8 @@ object ExecutePython extends Logging {
 
   def createSessionPythonWorker(conf: RuntimeConfig): SessionPythonWorker = {
     val pythonExec = StringUtils.firstNonBlank(
-      conf.get("spark.pyspark.driver.python"),
-      conf.get("spark.pyspark.python"),
+      conf.getOption("spark.pyspark.driver.python").orNull,
+      conf.getOption("spark.pyspark.python").orNull,
       System.getenv("PYSPARK_DRIVER_PYTHON"),
       System.getenv("PYSPARK_PYTHON"),
       "python3")
