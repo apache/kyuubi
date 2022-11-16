@@ -74,7 +74,7 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
-  private val isCustomGroup: Boolean = conf.get(ENGINE_SHARE_LEVEL_GROUP_CUSTOM_ENABLE)
+  private val isManualGroup: Boolean = conf.get(ENGINE_SHARE_LEVEL_GROUP_MANUAL_ENABLE)
 
   private val enginePoolBalancePolicy: String = conf.get(ENGINE_POOL_BALANCE_POLICY)
 
@@ -87,7 +87,7 @@ private[kyuubi] class EngineRef(
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
-    case GROUP => if (isCustomGroup) {
+    case GROUP => if (isManualGroup) {
         userGroupMap.getOrElse(user, user)
       } else {
       val clientUGI = UserGroupInformation.createRemoteUser(user)

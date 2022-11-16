@@ -32,26 +32,26 @@ CREATE TABLE metadata(
 
 CREATE TABLE `t_sys_user` (
                               `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                              `group_id` bigint(20) DEFAULT NULL COMMENT '组ID',
-                              `name` varchar(255) NOT NULL COMMENT '用户名',
-                              `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                              `is_del` tinyint(4) DEFAULT '0' COMMENT '是否软删除',
+                              `group_id` bigint(20) DEFAULT NULL COMMENT 'group id',
+                              `name` varchar(255) NOT NULL COMMENT 'user name',
+                              `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+                              `remark` varchar(500) NOT NULL COMMENT 'remark',
                               PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `t_limit_user` (
                                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                                `user_id` bigint(20) NOT NULL COMMENT '用户ID',
-                                `num` int(20) NOT NULL COMMENT '最大连接数',
-                                `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                                `is_del` tinyint(4) DEFAULT '0' COMMENT '是否软删除',
+                                `user_id` bigint(20) NOT NULL COMMENT 'user id',
+                                `num` int(20) NOT NULL COMMENT 'number of limit value',
+                                `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+                                `remark` varchar(500) NOT NULL COMMENT 'remark',
                                 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `t_sys_group` (
                                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                               `name` varchar(255) NOT NULL COMMENT '组名，共享GROUP模式使用的名称',
-                               `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                               `is_del` tinyint(4) DEFAULT '0' COMMENT '是否删除',
+                               `name` varchar(255) NOT NULL COMMENT 'group name',
+                               `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+                               `remark` varchar(500) NOT NULL COMMENT 'remark',
                                PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

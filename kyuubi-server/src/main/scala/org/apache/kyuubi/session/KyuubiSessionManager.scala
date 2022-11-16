@@ -269,10 +269,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
-    val customEnable = conf.get(SERVER_LIMIT_CONNECTIONS_CUSTOM_ENABLE)
-    val userMap: Map[String, Int] = if (customEnable) JDBCUserCustomStore().getUserLimitList().toMap
+    val manualEnable = conf.get(SERVER_LIMIT_CONNECTIONS_MANUAL_ENABLE)
+    val userMap: Map[String, Int] = if (manualEnable) JDBCUserCustomStore().getUserLimitList().toMap
       else Map()
-    if (customEnable || userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
+    if (manualEnable || userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
       limiter = Some(SessionLimiter(userMap, userLimit, ipAddressLimit, userIpAddressLimit))
     }
   }
