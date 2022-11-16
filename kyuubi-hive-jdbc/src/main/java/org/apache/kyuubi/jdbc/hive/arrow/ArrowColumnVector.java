@@ -113,6 +113,92 @@ public class ArrowColumnVector {
     return accessor.getMap(rowId);
   }
 
+  // ====== array related operation ======
+
+  /**
+   * Gets boolean type values from {@code [rowId, rowId + count)}. The return values for the null
+   * slots are undefined and can be anything.
+   */
+  public boolean[] getBooleans(int rowId, int count) {
+    boolean[] res = new boolean[count];
+    for (int i = 0; i < count; i++) {
+      res[i] = getBoolean(rowId + i);
+    }
+    return res;
+  }
+
+  /**
+   * Gets byte type values from {@code [rowId, rowId + count)}. The return values for the null slots
+   * are undefined and can be anything.
+   */
+  public byte[] getBytes(int rowId, int count) {
+    byte[] res = new byte[count];
+    for (int i = 0; i < count; i++) {
+      res[i] = getByte(rowId + i);
+    }
+    return res;
+  }
+
+  /**
+   * Gets short type values from {@code [rowId, rowId + count)}. The return values for the null
+   * slots are undefined and can be anything.
+   */
+  public short[] getShorts(int rowId, int count) {
+    short[] res = new short[count];
+    for (int i = 0; i < count; i++) {
+      res[i] = getShort(rowId + i);
+    }
+    return res;
+  }
+
+  /**
+   * Gets int type values from {@code [rowId, rowId + count)}. The return values for the null slots
+   * are undefined and can be anything.
+   */
+  public int[] getInts(int rowId, int count) {
+    int[] res = new int[count];
+    for (int i = 0; i < count; i++) {
+      res[i] = getInt(rowId + i);
+    }
+    return res;
+  }
+
+  /**
+   * Gets long type values from {@code [rowId, rowId + count)}. The return values for the null slots
+   * are undefined and can be anything.
+   */
+  public long[] getLongs(int rowId, int count) {
+    long[] res = new long[count];
+    for (int i = 0; i < count; i++) {
+      res[i] = getLong(rowId + i);
+    }
+    return res;
+  }
+
+  /**
+   * Gets float type values from {@code [rowId, rowId + count)}. The return values for the null
+   * slots are undefined and can be anything.
+   */
+  public float[] getFloats(int rowId, int count) {
+    float[] res = new float[count];
+    for (int i = 0; i < count; i++) {
+      res[i] = getFloat(rowId + i);
+    }
+    return res;
+  }
+
+  /**
+   * Gets double type values from {@code [rowId, rowId + count)}. The return values for the null
+   * slots are undefined and can be anything.
+   */
+  public double[] getDoubles(int rowId, int count) {
+    double[] res = new double[count];
+    for (int i = 0; i < count; i++) {
+      res[i] = getDouble(rowId + i);
+    }
+    return res;
+  }
+
   public ArrowColumnVector getChild(int ordinal) {
     return childColumns[ordinal];
   }
@@ -479,8 +565,8 @@ public class ArrowColumnVector {
     final Object getArray(int rowId) {
       int start = accessor.getElementStartIndex(rowId);
       int end = accessor.getElementEndIndex(rowId);
-      //      return new ColumnarArray(arrayData, start, end - start);
-      return null;
+      return new ColumnarArray(arrayData, start, end - start).toIntArray();
+      //      return null;
     }
   }
 

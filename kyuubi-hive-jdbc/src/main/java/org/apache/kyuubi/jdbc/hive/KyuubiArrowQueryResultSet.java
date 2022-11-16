@@ -59,6 +59,9 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
   private boolean isScrollable = false;
   private boolean fetchFirst = false;
 
+  // TODO:(fchen) make this configurable
+  protected boolean convertComplexTypeToString = true;
+
   private final TProtocolVersion protocol;
 
   public static class Builder {
@@ -196,7 +199,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
    * @param primitiveTypeEntry primitive type
    * @return generated ColumnAttributes, or null
    */
-  private static JdbcColumnAttributes getColumnAttributes(TPrimitiveTypeEntry primitiveTypeEntry) {
+  private static JdbcColumnAttributes getColumnAttributes(TPrimitiveTypeEntry primitiveTypeEntry, boolean convertComplexTypeToString) {
     JdbcColumnAttributes ret = null;
     if (primitiveTypeEntry.isSetTypeQualifiers()) {
       TTypeQualifiers tq = primitiveTypeEntry.getTypeQualifiers();
@@ -222,6 +225,14 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
           TTypeQualifierValue timeZone = tq.getQualifiers().get("session.timeZone");
           ret = new JdbcColumnAttributes(timeZone == null ? "" : timeZone.getStringValue());
           break;
+        case ARRAY_TYPE:
+          if (!convertComplexTypeToString) {
+            TTypeQualifierValue typeString = tq.getQualifiers().get("array.typeString");
+            ret = new JdbcColumnAttributes();
+            ret.setArrayElementType(typeString == null ? "" : typeString.getStringValue());
+          }
+          break;
+
         default:
           break;
       }
@@ -260,9 +271,11 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         TPrimitiveTypeEntry primitiveTypeEntry =
             columns.get(pos).getTypeDesc().getTypes().get(0).getPrimitiveEntry();
         columnTypes.add(primitiveTypeEntry.getType());
-        columnAttributes.add(getColumnAttributes(primitiveTypeEntry));
+        columnAttributes.add(getColumnAttributes(primitiveTypeEntry, convertComplexTypeToString));
       }
-      arrowSchema = ArrowUtils.toArrowSchema(columnNames, columnTypes, columnAttributes);
+      arrowSchema =
+          ArrowUtils.toArrowSchema(
+              columnNames, convertComplexTypeToStringType(columnTypes), columnAttributes);
       allocator = ArrowUtils.rootAllocator.newChildAllocator("KyuubiResultSet", 0, Long.MAX_VALUE);
       root = VectorSchemaRoot.create(arrowSchema, allocator);
     } catch (SQLException eS) {
@@ -470,5 +483,19 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
   @Override
   public boolean isClosed() {
     return isClosed;
+  }
+
+  private List<TTypeId> convertComplexTypeToStringType(List<TTypeId> colTypes) {
+    if (convertComplexTypeToString) {
+      return colTypes.stream().map(type -> {
+        if (type == TTypeId.ARRAY_TYPE || type == TTypeId.MAP_TYPE || type == TTypeId.STRUCT_TYPE) {
+          return TTypeId.STRING_TYPE;
+        } else {
+          return type;
+        }
+      }).collect(Collectors.toList());
+    } else {
+      return colTypes;
+    }
   }
 }

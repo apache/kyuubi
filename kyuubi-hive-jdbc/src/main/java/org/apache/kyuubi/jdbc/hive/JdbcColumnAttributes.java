@@ -21,6 +21,7 @@ public class JdbcColumnAttributes {
   public int precision = 0;
   public int scale = 0;
   public String timeZone = "";
+  public String arrayElementType = "";
 
   public JdbcColumnAttributes() {}
 
@@ -31,6 +32,10 @@ public class JdbcColumnAttributes {
 
   public JdbcColumnAttributes(String timeZone) {
     this.timeZone = timeZone;
+  }
+
+  public void setArrayElementType(String elementType) {
+    this.arrayElementType = elementType;
   }
 
   @Override

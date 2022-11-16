@@ -77,20 +77,31 @@ class SchemaHelperSuite extends KyuubiFunSuite {
   }
 
   test("toTTypeQualifiers") {
-    val timeZone = ZoneId.systemDefault().toString
+
+    // decimal
     val qualifiers = toTTypeQualifiers(outerSchema(9).dataType, "")
     val q = qualifiers.getQualifiers
     assert(q.size() === 2)
     assert(q.get(TCLIServiceConstants.PRECISION).getI32Value === 10)
     assert(q.get(TCLIServiceConstants.SCALE).getI32Value === 8)
 
+    // timestamp
+    val timeZone = ZoneId.systemDefault().toString
     val qualifiers2 = toTTypeQualifiers(outerSchema(11).dataType, timeZone)
     val q2 = qualifiers2.getQualifiers
     assert(q2.size() === 1)
     assert(q2.get("session.timeZone").getStringValue === timeZone)
 
+    // array<long>
+    val qualifiers3 = toTTypeQualifiers(outerSchema(13).dataType, timeZone)
+    val q3 = qualifiers3.getQualifiers
+    assert(q3.size() === 1)
+    assert(q3.get("array.typeString").getStringValue === "array<bigint>")
+
     outerSchema.foreach {
-      case f if f.dataType == DecimalType(10, 8) | f.dataType == TimestampType =>
+      case f if f.dataType == DecimalType(10, 8) =>
+      case f if f.dataType == TimestampType =>
+      case f if f.dataType.isInstanceOf[ArrayType] =>
       case f => assert(toTTypeQualifiers(f.dataType, "").getQualifiers.isEmpty)
     }
   }
@@ -113,6 +124,8 @@ class SchemaHelperSuite extends KyuubiFunSuite {
         assert(qualifiers.get(TCLIServiceConstants.SCALE).getI32Value === 8)
       } else if (pos == 11) {
         assert(qualifiers.get("session.timeZone").getStringValue === timeZone)
+      } else if (pos == 13) {
+        assert(qualifiers.get("array.typeString").getStringValue === "array<bigint>")
       } else {
         assert(qualifiers.isEmpty)
       }

@@ -17,11 +17,45 @@
 
 package org.apache.spark.sql.kyuubi
 
+import java.time.ZoneId
+
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.sql.types.{ArrayType, DataType, MapType, StructField, StructType}
+
+import org.apache.kyuubi.engine.spark.schema.RowSet
+import org.apache.spark.sql.functions._
 
 object SparkDatesetHelper {
   def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
     ds.toArrowBatchRdd
+  }
+
+  def convertTopLevelComplexTypeToHiveString(df: DataFrame): DataFrame = {
+    val timeZone = ZoneId.of(df.sparkSession.sessionState.conf.sessionLocalTimeZone)
+
+    // an udf to call `RowSet.toHiveString` on complex types(struct/array/map).
+    val toHiveStringUDF = udf[String, Row, String]((row, schemaDDL) => {
+      val dt = DataType.fromDDL(schemaDDL)
+      dt match {
+        case StructType(Array(StructField(_, st : StructType, _, _))) =>
+          RowSet.toHiveString((row, st), timeZone)
+        case StructType(Array(StructField(_, at : ArrayType, _, _))) =>
+          RowSet.toHiveString((row.toSeq.head, at), timeZone)
+        case StructType(Array(StructField(_, mt : MapType, _, _))) =>
+          RowSet.toHiveString((row.toSeq.head, mt), timeZone)
+        case _ =>
+          throw new UnsupportedOperationException
+      }
+    })
+
+    val cols = df.schema.map {
+      case sf @ StructField(name, _: StructType, _, _) =>
+        toHiveStringUDF(col(name), lit(sf.toDDL)).as(name)
+      case sf @ StructField(name, (_: MapType | _: ArrayType), _, _) =>
+        toHiveStringUDF(struct(col(name)), lit(sf.toDDL)).as(name)
+      case StructField(name, _, _, _) => col(name)
+    }
+    df.select(cols: _*)
   }
 }

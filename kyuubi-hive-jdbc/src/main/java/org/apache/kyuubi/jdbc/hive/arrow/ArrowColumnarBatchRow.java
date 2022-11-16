@@ -99,8 +99,7 @@ public class ArrowColumnarBatchRow {
   }
 
   public Object getArray(int ordinal) {
-    //    return columns[ordinal].getArray(rowId);
-    throw new UnsupportedOperationException();
+    return columns[ordinal].getArray(rowId);
   }
 
   public Object getMap(int ordinal) {
@@ -141,6 +140,13 @@ public class ArrowColumnarBatchRow {
         return new HiveIntervalDayTime(seconds, nanos);
       case INTERVAL_YEAR_MONTH_TYPE:
         return new HiveIntervalYearMonth(getInt(ordinal));
+      case ARRAY_TYPE:
+        return getString(ordinal);
+        //        return getArray(ordinal);
+      case MAP_TYPE:
+        return getString(ordinal);
+      case STRUCT_TYPE:
+        return getString(ordinal);
       default:
         throw new UnsupportedOperationException("Datatype not supported " + dataType);
     }
