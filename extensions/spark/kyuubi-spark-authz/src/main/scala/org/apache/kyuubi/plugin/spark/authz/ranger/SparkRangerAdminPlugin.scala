@@ -52,7 +52,7 @@ object SparkRangerAdminPlugin extends Logging {
     false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
-    val result = getOrCreateRangerPlugin().evalRowFilterPolicies(req, null)
+    val result = getOrCreate().evalRowFilterPolicies(req, null)
     Option(result)
       .filter(_.isRowFilterEnabled)
       .map(_.getFilterExpr)
@@ -61,7 +61,7 @@ object SparkRangerAdminPlugin extends Logging {
 
   def getMaskingExpr(req: AccessRequest): Option[String] = {
     val col = req.getResource.asInstanceOf[AccessResource].getColumn
-    val result = getOrCreateRangerPlugin().evalDataMaskPolicies(req, null)
+    val result = getOrCreate().evalDataMaskPolicies(req, null)
     Option(result).filter(_.isMaskEnabled).map { res =>
       if ("MASK_NULL".equalsIgnoreCase(res.getMaskType)) {
         "NULL"
@@ -114,7 +114,7 @@ object SparkRangerAdminPlugin extends Logging {
       requests: Seq[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
     if (requests.nonEmpty) {
-      val results = getOrCreateRangerPlugin().isAccessAllowed(requests.asJava, auditHandler)
+      val results = getOrCreate().isAccessAllowed(requests.asJava, auditHandler)
       if (results != null) {
         val indices = results.asScala.zipWithIndex.filter { case (result, idx) =>
           result != null && !result.getIsAllowed
@@ -141,7 +141,12 @@ object SparkRangerAdminPlugin extends Logging {
     }
   }
 
-  def getOrCreateRangerPlugin(catalog: Option[String] = None): RangerBasePlugin = synchronized {
+  /**
+   * Get or create the Ranger base plugin for the catalog name
+   * @param catalog option of catalog name
+   * @return an Ranger base plugin instance for catalog
+   */
+  def getOrCreate(catalog: Option[String] = None): RangerBasePlugin = synchronized {
     catalog match {
       case None | Some("spark_catalog") =>
         defaultBasePlugin

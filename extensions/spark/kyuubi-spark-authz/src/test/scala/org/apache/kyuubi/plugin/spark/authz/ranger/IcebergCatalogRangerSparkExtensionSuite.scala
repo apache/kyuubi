@@ -21,7 +21,7 @@ import scala.util.Try
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
-import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getOrCreateRangerPlugin
+import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getOrCreate
 import org.apache.kyuubi.plugin.spark.authz.util.RangerConfigUtil.getRangerConf
 
 /**
@@ -95,7 +95,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     assert(e1.getMessage.contains(s"does not have [select] privilege" +
       s" on [$namespace1/$table1/id]"))
 
-    val rangerPlugin = getOrCreateRangerPlugin()
+    val rangerPlugin = getOrCreate()
     try {
       getRangerConf(rangerPlugin).setBoolean(
         s"ranger.plugin.${rangerPlugin.getServiceType}.authorize.in.single.call",
