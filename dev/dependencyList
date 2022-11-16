@@ -32,6 +32,7 @@ curator-recipes/2.12.0//curator-recipes-2.12.0.jar
 derby/10.14.2.0//derby-10.14.2.0.jar
 error_prone_annotations/2.14.0//error_prone_annotations-2.14.0.jar
 failsafe/2.4.4//failsafe-2.4.4.jar
+failureaccess/1.0.1//failureaccess-1.0.1.jar
 fliptables/1.0.2//fliptables-1.0.2.jar
 generex/1.0.2//generex-1.0.2.jar
 grpc-api/1.48.0//grpc-api-1.48.0.jar
