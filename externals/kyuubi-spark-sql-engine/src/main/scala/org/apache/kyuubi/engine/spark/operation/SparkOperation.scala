@@ -186,12 +186,11 @@ abstract class SparkOperation(session: Session)
   override def shouldRunAsync: Boolean = false
 
   protected def arrowEnabled(): Boolean = {
-    session.conf.getOrElse("kyuubi.beeline.arrow.enabled", "true")
+    session.conf.getOrElse("kyuubi.beeline.arrow.enabled", "false")
       .equalsIgnoreCase("true") &&
     // TODO: (fchen) make all operation support arrow
     getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
   }
-
 }
 
 object SparkOperation {
