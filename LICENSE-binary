@@ -229,6 +229,7 @@ io.grpc:grpc-protobuf-lite
 io.grpc:grpc-protobuf
 io.grpc:grpc-stub
 com.google.code.gson:gson
+com.google.guava:failureaccess
 com.google.guava:guava
 org.apache.hadoop:hadoop-client-api
 org.apache.hadoop:hadoop-client-runtime
