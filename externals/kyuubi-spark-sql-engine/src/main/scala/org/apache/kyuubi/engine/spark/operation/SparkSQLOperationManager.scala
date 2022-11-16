@@ -93,7 +93,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
           ExecutePython.init()
           val worker = sessionToPythonProcess.getOrElseUpdate(
             session.handle,
-            ExecutePython.createSessionPythonWorker())
+            ExecutePython.createSessionPythonWorker(spark.conf))
           new ExecutePython(session, statement, worker)
         case OperationLanguages.UNKNOWN =>
           spark.conf.unset(OPERATION_LANGUAGE.key)

@@ -26,8 +26,9 @@ import scala.collection.JavaConverters._
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Row, RuntimeConfig}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Logging
@@ -98,9 +99,6 @@ case class SessionPythonWorker(
 
 object ExecutePython extends Logging {
 
-  // TODO:(fchen) get from conf
-  val pythonExec =
-    sys.env.getOrElse("PYSPARK_PYTHON", sys.env.getOrElse("PYSPARK_DRIVER_PYTHON", "python3"))
   private val isPythonGatewayStart = new AtomicBoolean(false)
   val kyuubiPythonPath = Files.createTempDirectory("")
   def init(): Unit = {
@@ -116,7 +114,14 @@ object ExecutePython extends Logging {
     }
   }
 
-  def createSessionPythonWorker(): SessionPythonWorker = {
+  def createSessionPythonWorker(conf: RuntimeConfig): SessionPythonWorker = {
+    val pythonExec = StringUtils.firstNonBlank(
+      conf.getOption("spark.pyspark.driver.python").orNull,
+      conf.getOption("spark.pyspark.python").orNull,
+      System.getenv("PYSPARK_DRIVER_PYTHON"),
+      System.getenv("PYSPARK_PYTHON"),
+      "python3")
+
     val builder = new ProcessBuilder(Seq(
       pythonExec,
       s"${ExecutePython.kyuubiPythonPath}/execute_python.py").asJava)
