@@ -68,7 +68,6 @@ class ExecutePython(
     val setSparkLocalProperties = (key: String, value: String) => {
       worker.runCode(s"spark.sparkContext.setLocalProperty('$key', '$value')")
     }
-
     try {
       setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, session.user)
 
