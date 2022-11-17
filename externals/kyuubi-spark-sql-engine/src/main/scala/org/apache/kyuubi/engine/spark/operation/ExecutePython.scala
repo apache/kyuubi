@@ -65,14 +65,16 @@ class ExecutePython(
   }
 
   override protected def withLocalProperties[T](f: => T): T = {
+    val setSparkLocalProperties = (key: String, value: String) => {
+      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', '$value')")
+    }
+
     try {
-      worker.runCode(s"spark.sparkContext.setLocalProperty(" +
-        s"'$KYUUBI_SESSION_USER_KEY', '${session.user}')")
+      setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, session.user)
 
       f
     } finally {
-      worker.runCode(s"spark.sparkContext.setLocalProperty(" +
-        s"'$KYUUBI_SESSION_USER_KEY', '')")
+      setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, "")
     }
   }
 
