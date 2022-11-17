@@ -235,7 +235,8 @@ def main():
 
     stderr = sys.stderr.getvalue()
     print(stderr, file=sys_stderr)
-    clearOutputs
+    clearOutputs()
+
     try:
 
         while True:
