@@ -132,6 +132,6 @@ Thanks,
 On behalf of Apache Kyuubi(Incubating) community
 EOF
 
-echo "please use general@incubator.apache.com
+echo "please use general@incubator.apache.org
 see vote content in $GENERAL_VOTE
 please check all the links and ensure they are available"

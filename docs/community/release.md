@@ -276,7 +276,7 @@ The [kyuubi status website](https://incubator.apache.org/projects/kyuubi.html) w
 ### Create an Announcement
 
 Once everything is working, create an announcement on the website and then send an e-mail to the mailing list.
-You can generate the announcement via `buld/release/script/announce.sh` automatically.
+You can generate the announcement via `build/release/script/announce.sh` automatically.
 The mailing list includes: `general@incubator.apache.org`, `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
 
 Note that, you must use the apache.org email to send announce to `announce@apache.org`.
