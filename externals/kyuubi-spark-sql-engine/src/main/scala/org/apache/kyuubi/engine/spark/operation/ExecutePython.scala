@@ -32,6 +32,7 @@ import org.apache.spark.sql.{Row, RuntimeConfig}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.session.Session
 
@@ -52,7 +53,7 @@ class ExecutePython(
     }
   }
 
-  override protected def runInternal(): Unit = {
+  override protected def runInternal(): Unit = withLocalProperties {
     val response = worker.runCode(statement)
     val output = response.map(_.content.getOutput()).getOrElse("")
     val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
@@ -61,6 +62,18 @@ class ExecutePython(
     val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
     iter =
       new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
+  }
+
+  override protected def withLocalProperties[T](f: => T): T = {
+    try {
+      worker.runCode(s"spark.sparkContext.setLocalProperty(" +
+        s"'${KYUUBI_SESSION_USER_KEY}', '${session.user}')")
+
+      f
+    } finally {
+      worker.runCode(s"spark.sparkContext.setLocalProperty(" +
+        s"'${KYUUBI_SESSION_USER_KEY}', '')")
+    }
   }
 
 }
