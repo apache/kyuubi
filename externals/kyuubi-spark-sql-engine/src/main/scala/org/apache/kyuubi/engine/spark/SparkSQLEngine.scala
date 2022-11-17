@@ -99,10 +99,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
           info(s"Spark engine is de-registering from engine discovery space.")
           frontendServices.flatMap(_.discoveryService).foreach(_.stop())
         }
-        val openSessionCount = backendService.sessionManager.getOpenSessionCount
-        if (openSessionCount > 0) {
-          info(s"$openSessionCount connection(s) are active, delay shutdown")
-        } else {
+
+        if (backendService.sessionManager.getOpenSessionCount <= 0) {
           info(s"Spark engine has no open session now, terminating.")
           stop()
         }
@@ -130,12 +128,9 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
             frontendServices.flatMap(_.discoveryService).foreach(_.stop())
           }
 
-          val openSessionCount = backendService.sessionManager.getOpenSessionCount
-          if (openSessionCount > 0) {
-            info(s"$openSessionCount connection(s) are active, delay shutdown")
-          } else {
+          if (backendService.sessionManager.getOpenSessionCount <= 0) {
             info(s"Spark engine has been running for more than $maxLifetime ms" +
-              s" and no open session now, terminating")
+              s" and no open session now, terminating.")
             stop()
           }
         }
