@@ -1010,8 +1010,8 @@ object KyuubiConf {
         "the duration (in milliseconds) of `$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf` " +
         "in the cache. After exceeding this value, the file will be reloaded into the cache. ")
       .version("1.7.0")
-      .timeConf
-      .createWithDefault(Duration.ofMinutes(10).toMillis)
+      .longConf
+      .createWithDefault(600000)
 
   val ENGINE_SPARK_MAX_LIFETIME: ConfigEntry[Long] =
     buildConf("kyuubi.session.engine.spark.max.lifetime")
