@@ -74,8 +74,6 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
-  private val isManualGroup: Boolean = conf.get(ENGINE_SHARE_LEVEL_GROUP_MANUAL_ENABLE)
-
   private val enginePoolBalancePolicy: String = conf.get(ENGINE_POOL_BALANCE_POLICY)
 
   // In case the multi kyuubi instances have the small gap of timeout, here we add
@@ -87,7 +85,7 @@ private[kyuubi] class EngineRef(
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
-    case GROUP => if (isManualGroup) {
+    case GROUP => if (userGroupMap.nonEmpty) {
         userGroupMap.getOrElse(user, user)
       } else {
       val clientUGI = UserGroupInformation.createRemoteUser(user)

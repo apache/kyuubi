@@ -24,8 +24,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols,
-  SERVER_LIMIT_CONNECTIONS_MANUAL_ENABLE, ENGINE_SHARE_LEVEL_GROUP_MANUAL_ENABLE}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
 import org.apache.kyuubi.events.{EventBus, KyuubiServerInfoEvent, ServerEventHandlerRegister}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -138,9 +137,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
 
     // initialize meta source
     if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
-      .contains(FrontendProtocols.REST)
-      || conf.get(SERVER_LIMIT_CONNECTIONS_MANUAL_ENABLE)
-      || conf.get(ENGINE_SHARE_LEVEL_GROUP_MANUAL_ENABLE)) {
+      .contains(FrontendProtocols.REST)) {
       new JDBCMetadataDatasource().initialize(conf)
     }
 

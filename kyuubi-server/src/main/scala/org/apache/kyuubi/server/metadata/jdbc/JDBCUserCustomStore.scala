@@ -44,18 +44,18 @@ class JDBCUserCustomStore extends UserCustomStore with Logging {
   }
 
   private def buildUserConfig(resultSet: ResultSet): Seq[Tuple2[String, Int]] = {
+    val userMetaList = ListBuffer[Tuple2[String, Int]]()
     try {
-      val userMetaList = ListBuffer[Tuple2[String, Int]]()
       while (resultSet.next()) {
         val userName = resultSet.getString("userName")
         val userLimit = resultSet.getInt("userLimit")
         val userMeta = Tuple2(userName, userLimit)
         userMetaList += userMeta
       }
-      userMetaList
     } finally {
       Utils.tryLogNonFatalError(resultSet.close())
     }
+    userMetaList
   }
 
   override def getUserGroupList(): Seq[Tuple2[String, String]] = {
@@ -74,18 +74,18 @@ class JDBCUserCustomStore extends UserCustomStore with Logging {
   }
 
   private def buildGroupConfig(resultSet: ResultSet): Seq[Tuple2[String, String]] = {
+    val groupMetaList = ListBuffer[Tuple2[String, String]]()
     try {
-      val groupMetaList = ListBuffer[Tuple2[String, String]]()
       while (resultSet.next()) {
         val userName = resultSet.getString("userName")
         val groupName = resultSet.getString("groupName")
         val groupMeta = Tuple2(userName, groupName)
         groupMetaList += groupMeta
       }
-      groupMetaList
     } finally {
       Utils.tryLogNonFatalError(resultSet.close())
     }
+    groupMetaList
   }
 
   private def withResultSet[T](
