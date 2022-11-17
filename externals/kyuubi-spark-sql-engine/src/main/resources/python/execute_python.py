@@ -24,6 +24,11 @@ import traceback
 import re
 import os
 
+if sys.version >= '3':
+    unicode = str
+else:
+    import cStringIO
+
 # ast api is changed after python 3.8, see https://github.com/ipython/ipython/pull/11593
 if sys.version_info > (3,8):
   from ast import Module
