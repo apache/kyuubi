@@ -34,7 +34,9 @@ class FileSessionConfAdvisor extends SessionConfAdvisor {
       user: String,
       sessionConf: JMap[String, String]): JMap[String, String] = {
     val profile: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
-    expiredDuration = sessionConf.get(KyuubiConf.SESSION_CONF_EXPIRED_DURATION.key).toLong
+    expiredDuration = sessionConf.getOrDefault(
+      KyuubiConf.SESSION_CONF_EXPIRED_DURATION.key,
+      KyuubiConf.SESSION_CONF_EXPIRED_DURATION.defaultValStr).toLong
     profile match {
       case null => Collections.emptyMap()
       case _ =>
