@@ -21,6 +21,7 @@ import datetime
 import decimal
 import io
 import json
+import kyuubi_util
 import os
 import re
 import sys
@@ -434,9 +435,10 @@ else:
     # already imported, no need to patch sys.path
     sys_path = None
 
-import kyuubi_util
-spark = kyuubi_util.get_spark()
-global_dict['spark'] = spark
+# get or create spark session
+spark_session = kyuubi_util.get_spark_session()
+global_dict['spark'] = spark_session
+
 
 def main():
     sys_stdin = sys.stdin

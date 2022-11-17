@@ -15,22 +15,12 @@
 # limitations under the License.
 #
 
-import atexit
 import os
-import sys
-import signal
-import shlex
-import shutil
-import socket
-import platform
-import tempfile
-import time
-from subprocess import Popen, PIPE
 
-from py4j.java_gateway import java_import, JavaGateway, JavaObject, GatewayParameters
 from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
+from py4j.java_gateway import java_import, JavaGateway, GatewayParameters
 from pyspark.context import SparkContext
-from pyspark.serializers import read_int, write_with_length, UTF8Deserializer
+from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
 
 
@@ -72,13 +62,15 @@ def connect_to_exist_gateway():
 
     return gateway
 
+
 def _get_exist_spark_context(self, jconf):
     """
     Initialize SparkContext in function to allow subclass specific initialization
     """
     return self._jvm.JavaSparkContext(self._jvm.org.apache.spark.SparkContext.getOrCreate(jconf))
 
-def get_spark():
+
+def get_spark_session():
     SparkContext._initialize_context = _get_exist_spark_context
     gateway = connect_to_exist_gateway()
     SparkContext._ensure_initialized(gateway=gateway)
