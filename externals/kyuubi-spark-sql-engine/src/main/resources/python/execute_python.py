@@ -152,6 +152,15 @@ def execute_reply_error(exc_type, exc_value, tb):
         'traceback': formatted_tb,
     })
 
+
+def execute_reply_internal_error(message, exc_info=None):
+    return execute_reply('error', {
+        'ename': 'InternalError',
+        'evalue': message,
+        'traceback': [],
+    })
+
+
 def execute_request(content):
     try:
         code = content['code']
