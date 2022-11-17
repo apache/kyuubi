@@ -21,13 +21,12 @@ import java.time.ZoneId
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
-import org.apache.spark.sql.catalyst.util.quoteIfNeeded
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{ArrayType, DataType, MapType, StructField, StructType}
 
 import org.apache.kyuubi.engine.spark.schema.RowSet
 
-object SparkDatesetHelper {
+object SparkDatasetHelper {
   def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
     ds.toArrowBatchRdd
   }
@@ -60,5 +59,17 @@ object SparkDatesetHelper {
       case StructField(name, _, _, _) => quotedCol(name)
     }
     df.select(cols: _*)
+  }
+
+  /**
+   * Fork from Apache Spark-3.3.1 org.apache.spark.sql.catalyst.util.quoteIfNeeded to adapt to
+   * Spark-3.1.x
+   */
+  def quoteIfNeeded(part: String): String = {
+    if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
+      part
+    } else {
+      s"`${part.replace("`", "``")}`"
+    }
   }
 }

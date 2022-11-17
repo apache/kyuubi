@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
 import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.sql.{DataFrame, Row}
-import org.apache.spark.sql.kyuubi.SparkDatesetHelper
+import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -99,7 +99,7 @@ class ExecuteStatement(
           info("Execute in incremental collect mode")
           if (arrowEnabled) {
             new IterableFetchIterator[Array[Byte]](
-              SparkDatesetHelper.toArrowBatchRdd(
+              SparkDatasetHelper.toArrowBatchRdd(
                 convertComplexTypeToStringTypeOrNot(result)).toLocalIterator.toIterable)
           } else {
             new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
@@ -111,7 +111,7 @@ class ExecuteStatement(
             info("Execute in full collect mode")
             if (arrowEnabled) {
               new ArrayFetchIterator(
-                SparkDatesetHelper.toArrowBatchRdd(
+                SparkDatasetHelper.toArrowBatchRdd(
                   convertComplexTypeToStringTypeOrNot(result)).collect())
             } else {
               new ArrayFetchIterator(result.collect())
@@ -121,7 +121,7 @@ class ExecuteStatement(
             if (arrowEnabled) {
               // this will introduce shuffle and hurt performance
               new ArrayFetchIterator(
-                SparkDatesetHelper.toArrowBatchRdd(
+                SparkDatasetHelper.toArrowBatchRdd(
                   convertComplexTypeToStringTypeOrNot(result.limit(resultMaxRows))).collect())
             } else {
               new ArrayFetchIterator(result.take(resultMaxRows))
@@ -217,7 +217,7 @@ class ExecuteStatement(
 
   def convertComplexTypeToStringTypeOrNot(df: DataFrame): DataFrame = {
     if (kyuubiBeelineConvertToString) {
-      SparkDatesetHelper.convertTopLevelComplexTypeToHiveString(df)
+      SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df)
     } else {
       df
     }
