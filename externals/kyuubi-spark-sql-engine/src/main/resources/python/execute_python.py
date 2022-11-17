@@ -34,17 +34,19 @@ else:
     import cStringIO
 
 # ast api is changed after python 3.8, see https://github.com/ipython/ipython/pull/11593
-if sys.version_info > (3,8):
-  from ast import Module
-else :
-  # mock the new API, ignore second argument
-  # see https://github.com/ipython/ipython/issues/11590
-  from ast import Module as OriginalModule
-  Module = lambda nodelist, type_ignores: OriginalModule(nodelist)
+if sys.version_info > (3, 8):
+    from ast import Module
+else:
+    # mock the new API, ignore second argument
+    # see https://github.com/ipython/ipython/issues/11590
+    from ast import Module as OriginalModule
+
+    Module = lambda nodelist, type_ignores: OriginalModule(nodelist)
 
 TOP_FRAME_REGEX = re.compile(r'\s*File "<stdin>".*in <module>')
 
 global_dict = {}
+
 
 class NormalNode(object):
     def __init__(self, code):
@@ -97,11 +99,13 @@ class ExecutionError(Exception):
     def __init__(self, exc_info):
         self.exc_info = exc_info
 
+
 class UnicodeDecodingStringIO(io.StringIO):
     def write(self, s):
         if isinstance(s, bytes):
             s = s.decode("utf-8")
         super(UnicodeDecodingStringIO, self).write(s)
+
 
 def clearOutputs():
     sys.stdout.close()
@@ -149,6 +153,7 @@ def parse_code_into_nodes(code):
 
     return nodes
 
+
 def execute_reply(status, content):
     msg = {
         'msg_type': 'execute_reply',
@@ -169,9 +174,9 @@ def execute_reply_ok(data):
 def execute_reply_error(exc_type, exc_value, tb):
     # LOG.error('execute_reply', exc_info=True)
     if sys.version >= '3':
-      formatted_tb = traceback.format_exception(exc_type, exc_value, tb, chain=False)
+        formatted_tb = traceback.format_exception(exc_type, exc_value, tb, chain=False)
     else:
-      formatted_tb = traceback.format_exception(exc_type, exc_value, tb)
+        formatted_tb = traceback.format_exception(exc_type, exc_value, tb)
     for i in range(len(formatted_tb)):
         if TOP_FRAME_REGEX.match(formatted_tb[i]):
             formatted_tb = formatted_tb[:1] + formatted_tb[i + 1:]
@@ -411,7 +416,6 @@ magic_router = {
     'matplot': magic_matplot,
 }
 
-
 # import findspark
 # findspark.init()
 
@@ -485,6 +489,7 @@ def main():
         sys.stdin = sys_stdin
         sys.stdout = sys_stdout
         sys.stderr = sys_stderr
+
 
 if __name__ == '__main__':
     sys.exit(main())

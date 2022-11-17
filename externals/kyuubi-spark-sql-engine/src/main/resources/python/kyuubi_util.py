@@ -27,7 +27,7 @@ from pyspark.sql import SparkSession
 def connect_to_exist_gateway():
     conn_info_file = os.environ.get("PYTHON_GATEWAY_CONNECTION_INFO")
     if conn_info_file is None:
-       raise SystemExit("the python gateway connection information file not found!")
+        raise SystemExit("the python gateway connection information file not found!")
     with open(conn_info_file, "rb") as info:
         gateway_port = read_int(info)
         gateway_secret = UTF8Deserializer().loads(info)
@@ -76,4 +76,3 @@ def get_spark_session():
     SparkContext._ensure_initialized(gateway=gateway)
     spark = SparkSession.builder.master('local').appName('test').getOrCreate()
     return spark
-
