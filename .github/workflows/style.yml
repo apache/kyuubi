@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds,spotless-python'
+          - '-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds'
 
     steps:
       - uses: actions/checkout@v3
@@ -75,13 +75,13 @@ jobs:
       - name: JavaStyle with maven
         run: build/mvn spotless:check ${{ matrix.profiles }}
       - name: Python style with maven
-          uses: actions/setup-python@v4
-          with:
-            python-version: '3.9'
-            cache: 'pip'
-          run: |
-          pip install black
-          build/mvn spotless:check ${{ matrix.profiles }} spotless-python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+        run: |
+        pip install black
+        build/mvn spotless:check ${{ matrix.profiles }} spotless-python
       - name: setup npm
         uses: actions/setup-node@v3
         with:
