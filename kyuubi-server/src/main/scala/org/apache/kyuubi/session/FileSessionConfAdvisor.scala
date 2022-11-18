@@ -27,16 +27,18 @@ import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.plugin.SessionConfAdvisor
-import org.apache.kyuubi.session.FileSessionConfAdvisor.{expiredDuration, sessionConfCache}
+import org.apache.kyuubi.session.FileSessionConfAdvisor.{reloadDuration, sessionConfCache}
 
 class FileSessionConfAdvisor extends SessionConfAdvisor {
   override def getConfOverlay(
       user: String,
       sessionConf: JMap[String, String]): JMap[String, String] = {
     val profile: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
-    expiredDuration = sessionConf.getOrDefault(
-      KyuubiConf.SESSION_CONF_EXPIRED_DURATION.key,
-      KyuubiConf.SESSION_CONF_EXPIRED_DURATION.defaultValStr).toLong
+    val duration = sessionConf.get(KyuubiConf.SESSION_CONF_FILE_RELOAD_DURATION.key)
+    duration match {
+      case null => reloadDuration = KyuubiConf.SESSION_CONF_FILE_RELOAD_DURATION.defaultVal.get
+      case _ => reloadDuration = duration.toLong
+    }
     profile match {
       case null => Collections.emptyMap()
       case _ =>
@@ -46,11 +48,11 @@ class FileSessionConfAdvisor extends SessionConfAdvisor {
 }
 
 object FileSessionConfAdvisor extends Logging {
-  private var expiredDuration: Long = _
+  private var reloadDuration: Long = _
   private lazy val sessionConfCache: LoadingCache[String, JMap[String, String]] =
     CacheBuilder.newBuilder()
       .expireAfterWrite(
-        expiredDuration,
+        reloadDuration,
         TimeUnit.MILLISECONDS)
       .build(new CacheLoader[String, JMap[String, String]] {
         override def load(profile: String): JMap[String, String] = {
