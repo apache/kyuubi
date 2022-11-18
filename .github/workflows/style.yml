@@ -81,7 +81,7 @@ jobs:
           cache: 'pip'
         run: |
           pip install black
-          build/mvn spotless:check ${{ matrix.profiles }} spotless-python
+          build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python
       - name: setup npm
         uses: actions/setup-node@v3
         with:
