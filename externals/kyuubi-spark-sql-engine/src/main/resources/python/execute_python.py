@@ -31,7 +31,7 @@ from glob import glob
 if sys.version >= '3':
     unicode = str
 else:
-    import cStringIO
+    sys.exit('Python < 3 is unsupported.')
 
 # ast api is changed after python 3.8, see https://github.com/ipython/ipython/pull/11593
 if sys.version_info > (3, 8):
@@ -449,11 +449,7 @@ def main():
     sys_stdout = sys.stdout
     sys_stderr = sys.stderr
 
-    if sys.version >= '3':
-        sys.stdin = io.StringIO()
-    else:
-        sys.stdin = cStringIO.StringIO()
-
+    sys.stdin = io.StringIO()
     sys.stdout = UnicodeDecodingStringIO()
     sys.stderr = UnicodeDecodingStringIO()
 
