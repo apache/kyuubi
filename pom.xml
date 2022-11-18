@@ -177,6 +177,7 @@
         <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
+        <spotless.python.includes></spotless.python.includes>
         <swagger.version>2.2.1</swagger.version>
         <swagger-ui.version>4.9.1</swagger-ui.version>
         <testcontainers-scala.version>0.40.7</testcontainers-scala.version>
@@ -2035,6 +2036,12 @@
                                 <file>${maven.multiModuleProjectDirectory}/.scalafmt.conf</file>
                             </scalafmt>
                         </scala>
+                        <python>
+                            <includes>
+                                <include>${spotless.python.includes}</include>
+                            </includes>
+                            <black></black>
+                        </python>
                     </configuration>
                     <executions>
                         <execution>
@@ -2298,6 +2305,13 @@
             <modules>
                 <module>tools/spark-block-cleaner</module>
             </modules>
+        </profile>
+
+        <profile>
+            <id>spotless-python</id>
+            <properties>
+                <spotless.python.includes>src/**/*.py</spotless.python.includes>
+            </properties>
         </profile>
 
         <profile>
