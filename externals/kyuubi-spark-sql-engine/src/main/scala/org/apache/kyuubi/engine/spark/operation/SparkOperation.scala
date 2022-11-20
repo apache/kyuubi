@@ -66,10 +66,10 @@ abstract class SparkOperation(session: Session)
     }
   }
 
-  private val forceCancel =
+  protected val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
-  private val schedulerPool =
+  protected val schedulerPool =
     spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
       session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
 
