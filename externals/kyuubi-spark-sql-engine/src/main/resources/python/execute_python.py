@@ -119,7 +119,7 @@ def parse_code_into_nodes(code):
 
         # Convert the chunks into AST nodes. Let exceptions propagate.
         for chunk in chunks:
-            # (look back here when Jupyter and sparkmagic are supported )
+            # TODO: look back here when Jupyter and sparkmagic are supported
             # if chunk.startswith('%'):
             #     nodes.append(MagicNode(chunk))
 
