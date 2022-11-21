@@ -60,7 +60,7 @@ class NormalNode(object):
                 mod = ast.Interactive([node])
                 code = compile(mod, '<stdin>', 'single')
                 exec(code, global_dict)
-        except:
+        except Exception:
             # We don't need to log the exception because we're just executing user
             # code and passing the error along.
             raise ExecutionError(sys.exc_info())
@@ -263,7 +263,6 @@ def main():
             try:
                 content = json.loads(line)
             except ValueError:
-                # LOG.error('failed to parse message', exc_info=True)
                 continue
 
             if content['cmd'] == 'exit_worker':
