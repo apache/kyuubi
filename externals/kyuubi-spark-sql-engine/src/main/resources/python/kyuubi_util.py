@@ -70,9 +70,9 @@ def _get_exist_spark_context(self, jconf):
     return self._jvm.JavaSparkContext(self._jvm.org.apache.spark.SparkContext.getOrCreate(jconf))
 
 
-def get_spark_session():
+def get_spark_session() -> "SparkSession":
     SparkContext._initialize_context = _get_exist_spark_context
     gateway = connect_to_exist_gateway()
     SparkContext._ensure_initialized(gateway=gateway)
-    spark = SparkSession.builder.master('local').appName('test').getOrCreate()
+    spark = SparkSession._create_shell_session()
     return spark
