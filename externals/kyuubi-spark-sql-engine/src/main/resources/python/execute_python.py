@@ -25,9 +25,7 @@ import sys
 import traceback
 from glob import glob
 
-if sys.version >= '3':
-    unicode = str
-else:
+if sys.version_info[0] < 3:
     sys.exit('Python < 3 is unsupported.')
 
 # ast api is changed after python 3.8, see https://github.com/ipython/ipython/pull/11593
