@@ -17,8 +17,10 @@
 
 package org.apache.spark.sql.kyuubi
 
+import java.io.ByteArrayOutputStream
 import java.time.ZoneId
 
+import net.jpountz.lz4.LZ4FrameOutputStream
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.functions._
@@ -27,8 +29,24 @@ import org.apache.spark.sql.types.{ArrayType, DataType, MapType, StructField, St
 import org.apache.kyuubi.engine.spark.schema.RowSet
 
 object SparkDatasetHelper {
-  def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
-    ds.toArrowBatchRdd
+  def toArrowBatchRdd[T](ds: Dataset[T], isCompressed: Boolean = true): RDD[Array[Byte]] = {
+    if (isCompressed) {
+      ds.toArrowBatchRdd.map { byteArray =>
+        val baos = new ByteArrayOutputStream()
+        var os: LZ4FrameOutputStream = null
+        try {
+          os = new LZ4FrameOutputStream(baos)
+          os.write(byteArray)
+        } finally {
+          if (os != null) {
+            os.close()
+          }
+        }
+        baos.toByteArray
+      }
+    } else {
+      ds.toArrowBatchRdd
+    }
   }
 
   def convertTopLevelComplexTypeToHiveString(df: DataFrame): DataFrame = {

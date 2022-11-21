@@ -17,11 +17,13 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import com.databricks.client.jdbc42.internal.jpountz.lz4.LZ4FrameInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
@@ -400,7 +402,30 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
 
   private ArrowRecordBatch loadArrowBatch(byte[] batchBytes, BufferAllocator allocator)
       throws IOException {
+    boolean isCompressed = true;
     ByteArrayInputStream in = new ByteArrayInputStream(batchBytes);
+    if (isCompressed) {
+      LZ4FrameInputStream lz4FrameInputStream = new LZ4FrameInputStream(in);
+      int length = batchBytes.length * 2;
+      byte[] buffer = new byte[length];
+      int offset = 0;
+
+      int readLength;
+      do {
+        readLength = lz4FrameInputStream.read(buffer, offset, buffer.length - offset);
+        if (-1 == readLength) {
+          break;
+        }
+
+        offset += readLength;
+        if (length <= offset) {
+          length *= 2;
+          buffer = Arrays.copyOf(buffer, length);
+        }
+      } while (-1 != readLength);
+      lz4FrameInputStream.close();
+      in = new ByteArrayInputStream(buffer);
+    }
     return MessageSerializer.deserializeRecordBatch(
         new ReadChannel(Channels.newChannel(in)), allocator);
   }
