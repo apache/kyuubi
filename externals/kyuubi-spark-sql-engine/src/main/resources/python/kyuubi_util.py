@@ -74,5 +74,5 @@ def get_spark_session() -> "SparkSession":
     SparkContext._initialize_context = _get_exist_spark_context
     gateway = connect_to_exist_gateway()
     SparkContext._ensure_initialized(gateway=gateway)
-    spark = SparkSession._create_shell_session()
+    spark = SparkSession.builder.master('local').appName('test').getOrCreate()
     return spark
