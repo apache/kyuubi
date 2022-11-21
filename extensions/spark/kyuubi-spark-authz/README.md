@@ -35,8 +35,8 @@ build/mvn clean package -pl :kyuubi-spark-authz_2.12 -Dspark.version=3.2.1 -Dran
 `-Dspark.version=`
 
 - [x] master
-- [x] 3.3.x
-- [x] 3.2.x (default)
+- [x] 3.3.x (default)
+- [x] 3.2.x
 - [x] 3.1.x
 - [x] 3.0.x
 - [ ] 2.4.x and earlier
