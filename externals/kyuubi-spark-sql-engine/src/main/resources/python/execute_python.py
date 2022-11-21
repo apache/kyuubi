@@ -28,6 +28,29 @@ from glob import glob
 if sys.version_info[0] < 3:
     sys.exit('Python < 3 is unsupported.')
 
+spark_home = os.environ.get("SPARK_HOME", "")
+os.environ["PYSPARK_PYTHON"] = os.environ.get("PYSPARK_PYTHON", sys.executable)
+
+# add pyspark to sys.path
+
+if "pyspark" not in sys.modules:
+    spark_python = os.path.join(spark_home, "python")
+    try:
+        py4j = glob(os.path.join(spark_python, "lib", "py4j-*.zip"))[0]
+    except IndexError:
+        raise Exception(
+            "Unable to find py4j in {}, your SPARK_HOME may not be configured correctly".format(
+                spark_python
+            )
+        )
+    sys.path[:0] = sys_path = [spark_python, py4j]
+else:
+    # already imported, no need to patch sys.path
+    sys_path = None
+
+# import kyuubi_util after preparing sys.path
+import kyuubi_util
+
 # ast api is changed after python 3.8, see https://github.com/ipython/ipython/pull/11593
 if sys.version_info >= (3, 8):
     from ast import Module
@@ -212,29 +235,7 @@ def execute_request(content):
     return execute_reply_ok(result)
 
 
-spark_home = os.environ.get("SPARK_HOME", "")
-os.environ["PYSPARK_PYTHON"] = os.environ.get("PYSPARK_PYTHON", sys.executable)
-
-# add pyspark to sys.path
-
-if "pyspark" not in sys.modules:
-    spark_python = os.path.join(spark_home, "python")
-    try:
-        py4j = glob(os.path.join(spark_python, "lib", "py4j-*.zip"))[0]
-    except IndexError:
-        raise Exception(
-            "Unable to find py4j in {}, your SPARK_HOME may not be configured correctly".format(
-                spark_python
-            )
-        )
-    sys.path[:0] = sys_path = [spark_python, py4j]
-else:
-    # already imported, no need to patch sys.path
-    sys_path = None
-
 # get or create spark session
-import kyuubi_util
-
 spark_session = kyuubi_util.get_spark_session()
 global_dict['spark'] = spark_session
 
