@@ -18,7 +18,7 @@
 import ast
 import io
 import json
-import kyuubi_util
+
 import os
 import re
 import sys
@@ -233,6 +233,8 @@ else:
     sys_path = None
 
 # get or create spark session
+import kyuubi_util
+
 spark_session = kyuubi_util.get_spark_session()
 global_dict['spark'] = spark_session
 
