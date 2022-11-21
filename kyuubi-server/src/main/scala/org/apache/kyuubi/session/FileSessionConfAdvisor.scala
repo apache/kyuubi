@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.session
 
-import java.util.{Map => JMap}
-import java.util.Collections
+import java.util.{Collections, Map => JMap}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
@@ -44,9 +43,12 @@ class FileSessionConfAdvisor extends SessionConfAdvisor {
 }
 
 object FileSessionConfAdvisor extends Logging {
-  private val sessionConfCache: LoadingCache[String, JMap[String, String]] =
+  private val reloadInterval: Long = KyuubiConf().get(KyuubiConf.SESSION_CONF_FILE_RELOAD_INTERVAL)
+  private lazy val sessionConfCache: LoadingCache[String, JMap[String, String]] =
     CacheBuilder.newBuilder()
-      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .expireAfterWrite(
+        reloadInterval,
+        TimeUnit.MILLISECONDS)
       .build(new CacheLoader[String, JMap[String, String]] {
         override def load(profile: String): JMap[String, String] = {
           val propsFile = Utils.getPropertiesFile(s"kyuubi-session-$profile.conf")

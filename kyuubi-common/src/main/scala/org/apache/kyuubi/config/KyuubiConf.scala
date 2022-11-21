@@ -1004,6 +1004,15 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val SESSION_CONF_FILE_RELOAD_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.session.conf.file.reload.interval")
+      .doc("When `FileSessionConfAdvisor` is used, this configuration defines " +
+        "the expired time of `$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf` " +
+        "in the cache. After exceeding this value, the file will be reloaded.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(10).toMillis)
+
   val ENGINE_SPARK_MAX_LIFETIME: ConfigEntry[Long] =
     buildConf("kyuubi.session.engine.spark.max.lifetime")
       .doc("Max lifetime for spark engine, the engine will self-terminate when it reaches the" +
