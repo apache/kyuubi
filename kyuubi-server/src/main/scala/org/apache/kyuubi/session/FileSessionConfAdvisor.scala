@@ -34,9 +34,9 @@ class FileSessionConfAdvisor extends SessionConfAdvisor {
       user: String,
       sessionConf: JMap[String, String]): JMap[String, String] = {
     val profile: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
-    val duration = sessionConf.get(KyuubiConf.SESSION_CONF_FILE_RELOAD_DURATION.key)
+    val duration = sessionConf.get(KyuubiConf.SESSION_CONF_FILE_RELOAD_INTERVAL.key)
     duration match {
-      case null => reloadDuration = KyuubiConf.SESSION_CONF_FILE_RELOAD_DURATION.defaultVal.get
+      case null => reloadDuration = KyuubiConf.SESSION_CONF_FILE_RELOAD_INTERVAL.defaultVal.get
       case _ => reloadDuration = duration.toLong
     }
     profile match {

@@ -1004,8 +1004,8 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val SESSION_CONF_FILE_RELOAD_DURATION: ConfigEntry[Long] =
-    buildConf("kyuubi.session.conf.file.reload.duration")
+  val SESSION_CONF_FILE_RELOAD_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.session.conf.file.reload.interval")
       .doc("When `FileSessionConfAdvisor` is used, this configuration defines " +
         "the expired time of `$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf` " +
         "in the cache. After exceeding this value, the file will be reloaded.")
