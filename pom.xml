@@ -2264,7 +2264,7 @@
                 <spark.binary.version>3.2</spark.binary.version>
                 <delta.version>2.0.1</delta.version>
                 <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.2.3-rc1-bin/</spark.archive.mirror>
-                <!-- <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name> -->
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
