@@ -2043,7 +2043,9 @@
                             <includes>
                                 <include>${spotless.python.includes}</include>
                             </includes>
-                            <black/>
+                            <black>
+                                <version>${spotless.python.black.version}</version>
+                            </black>
                         </python>
                     </configuration>
                     <executions>
