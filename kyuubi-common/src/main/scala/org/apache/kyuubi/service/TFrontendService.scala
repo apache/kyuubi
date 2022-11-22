@@ -91,8 +91,8 @@ abstract class TFrontendService(name: String)
    */
   private def stopInternal(): Unit = {
     if (started.compareAndSet(true, false)) {
-      serverThread.interrupt()
       stopServer()
+      serverThread.interrupt()
       info(getName + " has stopped")
     }
   }

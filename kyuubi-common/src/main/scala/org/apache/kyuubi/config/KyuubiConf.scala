@@ -671,6 +671,13 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val FRONTEND_THRIFT_STOP_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.frontend.thrift.stop.timeout")
+      .doc("Timeout seconds for stop the thrift frontend service.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(60)
+
   val FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER: ConfigEntry[String] =
     buildConf("kyuubi.frontend.proxy.http.client.ip.header")
       .doc("The http header to record the real client ip address. If your server is behind a load" +

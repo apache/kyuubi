@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.service
 
+import org.apache.thrift.server.{TServer, TThreadPoolServer}
+
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.operation.TClientTestUtils
 
 class ServerableSuite extends KyuubiFunSuite {
 
@@ -66,5 +69,28 @@ class ServerableSuite extends KyuubiFunSuite {
     val e1 = intercept[KyuubiException](server1.start())
     assert(e1.getMessage === "Failed to Start NoopTBinaryFrontendServer")
     assert(e1.getCause.getMessage === "should fail backend")
+  }
+
+  test("thrift frontend service stop") {
+    import scala.language.reflectiveCalls
+    val frontendServer = new NoopTBinaryFrontendServer() {
+      val frontendService = new NoopTBinaryFrontendService(this) {
+        def getServer(): Option[TServer] = server
+      }
+      override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(frontendService)
+    }
+    val conf = KyuubiConf()
+    frontendServer.initialize(conf)
+    frontendServer.start()
+
+    val service = frontendServer.frontendService
+    TClientTestUtils.withThriftClient(service) { _ =>
+      assert(service.getServer().isDefined)
+      val server: TThreadPoolServer =
+        service.getServer().get.asInstanceOf[TThreadPoolServer]
+      frontendServer.stop()
+      assert(service.getServer().isEmpty)
+      assert(!server.isServing)
+    }
   }
 }
