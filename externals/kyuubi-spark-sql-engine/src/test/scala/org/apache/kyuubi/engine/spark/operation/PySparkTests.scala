@@ -24,7 +24,9 @@ import scala.sys.process._
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.tags.PySparkTest
 
+@PySparkTest
 trait PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
   test("pyspark support") {
