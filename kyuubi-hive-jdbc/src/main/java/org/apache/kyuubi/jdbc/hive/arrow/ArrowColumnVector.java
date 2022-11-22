@@ -19,7 +19,6 @@ package org.apache.kyuubi.jdbc.hive.arrow;
 
 import java.math.BigDecimal;
 import org.apache.arrow.vector.*;
-import org.apache.arrow.vector.complex.*;
 import org.apache.arrow.vector.holders.NullableVarCharHolder;
 
 /** A column vector backed by Apache Arrow. */
@@ -103,112 +102,7 @@ public class ArrowColumnVector {
     return accessor.getBinary(rowId);
   }
 
-  public Object getArray(int rowId) {
-    if (isNullAt(rowId)) return null;
-    return accessor.getArray(rowId);
-  }
-
-  public Object getMap(int rowId) {
-    if (isNullAt(rowId)) return null;
-    return accessor.getMap(rowId);
-  }
-
-  // ====== array related operation ======
-
-  /**
-   * Gets boolean type values from {@code [rowId, rowId + count)}. The return values for the null
-   * slots are undefined and can be anything.
-   */
-  public boolean[] getBooleans(int rowId, int count) {
-    boolean[] res = new boolean[count];
-    for (int i = 0; i < count; i++) {
-      res[i] = getBoolean(rowId + i);
-    }
-    return res;
-  }
-
-  /**
-   * Gets byte type values from {@code [rowId, rowId + count)}. The return values for the null slots
-   * are undefined and can be anything.
-   */
-  public byte[] getBytes(int rowId, int count) {
-    byte[] res = new byte[count];
-    for (int i = 0; i < count; i++) {
-      res[i] = getByte(rowId + i);
-    }
-    return res;
-  }
-
-  /**
-   * Gets short type values from {@code [rowId, rowId + count)}. The return values for the null
-   * slots are undefined and can be anything.
-   */
-  public short[] getShorts(int rowId, int count) {
-    short[] res = new short[count];
-    for (int i = 0; i < count; i++) {
-      res[i] = getShort(rowId + i);
-    }
-    return res;
-  }
-
-  /**
-   * Gets int type values from {@code [rowId, rowId + count)}. The return values for the null slots
-   * are undefined and can be anything.
-   */
-  public int[] getInts(int rowId, int count) {
-    int[] res = new int[count];
-    for (int i = 0; i < count; i++) {
-      res[i] = getInt(rowId + i);
-    }
-    return res;
-  }
-
-  /**
-   * Gets long type values from {@code [rowId, rowId + count)}. The return values for the null slots
-   * are undefined and can be anything.
-   */
-  public long[] getLongs(int rowId, int count) {
-    long[] res = new long[count];
-    for (int i = 0; i < count; i++) {
-      res[i] = getLong(rowId + i);
-    }
-    return res;
-  }
-
-  /**
-   * Gets float type values from {@code [rowId, rowId + count)}. The return values for the null
-   * slots are undefined and can be anything.
-   */
-  public float[] getFloats(int rowId, int count) {
-    float[] res = new float[count];
-    for (int i = 0; i < count; i++) {
-      res[i] = getFloat(rowId + i);
-    }
-    return res;
-  }
-
-  /**
-   * Gets double type values from {@code [rowId, rowId + count)}. The return values for the null
-   * slots are undefined and can be anything.
-   */
-  public double[] getDoubles(int rowId, int count) {
-    double[] res = new double[count];
-    for (int i = 0; i < count; i++) {
-      res[i] = getDouble(rowId + i);
-    }
-    return res;
-  }
-
-  public ArrowColumnVector getChild(int ordinal) {
-    return childColumns[ordinal];
-  }
-
-  //  ArrowColumnVector(DataType type) {
-  //    super(type);
-  //  }
-
   public ArrowColumnVector(ValueVector vector) {
-    //    this(ArrowUtils.fromArrowField(vector.getField()));
     initAccessor(vector);
   }
 
@@ -239,20 +133,6 @@ public class ArrowColumnVector {
       accessor = new TimestampAccessor((TimeStampMicroTZVector) vector);
     } else if (vector instanceof TimeStampMicroVector) {
       accessor = new TimestampNTZAccessor((TimeStampMicroVector) vector);
-    } else if (vector instanceof MapVector) {
-      MapVector mapVector = (MapVector) vector;
-      accessor = new MapAccessor(mapVector);
-    } else if (vector instanceof ListVector) {
-      ListVector listVector = (ListVector) vector;
-      accessor = new ArrayAccessor(listVector);
-    } else if (vector instanceof StructVector) {
-      StructVector structVector = (StructVector) vector;
-      accessor = new StructAccessor(structVector);
-
-      childColumns = new ArrowColumnVector[structVector.size()];
-      for (int i = 0; i < childColumns.length; ++i) {
-        childColumns[i] = new ArrowColumnVector(structVector.getVectorById(i));
-      }
     } else if (vector instanceof NullVector) {
       accessor = new NullAccessor((NullVector) vector);
     } else if (vector instanceof IntervalYearVector) {
@@ -455,14 +335,12 @@ public class ArrowColumnVector {
     final BigDecimal getDecimal(int rowId, int precision, int scale) {
       if (isNullAt(rowId)) return null;
       return accessor.getObject(rowId);
-      //      return Decimal.apply(accessor.getObject(rowId), precision, scale);
     }
 
     @Override
     final BigDecimal getDecimal(int rowId) {
       if (isNullAt(rowId)) return null;
       return accessor.getObject(rowId);
-      //      return Decimal.apply(accessor.getObject(rowId), precision, scale);
     }
   }
 
@@ -483,9 +361,6 @@ public class ArrowColumnVector {
         return null;
       } else {
         return new String(accessor.get(rowId));
-        //        return UTF8String.fromAddress(null,
-        //            stringResult.buffer.memoryAddress() + stringResult.start,
-        //            stringResult.end - stringResult.start);
       }
     }
   }
@@ -547,63 +422,6 @@ public class ArrowColumnVector {
     @Override
     final long getLong(int rowId) {
       return accessor.get(rowId);
-    }
-  }
-
-  static class ArrayAccessor extends ArrowVectorAccessor {
-
-    private final ListVector accessor;
-    private final ArrowColumnVector arrayData;
-
-    ArrayAccessor(ListVector vector) {
-      super(vector);
-      this.accessor = vector;
-      this.arrayData = new ArrowColumnVector(vector.getDataVector());
-    }
-
-    @Override
-    final Object getArray(int rowId) {
-      int start = accessor.getElementStartIndex(rowId);
-      int end = accessor.getElementEndIndex(rowId);
-      return new ColumnarArray(arrayData, start, end - start).toIntArray();
-      //      return null;
-    }
-  }
-
-  /**
-   * Any call to "get" method will throw UnsupportedOperationException.
-   *
-   * <p>Access struct values in a ArrowColumnVector doesn't use this accessor. Instead, it uses
-   * getStruct() method defined in the parent class. Any call to "get" method in this class is a bug
-   * in the code.
-   */
-  static class StructAccessor extends ArrowVectorAccessor {
-
-    StructAccessor(StructVector vector) {
-      super(vector);
-    }
-  }
-
-  static class MapAccessor extends ArrowVectorAccessor {
-    private final MapVector accessor;
-    private final ArrowColumnVector keys;
-    private final ArrowColumnVector values;
-
-    MapAccessor(MapVector vector) {
-      super(vector);
-      this.accessor = vector;
-      StructVector entries = (StructVector) vector.getDataVector();
-      this.keys = new ArrowColumnVector(entries.getChild(MapVector.KEY_NAME));
-      this.values = new ArrowColumnVector(entries.getChild(MapVector.VALUE_NAME));
-    }
-
-    @Override
-    final Object getMap(int rowId) {
-      int index = rowId * MapVector.OFFSET_WIDTH;
-      int offset = accessor.getOffsetBuffer().getInt(index);
-      int length = accessor.getInnerValueCountAt(rowId);
-      //      return new ColumnarMap(keys, values, offset, length);
-      return null;
     }
   }
 

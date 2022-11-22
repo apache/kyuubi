@@ -89,21 +89,18 @@ public class ArrowColumnarBatchRow {
   }
 
   public Object getInterval(int ordinal) {
-    //    return columns[ordinal].getInterval(rowId);
     throw new UnsupportedOperationException();
   }
 
   public Object getStruct(int ordinal, int numFields) {
-    //    return columns[ordinal].getStruct(rowId);
     throw new UnsupportedOperationException();
   }
 
   public Object getArray(int ordinal) {
-    return columns[ordinal].getArray(rowId);
+    throw new UnsupportedOperationException();
   }
 
   public Object getMap(int ordinal) {
-    //    return columns[ordinal].getMap(rowId);
     throw new UnsupportedOperationException();
   }
 
@@ -142,7 +139,6 @@ public class ArrowColumnarBatchRow {
         return new HiveIntervalYearMonth(getInt(ordinal));
       case ARRAY_TYPE:
         return getString(ordinal);
-        //        return getArray(ordinal);
       case MAP_TYPE:
         return getString(ordinal);
       case STRUCT_TYPE:

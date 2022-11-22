@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.jdbc.hive.arrow;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,24 +49,10 @@ public class ArrowUtils {
   public static Field toArrowField(
       String name, TTypeId ttype, JdbcColumnAttributes jdbcColumnAttributes) {
     boolean nullable = true;
-    switch (ttype) {
-      case ARRAY_TYPE:
-        if (jdbcColumnAttributes != null) {
-          ArrayType type = (ArrayType) parseTypeString(jdbcColumnAttributes.arrayElementType);
-          FieldType fieldType = new FieldType(nullable, ArrowType.List.INSTANCE, null);
-          return new Field(
-              name,
-              fieldType,
-              Arrays.asList(
-                  toArrowField("element", type.elementType.toTTypeId(), jdbcColumnAttributes)));
-        }
-
-      default:
-        return new Field(
-            name,
-            new FieldType(nullable, toArrowType(ttype, jdbcColumnAttributes), null),
-            Collections.emptyList());
-    }
+    return new Field(
+        name,
+        new FieldType(nullable, toArrowType(ttype, jdbcColumnAttributes), null),
+        Collections.emptyList());
   }
 
   public static ArrowType toArrowType(TTypeId ttype, JdbcColumnAttributes jdbcColumnAttributes) {
@@ -111,15 +96,6 @@ public class ArrowUtils {
         return new ArrowType.Interval(IntervalUnit.YEAR_MONTH);
       default:
         throw new IllegalArgumentException("Unrecognized type name: " + ttype.name());
-    }
-  }
-
-  private static CatalogType parseTypeString(String typeString) {
-    if (typeString.startsWith("array")) {
-      CatalogType elementType = parseTypeString(typeString.substring(6, typeString.length() - 1));
-      return new ArrayType(elementType);
-    } else {
-      return new SimpleType(typeString);
     }
   }
 }

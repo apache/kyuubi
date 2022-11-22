@@ -78,8 +78,6 @@ object SchemaHelper {
           TCLIServiceConstants.SCALE -> TTypeQualifierValue.i32Value(d.scale)).asJava
       case _: TimestampType =>
         Map("session.timeZone" -> TTypeQualifierValue.stringValue(timeZone)).asJava
-      case at: ArrayType =>
-        Map("array.typeString" -> TTypeQualifierValue.stringValue(at.catalogString)).asJava
       case _ => Collections.emptyMap[String, TTypeQualifierValue]()
     }
     ret.setQualifiers(qualifiers)

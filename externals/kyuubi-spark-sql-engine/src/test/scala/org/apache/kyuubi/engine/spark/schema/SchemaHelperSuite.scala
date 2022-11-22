@@ -92,16 +92,8 @@ class SchemaHelperSuite extends KyuubiFunSuite {
     assert(q2.size() === 1)
     assert(q2.get("session.timeZone").getStringValue === timeZone)
 
-    // array<long>
-    val qualifiers3 = toTTypeQualifiers(outerSchema(13).dataType, timeZone)
-    val q3 = qualifiers3.getQualifiers
-    assert(q3.size() === 1)
-    assert(q3.get("array.typeString").getStringValue === "array<bigint>")
-
     outerSchema.foreach {
-      case f if f.dataType == DecimalType(10, 8) =>
-      case f if f.dataType == TimestampType =>
-      case f if f.dataType.isInstanceOf[ArrayType] =>
+      case f if f.dataType == DecimalType(10, 8) || f.dataType == TimestampType =>
       case f => assert(toTTypeQualifiers(f.dataType, "").getQualifiers.isEmpty)
     }
   }
@@ -124,8 +116,6 @@ class SchemaHelperSuite extends KyuubiFunSuite {
         assert(qualifiers.get(TCLIServiceConstants.SCALE).getI32Value === 8)
       } else if (pos == 11) {
         assert(qualifiers.get("session.timeZone").getStringValue === timeZone)
-      } else if (pos == 13) {
-        assert(qualifiers.get("array.typeString").getStringValue === "array<bigint>")
       } else {
         assert(qualifiers.isEmpty)
       }
