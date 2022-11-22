@@ -24,7 +24,7 @@ from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
 
 
-def connect_to_exist_gateway():
+def connect_to_exist_gateway() -> "JavaGateway":
     conn_info_file = os.environ.get("PYTHON_GATEWAY_CONNECTION_INFO")
     if conn_info_file is None:
         raise SystemExit("the python gateway connection information file not found!")
