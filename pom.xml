@@ -223,6 +223,10 @@
         <!-- Package to use when relocating shaded classes. -->
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
 
+        <!-- Needed for Spotless style check-->
+        <spotless.python.includes/>
+        <spotless.python.black.version>22.3.0</spotless.python.black.version>
+
         <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
         <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
         <distMgmtReleaseUrl>https://repository.apache.org/service/local/staging/deploy/maven2</distMgmtReleaseUrl>
@@ -2035,6 +2039,14 @@
                                 <file>${maven.multiModuleProjectDirectory}/.scalafmt.conf</file>
                             </scalafmt>
                         </scala>
+                        <python>
+                            <includes>
+                                <include>${spotless.python.includes}</include>
+                            </includes>
+                            <black>
+                                <version>${spotless.python.black.version}</version>
+                            </black>
+                        </python>
                     </configuration>
                     <executions>
                         <execution>
@@ -2298,6 +2310,13 @@
             <modules>
                 <module>tools/spark-block-cleaner</module>
             </modules>
+        </profile>
+
+        <profile>
+            <id>spotless-python</id>
+            <properties>
+                <spotless.python.includes>src/**/*.py</spotless.python.includes>
+            </properties>
         </profile>
 
         <profile>

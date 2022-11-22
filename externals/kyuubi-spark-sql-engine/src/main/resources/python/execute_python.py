@@ -26,7 +26,7 @@ import traceback
 from glob import glob
 
 if sys.version_info[0] < 3:
-    sys.exit('Python < 3 is unsupported.')
+    sys.exit("Python < 3 is unsupported.")
 
 spark_home = os.environ.get("SPARK_HOME", "")
 os.environ["PYSPARK_PYTHON"] = os.environ.get("PYSPARK_PYTHON", sys.executable)
@@ -68,7 +68,7 @@ global_dict = {}
 
 class NormalNode(object):
     def __init__(self, code):
-        self.code = compile(code, '<stdin>', 'exec', ast.PyCF_ONLY_AST, 1)
+        self.code = compile(code, "<stdin>", "exec", ast.PyCF_ONLY_AST, 1)
 
     def execute(self):
         to_run_exec, to_run_single = self.code.body[:-1], self.code.body[-1:]
@@ -76,12 +76,12 @@ class NormalNode(object):
         try:
             for node in to_run_exec:
                 mod = Module([node], [])
-                code = compile(mod, '<stdin>', 'exec')
+                code = compile(mod, "<stdin>", "exec")
                 exec(code, global_dict)
 
             for node in to_run_single:
                 mod = ast.Interactive([node])
-                code = compile(mod, '<stdin>', 'single')
+                code = compile(mod, "<stdin>", "single")
                 exec(code, global_dict)
         except Exception:
             # We don't need to log the exception because we're just executing user
@@ -115,10 +115,10 @@ def parse_code_into_nodes(code):
     except SyntaxError:
         normal = []
         chunks = []
-        for i, line in enumerate(code.rstrip().split('\n')):
-            if line.startswith('%'):
+        for i, line in enumerate(code.rstrip().split("\n")):
+            if line.startswith("%"):
                 if normal:
-                    chunks.append('\n'.join(normal))
+                    chunks.append("\n".join(normal))
                     normal = []
 
                 chunks.append(line)
@@ -126,7 +126,7 @@ def parse_code_into_nodes(code):
                 normal.append(line)
 
         if normal:
-            chunks.append('\n'.join(normal))
+            chunks.append("\n".join(normal))
 
         # Convert the chunks into AST nodes. Let exceptions propagate.
         for chunk in chunks:
@@ -141,46 +141,55 @@ def parse_code_into_nodes(code):
 
 def execute_reply(status, content):
     msg = {
-        'msg_type': 'execute_reply',
-        'content': dict(
+        "msg_type": "execute_reply",
+        "content": dict(
             content,
             status=status,
-        )
+        ),
     }
     return json.dumps(msg)
 
 
 def execute_reply_ok(data):
-    return execute_reply("ok", {
-        "data": data,
-    })
+    return execute_reply(
+        "ok",
+        {
+            "data": data,
+        },
+    )
 
 
 def execute_reply_error(exc_type, exc_value, tb):
     formatted_tb = traceback.format_exception(exc_type, exc_value, tb, chain=False)
     for i in range(len(formatted_tb)):
         if TOP_FRAME_REGEX.match(formatted_tb[i]):
-            formatted_tb = formatted_tb[:1] + formatted_tb[i + 1:]
+            formatted_tb = formatted_tb[:1] + formatted_tb[i + 1 :]
             break
 
-    return execute_reply('error', {
-        'ename': str(exc_type.__name__),
-        'evalue': str(exc_value),
-        'traceback': formatted_tb,
-    })
+    return execute_reply(
+        "error",
+        {
+            "ename": str(exc_type.__name__),
+            "evalue": str(exc_value),
+            "traceback": formatted_tb,
+        },
+    )
 
 
 def execute_reply_internal_error(message, exc_info=None):
-    return execute_reply('error', {
-        'ename': 'InternalError',
-        'evalue': message,
-        'traceback': [],
-    })
+    return execute_reply(
+        "error",
+        {
+            "ename": "InternalError",
+            "evalue": message,
+            "traceback": [],
+        },
+    )
 
 
 def execute_request(content):
     try:
-        code = content['code']
+        code = content["code"]
     except KeyError:
         return execute_reply_internal_error(
             'Malformed message: content object missing "code"', sys.exc_info()
@@ -208,7 +217,7 @@ def execute_request(content):
 
     clearOutputs()
 
-    output = result.pop('text/plain', '')
+    output = result.pop("text/plain", "")
 
     if stdout:
         output += stdout
@@ -220,14 +229,14 @@ def execute_request(content):
 
     # Only add the output if it exists, or if there are no other mimetypes in the result.
     if output or not result:
-        result['text/plain'] = output.rstrip()
+        result["text/plain"] = output.rstrip()
 
     return execute_reply_ok(result)
 
 
 # get or create spark session
 spark_session = kyuubi_util.get_spark_session()
-global_dict['spark'] = spark_session
+global_dict["spark"] = spark_session
 
 
 def main():
@@ -248,9 +257,9 @@ def main():
         while True:
             line = sys_stdin.readline()
 
-            if line == '':
+            if line == "":
                 break
-            elif line == '\n':
+            elif line == "\n":
                 continue
 
             try:
@@ -258,7 +267,7 @@ def main():
             except ValueError:
                 continue
 
-            if content['cmd'] == 'exit_worker':
+            if content["cmd"] == "exit_worker":
                 break
 
             result = execute_request(content)
@@ -272,5 +281,5 @@ def main():
         sys.stderr = sys_stderr
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

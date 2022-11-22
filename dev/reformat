@@ -22,4 +22,12 @@ KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 
 PROFILES="-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spark-3.3,spark-3.2,spark-3.1,tpcds"
 
+# python style checks rely on `black` in path
+if ! command -v black &> /dev/null
+then
+    echo "Skip Python lint since 'black' is not available."
+else
+    PROFILES="${PROFILES},spotless-python"
+fi
+
 ${KYUUBI_HOME}/build/mvn spotless:apply $PROFILES

@@ -45,6 +45,11 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
+      - name: Setup Python 3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
       - name: Check kyuubi modules avaliable
         id: modules-check
         run: build/mvn dependency:resolve -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile" -DexcludeTransitive=true ${{ matrix.profiles }}
@@ -72,8 +77,11 @@ jobs:
                 cat $log;
               fi
           done
-      - name: JavaStyle with maven
-        run: build/mvn spotless:check ${{ matrix.profiles }}
+      - name: Spotless style check
+        run: |
+          SPOTLESS_BLACK_VERSION=$(build/mvn help:evaluate -Dexpression=spotless.python.black.version -q -DforceStdout)
+          pip install black==$SPOTLESS_BLACK_VERSION
+          build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python
       - name: setup npm
         uses: actions/setup-node@v3
         with:

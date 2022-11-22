@@ -34,18 +34,16 @@ def connect_to_exist_gateway() -> "JavaGateway":
     if os.environ.get("PYSPARK_PIN_THREAD", "true").lower() == "true":
         gateway = ClientServer(
             java_parameters=JavaParameters(
-                port=gateway_port,
-                auth_token=gateway_secret,
-                auto_convert=True),
-            python_parameters=PythonParameters(
-                port=0,
-                eager_load=False))
+                port=gateway_port, auth_token=gateway_secret, auto_convert=True
+            ),
+            python_parameters=PythonParameters(port=0, eager_load=False),
+        )
     else:
         gateway = JavaGateway(
             gateway_parameters=GatewayParameters(
-                port=gateway_port,
-                auth_token=gateway_secret,
-                auto_convert=True))
+                port=gateway_port, auth_token=gateway_secret, auto_convert=True
+            )
+        )
     # gateway.proc = proc
 
     # Import the classes used by PySpark
@@ -67,12 +65,14 @@ def _get_exist_spark_context(self, jconf):
     """
     Initialize SparkContext in function to allow subclass specific initialization
     """
-    return self._jvm.JavaSparkContext(self._jvm.org.apache.spark.SparkContext.getOrCreate(jconf))
+    return self._jvm.JavaSparkContext(
+        self._jvm.org.apache.spark.SparkContext.getOrCreate(jconf)
+    )
 
 
 def get_spark_session() -> "SparkSession":
     SparkContext._initialize_context = _get_exist_spark_context
     gateway = connect_to_exist_gateway()
     SparkContext._ensure_initialized(gateway=gateway)
-    spark = SparkSession.builder.master('local').appName('test').getOrCreate()
+    spark = SparkSession.builder.master("local").appName("test").getOrCreate()
     return spark
