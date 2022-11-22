@@ -226,14 +226,6 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
           TTypeQualifierValue timeZone = tq.getQualifiers().get("session.timeZone");
           ret = new JdbcColumnAttributes(timeZone == null ? "" : timeZone.getStringValue());
           break;
-        case ARRAY_TYPE:
-          if (!convertComplexTypeToString) {
-            TTypeQualifierValue typeString = tq.getQualifiers().get("array.typeString");
-            ret = new JdbcColumnAttributes();
-            ret.setArrayElementType(typeString == null ? "" : typeString.getStringValue());
-          }
-          break;
-
         default:
           break;
       }
