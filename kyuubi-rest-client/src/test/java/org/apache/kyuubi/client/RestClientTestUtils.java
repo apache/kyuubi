@@ -69,6 +69,7 @@ public class RestClientTestUtils {
             "spark",
             "/MySpace/kyuubi-spark-sql-engine_2.12-1.6.0-SNAPSHOT.jar",
             "org.apache.kyuubi.engine.spark.SparkSQLEngine",
+            null,
             "test_batch",
             Collections.singletonMap("spark.driver.memory", "16m"),
             Collections.emptyList());

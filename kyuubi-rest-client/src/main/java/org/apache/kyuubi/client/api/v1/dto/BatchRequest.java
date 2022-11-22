@@ -28,6 +28,7 @@ public class BatchRequest {
   private String batchType;
   private String resource;
   private String className;
+  private String pythonFiles;
   private String name;
   private Map<String, String> conf;
   private List<String> args;
@@ -38,12 +39,14 @@ public class BatchRequest {
       String batchType,
       String resource,
       String className,
+      String pythonFiles,
       String name,
       Map<String, String> conf,
       List<String> args) {
     this.batchType = batchType;
     this.resource = resource;
     this.className = className;
+    this.pythonFiles = pythonFiles;
     this.name = name;
     this.conf = conf;
     this.args = args;
@@ -53,6 +56,7 @@ public class BatchRequest {
     this.batchType = batchType;
     this.resource = resource;
     this.className = className;
+    this.pythonFiles = null;
     this.name = name;
     this.conf = Collections.emptyMap();
     this.args = Collections.emptyList();
@@ -80,6 +84,14 @@ public class BatchRequest {
 
   public void setClassName(String className) {
     this.className = className;
+  }
+
+  public String getPythonFiles() {
+    return pythonFiles;
+  }
+
+  public void setPythonFiles(String pythonFiles) {
+    this.pythonFiles = pythonFiles;
   }
 
   public String getName() {
@@ -120,6 +132,7 @@ public class BatchRequest {
     return Objects.equals(getBatchType(), that.getBatchType())
         && Objects.equals(getResource(), that.getResource())
         && Objects.equals(getClassName(), that.getClassName())
+        && Objects.equals(getPythonFiles(), that.getPythonFiles())
         && Objects.equals(getName(), that.getName())
         && Objects.equals(getConf(), that.getConf())
         && Objects.equals(getArgs(), that.getArgs());
@@ -128,7 +141,7 @@ public class BatchRequest {
   @Override
   public int hashCode() {
     return Objects.hash(
-        getBatchType(), getResource(), getClassName(), getName(), getConf(), getArgs());
+        getBatchType(), getResource(), getClassName(), getPythonFiles(), getName(), getConf(), getArgs());
   }
 
   @Override

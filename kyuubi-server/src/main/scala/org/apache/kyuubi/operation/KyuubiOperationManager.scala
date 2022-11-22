@@ -69,7 +69,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       batchType: String,
       batchName: String,
       resource: String,
-      className: String,
+      className: Option[String],
+      pythonFiles: Option[String],
       batchConf: Map[String, String],
       batchArgs: Seq[String],
       recoveryMetadata: Option[Metadata]): BatchJobSubmission = {
@@ -79,6 +80,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       batchName,
       resource,
       className,
+      pythonFiles,
       batchConf,
       batchArgs,
       recoveryMetadata)

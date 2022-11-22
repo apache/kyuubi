@@ -59,6 +59,7 @@ case class Metadata(
     state: String = null,
     resource: String = null,
     className: String = null,
+    pythonFiles: String = null,
     requestName: String = null,
     requestConf: Map[String, String] = Map.empty,
     requestArgs: Seq[String] = Seq.empty,

@@ -11,6 +11,7 @@ CREATE TABLE metadata(
     state varchar(128) NOT NULL, -- the session state
     resource varchar(1024), -- the main resource
     class_name varchar(1024), -- the main class name
+    python_files varchar(1024), -- the python files
     request_name varchar(1024), -- the request name
     request_conf clob, -- the request config map
     request_args clob, -- the request arguments

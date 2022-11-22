@@ -409,7 +409,8 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       batchId2,
       "RUNNING_RECOVERY",
       sparkBatchTestResource,
-      sparkBatchTestMainClass,
+      Some(sparkBatchTestMainClass),
+      None,
       batchMetadata2.requestConf,
       batchMetadata2.requestArgs,
       None)

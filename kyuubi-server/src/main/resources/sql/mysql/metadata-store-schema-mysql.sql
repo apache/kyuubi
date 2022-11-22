@@ -11,6 +11,7 @@ CREATE TABLE metadata(
     state varchar(128) NOT NULL COMMENT 'the session state',
     resource varchar(1024) COMMENT 'the main resource',
     class_name varchar(1024) COMMENT 'the main class name',
+    python_files varchar(1024) COMMENT 'the python files',
     request_name varchar(1024) COMMENT 'the request name',
     request_conf mediumtext COMMENT 'the request config map',
     request_args mediumtext COMMENT 'the request arguments',

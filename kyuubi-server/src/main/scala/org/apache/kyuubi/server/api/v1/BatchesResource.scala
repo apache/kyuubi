@@ -162,9 +162,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     require(
       supportedBatchType(request.getBatchType),
       s"${request.getBatchType} is not in the supported list: $SUPPORTED_BATCH_TYPES}")
-    require(request.getResource != null, "resource is a required parameter")
-    require(request.getClassName != null, "classname is a required parameter")
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
+    require(request.getResource != null, "resource is a required parameter")
+    if (request.getBatchType.equals("SPARK")) {
+      require(request.getClassName != null, "classname is a required parameter for SPARK")
+    }
+    if (request.getBatchType.equals("PYSPARK")) {
+      require(request.getPythonFiles != null, "pythonFiles is a required parameter for PYSPARK")
+    }
 
     val userName = fe.getSessionUser(request.getConf.asScala.toMap)
     val ipAddress = fe.getIpAddress
@@ -365,7 +370,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 }
 
 object BatchesResource {
-  val SUPPORTED_BATCH_TYPES = Seq("SPARK")
+  val SUPPORTED_BATCH_TYPES = Seq("SPARK", "PYSPARK")
   val VALID_BATCH_STATES = Seq(
     OperationState.PENDING,
     OperationState.RUNNING,

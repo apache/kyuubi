@@ -55,6 +55,7 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
         request.get("batchType").asInstanceOf[String],
         request.get("resource").asInstanceOf[String],
         request.get("className").asInstanceOf[String],
+        request.get("pythonFiles").asInstanceOf[String],
         request.get("name").asInstanceOf[String],
         config,
         args)

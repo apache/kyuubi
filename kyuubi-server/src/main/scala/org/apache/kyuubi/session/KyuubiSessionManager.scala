@@ -237,6 +237,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           metadata.engineType,
           metadata.resource,
           metadata.className,
+          metadata.pythonFiles,
           metadata.requestName,
           metadata.requestConf.asJava,
           metadata.requestArgs.asJava)

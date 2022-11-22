@@ -54,7 +54,8 @@ class BatchJobSubmission(
     val batchType: String,
     val batchName: String,
     resource: String,
-    className: String,
+    className: Option[String],
+    pythonFiles: Option[String],
     batchConf: Map[String, String],
     batchArgs: Seq[String],
     recoveryMetadata: Option[Metadata])
@@ -77,7 +78,7 @@ class BatchJobSubmission(
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
-      case Some("SPARK") =>
+      case Some("SPARK") | Some("PYSPARK") =>
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
@@ -85,6 +86,7 @@ class BatchJobSubmission(
           batchName,
           Option(resource),
           className,
+          pythonFiles,
           batchConf,
           batchArgs,
           getOperationLog)

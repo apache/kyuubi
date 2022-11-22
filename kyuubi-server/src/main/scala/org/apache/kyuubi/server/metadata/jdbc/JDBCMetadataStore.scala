@@ -120,6 +120,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
          |state,
          |resource,
          |class_name,
+         |python_files,
          |request_name,
          |request_conf,
          |request_args,
@@ -143,6 +144,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         metadata.state,
         metadata.resource,
         metadata.className,
+        metadata.pythonFiles,
         metadata.requestName,
         valueAsString(metadata.requestConf),
         valueAsString(metadata.requestArgs),
@@ -320,12 +322,14 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
         var resource: String = null
         var className: String = null
+        var pythonFiles: String = null
         var requestConf: Map[String, String] = Map.empty
         var requestArgs: Seq[String] = Seq.empty
 
         if (!stateOnly) {
           resource = resultSet.getString("resource")
           className = resultSet.getString("class_name")
+          pythonFiles = resultSet.getString("python_files")
           requestConf = string2Map(resultSet.getString("request_conf"))
           requestArgs = string2Seq(resultSet.getString("request_args"))
         }
@@ -499,6 +503,7 @@ object JDBCMetadataStore {
     METADATA_STATE_ONLY_COLUMNS,
     "resource",
     "class_name",
+    "python_files",
     "request_conf",
     "request_args").mkString(",")
 }

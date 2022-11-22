@@ -216,6 +216,7 @@ object SparkProcessBuilder {
   final private[spark] val CLASS = "--class"
   final private[spark] val PROXY_USER = "--proxy-user"
   final private[spark] val SPARK_FILES = "spark.files"
+  final private[spark] val PYTHON_FILES = "--py-files"
   final private[spark] val PRINCIPAL = "spark.kerberos.principal"
   final private[spark] val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file

@@ -29,19 +29,27 @@ class SparkBatchProcessBuilder(
     batchId: String,
     batchName: String,
     override val mainResource: Option[String],
-    override val mainClass: String,
+    className: Option[String],
+    pythonFiles: Option[String],
     batchConf: Map[String, String],
     batchArgs: Seq[String],
     override val extraEngineLog: Option[OperationLog])
   extends SparkProcessBuilder(proxyUser, conf, batchId, extraEngineLog) {
   import SparkProcessBuilder._
 
+  override def mainClass: String = className.orNull
+
   override protected val commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
-    Option(mainClass).foreach { cla =>
+    className.foreach { cla =>
       buffer += CLASS
       buffer += cla
+    }
+
+    pythonFiles.foreach { files =>
+      buffer += PYTHON_FILES
+      buffer +=files
     }
 
     val batchKyuubiConf = new KyuubiConf(false)

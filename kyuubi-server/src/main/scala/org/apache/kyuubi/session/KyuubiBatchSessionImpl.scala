@@ -70,7 +70,8 @@ class KyuubiBatchSessionImpl(
       batchRequest.getBatchType,
       batchRequest.getName,
       batchRequest.getResource,
-      batchRequest.getClassName,
+      Option(batchRequest.getClassName),
+      Option(batchRequest.getPythonFiles),
       normalizedConf,
       batchRequest.getArgs.asScala,
       recoveryMetadata)
@@ -121,6 +122,7 @@ class KyuubiBatchSessionImpl(
         state = OperationState.PENDING.toString,
         resource = batchRequest.getResource,
         className = batchRequest.getClassName,
+        pythonFiles = batchRequest.getPythonFiles,
         requestName = batchRequest.getName,
         requestConf = normalizedConf,
         requestArgs = batchRequest.getArgs.asScala,

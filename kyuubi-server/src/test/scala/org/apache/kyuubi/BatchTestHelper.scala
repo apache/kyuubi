@@ -47,6 +47,7 @@ trait BatchTestHelper {
       batchType,
       resource,
       className,
+      null,
       name,
       conf.asJava,
       args.asJava)
