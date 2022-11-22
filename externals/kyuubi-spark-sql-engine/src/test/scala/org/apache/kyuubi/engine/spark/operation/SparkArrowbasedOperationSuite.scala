@@ -25,6 +25,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   override protected def jdbcUrl: String = getJdbcUrl
 
   override def withKyuubiConf: Map[String, String] = {
-    Map("kyuubi.operation.result.codec" -> "arrow")
+    Map("kyuubi.session.result.codec" -> "arrow")
   }
 }

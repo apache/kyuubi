@@ -186,7 +186,7 @@ abstract class SparkOperation(session: Session)
   override def shouldRunAsync: Boolean = false
 
   protected def arrowEnabled(): Boolean = {
-    session.conf.getOrElse("kyuubi.operation.result.codec", "simple")
+    session.conf.getOrElse("kyuubi.session.result.codec", "simple")
       .equalsIgnoreCase("arrow") &&
     // TODO: (fchen) make all operation support arrow
     getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
