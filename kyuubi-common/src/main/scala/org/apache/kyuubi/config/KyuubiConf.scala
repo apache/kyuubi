@@ -673,10 +673,10 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_STOP_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.thrift.stop.timeout")
-      .doc("Timeout seconds for stop the thrift frontend service.")
+      .doc("Timeout for stop the thrift frontend service.")
       .version("1.7.0")
       .timeConf
-      .createWithDefault(60)
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
 
   val FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER: ConfigEntry[String] =
     buildConf("kyuubi.frontend.proxy.http.client.ip.header")

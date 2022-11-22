@@ -112,7 +112,7 @@ abstract class TBinaryFrontendService(name: String)
         .beBackoffSlotLength(beBackoffSlotLength)
         .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
         .executorService(executor)
-        .stopTimeoutVal(stopTimeout)
+        .stopTimeoutVal(stopTimeout / 1000)
       // TCP Server
       server = Some(new TThreadPoolServer(args))
       server.foreach(_.setServerEventHandler(new FeTServerEventHandler))
