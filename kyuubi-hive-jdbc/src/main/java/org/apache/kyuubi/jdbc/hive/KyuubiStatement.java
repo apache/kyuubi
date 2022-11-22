@@ -213,6 +213,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
                 .build();
+        break;
       default:
         resultSet =
             new KyuubiQueryResultSet.Builder(this)
