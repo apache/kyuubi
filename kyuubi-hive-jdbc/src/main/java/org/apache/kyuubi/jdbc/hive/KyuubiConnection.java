@@ -112,6 +112,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isBeeLineMode;
   private String resultCodec = "simple";
+  private String compressionCodec = "lz4";
 
   /** Get all direct HiveServer2 URLs from a ZooKeeper based HiveServer2 URL */
   public static List<JdbcConnectionParams> getAllUrls(String zookeeperBasedHS2Url)
@@ -159,6 +160,19 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
                         connParams
                             .getHiveConfs()
                             .getOrDefault("kyuubi.operation.result.codec", "simple")));
+
+    compressionCodec =
+        connParams
+            .getSessionVars()
+            .getOrDefault(
+                "kyuubi.session.result.compression.codec",
+                connParams
+                    .getHiveVars()
+                    .getOrDefault(
+                        "kyuubi.session.result.compression.codec",
+                        connParams
+                            .getHiveConfs()
+                            .getOrDefault("kyuubi.session.result.compression.codec", "none")));
 
     setupTimeout();
 
@@ -1383,5 +1397,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   String getResultCodec() {
     return resultCodec;
+  }
+
+  public String getCompressionCodec() {
+    return compressionCodec;
   }
 }

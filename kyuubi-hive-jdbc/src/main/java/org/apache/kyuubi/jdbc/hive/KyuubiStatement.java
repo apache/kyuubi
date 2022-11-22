@@ -212,6 +212,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setMaxRows(maxRows)
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
+                .setCompressionCodec(connection.getCompressionCodec())
                 .build();
         break;
       default:
@@ -260,6 +261,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setMaxRows(maxRows)
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
+                .setCompressionCodec(connection.getCompressionCodec())
                 .build();
       default:
         resultSet =

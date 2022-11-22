@@ -193,6 +193,12 @@ abstract class SparkOperation(session: Session)
     // TODO: (fchen) make all operation support arrow
     getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
   }
+
+  protected def isCompressed(): Boolean = {
+    session.conf.getOrElse("kyuubi.session.result.compression.codec", "none")
+      .equalsIgnoreCase("lz4") &&
+    getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
+  }
 }
 
 object SparkOperation {

@@ -59,6 +59,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
   private boolean emptyResultSet = false;
   private boolean isScrollable = false;
   private boolean fetchFirst = false;
+  private String compressionCodec = "";
 
   // TODO:(fchen) make this configurable
   protected boolean convertComplexTypeToString = true;
@@ -88,6 +89,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
     private boolean emptyResultSet = false;
     private boolean isScrollable = false;
     private ReentrantLock transportLock = null;
+    private String compressionCodec = "none";
 
     public Builder(Statement statement) throws SQLException {
       this.statement = statement;
@@ -160,6 +162,11 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
       return this;
     }
 
+    public Builder setCompressionCodec(String codec) {
+      this.compressionCodec = codec;
+      return this;
+    }
+
     public KyuubiArrowQueryResultSet build() throws SQLException {
       return new KyuubiArrowQueryResultSet(this);
     }
@@ -175,6 +182,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
     this.stmtHandle = builder.stmtHandle;
     this.sessHandle = builder.sessHandle;
     this.fetchSize = builder.fetchSize;
+    this.compressionCodec = builder.compressionCodec;
     columnNames = new ArrayList<>();
     normalizedColumnNames = new ArrayList<>();
     columnTypes = new ArrayList<>();
@@ -402,9 +410,8 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
 
   private ArrowRecordBatch loadArrowBatch(byte[] batchBytes, BufferAllocator allocator)
       throws IOException {
-    boolean isCompressed = true;
     ByteArrayInputStream in = new ByteArrayInputStream(batchBytes);
-    if (isCompressed) {
+    if (compressionCodec.equalsIgnoreCase("lz4")) {
       LZ4FrameInputStream lz4FrameInputStream = new LZ4FrameInputStream(in);
       int length = batchBytes.length * 2;
       byte[] buffer = new byte[length];
