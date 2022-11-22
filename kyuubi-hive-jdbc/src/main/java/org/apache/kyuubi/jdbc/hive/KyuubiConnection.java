@@ -111,7 +111,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private String engineUrl = "";
 
   private boolean isBeeLineMode;
-  private boolean arrowEnabled = false;
+  private String resultCodec = "simple";
 
   /** Get all direct HiveServer2 URLs from a ZooKeeper based HiveServer2 URL */
   public static List<JdbcConnectionParams> getAllUrls(String zookeeperBasedHS2Url)
@@ -147,20 +147,18 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
     port = connParams.getPort();
 
-    if (connParams
+    resultCodec =
+        connParams
             .getSessionVars()
-            .getOrDefault("kyuubi.beeline.arrow.enabled", "false")
-            .equalsIgnoreCase("true")
-        || connParams
-            .getHiveVars()
-            .getOrDefault("kyuubi.beeline.arrow.enabled", "false")
-            .equalsIgnoreCase("true")
-        || connParams
-            .getHiveConfs()
-            .getOrDefault("kyuubi.beeline.arrow.enabled", "false")
-            .equalsIgnoreCase("true")) {
-      arrowEnabled = true;
-    }
+            .getOrDefault(
+                "kyuubi.operation.result.codec",
+                connParams
+                    .getHiveVars()
+                    .getOrDefault(
+                        "kyuubi.operation.result.codec",
+                        connParams
+                            .getHiveConfs()
+                            .getOrDefault("kyuubi.operation.result.codec", "simple")));
 
     setupTimeout();
 
@@ -1383,7 +1381,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return engineUrl;
   }
 
-  public boolean getArrowEnabled() {
-    return arrowEnabled;
+  public String getResultCodec() {
+    return resultCodec;
   }
 }
