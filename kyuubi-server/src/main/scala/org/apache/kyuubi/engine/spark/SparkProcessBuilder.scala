@@ -205,6 +205,7 @@ object SparkProcessBuilder {
     "spark.yarn.jars",
     "spark.yarn.dist.files",
     "spark.yarn.dist.pyFiles",
+    "spark.submit.pyFiles",
     "spark.yarn.dist.jars",
     "spark.yarn.dist.archives",
     "spark.kerberos.keytab",
