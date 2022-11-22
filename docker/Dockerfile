@@ -57,6 +57,7 @@ RUN set -ex && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
 
+COPY LICENSE NOTICE RELEASE ${KYUUBI_HOME}/
 COPY bin ${KYUUBI_HOME}/bin
 COPY jars ${KYUUBI_HOME}/jars
 COPY beeline-jars ${KYUUBI_HOME}/beeline-jars
