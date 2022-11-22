@@ -55,6 +55,7 @@ RUN set -ex && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
 
+COPY LICENSE NOTICE RELEASE ${KYUUBI_HOME}/
 COPY bin ${KYUUBI_HOME}/bin
 COPY jars ${KYUUBI_HOME}/jars
 COPY beeline-jars ${KYUUBI_HOME}/beeline-jars
