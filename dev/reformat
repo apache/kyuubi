@@ -25,7 +25,7 @@ PROFILES="-Pflink-provided,hive-provided,spark-provided,spark-block-cleaner,spar
 # python style checks rely on `black` in path
 if ! command -v black &> /dev/null
 then
-    echo "Skip Python lint since `black` is not available."
+    echo "Skip Python lint since 'black' is not available."
 else
     PROFILES="${PROFILES},spotless-python"
 fi
