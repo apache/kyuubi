@@ -224,7 +224,7 @@
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
 
         <!-- Needed for Spotless style check-->
-        <spotless.python.includes></spotless.python.includes>
+        <spotless.python.includes/>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
 
         <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
@@ -2043,7 +2043,7 @@
                             <includes>
                                 <include>${spotless.python.includes}</include>
                             </includes>
-                            <black></black>
+                            <black/>
                         </python>
                     </configuration>
                     <executions>
