@@ -30,8 +30,6 @@ jobs:
       matrix:
         profiles:
           - '-Pspark-master -pl externals/kyuubi-spark-sql-engine -am'
-        exclude-tags:
-          - '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.PySparkTest'
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -46,7 +44,7 @@ jobs:
           cache: 'maven'
           check-latest: false
       - name: Build with Maven
-        run: ./build/mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V ${{ matrix.exclude-tags }}
+        run: ./build/mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
