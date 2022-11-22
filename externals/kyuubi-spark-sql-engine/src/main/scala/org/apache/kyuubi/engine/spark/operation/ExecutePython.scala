@@ -98,14 +98,14 @@ case class SessionPythonWorker(
   private val stdout: BufferedReader =
     new BufferedReader(new InputStreamReader(workerProcess.getInputStream), 1)
 
-  def runCode(code: String): Option[PythonReponse] = {
+  def runCode(code: String): Option[PythonResponse] = {
     val input = ExecutePython.toJson(Map("code" -> code, "cmd" -> "run_code"))
     // scalastyle:off println
     stdin.println(input)
     // scalastyle:on
     stdin.flush()
     Option(stdout.readLine())
-      .map(ExecutePython.fromJson[PythonReponse](_))
+      .map(ExecutePython.fromJson[PythonResponse](_))
   }
 
   def close(): Unit = {
@@ -125,7 +125,7 @@ case class SessionPythonWorker(
 object ExecutePython extends Logging {
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
-  val kyuubiPythonPath = Files.createTempDirectory("")
+  private val kyuubiPythonPath = Files.createTempDirectory("")
   def init(): Unit = {
     if (!isPythonGatewayStart.get()) {
       synchronized {
@@ -186,7 +186,7 @@ object ExecutePython extends Logging {
 
   private def startStderrSteamReader(process: Process): Thread = {
     val stderrThread = new Thread("process stderr thread") {
-      override def run() = {
+      override def run(): Unit = {
         val lines = scala.io.Source.fromInputStream(process.getErrorStream).getLines()
         lines.foreach(logger.error)
       }
@@ -198,7 +198,7 @@ object ExecutePython extends Logging {
 
   def startWatcher(process: Process): Thread = {
     val processWatcherThread = new Thread("process watcher thread") {
-      override def run() = {
+      override def run(): Unit = {
         val exitCode = process.waitFor()
         if (exitCode != 0) {
           logger.error(f"Process has died with $exitCode")
@@ -229,7 +229,7 @@ object ExecutePython extends Logging {
     file
   }
 
-  val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+  val mapper: ObjectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
   def toJson[T](obj: T): String = {
     mapper.writeValueAsString(obj)
   }
@@ -243,7 +243,7 @@ object ExecutePython extends Logging {
 
 }
 
-case class PythonReponse(
+case class PythonResponse(
     msg_type: String,
     content: PythonResponseContent)
 
