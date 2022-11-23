@@ -21,14 +21,14 @@ import java.security.{KeyPairGenerator, PrivateKey, PublicKey, Signature}
 import java.util.Base64
 
 object SignUtils {
-  private lazy val keyPairGenerator = {
+  private lazy val rsaKeyPairGenerator = {
     val g = KeyPairGenerator.getInstance("RSA")
-    g.initialize(2048)
+    g.initialize(1024)
     g
   }
 
   def generateRSAKeyPair: (PublicKey, PrivateKey) = {
-    val keyPair = keyPairGenerator.generateKeyPair()
+    val keyPair = rsaKeyPairGenerator.generateKeyPair()
     (keyPair.getPublic, keyPair.getPrivate)
   }
 
