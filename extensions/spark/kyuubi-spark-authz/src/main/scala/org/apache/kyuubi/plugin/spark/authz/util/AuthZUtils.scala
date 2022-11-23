@@ -21,18 +21,22 @@ import java.nio.charset.StandardCharsets
 import java.security.KeyFactory
 import java.security.PublicKey
 import java.security.Signature
-import java.security.interfaces.RSAPublicKey
+import java.security.interfaces.ECPublicKey
 import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
 import scala.util.{Failure, Success, Try}
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{SPARK_VERSION, SparkContext}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, Table, TableCatalog}
+
+import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 
 private[authz] object AuthZUtils {
 
@@ -83,13 +87,10 @@ private[authz] object AuthZUtils {
     // kyuubi.session.user is only used by kyuubi
     val user = spark.getLocalProperty("kyuubi.session.user")
 
-    if (user != null) {
-      val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
-      val userPubKeyStr = spark.getLocalProperty("kyuubi.session.user.public.key")
-      val isVerified = verifySign(user, userSign, userPubKeyStr)
-      if (!isVerified) {
-        throw new RuntimeException(s"verify faield. " +
-          s"user:${user}, sign:${userSign}, pubkey:${userPubKeyStr}")
+    if (StringUtils.isNotBlank(user)) {
+      if (!verifyKyuubiSessionUser(user, spark)) {
+        throw new AccessControlException(
+          s"Permission denied: user [$user] verification failed")
       }
     }
 
@@ -195,12 +196,23 @@ private[authz] object AuthZUtils {
     parts.map(quoteIfNeeded).mkString(".")
   }
 
-  @throws[Exception]
-  def verifySign(plainText: String, signature: String, publicKeyStr: String): Boolean = {
+  private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Boolean = {
+    try {
+      val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
+      val userPubKeyStr = spark.getLocalProperty("kyuubi.session.user.public.key")
+      val isKyuubiUserVerified = verifySign(user, userSign, userPubKeyStr)
+      isKyuubiUserVerified
+    } catch {
+      case _: Exception =>
+        false
+    }
+  }
+
+  private def verifySign(plainText: String, signature: String, publicKeyStr: String): Boolean = {
     val pubKeyBytes = Base64.getDecoder.decode(publicKeyStr)
-    val publicKey: PublicKey = KeyFactory.getInstance("RSA")
-      .generatePublic(new X509EncodedKeySpec(pubKeyBytes)).asInstanceOf[RSAPublicKey]
-    val publicSignature = Signature.getInstance("SHA256withRSA")
+    val publicKey: PublicKey = KeyFactory.getInstance("EC")
+      .generatePublic(new X509EncodedKeySpec(pubKeyBytes)).asInstanceOf[ECPublicKey]
+    val publicSignature = Signature.getInstance("SHA256withECDSA")
     publicSignature.initVerify(publicKey)
     publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
     val signatureBytes = Base64.getDecoder.decode(signature)

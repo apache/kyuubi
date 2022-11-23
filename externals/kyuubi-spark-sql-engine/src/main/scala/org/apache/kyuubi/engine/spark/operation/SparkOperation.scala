@@ -81,8 +81,8 @@ abstract class SparkOperation(session: Session)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
 
-      val (publicKey, privateKey) = SignUtils.generateRSAKeyPair
-      val signed = SignUtils.signWithRSA(session.user, privateKey)
+      val (publicKey, privateKey) = SignUtils.generateKeyPair
+      val signed = SignUtils.signWithECDSA(session.user, privateKey)
       val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, signed)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_PUBIC_KEY, publicKeyStr)

@@ -78,8 +78,8 @@ class ExecutePython(
       setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, session.user)
       setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, statementId)
 
-      val (publicKey, privateKey) = SignUtils.generateRSAKeyPair
-      val signed = SignUtils.signWithRSA(session.user, privateKey)
+      val (publicKey, privateKey) = SignUtils.generateKeyPair
+      val signed = SignUtils.signWithECDSA(session.user, privateKey)
       val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
       setSparkLocalProperties(KYUUBI_SESSION_USER_SIGN, signed)
       setSparkLocalProperties(KYUUBI_SESSION_USER_PUBIC_KEY, publicKeyStr)

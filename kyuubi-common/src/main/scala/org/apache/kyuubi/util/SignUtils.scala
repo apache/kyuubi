@@ -18,22 +18,25 @@ package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
 import java.security.{KeyPairGenerator, PrivateKey, PublicKey, SecureRandom, Signature}
+import java.security.spec.{AlgorithmParameterSpec, ECGenParameterSpec}
 import java.util.Base64
 
 object SignUtils {
-  private lazy val rsaKeyPairGenerator = {
-    val g = KeyPairGenerator.getInstance("RSA")
-    g.initialize(1024, new SecureRandom())
+  private val algorithmSpec: AlgorithmParameterSpec = new ECGenParameterSpec("secp256k1")
+
+  private lazy val ecKeyPairGenerator = {
+    val g = KeyPairGenerator.getInstance("EC")
+    g.initialize(algorithmSpec, new SecureRandom())
     g
   }
 
-  def generateRSAKeyPair: (PublicKey, PrivateKey) = {
-    val keyPair = rsaKeyPairGenerator.generateKeyPair()
+  def generateKeyPair: (PublicKey, PrivateKey) = {
+    val keyPair = ecKeyPairGenerator.generateKeyPair()
     (keyPair.getPublic, keyPair.getPrivate)
   }
 
-  def signWithRSA(plainText: String, privateKey: PrivateKey): String = {
-    val privateSignature = Signature.getInstance("SHA256withRSA")
+  def signWithECDSA(plainText: String, privateKey: PrivateKey): String = {
+    val privateSignature = Signature.getInstance("SHA256withECDSA")
     privateSignature.initSign(privateKey)
     privateSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
     val signature = privateSignature.sign
