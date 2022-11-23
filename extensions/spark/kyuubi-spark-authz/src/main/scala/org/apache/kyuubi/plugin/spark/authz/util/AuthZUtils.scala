@@ -17,6 +17,14 @@
 
 package org.apache.kyuubi.plugin.spark.authz.util
 
+import java.nio.charset.StandardCharsets
+import java.security.KeyFactory
+import java.security.PublicKey
+import java.security.Signature
+import java.security.interfaces.RSAPublicKey
+import java.security.spec.X509EncodedKeySpec
+import java.util.Base64
+
 import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -74,6 +82,17 @@ private[authz] object AuthZUtils {
   def getAuthzUgi(spark: SparkContext): UserGroupInformation = {
     // kyuubi.session.user is only used by kyuubi
     val user = spark.getLocalProperty("kyuubi.session.user")
+
+    if (user != null) {
+      val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
+      val userPubKeyStr = spark.getLocalProperty("kyuubi.session.user.public.key")
+      val isVerified = verifySign(user, userSign, userPubKeyStr)
+      if (!isVerified) {
+        throw new RuntimeException(s"verify faield. " +
+          s"user:${user}, sign:${userSign}, pubkey:${userPubKeyStr}")
+      }
+    }
+
     if (user != null && user != UserGroupInformation.getCurrentUser.getShortUserName) {
       UserGroupInformation.createRemoteUser(user)
     } else {
@@ -174,5 +193,17 @@ private[authz] object AuthZUtils {
 
   def quote(parts: Seq[String]): String = {
     parts.map(quoteIfNeeded).mkString(".")
+  }
+
+  @throws[Exception]
+  def verifySign(plainText: String, signature: String, publicKeyStr: String): Boolean = {
+    val pubKeyBytes = Base64.getDecoder.decode(publicKeyStr)
+    val publicKey: PublicKey = KeyFactory.getInstance("RSA")
+      .generatePublic(new X509EncodedKeySpec(pubKeyBytes)).asInstanceOf[RSAPublicKey]
+    val publicSignature = Signature.getInstance("SHA256withRSA")
+    publicSignature.initVerify(publicKey)
+    publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
+    val signatureBytes = Base64.getDecoder.decode(signature)
+    publicSignature.verify(signatureBytes)
   }
 }
