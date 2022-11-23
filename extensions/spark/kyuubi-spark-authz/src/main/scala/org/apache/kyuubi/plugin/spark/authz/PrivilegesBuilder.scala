@@ -368,7 +368,6 @@ object PrivilegesBuilder {
         buildQuery(query, inputObjs)
 
       case "CreateView" => // revisit this after spark has view catalog
-
       case "CreateDataSourceTableCommand" | "CreateTableCommand" =>
         val table = getPlanField[CatalogTable]("table").identifier
         // fixme: do we need to add columns to check?

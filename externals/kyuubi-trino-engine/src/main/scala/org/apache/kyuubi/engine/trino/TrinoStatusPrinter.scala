@@ -67,16 +67,16 @@ object TrinoStatusPrinter {
       val cpuTime = new Duration(stats.getCpuTimeMillis(), MILLISECONDS)
       val cpuTimeSummary = s"CPU Time: ${cpuTime.getValue(SECONDS).formatted("%.1f")}s total, " +
         s"${formatCountRate(
-          stats.getProcessedRows(),
-          cpuTime,
-          false).formatted("%5s")} rows/s, " +
+            stats.getProcessedRows(),
+            cpuTime,
+            false).formatted("%5s")} rows/s, " +
         s"${formatDataRate(
-          DataSize.ofBytes(stats.getProcessedBytes),
-          cpuTime,
-          true).formatted("%8s")}, " +
+            DataSize.ofBytes(stats.getProcessedBytes),
+            cpuTime,
+            true).formatted("%8s")}, " +
         s"${percentage(
-          stats.getCpuTimeMillis(),
-          stats.getWallTimeMillis()).formatted("%d")}% active"
+            stats.getCpuTimeMillis(),
+            stats.getWallTimeMillis()).formatted("%d")}% active"
       out.printLine(cpuTimeSummary)
 
       val parallelism = cpuTime.getValue(MILLISECONDS) / wallTime.getValue(MILLISECONDS)
@@ -84,13 +84,13 @@ object TrinoStatusPrinter {
       // Per Node: 3.5 parallelism, 83.3K rows/s, 0.7 MB/s
       val perNodeSummary = s"Per Node: ${(parallelism / nodes).formatted("%.1f")} parallelism, " +
         s"${formatCountRate(
-          stats.getProcessedRows().toDouble / nodes,
-          wallTime,
-          false).formatted("%5s")} rows/s, " +
+            stats.getProcessedRows().toDouble / nodes,
+            wallTime,
+            false).formatted("%5s")} rows/s, " +
         s"${formatDataRate(
-          DataSize.ofBytes(stats.getProcessedBytes() / nodes),
-          wallTime,
-          true).formatted("%8s")}"
+            DataSize.ofBytes(stats.getProcessedBytes() / nodes),
+            wallTime,
+            true).formatted("%8s")}"
       out.reprintLine(perNodeSummary)
 
       // Parallelism: 5.3
