@@ -419,7 +419,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         .allOperations().map { operationHandle =>
           val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
           new OperationData(
-            operation.getHandle.identifier,
+            operation.getHandle.identifier.toString,
             operation.getHandle.toTOperationHandle.getOperationType.name(),
             operation.getStatus.state.name())
         }.toSeq

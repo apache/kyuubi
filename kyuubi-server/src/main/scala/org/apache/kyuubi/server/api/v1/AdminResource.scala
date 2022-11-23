@@ -17,29 +17,28 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import java.util.Collections
-import javax.ws.rs._
-import javax.ws.rs.core.{MediaType, Response}
-
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
-import scala.util.control.NonFatal
-
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
-
-import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.{Engine, HadoopConfData, Server, ServerLog}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
-import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
+import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.KyuubiServer.getServerLogRowSet
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.OSUtils
+import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
+
+import java.util.Collections
+import javax.ws.rs._
+import javax.ws.rs.core.{MediaType, Response}
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -82,7 +81,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(hs2ProxyUser)
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = getEngineSpace(engine)
-
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       val engineNodes = discoveryClient.getChildren(engineSpace)
       engineNodes.foreach { node =>
@@ -118,7 +116,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
     val engineSpace = getEngineSpace(engine)
 
-    var engineNodes = ListBuffer[ServiceNodeInfo]()
+    val engineNodes = ListBuffer[ServiceNodeInfo]()
     Option(subdomain).filter(_.nonEmpty) match {
       case Some(_) =>
         withDiscoveryClient(fe.getConf) { discoveryClient =>
@@ -133,6 +131,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
         }
     }
+
+    val engineMgr = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager].applicationManager
+
     engineNodes.map(node =>
       new Engine(
         engine.getVersion,
@@ -142,7 +143,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.namespace.split("/").last,
         node.instance,
         node.namespace,
-        node.attributes.asJava))
+        node.attributes.asJava,
+        node.createTime,
+        engineMgr.getApplicationInfo(None, node.engineRefId.get).get.url.getOrElse("")))
   }
 
   @ApiResponse(
@@ -202,7 +205,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @GET
   @Path("get_hadoop_conf")
   def getFrontendHadoopConf(): Seq[HadoopConfData] = {
-    val userName = fe.getUserName(Map.empty[String, String])
+    val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive get Kyuubi server hadoop conf request from $userName/$ipAddress")
     if (!userName.equals(administrator)) {
@@ -244,7 +247,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       engineSubdomain,
       null,
       null,
-      Collections.emptyMap())
+      Collections.emptyMap(),
+      null,
+      null)
   }
 
   private def getEngineSpace(engine: Engine): String = {

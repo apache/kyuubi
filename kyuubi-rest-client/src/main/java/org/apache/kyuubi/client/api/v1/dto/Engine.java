@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class Engine {
 
@@ -34,6 +35,9 @@ public class Engine {
   private String namespace;
   private Map<String, String> attributes;
 
+  private Long createTime;
+  private String url;
+
   public Engine() {}
 
   public Engine(
@@ -44,7 +48,9 @@ public class Engine {
       String subdomain,
       String instance,
       String namespace,
-      Map<String, String> attributes) {
+      Map<String, String> attributes,
+      Long createTime,
+      String url) {
     this.version = version;
     this.user = user;
     this.engineType = engineType;
@@ -53,6 +59,8 @@ public class Engine {
     this.instance = instance;
     this.namespace = namespace;
     this.attributes = attributes;
+    this.createTime = createTime;
+    this.url = url;
   }
 
   public String getVersion() {
@@ -83,8 +91,8 @@ public class Engine {
     return sharelevel;
   }
 
-  public void setSharelevel(String sharelevel) {
-    this.sharelevel = sharelevel;
+  public void setsharelevel(String shareLevel) {
+    this.sharelevel = shareLevel;
   }
 
   public String getSubdomain() {
@@ -122,6 +130,26 @@ public class Engine {
     this.attributes = attributes;
   }
 
+  public Long getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(Long createTime) {
+    this.createTime = createTime;
+  }
+
+  public void setShareLevel(String sharelevel) {
+    this.sharelevel = sharelevel;
+  }
+
+  public String getUrl() {
+    return url;
+  }
+
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -134,7 +162,9 @@ public class Engine {
         && Objects.equals(getSubdomain(), that.getSubdomain())
         && Objects.equals(getInstance(), that.getInstance())
         && Objects.equals(getNamespace(), that.getNamespace())
-        && Objects.equals(getAttributes(), that.getAttributes());
+        && Objects.equals(getAttributes(), that.getAttributes())
+        && Objects.equals(getCreateTime(), that.getCreateTime())
+        && Objects.equals(getUrl(), that.getUrl());
   }
 
   @Override
@@ -147,7 +177,9 @@ public class Engine {
         getSubdomain(),
         getInstance(),
         getNamespace(),
-        getAttributes());
+        getAttributes(),
+        getCreateTime(),
+        getUrl());
   }
 
   @Override

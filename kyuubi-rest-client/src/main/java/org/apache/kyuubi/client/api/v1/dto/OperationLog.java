@@ -17,24 +17,33 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 public class OperationLog {
-  private List<String> logRow;
+  private List<String> logRowSet;
   private int rowCount;
 
-  public OperationLog(List<String> logRow, int rowCount) {
-    this.logRow = logRow;
+  public OperationLog() {}
+
+  public OperationLog(List<String> logRowSet, int rowCount) {
+    this.logRowSet = logRowSet;
     this.rowCount = rowCount;
   }
 
-  public List<String> getLogRow() {
-    return logRow;
+  public List<String> getLogRowSet() {
+    if (null == logRowSet) {
+      return Collections.emptyList();
+    }
+    return logRowSet;
   }
 
-  public void setLogRow(List<String> logRow) {
-    this.logRow = logRow;
+  public void setLogRowSet(List<String> logRowSet) {
+    this.logRowSet = logRowSet;
   }
 
   public int getRowCount() {
@@ -50,11 +59,17 @@ public class OperationLog {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     OperationLog that = (OperationLog) o;
-    return rowCount == that.rowCount && Objects.equals(logRow, that.logRow);
+    return getRowCount() == that.getRowCount()
+        && Objects.equals(getLogRowSet(), that.getLogRowSet());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(logRow, rowCount);
+    return Objects.hash(getLogRowSet(), getRowCount());
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
   }
 }

@@ -24,6 +24,12 @@ public class OperationData {
   private String OperationType;
   private String OperationStatus;
 
+  public OperationData(String identifier, String operationType, String operationStatus) {
+    this.identifier = identifier;
+    OperationType = operationType;
+    OperationStatus = operationStatus;
+  }
+
   public String getIdentifier() {
     return identifier;
   }

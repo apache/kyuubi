@@ -484,7 +484,7 @@
         <dependency>
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
-            <version>${oshi.core.version}</version>
+            <version>6.3.2</version>
         </dependency>
     </dependencies>
 

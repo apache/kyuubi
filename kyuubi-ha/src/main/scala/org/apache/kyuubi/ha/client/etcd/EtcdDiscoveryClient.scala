@@ -25,32 +25,19 @@ import scala.collection.JavaConverters._
 import scala.concurrent.TimeoutException
 
 import com.google.common.annotations.VisibleForTesting
-import io.etcd.jetcd.ByteSequence
-import io.etcd.jetcd.Client
-import io.etcd.jetcd.KV
-import io.etcd.jetcd.Lease
-import io.etcd.jetcd.Lock
-import io.etcd.jetcd.Watch
+import io.etcd.jetcd._
 import io.etcd.jetcd.lease.LeaseKeepAliveResponse
-import io.etcd.jetcd.options.DeleteOption
-import io.etcd.jetcd.options.GetOption
-import io.etcd.jetcd.options.PutOption
-import io.etcd.jetcd.watch.WatchEvent
-import io.etcd.jetcd.watch.WatchResponse
+import io.etcd.jetcd.options.{DeleteOption, GetOption, PutOption}
+import io.etcd.jetcd.watch.{WatchEvent, WatchResponse}
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.stub.StreamObserver
 
-import org.apache.kyuubi.KYUUBI_VERSION
-import org.apache.kyuubi.KyuubiException
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.DiscoveryClient
-import org.apache.kyuubi.ha.client.DiscoveryPaths
-import org.apache.kyuubi.ha.client.ServiceDiscovery
-import org.apache.kyuubi.ha.client.ServiceNodeInfo
+import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths, ServiceDiscovery, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.etcd.EtcdDiscoveryClient._
 
 class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
@@ -227,7 +214,9 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val attributes =
           p.split(";").map(_.split("=", 2)).filter(_.size == 2).map(kv => (kv.head, kv.last)).toMap
         info(s"Get service instance:$instance and version:$version under $namespace")
-        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
+        // TODO:  implement
+        val createTime = 0L
+        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes, createTime)
       }
     } catch {
       case _: Exception if silent => Nil
