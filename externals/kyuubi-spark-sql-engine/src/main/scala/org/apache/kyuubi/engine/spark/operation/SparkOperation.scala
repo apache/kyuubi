@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.io.IOException
 import java.time.ZoneId
+import java.util.Base64
 
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
@@ -27,7 +28,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_PUBIC_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}
@@ -37,6 +38,7 @@ import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.SignUtils
 
 abstract class SparkOperation(session: Session)
   extends AbstractOperation(session) {
@@ -78,6 +80,13 @@ abstract class SparkOperation(session: Session)
       spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
+
+      val (publicKey, privateKey) = SignUtils.generateRSAKeyPair
+      val signed = SignUtils.signWithRSA(session.user, privateKey)
+      val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, signed)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_PUBIC_KEY, publicKeyStr)
+
       schedulerPool match {
         case Some(pool) =>
           spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
