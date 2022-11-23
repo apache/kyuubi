@@ -2047,7 +2047,7 @@
                             </includes>
                             <sortPom>
                                 <encoding>${project.build.sourceEncoding}</encoding>
-                                <expandEmptyElements>false</expandEmptyElements>
+                                <expandEmptyElements>true</expandEmptyElements>
                                 <indentSchemaLocation>true</indentSchemaLocation>
                                 <nrOfIndentSpace>4</nrOfIndentSpace>
                             </sortPom>
