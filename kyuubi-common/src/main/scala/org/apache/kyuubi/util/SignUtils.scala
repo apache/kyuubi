@@ -17,9 +17,7 @@
 package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
-import java.security.{KeyFactory, KeyPairGenerator, PrivateKey, PublicKey, Signature}
-import java.security.interfaces.RSAPublicKey
-import java.security.spec.X509EncodedKeySpec
+import java.security.{KeyPairGenerator, PrivateKey, PublicKey, Signature}
 import java.util.Base64
 
 object SignUtils {
