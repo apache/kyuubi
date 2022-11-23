@@ -131,7 +131,7 @@
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flink.version>1.15.2</flink.version>
-        <flink.module.scala.suffix/>
+        <flink.module.scala.suffix></flink.module.scala.suffix>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
@@ -219,7 +219,7 @@
         <maven.plugin.surefire.version>3.0.0-M7</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
-        <maven.plugin.scalatest.include.tags/>
+        <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.spotless.version>2.27.2</maven.plugin.spotless.version>
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
@@ -237,7 +237,7 @@
 
         <!-- Needed for Spotless style check-->
         <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
-        <spotless.python.includes/>
+        <spotless.python.includes></spotless.python.includes>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
         <spotless.scala.scalafmt.version>3.6.1</spotless.scala.scalafmt.version>
 
@@ -1672,7 +1672,7 @@
                             <phase>generate-test-resources</phase>
                             <configuration>
                                 <target>
-                                    <mkdir dir="${project.build.directory}/tmp"/>
+                                    <mkdir dir="${project.build.directory}/tmp"></mkdir>
                                 </target>
                             </configuration>
                         </execution>
@@ -2028,7 +2028,7 @@
                                 <version>${spotless.java.googlejavaformat.version}</version>
                                 <style>GOOGLE</style>
                             </googleJavaFormat>
-                            <removeUnusedImports/>
+                            <removeUnusedImports></removeUnusedImports>
                         </java>
                         <scala>
                             <includes>
@@ -2285,7 +2285,7 @@
             <id>flink-1.15</id>
             <properties>
                 <flink.version>1.15.2</flink.version>
-                <flink.module.scala.suffix/>
+                <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
 
@@ -2293,7 +2293,7 @@
             <id>flink-1.16</id>
             <properties>
                 <flink.version>1.16.0</flink.version>
-                <flink.module.scala.suffix/>
+                <flink.module.scala.suffix></flink.module.scala.suffix>
             </properties>
         </profile>
 
