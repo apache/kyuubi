@@ -19,9 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.io.{BufferedReader, File, FilenameFilter, FileOutputStream, InputStreamReader, PrintWriter}
 import java.lang.ProcessBuilder.Redirect
-import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.security.{KeyPairGenerator, PrivateKey, Signature}
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -37,9 +35,9 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_PUBIC_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
-import org.apache.kyuubi.engine.spark.operation.ExecutePython.keyPairGenerator
 import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.SignUtils
 
 class ExecutePython(
     session: Session,
@@ -80,15 +78,11 @@ class ExecutePython(
       setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, session.user)
       setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, statementId)
 
-      // use RSA to sign user
-      val (publicKey, privateKey) = {
-        val keyPair = keyPairGenerator.generateKeyPair
-        (keyPair.getPublic, keyPair.getPrivate)
-      }
-      val signed = sign(session.user, privateKey)
-      val publicKeyBase64 = Base64.getEncoder.encodeToString(publicKey.getEncoded)
+      val (publicKey, privateKey) = SignUtils.generateRSAKeyPair
+      val signed = SignUtils.signWithRSA(session.user, privateKey)
+      val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
       setSparkLocalProperties(KYUUBI_SESSION_USER_SIGN, signed)
-      setSparkLocalProperties(KYUUBI_SESSION_USER_PUBIC_KEY, publicKeyBase64)
+      setSparkLocalProperties(KYUUBI_SESSION_USER_PUBIC_KEY, publicKeyStr)
 
       schedulerPool match {
         case Some(pool) =>
@@ -103,15 +97,6 @@ class ExecutePython(
       setSparkLocalProperties(SPARK_SCHEDULER_POOL_KEY, "")
       worker.runCode("spark.sparkContext.clearJobGroup()")
     }
-  }
-
-  @throws[Exception]
-  private def sign(plainText: String, privateKey: PrivateKey) = {
-    val privateSignature = Signature.getInstance("SHA256withRSA")
-    privateSignature.initSign(privateKey)
-    privateSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
-    val signature = privateSignature.sign
-    Base64.getEncoder.encodeToString(signature)
   }
 }
 
@@ -151,9 +136,6 @@ object ExecutePython extends Logging {
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
   private val kyuubiPythonPath = Files.createTempDirectory("")
-
-  private val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
-  keyPairGenerator.initialize(2048)
 
   def init(): Unit = {
     if (!isPythonGatewayStart.get()) {
