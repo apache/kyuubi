@@ -961,8 +961,8 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
 
   private def exectractLineage(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
-    val analyzed = spark.sessionState.executePlan(parsed).analyzed
-    val optimized = spark.sessionState.optimizer.execute(analyzed)
+    val qe = spark.sessionState.executePlan(parsed)
+    val optimized = qe.optimizedPlan
     SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
   }
 

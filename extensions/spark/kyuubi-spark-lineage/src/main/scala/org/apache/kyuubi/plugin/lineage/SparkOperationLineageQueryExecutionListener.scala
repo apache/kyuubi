@@ -27,11 +27,8 @@ import org.apache.kyuubi.plugin.lineage.helper.SparkSQLLineageParseHelper
 class SparkOperationLineageQueryExecutionListener extends QueryExecutionListener {
 
   override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
-    // The plan here is not really executed, so we can skip the `withCachedData` of the optimizing,
-    // will not use queryExecution.optimizedPlan directly.
-    val optimized = qe.sparkSession.sessionState.optimizer.execute(qe.analyzed)
     val lineage =
-      SparkSQLLineageParseHelper(qe.sparkSession).transformToLineage(qe.id, optimized)
+      SparkSQLLineageParseHelper(qe.sparkSession).transformToLineage(qe.id, qe.optimizedPlan)
     val event = OperationLineageEvent(qe.id, System.currentTimeMillis(), lineage, None)
     SparkContextHelper.postEventToSparkListenerBus(event)
   }
