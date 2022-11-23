@@ -2040,7 +2040,7 @@
                             </includes>
                             <scalafmt>
                                 <version>${spotless.scala.scalafmt.version}</version>
-                                <majorScalaVersion>${scala.binary.version}</majorScalaVersion>
+                                <scalaMajorVersion>${scala.binary.version}</scalaMajorVersion>
                                 <file>${maven.multiModuleProjectDirectory}/.scalafmt.conf</file>
                             </scalafmt>
                         </scala>
