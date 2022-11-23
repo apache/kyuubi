@@ -35,7 +35,7 @@ import org.apache.spark.sql.{Row, RuntimeConfig}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_PUB_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_PUBIC_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.engine.spark.operation.ExecutePython.keyPairGenerator
 import org.apache.kyuubi.operation.ArrayFetchIterator
@@ -88,7 +88,7 @@ class ExecutePython(
       val signed = sign(session.user, privateKey)
       val publicKeyBase64 = Base64.getEncoder.encodeToString(publicKey.getEncoded)
       setSparkLocalProperties(KYUUBI_SESSION_USER_SIGN, signed)
-      setSparkLocalProperties(KYUUBI_SESSION_USER_PUB_KEY, publicKeyBase64)
+      setSparkLocalProperties(KYUUBI_SESSION_USER_PUBIC_KEY, publicKeyBase64)
 
       schedulerPool match {
         case Some(pool) =>
