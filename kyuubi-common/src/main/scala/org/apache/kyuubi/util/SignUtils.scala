@@ -17,13 +17,13 @@
 package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
-import java.security.{KeyPairGenerator, PrivateKey, PublicKey, Signature}
+import java.security.{KeyPairGenerator, PrivateKey, PublicKey, SecureRandom, Signature}
 import java.util.Base64
 
 object SignUtils {
   private lazy val rsaKeyPairGenerator = {
     val g = KeyPairGenerator.getInstance("RSA")
-    g.initialize(1024)
+    g.initialize(1024, new SecureRandom())
     g
   }
 
