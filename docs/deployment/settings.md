@@ -331,7 +331,7 @@ kyuubi.frontend.thrift.login.timeout|PT20S|Timeout for Thrift clients during log
 kyuubi.frontend.thrift.max.message.size|104857600|Maximum message size in bytes a Kyuubi server will accept.|int|1.4.0
 kyuubi.frontend.thrift.max.worker.threads|999|Maximum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.4.0
 kyuubi.frontend.thrift.min.worker.threads|9|Minimum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.4.0
-kyuubi.frontend.thrift.stop.timeout|PT60S|Timeout for stop the thrift frontend service.|int|1.7.0
+kyuubi.frontend.thrift.stop.timeout|PT1M|Timeout for stop the thrift frontend service.|duration|1.7.0
 kyuubi.frontend.thrift.worker.keepalive.time|PT1M|Keep-alive time (in milliseconds) for an idle worker thread|duration|1.4.0
 kyuubi.frontend.worker.keepalive.time|PT1M|(deprecated) Keep-alive time (in milliseconds) for an idle worker thread|duration|1.0.0
 
