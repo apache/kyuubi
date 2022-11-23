@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
-import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.duration.Duration
@@ -48,9 +48,10 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
 
   private val shutdown = new AtomicBoolean(false)
+  private val gracefulStopDeregistered = new AtomicBoolean(false)
 
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
-  @volatile private var stopEngineExec: Option[ScheduledExecutorService] = None
+  @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -91,24 +92,21 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     })
   }
 
-  def gracefulStop(): Unit = {
-    val deregistered = new AtomicBoolean(false)
+  def gracefulStop(): Unit = if (gracefulStopDeregistered.compareAndSet(false, true)) {
     val stopTask: Runnable = () => {
       if (!shutdown.get) {
-        if (deregistered.compareAndSet(false, true)) {
-          info(s"Spark engine is de-registering from engine discovery space.")
-          frontendServices.flatMap(_.discoveryService).foreach(_.stop())
+        info(s"Spark engine is de-registering from engine discovery space.")
+        frontendServices.flatMap(_.discoveryService).foreach(_.stop())
+        while (backendService.sessionManager.getOpenSessionCount > 0) {
+          Thread.sleep(1000 * 60)
         }
-
-        if (backendService.sessionManager.getOpenSessionCount <= 0) {
-          info(s"Spark engine has no open session now, terminating.")
-          stop()
-        }
+        info(s"Spark engine has no open session now, terminating.")
+        stop()
       }
     }
     stopEngineExec =
-      Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("spark-engine-graceful-stop"))
-    stopEngineExec.get.scheduleWithFixedDelay(stopTask, 0, 60, TimeUnit.SECONDS)
+      Some(ThreadUtils.newDaemonFixedThreadPool(1, "spark-engine-graceful-stop"))
+    stopEngineExec.get.execute(stopTask)
   }
 
   override protected def stopServer(): Unit = {
