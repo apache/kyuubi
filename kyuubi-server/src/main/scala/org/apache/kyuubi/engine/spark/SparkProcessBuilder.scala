@@ -190,6 +190,7 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
+  final val INTERNAL_RESOURCE = "spark-internal"
 
   /**
    * The path configs from Spark project that might upload local files:
