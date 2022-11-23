@@ -30,7 +30,6 @@ import scala.util.{Failure, Success, Try}
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{SPARK_VERSION, SparkContext}
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
@@ -88,7 +87,7 @@ private[authz] object AuthZUtils {
     val user = spark.getLocalProperty("kyuubi.session.user")
 
     if (StringUtils.isNotBlank(user)) {
-      if (!verifyKyuubiSessionUser(user, spark)) {
+      if (!verifyKyuubiSessionUser(spark, user)) {
         throw new AccessControlException(
           s"Permission denied: user [$user] verification failed")
       }
