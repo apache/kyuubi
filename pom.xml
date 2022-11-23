@@ -210,7 +210,7 @@
             org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest
         </maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
-        <maven.plugin.spotless.version>2.24.1</maven.plugin.spotless.version>
+        <maven.plugin.spotless.version>2.27.2</maven.plugin.spotless.version>
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
@@ -226,8 +226,10 @@
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
 
         <!-- Needed for Spotless style check-->
+        <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
         <spotless.python.includes/>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
+        <spotless.scala.scalafmt.version>3.6.1</spotless.scala.scalafmt.version>
 
         <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
         <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
@@ -2026,10 +2028,10 @@
                                 <include>src/test/java/**/*.java</include>
                             </includes>
                             <googleJavaFormat>
-                                <version>1.7</version>
+                                <version>${spotless.java.googlejavaformat.version}</version>
                                 <style>GOOGLE</style>
                             </googleJavaFormat>
-                            <removeUnusedImports />
+                            <removeUnusedImports/>
                         </java>
                         <scala>
                             <includes>
@@ -2037,7 +2039,8 @@
                                 <include>src/test/scala/**/*.scala</include>
                             </includes>
                             <scalafmt>
-                                <version>3.1.1</version>
+                                <version>${spotless.scala.scalafmt.version}</version>
+                                <scalaMajorVersion>${scala.binary.version}</scalaMajorVersion>
                                 <file>${maven.multiModuleProjectDirectory}/.scalafmt.conf</file>
                             </scalafmt>
                         </scala>

@@ -57,7 +57,7 @@ class GetTables(
     }
     if (tableTypes.nonEmpty) {
       filters += s"(${tableTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
-        .mkString(" OR ")})"
+          .mkString(" OR ")})"
     }
 
     if (filters.nonEmpty) {
