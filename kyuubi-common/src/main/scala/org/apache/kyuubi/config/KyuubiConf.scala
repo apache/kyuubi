@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.TreeMap
 import scala.util.matching.Regex
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -112,9 +113,12 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     unset(entry.key)
   }
 
-  /** Get all parameters as map */
+  /**
+   * Get all parameters as map
+   * sorted by key in ascending order
+   */
   def getAll: Map[String, String] = {
-    settings.entrySet().asScala.map(x => (x.getKey, x.getValue)).toMap[String, String]
+    TreeMap(settings.asScala.toSeq: _*)
   }
 
   /** Get all envs as map */

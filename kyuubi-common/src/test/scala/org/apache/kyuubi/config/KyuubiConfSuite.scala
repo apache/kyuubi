@@ -183,4 +183,21 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(kyuubiConf.getBatchConf("spark") == Map("spark.yarn.tags" -> "kyuubi"))
     assert(kyuubiConf.getBatchConf("flink") == Map("yarn.tags" -> "kyuubi"))
   }
+
+  test("KYUUBI #3848 - Sort config map returned in KyuubiConf.getAll") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set("kyuubi.xyz", "123")
+    kyuubiConf.set("kyuubi.efg", "")
+    kyuubiConf.set("kyuubi.abc", "789")
+
+    var kSeq = Seq[String]()
+    kyuubiConf.getAll.foreach { case (k, v) =>
+      kSeq = kSeq :+ k
+    }
+
+    assertResult(kSeq.size)(3)
+    assertResult(kSeq.head)("kyuubi.abc")
+    assertResult(kSeq(1))("kyuubi.efg")
+    assertResult(kSeq(2))("kyuubi.xyz")
+  }
 }
