@@ -178,7 +178,7 @@ object KyuubiApplicationManager {
       appConf: Map[String, String],
       kyuubiConf: KyuubiConf): Unit = {
     applicationType.toUpperCase(Locale.ROOT) match {
-      case appType if appType.startsWith("SPARK") => checkSparkAccessPaths(appConf, kyuubiConf)
+      case appType if appType.contains("SPARK") => checkSparkAccessPaths(appConf, kyuubiConf)
       case appType if appType.startsWith("FLINK") => // TODO: check flink app access local paths
       case _ =>
     }

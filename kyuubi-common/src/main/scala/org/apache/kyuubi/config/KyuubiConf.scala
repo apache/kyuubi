@@ -124,7 +124,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
 
   /** Get all batch conf as map */
   def getBatchConf(batchType: String): Map[String, String] = {
-    getAllWithPrefix(s"$KYUUBI_BATCH_CONF_PREFIX.${batchType.toLowerCase(Locale.ROOT)}", "")
+    val normalizedBatchType = batchType.toLowerCase(Locale.ROOT) match {
+      case "pyspark" => "spark"
+      case other => other.toLowerCase(Locale.ROOT)
+    }
+    getAllWithPrefix(s"$KYUUBI_BATCH_CONF_PREFIX.$normalizedBatchType", "")
   }
 
   /**

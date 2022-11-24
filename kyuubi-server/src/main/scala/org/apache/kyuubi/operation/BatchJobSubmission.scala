@@ -77,7 +77,7 @@ class BatchJobSubmission(
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
-      case Some("SPARK") =>
+      case Some("SPARK") | Some("PYSPARK") =>
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
