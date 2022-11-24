@@ -138,7 +138,6 @@ object ExecutePython extends Logging {
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
   private val kyuubiPythonPath = Files.createTempDirectory("")
-
   def init(): Unit = {
     if (!isPythonGatewayStart.get()) {
       synchronized {
