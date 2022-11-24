@@ -36,7 +36,7 @@ import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationS
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.session.{AbstractSession, Session}
 
 abstract class SparkOperation(session: Session)
   extends AbstractOperation(session) {
@@ -186,7 +186,9 @@ abstract class SparkOperation(session: Session)
   override def shouldRunAsync: Boolean = false
 
   protected def arrowEnabled(): Boolean = {
-    session.conf.getOrElse("kyuubi.session.result.codec", "simple")
+    // normalized config is required, to pass unit test
+    session.asInstanceOf[AbstractSession].normalizedConf
+      .getOrElse("kyuubi.session.result.codec", "simple")
       .equalsIgnoreCase("arrow") &&
     // TODO: (fchen) make all operation support arrow
     getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
