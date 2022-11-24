@@ -18,7 +18,7 @@ package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
 import java.security.{KeyPairGenerator, PrivateKey, PublicKey, SecureRandom, Signature}
-import java.security.spec.{AlgorithmParameterSpec, ECGenParameterSpec}
+import java.security.spec.ECGenParameterSpec
 import java.util.Base64
 
 object SignUtils {
