@@ -1763,10 +1763,6 @@
                             <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
                         </jvmArgs>
                         <javacArgs>
-                            <javacArg>-source</javacArg>
-                            <javacArg>${java.version}</javacArg>
-                            <javacArg>-target</javacArg>
-                            <javacArg>${java.version}</javacArg>
                             <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
                         </javacArgs>
                         <compilerPlugins>
