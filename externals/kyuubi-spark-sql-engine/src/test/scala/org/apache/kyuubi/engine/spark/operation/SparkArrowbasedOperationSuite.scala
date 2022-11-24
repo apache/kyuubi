@@ -22,9 +22,13 @@ import org.apache.kyuubi.operation.SparkDataTypeTests
 
 class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTypeTests {
 
-  override protected def jdbcUrl: String = getJdbcUrl + "#kyuubi.session.result.codec=arrow"
+  override protected def jdbcUrl: String = getJdbcUrl
 
   override def withKyuubiConf: Map[String, String] = Map.empty
+
+  override def jdbcVars: Map[String, String] = {
+    Map("kyuubi.session.result.codec" -> "arrow")
+  }
 
   test("make sure kyuubi.session.result.codec=arrow") {
     withJdbcStatement() { statement =>
