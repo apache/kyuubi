@@ -2333,6 +2333,20 @@
         </profile>
 
         <profile>
+            <id>fast</id>
+            <properties>
+                <checkstyle.skip>true</checkstyle.skip>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.resources.skip>true</maven.resources.skip>
+                <rat.skip>true</rat.skip>
+                <skipTests>true</skipTests>
+                <spotless.check.skip>true</spotless.check.skip>
+                <!-- skip generating scaladoc-->
+                <skip>true</skip>
+            </properties>
+        </profile>
+
+        <profile>
             <id>apache-release</id>
             <build>
                 <plugins>
