@@ -22,11 +22,10 @@ import java.security.spec.{AlgorithmParameterSpec, ECGenParameterSpec}
 import java.util.Base64
 
 object SignUtils {
-  private val algorithmSpec: AlgorithmParameterSpec = new ECGenParameterSpec("secp256k1")
 
   private lazy val ecKeyPairGenerator = {
     val g = KeyPairGenerator.getInstance("EC")
-    g.initialize(algorithmSpec, new SecureRandom())
+    g.initialize(new ECGenParameterSpec("secp256k1"), new SecureRandom())
     g
   }
 
