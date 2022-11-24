@@ -24,7 +24,12 @@ import org.apache.kyuubi.engine.SemanticVersion
 trait SparkDataTypeTests extends HiveJDBCTestHelper {
   protected lazy val SPARK_ENGINE_MAJOR_MINOR_VERSION: (Int, Int) = sparkEngineMajorMinorVersion
 
+  def resultCodec: String = "simple"
+
   test("execute statement - select null") {
+    assume(resultCodec == "simple"  ||
+      SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 2 &&
+      resultCodec == "arrow")
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")
       assert(resultSet.next())
@@ -184,6 +189,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select daytime interval") {
+    assume(resultCodec == "simple"  ||
+      SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 3 &&
+        resultCodec == "arrow")
     withJdbcStatement() { statement =>
       Map(
         "interval 1 day 1 hour -60 minutes 30 seconds" ->
@@ -229,6 +237,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select year/month interval") {
+    assume(resultCodec == "simple"  ||
+      SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 3 &&
+        resultCodec == "arrow")
     withJdbcStatement() { statement =>
       Map(
         "INTERVAL 2022 YEAR" -> Tuple2("2022-0", "2022 years"),
@@ -258,6 +269,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select array") {
+    assume(resultCodec == "simple"  ||
+      SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 2 &&
+        resultCodec == "arrow")
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT array() AS col1, array(1) AS col2, array(null) AS col3")
@@ -275,6 +289,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select map") {
+    assume(resultCodec == "simple"  ||
+      SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 2 &&
+        resultCodec == "arrow")
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT map() AS col1, map(1, 2, 3, 4) AS col2, map(1, null) AS col3")
@@ -292,6 +309,9 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper {
   }
 
   test("execute statement - select struct") {
+    assume(resultCodec == "simple"  ||
+      SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 2 &&
+        resultCodec == "arrow")
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT struct('1', '2') AS col1," +
