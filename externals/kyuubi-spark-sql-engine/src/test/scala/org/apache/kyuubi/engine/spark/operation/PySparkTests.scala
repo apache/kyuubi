@@ -27,7 +27,10 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.tags.PySparkTest
 
 @PySparkTest
-trait PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
+class PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
+
+  override protected def jdbcUrl: String = getJdbcUrl
+  override def withKyuubiConf: Map[String, String] = Map.empty
 
   test("pyspark support") {
     val code = "print(1)"
