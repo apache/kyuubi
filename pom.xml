@@ -1757,8 +1757,6 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven.plugin.compiler.version}</version>
                     <configuration>
-                        <skipMain>true</skipMain> <!-- skip compile -->
-                        <skip>true</skip> <!-- skip testCompile -->
                         <maxmem>1024m</maxmem>
                         <fork>true</fork>
                         <compilerArgs>

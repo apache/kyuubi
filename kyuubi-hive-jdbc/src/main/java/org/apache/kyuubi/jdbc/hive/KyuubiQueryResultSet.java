@@ -29,14 +29,14 @@ import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class KyuubiQueryResultSet extends KyuubiBaseResultSet {
+/** KyuubiQueryResultSet. */
+public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiQueryResultSet.class);
 
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle;
   private TSessionHandle sessHandle;
-
   private int maxRows;
   private int fetchSize;
   private int rowsFetched = 0;
@@ -207,10 +207,6 @@ class KyuubiQueryResultSet extends KyuubiBaseResultSet {
                   prec == null ? HiveDecimal.USER_DEFAULT_PRECISION : prec.getI32Value(),
                   scale == null ? HiveDecimal.USER_DEFAULT_SCALE : scale.getI32Value());
           break;
-        case TIMESTAMP_TYPE:
-          TTypeQualifierValue timeZone = tq.getQualifiers().get("session.timeZone");
-          ret = new JdbcColumnAttributes(timeZone == null ? "" : timeZone.getStringValue());
-          break;
         default:
           break;
       }
@@ -219,7 +215,7 @@ class KyuubiQueryResultSet extends KyuubiBaseResultSet {
   }
 
   /** Retrieve schema from the server */
-  protected void retrieveSchema() throws SQLException {
+  private void retrieveSchema() throws SQLException {
     try {
       TGetResultSetMetadataReq metadataReq = new TGetResultSetMetadataReq(stmtHandle);
       // TODO need session handle

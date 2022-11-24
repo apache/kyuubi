@@ -201,7 +201,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     }
 
     String resultCodec = connection.getResultCodec().toLowerCase(Locale.ROOT);
-    System.out.println("kyuubi.session.result.codec:" + resultCodec);
+    LOG.info("kyuubi.session.result.codec: " + resultCodec);
     switch (resultCodec) {
       case "arrow":
         resultSet =
@@ -249,7 +249,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       return false;
     }
     String resultCodec = connection.getResultCodec().toLowerCase(Locale.ROOT);
-    System.out.println("kyuubi.session.result.codec:" + resultCodec);
+    LOG.info("kyuubi.session.result.codec: " + resultCodec);
     switch (resultCodec) {
       case "arrow":
         resultSet =
