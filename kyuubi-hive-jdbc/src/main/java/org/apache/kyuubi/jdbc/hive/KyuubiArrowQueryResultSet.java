@@ -28,7 +28,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorLoader;
-import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ReadChannel;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
@@ -191,6 +190,9 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
     }
     this.isScrollable = builder.isScrollable;
     this.protocol = builder.getProtocolVersion();
+    if (allocator == null) {
+      initArrowSchemaAndAllocator();
+    }
   }
 
   /**
@@ -199,8 +201,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
    * @param primitiveTypeEntry primitive type
    * @return generated ColumnAttributes, or null
    */
-  private static JdbcColumnAttributes getColumnAttributes(
-      TPrimitiveTypeEntry primitiveTypeEntry, boolean convertComplexTypeToString) {
+  private static JdbcColumnAttributes getColumnAttributes(TPrimitiveTypeEntry primitiveTypeEntry) {
     JdbcColumnAttributes ret = null;
     if (primitiveTypeEntry.isSetTypeQualifiers()) {
       TTypeQualifiers tq = primitiveTypeEntry.getTypeQualifiers();
@@ -234,7 +235,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
   }
 
   /** Retrieve schema from the server */
-  protected void retrieveSchema() throws SQLException {
+  private void retrieveSchema() throws SQLException {
     try {
       TGetResultSetMetadataReq metadataReq = new TGetResultSetMetadataReq(stmtHandle);
       // TODO need session handle
@@ -264,13 +265,11 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         TPrimitiveTypeEntry primitiveTypeEntry =
             columns.get(pos).getTypeDesc().getTypes().get(0).getPrimitiveEntry();
         columnTypes.add(primitiveTypeEntry.getType());
-        columnAttributes.add(getColumnAttributes(primitiveTypeEntry, convertComplexTypeToString));
+        columnAttributes.add(getColumnAttributes(primitiveTypeEntry));
       }
       arrowSchema =
           ArrowUtils.toArrowSchema(
               columnNames, convertComplexTypeToStringType(columnTypes), columnAttributes);
-      allocator = ArrowUtils.rootAllocator.newChildAllocator("KyuubiResultSet", 0, Long.MAX_VALUE);
-      root = VectorSchemaRoot.create(arrowSchema, allocator);
     } catch (SQLException eS) {
       throw eS; // rethrow the SQLException as is
     } catch (Exception ex) {
@@ -293,6 +292,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
 
   @Override
   public void close() throws SQLException {
+    super.close();
     if (this.statement != null && (this.statement instanceof KyuubiStatement)) {
       KyuubiStatement s = (KyuubiStatement) this.statement;
       s.closeClientOperation();
@@ -353,7 +353,6 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         orientation = TFetchOrientation.FETCH_FIRST;
         fetchedRowsItr = null;
         fetchFirst = false;
-        initArrowSchemaAndAllocator();
       }
 
       if (fetchedRowsItr == null || !fetchedRowsItr.hasNext()) {

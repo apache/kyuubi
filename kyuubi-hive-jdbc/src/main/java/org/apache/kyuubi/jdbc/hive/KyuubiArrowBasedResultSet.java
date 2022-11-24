@@ -442,7 +442,11 @@ public abstract class KyuubiArrowBasedResultSet implements SQLResultSet {
 
   @Override
   public void close() throws SQLException {
-    root.close();
-    allocator.close();
+    if (root != null) {
+      root.close();
+    }
+    if (allocator != null) {
+      allocator.close();
+    }
   }
 }
