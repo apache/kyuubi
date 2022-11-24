@@ -25,9 +25,10 @@ import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
-
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
+
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.SESSION_USER_VERIFY_ENABLED
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_PUBIC_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
@@ -75,17 +76,23 @@ abstract class SparkOperation(session: Session)
     spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
       session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
 
+  protected val isSessionUserVerifyEnabled: Boolean = spark.sparkContext.getConf.getBoolean(
+    s"spark.${SESSION_USER_VERIFY_ENABLED.key}",
+    SESSION_USER_VERIFY_ENABLED.defaultVal.get)
+
   protected def withLocalProperties[T](f: => T): T = {
     try {
       spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
 
-      val (publicKey, privateKey) = SignUtils.generateKeyPair
-      val signed = SignUtils.signWithECDSA(session.user, privateKey)
-      val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
-      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, signed)
-      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_PUBIC_KEY, publicKeyStr)
+      if (isSessionUserVerifyEnabled) {
+        val (publicKey, privateKey) = SignUtils.generateKeyPair
+        val signed = SignUtils.signWithECDSA(session.user, privateKey)
+        val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
+        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_PUBIC_KEY, publicKeyStr)
+        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, signed)
+      }
 
       schedulerPool match {
         case Some(pool) =>

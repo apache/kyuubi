@@ -85,7 +85,6 @@ private[authz] object AuthZUtils {
   def getAuthzUgi(spark: SparkContext): UserGroupInformation = {
     // kyuubi.session.user is only used by kyuubi
     val user = spark.getLocalProperty("kyuubi.session.user")
-
     if (StringUtils.isNotBlank(user)) {
       if (!verifyKyuubiSessionUser(spark, user)) {
         throw new AccessControlException(
@@ -197,10 +196,13 @@ private[authz] object AuthZUtils {
 
   private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Boolean = {
     try {
-      val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
       val userPubKeyStr = spark.getLocalProperty("kyuubi.session.user.public.key")
-      val isKyuubiUserVerified = verifySign(user, userSign, userPubKeyStr)
-      isKyuubiUserVerified
+      if (StringUtils.isBlank(userPubKeyStr)) { // if public key not set, skipping verification
+        true
+      } else {
+        val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
+        verifySign(user, userSign, userPubKeyStr)
+      }
     } catch {
       case _: Exception =>
         false
