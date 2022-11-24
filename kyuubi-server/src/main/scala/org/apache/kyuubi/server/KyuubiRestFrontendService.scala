@@ -66,6 +66,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
+    this.conf = conf
     server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
     super.initialize(conf)
   }
