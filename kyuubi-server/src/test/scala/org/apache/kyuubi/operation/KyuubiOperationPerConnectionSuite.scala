@@ -220,6 +220,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   test("transfer the TGetInfoReq to kyuubi engine side to verify the connection valid") {
     withSessionConf(Map.empty)(Map(
       KyuubiConf.SERVER_INFO_PROVIDER.key -> "ENGINE",
+      KyuubiConf.FRONTEND_THRIFT_STOP_TIMEOUT.key -> "1000",
       KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))() {
       withJdbcStatement() { statement =>
         val conn = statement.getConnection.asInstanceOf[KyuubiConnection]
