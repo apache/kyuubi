@@ -56,15 +56,17 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
-    val host = conf.get(FRONTEND_REST_BIND_HOST)
-      .getOrElse {
-        if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
-          Utils.findLocalInetAddress.getCanonicalHostName
-        } else {
-          Utils.findLocalInetAddress.getHostAddress
-        }
+  lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
+    .getOrElse {
+      if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
+        Utils.findLocalInetAddress.getCanonicalHostName
+      } else {
+        Utils.findLocalInetAddress.getHostAddress
       }
+    }
+
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
+    this.conf = conf
     server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
     super.initialize(conf)
   }
