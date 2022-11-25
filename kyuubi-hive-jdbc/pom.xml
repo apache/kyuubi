@@ -171,16 +171,6 @@
     </dependencies>
 
     <build>
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> arrow-based collect
-=======
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
-
->>>>>>> drop scala dependency for module kyuubi-hive-jdbc
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
