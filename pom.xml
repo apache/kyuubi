@@ -2340,9 +2340,27 @@
                 <rat.skip>true</rat.skip>
                 <skipTests>true</skipTests>
                 <spotless.check.skip>true</spotless.check.skip>
-                <!-- skip generating scaladoc-->
-                <skip>true</skip>
             </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>net.alchim31.maven</groupId>
+                            <artifactId>scala-maven-plugin</artifactId>
+                            <configuration>
+                                <skip>true</skip>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.scalastyle</groupId>
+                            <artifactId>scalastyle-maven-plugin</artifactId>
+                            <configuration>
+                                <skip>true</skip>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
 
         <profile>
