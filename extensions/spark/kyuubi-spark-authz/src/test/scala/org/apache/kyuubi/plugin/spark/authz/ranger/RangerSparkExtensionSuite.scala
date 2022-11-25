@@ -921,7 +921,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
 
     // invalid session user sign
-    spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, "invalid_sign")
+    sc.setLocalProperty(KYUUBI_SESSION_USER_SIGN, "invalid_sign")
     val e2 = intercept[AccessControlException](AuthZUtils.getAuthzUgi(sc))
     assertResult(e2.getMessage)(s"Permission denied: user [${kyuubiSessionUser}] is not verified")
   }
