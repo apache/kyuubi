@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.security.PrivilegedExceptionAction
 import java.sql.Timestamp
+import java.util.Base64
 
 import scala.util.Try
 
@@ -34,9 +35,12 @@ import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_PUBLIC_KEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.getFieldVal
+import org.apache.kyuubi.util.SignUtils
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll {
@@ -891,5 +895,34 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           assert(e.getMessage === errorMessage("select", s"$db/$table/key"))
         })
     }
+  }
+
+  test("KYUUBI #3839 - signing and verifying kyuubi session user") {
+    val kyuubiSessionUser = "bowenliang123"
+    val sc = spark.sparkContext
+
+    // preparation as in SparkOperation
+    val (publicKey, privateKey) = SignUtils.generateKeyPair
+    val signed = SignUtils.signWithECDSA(kyuubiSessionUser, privateKey)
+    val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
+    sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
+    sc.setLocalProperty(KYUUBI_SESSION_USER_PUBLIC_KEY, publicKeyStr)
+    sc.setLocalProperty(KYUUBI_SESSION_USER_SIGN, signed)
+
+    // pass session user verification
+    val ugi = AuthZUtils.getAuthzUgi(sc)
+    assertResult(ugi.getUserName)(kyuubiSessionUser)
+
+    // fake session user name
+    val fakeSessionUser = "faker"
+    sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, fakeSessionUser)
+    val e1 = intercept[AccessControlException](AuthZUtils.getAuthzUgi(sc))
+    assertResult(e1.getMessage)(s"Permission denied: user [${fakeSessionUser}] is not verified")
+    sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
+
+    // invalid session user sign
+    spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, "invalid_sign")
+    val e2 = intercept[AccessControlException](AuthZUtils.getAuthzUgi(sc))
+    assertResult(e2.getMessage)(s"Permission denied: user [${kyuubiSessionUser}] is not verified")
   }
 }

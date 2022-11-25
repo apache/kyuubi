@@ -24,6 +24,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.config.KyuubiConf.SESSION_USER_SIGN_ENABLED
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait SparkSessionProvider {
@@ -54,6 +55,7 @@ trait SparkSessionProvider {
         "spark.sql.warehouse.dir",
         Utils.createTempDir("spark-warehouse").toString)
       .config("spark.sql.extensions", sqlExtensions)
+      .config(s"spark.${SESSION_USER_SIGN_ENABLED.key}", true)
       .withExtensions(extension)
       .getOrCreate()
     if (catalogImpl == "hive") {
