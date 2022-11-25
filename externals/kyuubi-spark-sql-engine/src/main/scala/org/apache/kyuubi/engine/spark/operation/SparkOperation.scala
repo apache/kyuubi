@@ -105,6 +105,10 @@ abstract class SparkOperation(session: Session)
       spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
+      if (isSessionUserVerifyEnabled) {
+        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_PUBLIC_KEY, null)
+        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, null)
+      }
       spark.sparkContext.clearJobGroup()
     }
   }

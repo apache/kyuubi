@@ -96,6 +96,10 @@ class ExecutePython(
       setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, "")
       setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, "")
       setSparkLocalProperties(SPARK_SCHEDULER_POOL_KEY, "")
+      if (isSessionUserVerifyEnabled) {
+        setSparkLocalProperties(KYUUBI_SESSION_USER_PUBLIC_KEY, "")
+        setSparkLocalProperties(KYUUBI_SESSION_USER_SIGN, "")
+      }
       worker.runCode("spark.sparkContext.clearJobGroup()")
     }
   }
