@@ -86,10 +86,7 @@ private[authz] object AuthZUtils {
     // kyuubi.session.user is only used by kyuubi
     val user = spark.getLocalProperty("kyuubi.session.user")
     if (StringUtils.isNotBlank(user)) {
-      if (!verifyKyuubiSessionUser(spark, user)) {
-        throw new AccessControlException(
-          s"Permission denied: user [$user] verification failed")
-      }
+      verifyKyuubiSessionUser(spark, user)
     }
 
     if (user != null && user != UserGroupInformation.getCurrentUser.getShortUserName) {
@@ -194,18 +191,24 @@ private[authz] object AuthZUtils {
     parts.map(quoteIfNeeded).mkString(".")
   }
 
-  private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Boolean = {
-    try {
-      val userPubKeyStr = spark.getLocalProperty("kyuubi.session.user.public.key")
-      if (StringUtils.isBlank(userPubKeyStr)) { // if public key not set, skipping verification
-        true
-      } else {
-        val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
-        verifySign(user, userSign, userPubKeyStr)
+  private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Unit = {
+    val isVerified =
+      try {
+        val userPubKeyStr = spark.getLocalProperty("kyuubi.session.user.public.key")
+        if (StringUtils.isBlank(userPubKeyStr)) { // if public key not set, skipping verification
+          true
+        } else {
+          val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
+          verifySign(user, userSign, userPubKeyStr)
+        }
+      } catch {
+        case _: Exception =>
+          false
       }
-    } catch {
-      case _: Exception =>
-        false
+
+    if (!isVerified) {
+      throw new AccessControlException(
+        s"Permission denied: user [$user] is not verified")
     }
   }
 
