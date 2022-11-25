@@ -199,7 +199,7 @@ private[authz] object AuthZUtils {
         try {
           val userPubKeyStr = spark.getLocalProperty("kyuubi.session.user.public.key")
           val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
-          verifySign(user, userSign, userPubKeyStr)
+          verifySignWithECDSA(user, userSign, userPubKeyStr)
         } catch {
           case _: Exception =>
             false
@@ -211,7 +211,10 @@ private[authz] object AuthZUtils {
     }
   }
 
-  private def verifySign(plainText: String, signature: String, publicKeyStr: String): Boolean = {
+  private def verifySignWithECDSA(
+      plainText: String,
+      signature: String,
+      publicKeyStr: String): Boolean = {
     val pubKeyBytes = Base64.getDecoder.decode(publicKeyStr)
     val publicKey: PublicKey = KeyFactory.getInstance("EC")
       .generatePublic(new X509EncodedKeySpec(pubKeyBytes)).asInstanceOf[ECPublicKey]
