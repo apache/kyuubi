@@ -100,7 +100,7 @@ class ExecuteStatement(
           if (arrowEnabled) {
             new IterableFetchIterator[Array[Byte]](
               SparkDatasetHelper.toArrowBatchRdd(
-                convertComplexTypeToStringTypeOrNot(result)).toLocalIterator.toIterable)
+                convertComplexType(result)).toLocalIterator.toIterable)
           } else {
             new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
           }
@@ -112,7 +112,7 @@ class ExecuteStatement(
             if (arrowEnabled) {
               new ArrayFetchIterator(
                 SparkDatasetHelper.toArrowBatchRdd(
-                  convertComplexTypeToStringTypeOrNot(result)).collect())
+                  convertComplexType(result)).collect())
             } else {
               new ArrayFetchIterator(result.collect())
             }
@@ -122,7 +122,7 @@ class ExecuteStatement(
               // this will introduce shuffle and hurt performance
               new ArrayFetchIterator(
                 SparkDatasetHelper.toArrowBatchRdd(
-                  convertComplexTypeToStringTypeOrNot(result.limit(resultMaxRows))).collect())
+                  convertComplexType(result.limit(resultMaxRows))).collect())
             } else {
               new ArrayFetchIterator(result.take(resultMaxRows))
             }
@@ -215,7 +215,7 @@ class ExecuteStatement(
   // TODO:(fchen) make this configurable
   val kyuubiBeelineConvertToString = true
 
-  def convertComplexTypeToStringTypeOrNot(df: DataFrame): DataFrame = {
+  def convertComplexType(df: DataFrame): DataFrame = {
     if (kyuubiBeelineConvertToString) {
       SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df)
     } else {
