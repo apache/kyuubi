@@ -2348,6 +2348,7 @@
                             <groupId>net.alchim31.maven</groupId>
                             <artifactId>scala-maven-plugin</artifactId>
                             <configuration>
+                                <!-- only `scala:doc-jar` goal affected -->
                                 <skip>true</skip>
                             </configuration>
                         </plugin>
