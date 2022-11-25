@@ -91,6 +91,10 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.fasterxml.jackson</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>io.netty</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.netty</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>org.apache.arrow</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.arrow</shadedPattern>
                         </relocation>
