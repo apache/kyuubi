@@ -1202,7 +1202,7 @@ object KyuubiConf {
   val SESSION_USER_SIGN_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.user.sign.enabled")
       .doc("Whether to verify the integrity of session user name" +
-        " in Spark engine within Authz plugin.")
+        " on engine side, e.g. Authz plugin in Spark.")
       .version("1.7.0")
       .booleanConf
       .createWithDefault(true)
