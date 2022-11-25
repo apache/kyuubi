@@ -1199,8 +1199,8 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
-  val SESSION_USER_VERIFY_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.session.user.verify.enabled")
+  val SESSION_USER_SIGN_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.user.sign.enabled")
       .doc("Whether to verify the integrity of session user name" +
         " in Spark engine within Authz plugin.")
       .version("1.7.0")
