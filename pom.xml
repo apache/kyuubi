@@ -2335,7 +2335,6 @@
         <profile>
             <id>fast</id>
             <properties>
-                <checkstyle.skip>true</checkstyle.skip>
                 <maven.javadoc.skip>true</maven.javadoc.skip>
                 <rat.skip>true</rat.skip>
                 <skipTests>true</skipTests>
