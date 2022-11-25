@@ -115,7 +115,7 @@
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
-        <arrow.version>10.0.0</arrow.version>
+        <arrow.version>10.0.1</arrow.version>
         <antlr4.version>4.8</antlr4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
@@ -256,20 +256,6 @@
                 <groupId>org.apache.arrow</groupId>
                 <artifactId>arrow-vector</artifactId>
                 <version>${arrow.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-annotations</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-common</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.arrow</groupId>

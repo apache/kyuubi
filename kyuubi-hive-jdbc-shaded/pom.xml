@@ -87,6 +87,14 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.google</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>com.fasterxml.jackson</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.fasterxml.jackson</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.arrow</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.arrow</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>org.apache.commons.codec</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.codec</shadedPattern>
                         </relocation>
