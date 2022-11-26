@@ -78,11 +78,12 @@ class ExecutePython(
       setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, statementId)
 
       if (isSessionUserVerifyEnabled) {
-        val (publicKey, privateKey) = SignUtils.generateKeyPair
-        val signed = SignUtils.signWithECDSA(session.user, privateKey)
-        val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
-        setSparkLocalProperties(KYUUBI_SESSION_USER_PUBLIC_KEY, publicKeyStr)
-        setSparkLocalProperties(KYUUBI_SESSION_USER_SIGN, signed)
+        setSparkLocalProperties(
+          KYUUBI_SESSION_USER_PUBLIC_KEY,
+          session.conf.get(KYUUBI_SESSION_USER_PUBLIC_KEY).orNull)
+        setSparkLocalProperties(
+          KYUUBI_SESSION_USER_SIGN,
+          session.conf.get(KYUUBI_SESSION_USER_SIGN).orNull)
       }
 
       schedulerPool match {

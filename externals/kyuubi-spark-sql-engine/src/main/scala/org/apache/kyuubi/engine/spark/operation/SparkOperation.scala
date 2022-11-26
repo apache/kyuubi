@@ -87,11 +87,12 @@ abstract class SparkOperation(session: Session)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
 
       if (isSessionUserVerifyEnabled) {
-        val (publicKey, privateKey) = SignUtils.generateKeyPair
-        val signed = SignUtils.signWithECDSA(session.user, privateKey)
-        val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
-        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_PUBLIC_KEY, publicKeyStr)
-        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, signed)
+        spark.sparkContext.setLocalProperty(
+          KYUUBI_SESSION_USER_PUBLIC_KEY,
+          session.conf.get(KYUUBI_SESSION_USER_PUBLIC_KEY).orNull)
+        spark.sparkContext.setLocalProperty(
+          KYUUBI_SESSION_USER_SIGN,
+          session.conf.get(KYUUBI_SESSION_USER_SIGN).orNull)
       }
 
       schedulerPool match {
