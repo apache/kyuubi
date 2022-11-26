@@ -32,7 +32,7 @@ import org.apache.spark.sql.{Row, RuntimeConfig}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_PUBLIC_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.session.Session
@@ -77,8 +77,8 @@ class ExecutePython(
 
       if (isSessionUserVerifyEnabled) {
         setSparkLocalProperties(
-          KYUUBI_SESSION_USER_PUBLIC_KEY,
-          session.conf.get(KYUUBI_SESSION_USER_PUBLIC_KEY).orNull)
+          KYUUBI_SESSION_SIGN_PUBLICKEY,
+          session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY).orNull)
         setSparkLocalProperties(
           KYUUBI_SESSION_USER_SIGN,
           session.conf.get(KYUUBI_SESSION_USER_SIGN).orNull)
@@ -96,7 +96,7 @@ class ExecutePython(
       setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, "")
       setSparkLocalProperties(SPARK_SCHEDULER_POOL_KEY, "")
       if (isSessionUserVerifyEnabled) {
-        setSparkLocalProperties(KYUUBI_SESSION_USER_PUBLIC_KEY, "")
+        setSparkLocalProperties(KYUUBI_SESSION_SIGN_PUBLICKEY, "")
         setSparkLocalProperties(KYUUBI_SESSION_USER_SIGN, "")
       }
       worker.runCode("spark.sparkContext.clearJobGroup()")

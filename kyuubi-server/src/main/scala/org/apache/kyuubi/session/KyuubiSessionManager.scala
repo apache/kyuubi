@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.session
 
+import java.security.KeyPair
+import java.util.Base64
+
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
@@ -27,6 +30,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_SIGN_PUBLICKEY
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -35,6 +39,7 @@ import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.util.SignUtils
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
@@ -57,6 +62,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   private var limiter: Option[SessionLimiter] = None
+  lazy val sessionSigningKeyPair: KeyPair = SignUtils.generateKeyPair()
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
@@ -64,6 +70,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(credentialsManager)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
+    initSessionSigningKey(conf)
     super.initialize(conf)
   }
 
@@ -271,5 +278,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
       limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
     }
+  }
+
+  private def initSessionSigningKey(conf: KyuubiConf): Unit = {
+    conf.set(
+      KYUUBI_SESSION_SIGN_PUBLICKEY,
+      Base64.getEncoder.encodeToString(sessionSigningKeyPair.getPublic.getEncoded))
   }
 }

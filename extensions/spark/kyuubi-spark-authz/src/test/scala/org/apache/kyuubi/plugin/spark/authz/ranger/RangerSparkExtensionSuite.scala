@@ -35,7 +35,7 @@ import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_PUBLIC_KEY, KYUUBI_SESSION_USER_SIGN}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
@@ -906,7 +906,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val userSignature = SignUtils.signWithPrivateKey(kyuubiSessionUser, keyPair.getPrivate)
     val publicKeyStr = Base64.getEncoder.encodeToString(keyPair.getPublic.getEncoded)
     sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
-    sc.setLocalProperty(KYUUBI_SESSION_USER_PUBLIC_KEY, publicKeyStr)
+    sc.setLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, publicKeyStr)
     sc.setLocalProperty(KYUUBI_SESSION_USER_SIGN, userSignature)
 
     // pass session user verification

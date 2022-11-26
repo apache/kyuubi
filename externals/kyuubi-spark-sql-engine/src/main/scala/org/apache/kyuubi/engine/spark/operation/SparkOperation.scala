@@ -28,7 +28,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_USER_SIGN_ENABLED
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_PUBLIC_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}
@@ -86,8 +86,8 @@ abstract class SparkOperation(session: Session)
 
       if (isSessionUserVerifyEnabled) {
         spark.sparkContext.setLocalProperty(
-          KYUUBI_SESSION_USER_PUBLIC_KEY,
-          session.conf.get(KYUUBI_SESSION_USER_PUBLIC_KEY).orNull)
+          KYUUBI_SESSION_SIGN_PUBLICKEY,
+          session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY).orNull)
         spark.sparkContext.setLocalProperty(
           KYUUBI_SESSION_USER_SIGN,
           session.conf.get(KYUUBI_SESSION_USER_SIGN).orNull)
@@ -105,7 +105,7 @@ abstract class SparkOperation(session: Session)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
       if (isSessionUserVerifyEnabled) {
-        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_PUBLIC_KEY, null)
+        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, null)
         spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, null)
       }
       spark.sparkContext.clearJobGroup()

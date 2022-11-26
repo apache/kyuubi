@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.security.KeyPair
-import java.util.Base64
-
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
@@ -29,7 +26,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_USER_PUBLIC_KEY, KYUUBI_SESSION_USER_SIGN}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
@@ -80,6 +77,9 @@ class KyuubiSessionImpl(
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
+  private lazy val sessionUserSign: String =
+    SignUtils.signWithPrivateKey(user, sessionManager.sessionSigningKeyPair.getPrivate)
+
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
 
@@ -113,12 +113,6 @@ class KyuubiSessionImpl(
     runOperation(launchEngineOp)
   }
 
-  private lazy val sessionUserKeyPair: KeyPair = SignUtils.generateKeyPair()
-  private lazy val sessionUserSign: String =
-    SignUtils.signWithPrivateKey(user, sessionUserKeyPair.getPrivate)
-  private lazy val sessionUserPublicKeyStr: String = Base64.getEncoder
-    .encodeToString(sessionUserKeyPair.getPublic.getEncoded)
-
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
       var openEngineSessionConf = optimizedConf
@@ -136,8 +130,8 @@ class KyuubiSessionImpl(
 
       if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
         openEngineSessionConf = openEngineSessionConf +
-          (KYUUBI_SESSION_USER_PUBLIC_KEY -> sessionUserPublicKeyStr,
-          KYUUBI_SESSION_USER_SIGN -> sessionUserSign)
+          (KYUUBI_SESSION_SIGN_PUBLICKEY -> conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY).orNull) +
+          (KYUUBI_SESSION_USER_SIGN -> sessionUserSign)
       }
 
       val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
