@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.session
 
-import java.security.{PrivateKey, PublicKey}
+import java.security.KeyPair
 import java.util.Base64
 
 import scala.collection.JavaConverters._
@@ -113,11 +113,11 @@ class KyuubiSessionImpl(
     runOperation(launchEngineOp)
   }
 
-  private lazy val sessionUserKeyPair: (PublicKey, PrivateKey) = SignUtils.generateKeyPair
-  private lazy val sessionUserSignature: String =
-    SignUtils.signWithECDSA(user, sessionUserKeyPair._2)
+  private lazy val sessionUserKeyPair: KeyPair = SignUtils.generateKeyPair()
+  private lazy val sessionUserSign: String =
+    SignUtils.signWithPrivateKey(user, sessionUserKeyPair.getPrivate)
   private lazy val sessionUserPublicKeyStr: String = Base64.getEncoder
-    .encodeToString(sessionUserKeyPair._1.getEncoded)
+    .encodeToString(sessionUserKeyPair.getPublic.getEncoded)
 
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
@@ -137,7 +137,7 @@ class KyuubiSessionImpl(
       if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
         openEngineSessionConf = openEngineSessionConf +
           (KYUUBI_SESSION_USER_PUBLIC_KEY -> sessionUserPublicKeyStr,
-          KYUUBI_SESSION_USER_SIGN -> sessionUserSignature)
+          KYUUBI_SESSION_USER_SIGN -> sessionUserSign)
       }
 
       val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)

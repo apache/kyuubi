@@ -17,7 +17,7 @@
 package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
-import java.security.{KeyPairGenerator, PrivateKey, PublicKey, SecureRandom, Signature}
+import java.security.{KeyPair, KeyPairGenerator, PrivateKey, SecureRandom, Signature}
 import java.security.spec.ECGenParameterSpec
 import java.util.Base64
 
@@ -29,17 +29,24 @@ object SignUtils {
     g
   }
 
-  def generateKeyPair: (PublicKey, PrivateKey) = {
-    val keyPair = ecKeyPairGenerator.generateKeyPair()
-    (keyPair.getPublic, keyPair.getPrivate)
+  def generateKeyPair(algorithm: String = "EC"): KeyPair = {
+    val generator = algorithm match {
+      case "EC" =>
+        ecKeyPairGenerator
+      case _ =>
+        throw new RuntimeException(s"algorithm $algorithm not supported for key pair generation")
+    }
+    generator.generateKeyPair()
   }
 
-  def signWithECDSA(plainText: String, privateKey: PrivateKey): String = {
-    val privateSignature = Signature.getInstance("SHA256withECDSA")
+  def signWithPrivateKey(
+      plainText: String,
+      privateKey: PrivateKey,
+      algorithm: String = "SHA256withECDSA"): String = {
+    val privateSignature = Signature.getInstance(algorithm)
     privateSignature.initSign(privateKey)
     privateSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
     val signature = privateSignature.sign
     Base64.getEncoder.encodeToString(signature)
   }
-
 }
