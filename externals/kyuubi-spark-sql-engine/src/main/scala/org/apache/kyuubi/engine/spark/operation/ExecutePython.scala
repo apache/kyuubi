@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.{BufferedReader, File, FilenameFilter, FileOutputStream, InputStreamReader, PrintWriter}
 import java.lang.ProcessBuilder.Redirect
 import java.nio.file.{Files, Path, Paths}
-import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
@@ -37,7 +36,6 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYU
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.util.SignUtils
 
 class ExecutePython(
     session: Session,

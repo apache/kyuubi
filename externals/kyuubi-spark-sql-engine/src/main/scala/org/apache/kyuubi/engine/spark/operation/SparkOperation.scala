@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.io.IOException
 import java.time.ZoneId
-import java.util.Base64
 
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
@@ -39,7 +38,6 @@ import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.util.SignUtils
 
 abstract class SparkOperation(session: Session)
   extends AbstractOperation(session) {
