@@ -1778,6 +1778,8 @@
                                 <version>${maven.plugin.silencer.version}</version>
                             </compilerPlugin>
                         </compilerPlugins>
+                        <!-- only skipping `scala:doc-jar` -->
+                        <skip>${maven.scaladoc.skip}</skip>
                     </configuration>
                     <executions>
                         <execution>
@@ -1804,9 +1806,6 @@
                                 <goal>doc-jar</goal>
                             </goals>
                             <phase>verify</phase>
-                            <configuration>
-                                <skip>${maven.scaladoc.skip}</skip>
-                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
