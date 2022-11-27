@@ -197,7 +197,7 @@ private[authz] object AuthZUtils {
     if (isSessionUserVerifyEnabled) {
       val isVerified = {
         try {
-          val userPubKeyStr = spark.getLocalProperty("kyuubi.session.user.public.key")
+          val userPubKeyStr = spark.getLocalProperty("kyuubi.session.sign.publickey")
           val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
           verifySignWithECDSA(user, userSign, userPubKeyStr)
         } catch {
