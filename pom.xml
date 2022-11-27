@@ -216,7 +216,6 @@
         <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
         <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
         <maven.plugin.scala.version>4.6.1</maven.plugin.scala.version>
-        <maven.plugin.scala.docjar.skip>false</maven.plugin.scala.docjar.skip>
         <maven.plugin.surefire.version>3.0.0-M7</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
@@ -225,12 +224,13 @@
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
-        <maven.plugin.scalastyle.skip>false</maven.plugin.scalastyle.skip>
         <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
         <maven.plugin.silencer.version>1.7.10</maven.plugin.silencer.version>
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
 
+        <maven.scaladoc.skip>false</maven.scaladoc.skip>
+        <maven.scalastyle.skip>false</maven.scalastyle.skip>
         <!-- Needed for consistent times -->
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 
@@ -1779,7 +1779,7 @@
                             </compilerPlugin>
                         </compilerPlugins>
                         <!-- only the `scala:doc-jar` goal skipped -->
-                        <skip>${maven.plugin.scala.docjar.skip}</skip>
+                        <skip>${maven.scaladoc.skip}</skip>
                     </configuration>
                     <executions>
                         <execution>
@@ -2006,7 +2006,7 @@
                         <configLocation>scalastyle-config.xml</configLocation>
                         <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
                         <outputEncoding>UTF-8</outputEncoding>
-                        <skip>${maven.plugin.scalastyle.skip}</skip>
+                        <skip>${maven.scalastyle.skip}</skip>
                     </configuration>
                     <executions>
                         <execution>
@@ -2344,8 +2344,8 @@
                 <rat.skip>true</rat.skip>
                 <skipTests>true</skipTests>
                 <spotless.check.skip>true</spotless.check.skip>
-                <maven.plugin.scala.docjar.skip>true</maven.plugin.scala.docjar.skip>
-                <maven.plugin.scalastyle.skip.skip>true</maven.plugin.scalastyle.skip.skip>
+                <maven.scaladoc.skip>true</maven.scaladoc.skip>
+                <maven.scalastyle.skip>true</maven.scalastyle.skip>
             </properties>
         </profile>
 
