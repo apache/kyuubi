@@ -75,7 +75,8 @@ abstract class SparkOperation(session: Session)
       session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
 
   protected val isSessionUserSignEnabled: Boolean = spark.sparkContext.getConf.getBoolean(
-    s"spark.${SESSION_USER_SIGN_ENABLED.key}", SESSION_USER_SIGN_ENABLED.defaultVal.get)
+    s"spark.${SESSION_USER_SIGN_ENABLED.key}",
+    SESSION_USER_SIGN_ENABLED.defaultVal.get)
 
   protected def withLocalProperties[T](f: => T): T = {
     try {
