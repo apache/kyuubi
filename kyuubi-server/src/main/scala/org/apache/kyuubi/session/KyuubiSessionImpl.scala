@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.util.Base64
+
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
@@ -130,7 +132,9 @@ class KyuubiSessionImpl(
 
       if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
         openEngineSessionConf = openEngineSessionConf +
-          (KYUUBI_SESSION_SIGN_PUBLICKEY -> conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY).orNull) +
+          (KYUUBI_SESSION_SIGN_PUBLICKEY ->
+            Base64.getEncoder.encodeToString(
+              sessionManager.sessionSigningKeyPair.getPublic.getEncoded)) +
           (KYUUBI_SESSION_USER_SIGN -> sessionUserSign)
       }
 
