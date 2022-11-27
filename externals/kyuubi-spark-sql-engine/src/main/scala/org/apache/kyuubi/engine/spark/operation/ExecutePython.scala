@@ -75,7 +75,7 @@ class ExecutePython(
       setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, session.user)
       setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, statementId)
 
-      if (isSessionUserVerifyEnabled) {
+      if (isSessionUserSignEnabled) {
         setSparkLocalProperties(
           KYUUBI_SESSION_SIGN_PUBLICKEY,
           session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY).orNull)
@@ -95,7 +95,7 @@ class ExecutePython(
       setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, "")
       setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, "")
       setSparkLocalProperties(SPARK_SCHEDULER_POOL_KEY, "")
-      if (isSessionUserVerifyEnabled) {
+      if (isSessionUserSignEnabled) {
         setSparkLocalProperties(KYUUBI_SESSION_SIGN_PUBLICKEY, "")
         setSparkLocalProperties(KYUUBI_SESSION_USER_SIGN, "")
       }

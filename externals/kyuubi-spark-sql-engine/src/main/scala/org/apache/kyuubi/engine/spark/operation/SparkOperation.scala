@@ -74,9 +74,8 @@ abstract class SparkOperation(session: Session)
     spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
       session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
 
-  protected val isSessionUserVerifyEnabled: Boolean = spark.sparkContext.getConf.getBoolean(
-    s"spark.${SESSION_USER_SIGN_ENABLED.key}",
-    SESSION_USER_SIGN_ENABLED.defaultVal.get)
+  protected val isSessionUserSignEnabled: Boolean = spark.sparkContext.getConf.getBoolean(
+    s"spark.${SESSION_USER_SIGN_ENABLED.key}", SESSION_USER_SIGN_ENABLED.defaultVal.get)
 
   protected def withLocalProperties[T](f: => T): T = {
     try {
@@ -84,7 +83,7 @@ abstract class SparkOperation(session: Session)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
 
-      if (isSessionUserVerifyEnabled) {
+      if (isSessionUserSignEnabled) {
         spark.sparkContext.setLocalProperty(
           KYUUBI_SESSION_SIGN_PUBLICKEY,
           session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY).orNull)
@@ -104,7 +103,7 @@ abstract class SparkOperation(session: Session)
       spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
-      if (isSessionUserVerifyEnabled) {
+      if (isSessionUserSignEnabled) {
         spark.sparkContext.setLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, null)
         spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, null)
       }
