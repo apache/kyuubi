@@ -62,8 +62,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   private var limiter: Option[SessionLimiter] = None
-  lazy val sessionSigningKeyPair: KeyPair = SignUtils.generateKeyPair()
-  val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
+  protected lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
