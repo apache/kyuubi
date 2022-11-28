@@ -17,8 +17,9 @@
 package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
-import java.security.{KeyPair, KeyPairGenerator, PrivateKey, SecureRandom, Signature}
-import java.security.spec.ECGenParameterSpec
+import java.security.{KeyFactory, KeyPair, KeyPairGenerator, PrivateKey, PublicKey, SecureRandom, Signature}
+import java.security.interfaces.ECPublicKey
+import java.security.spec.{ECGenParameterSpec, X509EncodedKeySpec}
 import java.util.Base64
 
 object SignUtils {
@@ -48,5 +49,19 @@ object SignUtils {
     privateSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
     val signature = privateSignature.sign
     Base64.getEncoder.encodeToString(signature)
+  }
+
+  def verifySignWithECDSA(
+      plainText: String,
+      signature: String,
+      publicKeyStr: String): Boolean = {
+    val pubKeyBytes = Base64.getDecoder.decode(publicKeyStr)
+    val publicKey: PublicKey = KeyFactory.getInstance("EC")
+      .generatePublic(new X509EncodedKeySpec(pubKeyBytes)).asInstanceOf[ECPublicKey]
+    val publicSignature = Signature.getInstance("SHA256withECDSA")
+    publicSignature.initVerify(publicKey)
+    publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
+    val signatureBytes = Base64.getDecoder.decode(signature)
+    publicSignature.verify(signatureBytes)
   }
 }
