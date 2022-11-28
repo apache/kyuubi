@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.security.KeyPair
 import java.util.Base64
 
 import scala.collection.JavaConverters._
