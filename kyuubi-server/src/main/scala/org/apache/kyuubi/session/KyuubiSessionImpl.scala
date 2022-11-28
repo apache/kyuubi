@@ -80,7 +80,7 @@ class KyuubiSessionImpl(
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
   private lazy val sessionUserSign: String =
-    SignUtils.signWithPrivateKey(user, sessionManager.sessionSigningKeyPair.getPrivate)
+    SignUtils.signWithPrivateKey(user, sessionManager.signingPrivateKey)
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
@@ -136,7 +136,7 @@ class KyuubiSessionImpl(
         openEngineSessionConf = openEngineSessionConf +
           (KYUUBI_SESSION_SIGN_PUBLICKEY ->
             Base64.getEncoder.encodeToString(
-              sessionManager.sessionSigningKeyPair.getPublic.getEncoded)) +
+              sessionManager.signingPublicKey.getEncoded)) +
           (KYUUBI_SESSION_USER_SIGN -> sessionUserSign)
       }
 

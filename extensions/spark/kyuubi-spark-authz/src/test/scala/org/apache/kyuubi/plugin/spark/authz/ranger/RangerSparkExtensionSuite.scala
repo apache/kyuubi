@@ -902,9 +902,9 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     val sc = spark.sparkContext
 
     // preparation as in SparkOperation
-    val keyPair = SignUtils.generateKeyPair()
-    val userSignature = SignUtils.signWithPrivateKey(kyuubiSessionUser, keyPair.getPrivate)
-    val publicKeyStr = Base64.getEncoder.encodeToString(keyPair.getPublic.getEncoded)
+    val (privateKey, publicKey) = SignUtils.generateKeyPair()
+    val userSignature = SignUtils.signWithPrivateKey(kyuubiSessionUser, privateKey)
+    val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
     sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
     sc.setLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, publicKeyStr)
     sc.setLocalProperty(KYUUBI_SESSION_USER_SIGN, userSignature)

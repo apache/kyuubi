@@ -31,7 +31,7 @@ object SignUtils {
     g
   }
 
-  def generateKeyPair(algorithm: String = "EC"): KeyPair = {
+  def generateKeyPair(algorithm: String = "EC"): (PrivateKey, PublicKey) = {
     val generator = algorithm.toUpperCase match {
       case "EC" =>
         ecKeyPairGenerator
@@ -39,7 +39,8 @@ object SignUtils {
         throw new InvalidParameterException(
           s"algorithm $algorithm not supported for key pair generation")
     }
-    generator.generateKeyPair()
+    val keyPair = generator.generateKeyPair()
+    (keyPair.getPrivate, keyPair.getPublic)
   }
 
   def signWithPrivateKey(

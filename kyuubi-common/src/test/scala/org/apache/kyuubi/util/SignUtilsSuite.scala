@@ -23,9 +23,9 @@ import org.apache.kyuubi.KyuubiFunSuite
 
 class SignUtilsSuite extends KyuubiFunSuite {
   test("generate key pair") {
-    val keyPair = SignUtils.generateKeyPair("EC")
-    assert(keyPair.getPublic !== null)
-    assert(keyPair.getPrivate !== null)
+    val (privateKey, publicKey) = SignUtils.generateKeyPair("EC")
+    assert(privateKey !== null)
+    assert(publicKey !== null)
 
     val invalidAlgorithm = "invalidAlgorithm"
     val e1 = intercept[InvalidParameterException](SignUtils.generateKeyPair(invalidAlgorithm))
@@ -33,10 +33,10 @@ class SignUtilsSuite extends KyuubiFunSuite {
   }
 
   test("sign/verify with key pair") {
-    val keyPair = SignUtils.generateKeyPair()
+    val (privateKey, publicKey) = SignUtils.generateKeyPair()
     val plainText = "plainText"
-    val signature = SignUtils.signWithPrivateKey(plainText, keyPair.getPrivate, "SHA256withECDSA")
-    val publicKeyStr = Base64.getEncoder.encodeToString(keyPair.getPublic.getEncoded)
+    val signature = SignUtils.signWithPrivateKey(plainText, privateKey, "SHA256withECDSA")
+    val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
     assert(SignUtils.verifySignWithECDSA(plainText, signature, publicKeyStr))
   }
 }
