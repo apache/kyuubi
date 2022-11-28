@@ -229,6 +229,8 @@
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
 
+        <maven.scaladoc.skip>false</maven.scaladoc.skip>
+        <maven.scalastyle.skip>false</maven.scalastyle.skip>
         <!-- Needed for consistent times -->
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 
@@ -1776,6 +1778,8 @@
                                 <version>${maven.plugin.silencer.version}</version>
                             </compilerPlugin>
                         </compilerPlugins>
+                        <!-- only skipping `scala:doc-jar` -->
+                        <skip>${maven.scaladoc.skip}</skip>
                     </configuration>
                     <executions>
                         <execution>
@@ -2002,6 +2006,7 @@
                         <configLocation>scalastyle-config.xml</configLocation>
                         <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
                         <outputEncoding>UTF-8</outputEncoding>
+                        <skip>${maven.scalastyle.skip}</skip>
                     </configuration>
                     <executions>
                         <execution>
@@ -2329,6 +2334,21 @@
             <id>spotless-python</id>
             <properties>
                 <spotless.python.includes>src/**/*.py</spotless.python.includes>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>fast</id>
+            <properties>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.scaladoc.skip>true</maven.scaladoc.skip>
+                <maven.scalastyle.skip>true</maven.scalastyle.skip>
+                <rat.skip>true</rat.skip>
+                <skipTests>true</skipTests>
+                <spotless.check.skip>true</spotless.check.skip>
+                <flink.archive.download.skip>true</flink.archive.download.skip>
+                <hive.archive.download.skip>true</hive.archive.download.skip>
+                <spark.archive.download.skip>true</spark.archive.download.skip>
             </properties>
         </profile>
 
