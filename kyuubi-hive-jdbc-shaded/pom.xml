@@ -71,6 +71,7 @@
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>
                                 <exclude>META-INF/maven/**</exclude>
+                                <exclude>META-INF/native-image/**</exclude>
                                 <exclude>LICENSE.txt</exclude>
                                 <exclude>NOTICE.txt</exclude>
                                 <exclude>mozilla/**</exclude>
@@ -131,10 +132,6 @@
                             <pattern>org.apache.zookeeper</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.zookeeper</shadedPattern>
                         </relocation>
-                        <relocation>
-                            <pattern>org.slf4j</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.slf4j</shadedPattern>
-                        </relocation>
                     </relocations>
                 </configuration>
                 <executions>
@@ -145,7 +142,7 @@
                         <phase>package</phase>
                         <configuration>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
                             </transformers>
                         </configuration>
                     </execution>
