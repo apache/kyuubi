@@ -26,7 +26,7 @@ object SignUtils {
 
   private lazy val ecKeyPairGenerator = {
     val g = KeyPairGenerator.getInstance("EC")
-    g.initialize(new ECGenParameterSpec("secp256k1"), new SecureRandom())
+    g.initialize(new ECGenParameterSpec("secp192r1"), new SecureRandom())
     g
   }
 
