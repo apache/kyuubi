@@ -89,7 +89,7 @@ jobs:
           matrix.java == 8 &&
           matrix.spark == '3.2' &&
           matrix.spark-archive == ''
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           verbose: true
       - name: Upload test logs
