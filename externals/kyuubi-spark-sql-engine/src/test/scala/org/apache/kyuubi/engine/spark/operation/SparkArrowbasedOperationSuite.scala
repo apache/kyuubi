@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.SparkDataTypeTests
 
@@ -27,15 +28,18 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   override def withKyuubiConf: Map[String, String] = Map.empty
 
   override def jdbcVars: Map[String, String] = {
-    Map("kyuubi.operation.result.codec" -> resultCodec)
+    Map(KyuubiConf.OPERATION_RESULT_CODEC.key -> resultCodec)
   }
 
   override def resultCodec: String = "arrow"
 
   test("make sure kyuubi.operation.result.codec=arrow") {
     withJdbcStatement() { statement =>
-      val resultSet =
-        statement.executeQuery("SELECT '${hivevar:kyuubi.operation.result.codec}' AS col")
+      val query =
+        s"""
+           |SELECT '$${hivevar:${KyuubiConf.OPERATION_RESULT_CODEC.key}}' AS col
+           |""".stripMargin
+      val resultSet = statement.executeQuery(query)
       assert(resultSet.next())
       assert(resultSet.getString("col") === "arrow")
     }
