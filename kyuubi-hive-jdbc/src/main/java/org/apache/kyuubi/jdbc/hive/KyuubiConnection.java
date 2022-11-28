@@ -1381,7 +1381,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return engineUrl;
   }
 
-  public String getResultCodec() {
+  String getResultCodec() {
     return resultCodec;
   }
 }
