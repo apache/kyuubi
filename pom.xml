@@ -2335,7 +2335,7 @@
         </profile>
 
         <profile>
-            <id>jdbc-use-shaded</id>
+            <id>jdbc-shaded</id>
             <properties>
                 <hive.jdbc.artifact>kyuubi-hive-jdbc-shaded</hive.jdbc.artifact>
             </properties>
