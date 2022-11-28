@@ -17,25 +17,27 @@
 package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
-import java.security.{KeyFactory, KeyPair, KeyPairGenerator, PrivateKey, PublicKey, SecureRandom, Signature}
+import java.security.{InvalidParameterException, KeyFactory, KeyPair, KeyPairGenerator, PrivateKey, PublicKey, SecureRandom, Signature}
 import java.security.interfaces.ECPublicKey
 import java.security.spec.{ECGenParameterSpec, X509EncodedKeySpec}
 import java.util.Base64
 
 object SignUtils {
+  val KEYPAIR_ALGORITHM_EC: String = "EC"
 
   private lazy val ecKeyPairGenerator = {
-    val g = KeyPairGenerator.getInstance("EC")
+    val g = KeyPairGenerator.getInstance(KEYPAIR_ALGORITHM_EC)
     g.initialize(new ECGenParameterSpec("secp192r1"), new SecureRandom())
     g
   }
 
   def generateKeyPair(algorithm: String = "EC"): KeyPair = {
-    val generator = algorithm match {
+    val generator = algorithm.toUpperCase match {
       case "EC" =>
         ecKeyPairGenerator
       case _ =>
-        throw new RuntimeException(s"algorithm $algorithm not supported for key pair generation")
+        throw new InvalidParameterException(
+          s"algorithm $algorithm not supported for key pair generation")
     }
     generator.generateKeyPair()
   }
@@ -47,21 +49,21 @@ object SignUtils {
     val privateSignature = Signature.getInstance(algorithm)
     privateSignature.initSign(privateKey)
     privateSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
-    val signature = privateSignature.sign
-    Base64.getEncoder.encodeToString(signature)
+    val signatureBytes = privateSignature.sign
+    Base64.getEncoder.encodeToString(signatureBytes)
   }
 
   def verifySignWithECDSA(
       plainText: String,
       signature: String,
       publicKeyStr: String): Boolean = {
-    val pubKeyBytes = Base64.getDecoder.decode(publicKeyStr)
-    val publicKey: PublicKey = KeyFactory.getInstance("EC")
-      .generatePublic(new X509EncodedKeySpec(pubKeyBytes)).asInstanceOf[ECPublicKey]
+    val publicKeyBytes = Base64.getDecoder.decode(publicKeyStr)
+    val publicKey: PublicKey = KeyFactory.getInstance(KEYPAIR_ALGORITHM_EC)
+      .generatePublic(new X509EncodedKeySpec(publicKeyBytes)).asInstanceOf[ECPublicKey]
+    val signatureBytes = Base64.getDecoder.decode(signature)
     val publicSignature = Signature.getInstance("SHA256withECDSA")
     publicSignature.initVerify(publicKey)
     publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
-    val signatureBytes = Base64.getDecoder.decode(signature)
     publicSignature.verify(signatureBytes)
   }
 }
