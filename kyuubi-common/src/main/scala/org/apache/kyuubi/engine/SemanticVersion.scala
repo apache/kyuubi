@@ -23,6 +23,14 @@ package org.apache.kyuubi.engine
  */
 case class SemanticVersion(majorVersion: Int, minorVersion: Int) {
 
+  def <=(targetVersionString: String): Boolean = isVersionAtMost(targetVersionString)
+
+  def >=(targetVersionString: String): Boolean = isVersionAtLeast(targetVersionString)
+
+  def >(targetVersionString: String): Boolean = !isVersionAtMost(targetVersionString)
+
+  def <(targetVersionString: String): Boolean = !isVersionAtLeast(targetVersionString)
+
   def isVersionAtMost(targetVersionString: String): Boolean = {
     this.compareVersion(
       targetVersionString,

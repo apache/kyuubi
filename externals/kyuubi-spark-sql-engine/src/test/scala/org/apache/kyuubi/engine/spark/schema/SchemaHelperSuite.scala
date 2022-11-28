@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark.schema
 
+import java.time.ZoneId
+
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TCLIServiceConstants, TTypeId}
@@ -75,20 +77,30 @@ class SchemaHelperSuite extends KyuubiFunSuite {
   }
 
   test("toTTypeQualifiers") {
-    val qualifiers = toTTypeQualifiers(outerSchema(9).dataType)
+
+    // decimal
+    val qualifiers = toTTypeQualifiers(outerSchema(9).dataType, "")
     val q = qualifiers.getQualifiers
     assert(q.size() === 2)
     assert(q.get(TCLIServiceConstants.PRECISION).getI32Value === 10)
     assert(q.get(TCLIServiceConstants.SCALE).getI32Value === 8)
 
+    // timestamp
+    val timeZone = ZoneId.systemDefault().toString
+    val qualifiers2 = toTTypeQualifiers(outerSchema(11).dataType, timeZone)
+    val q2 = qualifiers2.getQualifiers
+    assert(q2.size() === 1)
+    assert(q2.get("session.timeZone").getStringValue === timeZone)
+
     outerSchema.foreach {
-      case f if f.dataType == DecimalType(10, 8) =>
-      case f => assert(toTTypeQualifiers(f.dataType).getQualifiers.isEmpty)
+      case f if f.dataType == DecimalType(10, 8) || f.dataType == TimestampType =>
+      case f => assert(toTTypeQualifiers(f.dataType, "").getQualifiers.isEmpty)
     }
   }
 
   test("toTTableSchema") {
-    val tTableSchema = toTTableSchema(outerSchema)
+    val timeZone = ZoneId.systemDefault().toString
+    val tTableSchema = toTTableSchema(outerSchema, timeZone)
     assert(tTableSchema.getColumnsSize === outerSchema.size)
     val iter = tTableSchema.getColumns
 
@@ -102,6 +114,8 @@ class SchemaHelperSuite extends KyuubiFunSuite {
       if (pos == 9) {
         assert(qualifiers.get(TCLIServiceConstants.PRECISION).getI32Value === 10)
         assert(qualifiers.get(TCLIServiceConstants.SCALE).getI32Value === 8)
+      } else if (pos == 11) {
+        assert(qualifiers.get("session.timeZone").getStringValue === timeZone)
       } else {
         assert(qualifiers.isEmpty)
       }

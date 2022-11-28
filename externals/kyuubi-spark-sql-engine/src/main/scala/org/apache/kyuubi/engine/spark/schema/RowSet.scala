@@ -35,6 +35,27 @@ import org.apache.kyuubi.util.RowSetUtils._
 object RowSet {
 
   def toTRowSet(
+      bytes: Array[Byte],
+      protocolVersion: TProtocolVersion): TRowSet = {
+    if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
+      throw new UnsupportedOperationException
+    } else {
+      toColumnBasedSet(bytes)
+    }
+  }
+
+  def emptyTRowSet(): TRowSet = {
+    new TRowSet(0, new java.util.ArrayList[TRow](0))
+  }
+
+  def toColumnBasedSet(data: Array[Byte]): TRowSet = {
+    val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](1))
+    val tColumn = toTColumn(data)
+    tRowSet.addToColumns(tColumn)
+    tRowSet
+  }
+
+  def toTRowSet(
       rows: Seq[Row],
       schema: StructType,
       protocolVersion: TProtocolVersion,
@@ -278,5 +299,12 @@ object RowSet {
       case (other, _) =>
         other.toString
     }
+  }
+
+  private def toTColumn(data: Array[Byte]): TColumn = {
+    val values = new java.util.ArrayList[ByteBuffer](1)
+    values.add(ByteBuffer.wrap(data))
+    val nulls = new java.util.BitSet()
+    TColumn.binaryVal(new TBinaryColumn(values, nulls))
   }
 }

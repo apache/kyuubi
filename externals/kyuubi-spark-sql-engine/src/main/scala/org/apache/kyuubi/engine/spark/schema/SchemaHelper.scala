@@ -69,40 +69,42 @@ object SchemaHelper {
       throw new IllegalArgumentException(s"Unrecognized type name: ${other.catalogString}")
   }
 
-  def toTTypeQualifiers(typ: DataType): TTypeQualifiers = {
+  def toTTypeQualifiers(typ: DataType, timeZone: String): TTypeQualifiers = {
     val ret = new TTypeQualifiers()
     val qualifiers = typ match {
       case d: DecimalType =>
         Map(
           TCLIServiceConstants.PRECISION -> TTypeQualifierValue.i32Value(d.precision),
           TCLIServiceConstants.SCALE -> TTypeQualifierValue.i32Value(d.scale)).asJava
+      case _: TimestampType =>
+        Map("session.timeZone" -> TTypeQualifierValue.stringValue(timeZone)).asJava
       case _ => Collections.emptyMap[String, TTypeQualifierValue]()
     }
     ret.setQualifiers(qualifiers)
     ret
   }
 
-  def toTTypeDesc(typ: DataType): TTypeDesc = {
+  def toTTypeDesc(typ: DataType, timeZone: String): TTypeDesc = {
     val typeEntry = new TPrimitiveTypeEntry(toTTypeId(typ))
-    typeEntry.setTypeQualifiers(toTTypeQualifiers(typ))
+    typeEntry.setTypeQualifiers(toTTypeQualifiers(typ, timeZone))
     val tTypeDesc = new TTypeDesc()
     tTypeDesc.addToTypes(TTypeEntry.primitiveEntry(typeEntry))
     tTypeDesc
   }
 
-  def toTColumnDesc(field: StructField, pos: Int): TColumnDesc = {
+  def toTColumnDesc(field: StructField, pos: Int, timeZone: String): TColumnDesc = {
     val tColumnDesc = new TColumnDesc()
     tColumnDesc.setColumnName(field.name)
-    tColumnDesc.setTypeDesc(toTTypeDesc(field.dataType))
+    tColumnDesc.setTypeDesc(toTTypeDesc(field.dataType, timeZone))
     tColumnDesc.setComment(field.getComment().getOrElse(""))
     tColumnDesc.setPosition(pos)
     tColumnDesc
   }
 
-  def toTTableSchema(schema: StructType): TTableSchema = {
+  def toTTableSchema(schema: StructType, timeZone: String): TTableSchema = {
     val tTableSchema = new TTableSchema()
     schema.zipWithIndex.foreach { case (f, i) =>
-      tTableSchema.addToColumns(toTColumnDesc(f, i))
+      tTableSchema.addToColumns(toTColumnDesc(f, i, timeZone))
     }
     tTableSchema
   }
