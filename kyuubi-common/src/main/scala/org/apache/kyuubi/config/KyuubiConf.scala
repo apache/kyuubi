@@ -1444,7 +1444,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val a: ConfigEntry[String] =
+  val OPERATION_RESULT_CODEC: ConfigEntry[String] =
     buildConf("kyuubi.operation.result.codec")
       .doc("Specify the result codec, available configs are: <ul>" +
         " <li>SIMPLE: the result will convert to TRow at the engine driver side. </li>" +
