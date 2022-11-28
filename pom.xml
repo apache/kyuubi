@@ -2341,11 +2341,14 @@
             <id>fast</id>
             <properties>
                 <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.scaladoc.skip>true</maven.scaladoc.skip>
+                <maven.scalastyle.skip>true</maven.scalastyle.skip>
                 <rat.skip>true</rat.skip>
                 <skipTests>true</skipTests>
                 <spotless.check.skip>true</spotless.check.skip>
-                <maven.scaladoc.skip>true</maven.scaladoc.skip>
-                <maven.scalastyle.skip>true</maven.scalastyle.skip>
+                <flink.archive.download.skip>true</flink.archive.download.skip>
+                <hive.archive.download.skip>true</hive.archive.download.skip>
+                <spark.archive.download.skip>true</spark.archive.download.skip>
             </properties>
         </profile>
 
