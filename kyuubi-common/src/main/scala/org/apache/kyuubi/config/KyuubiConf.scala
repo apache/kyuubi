@@ -1444,6 +1444,19 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val a: ConfigEntry[String] =
+    buildConf("kyuubi.operation.result.codec")
+      .doc("Specify the result codec, available configs are: <ul>" +
+        " <li>SIMPLE: the result will convert to TRow at the engine driver side. </li>" +
+        " <li>ARROW: the result will be encoded as Arrow at the executor side before collecting" +
+        " by the driver, and deserialized at the client side. note that it only takes effect for" +
+        " kyuubi-hive-jdbc clients now.</li></ul>")
+      .version("1.7.0")
+      .stringConf
+      .checkValues(Set("arrow", "simple"))
+      .transform(_.toLowerCase(Locale.ROOT))
+      .createWithDefault("simple")
+
   val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
     buildConf("kyuubi.operation.result.max.rows")
       .doc("Max rows of Spark query results. Rows that exceeds the limit would be ignored. " +
