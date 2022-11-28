@@ -36,32 +36,48 @@ class SessionSigningSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   }
 
   test("KYUUBI #3839 session user sign - not allow override `kyuubi.session.user.sign.enabled`") {
-    withSessionConf()()() {
+    val checkSessionUser: Unit = {
       withJdbcStatement() { statement =>
-        val rs0 = statement.executeQuery(s"SET ${SESSION_USER_SIGN_ENABLED.key}")
-        assert(rs0.next())
-        assert(rs0.getString("value") === "true")
+        val rs = statement.executeQuery(s"SET $KYUUBI_SESSION_USER_SIGN")
+        assert(rs.next())
+        assert(rs.getString("value").nonEmpty)
       }
     }
 
+    withSessionConf()()() {
+      checkSessionUser
+    }
+
     withSessionConf(Map.empty)(Map.empty)(Map(s"${SESSION_USER_SIGN_ENABLED.key}" -> "false")) {
-      assertJDBCConnectionFail()
+      checkSessionUser
+    }
+
+    withSessionConf(Map.empty)(Map(s"${SESSION_USER_SIGN_ENABLED.key}" -> "false"))(Map.empty) {
+      checkSessionUser
+    }
+
+    withSessionConf(Map(s"${SESSION_USER_SIGN_ENABLED.key}" -> "false"))(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val rs = statement.executeQuery(s"SET $KYUUBI_SESSION_USER_SIGN")
+        assert(rs.next())
+        assert(rs.getString("value").nonEmpty)
+      }
     }
   }
 
   test("KYUUBI #3839 session user sign - check session user sign") {
     withSessionConf()()() {
       withJdbcStatement() { statement =>
-        val rs3 = statement.executeQuery(s"SET $KYUUBI_SESSION_SIGN_PUBLICKEY")
-        assert(rs3.next())
-        assert(rs3.getString("value").nonEmpty)
+        val rs1 = statement.executeQuery(s"SET $KYUUBI_SESSION_SIGN_PUBLICKEY")
+        assert(rs1.next())
+        assert(rs1.getString("value").nonEmpty)
 
-        val rs4 = statement.executeQuery(s"SET $KYUUBI_SESSION_USER_SIGN")
-        assert(rs4.next())
-        assert(rs4.getString("value").nonEmpty)
+        val rs2 = statement.executeQuery(s"SET $KYUUBI_SESSION_USER_SIGN")
+        assert(rs2.next())
+        assert(rs2.getString("value").nonEmpty)
 
-        val publicKeyStr = rs3.getString("value")
-        val sessionUserSign = rs4.getString("value")
+        val publicKeyStr = rs1.getString("value")
+        val sessionUserSign = rs2.getString("value")
         assert(SignUtils.verifySignWithECDSA(user, sessionUserSign, publicKeyStr))
       }
     }
