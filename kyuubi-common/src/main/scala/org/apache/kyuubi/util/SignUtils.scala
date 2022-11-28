@@ -17,7 +17,7 @@
 package org.apache.kyuubi.util
 
 import java.nio.charset.StandardCharsets
-import java.security.{InvalidParameterException, KeyFactory, KeyPair, KeyPairGenerator, PrivateKey, PublicKey, SecureRandom, Signature}
+import java.security.{InvalidParameterException, KeyFactory, KeyPairGenerator, PrivateKey, PublicKey, SecureRandom, Signature}
 import java.security.interfaces.ECPublicKey
 import java.security.spec.{ECGenParameterSpec, X509EncodedKeySpec}
 import java.util.Base64
