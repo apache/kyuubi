@@ -1205,7 +1205,7 @@ object KyuubiConf {
         " on engine side, e.g. Authz plugin in Spark.")
       .version("1.7.0")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
 
   val SESSION_ENGINE_STARTUP_MAX_LOG_LINES: ConfigEntry[Int] =
     buildConf("kyuubi.session.engine.startup.maxLogLines")
@@ -2174,8 +2174,8 @@ object KyuubiConf {
     SERVER_LIMIT_CONNECTIONS_PER_USER,
     SESSION_LOCAL_DIR_ALLOW_LIST,
     FRONTEND_SSL_KEYSTORE_PASSWORD,
-    FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD,
-    SESSION_USER_SIGN_ENABLED)
+    FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD
+  )
 
   /**
    * Holds information about keys that have been deprecated.
