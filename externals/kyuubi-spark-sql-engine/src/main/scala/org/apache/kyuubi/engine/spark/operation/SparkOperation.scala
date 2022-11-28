@@ -188,7 +188,7 @@ abstract class SparkOperation(session: Session)
   protected def arrowEnabled(): Boolean = {
     // normalized config is required, to pass unit test
     session.asInstanceOf[AbstractSession].normalizedConf
-      .getOrElse("kyuubi.session.result.codec", "simple")
+      .getOrElse("kyuubi.operation.result.codec", "simple")
       .equalsIgnoreCase("arrow") &&
     // TODO: (fchen) make all operation support arrow
     getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
