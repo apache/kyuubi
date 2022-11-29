@@ -153,7 +153,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         KYUUBI_SERVER_IP_KEY -> fe.host,
         KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
         KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).toMap)
-    new dto.SessionHandle(handle.identifier)
+    new dto.SessionHandle(handle.identifier, fe.connectionUrl)
   }
 
   @ApiResponse(
