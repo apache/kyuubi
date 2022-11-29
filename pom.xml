@@ -261,11 +261,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-
-        <repository>
-            <id>iceberg-staging</id>
-            <url>https://repository.apache.org/content/repositories/orgapacheiceberg-1114/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
