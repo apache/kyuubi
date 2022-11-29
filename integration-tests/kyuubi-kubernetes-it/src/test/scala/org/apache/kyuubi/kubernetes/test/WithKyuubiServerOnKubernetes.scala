@@ -43,7 +43,7 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
     val kyuubiServerIp = MiniKube.getIp
     val kyuubiServerPort =
       kyuubiServer.getSpec.getContainers.get(0).getPorts.get(0).getHostPort
-    val connectStr = connectionConf.map(kv => kv._1 + "=" + kv._2).mkString("", ";", ";")
+    val connectStr = connectionConf.map(kv => kv._1 + "=" + kv._2).mkString("#", ";", "")
     s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;$connectStr"
   }
 
