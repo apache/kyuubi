@@ -22,10 +22,8 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import org.apache.kyuubi.KyuubiFunSuite
 
 trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
+  protected def connectionConf: Map[String, String] = Map.empty
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
-
-  protected def connectionConf: Map[String, String] =
-    Map("kyuubi.engine.share.level" -> "CONNECTION")
 
   protected def getJdbcUrl(connectionConf: Map[String, String]): String = {
     val kyuubiServers =

@@ -42,11 +42,10 @@ class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKuber
     super.connectionConf ++ Map("spark.master" -> "local", "spark.executor.instances" -> "1")
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf) + " -n local"
 }
 
-class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
-  with SparkQueryTests {
+class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes {
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++
       Map(
@@ -57,8 +56,6 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
         "spark.kubernetes.executor.request.cores" -> "250m",
         "spark.executor.instances" -> "1")
   }
-
-  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
 }
 
 /**
@@ -72,14 +69,14 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
  *  ------------       -------------------------------------------------      ---------------------
  */
 class KyuubiOnKubernetesWithClientSparkTestsSuite
-  extends KyuubiOnKubernetesWithSparkTestsBase {
+  extends KyuubiOnKubernetesWithSparkTestsBase with SparkQueryTests {
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map(
       "spark.submit.deployMode" -> "client",
       "kyuubi.frontend.connection.url.use.hostname" -> "false")
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf) + " -n client"
 }
 
 /**
@@ -93,7 +90,7 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
  *  ----------       -----------------     -----------------------------      ---------------------
  */
 class KyuubiOnKubernetesWithClusterSparkTestsSuite
-  extends KyuubiOnKubernetesWithSparkTestsBase with WithSimpleDFSService {
+  extends KyuubiOnKubernetesWithSparkTestsBase with WithSimpleDFSService with SparkQueryTests {
   private val localhostAddress = Utils.findLocalInetAddress.getHostAddress
   private val driverTemplate =
     Thread.currentThread().getContextClassLoader.getResource("driver.yml")
@@ -122,5 +119,5 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
         FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf) + " -n cluster"
 }
