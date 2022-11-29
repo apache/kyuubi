@@ -346,20 +346,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val operationType = OperationType(plan.nodeName)
     assert(operationType === ALTERVIEW_AS)
     val tuple = PrivilegesBuilder.build(plan, spark)
-    assert(tuple._1.size === 1)
-    val po0 = tuple._1.head
-    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-    assert(po0.dbname equalsIgnoreCase reusedDb)
-    assert(po0.objectName equalsIgnoreCase reusedPartTableShort)
-    if (isSparkV32OrGreater) {
-      // Query in AlterViewAsCommand can not be resolved before SPARK-34698
-      assert(po0.columns === Seq("key", "value", "pid"))
-      checkTableOwner(po0)
-    }
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
-
     assert(tuple._2.size === 1)
     val po = tuple._2.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)

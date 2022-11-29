@@ -320,7 +320,6 @@ object PrivilegesBuilder {
         if (!isTempView(view, spark)) {
           outputObjs += tablePrivilegesWithOwner(view)
         }
-        buildQuery(getQuery, inputObjs)
 
       case "AlterViewAs" =>
 
