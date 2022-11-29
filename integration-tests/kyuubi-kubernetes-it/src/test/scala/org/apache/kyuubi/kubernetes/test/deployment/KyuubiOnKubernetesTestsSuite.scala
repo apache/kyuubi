@@ -74,7 +74,9 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
 class KyuubiOnKubernetesWithClientSparkTestsSuite
   extends KyuubiOnKubernetesWithSparkTestsBase {
   override protected def connectionConf: Map[String, String] = {
-    super.connectionConf ++ Map("spark.submit.deployMode" -> "client")
+    super.connectionConf ++ Map(
+      "spark.submit.deployMode" -> "client",
+      "kyuubi.frontend.connection.url.use.hostname" -> "false")
   }
 
   override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
