@@ -17,13 +17,10 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import com.databricks.client.jdbc42.internal.jpountz.lz4.LZ4FrameInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
@@ -38,6 +35,8 @@ import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnVector;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatch;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
 import org.apache.kyuubi.jdbc.hive.arrow.ArrowUtils;
+import org.apache.kyuubi.jdbc.hive.arrow.CompressionCodec;
+import org.apache.kyuubi.jdbc.hive.arrow.CompressionCodecFactory;
 import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +58,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
   private boolean emptyResultSet = false;
   private boolean isScrollable = false;
   private boolean fetchFirst = false;
-  private String compressionCodec = "";
+  private CompressionCodec compressionCodec;
 
   // TODO:(fchen) make this configurable
   protected boolean convertComplexTypeToString = true;
@@ -182,7 +181,7 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
     this.stmtHandle = builder.stmtHandle;
     this.sessHandle = builder.sessHandle;
     this.fetchSize = builder.fetchSize;
-    this.compressionCodec = builder.compressionCodec;
+    this.compressionCodec = CompressionCodecFactory.createCodec(builder.compressionCodec);
     columnNames = new ArrayList<>();
     normalizedColumnNames = new ArrayList<>();
     columnTypes = new ArrayList<>();
@@ -410,31 +409,8 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
 
   private ArrowRecordBatch loadArrowBatch(byte[] batchBytes, BufferAllocator allocator)
       throws IOException {
-    ByteArrayInputStream in = new ByteArrayInputStream(batchBytes);
-    if (compressionCodec.equalsIgnoreCase("lz4")) {
-      LZ4FrameInputStream lz4FrameInputStream = new LZ4FrameInputStream(in);
-      int length = batchBytes.length * 2;
-      byte[] buffer = new byte[length];
-      int offset = 0;
-
-      int readLength;
-      do {
-        readLength = lz4FrameInputStream.read(buffer, offset, buffer.length - offset);
-        if (-1 == readLength) {
-          break;
-        }
-
-        offset += readLength;
-        if (length <= offset) {
-          length *= 2;
-          buffer = Arrays.copyOf(buffer, length);
-        }
-      } while (-1 != readLength);
-      lz4FrameInputStream.close();
-      in = new ByteArrayInputStream(buffer);
-    }
     return MessageSerializer.deserializeRecordBatch(
-        new ReadChannel(Channels.newChannel(in)), allocator);
+        new ReadChannel(Channels.newChannel(compressionCodec.decompress(batchBytes))), allocator);
   }
 
   @Override

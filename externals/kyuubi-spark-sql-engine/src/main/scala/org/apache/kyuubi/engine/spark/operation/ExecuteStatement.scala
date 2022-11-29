@@ -100,7 +100,8 @@ class ExecuteStatement(
           if (arrowEnabled) {
             new IterableFetchIterator[Array[Byte]](
               SparkDatasetHelper.toArrowBatchRdd(
-                convertComplexType(result), isCompressed()).toLocalIterator.toIterable)
+                convertComplexType(result),
+                compressionCodec()).toLocalIterator.toIterable)
           } else {
             new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
           }
@@ -112,7 +113,8 @@ class ExecuteStatement(
             if (arrowEnabled) {
               new ArrayFetchIterator(
                 SparkDatasetHelper.toArrowBatchRdd(
-                  convertComplexType(result), isCompressed()).collect())
+                  convertComplexType(result),
+                  compressionCodec()).collect())
             } else {
               new ArrayFetchIterator(result.collect())
             }
@@ -122,7 +124,8 @@ class ExecuteStatement(
               // this will introduce shuffle and hurt performance
               new ArrayFetchIterator(
                 SparkDatasetHelper.toArrowBatchRdd(
-                  convertComplexType(result.limit(resultMaxRows)), isCompressed()).collect())
+                  convertComplexType(result.limit(resultMaxRows)),
+                  compressionCodec()).collect())
             } else {
               new ArrayFetchIterator(result.take(resultMaxRows))
             }

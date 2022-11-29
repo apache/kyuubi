@@ -165,14 +165,14 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         connParams
             .getSessionVars()
             .getOrDefault(
-                "kyuubi.session.result.compression.codec",
+                "kyuubi.operation.result.compression.codec",
                 connParams
                     .getHiveVars()
                     .getOrDefault(
-                        "kyuubi.session.result.compression.codec",
+                        "kyuubi.operation.result.compression.codec",
                         connParams
                             .getHiveConfs()
-                            .getOrDefault("kyuubi.session.result.compression.codec", "none")));
+                            .getOrDefault("kyuubi.operation.result.compression.codec", "lz4")));
 
     setupTimeout();
 
