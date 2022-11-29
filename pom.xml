@@ -2248,7 +2248,7 @@
                 <module>extensions/spark/kyuubi-extension-spark-3-2</module>
             </modules>
             <properties>
-                <spark.version>3.2.2</spark.version>
+                <spark.version>3.2.3</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
                 <delta.version>2.0.1</delta.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
