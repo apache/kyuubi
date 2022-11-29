@@ -42,7 +42,7 @@ class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKuber
     super.connectionConf ++ Map("spark.master" -> "local", "spark.executor.instances" -> "1")
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
 }
 
 class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
@@ -58,7 +58,7 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes
         "spark.executor.instances" -> "1")
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
 }
 
 /**
@@ -76,6 +76,8 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map("spark.submit.deployMode" -> "client")
   }
+
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
 }
 
 /**
@@ -117,4 +119,6 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
         ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress,
         FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
   }
+
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
 }

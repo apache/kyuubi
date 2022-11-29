@@ -25,7 +25,7 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
   protected def connectionConf: Map[String, String] = Map.empty
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
-  protected def getJdbcUrl: String = {
+  protected def getJdbcUrl(connectionConf: Map[String, String]): String = {
     val kyuubiServers =
       miniKubernetesClient.pods().list().getItems
     assert(kyuubiServers.size() == 1)
@@ -43,7 +43,8 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
     val kyuubiServerIp = MiniKube.getIp
     val kyuubiServerPort =
       kyuubiServer.getSpec.getContainers.get(0).getPorts.get(0).getHostPort
-    s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;"
+    val connectStr = connectionConf.map(kv => kv._1 + "=" + kv._2).mkString("", ";", ";")
+    s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;$connectStr"
   }
 
   def getMiniKubeApiMaster: String = miniKubernetesClient.getMasterUrl.toString
