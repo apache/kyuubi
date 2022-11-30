@@ -36,6 +36,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, Table, TableCatalog}
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
 
 private[authz] object AuthZUtils {
 
@@ -84,10 +85,10 @@ private[authz] object AuthZUtils {
    */
   def getAuthzUgi(spark: SparkContext): UserGroupInformation = {
     val isSessionUserVerifyEnabled =
-      spark.getConf.getBoolean(s"spark.kyuubi.session.user.sign.enabled", defaultValue = false)
+      spark.getConf.getBoolean(s"spark.$KYUUBI_SESSION_USER_SIGN_ENABLED", defaultValue = false)
 
     // kyuubi.session.user is only used by kyuubi
-    val user = spark.getLocalProperty("kyuubi.session.user")
+    val user = spark.getLocalProperty(KYUUBI_SESSION_USER)
     if (isSessionUserVerifyEnabled) {
       verifyKyuubiSessionUser(spark, user)
     }
@@ -197,8 +198,8 @@ private[authz] object AuthZUtils {
   private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Unit = {
     val isVerified = {
       try {
-        val userPubKeyStr = spark.getLocalProperty("kyuubi.session.sign.publickey")
-        val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
+        val userPubKeyStr = spark.getLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY)
+        val userSign = spark.getLocalProperty(KYUUBI_SESSION_USER_SIGN)
         if (StringUtils.isAnyBlank(user, userPubKeyStr, userSign)) {
           false
         } else {
