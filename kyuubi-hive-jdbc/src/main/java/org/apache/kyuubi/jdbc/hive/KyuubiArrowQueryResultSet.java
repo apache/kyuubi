@@ -17,36 +17,49 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.channels.Channels;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.VectorLoader;
+import org.apache.arrow.vector.ipc.ReadChannel;
+import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
+import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.hive.service.rpc.thrift.*;
-import org.apache.kyuubi.jdbc.hive.cli.RowSet;
-import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
+import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnVector;
+import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatch;
+import org.apache.kyuubi.jdbc.hive.arrow.ArrowColumnarBatchRow;
+import org.apache.kyuubi.jdbc.hive.arrow.ArrowUtils;
 import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** KyuubiQueryResultSet. */
-public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
+public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
 
-  public static final Logger LOG = LoggerFactory.getLogger(KyuubiQueryResultSet.class);
+  public static final Logger LOG = LoggerFactory.getLogger(KyuubiArrowQueryResultSet.class);
 
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle;
   private TSessionHandle sessHandle;
+
   private int maxRows;
   private int fetchSize;
   private int rowsFetched = 0;
 
-  private RowSet fetchedRows;
-  private Iterator<Object[]> fetchedRowsItr;
+  private Iterator<ArrowColumnarBatchRow> fetchedRowsItr;
   private boolean isClosed = false;
   private boolean emptyResultSet = false;
   private boolean isScrollable = false;
   private boolean fetchFirst = false;
+
+  // TODO:(fchen) make this configurable
+  protected boolean convertComplexTypeToString = true;
 
   private final TProtocolVersion protocol;
 
@@ -145,8 +158,8 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
       return this;
     }
 
-    public KyuubiQueryResultSet build() throws SQLException {
-      return new KyuubiQueryResultSet(this);
+    public KyuubiArrowQueryResultSet build() throws SQLException {
+      return new KyuubiArrowQueryResultSet(this);
     }
 
     public TProtocolVersion getProtocolVersion() throws SQLException {
@@ -154,7 +167,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     }
   }
 
-  protected KyuubiQueryResultSet(Builder builder) throws SQLException {
+  protected KyuubiArrowQueryResultSet(Builder builder) throws SQLException {
     this.statement = builder.statement;
     this.client = builder.client;
     this.stmtHandle = builder.stmtHandle;
@@ -177,6 +190,9 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     }
     this.isScrollable = builder.isScrollable;
     this.protocol = builder.getProtocolVersion();
+    if (allocator == null) {
+      initArrowSchemaAndAllocator();
+    }
   }
 
   /**
@@ -206,6 +222,10 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
               new JdbcColumnAttributes(
                   prec == null ? HiveDecimal.USER_DEFAULT_PRECISION : prec.getI32Value(),
                   scale == null ? HiveDecimal.USER_DEFAULT_SCALE : scale.getI32Value());
+          break;
+        case TIMESTAMP_TYPE:
+          TTypeQualifierValue timeZone = tq.getQualifiers().get("session.timeZone");
+          ret = new JdbcColumnAttributes(timeZone == null ? "" : timeZone.getStringValue());
           break;
         default:
           break;
@@ -247,9 +267,13 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
         columnTypes.add(primitiveTypeEntry.getType());
         columnAttributes.add(getColumnAttributes(primitiveTypeEntry));
       }
+      arrowSchema =
+          ArrowUtils.toArrowSchema(
+              columnNames, convertComplexTypeToStringType(columnTypes), columnAttributes);
     } catch (SQLException eS) {
       throw eS; // rethrow the SQLException as is
     } catch (Exception ex) {
+      ex.printStackTrace();
       throw new KyuubiSQLException("Could not create ResultSet: " + ex.getMessage(), ex);
     }
   }
@@ -268,6 +292,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
   @Override
   public void close() throws SQLException {
+    super.close();
     if (this.statement != null && (this.statement instanceof KyuubiStatement)) {
       KyuubiStatement s = (KyuubiStatement) this.statement;
       s.closeClientOperation();
@@ -326,19 +351,34 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
       if (fetchFirst) {
         // If we are asked to start from begining, clear the current fetched resultset
         orientation = TFetchOrientation.FETCH_FIRST;
-        fetchedRows = null;
         fetchedRowsItr = null;
         fetchFirst = false;
       }
-      if (fetchedRows == null || !fetchedRowsItr.hasNext()) {
+
+      if (fetchedRowsItr == null || !fetchedRowsItr.hasNext()) {
+
         TFetchResultsReq fetchReq = new TFetchResultsReq(stmtHandle, orientation, fetchSize);
         TFetchResultsResp fetchResp;
         fetchResp = client.FetchResults(fetchReq);
         Utils.verifySuccessWithInfo(fetchResp.getStatus());
 
         TRowSet results = fetchResp.getResults();
-        fetchedRows = RowSetFactory.create(results, protocol);
-        fetchedRowsItr = fetchedRows.iterator();
+        if (results == null || results.getColumnsSize() == 0) {
+          return false;
+        }
+        TColumn arrowColumn = results.getColumns().get(0);
+        byte[] batchBytes = arrowColumn.getBinaryVal().getValues().get(0).array();
+        ArrowRecordBatch recordBatch = loadArrowBatch(batchBytes, allocator);
+        VectorLoader vectorLoader = new VectorLoader(root);
+        vectorLoader.load(recordBatch);
+        recordBatch.close();
+        java.util.List<ArrowColumnVector> columns =
+            root.getFieldVectors().stream()
+                .map(vector -> new ArrowColumnVector(vector))
+                .collect(Collectors.toList());
+        ArrowColumnarBatch batch =
+            new ArrowColumnarBatch(columns.toArray(new ArrowColumnVector[0]), root.getRowCount());
+        fetchedRowsItr = batch.rowIterator();
       }
 
       if (fetchedRowsItr.hasNext()) {
@@ -351,10 +391,18 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     } catch (SQLException eS) {
       throw eS;
     } catch (Exception ex) {
+      ex.printStackTrace();
       throw new KyuubiSQLException("Error retrieving next row", ex);
     }
     // NOTE: fetchOne doesn't throw new SQLFeatureNotSupportedException("Method not supported").
     return true;
+  }
+
+  private ArrowRecordBatch loadArrowBatch(byte[] batchBytes, BufferAllocator allocator)
+      throws IOException {
+    ByteArrayInputStream in = new ByteArrayInputStream(batchBytes);
+    return MessageSerializer.deserializeRecordBatch(
+        new ReadChannel(Channels.newChannel(in)), allocator);
   }
 
   @Override
@@ -427,5 +475,24 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
   @Override
   public boolean isClosed() {
     return isClosed;
+  }
+
+  private List<TTypeId> convertComplexTypeToStringType(List<TTypeId> colTypes) {
+    if (convertComplexTypeToString) {
+      return colTypes.stream()
+          .map(
+              type -> {
+                if (type == TTypeId.ARRAY_TYPE
+                    || type == TTypeId.MAP_TYPE
+                    || type == TTypeId.STRUCT_TYPE) {
+                  return TTypeId.STRING_TYPE;
+                } else {
+                  return type;
+                }
+              })
+          .collect(Collectors.toList());
+    } else {
+      return colTypes;
+    }
   }
 }

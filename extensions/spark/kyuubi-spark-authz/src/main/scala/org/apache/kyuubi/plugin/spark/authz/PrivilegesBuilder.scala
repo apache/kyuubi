@@ -580,10 +580,10 @@ object PrivilegesBuilder {
 
       case "ReplaceArcticData" =>
         val relation = getPlanField[Any]("table")
-        val identifier = getFieldVal[AnyRef](relation, "identifier")
-        val namespace = invoke(identifier, "namespace").asInstanceOf[Array[String]]
-        val table = invoke(identifier, "name").asInstanceOf[String]
-        val owner = getTableOwnerFromV2Plan(relation, identifier.asInstanceOf[Identifier])
+        val identifier = getFieldVal[Option[Identifier]](relation, "identifier")
+        val namespace = invoke(identifier.get, "namespace").asInstanceOf[Array[String]]
+        val table = invoke(identifier.get, "name").asInstanceOf[String]
+        val owner = getTableOwnerFromV2Plan(relation, identifier.get)
         outputObjs += PrivilegeObject(
           TABLE_OR_VIEW,
           PrivilegeObjectActionType.UPDATE,

@@ -36,7 +36,7 @@ import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationS
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.session.{AbstractSession, Session}
 
 abstract class SparkOperation(session: Session)
   extends AbstractOperation(session) {
@@ -49,7 +49,7 @@ abstract class SparkOperation(session: Session)
     }.getOrElse(ZoneId.systemDefault())
   }
 
-  protected var iter: FetchIterator[Row] = _
+  protected var iter: FetchIterator[_] = _
 
   protected var result: DataFrame = _
 
@@ -146,7 +146,8 @@ abstract class SparkOperation(session: Session)
     }
   }
 
-  override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(resultSchema)
+  override def getResultSetSchema: TTableSchema =
+    SchemaHelper.toTTableSchema(resultSchema, timeZone.toString)
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet =
     withLocalProperties {
@@ -160,9 +161,22 @@ abstract class SparkOperation(session: Session)
           case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
           case FETCH_FIRST => iter.fetchAbsolute(0);
         }
-        val taken = iter.take(rowSetSize)
         resultRowSet =
-          RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion, timeZone)
+          if (arrowEnabled) {
+            if (iter.hasNext) {
+              val taken = iter.next().asInstanceOf[Array[Byte]]
+              RowSet.toTRowSet(taken, getProtocolVersion)
+            } else {
+              RowSet.emptyTRowSet()
+            }
+          } else {
+            val taken = iter.take(rowSetSize)
+            RowSet.toTRowSet(
+              taken.toList.asInstanceOf[List[Row]],
+              resultSchema,
+              getProtocolVersion,
+              timeZone)
+          }
         resultRowSet.setStartRowOffset(iter.getPosition)
       } catch onError(cancel = true)
 
@@ -170,6 +184,15 @@ abstract class SparkOperation(session: Session)
     }
 
   override def shouldRunAsync: Boolean = false
+
+  protected def arrowEnabled(): Boolean = {
+    // normalized config is required, to pass unit test
+    session.asInstanceOf[AbstractSession].normalizedConf
+      .getOrElse("kyuubi.operation.result.codec", "simple")
+      .equalsIgnoreCase("arrow") &&
+    // TODO: (fchen) make all operation support arrow
+    getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
+  }
 }
 
 object SparkOperation {

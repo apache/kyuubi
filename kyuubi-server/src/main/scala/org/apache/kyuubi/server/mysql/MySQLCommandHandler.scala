@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.mysql
 
+import java.net.InetAddress
 import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor}
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -27,7 +28,7 @@ import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.mysql.MySQLCommandHandler._
@@ -40,7 +41,11 @@ object MySQLCommandHandler {
   val connIdToSessHandle = new ConcurrentHashMap[Int, SessionHandle]
 }
 
-class MySQLCommandHandler(connectionUrl: String, be: BackendService, execPool: ThreadPoolExecutor)
+class MySQLCommandHandler(
+    serverAddr: InetAddress,
+    connectionUrl: String,
+    be: BackendService,
+    execPool: ThreadPoolExecutor)
   extends SimpleChannelInboundHandler[MySQLCommandPacket] with Logging {
 
   implicit private val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(execPool)
@@ -107,9 +112,10 @@ class MySQLCommandHandler(connectionUrl: String, be: BackendService, execPool: T
         user,
         "",
         remoteIp,
-        sessionConf ++ Map(
-          KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl,
-          KYUUBI_SESSION_REAL_USER_KEY -> user))
+        Map(KYUUBI_CLIENT_IP_KEY -> remoteIp, KYUUBI_SERVER_IP_KEY -> serverAddr.getHostAddress) ++
+          sessionConf ++ Map(
+            KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl,
+            KYUUBI_SESSION_REAL_USER_KEY -> user))
       sessionHandle
     } catch {
       case rethrow: Exception =>

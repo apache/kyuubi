@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.TreeMap
 import scala.util.matching.Regex
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -112,9 +113,12 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     unset(entry.key)
   }
 
-  /** Get all parameters as map */
+  /**
+   * Get all parameters as map
+   * sorted by key in ascending order
+   */
   def getAll: Map[String, String] = {
-    settings.entrySet().asScala.map(x => (x.getKey, x.getValue)).toMap[String, String]
+    TreeMap(settings.asScala.toSeq: _*)
   }
 
   /** Get all envs as map */
@@ -124,7 +128,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
 
   /** Get all batch conf as map */
   def getBatchConf(batchType: String): Map[String, String] = {
-    getAllWithPrefix(s"$KYUUBI_BATCH_CONF_PREFIX.${batchType.toLowerCase(Locale.ROOT)}", "")
+    val normalizedBatchType = batchType.toLowerCase(Locale.ROOT) match {
+      case "pyspark" => "spark"
+      case other => other.toLowerCase(Locale.ROOT)
+    }
+    getAllWithPrefix(s"$KYUUBI_BATCH_CONF_PREFIX.$normalizedBatchType", "")
   }
 
   /**
@@ -1435,6 +1443,19 @@ object KyuubiConf {
       .version("1.4.0")
       .booleanConf
       .createWithDefault(false)
+
+  val OPERATION_RESULT_CODEC: ConfigEntry[String] =
+    buildConf("kyuubi.operation.result.codec")
+      .doc("Specify the result codec, available configs are: <ul>" +
+        " <li>SIMPLE: the result will convert to TRow at the engine driver side. </li>" +
+        " <li>ARROW: the result will be encoded as Arrow at the executor side before collecting" +
+        " by the driver, and deserialized at the client side. note that it only takes effect for" +
+        " kyuubi-hive-jdbc clients now.</li></ul>")
+      .version("1.7.0")
+      .stringConf
+      .checkValues(Set("arrow", "simple"))
+      .transform(_.toLowerCase(Locale.ROOT))
+      .createWithDefault("simple")
 
   val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
     buildConf("kyuubi.operation.result.max.rows")

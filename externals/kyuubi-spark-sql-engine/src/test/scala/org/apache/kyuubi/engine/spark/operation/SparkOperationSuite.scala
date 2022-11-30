@@ -92,14 +92,12 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       .add("c17", "struct<X: string>", nullable = true, "17")
 
     // since spark3.3.0
-    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
-      (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 3)) {
+    if (SPARK_ENGINE_VERSION >= "3.3") {
       schema = schema.add("c18", "interval day", nullable = true, "18")
         .add("c19", "interval year", nullable = true, "19")
     }
     // since spark3.4.0
-    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
-      (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 4)) {
+    if (SPARK_ENGINE_VERSION >= "3.4") {
       schema = schema.add("c20", "timestamp_ntz", nullable = true, "20")
     }
 

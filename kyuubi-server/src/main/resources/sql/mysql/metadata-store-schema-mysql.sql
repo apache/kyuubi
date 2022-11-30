@@ -1,6 +1,6 @@
 -- the metadata table ddl
 
-CREATE TABLE metadata(
+CREATE TABLE IF NOT EXISTS metadata(
     key_id bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'the auto increment key id',
     identifier varchar(36) NOT NULL COMMENT 'the identifier id, which is an UUID',
     session_type varchar(128) NOT NULL COMMENT 'the session type, SQL or BATCH',
