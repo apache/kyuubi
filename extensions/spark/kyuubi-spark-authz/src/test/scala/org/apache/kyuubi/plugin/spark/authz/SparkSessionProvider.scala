@@ -55,7 +55,6 @@ trait SparkSessionProvider {
         "spark.sql.warehouse.dir",
         Utils.createTempDir("spark-warehouse").toString)
       .config("spark.sql.extensions", sqlExtensions)
-      .config(s"spark.${SESSION_USER_SIGN_ENABLED.key}", true)
       .withExtensions(extension)
       .getOrCreate()
     if (catalogImpl == "hive") {
