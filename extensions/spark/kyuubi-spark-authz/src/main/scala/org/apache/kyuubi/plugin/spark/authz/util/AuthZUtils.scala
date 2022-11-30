@@ -199,7 +199,11 @@ private[authz] object AuthZUtils {
         try {
           val userPubKeyStr = spark.getLocalProperty("kyuubi.session.sign.publickey")
           val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
-          verifySignWithECDSA(user, userSign, userPubKeyStr)
+          if (StringUtils.isAnyBlank(userPubKeyStr, userSign)) {
+            false
+          } else {
+            verifySignWithECDSA(user, userSign, userPubKeyStr)
+          }
         } catch {
           case _: Exception =>
             false
