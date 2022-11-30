@@ -83,9 +83,12 @@ private[authz] object AuthZUtils {
    * @return the user name
    */
   def getAuthzUgi(spark: SparkContext): UserGroupInformation = {
+    val isSessionUserVerifyEnabled =
+      spark.getConf.getBoolean(s"spark.kyuubi.session.user.sign.enabled", defaultValue = false)
+
     // kyuubi.session.user is only used by kyuubi
     val user = spark.getLocalProperty("kyuubi.session.user")
-    if (StringUtils.isNotBlank(user)) {
+    if (isSessionUserVerifyEnabled) {
       verifyKyuubiSessionUser(spark, user)
     }
 
@@ -192,26 +195,22 @@ private[authz] object AuthZUtils {
   }
 
   private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Unit = {
-    val isSessionUserVerifyEnabled =
-      spark.getConf.getBoolean(s"spark.kyuubi.session.user.sign.enabled", defaultValue = false)
-    if (isSessionUserVerifyEnabled) {
-      val isVerified = {
-        try {
-          val userPubKeyStr = spark.getLocalProperty("kyuubi.session.sign.publickey")
-          val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
-          if (StringUtils.isAnyBlank(userPubKeyStr, userSign)) {
-            false
-          } else {
-            verifySignWithECDSA(user, userSign, userPubKeyStr)
-          }
-        } catch {
-          case _: Exception =>
-            false
+    val isVerified = {
+      try {
+        val userPubKeyStr = spark.getLocalProperty("kyuubi.session.sign.publickey")
+        val userSign = spark.getLocalProperty("kyuubi.session.user.sign")
+        if (StringUtils.isAnyBlank(user, userPubKeyStr, userSign)) {
+          false
+        } else {
+          verifySignWithECDSA(user, userSign, userPubKeyStr)
         }
+      } catch {
+        case _: Exception =>
+          false
       }
-      if (!isVerified) {
-        throw new AccessControlException(s"Permission denied: user [$user] is not verified")
-      }
+    }
+    if (!isVerified) {
+      throw new AccessControlException(s"Permission denied: user [$user] is not verified")
     }
   }
 
