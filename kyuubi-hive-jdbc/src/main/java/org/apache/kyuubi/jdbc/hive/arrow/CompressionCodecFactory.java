@@ -18,7 +18,6 @@
 package org.apache.kyuubi.jdbc.hive.arrow;
 
 public class CompressionCodecFactory {
-  public static final CompressionCodecFactory INSTANCE = new CompressionCodecFactory();
 
   public static CompressionCodec createCodec(String codec) {
     switch (codec) {
@@ -26,8 +25,6 @@ public class CompressionCodecFactory {
         return new Lz4CompressionCodec();
       case "zstd":
         return new ZstdCompressionCodec();
-      case "snappy":
-        return new SnappyCompressionCodec();
       case "gzip":
         return new GZIPCompressionCodec();
       default:

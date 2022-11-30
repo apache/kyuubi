@@ -27,7 +27,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{ArrayType, DataType, MapType, StructField, StructType}
-import org.xerial.snappy.SnappyOutputStream
 
 import org.apache.kyuubi.engine.spark.schema.RowSet
 
@@ -103,7 +102,6 @@ object CompressionCodecFactory {
     tpe match {
       case "lz4" => Lz4CompressionCodec
       case "zstd" => ZstdCompressionCodec
-      case "snappy" => SnappyCompressionCodec
       case "gzip" => GZIPCompressionCodec
       case _ => NoCompressionCodec
     }
@@ -125,11 +123,6 @@ object Lz4CompressionCodec extends CompressionCodec {
 object ZstdCompressionCodec extends CompressionCodec {
   override def outputStream(baos: ByteArrayOutputStream): OutputStream =
     new ZstdOutputStreamNoFinalizer(baos)
-}
-
-object SnappyCompressionCodec extends CompressionCodec {
-  override def outputStream(baos: ByteArrayOutputStream): OutputStream =
-    new SnappyOutputStream(baos)
 }
 
 object GZIPCompressionCodec extends CompressionCodec {

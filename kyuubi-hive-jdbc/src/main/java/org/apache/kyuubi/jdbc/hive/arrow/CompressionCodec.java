@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 import net.jpountz.lz4.LZ4FrameInputStream;
-import org.xerial.snappy.SnappyInputStream;
 
 public interface CompressionCodec {
   InputStream decompress(byte[] batchBytes) throws IOException;
@@ -80,13 +79,6 @@ class ZstdCompressionCodec extends AbstractCompressionCodec {
   @Override
   InputStream inputStream(ByteArrayInputStream in) throws IOException {
     return new ZstdInputStreamNoFinalizer(in);
-  }
-}
-
-class SnappyCompressionCodec extends AbstractCompressionCodec {
-  @Override
-  InputStream inputStream(ByteArrayInputStream in) throws IOException {
-    return new SnappyInputStream(in);
   }
 }
 
