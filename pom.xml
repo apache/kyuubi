@@ -168,6 +168,7 @@
         <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.19.0</log4j.version>
+        <lz4.version>1.8.0</lz4.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
         <netty.version>4.1.84.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
@@ -198,6 +199,7 @@
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
         <zookeeper.version>3.4.14</zookeeper.version>
+        <zstd.version>1.5.2-5</zstd.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.jline.version>2.12</hive.client.jline.version>
@@ -1612,13 +1614,13 @@
             <dependency>
                 <groupId>org.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
-                <version>1.8.0</version>
+                <version>${lz4.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.2-5</version>
+                <version>${zstd.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
