@@ -50,9 +50,9 @@ class AuthzSessionSigningSuite extends AnyFunSuite
     // preparation as in SparkOperation
     val (privateKey, publicKey) = SignUtils.generateKeyPair()
     val userSignature = SignUtils.signWithPrivateKey(kyuubiSessionUser, privateKey)
-    val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
+    val publicKeyBase64 = Base64.getEncoder.encodeToString(publicKey.getEncoded)
     sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
-    sc.setLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, publicKeyStr)
+    sc.setLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, publicKeyBase64)
     sc.setLocalProperty(KYUUBI_SESSION_USER_SIGN, userSignature)
 
     // pass session user verification

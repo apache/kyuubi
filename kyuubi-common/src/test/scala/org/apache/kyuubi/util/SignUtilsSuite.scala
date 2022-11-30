@@ -36,7 +36,7 @@ class SignUtilsSuite extends KyuubiFunSuite {
     val (privateKey, publicKey) = SignUtils.generateKeyPair()
     val plainText = "plainText"
     val signature = SignUtils.signWithPrivateKey(plainText, privateKey, "SHA256withECDSA")
-    val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
-    assert(SignUtils.verifySignWithECDSA(plainText, signature, publicKeyStr))
+    val publicKeyBase64 = Base64.getEncoder.encodeToString(publicKey.getEncoded)
+    assert(SignUtils.verifySignWithECDSA(plainText, signature, publicKeyBase64))
   }
 }

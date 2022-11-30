@@ -198,12 +198,12 @@ private[authz] object AuthZUtils {
   private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Unit = {
     val isVerified = {
       try {
-        val userPubKeyStr = spark.getLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY)
+        val userPubKeyBase64 = spark.getLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY)
         val userSign = spark.getLocalProperty(KYUUBI_SESSION_USER_SIGN)
-        if (StringUtils.isAnyBlank(user, userPubKeyStr, userSign)) {
+        if (StringUtils.isAnyBlank(user, userPubKeyBase64, userSign)) {
           false
         } else {
-          verifySignWithECDSA(user, userSign, userPubKeyStr)
+          verifySignWithECDSA(user, userSign, userPubKeyBase64)
         }
       } catch {
         case _: Exception =>
