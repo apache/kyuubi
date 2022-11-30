@@ -19,7 +19,6 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.security.PrivilegedExceptionAction
 import java.sql.Timestamp
-import java.util.Base64
 
 import scala.util.Try
 
