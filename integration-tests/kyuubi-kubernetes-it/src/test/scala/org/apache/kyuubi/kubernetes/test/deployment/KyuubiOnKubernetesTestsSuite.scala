@@ -119,7 +119,6 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
         "spark.kubernetes.file.upload.path" -> s"hdfs://$localhostAddress:$getDFSPort/spark",
         "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
         "spark.kubernetes.authenticate.driver.serviceAccountName" -> "spark",
-        "spark.kubernetes.driver.podTemplateFile" -> driverTemplate.getPath,
         ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress,
         FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
   }

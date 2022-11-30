@@ -368,10 +368,10 @@ jobs:
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.deployment,org.apache.kyuubi.kubernetes.test.KubernetesUtilsTest
       - name: Cat kyuubi server log
-#        if: failure()
+        if: failure()
         run: kubectl logs kyuubi-test
       - name: Upload test logs
-#        if: failure()
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: unit-tests-log-kyuubi-on-k8s-it
