@@ -1457,6 +1457,16 @@ object KyuubiConf {
       .transform(_.toLowerCase(Locale.ROOT))
       .createWithDefault("simple")
 
+  val OPERATION_RESULT_COMPRESSION_CODEC: ConfigEntry[String] =
+    buildConf("kyuubi.operation.result.compression.codec")
+      .doc("The codec used to compress arrow-based result. By default, Kyuubi provides three " +
+        "codecs: `lz4`, `zstd`, `gzip`")
+      .version("1.7.0")
+      .stringConf
+      .checkValues(Set("none", "lz4", "zstd", "gzip"))
+      .transform(_.toLowerCase(Locale.ROOT))
+      .createWithDefault("lz4")
+
   val OPERATION_RESULT_MAX_ROWS: ConfigEntry[Int] =
     buildConf("kyuubi.operation.result.max.rows")
       .doc("Max rows of Spark query results. Rows that exceeds the limit would be ignored. " +

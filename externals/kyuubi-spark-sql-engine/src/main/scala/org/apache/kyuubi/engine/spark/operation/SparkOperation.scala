@@ -197,6 +197,7 @@ abstract class SparkOperation(session: Session)
   protected def compressionCodec(): Option[String] = {
     session.asInstanceOf[AbstractSession].normalizedConf
       .get("kyuubi.operation.result.compression.codec")
+      .orElse(Option("lz4"))
   }
 }
 

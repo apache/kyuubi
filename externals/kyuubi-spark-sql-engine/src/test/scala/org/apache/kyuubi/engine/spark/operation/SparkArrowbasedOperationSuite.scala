@@ -28,10 +28,13 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   override def withKyuubiConf: Map[String, String] = Map.empty
 
   override def jdbcVars: Map[String, String] = {
-    Map(KyuubiConf.OPERATION_RESULT_CODEC.key -> resultCodec)
+    Map(KyuubiConf.OPERATION_RESULT_CODEC.key -> resultCodec,
+      KyuubiConf.OPERATION_RESULT_COMPRESSION_CODEC.key -> compressionCodec)
   }
 
   override def resultCodec: String = "arrow"
+
+  def compressionCodec: String = "lz4"
 
   test("make sure kyuubi.operation.result.codec=arrow") {
     withJdbcStatement() { statement =>
@@ -44,4 +47,28 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       assert(resultSet.getString("col") === "arrow")
     }
   }
+
+  test("compression codec") {
+    withJdbcStatement() { statement =>
+      val query =
+        s"""
+           |SELECT '$${hivevar:${KyuubiConf.OPERATION_RESULT_COMPRESSION_CODEC.key}}' AS col
+           |""".stripMargin
+      val resultSet = statement.executeQuery(query)
+      assert(resultSet.next())
+      assert(resultSet.getString("col") === compressionCodec)
+    }
+  }
+}
+
+class NoCompressionSuite extends SparkArrowbasedOperationSuite {
+  override def compressionCodec: String = "none"
+}
+
+class ZstdCompressionSuite extends SparkArrowbasedOperationSuite {
+  override def compressionCodec: String = "zstd"
+}
+
+class GzipCompressionSuite extends SparkArrowbasedOperationSuite {
+  override def compressionCodec: String = "gzip"
 }

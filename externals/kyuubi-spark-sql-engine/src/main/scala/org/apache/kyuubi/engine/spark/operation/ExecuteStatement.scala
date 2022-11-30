@@ -101,7 +101,7 @@ class ExecuteStatement(
             new IterableFetchIterator[Array[Byte]](
               SparkDatasetHelper.toArrowBatchRdd(
                 convertComplexType(result),
-                compressionCodec()).toLocalIterator.toIterable)
+                compressionCodec).toLocalIterator.toIterable)
           } else {
             new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
           }
@@ -114,7 +114,7 @@ class ExecuteStatement(
               new ArrayFetchIterator(
                 SparkDatasetHelper.toArrowBatchRdd(
                   convertComplexType(result),
-                  compressionCodec()).collect())
+                  compressionCodec).collect())
             } else {
               new ArrayFetchIterator(result.collect())
             }
@@ -125,7 +125,7 @@ class ExecuteStatement(
               new ArrayFetchIterator(
                 SparkDatasetHelper.toArrowBatchRdd(
                   convertComplexType(result.limit(resultMaxRows)),
-                  compressionCodec()).collect())
+                  compressionCodec).collect())
             } else {
               new ArrayFetchIterator(result.take(resultMaxRows))
             }
