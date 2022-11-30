@@ -214,8 +214,8 @@ private[authz] object AuthZUtils {
   private def verifySignWithECDSA(
       plainText: String,
       signature: String,
-      publicKeyStr: String): Boolean = {
-    val pubKeyBytes = Base64.getDecoder.decode(publicKeyStr)
+      publicKeyBase64: String): Boolean = {
+    val pubKeyBytes = Base64.getDecoder.decode(publicKeyBase64)
     val publicKey: PublicKey = KeyFactory.getInstance("EC")
       .generatePublic(new X509EncodedKeySpec(pubKeyBytes)).asInstanceOf[ECPublicKey]
     val publicSignature = Signature.getInstance("SHA256withECDSA")

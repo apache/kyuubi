@@ -57,8 +57,8 @@ object SignUtils {
   def verifySignWithECDSA(
       plainText: String,
       signature: String,
-      publicKeyStr: String): Boolean = {
-    val publicKeyBytes = Base64.getDecoder.decode(publicKeyStr)
+      publicKeyBase64: String): Boolean = {
+    val publicKeyBytes = Base64.getDecoder.decode(publicKeyBase64)
     val publicKey: PublicKey = KeyFactory.getInstance(KEYPAIR_ALGORITHM_EC)
       .generatePublic(new X509EncodedKeySpec(publicKeyBytes)).asInstanceOf[ECPublicKey]
     val signatureBytes = Base64.getDecoder.decode(signature)
