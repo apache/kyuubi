@@ -203,6 +203,8 @@
         <hive.client.jline.version>2.12</hive.client.jline.version>
         <hive.client.supercsv.version>2.2.0</hive.client.supercsv.version>
 
+        <hive.jdbc.artifact>kyuubi-hive-jdbc</hive.jdbc.artifact>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
@@ -2345,6 +2347,13 @@
             <id>spotless-python</id>
             <properties>
                 <spotless.python.includes>src/**/*.py</spotless.python.includes>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jdbc-shaded</id>
+            <properties>
+                <hive.jdbc.artifact>kyuubi-hive-jdbc-shaded</hive.jdbc.artifact>
             </properties>
         </profile>
 
