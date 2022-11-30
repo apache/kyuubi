@@ -37,6 +37,8 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param endTime session end time
  * @param totalOperations how many queries and meta calls
  * @param exception the session exception, such as the exception that occur when opening session
+ * @param runningOperations how many queries running
+ * @param errorOperations how many queries failed
  */
 case class KyuubiSessionEvent(
     sessionId: String,

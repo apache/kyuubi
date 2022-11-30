@@ -20,38 +20,129 @@ package org.apache.kyuubi.client.api.v1.dto;
 import java.util.Objects;
 
 public class OperationData {
-  private String identifier;
-  private String OperationType;
-  private String OperationStatus;
+  private String sessionId;
+  private String operationId;
+  private String sessionUser;
+  private String statementId;
+  private Long createTime;
+  private Long completeTime;
+  private String statement;
+  private String engineName;
+  private String engineType;
+  private String engineShareLevel;
+  private String exception;
 
-  public OperationData(String identifier, String operationType, String operationStatus) {
-    this.identifier = identifier;
-    OperationType = operationType;
-    OperationStatus = operationStatus;
+  public OperationData(
+      String sessionId,
+      String operationId,
+      String sessionUser,
+      String statementId,
+      Long createTime,
+      Long completeTime,
+      String statement,
+      String engineName,
+      String engineType,
+      String engineShareLevel,
+      String exception) {
+    this.sessionId = sessionId;
+    this.operationId = operationId;
+    this.sessionUser = sessionUser;
+    this.statementId = statementId;
+    this.createTime = createTime;
+    this.completeTime = completeTime;
+    this.statement = statement;
+    this.engineName = engineName;
+    this.engineType = engineType;
+    this.engineShareLevel = engineShareLevel;
+    this.exception = exception;
   }
 
-  public String getIdentifier() {
-    return identifier;
+  public String getSessionId() {
+    return sessionId;
   }
 
-  public void setIdentifier(String identifier) {
-    this.identifier = identifier;
+  public void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
   }
 
-  public String getOperationType() {
-    return OperationType;
+  public String getOperationId() {
+    return operationId;
   }
 
-  public void setOperationType(String operationType) {
-    OperationType = operationType;
+  public void setOperationId(String operationId) {
+    this.operationId = operationId;
   }
 
-  public String getOperationStatus() {
-    return OperationStatus;
+  public String getSessionUser() {
+    return sessionUser;
   }
 
-  public void setOperationStatus(String operationStatus) {
-    OperationStatus = operationStatus;
+  public void setSessionUser(String sessionUser) {
+    this.sessionUser = sessionUser;
+  }
+
+  public String getStatementId() {
+    return statementId;
+  }
+
+  public void setStatementId(String statementId) {
+    this.statementId = statementId;
+  }
+
+  public Long getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(Long createTime) {
+    this.createTime = createTime;
+  }
+
+  public Long getCompleteTime() {
+    return completeTime;
+  }
+
+  public void setCompleteTime(Long completeTime) {
+    this.completeTime = completeTime;
+  }
+
+  public String getStatement() {
+    return statement;
+  }
+
+  public void setStatement(String statement) {
+    this.statement = statement;
+  }
+
+  public String getEngineName() {
+    return engineName;
+  }
+
+  public void setEngineName(String engineName) {
+    this.engineName = engineName;
+  }
+
+  public String getEngineType() {
+    return engineType;
+  }
+
+  public void setEngineType(String engineType) {
+    this.engineType = engineType;
+  }
+
+  public String getEngineShareLevel() {
+    return engineShareLevel;
+  }
+
+  public void setEngineShareLevel(String engineShareLevel) {
+    this.engineShareLevel = engineShareLevel;
+  }
+
+  public String getException() {
+    return exception;
+  }
+
+  public void setException(String exception) {
+    this.exception = exception;
   }
 
   @Override
@@ -59,28 +150,32 @@ public class OperationData {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     OperationData that = (OperationData) o;
-    return Objects.equals(identifier, that.identifier)
-        && Objects.equals(OperationType, that.OperationType)
-        && Objects.equals(OperationStatus, that.OperationStatus);
+    return Objects.equals(sessionId, that.sessionId)
+        && Objects.equals(operationId, that.operationId)
+        && Objects.equals(sessionUser, that.sessionUser)
+        && Objects.equals(statementId, that.statementId)
+        && Objects.equals(createTime, that.createTime)
+        && Objects.equals(completeTime, that.completeTime)
+        && Objects.equals(statement, that.statement)
+        && Objects.equals(engineName, that.engineName)
+        && Objects.equals(engineType, that.engineType)
+        && Objects.equals(engineShareLevel, that.engineShareLevel)
+        && Objects.equals(exception, that.exception);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(identifier, OperationType, OperationStatus);
-  }
-
-  @Override
-  public String toString() {
-    return "OperationData{"
-        + "identifier='"
-        + identifier
-        + '\''
-        + ", OperationType='"
-        + OperationType
-        + '\''
-        + ", OperationStatus='"
-        + OperationStatus
-        + '\''
-        + '}';
+    return Objects.hash(
+        sessionId,
+        operationId,
+        sessionUser,
+        statementId,
+        createTime,
+        completeTime,
+        statement,
+        engineName,
+        engineType,
+        engineShareLevel,
+        exception);
   }
 }

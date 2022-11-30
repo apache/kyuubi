@@ -17,28 +17,30 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.util.Collections
+import javax.ws.rs._
+import javax.ws.rs.core.{MediaType, Response}
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
+
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+
+import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.{Engine, HadoopConfData, Server, ServerLog}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
-import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
+import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.KyuubiServer.getServerLogRowSet
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.OSUtils
-import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
-
-import java.util.Collections
-import javax.ws.rs._
-import javax.ws.rs.core.{MediaType, Response}
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
-import scala.util.control.NonFatal
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
