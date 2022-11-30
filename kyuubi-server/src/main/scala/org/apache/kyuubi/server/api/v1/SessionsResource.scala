@@ -103,386 +103,385 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
+  }
 
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[InfoDetail]))),
-      description =
-        "get a information detail via session handle identifier and a specific information type")
-    @GET
-    @Path("{sessionHandle}/info/{infoType}")
-    def getInfo(
-        @PathParam("sessionHandle") sessionHandleStr: String,
-        @PathParam("infoType") infoType: Int): InfoDetail = {
-      try {
-        val info = TGetInfoType.findByValue(infoType)
-        val infoValue = fe.be.getInfo(sessionHandleStr, info)
-        new InfoDetail(info.toString, infoValue.getStringValue)
-      } catch {
-        case NonFatal(e) =>
-          error(s"Unrecognized GetInfoType value: $infoType", e)
-          throw new NotFoundException(s"Unrecognized GetInfoType value: $infoType")
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[SessionOpenCount]))),
-      description = "Get the current open session count")
-    @GET
-    @Path("count")
-    def sessionCount(): SessionOpenCount = {
-      new SessionOpenCount(sessionManager.getOpenSessionCount)
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[ExecPoolStatistic]))),
-      description = "Get statistic info of background executors")
-    @GET
-    @Path("execPool/statistic")
-    def execPoolStatistic(): ExecPoolStatistic = {
-      new ExecPoolStatistic(
-        sessionManager.getExecPoolSize,
-        sessionManager.getActiveCount)
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON)),
-      description = "Open(create) a session")
-    @POST
-    @Consumes(Array(MediaType.APPLICATION_JSON))
-    def openSession(request: SessionOpenRequest): dto.SessionHandle = {
-      val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
-      val ipAddress = fe.getIpAddress
-      val handle = fe.be.openSession(
-        TProtocolVersion.findByValue(request.getProtocolVersion),
-        userName,
-        request.getPassword,
-        ipAddress,
-        (request.getConfigs.asScala ++ Map(
-          KYUUBI_CLIENT_IP_KEY -> ipAddress,
-          KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
-          KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).toMap)
-      new dto.SessionHandle(handle.identifier)
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON)),
-      description = "Close a session")
-    @DELETE
-    @Path("{sessionHandle}")
-    def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
-      fe.be.closeSession(sessionHandleStr)
-      Response.ok().build()
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with EXECUTE_STATEMENT type")
-    @POST
-    @Path("{sessionHandle}/operations/statement")
-    def executeStatement(
-        @PathParam("sessionHandle") sessionHandleStr: String,
-        request: StatementRequest): OperationHandle = {
-      try {
-        fe.be.executeStatement(
-          sessionHandleStr,
-          request.getStatement,
-          Map.empty,
-          request.isRunAsync,
-          request.getQueryTimeout)
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error executing statement"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with GET_TYPE_INFO type")
-    @POST
-    @Path("{sessionHandle}/operations/typeInfo")
-    def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
-      try {
-        fe.be.getTypeInfo(sessionHandleStr)
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error getting type information"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with GET_CATALOGS type")
-    @POST
-    @Path("{sessionHandle}/operations/catalogs")
-    def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
-      try {
-        fe.be.getCatalogs(sessionHandleStr)
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error getting catalogs"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with GET_SCHEMAS type")
-    @POST
-    @Path("{sessionHandle}/operations/schemas")
-    def getSchemas(
-        @PathParam("sessionHandle") sessionHandleStr: String,
-        request: GetSchemasRequest): OperationHandle = {
-      try {
-        val operationHandle = fe.be.getSchemas(
-          sessionHandleStr,
-          request.getCatalogName,
-          request.getSchemaName)
-        operationHandle
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error getting schemas"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with GET_TABLES type")
-    @POST
-    @Path("{sessionHandle}/operations/tables")
-    def getTables(
-        @PathParam("sessionHandle") sessionHandleStr: String,
-        request: GetTablesRequest): OperationHandle = {
-      try {
-        fe.be.getTables(
-          sessionHandleStr,
-          request.getCatalogName,
-          request.getSchemaName,
-          request.getTableName,
-          request.getTableTypes)
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error getting tables"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with GET_TABLE_TYPES type")
-    @POST
-    @Path("{sessionHandle}/operations/tableTypes")
-    def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
-      try {
-        fe.be.getTableTypes(sessionHandleStr)
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error getting table types"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with GET_COLUMNS type")
-    @POST
-    @Path("{sessionHandle}/operations/columns")
-    def getColumns(
-        @PathParam("sessionHandle") sessionHandleStr: String,
-        request: GetColumnsRequest): OperationHandle = {
-      try {
-        fe.be.getColumns(
-          sessionHandleStr,
-          request.getCatalogName,
-          request.getSchemaName,
-          request.getTableName,
-          request.getColumnName)
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error getting columns"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with GET_FUNCTIONS type")
-    @POST
-    @Path("{sessionHandle}/operations/functions")
-    def getFunctions(
-        @PathParam("sessionHandle") sessionHandleStr: String,
-        request: GetFunctionsRequest): OperationHandle = {
-      try {
-        fe.be.getFunctions(
-          sessionHandleStr,
-          request.getCatalogName,
-          request.getSchemaName,
-          request.getFunctionName)
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error getting functions"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with GET_PRIMARY_KEY type")
-    @POST
-    @Path("{sessionHandle}/operations/primaryKeys")
-    def getPrimaryKeys(
-        @PathParam("sessionHandle") sessionHandleStr: String,
-        request: GetPrimaryKeysRequest): OperationHandle = {
-      try {
-        fe.be.getPrimaryKeys(
-          sessionHandleStr,
-          request.getCatalogName,
-          request.getSchemaName,
-          request.getTableName)
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error getting primary keys"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationHandle]))),
-      description = "Create an operation with GET_CROSS_REFERENCE type")
-    @POST
-    @Path("{sessionHandle}/operations/crossReference")
-    def getCrossReference(
-        @PathParam("sessionHandle") sessionHandleStr: String,
-        request: GetCrossReferenceRequest): OperationHandle = {
-      try {
-        fe.be.getCrossReference(
-          sessionHandleStr,
-          request.getPrimaryCatalog,
-          request.getPrimarySchema,
-          request.getPrimaryTable,
-          request.getForeignCatalog,
-          request.getForeignSchema,
-          request.getForeignTable)
-      } catch {
-        case NonFatal(e) =>
-          val errorMsg = "Error getting cross reference"
-          error(errorMsg, e)
-          throw new NotFoundException(errorMsg)
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[OperationData]))),
-      description =
-        "get all the operation list hosted a specific session binding via an identifier")
-    @GET
-    @Path("{sessionHandle}/operations")
-    def getOperations(
-        @PathParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
-      try {
-        sessionManager.getSession(sessionHandleStr)
-          .allOperations().map { operationHandle =>
-            val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
-            val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
-            new OperationData(
-              sessionHandleStr,
-              operation.getHandle.identifier.toString,
-              kyuubiSessionEvent.sessionUser,
-              kyuubiSessionEvent.statementId,
-              kyuubiSessionEvent.createTime,
-              kyuubiSessionEvent.completeTime,
-              kyuubiSessionEvent.statement,
-              kyuubiSessionEvent.engineName,
-              kyuubiSessionEvent.engineType,
-              kyuubiSessionEvent.engineShareLevel,
-              kyuubiSessionEvent.exception.get.toString)
-          }.toSeq
-      } catch {
-        case NonFatal(e) =>
-          error(s"Invalid $sessionHandleStr", e)
-          throw new NotFoundException(s"Invalid $sessionHandleStr")
-      }
-    }
-
-    @ApiResponse(
-      responseCode = "200",
-      content = Array(new Content(
-        mediaType = MediaType.APPLICATION_JSON,
-        schema = new Schema(implementation = classOf[InfoDetail]))),
-      description =
-        "get all supported info types by Kyuubi session")
-    @GET
-    @Path("{sessionHandle}/infoTypes")
-    def getSupportedInfoType(
-        @PathParam("sessionHandle") sessionHandleStr: String): Seq[InfoDetail] = {
-      try {
-        val infoTypes = TGetInfoType.values()
-        infoTypes.map(infoType => {
-          new InfoDetail(infoType.toString, infoType.getValue.toString)
-        })
-      } catch {
-        case NonFatal(e) =>
-          error(s"Invalid $sessionHandleStr", e)
-          throw new NotFoundException(s"Invalid $sessionHandleStr")
-      }
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[InfoDetail]))),
+    description =
+      "get a information detail via session handle identifier and a specific information type")
+  @GET
+  @Path("{sessionHandle}/info/{infoType}")
+  def getInfo(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @PathParam("infoType") infoType: Int): InfoDetail = {
+    try {
+      val info = TGetInfoType.findByValue(infoType)
+      val infoValue = fe.be.getInfo(sessionHandleStr, info)
+      new InfoDetail(info.toString, infoValue.getStringValue)
+    } catch {
+      case NonFatal(e) =>
+        error(s"Unrecognized GetInfoType value: $infoType", e)
+        throw new NotFoundException(s"Unrecognized GetInfoType value: $infoType")
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[SessionOpenCount]))),
+    description = "Get the current open session count")
+  @GET
+  @Path("count")
+  def sessionCount(): SessionOpenCount = {
+    new SessionOpenCount(sessionManager.getOpenSessionCount)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ExecPoolStatistic]))),
+    description = "Get statistic info of background executors")
+  @GET
+  @Path("execPool/statistic")
+  def execPoolStatistic(): ExecPoolStatistic = {
+    new ExecPoolStatistic(
+      sessionManager.getExecPoolSize,
+      sessionManager.getActiveCount)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Open(create) a session")
+  @POST
+  @Consumes(Array(MediaType.APPLICATION_JSON))
+  def openSession(request: SessionOpenRequest): dto.SessionHandle = {
+    val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
+    val ipAddress = fe.getIpAddress
+    val handle = fe.be.openSession(
+      TProtocolVersion.findByValue(request.getProtocolVersion),
+      userName,
+      request.getPassword,
+      ipAddress,
+      (request.getConfigs.asScala ++ Map(
+        KYUUBI_CLIENT_IP_KEY -> ipAddress,
+        KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
+        KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).toMap)
+    new dto.SessionHandle(handle.identifier)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Close a session")
+  @DELETE
+  @Path("{sessionHandle}")
+  def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
+    fe.be.closeSession(sessionHandleStr)
+    Response.ok().build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with EXECUTE_STATEMENT type")
+  @POST
+  @Path("{sessionHandle}/operations/statement")
+  def executeStatement(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: StatementRequest): OperationHandle = {
+    try {
+      fe.be.executeStatement(
+        sessionHandleStr,
+        request.getStatement,
+        Map.empty,
+        request.isRunAsync,
+        request.getQueryTimeout)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error executing statement"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with GET_TYPE_INFO type")
+  @POST
+  @Path("{sessionHandle}/operations/typeInfo")
+  def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+    try {
+      fe.be.getTypeInfo(sessionHandleStr)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting type information"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with GET_CATALOGS type")
+  @POST
+  @Path("{sessionHandle}/operations/catalogs")
+  def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+    try {
+      fe.be.getCatalogs(sessionHandleStr)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting catalogs"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with GET_SCHEMAS type")
+  @POST
+  @Path("{sessionHandle}/operations/schemas")
+  def getSchemas(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetSchemasRequest): OperationHandle = {
+    try {
+      val operationHandle = fe.be.getSchemas(
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName)
+      operationHandle
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting schemas"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with GET_TABLES type")
+  @POST
+  @Path("{sessionHandle}/operations/tables")
+  def getTables(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetTablesRequest): OperationHandle = {
+    try {
+      fe.be.getTables(
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getTableName,
+        request.getTableTypes)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting tables"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with GET_TABLE_TYPES type")
+  @POST
+  @Path("{sessionHandle}/operations/tableTypes")
+  def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+    try {
+      fe.be.getTableTypes(sessionHandleStr)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting table types"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with GET_COLUMNS type")
+  @POST
+  @Path("{sessionHandle}/operations/columns")
+  def getColumns(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetColumnsRequest): OperationHandle = {
+    try {
+      fe.be.getColumns(
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getTableName,
+        request.getColumnName)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting columns"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with GET_FUNCTIONS type")
+  @POST
+  @Path("{sessionHandle}/operations/functions")
+  def getFunctions(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetFunctionsRequest): OperationHandle = {
+    try {
+      fe.be.getFunctions(
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getFunctionName)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting functions"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with GET_PRIMARY_KEY type")
+  @POST
+  @Path("{sessionHandle}/operations/primaryKeys")
+  def getPrimaryKeys(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetPrimaryKeysRequest): OperationHandle = {
+    try {
+      fe.be.getPrimaryKeys(
+        sessionHandleStr,
+        request.getCatalogName,
+        request.getSchemaName,
+        request.getTableName)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting primary keys"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationHandle]))),
+    description = "Create an operation with GET_CROSS_REFERENCE type")
+  @POST
+  @Path("{sessionHandle}/operations/crossReference")
+  def getCrossReference(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetCrossReferenceRequest): OperationHandle = {
+    try {
+      fe.be.getCrossReference(
+        sessionHandleStr,
+        request.getPrimaryCatalog,
+        request.getPrimarySchema,
+        request.getPrimaryTable,
+        request.getForeignCatalog,
+        request.getForeignSchema,
+        request.getForeignTable)
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error getting cross reference"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[OperationData]))),
+    description =
+      "get all the operation list hosted a specific session binding via an identifier")
+  @GET
+  @Path("{sessionHandle}/operations")
+  def getOperations(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
+    try {
+      sessionManager.getSession(sessionHandleStr)
+        .allOperations().map { operationHandle =>
+          val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
+          val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+          new OperationData(
+            sessionHandleStr,
+            operation.getHandle.identifier.toString,
+            kyuubiSessionEvent.sessionUser,
+            kyuubiSessionEvent.statementId,
+            kyuubiSessionEvent.createTime,
+            kyuubiSessionEvent.completeTime,
+            kyuubiSessionEvent.statement,
+            kyuubiSessionEvent.engineName,
+            kyuubiSessionEvent.engineType,
+            kyuubiSessionEvent.engineShareLevel,
+            kyuubiSessionEvent.exception.get.toString)
+        }.toSeq
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[InfoDetail]))),
+    description =
+      "get all supported info types by Kyuubi session")
+  @GET
+  @Path("{sessionHandle}/infoTypes")
+  def getSupportedInfoType(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[InfoDetail] = {
+    try {
+      val infoTypes = TGetInfoType.values()
+      infoTypes.map(infoType => {
+        new InfoDetail(infoType.toString, infoType.getValue.toString)
+      }).toSeq
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
 }
