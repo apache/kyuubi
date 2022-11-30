@@ -78,10 +78,10 @@ class ExecutePython(
       if (isSessionUserSignEnabled) {
         setSparkLocalProperties(
           KYUUBI_SESSION_SIGN_PUBLICKEY,
-          session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY).orNull)
+          session.conf(KYUUBI_SESSION_SIGN_PUBLICKEY))
         setSparkLocalProperties(
           KYUUBI_SESSION_USER_SIGN,
-          session.conf.get(KYUUBI_SESSION_USER_SIGN).orNull)
+          session.conf(KYUUBI_SESSION_USER_SIGN))
       }
 
       schedulerPool match {
