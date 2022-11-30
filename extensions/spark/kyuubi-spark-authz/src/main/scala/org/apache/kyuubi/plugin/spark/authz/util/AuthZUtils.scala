@@ -211,7 +211,7 @@ private[authz] object AuthZUtils {
       }
     }
     if (!isVerified) {
-      throw new AccessControlException(s"Permission denied: user [$user] is not verified")
+      throw new AccessControlException(s"Invalid user identifier [$user]")
     }
   }
 
