@@ -28,7 +28,8 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   override def withKyuubiConf: Map[String, String] = Map.empty
 
   override def jdbcVars: Map[String, String] = {
-    Map(KyuubiConf.OPERATION_RESULT_CODEC.key -> resultCodec,
+    Map(
+      KyuubiConf.OPERATION_RESULT_CODEC.key -> resultCodec,
       KyuubiConf.OPERATION_RESULT_COMPRESSION_CODEC.key -> compressionCodec)
   }
 
