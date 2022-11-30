@@ -42,7 +42,9 @@ class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKuber
     super.connectionConf ++ Map("spark.master" -> "local", "spark.executor.instances" -> "1")
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl(connectionConf) + " -n local"
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+
+  override protected lazy val user: String = "local"
 }
 
 class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes {
@@ -76,7 +78,9 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
       "kyuubi.frontend.connection.url.use.hostname" -> "false")
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl(connectionConf) + " -n client"
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+
+  override protected lazy val user: String = "client"
 }
 
 /**
@@ -119,5 +123,7 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
         FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
   }
 
-  override protected def jdbcUrl: String = getJdbcUrl(connectionConf) + " -n cluster"
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+
+  override protected lazy val user: String = "cluster"
 }
