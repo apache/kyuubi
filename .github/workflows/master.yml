@@ -347,7 +347,7 @@ jobs:
           tags: apache/kyuubi:latest
       # from https://github.com/marketplace/actions/setup-minikube-kubernetes-cluster
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.7.0
+        uses: manusa/actions-setup-minikube@v2.7.1
         with:
           minikube version: 'v1.25.2'
           kubernetes version: 'v1.23.3'
@@ -382,7 +382,7 @@ jobs:
         uses: actions/checkout@v3
       # from https://github.com/marketplace/actions/setup-minikube-kubernetes-cluster
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.7.0
+        uses: manusa/actions-setup-minikube@v2.7.1
         with:
           minikube version: 'v1.25.2'
           kubernetes version: 'v1.23.3'
