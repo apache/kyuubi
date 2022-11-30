@@ -24,7 +24,6 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.config.KyuubiConf.SESSION_USER_SIGN_ENABLED
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait SparkSessionProvider {
