@@ -355,6 +355,7 @@ jobs:
         run: |
           kubectl get serviceaccount
           kubectl create serviceaccount kyuubi
+          kubectl create clusterrolebinding kyuubi-role --clusterrole=edit --serviceaccount=default:kyuubi
           kubectl get serviceaccount
       - name: start kyuubi
         run: kubectl apply -f integration-tests/kyuubi-kubernetes-it/src/test/resources/kyuubi-server.yaml
