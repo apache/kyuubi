@@ -896,33 +896,4 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         })
     }
   }
-
-  test("KYUUBI #3839 - signing and verifying kyuubi session user") {
-    val kyuubiSessionUser = "bowenliang123"
-    val sc = spark.sparkContext
-
-    // preparation as in SparkOperation
-    val (privateKey, publicKey) = SignUtils.generateKeyPair()
-    val userSignature = SignUtils.signWithPrivateKey(kyuubiSessionUser, privateKey)
-    val publicKeyStr = Base64.getEncoder.encodeToString(publicKey.getEncoded)
-    sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
-    sc.setLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, publicKeyStr)
-    sc.setLocalProperty(KYUUBI_SESSION_USER_SIGN, userSignature)
-
-    // pass session user verification
-    val ugi = AuthZUtils.getAuthzUgi(sc)
-    assertResult(ugi.getUserName)(kyuubiSessionUser)
-
-    // fake session user name
-    val fakeSessionUser = "faker"
-    sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, fakeSessionUser)
-    val e1 = intercept[AccessControlException](AuthZUtils.getAuthzUgi(sc))
-    assertResult(e1.getMessage)(s"Permission denied: user [${fakeSessionUser}] is not verified")
-    sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
-
-    // invalid session user sign
-    sc.setLocalProperty(KYUUBI_SESSION_USER_SIGN, "invalid_sign")
-    val e2 = intercept[AccessControlException](AuthZUtils.getAuthzUgi(sc))
-    assertResult(e2.getMessage)(s"Permission denied: user [${kyuubiSessionUser}] is not verified")
-  }
 }
