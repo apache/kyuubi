@@ -19,9 +19,8 @@
 
 set -e
 
-
 APACHE_MIRROR=${APACHE_MIRROR:-https://dlcdn.apache.org}
-MAVEN_MIRROR=${MAVEN_MIRROR:-https://repo1.maven.org/maven2}
+MAVEN_MIRROR=${MAVEN_MIRROR:-https://maven-central-asia.storage-download.googleapis.com/maven2}
 BUILD_CMD="docker build"
 
 if [ $BUILDX ]; then
