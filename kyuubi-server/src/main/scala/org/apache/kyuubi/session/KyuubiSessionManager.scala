@@ -69,7 +69,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     addService(credentialsManager)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
-    initSessionSigningKey(conf)
     super.initialize(conf)
   }
 
@@ -277,11 +276,5 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
       limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
     }
-  }
-
-  private def initSessionSigningKey(conf: KyuubiConf): Unit = {
-    conf.set(
-      KYUUBI_SESSION_SIGN_PUBLICKEY,
-      Base64.getEncoder.encodeToString(signingPublicKey.getEncoded))
   }
 }
