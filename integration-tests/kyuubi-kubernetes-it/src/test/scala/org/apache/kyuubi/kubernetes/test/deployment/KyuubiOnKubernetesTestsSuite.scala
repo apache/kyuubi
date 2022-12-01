@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.kubernetes.test.deployment
 
-import java.nio.file.Paths
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.net.NetUtils
