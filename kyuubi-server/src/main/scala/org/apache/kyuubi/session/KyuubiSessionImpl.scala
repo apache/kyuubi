@@ -130,10 +130,10 @@ class KyuubiSessionImpl(
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }
 
-      openEngineSessionConf = openEngineSessionConf +
-        (SESSION_USER_SIGN_ENABLED.key -> sessionConf.get(SESSION_USER_SIGN_ENABLED).toString)
       if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
         openEngineSessionConf = openEngineSessionConf +
+          (SESSION_USER_SIGN_ENABLED.key ->
+            sessionConf.get(SESSION_USER_SIGN_ENABLED).toString) +
           (KYUUBI_SESSION_SIGN_PUBLICKEY ->
             Base64.getEncoder.encodeToString(
               sessionManager.signingPublicKey.getEncoded)) +

@@ -91,7 +91,6 @@ abstract class SparkOperation(session: Session)
           spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
         case None =>
       }
-
       if (isSessionUserSignEnabled) {
         setSessionUserSign()
       }
