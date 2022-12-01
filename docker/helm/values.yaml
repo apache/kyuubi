@@ -28,6 +28,10 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "master-snapshot"
 
+# ServiceAccount used for Kyuubi create/list/delete pod in kubernetes
+serviceAccount:
+  name: default
+
 probe:
   liveness:
     enabled: true

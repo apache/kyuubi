@@ -145,6 +145,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
     assert(HttpServletResponse.SC_OK == response.getStatus)
     val sessionHandle = response.readEntity(classOf[SessionHandle])
+    assert(sessionHandle.getKyuubiInstance === fe.connectionUrl)
     val session = server.backendService.sessionManager.getSession(
       org.apache.kyuubi.session.SessionHandle.fromUUID(sessionHandle.getIdentifier.toString))
       .asInstanceOf[KyuubiSession]

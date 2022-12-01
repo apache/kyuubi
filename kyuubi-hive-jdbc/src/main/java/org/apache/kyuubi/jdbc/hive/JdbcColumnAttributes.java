@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-class JdbcColumnAttributes {
+public class JdbcColumnAttributes {
   public int precision = 0;
   public int scale = 0;
+  public String timeZone = "";
 
   public JdbcColumnAttributes() {}
 
@@ -28,8 +29,12 @@ class JdbcColumnAttributes {
     this.scale = scale;
   }
 
+  public JdbcColumnAttributes(String timeZone) {
+    this.timeZone = timeZone;
+  }
+
   @Override
   public String toString() {
-    return "(" + precision + "," + scale + ")";
+    return "(" + precision + "," + scale + "," + timeZone + ")";
   }
 }

@@ -35,6 +35,9 @@ spec:
         app: {{ template "kyuubi.name" . }}
         release: {{ .Release.Name }}
     spec:
+      {{- if .Values.serviceAccount }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end}}
       containers:
         - name: kyuubi-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

@@ -115,6 +115,7 @@
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
+        <arrow.version>10.0.1</arrow.version>
         <antlr4.version>4.8</antlr4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
@@ -154,7 +155,7 @@
         <httpclient.version>4.5.13</httpclient.version>
         <httpcore.version>4.4.15</httpcore.version>
         <hudi.version>0.12.0</hudi.version>
-        <iceberg.version>1.0.0</iceberg.version>
+        <iceberg.version>1.1.0</iceberg.version>
         <jackson.version>2.13.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
@@ -201,6 +202,8 @@
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.jline.version>2.12</hive.client.jline.version>
         <hive.client.supercsv.version>2.2.0</hive.client.supercsv.version>
+
+        <hive.jdbc.artifact>kyuubi-hive-jdbc</hive.jdbc.artifact>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
@@ -253,6 +256,16 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-vector</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-netty</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
@@ -2237,7 +2250,7 @@
                 <module>extensions/spark/kyuubi-extension-spark-3-2</module>
             </modules>
             <properties>
-                <spark.version>3.2.2</spark.version>
+                <spark.version>3.2.3</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
                 <delta.version>2.0.1</delta.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2.tgz</spark.archive.name>
@@ -2334,6 +2347,13 @@
             <id>spotless-python</id>
             <properties>
                 <spotless.python.includes>src/**/*.py</spotless.python.includes>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jdbc-shaded</id>
+            <properties>
+                <hive.jdbc.artifact>kyuubi-hive-jdbc-shaded</hive.jdbc.artifact>
             </properties>
         </profile>
 
