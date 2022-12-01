@@ -78,25 +78,22 @@ abstract class SparkOperation(session: Session)
     s"spark.${SESSION_USER_SIGN_ENABLED.key}",
     SESSION_USER_SIGN_ENABLED.defaultVal.get)
 
+  protected def setSparkLocalProperty: (String, String) => Unit =
+    spark.sparkContext.setLocalProperty
+
   protected def withLocalProperties[T](f: => T): T = {
     try {
       spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
-
-      if (isSessionUserSignEnabled) {
-        spark.sparkContext.setLocalProperty(
-          KYUUBI_SESSION_SIGN_PUBLICKEY,
-          session.conf(KYUUBI_SESSION_SIGN_PUBLICKEY))
-        spark.sparkContext.setLocalProperty(
-          KYUUBI_SESSION_USER_SIGN,
-          session.conf(KYUUBI_SESSION_USER_SIGN))
-      }
-
       schedulerPool match {
         case Some(pool) =>
           spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
         case None =>
+      }
+
+      if (isSessionUserSignEnabled) {
+        setSessionUserSign()
       }
 
       f
@@ -104,11 +101,10 @@ abstract class SparkOperation(session: Session)
       spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
-      if (isSessionUserSignEnabled) {
-        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, null)
-        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_SIGN, null)
-      }
       spark.sparkContext.clearJobGroup()
+      if (isSessionUserSignEnabled) {
+        clearSessionUserSign()
+      }
     }
   }
 
@@ -189,6 +185,25 @@ abstract class SparkOperation(session: Session)
     }
 
   override def shouldRunAsync: Boolean = false
+
+  protected def setSessionUserSign(): Unit = {
+    (
+      session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY),
+      session.conf.get(KYUUBI_SESSION_USER_SIGN)) match {
+      case (Some(pubKey), Some(userSign)) =>
+        setSparkLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, pubKey)
+        setSparkLocalProperty(KYUUBI_SESSION_USER_SIGN, userSign)
+      case _ =>
+        throw new IllegalArgumentException(
+          s"missing $KYUUBI_SESSION_SIGN_PUBLICKEY or $KYUUBI_SESSION_USER_SIGN" +
+            s" in session config for session user sign")
+    }
+  }
+
+  protected def clearSessionUserSign(): Unit = {
+    setSparkLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, "")
+    setSparkLocalProperty(KYUUBI_SESSION_USER_SIGN, "")
+  }
 }
 
 object SparkOperation {

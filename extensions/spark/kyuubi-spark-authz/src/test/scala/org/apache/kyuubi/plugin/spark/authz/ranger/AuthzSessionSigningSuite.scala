@@ -63,12 +63,12 @@ class AuthzSessionSigningSuite extends AnyFunSuite
     val fakeSessionUser = "faker"
     sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, fakeSessionUser)
     val e1 = intercept[AccessControlException](AuthZUtils.getAuthzUgi(sc))
-    assertResult(e1.getMessage)(s"Permission denied: user [${fakeSessionUser}] is not verified")
+    assertResult(e1.getMessage)(s"Permission denied: user [$fakeSessionUser] is not verified")
     sc.setLocalProperty(KYUUBI_SESSION_USER_KEY, kyuubiSessionUser)
 
     // invalid session user sign
     sc.setLocalProperty(KYUUBI_SESSION_USER_SIGN, "invalid_sign")
     val e2 = intercept[AccessControlException](AuthZUtils.getAuthzUgi(sc))
-    assertResult(e2.getMessage)(s"Permission denied: user [${kyuubiSessionUser}] is not verified")
+    assertResult(e2.getMessage)(s"Permission denied: user [$kyuubiSessionUser] is not verified")
   }
 }

@@ -65,41 +65,36 @@ class ExecutePython(
       new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
   }
 
-  override protected def withLocalProperties[T](f: => T): T = {
-    val setSparkLocalProperties = (key: String, value: String) => {
+  override def setSparkLocalProperty: (String, String) => Unit =
+    (key: String, value: String) => {
       worker.runCode(s"spark.sparkContext.setLocalProperty('$key', '$value')")
+      ()
     }
+
+  override protected def withLocalProperties[T](f: => T): T = {
     try {
       worker.runCode("spark.sparkContext.setJobGroup" +
         s"($statementId, $redactedStatement, $forceCancel)")
-      setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, session.user)
-      setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, statementId)
-
-      if (isSessionUserSignEnabled) {
-        setSparkLocalProperties(
-          KYUUBI_SESSION_SIGN_PUBLICKEY,
-          session.conf(KYUUBI_SESSION_SIGN_PUBLICKEY))
-        setSparkLocalProperties(
-          KYUUBI_SESSION_USER_SIGN,
-          session.conf(KYUUBI_SESSION_USER_SIGN))
-      }
-
+      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
+      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
         case Some(pool) =>
-          setSparkLocalProperties(SPARK_SCHEDULER_POOL_KEY, pool)
+          setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
         case None =>
+      }
+      if (isSessionUserSignEnabled) {
+        setSessionUserSign()
       }
 
       f
     } finally {
-      setSparkLocalProperties(KYUUBI_SESSION_USER_KEY, "")
-      setSparkLocalProperties(KYUUBI_STATEMENT_ID_KEY, "")
-      setSparkLocalProperties(SPARK_SCHEDULER_POOL_KEY, "")
-      if (isSessionUserSignEnabled) {
-        setSparkLocalProperties(KYUUBI_SESSION_SIGN_PUBLICKEY, "")
-        setSparkLocalProperties(KYUUBI_SESSION_USER_SIGN, "")
-      }
+      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, "")
+      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, "")
+      setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, "")
       worker.runCode("spark.sparkContext.clearJobGroup()")
+      if (isSessionUserSignEnabled) {
+        clearSessionUserSign()
+      }
     }
   }
 }
