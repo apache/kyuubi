@@ -79,7 +79,7 @@ class KyuubiSessionImpl(
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
-  private lazy val sessionUserSign: String =
+  private lazy val sessionUserSignBase64: String =
     SignUtils.signWithPrivateKey(user, sessionManager.signingPrivateKey)
 
   private val sessionEvent = KyuubiSessionEvent(this)
@@ -137,7 +137,7 @@ class KyuubiSessionImpl(
           (KYUUBI_SESSION_SIGN_PUBLICKEY ->
             Base64.getEncoder.encodeToString(
               sessionManager.signingPublicKey.getEncoded)) +
-          (KYUUBI_SESSION_USER_SIGN -> sessionUserSign)
+          (KYUUBI_SESSION_USER_SIGN -> sessionUserSignBase64)
       }
 
       val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)

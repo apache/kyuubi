@@ -196,28 +196,28 @@ private[authz] object AuthZUtils {
   }
 
   private def verifyKyuubiSessionUser(spark: SparkContext, user: String): Unit = {
-    val isVerified = {
-      try {
-        val userPubKeyBase64 = spark.getLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY)
-        val userSign = spark.getLocalProperty(KYUUBI_SESSION_USER_SIGN)
-        if (StringUtils.isAnyBlank(user, userPubKeyBase64, userSign)) {
-          false
-        } else {
-          verifySignWithECDSA(user, userSign, userPubKeyBase64)
-        }
-      } catch {
-        case _: Exception =>
-          false
-      }
-    }
-    if (!isVerified) {
+    def illegalAccessWithUnverifiedUser = {
       throw new AccessControlException(s"Invalid user identifier [$user]")
+    }
+
+    try {
+      val userPubKeyBase64 = spark.getLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY)
+      val userSignBase64 = spark.getLocalProperty(KYUUBI_SESSION_USER_SIGN)
+      if (StringUtils.isAnyBlank(user, userPubKeyBase64, userSignBase64)) {
+        illegalAccessWithUnverifiedUser
+      }
+      if (!verifySignWithECDSA(user, userSignBase64, userPubKeyBase64)) {
+        illegalAccessWithUnverifiedUser
+      }
+    } catch {
+      case _: Exception =>
+        illegalAccessWithUnverifiedUser
     }
   }
 
   private def verifySignWithECDSA(
       plainText: String,
-      signature: String,
+      signatureBase64: String,
       publicKeyBase64: String): Boolean = {
     val pubKeyBytes = Base64.getDecoder.decode(publicKeyBase64)
     val publicKey: PublicKey = KeyFactory.getInstance("EC")
@@ -225,7 +225,7 @@ private[authz] object AuthZUtils {
     val publicSignature = Signature.getInstance("SHA256withECDSA")
     publicSignature.initVerify(publicKey)
     publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
-    val signatureBytes = Base64.getDecoder.decode(signature)
+    val signatureBytes = Base64.getDecoder.decode(signatureBase64)
     publicSignature.verify(signatureBytes)
   }
 }
