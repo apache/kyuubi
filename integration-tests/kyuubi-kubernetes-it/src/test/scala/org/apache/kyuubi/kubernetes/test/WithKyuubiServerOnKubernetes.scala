@@ -26,10 +26,8 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
   protected def getJdbcUrl(connectionConf: Map[String, String]): String = {
-    val kyuubiServers =
-      miniKubernetesClient.pods().list().getItems
-    assert(kyuubiServers.size() == 1)
-    val kyuubiServer = kyuubiServers.get(0)
+    val kyuubiServer =
+      miniKubernetesClient.pods().withName("kyuubi-test").get()
     // Kyuubi server state should be running since mvn compile is quite slowly..
     if (!"running".equalsIgnoreCase(kyuubiServer.getStatus.getPhase)) {
       val log =
