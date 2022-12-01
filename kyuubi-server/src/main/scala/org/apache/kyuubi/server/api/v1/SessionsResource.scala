@@ -90,7 +90,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[KyuubiEvent]))),
     description = "get all session info")
   @GET
-  @Path("getAllSessionInfo")
+  @Path("allSessionInfo")
   def getAllSessionInfo(): Seq[KyuubiSessionEvent] = {
     try {
       sessionManager.allSessions().map { session =>
@@ -430,19 +430,19 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationData]))),
+      schema = new Schema(implementation = classOf[SQLDetail]))),
     description =
-      "get all the operation list hosted a specific session binding via an identifier")
+      "get sql detail list hosted a specific session binding via an identifier")
   @GET
-  @Path("{sessionHandle}/operations")
+  @Path("{sessionHandle}/sqlDetails")
   def getOperations(
-      @PathParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[SQLDetail] = {
     try {
       sessionManager.getSession(sessionHandleStr)
         .allOperations().map { operationHandle =>
           val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
           val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
-          new OperationData(
+          new SQLDetail(
             sessionHandleStr,
             operation.getHandle.identifier.toString,
             kyuubiSessionEvent.sessionUser,
@@ -484,4 +484,29 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         throw new NotFoundException(s"Invalid $sessionHandleStr")
     }
   }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[KyuubiOperationEvent]))),
+    description =
+      "get all the operation event hosted a specific session binding via an identifier")
+  @GET
+  @Path("{sessionHandle}/operations")
+  def getAllOperationEvent(
+      @PathParam("sessionHandle") sessionHandleStr: String): Seq[KyuubiOperationEvent] = {
+    try {
+      sessionManager.getSession(sessionHandleStr)
+        .allOperations().map { operationHandle =>
+          val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
+          KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+        }.toSeq
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
 }

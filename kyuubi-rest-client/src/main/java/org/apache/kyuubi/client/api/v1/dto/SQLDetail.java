@@ -19,7 +19,7 @@ package org.apache.kyuubi.client.api.v1.dto;
 
 import java.util.Objects;
 
-public class OperationData {
+public class SQLDetail {
   private String sessionId;
   private String operationId;
   private String sessionUser;
@@ -32,7 +32,7 @@ public class OperationData {
   private String engineShareLevel;
   private String exception;
 
-  public OperationData(
+  public SQLDetail(
       String sessionId,
       String operationId,
       String sessionUser,
@@ -149,7 +149,7 @@ public class OperationData {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    OperationData that = (OperationData) o;
+    SQLDetail that = (SQLDetail) o;
     return Objects.equals(sessionId, that.sessionId)
         && Objects.equals(operationId, that.operationId)
         && Objects.equals(sessionUser, that.sessionUser)
