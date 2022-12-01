@@ -18,8 +18,9 @@
 package org.apache.kyuubi.kubernetes.test.deployment
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.net.NetUtils
-
 import org.apache.kyuubi.{Utils, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
 import org.apache.kyuubi.kubernetes.test.WithKyuubiServerOnKubernetes
@@ -101,6 +102,14 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
   private val driverTemplate =
     Thread.currentThread().getContextClassLoader.getResource("driver.yml")
 
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    val fs = FileSystem.get(getHadoopConf)
+    fs.mkdirs(new Path("/spark"), FsPermission.valueOf("777"))
+    fs.copyFromLocalFile(new Path(driverTemplate.getPath), new Path("/spark/driver.yml"))
+  }
+
   override val hadoopConf: Configuration = {
     val hdfsConf: Configuration = new Configuration()
     hdfsConf.set("dfs.namenode.rpc-bind-host", "0.0.0.0")
@@ -120,10 +129,12 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
       Map(
         "spark.submit.deployMode" -> "cluster",
         "spark.kubernetes.file.upload.path" -> s"hdfs://$localhostAddress:$getDFSPort/spark",
+        "spark.kubernetes.driver.podTemplateFile" ->
+          "hdfs://$localhostAddress:$getDFSPort/spark/driver.yml",
         "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
         "spark.kubernetes.authenticate.driver.serviceAccountName" -> "spark",
-        ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress,
-        FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
+        ZK_CLIENT_PORT_ADDRESS.key -> getKyuubiServerIp,
+        FRONTEND_THRIFT_BINARY_BIND_HOST.key -> getKyuubiServerIp)
   }
 
   override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
