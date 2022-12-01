@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.net.NetUtils
+
 import org.apache.kyuubi.{Utils, WithSimpleDFSService}
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
 import org.apache.kyuubi.kubernetes.test.WithKyuubiServerOnKubernetes
@@ -53,7 +54,7 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes 
     super.connectionConf ++
       Map(
         "spark.master" -> s"k8s://$getMiniKubeApiMaster",
-        "spark.kubernetes.container.image" -> "apache/spark:v3.2.1",
+        "spark.kubernetes.container.image" -> "apache/spark:3.3.1",
         "spark.executor.memory" -> "512M",
         "spark.driver.memory" -> "512M",
         "spark.kubernetes.driver.request.cores" -> "250m",
