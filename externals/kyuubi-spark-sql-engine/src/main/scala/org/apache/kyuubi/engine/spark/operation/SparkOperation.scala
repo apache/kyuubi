@@ -199,7 +199,7 @@ abstract class SparkOperation(session: Session)
     }
 
   override def shouldRunAsync: Boolean = false
-  
+
   protected def arrowEnabled(): Boolean = {
     // normalized config is required, to pass unit test
     session.asInstanceOf[AbstractSession].normalizedConf
@@ -208,7 +208,7 @@ abstract class SparkOperation(session: Session)
     // TODO: (fchen) make all operation support arrow
     getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
   }
-  
+
   protected def setSessionUserSign(): Unit = {
     (
       session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY),
