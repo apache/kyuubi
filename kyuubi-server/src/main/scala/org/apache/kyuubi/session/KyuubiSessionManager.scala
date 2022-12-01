@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.session
 
-
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
