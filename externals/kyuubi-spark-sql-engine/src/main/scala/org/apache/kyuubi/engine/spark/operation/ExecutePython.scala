@@ -67,7 +67,8 @@ class ExecutePython(
 
   override def setSparkLocalProperty: (String, String) => Unit =
     (key: String, value: String) => {
-      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', '$value')")
+      val valueStr = if (value == null) "None" else s"'$value'"
+      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', $valueStr)")
       ()
     }
 

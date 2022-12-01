@@ -223,8 +223,8 @@ abstract class SparkOperation(session: Session)
   }
 
   protected def clearSessionUserSign(): Unit = {
-    setSparkLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, "")
-    setSparkLocalProperty(KYUUBI_SESSION_USER_SIGN, "")
+    setSparkLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, null)
+    setSparkLocalProperty(KYUUBI_SESSION_USER_SIGN, null)
   }
 }
 
