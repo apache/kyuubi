@@ -78,7 +78,7 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map(
       "spark.submit.deployMode" -> "client",
-      "spark.bind.address" -> getKyuubiServerIp,
+      "spark.driver.host" -> getKyuubiServerIp,
       "kyuubi.frontend.connection.url.use.hostname" -> "false")
   }
 
