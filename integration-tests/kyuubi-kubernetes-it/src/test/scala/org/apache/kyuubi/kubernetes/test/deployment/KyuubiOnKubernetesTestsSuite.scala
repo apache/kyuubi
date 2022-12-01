@@ -18,7 +18,6 @@
 package org.apache.kyuubi.kubernetes.test.deployment
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.net.NetUtils
 
 import org.apache.kyuubi.{Utils, WithSimpleDFSService}
@@ -77,6 +76,7 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map(
       "spark.submit.deployMode" -> "client",
+      "spark.bind.address" -> getKyuubiServerIp,
       "kyuubi.frontend.connection.url.use.hostname" -> "false")
   }
 
@@ -101,13 +101,6 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
   private val driverTemplate =
     Thread.currentThread().getContextClassLoader.getResource("driver.yml")
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    // upload driver template yaml to mini dfs
-    val fs = FileSystem.get(getHadoopConf)
-    fs.copyFromLocalFile(new Path(driverTemplate.getPath), new Path("/spark"))
-  }
-
   override val hadoopConf: Configuration = {
     val hdfsConf: Configuration = new Configuration()
     hdfsConf.set("dfs.namenode.rpc-bind-host", "0.0.0.0")
@@ -115,12 +108,10 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
     hdfsConf.set("dfs.datanode.hostname", localhostAddress)
     hdfsConf.set("dfs.datanode.address", s"0.0.0.0:${NetUtils.getFreeSocketPort}")
 //    // spark use 185 as userid in docker
-//    hdfsConf.set("hadoop.proxyuser.185.groups", "*")
-//    hdfsConf.set("hadoop.proxyuser.185.hosts", "*")
-    hdfsConf.set("hadoop.proxyuser.kyuubi.groups", "*")
-    hdfsConf.set("hadoop.proxyuser.kyuubi.hosts", "*")
     hdfsConf.set("hadoop.proxyuser.cluster.groups", "*")
     hdfsConf.set("hadoop.proxyuser.cluster.hosts", "*")
+    hdfsConf.set("hadoop.proxyuser.kyuubi.groups", "*")
+    hdfsConf.set("hadoop.proxyuser.kyuubi.hosts", "*")
     hdfsConf
   }
 
@@ -131,7 +122,6 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
         "spark.kubernetes.file.upload.path" -> s"hdfs://$localhostAddress:$getDFSPort/spark",
         "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
         "spark.kubernetes.authenticate.driver.serviceAccountName" -> "spark",
-        "spark.kubernetes.driver.podTemplateFile" -> s"hdfs:///$getDefaultFS/spark/driver.yaml",
         ZK_CLIENT_PORT_ADDRESS.key -> localhostAddress,
         FRONTEND_THRIFT_BINARY_BIND_HOST.key -> localhostAddress)
   }
