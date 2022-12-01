@@ -433,7 +433,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[SQLDetail]))),
     description =
       "get sql detail list hosted a specific session binding via an identifier")
-  @GET
+  @POST
   @Path("{sessionHandle}/sqlDetails")
   def getOperations(
       @PathParam("sessionHandle") sessionHandleStr: String): Seq[SQLDetail] = {
@@ -469,7 +469,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[InfoDetail]))),
     description =
       "get all supported info types by Kyuubi session")
-  @GET
+  @POST
   @Path("{sessionHandle}/infoTypes")
   def getSupportedInfoType(
       @PathParam("sessionHandle") sessionHandleStr: String): Seq[InfoDetail] = {
@@ -492,7 +492,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[KyuubiOperationEvent]))),
     description =
       "get all the operation event hosted a specific session binding via an identifier")
-  @GET
+  @POST
   @Path("{sessionHandle}/operations")
   def getAllOperationEvent(
       @PathParam("sessionHandle") sessionHandleStr: String): Seq[KyuubiOperationEvent] = {

@@ -237,7 +237,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[OperationStatus]))),
     description =
       "Get the operation status")
-  @GET
+  @POST
   @Path("{operationHandle}/status")
   def getOperationStatus(
       @PathParam("operationHandle") operationHandleStr: String): OperationStatus = {
@@ -260,7 +260,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[String]))),
     description =
       "Get the query id of the given operation identifier")
-  @GET
+  @POST
   @Path("{operationHandle}/queryId")
   def getQueryId(
       @PathParam("operationHandle") operationHandleStr: String): String = {
