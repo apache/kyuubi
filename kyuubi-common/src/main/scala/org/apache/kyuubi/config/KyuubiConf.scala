@@ -213,6 +213,9 @@ object KyuubiConf {
       val updatedMap = new java.util.HashMap[String, ConfigEntry[_]](kyuubiConfEntries)
       updatedMap.put(entry.key, entry)
       kyuubiConfEntries = updatedMap
+      if (entry.serverOnly) {
+        serverOnlyConfEntries += entry
+      }
     }
 
   // For testing only
@@ -2153,7 +2156,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
+  private var serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
     FRONTEND_BIND_HOST,
     FRONTEND_BIND_PORT,
     FRONTEND_THRIFT_BINARY_BIND_HOST,

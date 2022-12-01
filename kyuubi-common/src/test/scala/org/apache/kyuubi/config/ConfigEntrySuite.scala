@@ -31,6 +31,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       doc,
       "<none>",
       "int",
+      false,
       false)
 
     assert(e1.key === "kyuubi.int.spark")
@@ -56,6 +57,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "this is dummy documentation",
       "<none>",
       "int",
+      false,
       false))
     assert(e.getMessage ===
       "requirement failed: Config entry kyuubi.int.spark already registered!")
@@ -74,6 +76,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "doc",
       "0.11.1",
       "long",
+      false,
       false)
 
     assert(e1.key === "kyuubi.long.spark")
@@ -105,6 +108,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "doc",
       "",
       "double",
+      false,
       false)
 
     assert(e1.key === "kyuubi.double.spark")
@@ -137,6 +141,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
         "fallback",
         "1.2.0",
         false,
+        false,
         origin)
 
     assert(fallback.key === "kyuubi.fallback.spark")
@@ -168,6 +173,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "doc",
       "",
       "double",
+      false,
       false)
 
     val conf = KyuubiConf()
@@ -192,6 +198,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "doc",
       "",
       "double",
+      false,
       false)
 
     val conf = KyuubiConf()
