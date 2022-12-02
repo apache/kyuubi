@@ -453,7 +453,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
             kyuubiSessionEvent.engineName,
             kyuubiSessionEvent.engineType,
             kyuubiSessionEvent.engineShareLevel,
-            kyuubiSessionEvent.exception.get.toString)
+            kyuubiSessionEvent.exception.map(_.toString).orNull)
         }.toSeq
     } catch {
       case NonFatal(e) =>
