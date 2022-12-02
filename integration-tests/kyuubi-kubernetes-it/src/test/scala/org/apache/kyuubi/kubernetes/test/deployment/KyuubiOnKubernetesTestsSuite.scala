@@ -19,7 +19,7 @@ package org.apache.kyuubi.kubernetes.test.deployment
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.fs.permission.FsPermission
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.hadoop.net.NetUtils
 
 import org.apache.kyuubi.{Utils, WithSimpleDFSService}
@@ -38,8 +38,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
  *  |          |         |                                                   |
  *  ------------         -----------------------------------------------------
  */
-class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKubernetes
-  with SparkQueryTests {
+class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKubernetes {
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map("spark.master" -> "local", "spark.executor.instances" -> "1")
   }
@@ -75,7 +74,7 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes 
  *  ------------       -------------------------------------------------      ---------------------
  */
 class KyuubiOnKubernetesWithClientSparkTestsSuite
-  extends KyuubiOnKubernetesWithSparkTestsBase with SparkQueryTests {
+  extends KyuubiOnKubernetesWithSparkTestsBase {
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map(
       "spark.submit.deployMode" -> "client",
@@ -104,11 +103,12 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
   private val driverTemplate =
     Thread.currentThread().getContextClassLoader.getResource("driver.yml")
 
-
   override def beforeAll(): Unit = {
     super.beforeAll()
     val fs = FileSystem.get(getHadoopConf)
-    fs.mkdirs(new Path("/spark"), FsPermission.valueOf("777"))
+    fs.mkdirs(
+      new Path("/spark"),
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.READ_WRITE))
     fs.copyFromLocalFile(new Path(driverTemplate.getPath), new Path("/spark/driver.yml"))
   }
 
