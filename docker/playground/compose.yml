@@ -39,8 +39,8 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./image/hive-schema-2.3.0.postgres.sql:/docker-entrypoint-initdb.d/hive-schema-2.3.0.postgres.sql
-      - ./image/hive-txn-schema-2.3.0.postgres.sql:/docker-entrypoint-initdb.d/hive-txn-schema-2.3.0.postgres.sql
+      - ./script/hive-schema-2.3.0.postgres.sql:/docker-entrypoint-initdb.d/hive-schema-2.3.0.postgres.sql
+      - ./script/hive-txn-schema-2.3.0.postgres.sql:/docker-entrypoint-initdb.d/hive-txn-schema-2.3.0.postgres.sql
 
   zookeeper:
     image: zookeeper:${ZOOKEEPER_VERSION}
@@ -56,8 +56,8 @@ services:
     ports:
       - 9083
     volumes:
-      - ./image/core-site.xml:/etc/hadoop/conf/core-site.xml
-      - ./image/hive-site.xml:/etc/hive/conf/hive-site.xml
+      - ./conf/core-site.xml:/etc/hadoop/conf/core-site.xml
+      - ./conf/hive-site.xml:/etc/hive/conf/hive-site.xml
     depends_on:
       - postgres
 
@@ -69,13 +69,13 @@ services:
       - 4040-4050:4040-4050
       - 10009:10009
     volumes:
-      - ./image/core-site.xml:/etc/hadoop/conf/core-site.xml
-      - ./image/hive-site.xml:/etc/hive/conf/hive-site.xml
-      - ./image/spark-defaults.conf:/etc/spark/conf/spark-defaults.conf
-      - ./image/kyuubi-defaults.conf:/etc/kyuubi/conf/kyuubi-defaults.conf
-      - ./image/kyuubi-log4j2.xml:/etc/kyuubi/conf/log4j2.xml
-      - ./image/load-dataset-tpcds-tiny.sql:/opt/load_data/load-dataset-tpcds-tiny.sql
-      - ./image/load-dataset-tpch-tiny.sql:/opt/load_data/load-dataset-tpch-tiny.sql
+      - ./conf/core-site.xml:/etc/hadoop/conf/core-site.xml
+      - ./conf/hive-site.xml:/etc/hive/conf/hive-site.xml
+      - ./conf/spark-defaults.conf:/etc/spark/conf/spark-defaults.conf
+      - ./conf/kyuubi-defaults.conf:/etc/kyuubi/conf/kyuubi-defaults.conf
+      - ./conf/kyuubi-log4j2.xml:/etc/kyuubi/conf/log4j2.xml
+      - ./script/load-dataset-tpcds-tiny.sql:/opt/load_data/load-dataset-tpcds-tiny.sql
+      - ./script/load-dataset-tpch-tiny.sql:/opt/load_data/load-dataset-tpch-tiny.sql
     depends_on:
       - metastore
       - minio
