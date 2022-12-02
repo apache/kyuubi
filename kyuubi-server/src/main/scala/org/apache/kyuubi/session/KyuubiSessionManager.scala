@@ -35,6 +35,7 @@ import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.Metadata
+import org.apache.kyuubi.util.SignUtils
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
@@ -57,6 +58,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   private var limiter: Option[SessionLimiter] = None
+  lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf

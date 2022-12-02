@@ -1222,6 +1222,14 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
+  val SESSION_USER_SIGN_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.session.user.sign.enabled")
+      .doc("Whether to verify the integrity of session user name" +
+        " on engine side, e.g. Authz plugin in Spark.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val SESSION_ENGINE_STARTUP_MAX_LOG_LINES: ConfigEntry[Int] =
     buildConf("kyuubi.session.engine.startup.maxLogLines")
       .doc("The maximum number of engine log lines when errors occur during engine startup phase." +

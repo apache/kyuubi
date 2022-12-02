@@ -21,6 +21,7 @@ import java.nio.file.Files
 import java.security.PrivilegedExceptionAction
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession, SparkSessionExtensions}
 
 import org.apache.kyuubi.Utils
@@ -38,6 +39,7 @@ trait SparkSessionProvider {
   protected val sqlExtensions: String = ""
 
   protected val defaultTableOwner = "default_table_owner"
+  protected val extraSparkConf: SparkConf = new SparkConf()
 
   protected lazy val spark: SparkSession = {
     val metastore = {
@@ -55,6 +57,7 @@ trait SparkSessionProvider {
         Utils.createTempDir("spark-warehouse").toString)
       .config("spark.sql.extensions", sqlExtensions)
       .withExtensions(extension)
+      .config(extraSparkConf)
       .getOrCreate()
     if (catalogImpl == "hive") {
       // Ensure HiveExternalCatalog.client.userName is defaultTableOwner

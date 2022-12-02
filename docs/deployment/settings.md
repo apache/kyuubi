@@ -498,6 +498,7 @@ kyuubi.session.idle.timeout|PT6H|session idle timeout, it will be closed when it
 kyuubi.session.local.dir.allow.list||The local dir list that are allowed to access by the kyuubi session application. User might set some parameters such as `spark.files` and it will upload some local files when launching the kyuubi engine, if the local dir allow list is defined, kyuubi will check whether the path to upload is in the allow list. Note that, if it is empty, there is no limitation for that and please use absolute path list.|seq|1.6.0
 kyuubi.session.name|&lt;undefined&gt;|A human readable name of session and we use empty string by default. This name will be recorded in event. Note that, we only apply this value from session conf.|string|1.4.0
 kyuubi.session.timeout|PT6H|(deprecated)session timeout, it will be closed when it's not accessed for this duration|duration|1.0.0
+kyuubi.session.user.sign.enabled|false|Whether to verify the integrity of session user name on engine side, e.g. Authz plugin in Spark.|boolean|1.7.0
 
 
 ### Spnego
