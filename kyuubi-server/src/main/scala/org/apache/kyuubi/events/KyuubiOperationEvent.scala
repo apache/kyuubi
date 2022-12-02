@@ -81,7 +81,7 @@ object KyuubiOperationEvent {
       Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
       operation.statement,
       operation.shouldRunAsync,
-      operation.remoteOpHandle().getOperationType.name(),
+      Option(operation.remoteOpHandle()).map(_.getOperationType.name()).orNull,
       status.state.name(),
       status.lastModified,
       status.create,
@@ -90,9 +90,10 @@ object KyuubiOperationEvent {
       status.exception,
       session.handle.identifier.toString,
       session.user,
-      session.sessionManager.getConf.getOption(KYUUBI_ENGINE_NAME).orNull,
-      session.sessionManager.getConf.getOption("kyuubi.engine.type").orNull,
-      session.sessionManager.getConf.getOption("kyuubi.engine.share.level").orNull,
+      Option(session.sessionManager.getConf).map(_.getOption(KYUUBI_ENGINE_NAME).get).orNull,
+      Option(session.sessionManager.getConf).map(_.getOption("kyuubi.engine.type").get).orNull,
+      Option(session.sessionManager.getConf)
+        .map(_.getOption("kyuubi.engine.share.level").get).orNull,
       resultSchema)
   }
 }
