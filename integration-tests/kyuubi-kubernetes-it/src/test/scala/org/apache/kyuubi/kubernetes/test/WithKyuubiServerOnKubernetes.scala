@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.kubernetes.test
 
+import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
-
 import org.apache.kyuubi.KyuubiFunSuite
 
 trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
@@ -26,8 +26,7 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
   protected def getJdbcUrl(connectionConf: Map[String, String]): String = {
-    val kyuubiServer =
-      miniKubernetesClient.pods().withName("kyuubi-test").get()
+    val kyuubiServer = getKyuubiPod
     // Kyuubi server state should be running since mvn compile is quite slowly..
     if (!"running".equalsIgnoreCase(kyuubiServer.getStatus.getPhase)) {
       val log =
@@ -38,7 +37,7 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
       throw new IllegalStateException(
         s"Kyuubi server pod state error: ${kyuubiServer.getStatus.getPhase}, log:\n$log")
     }
-    val kyuubiServerIp = getKyuubiServerIp
+    val kyuubiServerIp = MiniKube.getIp
     val kyuubiServerPort =
       kyuubiServer.getSpec.getContainers.get(0).getPorts.get(0).getHostPort
     val connectStr = connectionConf.map(kv => kv._1 + "=" + kv._2).mkString("#", ";", "")
@@ -47,6 +46,7 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
 
   def getMiniKubeApiMaster: String = miniKubernetesClient.getMasterUrl.toString
 
-  def getKyuubiServerIp: String = miniKubernetesClient.pods().withName("kyuubi-test")
-    .get().getSpec.getHostname
+  def getKyuubiPod: Pod = miniKubernetesClient.pods().withName("kyuubi-test").get()
+
+  def getKyuubiServerIp: String = getKyuubiPod.getStatus.getPodIP
 }

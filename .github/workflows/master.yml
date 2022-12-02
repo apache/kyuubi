@@ -372,9 +372,10 @@ jobs:
       - name: Cat kyuubi server log
         if: failure()
         run: kubectl logs kyuubi-test
-      - name: Cat spark driver log
+      - name: Cat spark executor log
         if: failure()
-        run: kubectl get pods | grep exec-0 | awk -F " " '{print$1}' | xargs -I {} kubectl logs {}
+        run: |
+          kubectl get pods | grep exec-0 | awk -F " " '{print$1}' | xargs -I {} kubectl logs {}
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
