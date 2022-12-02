@@ -54,7 +54,6 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes 
       Map(
         "spark.master" -> s"k8s://$getMiniKubeApiMaster",
         "spark.kubernetes.container.image" -> "apache/spark:3.3.1",
-        "spark.driver.host" -> getKyuubiServerIp,
         "spark.executor.memory" -> "512M",
         "spark.driver.memory" -> "512M",
         "spark.kubernetes.driver.request.cores" -> "250m",
@@ -78,7 +77,7 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map(
       "spark.submit.deployMode" -> "client",
-      "spark.kubernetes.executor.deleteOnTermination" -> "false",
+      "spark.driver.host" -> getKyuubiServerIp,
       "kyuubi.frontend.connection.url.use.hostname" -> "false")
   }
 
