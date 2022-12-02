@@ -90,10 +90,10 @@ object KyuubiOperationEvent {
       status.exception,
       session.handle.identifier.toString,
       session.user,
-      Option(session.sessionManager.getConf).map(_.getOption(KYUUBI_ENGINE_NAME).get).orNull,
-      Option(session.sessionManager.getConf).map(_.getOption("kyuubi.engine.type").get).orNull,
+      Option(session.sessionManager.getConf).map(_.getOption(KYUUBI_ENGINE_NAME).orNull).orNull,
+      Option(session.sessionManager.getConf).map(_.getOption("kyuubi.engine.type").orNull).orNull,
       Option(session.sessionManager.getConf)
-        .map(_.getOption("kyuubi.engine.share.level").get).orNull,
+        .map(_.getOption("kyuubi.engine.share.level").orNull).orNull,
       resultSchema)
   }
 }
