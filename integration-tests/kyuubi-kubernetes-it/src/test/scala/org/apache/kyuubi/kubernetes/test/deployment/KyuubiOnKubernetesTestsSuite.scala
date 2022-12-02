@@ -56,7 +56,6 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes 
         "spark.master" -> s"k8s://$getMiniKubeApiMaster",
         "spark.kubernetes.container.image" -> "apache/spark:3.3.1",
         "spark.driver.host" -> getKyuubiServerIp,
-        "spark.driver.bindAddress" -> "0.0.0.0",
         "spark.executor.memory" -> "512M",
         "spark.driver.memory" -> "512M",
         "spark.kubernetes.driver.request.cores" -> "250m",
