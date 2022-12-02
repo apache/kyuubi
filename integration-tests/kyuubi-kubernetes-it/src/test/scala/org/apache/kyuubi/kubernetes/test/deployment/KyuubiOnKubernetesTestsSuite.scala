@@ -107,7 +107,7 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
     val fs = FileSystem.get(getHadoopConf)
     fs.mkdirs(
       new Path("/spark"),
-      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.READ_EXECUTE))
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     fs.copyFromLocalFile(new Path(driverTemplate.getPath), new Path("/spark/driver.yml"))
   }
 
