@@ -47,5 +47,6 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
 
   def getMiniKubeApiMaster: String = miniKubernetesClient.getMasterUrl.toString
 
-  def getKyuubiServerIp: String = MiniKube.getIp
+  def getKyuubiServerIp: String = miniKubernetesClient.pods().withName("kyuubi-test")
+    .get().getSpec.getHostname
 }

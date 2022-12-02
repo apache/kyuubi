@@ -360,7 +360,9 @@ jobs:
       - name: start kyuubi
         run: kubectl apply -f integration-tests/kyuubi-kubernetes-it/src/test/resources/kyuubi-server.yaml
       - name: kyuubi pod check
-        run: kubectl get pods
+        run: |
+          kubectl get pods
+          kubectl describe pods kyuubi-test
       - name: integration tests
         run: >-
           ./build/mvn ${MVN_OPT} clean install
