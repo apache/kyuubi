@@ -78,17 +78,17 @@ abstract class SparkOperation(session: Session)
     s"spark.${SESSION_USER_SIGN_ENABLED.key}",
     SESSION_USER_SIGN_ENABLED.defaultVal.get)
 
-  protected def setSparkLocalProperty(key: String, value: String): Unit =
-    spark.sparkContext.setLocalProperty _
+  protected def setSparkLocalProperty: (String, String) => Unit =
+    spark.sparkContext.setLocalProperty
 
   protected def withLocalProperties[T](f: => T): T = {
     try {
       spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
-      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
-      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
+      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
         case Some(pool) =>
-          setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
+          spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
         case None =>
       }
       if (isSessionUserSignEnabled) {
@@ -97,9 +97,9 @@ abstract class SparkOperation(session: Session)
 
       f
     } finally {
-      setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
-      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, null)
-      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
+      spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
+      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
       spark.sparkContext.clearJobGroup()
       if (isSessionUserSignEnabled) {
         clearSessionUserSign()

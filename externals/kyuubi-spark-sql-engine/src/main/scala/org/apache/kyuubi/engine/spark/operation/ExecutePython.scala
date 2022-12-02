@@ -65,10 +65,12 @@ class ExecutePython(
       new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
   }
 
-  override def setSparkLocalProperty(key: String, value: String): Unit = {
-    val valueStr = if (value == null) "None" else s"'$value'"
-    worker.runCode(s"spark.sparkContext.setLocalProperty('$key', $valueStr)")
-  }
+  override def setSparkLocalProperty: (String, String) => Unit =
+    (key: String, value: String) => {
+      val valueStr = if (value == null) "None" else s"'$value'"
+      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', $valueStr)")
+      ()
+    }
 
   override protected def withLocalProperties[T](f: => T): T = {
     try {
@@ -87,9 +89,9 @@ class ExecutePython(
 
       f
     } finally {
-      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, null)
-      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
-      setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
+      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, "")
+      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, "")
+      setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, "")
       worker.runCode("spark.sparkContext.clearJobGroup()")
       if (isSessionUserSignEnabled) {
         clearSessionUserSign()
