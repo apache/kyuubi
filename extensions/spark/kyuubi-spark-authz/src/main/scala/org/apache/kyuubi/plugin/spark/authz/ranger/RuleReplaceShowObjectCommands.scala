@@ -25,7 +25,9 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.{RunnableCommand, ShowColumnsCommand}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.util.{AuthZUtils, ObjectFilterPlaceHolder, WithInternalChildren}
+import org.apache.kyuubi.plugin.spark.authz.util.{
+  AuthZUtils, ObjectFilterPlaceHolder, WithInternalChildren
+}
 
 class RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {

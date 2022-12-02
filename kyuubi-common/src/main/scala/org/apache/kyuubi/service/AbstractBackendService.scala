@@ -21,7 +21,9 @@ import java.util.concurrent.{ExecutionException, TimeoutException, TimeUnit}
 
 import scala.concurrent.CancellationException
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{
+  TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema
+}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}

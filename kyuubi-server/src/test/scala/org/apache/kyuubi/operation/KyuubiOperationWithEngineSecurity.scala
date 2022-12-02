@@ -21,7 +21,9 @@ import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
-import org.apache.kyuubi.service.authentication.{InternalSecurityAccessor, ZooKeeperEngineSecuritySecretProviderImpl}
+import org.apache.kyuubi.service.authentication.{
+  InternalSecurityAccessor, ZooKeeperEngineSecuritySecretProviderImpl
+}
 
 class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with HiveJDBCTestHelper {
   import DiscoveryClientProvider._

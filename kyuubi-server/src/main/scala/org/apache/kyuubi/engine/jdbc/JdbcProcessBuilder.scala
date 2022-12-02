@@ -29,7 +29,10 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.Utils.REDACTION_REPLACEMENT_TEXT
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH,
+  ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY
+}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.operation.log.OperationLog

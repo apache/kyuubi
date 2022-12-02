@@ -24,7 +24,9 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{
+  Alias, Attribute, AttributeSet, Expression, NamedExpression
+}
 import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
 import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}

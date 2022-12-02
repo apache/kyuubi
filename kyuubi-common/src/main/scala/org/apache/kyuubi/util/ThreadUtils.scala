@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.util
 
-import java.util.concurrent.{Executors, ExecutorService, LinkedBlockingQueue, ScheduledExecutorService, ScheduledThreadPoolExecutor, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{
+  Executors, ExecutorService, LinkedBlockingQueue, ScheduledExecutorService,
+  ScheduledThreadPoolExecutor, ThreadPoolExecutor, TimeUnit
+}
 
 import scala.concurrent.Awaitable
 import scala.concurrent.duration.{Duration, FiniteDuration}

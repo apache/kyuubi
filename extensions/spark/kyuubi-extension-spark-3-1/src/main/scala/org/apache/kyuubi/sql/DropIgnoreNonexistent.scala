@@ -20,7 +20,9 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.UnresolvedTableOrView
 import org.apache.spark.sql.catalyst.plans.logical.{DropTable, LogicalPlan, NoopDropTable}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.{AlterTableDropPartitionCommand, DropDatabaseCommand, DropFunctionCommand, DropTableCommand}
+import org.apache.spark.sql.execution.command.{
+  AlterTableDropPartitionCommand, DropDatabaseCommand, DropFunctionCommand, DropTableCommand
+}
 
 import org.apache.kyuubi.sql.KyuubiSQLConf._
 

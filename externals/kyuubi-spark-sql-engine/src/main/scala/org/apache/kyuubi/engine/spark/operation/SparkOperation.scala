@@ -28,7 +28,10 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SESSION_USER_SIGN_ENABLED
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{
+  KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN,
+  KYUUBI_STATEMENT_ID_KEY
+}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}

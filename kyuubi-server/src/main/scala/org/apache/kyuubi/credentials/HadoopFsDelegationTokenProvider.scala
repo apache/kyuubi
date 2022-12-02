@@ -31,7 +31,9 @@ import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.credentials.HadoopFsDelegationTokenProvider.{doAsProxyUser, validatedFsUris}
+import org.apache.kyuubi.credentials.HadoopFsDelegationTokenProvider.{
+  doAsProxyUser, validatedFsUris
+}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with Logging {

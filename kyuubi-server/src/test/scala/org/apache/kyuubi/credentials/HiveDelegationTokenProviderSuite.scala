@@ -31,7 +31,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars._
 import org.apache.hadoop.hive.metastore.{HiveMetaException, HiveMetaStore}
-import org.apache.hadoop.hive.metastore.security.{DelegationTokenIdentifier, HadoopThriftAuthBridge, HadoopThriftAuthBridge23}
+import org.apache.hadoop.hive.metastore.security.{
+  DelegationTokenIdentifier, HadoopThriftAuthBridge, HadoopThriftAuthBridge23
+}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.authorize.ProxyUsers

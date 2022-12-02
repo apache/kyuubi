@@ -32,7 +32,9 @@ import org.apache.kyuubi.engine.trino.schema.SchemaHelper
 import org.apache.kyuubi.engine.trino.session.TrinoSessionImpl
 import org.apache.kyuubi.operation.AbstractOperation
 import org.apache.kyuubi.operation.FetchIterator
-import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
+import org.apache.kyuubi.operation.FetchOrientation.{
+  FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation
+}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session

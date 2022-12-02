@@ -22,7 +22,9 @@ import scala.collection.JavaConverters._
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
-import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
+import org.apache.hive.service.rpc.thrift.{
+  TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp
+}
 import org.apache.spark.SparkContext
 import org.apache.spark.kyuubi.SparkContextHelper
 

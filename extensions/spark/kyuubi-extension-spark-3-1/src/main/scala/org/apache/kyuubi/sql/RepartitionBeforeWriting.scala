@@ -20,7 +20,9 @@ package org.apache.kyuubi.sql
 import java.util.Random
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Expression, Literal, Multiply, Rand}
+import org.apache.spark.sql.catalyst.expressions.{
+  Attribute, Cast, Expression, Literal, Multiply, Rand
+}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.types.IntegerType
 

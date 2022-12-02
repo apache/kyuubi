@@ -21,7 +21,9 @@ import java.sql.{SQLTimeoutException, Statement}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import org.apache.spark.TaskKilled
-import org.apache.spark.scheduler.{SparkListener, SparkListenerJobEnd, SparkListenerJobStart, SparkListenerTaskEnd}
+import org.apache.spark.scheduler.{
+  SparkListener, SparkListenerJobEnd, SparkListenerJobStart, SparkListenerTaskEnd
+}
 import org.apache.spark.sql.SparkSession
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._

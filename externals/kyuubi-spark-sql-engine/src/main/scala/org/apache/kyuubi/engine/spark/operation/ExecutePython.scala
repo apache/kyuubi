@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.io.{BufferedReader, File, FilenameFilter, FileOutputStream, InputStreamReader, PrintWriter}
+import java.io.{
+  BufferedReader, File, FilenameFilter, FileOutputStream, InputStreamReader, PrintWriter
+}
 import java.lang.ProcessBuilder.Redirect
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.atomic.AtomicBoolean
@@ -32,7 +34,9 @@ import org.apache.spark.sql.{Row, RuntimeConfig}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{
+  KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY
+}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.operation.ArrayFetchIterator
 import org.apache.kyuubi.session.Session

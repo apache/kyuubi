@@ -19,7 +19,9 @@ package org.apache.spark.kyuubi
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TOperationHandle}
+import org.apache.hive.service.rpc.thrift.{
+  TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TOperationHandle
+}
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_SPARK_LISTENER_ENABLED

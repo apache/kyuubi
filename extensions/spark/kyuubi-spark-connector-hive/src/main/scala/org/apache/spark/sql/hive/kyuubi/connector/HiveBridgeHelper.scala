@@ -25,7 +25,9 @@ import org.apache.spark.sql.catalyst.catalog.{BucketSpec, ExternalCatalogEvent}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Literal}
 import org.apache.spark.sql.catalyst.util.quoteIfNeeded
 import org.apache.spark.sql.connector.catalog.CatalogV2Util
-import org.apache.spark.sql.connector.expressions.{BucketTransform, FieldReference, IdentityTransform, LogicalExpressions, Transform}
+import org.apache.spark.sql.connector.expressions.{
+  BucketTransform, FieldReference, IdentityTransform, LogicalExpressions, Transform
+}
 import org.apache.spark.sql.connector.expressions.LogicalExpressions.{bucket, reference}
 import org.apache.spark.sql.hive.{HadoopTableReader, HiveShim, HiveTableUtil}
 import org.apache.spark.sql.hive.client.HiveClientImpl

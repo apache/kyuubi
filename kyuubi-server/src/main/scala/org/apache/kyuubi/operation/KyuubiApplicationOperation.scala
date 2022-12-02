@@ -22,7 +22,10 @@ import java.util.{ArrayList => JArrayList}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
+import org.apache.hive.service.rpc.thrift.{
+  TColumn, TColumnDesc, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc,
+  TTypeEntry, TTypeId
+}
 
 import org.apache.kyuubi.engine.ApplicationInfo
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation

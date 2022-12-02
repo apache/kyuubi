@@ -23,7 +23,9 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PROVIDER, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DRIVER_CLASS}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_JDBC_CONNECTION_PROVIDER, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DRIVER_CLASS
+}
 
 abstract class AbstractConnectionProvider extends Logging {
   protected val providers = loadProviders()

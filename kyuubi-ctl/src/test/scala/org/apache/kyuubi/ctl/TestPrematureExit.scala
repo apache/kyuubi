@@ -22,7 +22,9 @@ import java.io.{OutputStream, PrintStream}
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.ctl.cli.{AdminControlCli, AdminControlCliArguments, ControlCli, ControlCliArguments}
+import org.apache.kyuubi.ctl.cli.{
+  AdminControlCli, AdminControlCliArguments, ControlCli, ControlCliArguments
+}
 import org.apache.kyuubi.ctl.util.CommandLineUtils
 
 trait TestPrematureExit {

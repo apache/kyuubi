@@ -24,7 +24,9 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.planning.ScanOperation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.{
+  CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation
+}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.sql.KyuubiSQLConf

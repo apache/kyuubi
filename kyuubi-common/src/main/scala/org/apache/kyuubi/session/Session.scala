@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.session
 
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{
+  TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema
+}
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationHandle

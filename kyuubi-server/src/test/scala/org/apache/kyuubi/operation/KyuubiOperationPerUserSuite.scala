@@ -20,7 +20,9 @@ package org.apache.kyuubi.operation
 import java.util.UUID
 
 import org.apache.hadoop.fs.{FileSystem, FileUtil, Path}
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode}
+import org.apache.hive.service.rpc.thrift.{
+  TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode
+}
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer, WithSimpleDFSService}

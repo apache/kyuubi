@@ -21,7 +21,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
+import org.apache.kyuubi.service.authentication.{
+  UserDefineAuthenticationProviderImpl, WithLdapServer
+}
 
 trait RestClientTestHelper extends RestFrontendTestHelper with KerberizedTestHelper
   with WithLdapServer {

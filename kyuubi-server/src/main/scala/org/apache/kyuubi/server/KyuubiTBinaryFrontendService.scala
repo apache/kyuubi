@@ -32,7 +32,9 @@ import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
-import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, FeServiceServerContext, OK_STATUS}
+import org.apache.kyuubi.service.TFrontendService.{
+  CURRENT_SERVER_CONTEXT, FeServiceServerContext, OK_STATUS
+}
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 final class KyuubiTBinaryFrontendService(

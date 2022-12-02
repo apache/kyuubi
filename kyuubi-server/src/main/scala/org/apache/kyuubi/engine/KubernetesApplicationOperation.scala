@@ -23,7 +23,9 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, PENDING, RUNNING}
+import org.apache.kyuubi.engine.ApplicationState.{
+  ApplicationState, FAILED, FINISHED, PENDING, RUNNING
+}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.SPARK_APP_ID_LABEL
 import org.apache.kyuubi.util.KubernetesUtils
 

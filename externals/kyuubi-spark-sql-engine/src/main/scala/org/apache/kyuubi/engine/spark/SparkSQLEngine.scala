@@ -25,7 +25,9 @@ import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
 import org.apache.spark.{ui, SparkConf}
-import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
+import org.apache.spark.kyuubi.{
+  SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener
+}
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
 import org.apache.spark.sql.SparkSession
 
@@ -35,7 +37,9 @@ import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
-import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
+import org.apache.kyuubi.engine.spark.events.{
+  EngineEvent, EngineEventsStore, SparkEventHandlerRegister
+}
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies

@@ -21,7 +21,9 @@ import java.sql.Statement
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
-import org.apache.kyuubi.operation.{AnalyzeMode, ExecutionMode, HiveJDBCTestHelper, ParseMode, PhysicalMode}
+import org.apache.kyuubi.operation.{
+  AnalyzeMode, ExecutionMode, HiveJDBCTestHelper, ParseMode, PhysicalMode
+}
 
 class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
 

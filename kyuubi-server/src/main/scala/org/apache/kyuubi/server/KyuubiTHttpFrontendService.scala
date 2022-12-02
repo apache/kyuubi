@@ -38,7 +38,9 @@ import org.eclipse.jetty.util.thread.ExecutorThreadPool
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_HTTP_CONN_FAIL, THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL}
+import org.apache.kyuubi.metrics.MetricsConstants.{
+  THRIFT_HTTP_CONN_FAIL, THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL
+}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.ThriftHttpServlet
 import org.apache.kyuubi.server.http.util.SessionManager

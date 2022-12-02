@@ -24,7 +24,10 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hive.service.cli.{SessionHandle => ImportedSessionHandle}
-import org.apache.hive.service.cli.session.{HiveSessionImplwithUGI => ImportedHiveSessionImpl, HiveSessionProxy, SessionManager => ImportedHiveSessionManager}
+import org.apache.hive.service.cli.session.{
+  HiveSessionImplwithUGI => ImportedHiveSessionImpl, HiveSessionProxy,
+  SessionManager => ImportedHiveSessionManager
+}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL

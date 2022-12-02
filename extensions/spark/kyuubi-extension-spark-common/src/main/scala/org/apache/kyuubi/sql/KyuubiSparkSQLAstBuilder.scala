@@ -28,12 +28,16 @@ import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
 import org.apache.commons.codec.binary.Hex
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
+import org.apache.spark.sql.catalyst.analysis.{
+  UnresolvedAttribute, UnresolvedRelation, UnresolvedStar
+}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, stringWithoutUnescape, withOrigin}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
-import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, localDateToDays, stringToTimestamp}
+import org.apache.spark.sql.catalyst.util.DateTimeUtils.{
+  getZoneId, localDateToDays, stringToTimestamp
+}
 import org.apache.spark.sql.catalyst.util.IntervalUtils
 import org.apache.spark.sql.hive.HiveAnalysis.conf
 import org.apache.spark.sql.internal.SQLConf
@@ -41,7 +45,9 @@ import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.sql.KyuubiSparkSQLParser._
-import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, OptimizeZorderStatementBase, Zorder, ZorderBase}
+import org.apache.kyuubi.sql.zorder.{
+  OptimizeZorderStatement, OptimizeZorderStatementBase, Zorder, ZorderBase
+}
 
 abstract class KyuubiSparkSQLAstBuilderBase extends KyuubiSparkSQLBaseVisitor[AnyRef] {
   def buildZorder(child: Seq[Expression]): ZorderBase

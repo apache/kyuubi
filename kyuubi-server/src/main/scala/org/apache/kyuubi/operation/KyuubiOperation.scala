@@ -26,7 +26,9 @@ import org.apache.thrift.TException
 import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
-import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_STATE, OPERATION_TOTAL}
+import org.apache.kyuubi.metrics.MetricsConstants.{
+  OPERATION_FAIL, OPERATION_OPEN, OPERATION_STATE, OPERATION_TOTAL
+}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.OperationState

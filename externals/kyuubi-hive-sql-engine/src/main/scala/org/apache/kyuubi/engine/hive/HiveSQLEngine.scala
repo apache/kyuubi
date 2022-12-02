@@ -31,7 +31,9 @@ import org.apache.kyuubi.engine.hive.events.{HiveEngineEvent, HiveEventHandlerRe
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
 import org.apache.kyuubi.ha.client.RetryPolicies
-import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
+import org.apache.kyuubi.service.{
+  AbstractBackendService, AbstractFrontendService, Serverable, ServiceState
+}
 import org.apache.kyuubi.util.SignalRegister
 
 class HiveSQLEngine extends Serverable("HiveSQLEngine") {

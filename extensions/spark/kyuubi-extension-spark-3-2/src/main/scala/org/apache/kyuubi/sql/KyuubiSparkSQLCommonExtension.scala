@@ -19,7 +19,9 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder}
+import org.apache.kyuubi.sql.zorder.{
+  InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder
+}
 
 class KyuubiSparkSQLCommonExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {

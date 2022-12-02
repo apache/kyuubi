@@ -18,7 +18,10 @@ package org.apache.kyuubi.engine.jdbc
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH,
+  ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY
+}
 
 class JdbcProcessBuilderSuite extends KyuubiFunSuite {
 

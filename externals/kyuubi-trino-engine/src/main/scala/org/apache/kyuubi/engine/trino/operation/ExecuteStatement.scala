@@ -27,7 +27,9 @@ import org.apache.kyuubi.engine.trino.event.TrinoOperationEvent
 import org.apache.kyuubi.engine.trino.schema.RowSet
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, OperationState}
-import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
+import org.apache.kyuubi.operation.FetchOrientation.{
+  FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation
+}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 

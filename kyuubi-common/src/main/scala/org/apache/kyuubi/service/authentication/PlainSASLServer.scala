@@ -19,7 +19,9 @@ package org.apache.kyuubi.service.authentication
 
 import java.io.IOException
 import java.security.Provider
-import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
+import javax.security.auth.callback.{
+  Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException
+}
 import javax.security.sasl.{AuthorizeCallback, SaslException, SaslServer, SaslServerFactory}
 
 import org.apache.kyuubi.KYUUBI_VERSION

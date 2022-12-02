@@ -20,7 +20,9 @@ package org.apache.kyuubi.engine.spark.shim
 import java.util.regex.Pattern
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces, TableCatalog}
+import org.apache.spark.sql.connector.catalog.{
+  CatalogExtension, CatalogPlugin, SupportsNamespaces, TableCatalog
+}
 
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim.SESSION_CATALOG
 

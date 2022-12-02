@@ -17,7 +17,9 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.expressions.{AttributeReference, AttributeSet, Expression, ExpressionSet, PredicateHelper, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{
+  AttributeReference, AttributeSet, Expression, ExpressionSet, PredicateHelper, SubqueryExpression
+}
 import org.apache.spark.sql.catalyst.plans.logical.LeafNode
 import org.apache.spark.sql.execution.datasources.DataSourceStrategy
 import org.apache.spark.sql.types.StructType

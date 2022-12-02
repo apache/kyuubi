@@ -22,7 +22,9 @@ import org.apache.flink.table.operations.command._
 
 import org.apache.kyuubi.engine.flink.FlinkEngineUtils.isFlinkVersionAtMost
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil
-import org.apache.kyuubi.operation.{ExecutionMode, ParseMode, PhysicalMode, PlanOnlyMode, UnknownMode}
+import org.apache.kyuubi.operation.{
+  ExecutionMode, ParseMode, PhysicalMode, PlanOnlyMode, UnknownMode
+}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session

@@ -18,7 +18,9 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.catalyst.expressions.SortOrder
-import org.apache.spark.sql.catalyst.plans.physical.{BroadcastDistribution, Distribution, UnspecifiedDistribution}
+import org.apache.spark.sql.catalyst.plans.physical.{
+  BroadcastDistribution, Distribution, UnspecifiedDistribution
+}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{SortExec, SparkPlan}
 import org.apache.spark.sql.execution.exchange.{BroadcastExchangeExec, ShuffleExchangeExec}

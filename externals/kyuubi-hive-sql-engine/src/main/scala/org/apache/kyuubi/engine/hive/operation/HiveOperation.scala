@@ -25,7 +25,9 @@ import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
-import org.apache.kyuubi.operation.{AbstractOperation, FetchOrientation, OperationState, OperationStatus}
+import org.apache.kyuubi.operation.{
+  AbstractOperation, FetchOrientation, OperationState, OperationStatus
+}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
 

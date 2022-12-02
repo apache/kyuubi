@@ -20,7 +20,9 @@ package org.apache.kyuubi.spark.connector.hive.command
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.types.{StringType, StructType}
 
-import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{V1_COMMAND_VERSION, V2_COMMAND_VERSION}
+import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{
+  V1_COMMAND_VERSION, V2_COMMAND_VERSION
+}
 
 trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
   override protected def command: String = "DROP NAMESPACE"

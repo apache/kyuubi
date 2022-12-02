@@ -17,10 +17,16 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedRelation, UnresolvedTableOrView, UnresolvedView}
-import org.apache.spark.sql.catalyst.plans.logical.{DropTable, DropView, LogicalPlan, NoopCommand, UncacheTable}
+import org.apache.spark.sql.catalyst.analysis.{
+  UnresolvedRelation, UnresolvedTableOrView, UnresolvedView
+}
+import org.apache.spark.sql.catalyst.plans.logical.{
+  DropTable, DropView, LogicalPlan, NoopCommand, UncacheTable
+}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.{AlterTableDropPartitionCommand, DropDatabaseCommand, DropFunctionCommand, DropTableCommand}
+import org.apache.spark.sql.execution.command.{
+  AlterTableDropPartitionCommand, DropDatabaseCommand, DropFunctionCommand, DropTableCommand
+}
 
 import org.apache.kyuubi.sql.KyuubiSQLConf._
 

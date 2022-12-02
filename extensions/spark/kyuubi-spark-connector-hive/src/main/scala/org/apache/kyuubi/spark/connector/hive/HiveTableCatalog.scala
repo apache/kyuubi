@@ -28,22 +28,31 @@ import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{SQLConfHelper, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.{NamespaceAlreadyExistsException, NoSuchDatabaseException, NoSuchNamespaceException, NoSuchTableException, TableAlreadyExistsException}
+import org.apache.spark.sql.catalyst.analysis.{
+  NamespaceAlreadyExistsException, NoSuchDatabaseException, NoSuchNamespaceException,
+  NoSuchTableException, TableAlreadyExistsException
+}
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.util.quoteIfNeeded
-import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table, TableCatalog, TableChange}
+import org.apache.spark.sql.connector.catalog.{
+  Identifier, NamespaceChange, SupportsNamespaces, Table, TableCatalog, TableChange
+}
 import org.apache.spark.sql.connector.catalog.NamespaceChange.RemoveProperty
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.datasources.DataSource
 import org.apache.spark.sql.hive.HiveUDFExpressionBuilder
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{catalogV2Util, postExternalCatalogEvent, HiveMetastoreCatalog, HiveSessionCatalog}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{
+  catalogV2Util, postExternalCatalogEvent, HiveMetastoreCatalog, HiveSessionCatalog
+}
 import org.apache.spark.sql.internal.StaticSQLConf.CATALOG_IMPLEMENTATION
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
+import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{
+  toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper
+}
 
 /**
  * A [[TableCatalog]] that wrap HiveExternalCatalog to as V2 CatalogPlugin instance to access Hive.

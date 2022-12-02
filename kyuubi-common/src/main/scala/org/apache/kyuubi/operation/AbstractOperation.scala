@@ -20,7 +20,9 @@ package org.apache.kyuubi.operation
 import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TProgressUpdateResp, TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{
+  TProgressUpdateResp, TProtocolVersion, TRowSet, TTableSchema
+}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT

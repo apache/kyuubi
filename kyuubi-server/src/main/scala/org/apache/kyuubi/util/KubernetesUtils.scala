@@ -22,7 +22,9 @@ import java.io.File
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import io.fabric8.kubernetes.client.{Config, ConfigBuilder, DefaultKubernetesClient, KubernetesClient}
+import io.fabric8.kubernetes.client.{
+  Config, ConfigBuilder, DefaultKubernetesClient, KubernetesClient
+}
 import io.fabric8.kubernetes.client.Config.autoConfigure
 import io.fabric8.kubernetes.client.okhttp.OkHttpClientFactory
 import okhttp3.{Dispatcher, OkHttpClient}

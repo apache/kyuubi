@@ -18,7 +18,9 @@ package org.apache.kyuubi.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{
+  KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY
+}
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.session.SessionType.SessionType
 
