@@ -598,6 +598,20 @@ abstract class TFrontendService(name: String)
     resp
   }
 
+  override def UploadData(req: TUploadDataReq): TUploadDataResp = {
+    debug(req.toString)
+    val resp = new TUploadDataResp
+    resp.setStatus(OK_STATUS)
+    resp
+  }
+
+  override def DownloadData(req: TDownloadDataReq): TDownloadDataResp = {
+    debug(req.toString)
+    val resp = new TDownloadDataResp
+    resp.setStatus(OK_STATUS)
+    resp
+  }
+
   protected def isServer(): Boolean = false
 
   class FeTServerEventHandler extends TServerEventHandler {
