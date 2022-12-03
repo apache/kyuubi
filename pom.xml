@@ -1778,10 +1778,6 @@
                             <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
                         </jvmArgs>
                         <javacArgs>
-                            <javacArg>-source</javacArg>
-                            <javacArg>${java.version}</javacArg>
-                            <javacArg>-target</javacArg>
-                            <javacArg>${java.version}</javacArg>
                             <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
                         </javacArgs>
                         <compilerPlugins>
@@ -2225,6 +2221,9 @@
             </activation>
             <properties>
                 <java.version>11</java.version>
+                <maven.compiler.source></maven.compiler.source>
+                <maven.compiler.target></maven.compiler.target>
+                <maven.compiler.release>${java.version}</maven.compiler.release>
             </properties>
         </profile>
 
