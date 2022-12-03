@@ -142,6 +142,4 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
   }
 
   override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
-
-  override protected lazy val user: String = "cluster"
 }
