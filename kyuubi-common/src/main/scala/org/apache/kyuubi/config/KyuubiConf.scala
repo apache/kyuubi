@@ -1977,6 +1977,21 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val GROUP_PROVIDER: ConfigEntry[String] =
+    buildConf("kyuubi.session.group.provider")
+      .doc("A group provider plugin for Kyuubi Server. This plugin can provide primary group " +
+        "and groups information for different user or session configs. This config value " +
+        "should be a class which is a child of 'org.apache.kyuubi.plugin.GroupProvider' which " +
+        "has zero-arg constructor. Kyuubi provides the following built-in implementations: " +
+        "<li>hadoop: delegate the user group mapping to hadoop UserGroupInformation.</li>")
+      .version("1.7.0")
+      .stringConf
+      .transform {
+        case "hadoop" => "org.apache.kyuubi.session.HadoopGroupProvider"
+        case other => other
+      }
+      .createWithDefault("hadoop")
+
   val SERVER_NAME: OptionalConfigEntry[String] =
     buildConf("kyuubi.server.name")
       .doc("The name of Kyuubi Server.")

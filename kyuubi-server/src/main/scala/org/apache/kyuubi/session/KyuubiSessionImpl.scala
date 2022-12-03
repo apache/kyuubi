@@ -74,8 +74,12 @@ class KyuubiSessionImpl(
 
   private lazy val engineCredentials = renewEngineCredentials()
 
-  lazy val engine: EngineRef =
-    new EngineRef(sessionConf, user, handle.identifier.toString, sessionManager.applicationManager)
+  lazy val engine: EngineRef = new EngineRef(
+    sessionConf,
+    user,
+    sessionManager.groupProvider.primaryGroup(user, optimizedConf.asJava),
+    handle.identifier.toString,
+    sessionManager.applicationManager)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
