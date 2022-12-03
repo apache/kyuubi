@@ -95,7 +95,9 @@ class ExecuteStatement(
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
-          new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
+          new IterableFetchIterator[Row](new Iterable[Row] {
+            override def iterator: Iterator[Row] = result.toLocalIterator().asScala
+          })
         } else {
           val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
             .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
