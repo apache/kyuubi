@@ -278,4 +278,14 @@ class KyuubiOperationPerUserSuite
       }
     }
   }
+
+  test("remove spark.kyuubi.engine.credentials") {
+    withJdbcStatement() { statement =>
+      val result = statement.executeQuery("set spark.kyuubi.engine.credentials")
+      assert(result.next())
+      assert(result.getString(1) === "spark.kyuubi.engine.credentials")
+      assert(result.getString(2).isEmpty)
+      assert(!result.next())
+    }
+  }
 }
