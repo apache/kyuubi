@@ -35,12 +35,16 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.operation.ArrayFetchIterator
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class ExecutePython(
     session: Session,
     override val statement: String,
     worker: SessionPythonWorker) extends SparkOperation(session) {
+
+  private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
