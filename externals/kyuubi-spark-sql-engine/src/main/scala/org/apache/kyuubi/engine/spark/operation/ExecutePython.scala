@@ -136,6 +136,7 @@ case class SessionPythonWorker(
 }
 
 object ExecutePython extends Logging {
+  final val DEFAULT_SPARK_PYTHON_ARCHIVE_FRAGMENT = "kyuubi_spark_python_home"
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
   private val kyuubiPythonPath = Files.createTempDirectory("")
@@ -192,12 +193,11 @@ object ExecutePython extends Logging {
       archive =>
         var uri = new URI(archive)
         if (uri.getFragment == null) {
-          uri = UriBuilder.fromUri(new URI(uri.toString)).fragment(
-            session.handle.identifier.toString).build()
+          uri = UriBuilder.fromUri(uri).fragment(DEFAULT_SPARK_PYTHON_ARCHIVE_FRAGMENT).build()
         }
         spark.sparkContext.addArchive(uri.toString)
-        uri.getFragment
-    }
+        Paths.get(uri.getFragment)
+    }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
   }
 
   // for test
