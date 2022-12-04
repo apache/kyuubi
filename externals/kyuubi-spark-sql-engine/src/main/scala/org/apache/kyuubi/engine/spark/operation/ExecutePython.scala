@@ -22,6 +22,7 @@ import java.lang.ProcessBuilder.Redirect
 import java.net.URI
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.ws.rs.core.UriBuilder
 
 import scala.collection.JavaConverters._
 
@@ -191,7 +192,8 @@ object ExecutePython extends Logging {
       archive =>
         var uri = new URI(archive)
         if (uri.getFragment == null) {
-          uri = new URI(uri.toString + "#" + session.handle.identifier)
+          uri = UriBuilder.fromUri(new URI(uri.toString)).fragment(
+            session.handle.identifier.toString).build()
         }
         spark.sparkContext.addArchive(uri.toString)
         uri.getFragment
