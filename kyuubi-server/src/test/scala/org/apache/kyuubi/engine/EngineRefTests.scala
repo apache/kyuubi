@@ -137,7 +137,7 @@ trait EngineRefTests extends KyuubiFunSuite {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER.toString)
     conf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
-    val appName = new EngineRef(conf, user, id, "grp", null)
+    val appName = new EngineRef(conf, user, "grp", id, null)
     assert(appName.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER}_${FLINK_SQL}",
