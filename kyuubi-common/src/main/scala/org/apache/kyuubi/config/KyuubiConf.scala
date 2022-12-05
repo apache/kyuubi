@@ -2297,13 +2297,27 @@ object KyuubiConf {
       .version("1.7.0")
       .fallbackConf(ENGINE_EVENT_LOGGERS)
 
-  val ENGINE_SPARK_PYTHON_ARCHIVE: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.spark.python.archive")
+  val ENGINE_SPARK_PYTHON_HOME_ARCHIVE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.spark.python.home.archive")
       .doc("Spark archive containing $SPARK_HOME/python directory, which is used to init session" +
         " python worker for python language mode.")
       .version("1.7.0")
       .stringConf
       .createOptional
+
+  val ENGINE_SPARK_PYTHON_ENV_ARCHIVE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.spark.python.env.archive")
+      .doc("Portable python env archive used for Spark engine python language mode.")
+      .version("1.7.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH: ConfigEntry[String] =
+    buildConf("kyuubi.engine.spark.python.env.archive.exec.path")
+      .doc("The python exec path under the python env archive.")
+      .version("1.7.0")
+      .stringConf
+      .createWithDefault("bin/python")
 
   val ENGINE_HIVE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.hive.event.loggers")
