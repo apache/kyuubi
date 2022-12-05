@@ -29,6 +29,7 @@ import scala.collection.JavaConverters._
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.SparkFiles
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
@@ -199,7 +200,7 @@ object ExecutePython extends Logging {
           uri = UriBuilder.fromUri(uri).fragment(DEFAULT_SPARK_PYTHON_ENV_ARCHIVE_FRAGMENT).build()
         }
         spark.sparkContext.addArchive(uri.toString)
-        Paths.get(uri.getFragment, pythonEnvExecPath)
+        Paths.get(SparkFiles.get(uri.getFragment), pythonEnvExecPath)
     }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
   }
 
@@ -213,7 +214,7 @@ object ExecutePython extends Logging {
           uri = UriBuilder.fromUri(uri).fragment(DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT).build()
         }
         spark.sparkContext.addArchive(uri.toString)
-        Paths.get(uri.getFragment)
+        Paths.get(SparkFiles.get(uri.getFragment))
     }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
   }
 
