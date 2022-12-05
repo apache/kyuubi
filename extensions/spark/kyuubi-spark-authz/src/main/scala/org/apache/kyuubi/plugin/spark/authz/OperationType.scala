@@ -37,8 +37,6 @@ object OperationType extends Enumeration {
    */
   def apply(clzName: String): OperationType = {
     clzName match {
-      case v2Cmd if v2Commands.accept(v2Cmd) =>
-        v2Commands.withName(v2Cmd).operationType
 
       case "AddArchivesCommand" => EXPLAIN
       case "AddFilesCommand" => EXPLAIN
@@ -47,11 +45,7 @@ object OperationType extends Enumeration {
           "SetNamespaceProperties" => ALTERDATABASE
       case "AlterDatabaseSetLocationCommand" |
           "SetNamespaceLocation" => ALTERDATABASE_LOCATION
-      case "AlterTableAddColumnsCommand" |
-          "AlterHoodieTableAddColumnsCommand" => ALTERTABLE_ADDCOLS
-      case "AlterTableAddPartitionCommand" => ALTERTABLE_ADDPARTS
-      case "AlterTableChangeColumnCommand" => ALTERTABLE_REPLACECOLS
-      case "AlterTableDropPartitionCommand" => ALTERTABLE_DROPPARTS
+      case "AlterHoodieTableAddColumnsCommand" => ALTERTABLE_ADDCOLS
       case "AlterTableRenameCommand" => ALTERTABLE_RENAME
       case "AlterTableRecoverPartitionsCommand" |
           "RepairTableCommand" => MSCK
@@ -60,6 +54,11 @@ object OperationType extends Enumeration {
       case "AlterTableSetLocationCommand" => ALTERTABLE_LOCATION
       case "AlterTableSetPropertiesCommand" |
           "AlterTableUnsetPropertiesCommand" => ALTERTABLE_PROPERTIES
+      case "AlterTableChangeColumnCommand" => ALTERTABLE_REPLACECOLS
+      case "AlterTableAddColumnsCommand" |
+          "AlterHoodieTableAddColumnsCommand" => ALTERTABLE_ADDCOLS
+      case "AlterTableAddPartitionCommand" => ALTERTABLE_ADDPARTS
+      case "AlterTableDropPartitionCommand" => ALTERTABLE_DROPPARTS
       case ava if ava.contains("AlterViewAs") => ALTERVIEW_AS
       case ac if ac.startsWith("Analyze") => ANALYZE_TABLE
       case "CreateDatabaseCommand" => CREATEDATABASE

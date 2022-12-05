@@ -823,7 +823,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s" [select] privilege on" +
           s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
           s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
-          s" [update] privilege on [$db1/$sinkTable1]"))
+          s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
+          s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]"))
       } finally {
         // revert to default value
         SparkRangerAdminPlugin.getRangerConf.setBoolean(
