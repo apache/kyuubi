@@ -37,7 +37,7 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
       throw new IllegalStateException(
         s"Kyuubi server pod state error: ${kyuubiServer.getStatus.getPhase}, log:\n$log")
     }
-    val kyuubiServerIp = MiniKube.getIp
+    val kyuubiServerIp = getMiniKubeIp
     val kyuubiServerPort =
       kyuubiServer.getSpec.getContainers.get(0).getPorts.get(0).getHostPort
     val connectStr = connectionConf.map(kv => kv._1 + "=" + kv._2).mkString("#", ";", "")
@@ -49,4 +49,6 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
   def getKyuubiPod: Pod = miniKubernetesClient.pods().withName("kyuubi-test").get()
 
   def getKyuubiServerIp: String = getKyuubiPod.getStatus.getPodIP
+
+  def getMiniKubeIp: String = MiniKube.getIp
 }
