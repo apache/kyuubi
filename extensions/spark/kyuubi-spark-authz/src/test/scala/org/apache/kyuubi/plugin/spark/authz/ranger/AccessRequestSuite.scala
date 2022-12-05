@@ -22,8 +22,8 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.funsuite.AnyFunSuite
 
+ import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
-import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getFilterExpr
 
 class AccessRequestSuite extends AnyFunSuite {
@@ -43,7 +43,7 @@ class AccessRequestSuite extends AnyFunSuite {
     assert(art2.getUserGroups.contains("group_b"))
 
     val are = AccessResource(ObjectType.TABLE, "default", "src_group_row_filter", null)
-    val art3=AccessRequest(are, ugi2, OperationType.QUERY, AccessType.SELECT)
+    val art3 = AccessRequest(are, ugi2, OperationType.QUERY, AccessType.SELECT)
     val maybeString = getFilterExpr(art3)
     assert(maybeString.get === "key<120")
   }
