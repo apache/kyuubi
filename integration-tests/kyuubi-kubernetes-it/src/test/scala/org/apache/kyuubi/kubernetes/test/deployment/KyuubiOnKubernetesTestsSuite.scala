@@ -121,8 +121,8 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
     hdfsConf.set("dfs.datanode.hostname", localhostAddress)
     hdfsConf.set("dfs.datanode.address", s"0.0.0.0:${NetUtils.getFreeSocketPort}")
 //    // spark use 185 as userid in docker
-    hdfsConf.set("hadoop.proxyuser.cluster.groups", "*")
-    hdfsConf.set("hadoop.proxyuser.cluster.hosts", "*")
+    hdfsConf.set("hadoop.proxyuser.185.groups", "*")
+    hdfsConf.set("hadoop.proxyuser.185.hosts", "*")
     hdfsConf.set("hadoop.proxyuser.kyuubi.groups", "*")
     hdfsConf.set("hadoop.proxyuser.kyuubi.hosts", "*")
     hdfsConf
