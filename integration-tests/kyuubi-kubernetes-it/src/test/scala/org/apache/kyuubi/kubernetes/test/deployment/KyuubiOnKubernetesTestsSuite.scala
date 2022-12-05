@@ -38,14 +38,15 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
  *  |          |         |                                                   |
  *  ------------         -----------------------------------------------------
  */
-class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKubernetes {
+class KyuubiOnKubernetesWithLocalSparkTestsSuite extends WithKyuubiServerOnKubernetes
+  with SparkQueryTests {
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map("spark.master" -> "local", "spark.executor.instances" -> "1")
   }
-//
-//  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
-//
-//  override protected lazy val user: String = "local"
+
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+
+  override protected lazy val user: String = "local"
 }
 
 class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes {
@@ -55,7 +56,7 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes 
         "spark.master" -> s"k8s://$getMiniKubeApiMaster",
         "spark.kubernetes.container.image" -> "apache/spark:3.3.1",
         "spark.executor.memory" -> "512M",
-        "spark.driver.memory" -> "512M",
+        "spark.driver.memory" -> "1024M",
         "spark.kubernetes.driver.request.cores" -> "250m",
         "spark.kubernetes.executor.request.cores" -> "250m",
         "spark.executor.instances" -> "1")
@@ -73,7 +74,7 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes 
  *  ------------       -------------------------------------------------      ---------------------
  */
 class KyuubiOnKubernetesWithClientSparkTestsSuite
-  extends KyuubiOnKubernetesWithSparkTestsBase {
+  extends KyuubiOnKubernetesWithSparkTestsBase with SparkQueryTests {
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map(
       "spark.submit.deployMode" -> "client",
@@ -81,9 +82,9 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
       "kyuubi.frontend.connection.url.use.hostname" -> "false")
   }
 
-//  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
-//
-//  override protected lazy val user: String = "client"
+  override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
+
+  override protected lazy val user: String = "client"
 }
 
 /**
@@ -109,8 +110,7 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
       new Path("/spark"),
       new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     fs.setPermission(new Path("/"), new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
-    fs.setPermission(new Path("/spark"),
-      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    fs.setPermission(new Path("/spark"), new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     fs.copyFromLocalFile(new Path(driverTemplate.getPath), new Path("/spark/driver.yml"))
   }
 
