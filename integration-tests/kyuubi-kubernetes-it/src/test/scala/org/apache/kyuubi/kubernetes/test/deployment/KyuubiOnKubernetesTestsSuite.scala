@@ -137,6 +137,7 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
           s"hdfs://$localhostAddress:$getDFSPort/spark/driver.yml",
         "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
         "spark.kubernetes.authenticate.driver.serviceAccountName" -> "kyuubi",
+        "spark.kyuubi.frontend.thrift.binary.bind.host" -> "0.0.0.0",
         ZK_CLIENT_PORT_ADDRESS.key -> getKyuubiServerIp,
         FRONTEND_THRIFT_BINARY_BIND_HOST.key -> getKyuubiServerIp)
   }
