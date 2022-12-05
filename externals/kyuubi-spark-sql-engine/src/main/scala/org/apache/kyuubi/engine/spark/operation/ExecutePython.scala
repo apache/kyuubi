@@ -19,19 +19,23 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.io.{BufferedReader, File, FilenameFilter, FileOutputStream, InputStreamReader, PrintWriter}
 import java.lang.ProcessBuilder.Redirect
+import java.net.URI
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.ws.rs.core.UriBuilder
 
 import scala.collection.JavaConverters._
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.SparkFiles
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
-import org.apache.spark.sql.{Row, RuntimeConfig}
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.operation.ArrayFetchIterator
@@ -137,6 +141,8 @@ case class SessionPythonWorker(
 }
 
 object ExecutePython extends Logging {
+  final val DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT = "__kyuubi_spark_python_home__"
+  final val DEFAULT_SPARK_PYTHON_ENV_ARCHIVE_FRAGMENT = "__kyuubi_spark_python_env__"
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
   private val kyuubiPythonPath = Files.createTempDirectory("")
@@ -153,13 +159,13 @@ object ExecutePython extends Logging {
     }
   }
 
-  def createSessionPythonWorker(conf: RuntimeConfig): SessionPythonWorker = {
+  def createSessionPythonWorker(spark: SparkSession, session: Session): SessionPythonWorker = {
     val pythonExec = StringUtils.firstNonBlank(
-      conf.getOption("spark.pyspark.driver.python").orNull,
-      conf.getOption("spark.pyspark.python").orNull,
+      spark.conf.getOption("spark.pyspark.driver.python").orNull,
+      spark.conf.getOption("spark.pyspark.python").orNull,
       System.getenv("PYSPARK_DRIVER_PYTHON"),
       System.getenv("PYSPARK_PYTHON"),
-      "python3")
+      getSparkPythonExecFromArchive(spark, session).getOrElse("python3"))
 
     val builder = new ProcessBuilder(Seq(
       pythonExec,
@@ -169,7 +175,11 @@ object ExecutePython extends Logging {
       .split(File.pathSeparator)
       .++(ExecutePython.kyuubiPythonPath.toString)
     env.put("PYTHONPATH", pythonPath.mkString(File.pathSeparator))
-    env.put("SPARK_HOME", sys.env.getOrElse("SPARK_HOME", defaultSparkHome()))
+    env.put(
+      "SPARK_HOME",
+      sys.env.getOrElse(
+        "SPARK_HOME",
+        getSparkPythonHomeFromArchive(spark, session).getOrElse(defaultSparkHome)))
     env.put("PYTHON_GATEWAY_CONNECTION_INFO", KyuubiPythonGatewayServer.CONNECTION_FILE_PATH)
     logger.info(
       s"""
@@ -180,6 +190,36 @@ object ExecutePython extends Logging {
     builder.redirectError(Redirect.PIPE)
     val process = builder.start()
     SessionPythonWorker(startStderrSteamReader(process), startWatcher(process), process)
+  }
+
+  def getSparkPythonExecFromArchive(spark: SparkSession, session: Session): Option[String] = {
+    val pythonEnvArchive = spark.conf.getOption(ENGINE_SPARK_PYTHON_ENV_ARCHIVE.key)
+      .orElse(session.sessionManager.getConf.get(ENGINE_SPARK_PYTHON_ENV_ARCHIVE))
+    val pythonEnvExecPath = spark.conf.getOption(ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH.key)
+      .getOrElse(session.sessionManager.getConf.get(ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH))
+    pythonEnvArchive.map {
+      archive =>
+        var uri = new URI(archive)
+        if (uri.getFragment == null) {
+          uri = UriBuilder.fromUri(uri).fragment(DEFAULT_SPARK_PYTHON_ENV_ARCHIVE_FRAGMENT).build()
+        }
+        spark.sparkContext.addArchive(uri.toString)
+        Paths.get(SparkFiles.get(uri.getFragment), pythonEnvExecPath)
+    }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+  }
+
+  def getSparkPythonHomeFromArchive(spark: SparkSession, session: Session): Option[String] = {
+    val pythonHomeArchive = spark.conf.getOption(ENGINE_SPARK_PYTHON_HOME_ARCHIVE.key)
+      .orElse(session.sessionManager.getConf.get(ENGINE_SPARK_PYTHON_HOME_ARCHIVE))
+    pythonHomeArchive.map {
+      archive =>
+        var uri = new URI(archive)
+        if (uri.getFragment == null) {
+          uri = UriBuilder.fromUri(uri).fragment(DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT).build()
+        }
+        spark.sparkContext.addArchive(uri.toString)
+        Paths.get(SparkFiles.get(uri.getFragment))
+    }.find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
   }
 
   // for test
