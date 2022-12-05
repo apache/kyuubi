@@ -25,7 +25,11 @@ import org.apache.kyuubi.KyuubiFunSuite
 trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
   protected def connectionConf: Map[String, String] = Map.empty
   private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
+
   lazy val kyuubiPod: Pod = miniKubernetesClient.pods().withName("kyuubi-test").get()
+  lazy val kyuubiServerIp: String = kyuubiPod.getStatus.getPodIP
+  lazy val miniKubeIp: String = MiniKube.getIp
+  lazy val miniKubeApiMaster: String = miniKubernetesClient.getMasterUrl.toString
 
   protected def getJdbcUrl(connectionConf: Map[String, String]): String = {
     // Kyuubi server state should be running since mvn compile is quite slowly..
@@ -44,10 +48,4 @@ trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
     val connectStr = connectionConf.map(kv => kv._1 + "=" + kv._2).mkString("#", ";", "")
     s"jdbc:hive2://$kyuubiServerIp:$kyuubiServerPort/;$connectStr"
   }
-
-  def miniKubeApiMaster: String = miniKubernetesClient.getMasterUrl.toString
-
-  def kyuubiServerIp: String = kyuubiPod.getStatus.getPodIP
-
-  def miniKubeIp: String = MiniKube.getIp
 }
