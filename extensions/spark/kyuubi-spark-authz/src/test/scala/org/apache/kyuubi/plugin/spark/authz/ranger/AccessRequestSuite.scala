@@ -22,7 +22,6 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getFilterExpr
 
 class AccessRequestSuite extends AnyFunSuite {
@@ -30,7 +29,8 @@ class AccessRequestSuite extends AnyFunSuite {
   test("[[KYUUBI #3300]] overriding userGroups with UserStore") {
     SparkRangerAdminPlugin.init()
 
-    val resource1 = AccessResource(COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2")
+    val resource1 =
+      AccessResource(ObjectType.COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2")
 
     val ugi1 = UserGroupInformation.createRemoteUser("anonymous")
     val art1 = AccessRequest(resource1, ugi1, OperationType.QUERY, AccessType.SELECT)
