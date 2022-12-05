@@ -120,7 +120,7 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
     hdfsConf.set("dfs.namenode.servicerpc-bind-host", "0.0.0.0")
     hdfsConf.set("dfs.datanode.hostname", localhostAddress)
     hdfsConf.set("dfs.datanode.address", s"0.0.0.0:${NetUtils.getFreeSocketPort}")
-//    // spark use 185 as userid in docker
+    // spark use 185 as userid in docker
     hdfsConf.set("hadoop.proxyuser.185.groups", "*")
     hdfsConf.set("hadoop.proxyuser.185.hosts", "*")
     hdfsConf.set("hadoop.proxyuser.kyuubi.groups", "*")
@@ -133,10 +133,10 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
       Map(
         "spark.submit.deployMode" -> "cluster",
         "spark.kubernetes.file.upload.path" -> s"hdfs://$localhostAddress:$getDFSPort/spark",
-        "spark.kubernetes.driver.podTemplateFile" ->
-          s"hdfs://$localhostAddress:$getDFSPort/spark/driver.yml",
         "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
         "spark.kubernetes.authenticate.driver.serviceAccountName" -> "kyuubi",
+        "spark.kubernetes.driver.podTemplateFile" ->
+          s"hdfs://$localhostAddress:$getDFSPort/spark/driver.yml",
         "spark.kyuubi.frontend.thrift.binary.bind.host" -> miniKubeIp,
         "spark.kyuubi.ha.addresses" -> s"$kyuubiServerIp:2181",
         ZK_CLIENT_PORT_ADDRESS.key -> kyuubiServerIp,
