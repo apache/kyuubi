@@ -136,7 +136,7 @@ case class SessionPythonWorker(
 }
 
 object ExecutePython extends Logging {
-  final val DEFAULT_SPARK_PYTHON_ARCHIVE_FRAGMENT = "kyuubi_spark_python_home"
+  final val DEFAULT_SPARK_PYTHON_ARCHIVE_FRAGMENT = "__kyuubi_spark_python_home__"
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
   private val kyuubiPythonPath = Files.createTempDirectory("")
