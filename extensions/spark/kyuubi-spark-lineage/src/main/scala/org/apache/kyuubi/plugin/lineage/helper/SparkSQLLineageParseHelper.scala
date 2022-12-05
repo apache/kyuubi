@@ -318,7 +318,7 @@ trait LineageParser {
       case p: LocalRelation =>
         joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(LOCAL_TABLE_IDENTIFIER))
 
-      case p: InMemoryRelation =>
+      case p: InMemoryRelation if p.cacheBuilder.tableName.nonEmpty =>
         val tableName = p.cacheBuilder.tableName.get
         sparkSession.sessionState.catalog.getTempView(tableName) match {
           case Some(viewPlan) =>
