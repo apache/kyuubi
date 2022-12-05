@@ -18,10 +18,13 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.io.InputStreamReader
+import java.util
+
+import scala.collection.JavaConverters._
 
 import com.google.gson.GsonBuilder
 import org.apache.ranger.admin.client.RangerAdminRESTClient
-import org.apache.ranger.plugin.util.ServicePolicies
+import org.apache.ranger.plugin.util.{RangerUserStore, ServicePolicies}
 
 class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
 
@@ -45,6 +48,17 @@ class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
       lastKnownVersion: Long): ServicePolicies = {
     policies
   }
+
+  override def getUserStoreIfUpdated(
+      lastKnownUserStoreVersion: Long,
+      lastActivationTimeInMillis: Long): RangerUserStore = {
+    val userGroupsMapping = new util.HashMap[String, util.Set[String]]()
+    userGroupsMapping.put("bob", Set("group_a", "group_b").asJava)
+
+    val userStore = new RangerUserStore()
+    userStore.setUserGroupMapping(userGroupsMapping)
+    userStore
+  }
 }
 
 /**
@@ -64,4 +78,12 @@ trait RangerClientHelper {
    */
   def getServicePoliciesIfUpdated(
       lastKnownVersion: Long): ServicePolicies
+
+  /**
+   * Apache ranger 2.1.0+
+   */
+  def getUserStoreIfUpdated(
+      lastKnownUserStoreVersion: Long,
+      lastActivationTimeInMillis: Long): RangerUserStore
+
 }

@@ -100,7 +100,7 @@ object AccessRequest {
 
         val userGroupMappingMap: mutable.Map[String, util.Set[String]] =
           mapAsScalaMap(getUserGroupMapping.invoke(userStore)
-            .asInstanceOf[util.LinkedHashMap[String, util.Set[String]]])
+            .asInstanceOf[util.HashMap[String, util.Set[String]]])
 
         userGroupMappingMap.get(userName).orNull
       }
