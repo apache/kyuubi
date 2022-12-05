@@ -155,13 +155,12 @@ object ExecutePython extends Logging {
   }
 
   def createSessionPythonWorker(spark: SparkSession, session: Session): SessionPythonWorker = {
-    val pythonExec = getSparkPythonExecFromArchive(spark, session).getOrElse(
-      StringUtils.firstNonBlank(
-        spark.conf.getOption("spark.pyspark.driver.python").orNull,
-        spark.conf.getOption("spark.pyspark.python").orNull,
-        System.getenv("PYSPARK_DRIVER_PYTHON"),
-        System.getenv("PYSPARK_PYTHON"),
-        "python3"))
+    val pythonExec = StringUtils.firstNonBlank(
+      spark.conf.getOption("spark.pyspark.driver.python").orNull,
+      spark.conf.getOption("spark.pyspark.python").orNull,
+      System.getenv("PYSPARK_DRIVER_PYTHON"),
+      System.getenv("PYSPARK_PYTHON"),
+      getSparkPythonExecFromArchive(spark, session).getOrElse("python3"))
 
     val builder = new ProcessBuilder(Seq(
       pythonExec,
@@ -173,9 +172,9 @@ object ExecutePython extends Logging {
     env.put("PYTHONPATH", pythonPath.mkString(File.pathSeparator))
     env.put(
       "SPARK_HOME",
-      getSparkPythonHomeFromArchive(spark, session).getOrElse(sys.env.getOrElse(
+      sys.env.getOrElse(
         "SPARK_HOME",
-        defaultSparkHome)))
+        getSparkPythonHomeFromArchive(spark, session).getOrElse(defaultSparkHome)))
     env.put("PYTHON_GATEWAY_CONNECTION_INFO", KyuubiPythonGatewayServer.CONNECTION_FILE_PATH)
     logger.info(
       s"""
