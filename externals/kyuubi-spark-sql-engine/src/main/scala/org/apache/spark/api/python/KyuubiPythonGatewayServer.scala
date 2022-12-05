@@ -24,9 +24,11 @@ import java.nio.file.Files
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 
+import org.apache.kyuubi.Utils
+
 object KyuubiPythonGatewayServer extends Logging {
 
-  val CONNECTION_FILE_PATH = Files.createTempDirectory("") + "/connection.info"
+  val CONNECTION_FILE_PATH = Utils.createTempDir() + "/connection.info"
 
   def start(): Unit = {
 

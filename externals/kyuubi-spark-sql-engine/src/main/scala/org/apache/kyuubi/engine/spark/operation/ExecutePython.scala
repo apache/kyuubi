@@ -34,7 +34,7 @@ import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
@@ -154,7 +154,7 @@ object ExecutePython extends Logging {
   final val DEFAULT_SPARK_PYTHON_ENV_ARCHIVE_FRAGMENT = "__kyuubi_spark_python_env__"
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
-  private val kyuubiPythonPath = Files.createTempDirectory("")
+  private val kyuubiPythonPath = Utils.createTempDir()
   def init(): Unit = {
     if (!isPythonGatewayStart.get()) {
       synchronized {
