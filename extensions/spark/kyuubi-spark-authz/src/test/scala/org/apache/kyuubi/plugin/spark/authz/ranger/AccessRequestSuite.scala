@@ -18,15 +18,15 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 // scalastyle:off
-
 import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.funsuite.AnyFunSuite
 
- import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getFilterExpr
 
 class AccessRequestSuite extends AnyFunSuite {
+// scalastyle:on
   test("[[KYUUBI #3300]] overriding userGroups with UserStore") {
     SparkRangerAdminPlugin.init()
 
