@@ -109,6 +109,8 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
       new Path("/spark"),
       new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     fs.setPermission(new Path("/"), new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    fs.setPermission(new Path("/spark"),
+      new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     fs.copyFromLocalFile(new Path(driverTemplate.getPath), new Path("/spark/driver.yml"))
   }
 
@@ -140,6 +142,4 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
   }
 
   override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
-
-  override protected lazy val user: String = "cluster"
 }
