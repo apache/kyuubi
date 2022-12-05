@@ -32,7 +32,7 @@ import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
-import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.util.SignUtils
@@ -43,8 +43,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
-  // this lazy is must be specified since the conf is null when the class initialization
-  lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
   val applicationManager = new KyuubiApplicationManager()
   private lazy val metadataManager: Option[MetadataManager] = {
     // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
@@ -56,6 +54,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       None
     }
   }
+
+  // lazy is required for plugins since the conf is null when this class initialization
+  lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
+  lazy val groupProvider: GroupProvider = PluginLoader.loadGroupProvider(conf)
 
   private var limiter: Option[SessionLimiter] = None
   lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
