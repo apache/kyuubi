@@ -100,7 +100,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
             case e: Throwable =>
               spark.conf.set(OPERATION_LANGUAGE.key, OperationLanguages.SQL.toString)
               throw KyuubiSQLException(
-                s"Failed to init python environment, fall back to SQL language mode",
+                s"Failed to init python environment, fall back to SQL mode: ${e.getMessage}",
                 e)
           }
         case OperationLanguages.UNKNOWN =>
