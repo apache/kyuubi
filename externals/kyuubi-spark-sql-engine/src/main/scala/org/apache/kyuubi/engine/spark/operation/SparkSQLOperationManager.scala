@@ -90,11 +90,19 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
           val repl = sessionToRepl.getOrElseUpdate(session.handle, KyuubiSparkILoop(spark))
           new ExecuteScala(session, repl, statement)
         case OperationLanguages.PYTHON =>
-          ExecutePython.init()
-          val worker = sessionToPythonProcess.getOrElseUpdate(
-            session.handle,
-            ExecutePython.createSessionPythonWorker(spark.conf))
-          new ExecutePython(session, statement, worker)
+          try {
+            ExecutePython.init()
+            val worker = sessionToPythonProcess.getOrElseUpdate(
+              session.handle,
+              ExecutePython.createSessionPythonWorker(spark, session))
+            new ExecutePython(session, statement, worker)
+          } catch {
+            case e: Throwable =>
+              spark.conf.set(OPERATION_LANGUAGE.key, OperationLanguages.SQL.toString)
+              throw KyuubiSQLException(
+                s"Failed to init python environment, fall back to SQL mode: ${e.getMessage}",
+                e)
+          }
         case OperationLanguages.UNKNOWN =>
           spark.conf.unset(OPERATION_LANGUAGE.key)
           throw KyuubiSQLException(s"The operation language $lang" +

@@ -54,7 +54,7 @@ class AdminCtlSuite extends RestClientTestHelper with TestPrematureExit {
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
     conf.set(KyuubiConf.AUTHENTICATION_METHOD, Seq("LDAP", "CUSTOM"))
     val user = ldapUser
-    val engine = new EngineRef(conf.clone, user, id, null)
+    val engine = new EngineRef(conf.clone, user, "grp", id, null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",

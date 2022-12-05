@@ -45,6 +45,7 @@ object JDBCMetadataStoreConf {
         " please specify them with prefix: kyuubi.metadata.store.jdbc.datasource." +
         " For example, kyuubi.metadata.store.jdbc.datasource.connectionTimeout=10000.")
       .version("1.6.0")
+      .serverOnly
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .createWithDefault("DERBY")
@@ -53,6 +54,7 @@ object JDBCMetadataStoreConf {
     buildConf("kyuubi.metadata.store.jdbc.database.schema.init")
       .doc("Whether to init the jdbc metadata store database schema.")
       .version("1.6.0")
+      .serverOnly
       .booleanConf
       .createWithDefault(true)
 
@@ -60,6 +62,7 @@ object JDBCMetadataStoreConf {
     buildConf("kyuubi.metadata.store.jdbc.driver")
       .doc("JDBC driver class name for server jdbc metadata store.")
       .version("1.6.0")
+      .serverOnly
       .stringConf
       .createOptional
 
@@ -69,6 +72,7 @@ object JDBCMetadataStoreConf {
         " database url, and the state information is not shared across kyuubi instances. To" +
         " enable multiple kyuubi instances high available, please specify a production jdbc url.")
       .version("1.6.0")
+      .serverOnly
       .stringConf
       .createWithDefault("jdbc:derby:memory:kyuubi_state_store_db;create=true")
 
@@ -76,6 +80,7 @@ object JDBCMetadataStoreConf {
     buildConf("kyuubi.metadata.store.jdbc.user")
       .doc("The username for server jdbc metadata store.")
       .version("1.6.0")
+      .serverOnly
       .stringConf
       .createWithDefault("")
 
@@ -83,6 +88,7 @@ object JDBCMetadataStoreConf {
     buildConf("kyuubi.metadata.store.jdbc.password")
       .doc("The password for server jdbc metadata store.")
       .version("1.6.0")
+      .serverOnly
       .stringConf
       .createWithDefault("")
 }

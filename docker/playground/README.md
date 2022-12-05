@@ -6,28 +6,28 @@ Playground
 ### Setup
 
 1. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/);
-2. Go to `docker/playground`, and use `docker compose up` to start compose services in the foreground, or use `docker compose up -d` to run compose services as daemon;
+2. Go to `docker/playground`, and use `docker compose up -d` to run compose services as daemon;
 
 ### Play
 
 1. Connect using `beeline`
 
-`docker exec -it kyuubi /opt/kyuubi/bin/beeline -u 'jdbc:hive2://0.0.0.0:10009/'`;
+`docker exec -it kyuubi /opt/kyuubi/bin/beeline -u 'jdbc:hive2://0.0.0.0:10009/tpcds/tiny'`;
 
 2. Connect using DBeaver
 
 Add a Kyuubi datasource with
 
-- connection url `jdbc:hive2://0.0.0.0:10009/`
+- connection url `jdbc:hive2://0.0.0.0:10009/tpcds/tiny`
 - username: `anonymous`
 - password: `<empty>`
 
-3. Using built-in dataset
+3. Use built-in dataset
 
-Kyuubi supply some built-in dataset, After the Kyuubi starts, you can run the following command to load the different datasets:
+Kyuubi supply some built-in dataset, after Kyuubi started, you can run the following command to load the different datasets:
 
-- For loading TPC-DS tiny dataset to spark_catalog.tpcds_tiny, run `docker exec -it kyuubi /opt/kyuubi/bin/beeline -u 'jdbc:hive2://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpcds-tiny.sql`
-- For loading TPC-H tiny dataset to spark_catalog.tpch_tiny, run `docker exec -it kyuubi /opt/kyuubi/bin/beeline -u 'jdbc:hive2://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpch-tiny.sql`
+- For loading TPC-DS tiny dataset to `spark_catalog.tpcds_tiny`, run `docker exec -it kyuubi /opt/kyuubi/bin/beeline -u 'jdbc:hive2://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpcds-tiny.sql`
+- For loading TPC-H  tiny dataset to `spark_catalog.tpch_tiny`,  run `docker exec -it kyuubi /opt/kyuubi/bin/beeline -u 'jdbc:hive2://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpch-tiny.sql`
 
 ### Access Service
 
@@ -37,8 +37,7 @@ Kyuubi supply some built-in dataset, After the Kyuubi starts, you can run the fo
 
 ### Shutdown
 
-1. Stop compose services by pressing `CTRL+C` if they are running on the foreground, or by `docker compose down` if they are running as daemon;
-2. Remove the stopped containers `docker compose rm`;
+1. Stop compose services by `docker compose down`;
 
 ## For Maintainers
 

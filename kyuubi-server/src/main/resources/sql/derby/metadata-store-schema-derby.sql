@@ -1,3 +1,5 @@
+-- Derby does not support `CREATE TABLE IF NOT EXISTS`
+
 -- the metadata table ddl
 
 CREATE TABLE metadata(

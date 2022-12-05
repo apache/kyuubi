@@ -23,7 +23,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
 import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -92,19 +93,42 @@ class ExecuteStatement(
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       operationListener.foreach(spark.sparkContext.addSparkListener(_))
       result = spark.sql(statement)
+
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
-          new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
+          if (arrowEnabled) {
+            new IterableFetchIterator[Array[Byte]](new Iterable[Array[Byte]] {
+              override def iterator: Iterator[Array[Byte]] = SparkDatasetHelper.toArrowBatchRdd(
+                convertComplexType(result)).toLocalIterator
+            })
+          } else {
+            new IterableFetchIterator[Row](new Iterable[Row] {
+              override def iterator: Iterator[Row] = result.toLocalIterator().asScala
+            })
+          }
         } else {
           val resultMaxRows = spark.conf.getOption(OPERATION_RESULT_MAX_ROWS.key).map(_.toInt)
             .getOrElse(session.sessionManager.getConf.get(OPERATION_RESULT_MAX_ROWS))
           if (resultMaxRows <= 0) {
             info("Execute in full collect mode")
-            new ArrayFetchIterator(result.collect())
+            if (arrowEnabled) {
+              new ArrayFetchIterator(
+                SparkDatasetHelper.toArrowBatchRdd(
+                  convertComplexType(result)).collect())
+            } else {
+              new ArrayFetchIterator(result.collect())
+            }
           } else {
             info(s"Execute with max result rows[$resultMaxRows]")
-            new ArrayFetchIterator(result.take(resultMaxRows))
+            if (arrowEnabled) {
+              // this will introduce shuffle and hurt performance
+              new ArrayFetchIterator(
+                SparkDatasetHelper.toArrowBatchRdd(
+                  convertComplexType(result.limit(resultMaxRows))).collect())
+            } else {
+              new ArrayFetchIterator(result.take(resultMaxRows))
+            }
           }
         }
       setCompiledStateIfNeeded()
@@ -188,6 +212,17 @@ class ExecuteStatement(
       }
       EventBus.post(
         SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+    }
+  }
+
+  // TODO:(fchen) make this configurable
+  val kyuubiBeelineConvertToString = true
+
+  def convertComplexType(df: DataFrame): DataFrame = {
+    if (kyuubiBeelineConvertToString) {
+      SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df)
+    } else {
+      df
     }
   }
 }

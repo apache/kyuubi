@@ -250,7 +250,6 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     } catch (SQLException eS) {
       throw eS; // rethrow the SQLException as is
     } catch (Exception ex) {
-      ex.printStackTrace();
       throw new KyuubiSQLException("Could not create ResultSet: " + ex.getMessage(), ex);
     }
   }
@@ -352,7 +351,6 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     } catch (SQLException eS) {
       throw eS;
     } catch (Exception ex) {
-      ex.printStackTrace();
       throw new KyuubiSQLException("Error retrieving next row", ex);
     }
     // NOTE: fetchOne doesn't throw new SQLFeatureNotSupportedException("Method not supported").

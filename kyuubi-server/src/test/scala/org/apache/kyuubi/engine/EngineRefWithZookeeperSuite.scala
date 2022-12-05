@@ -74,7 +74,7 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
       executor.execute(() => {
         DiscoveryClientProvider.withDiscoveryClient(conf1) { client =>
           try {
-            new EngineRef(conf1, user, UUID.randomUUID().toString, null)
+            new EngineRef(conf1, user, "grp", UUID.randomUUID().toString, null)
               .getOrCreate(client)
           } finally {
             times(0) = System.currentTimeMillis()
@@ -84,7 +84,7 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
       executor.execute(() => {
         DiscoveryClientProvider.withDiscoveryClient(conf2) { client =>
           try {
-            new EngineRef(conf2, user, UUID.randomUUID().toString, null)
+            new EngineRef(conf2, user, "grp", UUID.randomUUID().toString, null)
               .getOrCreate(client)
           } finally {
             times(1) = System.currentTimeMillis()

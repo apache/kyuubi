@@ -130,7 +130,8 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
 
       conf.set(HA_ZK_AUTH_KEYTAB.key, s"${keytab.getName}")
       val e = intercept[IOException](ZookeeperClientProvider.setUpZooKeeperAuth(conf))
-      assert(e.getMessage === s"${HA_ZK_AUTH_KEYTAB.key} does not exists")
+      assert(e.getMessage ===
+        s"${HA_ZK_AUTH_KEYTAB.key}: ${ZookeeperClientProvider.getKeyTabFile(conf)} does not exists")
     }
   }
 
