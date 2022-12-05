@@ -62,15 +62,24 @@ class ExecutePython(
     }
   }
 
+  override protected def beforeRun(): Unit = {
+    OperationLog.setCurrentOperationLog(operationLog)
+    super.beforeRun()
+  }
+
   override protected def runInternal(): Unit = withLocalProperties {
-    val response = worker.runCode(statement)
-    val output = response.map(_.content.getOutput()).getOrElse("")
-    val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
-    val ename = response.map(_.content.getEname()).getOrElse("")
-    val evalue = response.map(_.content.getEvalue()).getOrElse("")
-    val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
-    iter =
-      new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
+    try {
+      val response = worker.runCode(statement)
+      val output = response.map(_.content.getOutput()).getOrElse("")
+      val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
+      val ename = response.map(_.content.getEname()).getOrElse("")
+      val evalue = response.map(_.content.getEvalue()).getOrElse("")
+      val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
+      iter =
+        new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
+    } catch {
+      onError(cancel = true)
+    }
   }
 
   override def setSparkLocalProperty: (String, String) => Unit =
