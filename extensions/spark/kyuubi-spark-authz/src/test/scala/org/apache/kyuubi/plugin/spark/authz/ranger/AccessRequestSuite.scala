@@ -45,6 +45,6 @@ class AccessRequestSuite extends AnyFunSuite {
     val are = AccessResource(ObjectType.TABLE, "default", "src_group_row_filter", null)
     val art3 = AccessRequest(are, ugi2, OperationType.QUERY, AccessType.SELECT)
     val maybeString = getFilterExpr(art3)
-    assert(maybeString.get === "key<120")
+    assert(maybeString.get === "city == 'guangzhou'")
   }
 }

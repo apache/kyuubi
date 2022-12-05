@@ -1050,7 +1050,7 @@
       "rowFilterPolicyItems": [
         {
           "rowFilterInfo": {
-            "filterExpr": "key<120"
+            "filterExpr": "city == '${{USER.city}}'"
           },
           "accesses": [
             {
