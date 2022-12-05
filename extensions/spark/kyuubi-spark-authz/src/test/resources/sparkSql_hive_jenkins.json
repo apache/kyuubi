@@ -1036,7 +1036,7 @@
         },
         "table": {
           "values": [
-            "src_attr"
+            "src_group_row_filter"
           ],
           "isExcludes": false,
           "isRecursive": false
@@ -1050,7 +1050,7 @@
       "rowFilterPolicyItems": [
         {
           "rowFilterInfo": {
-            "filterExpr": "siteCode == '${{USER.state}}'"
+            "filterExpr": "key<120"
           },
           "accesses": [
             {
@@ -1058,10 +1058,8 @@
               "isAllowed": true
             }
           ],
-          "users": [
-            "bob"
-          ],
-          "groups": [],
+          "users": [],
+          "groups": ["group_b"],
           "conditions": [],
           "delegateAdmin": false
         }
