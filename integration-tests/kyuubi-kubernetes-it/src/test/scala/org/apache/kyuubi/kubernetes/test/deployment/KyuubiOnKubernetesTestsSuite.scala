@@ -53,7 +53,7 @@ class KyuubiOnKubernetesWithSparkTestsBase extends WithKyuubiServerOnKubernetes 
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++
       Map(
-        "spark.master" -> s"k8s://$getMiniKubeApiMaster",
+        "spark.master" -> s"k8s://$miniKubeApiMaster",
         "spark.kubernetes.container.image" -> "apache/spark:3.3.1",
         "spark.executor.memory" -> "512M",
         "spark.driver.memory" -> "1024M",
@@ -78,7 +78,7 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map(
       "spark.submit.deployMode" -> "client",
-      "spark.driver.host" -> getKyuubiServerIp,
+      "spark.driver.host" -> kyuubiServerIp,
       "kyuubi.frontend.connection.url.use.hostname" -> "false")
   }
 
@@ -137,10 +137,10 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
           s"hdfs://$localhostAddress:$getDFSPort/spark/driver.yml",
         "spark.hadoop.dfs.client.use.datanode.hostname" -> "true",
         "spark.kubernetes.authenticate.driver.serviceAccountName" -> "kyuubi",
-        "spark.kyuubi.frontend.thrift.binary.bind.host" -> getMiniKubeIp,
-        "spark.kyuubi.ha.addresses" -> s"$getKyuubiServerIp:2181",
-        ZK_CLIENT_PORT_ADDRESS.key -> getKyuubiServerIp,
-        FRONTEND_THRIFT_BINARY_BIND_HOST.key -> getKyuubiServerIp)
+        "spark.kyuubi.frontend.thrift.binary.bind.host" -> miniKubeIp,
+        "spark.kyuubi.ha.addresses" -> s"$kyuubiServerIp:2181",
+        ZK_CLIENT_PORT_ADDRESS.key -> kyuubiServerIp,
+        FRONTEND_THRIFT_BINARY_BIND_HOST.key -> kyuubiServerIp)
   }
 
   override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
