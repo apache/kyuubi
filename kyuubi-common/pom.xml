@@ -187,17 +187,31 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <target>
-                                <exec executable="bash">
-                                    <arg value="${project.basedir}/../build/kyuubi-build-info"/>
-                                    <arg value="${project.build.directory}/extra-resources"/>
-                                    <arg value="${project.version}"/>
-                                    <arg value="${java.version}"/>
-                                    <arg value="${scala.binary.version}"/>
-                                    <arg value="${spark.version}"/>
-                                    <arg value="${hive.version}"/>
-                                    <arg value="${hadoop.version}"/>
-                                    <arg value="${flink.version}"/>
-                                    <arg value="${trino.client.version}"/>
+                                <exec executable="bash" osfamily="unix">
+                                    <arg value="${project.basedir}/../build/kyuubi-build-info"></arg>
+                                    <arg value="${project.build.directory}/extra-resources"></arg>
+                                    <arg value="${project.version}"></arg>
+                                    <arg value="${java.version}"></arg>
+                                    <arg value="${scala.binary.version}"></arg>
+                                    <arg value="${spark.version}"></arg>
+                                    <arg value="${hive.version}"></arg>
+                                    <arg value="${hadoop.version}"></arg>
+                                    <arg value="${flink.version}"></arg>
+                                    <arg value="${trino.client.version}"></arg>
+                                </exec>
+
+                                <exec executable="cmd.exe" osfamily="windows">
+                                    <arg value="/c"></arg>
+                                    <arg value="${project.basedir}/../build/kyuubi-build-info.cmd"></arg>
+                                    <arg value="${project.build.directory}/extra-resources"></arg>
+                                    <arg value="${project.version}"></arg>
+                                    <arg value="${java.version}"></arg>
+                                    <arg value="${scala.binary.version}"></arg>
+                                    <arg value="${spark.version}"></arg>
+                                    <arg value="${hive.version}"></arg>
+                                    <arg value="${hadoop.version}"></arg>
+                                    <arg value="${flink.version}"></arg>
+                                    <arg value="${trino.client.version}"></arg>
                                 </exec>
                             </target>
                         </configuration>
