@@ -49,7 +49,7 @@ package object serde {
     TABLE_COMMAND_SPECS.get(classname)
       .orElse(DB_COMMAND_SPECS.get(classname))
       .orElse(FUNCTION_COMMAND_SPECS.get(classname))
-      .map(s => OperationType.withName(s.operationType))
+      .map(s => s.operationType)
       .getOrElse(QUERY)
   }
 }

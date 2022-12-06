@@ -17,7 +17,11 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType
+import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
+
 trait CommandSpec {
   def classname: String
-  def operationType: String
+  def opType: String
+  final def operationType: OperationType = OperationType.withName(opType)
 }

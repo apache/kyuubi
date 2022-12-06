@@ -23,7 +23,7 @@ import java.nio.file.{Files, Paths}
 case class DatabaseCommandSpec(
     classname: String,
     databaseDescs: Seq[DatabaseDesc],
-    operationType: String = "QUERY") extends CommandSpec
+    opType: String = "QUERY") extends CommandSpec
 
 object DatabaseCommandSpec {
 
@@ -121,13 +121,13 @@ object DatabaseCommandSpec {
       AlterDatabaseProperties,
       AlterDatabaseProperties.copy(
         classname = "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
-        operationType = "ALTERDATABASE_LOCATION"),
+        opType = "ALTERDATABASE_LOCATION"),
       AlterDatabaseProperties.copy(
         classname = "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
-        operationType = "CREATEDATABASE"),
+        opType = "CREATEDATABASE"),
       AlterDatabaseProperties.copy(
         classname = "org.apache.spark.sql.execution.command.DropDatabaseCommand",
-        operationType = "DROPDATABASE"),
+        opType = "DROPDATABASE"),
       AnalyzeTables,
       CreateNamespace,
       CommentOnNamespace,

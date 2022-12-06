@@ -23,7 +23,7 @@ import java.nio.file.{Files, Paths}
 case class FunctionCommandSpec(
     classname: String,
     functionDescs: Seq[FunctionDesc],
-    operationType: String) extends CommandSpec
+    opType: String) extends CommandSpec
 
 object FunctionCommandSpec {
   def main(args: Array[String]): Unit = {
@@ -64,7 +64,7 @@ object FunctionCommandSpec {
 
     val DropFunction = {
       val cmd = "org.apache.spark.sql.execution.command.DropFunctionCommand"
-      CreateFunction.copy(cmd, operationType = "DROPFUNCTION")
+      CreateFunction.copy(cmd, opType = "DROPFUNCTION")
     }
 
     val RefreshFunction = {

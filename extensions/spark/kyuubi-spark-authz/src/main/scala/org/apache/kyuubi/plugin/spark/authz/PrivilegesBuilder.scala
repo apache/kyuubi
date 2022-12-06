@@ -51,10 +51,10 @@ object PrivilegesBuilder {
   }
 
   private def v2TablePrivileges(
-    table: Identifier,
-    columns: Seq[String] = Nil,
-    owner: Option[String] = None,
-    actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
+      table: Identifier,
+      columns: Seq[String] = Nil,
+      owner: Option[String] = None,
+      actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
     PrivilegeObject(
       TABLE_OR_VIEW,
       actionType,
@@ -210,25 +210,14 @@ object PrivilegesBuilder {
               Nil
             } else {
               val actionType = tableDesc.actionTypeDesc.map(_.getValue(plan)).getOrElse(OTHER)
-              tableDesc.columnDesc match {
-                case Some(columnDesc) =>
-                  columnDesc.getValue(plan)
-                  // get column names
-                  val columnNames = columnDesc.getValue(plan)
-                  Seq(tablePrivileges(
-                    identifier,
-                    columnNames,
-                    owner = table.owner,
-                    actionType = actionType))
-                case None =>
-                  Seq(tablePrivileges(identifier, owner = table.owner, actionType = actionType))
-              }
+              val columnNames = tableDesc.columnDesc.map(_.getValue(plan)).getOrElse(Nil)
+              Seq(tablePrivileges(identifier, columnNames, table.owner, actionType))
             }
           case None => Nil
         }
-
       } catch {
-        case e: Throwable => // TODO: add log
+        case e: Exception =>
+          LOG.warn(tableDesc.error(plan, e))
           Nil
       }
     }
@@ -249,7 +238,7 @@ object PrivilegesBuilder {
               LOG.warn(databaseDesc.error(plan, e))
           }
         }
-        OperationType.withName(desc.operationType)
+        desc.operationType
 
       case classname if TABLE_COMMAND_SPECS.contains(classname) =>
         val spec = TABLE_COMMAND_SPECS(classname)
@@ -264,17 +253,13 @@ object PrivilegesBuilder {
           try {
             buildQuery(qd.getValue(plan), inputObjs)
           } catch {
-            case e: Exception => // todo: log and handle special errs
+            case e: Exception =>
+              LOG.warn(qd.error(plan, e))
           }
         }
-        OperationType.withName(spec.operationType)
+        spec.operationType
 
       case classname if FUNCTION_COMMAND_SPECS.contains(classname) =>
-        def isPersistentFunction(function: Function): Boolean = {
-          val id = FunctionIdentifier(function.functionName, function.database)
-          spark.sessionState.catalog.isPersistentFunction(id)
-        }
-
         val spec = FUNCTION_COMMAND_SPECS(classname)
         spec.functionDescs.foreach { fd =>
           try {
@@ -287,10 +272,11 @@ object PrivilegesBuilder {
               }
             }
           } catch {
-            case e: Exception => // todo: log and handle special errs
+            case e: Exception =>
+              LOG.warn(fd.error(plan, e))
           }
         }
-        OperationType.withName(spec.operationType)
+        OperationType.withName(spec.opType)
 
       case _ => OperationType.QUERY
     }

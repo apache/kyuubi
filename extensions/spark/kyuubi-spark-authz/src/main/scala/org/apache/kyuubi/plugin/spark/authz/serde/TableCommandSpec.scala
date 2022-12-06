@@ -23,7 +23,7 @@ import java.nio.file.{Files, Paths}
 case class TableCommandSpec(
     classname: String,
     tableDescs: Seq[TableDesc],
-    operationType: String = "QUERY",
+    opType: String = "QUERY",
     queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec
 
 object TableCommandSpec {
@@ -341,7 +341,7 @@ object TableCommandSpec {
       val cmd = "org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand"
       CreateDataSourceTable.copy(
         classname = cmd,
-        operationType = "CREATETABLE_AS_SELECT",
+        opType = "CREATETABLE_AS_SELECT",
         queryDescs = Seq(QueryDesc("query")))
     }
 
