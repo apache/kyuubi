@@ -244,23 +244,6 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
       // TODO need session handle
       TGetResultSetMetadataResp metadataResp;
       metadataResp = client.GetResultSetMetadata(metadataReq);
-      metadataResp
-          .getStatus()
-          .getInfoMessages()
-          .forEach(
-              line -> {
-                String[] keyValue = line.split("=");
-                String key = keyValue[0];
-                String value = keyValue[1];
-                System.out.println("key = " + key + ", value = " + value);
-                if (key.equals("__kyuubi_operation_result_codec__")) {
-                  try {
-                    ((KyuubiConnection) statement.getConnection()).setOperationResultCodec(value);
-                  } catch (SQLException e) {
-                    e.printStackTrace();
-                  }
-                }
-              });
       Utils.verifySuccess(metadataResp.getStatus());
 
       StringBuilder namesSb = new StringBuilder();
