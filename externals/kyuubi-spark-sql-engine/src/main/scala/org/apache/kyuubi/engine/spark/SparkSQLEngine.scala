@@ -353,7 +353,7 @@ object SparkSQLEngine extends Logging {
     val resolvedUserName = userName.replaceAll(pattern, "-")
     val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
     if (podNamePrefixWithUser.length >= 237) {
-      s"kyuubi-${UUID.randomUUID().toString}"
+      s"kyuubi-${UUID.randomUUID()}"
     } else {
       podNamePrefixWithUser
     }
