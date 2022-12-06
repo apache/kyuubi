@@ -43,9 +43,9 @@ trait CommandSpec {
  * @param opType operation type, e.g. CREATEDATABASE
  */
 case class DatabaseCommandSpec(
-  classname: String,
-  databaseDescs: Seq[DatabaseDesc],
-  opType: String = "QUERY") extends CommandSpec
+    classname: String,
+    databaseDescs: Seq[DatabaseDesc],
+    opType: String = "QUERY") extends CommandSpec
 
 /**
  * A specification describe a function command
@@ -55,9 +55,9 @@ case class DatabaseCommandSpec(
  * @param opType operation type, e.g. DROPFUNCTION
  */
 case class FunctionCommandSpec(
-  classname: String,
-  functionDescs: Seq[FunctionDesc],
-  opType: String) extends CommandSpec
+    classname: String,
+    functionDescs: Seq[FunctionDesc],
+    opType: String) extends CommandSpec
 
 /**
  * A specification describe a table command
@@ -68,7 +68,7 @@ case class FunctionCommandSpec(
  * @param queryDescs the query descriptors a table command may have
  */
 case class TableCommandSpec(
-  classname: String,
-  tableDescs: Seq[TableDesc],
-  opType: String = "QUERY",
-  queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec
+    classname: String,
+    tableDescs: Seq[TableDesc],
+    opType: String = "QUERY",
+    queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec

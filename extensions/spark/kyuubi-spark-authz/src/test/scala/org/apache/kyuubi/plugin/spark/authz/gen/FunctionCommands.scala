@@ -28,7 +28,8 @@ object FunctionCommands {
       classOf[TempMarkerFunctionTypeExtractor].getSimpleName,
       Seq("TEMP"))
     val databaseDesc = DatabaseDesc(
-      "databaseName", classOf[StringOptionDatabaseExtractor].getSimpleName)
+      "databaseName",
+      classOf[StringOptionDatabaseExtractor].getSimpleName)
     val functionDesc = FunctionDesc(
       "functionName",
       "StringFunctionExtractor",
