@@ -355,17 +355,28 @@ jobs:
         run: |
           kubectl get serviceaccount
           kubectl create serviceaccount kyuubi
+          kubectl create clusterrolebinding kyuubi-role --clusterrole=edit --serviceaccount=default:kyuubi
           kubectl get serviceaccount
       - name: start kyuubi
         run: kubectl apply -f integration-tests/kyuubi-kubernetes-it/src/test/resources/kyuubi-server.yaml
       - name: kyuubi pod check
-        run: kubectl get pods
+        run: |
+          kubectl get pods
+          kubectl describe pods kyuubi-test
       - name: integration tests
         run: >-
           ./build/mvn ${MVN_OPT} clean install
           -pl integration-tests/kyuubi-kubernetes-it -am
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.deployment,org.apache.kyuubi.kubernetes.test.KubernetesUtilsTest
+      - name: Cat kyuubi server log
+        if: failure()
+        run: kubectl logs kyuubi-test
+      - name: Cat spark driver log
+        if: failure()
+        run: |
+          kubectl get pods
+          kubectl get pods | grep driver | awk -F " " '{print$1}' | xargs -I {} kubectl logs {}
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
