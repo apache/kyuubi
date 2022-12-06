@@ -188,6 +188,7 @@ object ExecutePython extends Logging {
       .split(File.pathSeparator)
       .++(ExecutePython.kyuubiPythonPath.toString)
     env.put("PYTHONPATH", pythonPath.mkString(File.pathSeparator))
+    // try to find py4j lib from `PYTHONPATH` and set env `PY4J_PATH` into process if found
     pythonPath.mkString(File.pathSeparator)
       .split(File.pathSeparator)
       .find(PY4J_REGEX.findFirstMatchIn(_).nonEmpty)

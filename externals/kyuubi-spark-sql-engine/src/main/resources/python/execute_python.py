@@ -33,6 +33,7 @@ os.environ["PYSPARK_PYTHON"] = os.environ.get("PYSPARK_PYTHON", sys.executable)
 # add pyspark to sys.path
 
 if "pyspark" not in sys.modules:
+    # try to get PY4J_PATH and use it directly if not none
     py4j_path = os.environ.get("PY4J_PATH")
     if py4j_path is not None:
         sys.path[:0] = sys_path = [py4j_path]
