@@ -31,9 +31,10 @@ object FunctionCommandSpec {
       val cmd = "org.apache.spark.sql.execution.command.CreateFunctionCommand"
       val functionTypeDesc = FunctionTypeDesc(
         "isTemp",
-        "TempMarkerFunctionTypeExtractor",
+        classOf[TempMarkerFunctionTypeExtractor].getSimpleName,
         Seq("TEMP"))
-      val databaseDesc = DatabaseDesc("databaseName", "StringOptionDatabaseExtractor")
+      val databaseDesc = DatabaseDesc(
+        "databaseName", classOf[StringOptionDatabaseExtractor].getSimpleName)
       val functionDesc = FunctionDesc(
         "functionName",
         "StringFunctionExtractor",

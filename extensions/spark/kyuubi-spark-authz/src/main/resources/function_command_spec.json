@@ -15,7 +15,7 @@
     },
     "isInput" : false
   } ],
-  "operationType" : "CREATEFUNCTION"
+  "opType" : "CREATEFUNCTION"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropFunctionCommand",
   "functionDescs" : [ {
@@ -33,7 +33,7 @@
     },
     "isInput" : false
   } ],
-  "operationType" : "DROPFUNCTION"
+  "opType" : "DROPFUNCTION"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeFunctionCommand",
   "functionDescs" : [ {
@@ -57,7 +57,7 @@
     },
     "isInput" : true
   } ],
-  "operationType" : "DESCFUNCTION"
+  "opType" : "DESCFUNCTION"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.RefreshFunctionCommand",
   "functionDescs" : [ {
@@ -71,5 +71,5 @@
     "functionTypeDesc" : null,
     "isInput" : false
   } ],
-  "operationType" : "RELOADFUNCTION"
+  "opType" : "RELOADFUNCTION"
 } ]

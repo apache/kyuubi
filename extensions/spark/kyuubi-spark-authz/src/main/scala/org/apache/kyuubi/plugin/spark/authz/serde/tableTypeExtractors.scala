@@ -59,7 +59,9 @@ class ViewTypeTableTypeExtractor extends TableTypeExtractor {
 class TableIdentifierTableTypeExtractor extends TableTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): TableType = {
     val catalog = spark.sessionState.catalog
-    if (catalog.isTempView(v1.asInstanceOf[TableIdentifier])) {
+    val identifier = v1.asInstanceOf[TableIdentifier]
+    val nameParts: Seq[String] = identifier.database.toSeq :+ identifier.table
+    if (catalog.isTempView(nameParts)) {
       TableType.TEMP_VIEW
     } else {
       TableType.PERMANENT_VIEW

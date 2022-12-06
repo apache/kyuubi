@@ -5,7 +5,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "ALTERDATABASE"
+  "opType" : "ALTERDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
   "databaseDescs" : [ {
@@ -13,7 +13,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "ALTERDATABASE_LOCATION"
+  "opType" : "ALTERDATABASE_LOCATION"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
   "databaseDescs" : [ {
@@ -21,7 +21,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "CREATEDATABASE"
+  "opType" : "CREATEDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropDatabaseCommand",
   "databaseDescs" : [ {
@@ -29,7 +29,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "DROPDATABASE"
+  "opType" : "DROPDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
   "databaseDescs" : [ {
@@ -37,7 +37,7 @@
     "fieldExtractor" : "StringOptionDatabaseExtractor",
     "isInput" : true
   } ],
-  "operationType" : "ANALYZE_TABLE"
+  "opType" : "ANALYZE_TABLE"
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
   "databaseDescs" : [ {
@@ -49,7 +49,7 @@
     "fieldExtractor" : "StringSeqDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "CREATEDATABASE"
+  "opType" : "CREATEDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommentOnNamespace",
   "databaseDescs" : [ {
@@ -57,7 +57,7 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "ALTERDATABASE"
+  "opType" : "ALTERDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeDatabaseCommand",
   "databaseDescs" : [ {
@@ -65,7 +65,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "isInput" : true
   } ],
-  "operationType" : "DESCDATABASE"
+  "opType" : "DESCDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace",
   "databaseDescs" : [ {
@@ -73,7 +73,7 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "isInput" : true
   } ],
-  "operationType" : "DESCDATABASE"
+  "opType" : "DESCDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropNamespace",
   "databaseDescs" : [ {
@@ -81,7 +81,7 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "DROPDATABASE"
+  "opType" : "DROPDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace",
   "databaseDescs" : [ {
@@ -93,7 +93,7 @@
     "fieldExtractor" : "StringSeqOptionDatabaseExtractor",
     "isInput" : true
   } ],
-  "operationType" : "SWITCHDATABASE"
+  "opType" : "SWITCHDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetDatabaseCommand",
   "databaseDescs" : [ {
@@ -101,7 +101,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "isInput" : true
   } ],
-  "operationType" : "SWITCHDATABASE"
+  "opType" : "SWITCHDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetNamespaceCommand",
   "databaseDescs" : [ {
@@ -109,7 +109,7 @@
     "fieldExtractor" : "StringSeqDatabaseExtractor",
     "isInput" : true
   } ],
-  "operationType" : "SWITCHDATABASE"
+  "opType" : "SWITCHDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
   "databaseDescs" : [ {
@@ -117,7 +117,7 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "ALTERDATABASE"
+  "opType" : "ALTERDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
   "databaseDescs" : [ {
@@ -125,5 +125,5 @@
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "ALTERDATABASE_LOCATION"
+  "opType" : "ALTERDATABASE_LOCATION"
 } ]

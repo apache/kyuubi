@@ -29,13 +29,19 @@ case class TableCommandSpec(
 object TableCommandSpec {
   def main(args: Array[String]): Unit = {
     // table extractors
-    val tite = "TableIdentifierTableExtractor"
+    val tite = classOf[TableIdentifierTableExtractor].getSimpleName
     val tableNameDesc = TableDesc("tableName", tite)
     val tableIdentDesc = TableDesc("tableIdent", tite)
     val resolvedTableDesc = TableDesc("child", "ResolvedTableTableExtractor")
 
     val overwriteActionTypeDesc =
       ActionTypeDesc("overwrite", "OverwriteOrInsertActionTypeExtractor")
+
+    val AlterTable = {
+      val cmd = "org.apache.spark.sql.catalyst.plans.logical.AlterTable"
+      val tableDesc = TableDesc("ident", classOf[IdentifierTableExtractor].getSimpleName)
+      TableCommandSpec(cmd, Seq(tableDesc), "ALTERTABLE_PROPERTIES")
+    }
 
     val AlterTableAddColumns = {
       val cmd = "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand"
@@ -528,6 +534,7 @@ object TableCommandSpec {
       DropColumns,
       ReplaceColumns,
       RenameColumn,
+      AlterTable,
       AlterTableAddColumns,
       AlterTableAddPartition,
       AlterTableChangeColumn,
