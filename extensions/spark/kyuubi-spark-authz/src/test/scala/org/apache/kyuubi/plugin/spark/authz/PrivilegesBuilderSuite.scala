@@ -440,7 +440,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   test("RefreshTableCommand / RefreshTable") {
     val plan = sql(s"REFRESH TABLE $reusedTable").queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-    assert(operationType === ANALYZE_TABLE)
+    assert(operationType === QUERY)
     assert(in.size === 1)
     val po0 = in.head
     assert(po0.actionType === PrivilegeObjectActionType.OTHER)

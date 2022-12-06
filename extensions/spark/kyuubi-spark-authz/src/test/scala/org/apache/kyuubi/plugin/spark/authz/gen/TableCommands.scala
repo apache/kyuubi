@@ -505,8 +505,18 @@ object TableCommands {
   }
 
   val RefreshTable = {
+    val cmd = "org.apache.spark.sql.execution.command.RefreshTableCommand"
+    TableCommandSpec(cmd, Seq(tableIdentDesc.copy(isInput = true)))
+  }
+
+  val RefreshTableV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.RefreshTable"
-    TableCommandSpec(cmd, Seq(resolvedTableDesc), "ANALYZE_TABLE")
+    TableCommandSpec(cmd, Seq(resolvedTableDesc.copy(isInput = true)))
+  }
+
+  val RefreshTable3d0 = {
+    val cmd = "org.apache.spark.sql.execution.datasources.RefreshTable"
+    TableCommandSpec(cmd, Seq(tableIdentDesc.copy(isInput = true)))
   }
 
   val data = Array(
@@ -537,8 +547,6 @@ object TableCommands {
     AnalyzeColumn,
     AnalyzePartition,
     AnalyzeTable,
-    AnalyzeTable.copy(classname =
-      "org.apache.spark.sql.execution.command.RefreshTableCommand"),
     AnalyzeTable.copy(classname =
       "org.apache.spark.sql.execution.command.AnalyzeTablesCommand"),
     AppendDataV2,
@@ -588,6 +596,8 @@ object TableCommands {
     OverwritePartitionsDynamic,
     RepairTable,
     RefreshTable,
+    RefreshTableV2,
+    RefreshTable3d0,
     ShowColumns,
     ShowCreateTable,
     ShowCreateTable.copy(classname =

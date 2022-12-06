@@ -402,19 +402,6 @@
   "opType" : "ANALYZE_TABLE",
   "queryDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.execution.command.RefreshTableCommand",
-  "tableDescs" : [ {
-    "fieldName" : "tableIdent",
-    "fieldExtractor" : "TableIdentifierTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "isInput" : true,
-    "setCurrentDatabaseIfMissing" : false
-  } ],
-  "opType" : "ANALYZE_TABLE",
-  "queryDescs" : [ ]
-}, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
   "tableDescs" : [ {
     "fieldName" : "tableIdent",
@@ -983,6 +970,19 @@
   "opType" : "MSCK",
   "queryDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.execution.command.RefreshTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RefreshTable",
   "tableDescs" : [ {
     "fieldName" : "child",
@@ -990,10 +990,23 @@
     "columnDesc" : null,
     "actionTypeDesc" : null,
     "tableTypeDesc" : null,
-    "isInput" : false,
+    "isInput" : true,
     "setCurrentDatabaseIfMissing" : false
   } ],
-  "opType" : "ANALYZE_TABLE",
+  "opType" : "QUERY",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.RefreshTable",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
   "queryDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowColumnsCommand",
