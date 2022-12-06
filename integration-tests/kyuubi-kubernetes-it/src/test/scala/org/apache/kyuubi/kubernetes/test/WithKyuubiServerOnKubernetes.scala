@@ -24,8 +24,8 @@ import org.apache.kyuubi.KyuubiFunSuite
 
 trait WithKyuubiServerOnKubernetes extends KyuubiFunSuite {
   protected def connectionConf: Map[String, String] = Map.empty
-  private val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
 
+  lazy val miniKubernetesClient: DefaultKubernetesClient = MiniKube.getKubernetesClient
   lazy val kyuubiPod: Pod = miniKubernetesClient.pods().withName("kyuubi-test").get()
   lazy val kyuubiServerIp: String = kyuubiPod.getStatus.getPodIP
   lazy val miniKubeIp: String = MiniKube.getIp

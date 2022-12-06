@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
+import java.util.UUID
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -192,6 +193,10 @@ object SparkSQLEngine extends Logging {
 
     if (Utils.isOnK8s) {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
+
+      _sparkConf.setIfMissing(
+        "spark.kubernetes.executor.podNamePrefix",
+        generateExecutorPodNamePrefixForK8s(user))
     }
 
     // Set web ui port 0 to avoid port conflicts during non-k8s cluster mode
@@ -341,5 +346,16 @@ object SparkSQLEngine extends Logging {
   private def isOnK8sClusterMode: Boolean = {
     // only spark driver pod will build with `SPARK_APPLICATION_ID` env.
     Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
+  }
+
+  private def generateExecutorPodNamePrefixForK8s(userName: String): String = {
+    val pattern = "[^a-z0-9]([^-a-z0-9]*[^a-z0-9])?"
+    val resolvedUserName = userName.replaceAll(pattern, "-")
+    val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
+    if (podNamePrefixWithUser.length >= 237) {
+      s"kyuubi-${UUID.randomUUID().toString}"
+    } else {
+      podNamePrefixWithUser
+    }
   }
 }
