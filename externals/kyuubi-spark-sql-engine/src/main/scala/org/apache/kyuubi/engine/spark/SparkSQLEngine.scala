@@ -18,13 +18,14 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
-import java.util.UUID
+import java.util.{Locale, UUID}
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
@@ -194,6 +195,9 @@ object SparkSQLEngine extends Logging {
     if (Utils.isOnK8s) {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
 
+      // https://github.com/apache/incubator-kyuubi/issues/3385
+      // Set unset executor pod prefix to prevent kubernetes pod length limit error
+      // due to the long app name
       _sparkConf.setIfMissing(
         "spark.kubernetes.executor.podNamePrefix",
         generateExecutorPodNamePrefixForK8s(user))
@@ -348,14 +352,22 @@ object SparkSQLEngine extends Logging {
     Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
   }
 
-  private def generateExecutorPodNamePrefixForK8s(userName: String): String = {
-    val pattern = "[^a-z0-9]([^-a-z0-9]*[^a-z0-9])?"
-    val resolvedUserName = userName.replaceAll(pattern, "-")
+  @VisibleForTesting
+  def generateExecutorPodNamePrefixForK8s(userName: String): String = {
+    val resolvedUserName =
+      userName.trim.toLowerCase(Locale.ROOT)
+        .replaceAll("[^a-z0-9\\-]", "-")
+        .replaceAll("-+", "-")
+        .replaceAll("^-", "")
     val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
-    if (podNamePrefixWithUser.length >= 237) {
+    if (podNamePrefixWithUser.length >= EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
       s"kyuubi-${UUID.randomUUID()}"
     } else {
       podNamePrefixWithUser
     }
   }
+
+  // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
+  // 253 - 10 - 6
+  private val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
 }
