@@ -311,7 +311,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         setData(path, String.valueOf(0).getBytes)
       }
       val s = new String(getData(path)).toInt
-      setData(path, String.valueOf(s + 1).getBytes)
+      setData(path, String.valueOf(s + delta).getBytes)
       s
     }
   }
