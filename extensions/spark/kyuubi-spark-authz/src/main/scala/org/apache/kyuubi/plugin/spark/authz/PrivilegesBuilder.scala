@@ -33,7 +33,6 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
-import org.apache.kyuubi.plugin.spark.authz.v2Commands.v2TablePrivileges
 
 object PrivilegesBuilder {
 
@@ -51,6 +50,19 @@ object PrivilegesBuilder {
     PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns, owner)
   }
 
+  private def v2TablePrivileges(
+    table: Identifier,
+    columns: Seq[String] = Nil,
+    owner: Option[String] = None,
+    actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
+    PrivilegeObject(
+      TABLE_OR_VIEW,
+      actionType,
+      quote(table.namespace()),
+      table.name(),
+      columns,
+      owner)
+  }
   private def functionPrivileges(
       function: Function): PrivilegeObject = {
     PrivilegeObject(
@@ -73,25 +85,6 @@ object PrivilegesBuilder {
     } else {
       tableIdent
     }
-  }
-
-  private def isTempView(
-      tableIdent: TableIdentifier,
-      spark: SparkSession): Boolean = {
-    val parts = tableIdent.database match {
-      case Some(db) =>
-        Seq(db, tableIdent.table)
-      case _ =>
-        Seq(tableIdent.table)
-    }
-    spark.sessionState.catalog.isTempView(parts)
-  }
-
-  private def isPersistentFunction(
-      function: Function,
-      spark: SparkSession): Boolean = {
-    val id = FunctionIdentifier(function.functionName, function.database)
-    spark.sessionState.catalog.isPersistentFunction(id)
   }
 
   /**

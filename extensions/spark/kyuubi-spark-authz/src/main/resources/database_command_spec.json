@@ -13,7 +13,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "ALTERDATABASE"
+  "operationType" : "ALTERDATABASE_LOCATION"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
   "databaseDescs" : [ {
@@ -21,7 +21,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "ALTERDATABASE"
+  "operationType" : "CREATEDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropDatabaseCommand",
   "databaseDescs" : [ {
@@ -29,7 +29,7 @@
     "fieldExtractor" : "StringDatabaseExtractor",
     "isInput" : false
   } ],
-  "operationType" : "ALTERDATABASE"
+  "operationType" : "DROPDATABASE"
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
   "databaseDescs" : [ {
@@ -43,6 +43,10 @@
   "databaseDescs" : [ {
     "fieldName" : "name",
     "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
+    "isInput" : false
+  }, {
+    "fieldName" : "namespace",
+    "fieldExtractor" : "StringSeqDatabaseExtractor",
     "isInput" : false
   } ],
   "operationType" : "CREATEDATABASE"

@@ -57,9 +57,11 @@ object DatabaseCommandSpec {
     }
 
     val CreateNamespace = {
+      val databaseDesc1 = DatabaseDesc("name", "ResolvedDBObjectNameDatabaseExtractor")
+      val databaseDesc2 = DatabaseDesc("namespace", "StringSeqDatabaseExtractor")
       DatabaseCommandSpec(
         "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
-        Seq(DatabaseDesc("name", "ResolvedDBObjectNameDatabaseExtractor")),
+        Seq(databaseDesc1, databaseDesc2),
         "CREATEDATABASE")
     }
 
@@ -118,11 +120,14 @@ object DatabaseCommandSpec {
     val data = Array(
       AlterDatabaseProperties,
       AlterDatabaseProperties.copy(
-        "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand"),
+        classname = "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
+        operationType = "ALTERDATABASE_LOCATION"),
       AlterDatabaseProperties.copy(
-        "org.apache.spark.sql.execution.command.CreateDatabaseCommand"),
+        classname = "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
+        operationType = "CREATEDATABASE"),
       AlterDatabaseProperties.copy(
-        "org.apache.spark.sql.execution.command.DropDatabaseCommand"),
+        classname = "org.apache.spark.sql.execution.command.DropDatabaseCommand",
+        operationType = "DROPDATABASE"),
       AnalyzeTables,
       CreateNamespace,
       CommentOnNamespace,

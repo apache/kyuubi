@@ -563,7 +563,10 @@ object TableCommandSpec {
         "org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand"),
       CreateTableLike,
       CreateTableV2,
-      CreateTableV2.copy(classname = "org.apache.spark.sql.catalyst.plans.logical.ReplaceTable"),
+      CreateTableV2.copy(classname =
+        "org.apache.spark.sql.catalyst.plans.logical.ReplaceTable"),
+      CreateTableV2.copy(classname =
+        "org.apache.spark.sql.catalyst.plans.logical.CreateV2Table"),
       CreateTableAsSelectV2,
       CreateTableAsSelectV2.copy(classname =
         "org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect"),

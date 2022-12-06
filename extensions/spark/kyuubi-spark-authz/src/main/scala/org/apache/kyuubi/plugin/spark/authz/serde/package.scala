@@ -39,6 +39,11 @@ package object serde {
     mapper.readValue[Array[TableCommandSpec]](is).map(e => (e.classname, e)).toMap
   }
 
+  final lazy val FUNCTION_COMMAND_SPECS: Map[String, FunctionCommandSpec] = {
+    val is = getClass.getClassLoader.getResourceAsStream("function_command_spec.json")
+    mapper.readValue[Array[FunctionCommandSpec]](is).map(e => (e.classname, e)).toMap
+  }
+
   def operationType(plan: LogicalPlan): OperationType = {
     val classname = plan.getClass.getName
     TABLE_COMMAND_SPECS.get(classname)
@@ -46,10 +51,5 @@ package object serde {
       .orElse(FUNCTION_COMMAND_SPECS.get(classname))
       .map(s => OperationType.withName(s.operationType))
       .getOrElse(QUERY)
-  }
-
-  final lazy val FUNCTION_COMMAND_SPECS: Map[String, FunctionCommandSpec] = {
-    val is = getClass.getClassLoader.getResourceAsStream("function_command_spec.json")
-    mapper.readValue[Array[FunctionCommandSpec]](is).map(e => (e.classname, e)).toMap
   }
 }

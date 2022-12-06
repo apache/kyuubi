@@ -59,7 +59,6 @@ class TempMarkerFunctionTypeExtractor extends FunctionTypeExtractor {
 class ExpressionInfoFunctionTypeExtractor extends FunctionTypeExtractor {
   override def apply(v1: AnyRef, spark: SparkSession): FunctionType = {
     val function = new ExpressionInfoFunctionExtractor().apply(v1)
-    val catalog = spark.sessionState.catalog
     val fi = FunctionIdentifier(function.functionName, function.database)
     new FunctionIdentifierFunctionTypeExtractor().apply(fi, spark)
   }
@@ -71,10 +70,12 @@ class FunctionIdentifierFunctionTypeExtractor extends FunctionTypeExtractor {
     val fi = v1.asInstanceOf[FunctionIdentifier]
     if (catalog.isTemporaryFunction(fi)) {
       TEMP
-    } else if (catalog.isBuiltinFunction(fi)) {
+    } else if (catalog.isPersistentFunction(fi)) {
+      PERMANENT
+    } else if (catalog.isRegisteredFunction(fi)) {
       SYSTEM
     } else {
-      PERMANENT
+      TEMP
     }
   }
 }

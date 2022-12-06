@@ -35,7 +35,6 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extractor
 
 object TableExtractor {
-
   val tableExtractors: Map[String, TableExtractor] = {
     ServiceLoader.load(classOf[TableExtractor])
       .iterator()
