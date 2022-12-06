@@ -276,7 +276,7 @@ object PrivilegesBuilder {
               LOG.warn(fd.error(plan, e))
           }
         }
-        OperationType.withName(spec.opType)
+       spec.operationType
 
       case _ => OperationType.QUERY
     }

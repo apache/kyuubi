@@ -20,8 +20,55 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 import org.apache.kyuubi.plugin.spark.authz.OperationType
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
+/**
+ * A command specification contains
+ *  - different [[Descriptor]]s for specific implementations. It's a list to cover:
+ *    - A command may have multiple object to describe, such as create table A like B
+ *    - An object descriptor may vary through spark versions, it wins at least once if one of
+ *      the descriptors matches
+ *  - the classname of a command which this spec point to
+ *  - the [[OperationType]] of this command which finally maps to an access privilege
+ */
 trait CommandSpec {
   def classname: String
   def opType: String
   final def operationType: OperationType = OperationType.withName(opType)
 }
+
+/**
+ * A specification describe a database command
+ *
+ * @param classname the database command classname
+ * @param databaseDescs a list of database descriptors
+ * @param opType operation type, e.g. CREATEDATABASE
+ */
+case class DatabaseCommandSpec(
+  classname: String,
+  databaseDescs: Seq[DatabaseDesc],
+  opType: String = "QUERY") extends CommandSpec
+
+/**
+ * A specification describe a function command
+ *
+ * @param classname the database command classname
+ * @param functionDescs a list of function descriptors
+ * @param opType operation type, e.g. DROPFUNCTION
+ */
+case class FunctionCommandSpec(
+  classname: String,
+  functionDescs: Seq[FunctionDesc],
+  opType: String) extends CommandSpec
+
+/**
+ * A specification describe a table command
+ *
+ * @param classname the database command classname
+ * @param tableDescs a list of table descriptors
+ * @param opType operation type, e.g. DROPFUNCTION
+ * @param queryDescs the query descriptors a table command may have
+ */
+case class TableCommandSpec(
+  classname: String,
+  tableDescs: Seq[TableDesc],
+  opType: String = "QUERY",
+  queryDescs: Seq[QueryDesc] = Nil) extends CommandSpec
