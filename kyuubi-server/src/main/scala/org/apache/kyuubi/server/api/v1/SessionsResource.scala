@@ -444,13 +444,12 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
           val kyuubiSessionEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
           new SQLDetail(
             sessionHandleStr,
-            operation.getHandle.identifier.toString,
             kyuubiSessionEvent.sessionUser,
             kyuubiSessionEvent.statementId,
             kyuubiSessionEvent.createTime,
             kyuubiSessionEvent.completeTime,
             kyuubiSessionEvent.statement,
-            kyuubiSessionEvent.engineName,
+            kyuubiSessionEvent.engineId,
             kyuubiSessionEvent.engineType,
             kyuubiSessionEvent.engineShareLevel,
             kyuubiSessionEvent.exception.map(_.toString).orNull)

@@ -276,4 +276,43 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
         throw new NotFoundException(errorMsg)
     }
   }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[KyuubiOperationEvent]))),
+    description =
+      "query operation event list")
+  @POST
+  @Path("operations")
+  def queryOperationEventList(
+      @QueryParam("sessionHandle") @DefaultValue("") sessionHandleStr: String,
+      @QueryParam("type") @DefaultValue("") TypeStr: String,
+      @QueryParam("state") @DefaultValue("") StateStr: String): Seq[KyuubiOperationEvent] = {
+    try {
+      val KyuubiOperationEventSeq = Seq[KyuubiOperationEvent]()
+      fe.be.sessionManager.allSessions()
+        .map { session =>
+          session.allOperations().map { operationHandle =>
+            val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
+            val kyuubiOperationEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
+            if (kyuubiOperationEvent.sessionId.equalsIgnoreCase(sessionHandleStr)
+              || kyuubiOperationEvent.operationType.equalsIgnoreCase(TypeStr)
+              || kyuubiOperationEvent.state.equalsIgnoreCase(StateStr)
+              || (sessionHandleStr.equalsIgnoreCase("")
+                && TypeStr.equalsIgnoreCase("")
+                && StateStr.equalsIgnoreCase(""))) {
+              KyuubiOperationEventSeq :+ kyuubiOperationEvent
+            }
+          }
+        }
+      KyuubiOperationEventSeq
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = "Error querying operation event list"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
+  }
 }

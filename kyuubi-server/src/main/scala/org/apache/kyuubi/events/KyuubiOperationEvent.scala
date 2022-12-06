@@ -18,8 +18,9 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_NAME
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_TYPE}
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
+import org.apache.kyuubi.session.KyuubiSessionImpl
 
 /**
  * A [[KyuubiOperationEvent]] used to tracker the lifecycle of an operation at server side.
@@ -56,10 +57,9 @@ case class KyuubiOperationEvent private (
     exception: Option[Throwable],
     sessionId: String,
     sessionUser: String,
-    engineName: String,
+    engineId: String,
     engineType: String,
-    engineShareLevel: String,
-    resultSchema: String) extends KyuubiEvent {
+    engineShareLevel: String) extends KyuubiEvent {
 
   // operation events are partitioned by the date when the corresponding operations are
   // created.
@@ -75,7 +75,6 @@ object KyuubiOperationEvent {
   def apply(operation: KyuubiOperation): KyuubiOperationEvent = {
     val session = operation.getSession
     val status = operation.getStatus
-    val resultSchema = operation.getResultSetSchema.toString
     new KyuubiOperationEvent(
       operation.statementId,
       Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
@@ -90,10 +89,9 @@ object KyuubiOperationEvent {
       status.exception,
       session.handle.identifier.toString,
       session.user,
-      Option(session.sessionManager.getConf).map(_.getOption(KYUUBI_ENGINE_NAME).orNull).orNull,
-      Option(session.sessionManager.getConf).map(_.getOption("kyuubi.engine.type").orNull).orNull,
+      session.asInstanceOf[KyuubiSessionImpl].client.engineId.orNull,
+      Option(session.sessionManager.getConf).map(_.get(ENGINE_TYPE)).orNull,
       Option(session.sessionManager.getConf)
-        .map(_.getOption("kyuubi.engine.share.level").orNull).orNull,
-      resultSchema)
+        .map(_.get(ENGINE_SHARE_LEVEL)).orNull)
   }
 }

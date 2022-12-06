@@ -21,7 +21,6 @@ import java.util.Objects;
 
 public class SQLDetail {
   private String sessionId;
-  private String operationId;
   private String sessionUser;
   private String statementId;
   private Long createTime;
@@ -34,7 +33,6 @@ public class SQLDetail {
 
   public SQLDetail(
       String sessionId,
-      String operationId,
       String sessionUser,
       String statementId,
       Long createTime,
@@ -45,7 +43,6 @@ public class SQLDetail {
       String engineShareLevel,
       String exception) {
     this.sessionId = sessionId;
-    this.operationId = operationId;
     this.sessionUser = sessionUser;
     this.statementId = statementId;
     this.createTime = createTime;
@@ -63,14 +60,6 @@ public class SQLDetail {
 
   public void setSessionId(String sessionId) {
     this.sessionId = sessionId;
-  }
-
-  public String getOperationId() {
-    return operationId;
-  }
-
-  public void setOperationId(String operationId) {
-    this.operationId = operationId;
   }
 
   public String getSessionUser() {
@@ -151,7 +140,6 @@ public class SQLDetail {
     if (o == null || getClass() != o.getClass()) return false;
     SQLDetail that = (SQLDetail) o;
     return Objects.equals(sessionId, that.sessionId)
-        && Objects.equals(operationId, that.operationId)
         && Objects.equals(sessionUser, that.sessionUser)
         && Objects.equals(statementId, that.statementId)
         && Objects.equals(createTime, that.createTime)
@@ -167,7 +155,6 @@ public class SQLDetail {
   public int hashCode() {
     return Objects.hash(
         sessionId,
-        operationId,
         sessionUser,
         statementId,
         createTime,
