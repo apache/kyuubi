@@ -20,10 +20,8 @@ package org.apache.kyuubi.engine.spark
 import org.apache.kyuubi.KyuubiFunSuite
 
 class SparkSQLEngineSuite extends KyuubiFunSuite {
-  private val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
 
   test("[KYUUBI #3385] generate executor pod name prefix with user or UUID") {
-
     val userName1 = "/kyuubi_user+-*"
     val executorPodNamePrefix1 = SparkSQLEngine.generateExecutorPodNamePrefixForK8s(userName1)
     assert(executorPodNamePrefix1.contains("-kyuubi-user-"))
@@ -34,6 +32,6 @@ class SparkSQLEngineSuite extends KyuubiFunSuite {
       "LongLongLongLongLongLongLongLongLongLongLongLongName"
     val executorPodNamePrefix2 = SparkSQLEngine.generateExecutorPodNamePrefixForK8s(userName2)
     assert(!executorPodNamePrefix2.contains(userName2))
-    assert(executorPodNamePrefix2.length <= EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH)
+    assert(executorPodNamePrefix2.length <= SparkSQLEngine.EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH)
   }
 }

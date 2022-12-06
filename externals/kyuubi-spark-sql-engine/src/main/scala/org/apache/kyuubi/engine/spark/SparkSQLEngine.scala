@@ -360,14 +360,14 @@ object SparkSQLEngine extends Logging {
         .replaceAll("-+", "-")
         .replaceAll("^-", "")
     val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
-    if (podNamePrefixWithUser.length >= EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
-      s"kyuubi-${UUID.randomUUID()}"
-    } else {
+    if (podNamePrefixWithUser.length <= EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
       podNamePrefixWithUser
+    } else {
+      s"kyuubi-${UUID.randomUUID()}"
     }
   }
 
   // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
   // 253 - 10 - 6
-  private val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
+  val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
 }
