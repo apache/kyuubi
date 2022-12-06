@@ -28,22 +28,27 @@ from glob import glob
 if sys.version_info[0] < 3:
     sys.exit("Python < 3 is unsupported.")
 
-spark_home = os.environ.get("SPARK_HOME", "")
 os.environ["PYSPARK_PYTHON"] = os.environ.get("PYSPARK_PYTHON", sys.executable)
 
 # add pyspark to sys.path
 
 if "pyspark" not in sys.modules:
-    spark_python = os.path.join(spark_home, "python")
-    try:
-        py4j = glob(os.path.join(spark_python, "lib", "py4j-*.zip"))[0]
-    except IndexError:
-        raise Exception(
-            "Unable to find py4j in {}, your SPARK_HOME may not be configured correctly".format(
-                spark_python
+    # try to get PY4J_PATH and use it directly if not none
+    py4j_path = os.environ.get("PY4J_PATH")
+    if py4j_path is not None:
+        sys.path[:0] = sys_path = [py4j_path]
+    else:
+        spark_home = os.environ.get("SPARK_HOME", "")
+        spark_python = os.path.join(spark_home, "python")
+        try:
+            py4j = glob(os.path.join(spark_python, "lib", "py4j-*.zip"))[0]
+        except IndexError:
+            raise Exception(
+                "Unable to find py4j in {}, your SPARK_HOME may not be configured correctly".format(
+                    spark_python
+                )
             )
-        )
-    sys.path[:0] = sys_path = [spark_python, py4j]
+        sys.path[:0] = sys_path = [spark_python, py4j]
 else:
     # already imported, no need to patch sys.path
     sys_path = None
