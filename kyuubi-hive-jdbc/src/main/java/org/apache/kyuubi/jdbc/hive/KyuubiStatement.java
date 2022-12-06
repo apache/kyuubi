@@ -26,6 +26,7 @@ import org.apache.kyuubi.jdbc.hive.adapter.SQLStatement;
 import org.apache.kyuubi.jdbc.hive.cli.FetchType;
 import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
+import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
@@ -44,6 +45,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private int fetchSize = DEFAULT_FETCH_SIZE;
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
+  private Map<String, String> properties = new HashMap<>();
   /**
    * We need to keep a reference to the result set to support the following: <code>
    * statement.execute(String sql);
@@ -200,7 +202,14 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       return false;
     }
 
-    String resultCodec = connection.getResultCodec().toLowerCase(Locale.ROOT);
+    TGetResultSetMetadataResp metadata = getResultSetMetadata();
+    List<String> columnNames = new ArrayList<>();
+    List<TTypeId> columnTypes = new ArrayList<>();
+    List<JdbcColumnAttributes> columnAttributes = new ArrayList<>();
+    parseMetadata(metadata, columnNames, columnTypes, columnAttributes);
+
+    String resultCodec =
+        properties.getOrDefault("__kyuubi_operation_result_codec__", connection.getResultCodec());
     LOG.info("kyuubi.operation.result.codec: " + resultCodec);
     switch (resultCodec) {
       case "arrow":
@@ -212,6 +221,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setMaxRows(maxRows)
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
+                .setSchema(columnNames, columnTypes, columnAttributes)
                 .build();
         break;
       default:
@@ -223,6 +233,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setMaxRows(maxRows)
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
+                .setSchema(columnNames, columnTypes, columnAttributes)
                 .build();
     }
     return true;
@@ -248,7 +259,14 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     if (!status.isHasResultSet()) {
       return false;
     }
-    String resultCodec = connection.getResultCodec().toLowerCase(Locale.ROOT);
+    TGetResultSetMetadataResp metadata = getResultSetMetadata();
+    List<String> columnNames = new ArrayList<>();
+    List<TTypeId> columnTypes = new ArrayList<>();
+    List<JdbcColumnAttributes> columnAttributes = new ArrayList<>();
+    parseMetadata(metadata, columnNames, columnTypes, columnAttributes);
+
+    String resultCodec =
+        properties.getOrDefault("__kyuubi_operation_result_codec__", connection.getResultCodec());
     LOG.info("kyuubi.operation.result.codec: " + resultCodec);
     switch (resultCodec) {
       case "arrow":
@@ -260,6 +278,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setMaxRows(maxRows)
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
+                .setSchema(columnNames, columnTypes, columnAttributes)
                 .build();
       default:
         resultSet =
@@ -270,6 +289,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                 .setMaxRows(maxRows)
                 .setFetchSize(fetchSize)
                 .setScrollable(isScrollableResultset)
+                .setSchema(columnNames, columnTypes, columnAttributes)
                 .build();
     }
     return true;
@@ -742,5 +762,55 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
    */
   public void setInPlaceUpdateStream(InPlaceUpdateStream stream) {
     this.inPlaceUpdateStream = stream;
+  }
+
+  private TGetResultSetMetadataResp getResultSetMetadata() throws SQLException {
+    try {
+      TGetResultSetMetadataReq metadataReq = new TGetResultSetMetadataReq(stmtHandle);
+      // TODO need session handle
+      TGetResultSetMetadataResp metadataResp;
+      metadataResp = client.GetResultSetMetadata(metadataReq);
+      Utils.verifySuccess(metadataResp.getStatus());
+      return metadataResp;
+    } catch (SQLException eS) {
+      throw eS; // rethrow the SQLException as is
+    } catch (Exception ex) {
+      throw new KyuubiSQLException("Could not create ResultSet: " + ex.getMessage(), ex);
+    }
+  }
+
+  private void parseMetadata(
+      TGetResultSetMetadataResp metadataResp,
+      List<String> columnNames,
+      List<TTypeId> columnTypes,
+      List<JdbcColumnAttributes> columnAttributes)
+      throws KyuubiSQLException {
+    TTableSchema schema = metadataResp.getSchema();
+    if (schema == null || !schema.isSetColumns()) {
+      throw new KyuubiSQLException("the result set schema is null");
+    }
+
+    // parse kyuubi hint
+    metadataResp
+        .getStatus()
+        .getInfoMessages()
+        .forEach(
+            line -> {
+              String[] keyValue = line.split("=");
+              String key = keyValue[0];
+              String value = keyValue[1];
+              properties.put(key, value);
+            });
+
+    // parse metadata
+    List<TColumnDesc> columns = schema.getColumns();
+    for (int pos = 0; pos < schema.getColumnsSize(); pos++) {
+      String columnName = columns.get(pos).getColumnName();
+      columnNames.add(columnName);
+      TPrimitiveTypeEntry primitiveTypeEntry =
+          columns.get(pos).getTypeDesc().getTypes().get(0).getPrimitiveEntry();
+      columnTypes.add(primitiveTypeEntry.getType());
+      columnAttributes.add(KyuubiArrowQueryResultSet.getColumnAttributes(primitiveTypeEntry));
+    }
   }
 }

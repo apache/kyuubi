@@ -31,6 +31,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationStatus}
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -93,6 +94,8 @@ class ExecuteStatement(
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       operationListener.foreach(spark.sparkContext.addSparkListener(_))
       result = spark.sql(statement)
+
+      detectCodec()
 
       iter =
         if (incrementalCollect) {
@@ -223,6 +226,22 @@ class ExecuteStatement(
       SparkDatasetHelper.convertTopLevelComplexTypeToHiveString(df)
     } else {
       df
+    }
+  }
+
+  override def getResultSetMetadataHints(): Seq[String] = {
+    val resultCodec = session.asInstanceOf[SparkSessionImpl].getResultCodec()
+    resultCodec.toSeq.map(codec => s"__kyuubi_operation_result_codec__=$codec")
+  }
+
+  private def detectCodec(): Unit = {
+    if (result.queryExecution.analyzed.nodeName == "SetCommand") {
+      result.collect() match {
+        case Array(row) if row.getAs[String]("key") == "kyuubi.operation.result.codec" =>
+          session.asInstanceOf[SparkSessionImpl].setResultCodec(
+            row.getAs[String]("value").toLowerCase())
+        case _ =>
+      }
     }
   }
 }

@@ -19,8 +19,10 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
 
+import scala.collection.JavaConverters._
+
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TProgressUpdateResp, TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TRowSet, TStatus, TStatusCode}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
@@ -173,7 +175,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def getProtocolVersion: TProtocolVersion = session.protocol
 
-  override def getResultSetSchema: TTableSchema
+  override def getResultSetMetadata: TGetResultSetMetadataResp
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet
 
@@ -226,5 +228,13 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
       OperationState.isTerminal(state) &&
       lastAccessTime + operationTimeout <= System.currentTimeMillis()
     }
+  }
+
+  final val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
+
+  def okStatusWithHints(hints: Seq[String]): TStatus = {
+    val ok = new TStatus(TStatusCode.SUCCESS_STATUS)
+    ok.setInfoMessages(hints.asJava)
+    ok
   }
 }
