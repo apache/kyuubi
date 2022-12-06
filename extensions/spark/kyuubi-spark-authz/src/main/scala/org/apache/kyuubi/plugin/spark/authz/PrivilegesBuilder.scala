@@ -27,17 +27,17 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.slf4j.LoggerFactory
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.PermanentViewMarker
 import org.apache.kyuubi.plugin.spark.authz.v2Commands.v2TablePrivileges
-import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
 object PrivilegesBuilder {
 
-  private final val LOG = LoggerFactory.getLogger(getClass)
+  final private val LOG = LoggerFactory.getLogger(getClass)
 
   def databasePrivileges(db: String): PrivilegeObject = {
     PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db)
@@ -218,7 +218,8 @@ object PrivilegesBuilder {
             } else {
               val actionType = tableDesc.actionTypeDesc.map(_.getValue(plan)).getOrElse(OTHER)
               tableDesc.columnDesc match {
-                case Some(columnDesc) => columnDesc.getValue(plan)
+                case Some(columnDesc) =>
+                  columnDesc.getValue(plan)
                   // get column names
                   val columnNames = columnDesc.getValue(plan)
                   Seq(tablePrivileges(

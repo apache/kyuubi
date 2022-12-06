@@ -318,7 +318,9 @@ object TableCommandSpec {
         "ViewTypeTableTypeExtractor",
         Seq("TEMP_VIEW", "GLOBAL_TEMP_VIEW"))
       val tableDesc = TableDesc(
-        "name", "TableIdentifierTableExtractor", tableTypeDesc = Some(tableTypeDesc))
+        "name",
+        "TableIdentifierTableExtractor",
+        tableTypeDesc = Some(tableTypeDesc))
       val queryDesc1 = QueryDesc("plan")
       val queryDesc2 = QueryDesc("child")
       TableCommandSpec(cmd, Seq(tableDesc), "CREATEVIEW", queryDescs = Seq(queryDesc1, queryDesc2))

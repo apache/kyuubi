@@ -29,6 +29,6 @@ package org.apache.kyuubi.plugin.spark.authz.serde
  * @param owner table owner if any, otherwise None
  */
 case class Table(
-  database: Option[String],
-  table: String,
-  owner: Option[String])
+    database: Option[String],
+    table: String,
+    owner: Option[String])

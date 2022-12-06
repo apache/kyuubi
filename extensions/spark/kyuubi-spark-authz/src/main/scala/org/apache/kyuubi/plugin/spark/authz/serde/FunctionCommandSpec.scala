@@ -30,10 +30,15 @@ object FunctionCommandSpec {
     val CreateFunction = {
       val cmd = "org.apache.spark.sql.execution.command.CreateFunctionCommand"
       val functionTypeDesc = FunctionTypeDesc(
-        "isTemp", "TempMarkerFunctionTypeExtractor", Seq("TEMP"))
+        "isTemp",
+        "TempMarkerFunctionTypeExtractor",
+        Seq("TEMP"))
       val databaseDesc = DatabaseDesc("databaseName", "StringOptionDatabaseExtractor")
       val functionDesc = FunctionDesc(
-        "functionName", "StringFunctionExtractor", Some(databaseDesc), Some(functionTypeDesc))
+        "functionName",
+        "StringFunctionExtractor",
+        Some(databaseDesc),
+        Some(functionTypeDesc))
       FunctionCommandSpec(cmd, Seq(functionDesc), "CREATEFUNCTION")
     }
 
@@ -66,7 +71,9 @@ object FunctionCommandSpec {
       val cmd = "org.apache.spark.sql.execution.command.RefreshFunctionCommand"
       val databaseDesc = DatabaseDesc("databaseName", "StringOptionDatabaseExtractor")
       val functionDesc = FunctionDesc(
-        "functionName", "StringFunctionExtractor", Some(databaseDesc))
+        "functionName",
+        "StringFunctionExtractor",
+        Some(databaseDesc))
       FunctionCommandSpec(cmd, Seq(functionDesc), "RELOADFUNCTION")
     }
 

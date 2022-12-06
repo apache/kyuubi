@@ -21,19 +21,19 @@ import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-import org.apache.kyuubi.plugin.spark.authz.serde.ColumnExtractor.columnExtractors
-import org.apache.kyuubi.plugin.spark.authz.serde.DatabaseExtractor.dbExtractors
-import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.functionExtractors
-import org.apache.kyuubi.plugin.spark.authz.serde.QueryExtractor.queryExtractors
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.serde.ActionTypeExtractor.actionTypeExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.ColumnExtractor.columnExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.DatabaseExtractor.dbExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.functionExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType.FunctionType
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionTypeExtractor.functionTypeExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.QueryExtractor.queryExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableExtractor.tableExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableType.TableType
 import org.apache.kyuubi.plugin.spark.authz.serde.TableTypeExtractor.tableTypeExtractors
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 /**
  * A database object(such as database, table, function) descriptor describes its name and getter
@@ -86,9 +86,9 @@ case class DatabaseDesc(
 }
 
 case class FunctionTypeDesc(
-  fieldName: String,
-  fieldExtractor: String,
-  skipTypes: Seq[String]) extends Descriptor {
+    fieldName: String,
+    fieldExtractor: String,
+    skipTypes: Seq[String]) extends Descriptor {
 
   override def getValue(v: AnyRef): FunctionType = {
     getValue(v, SparkSession.active)

@@ -56,6 +56,7 @@ object TableExtractor {
     properties.get("owner")
   }
 }
+
 /**
  * TableIdentifier ->
  */
