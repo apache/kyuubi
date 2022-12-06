@@ -308,7 +308,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val dai = new DistributedAtomicInteger(zkClient, path, new RetryForever(1000))
     var atomicVal: AtomicValue[Integer] = null
     do {
-      dai.add(delta)
+      atomicVal = dai.add(delta)
     } while (atomicVal == null || !atomicVal.succeeded())
     atomicVal.preValue().intValue()
   }

@@ -174,7 +174,7 @@ trait DiscoveryClient extends Logging {
    * Atomically get an Int number and add one
    * @param path the path of stored data,
    *             If the path does not exist, it will be created and initialized to 0
-   * @param delta the increase num, default is 1
+   * @param delta the increase num
    * @return the stored data under path
    */
   def getAndIncrement(path: String, delta: Int = 1): Int
