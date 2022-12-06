@@ -88,7 +88,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
           }
         case OperationLanguages.SCALA =>
           val repl = sessionToRepl.getOrElseUpdate(session.handle, KyuubiSparkILoop(spark))
-          new ExecuteScala(session, repl, statement)
+          new ExecuteScala(session, repl, statement, runAsync, queryTimeout)
         case OperationLanguages.PYTHON =>
           try {
             ExecutePython.init()

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.jdbc
 
+import java.sql.SQLTimeoutException
 import java.util.Properties
 
 import org.apache.kyuubi.IcebergSuiteMixin
@@ -97,6 +98,23 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
       val resultSet = statement.executeScala(code)
       assert(resultSet.next())
       assert(resultSet.getString(1).contains("kyuubi.operation.language"))
+    } finally {
+      statement.close()
+      connection.close()
+    }
+  }
+
+  test("executeScala support timeout") {
+    val driver = new KyuubiHiveDriver()
+    val connection = driver.connect(getJdbcUrl, new Properties())
+    val statement = connection.createStatement().asInstanceOf[KyuubiStatement]
+    statement.setQueryTimeout(5)
+    try {
+      val code = """java.lang.Thread.sleep(500000L)"""
+      val e = intercept[SQLTimeoutException] {
+        statement.executeScala(code)
+      }.getMessage
+      assert(e.contains("Query timed out"))
     } finally {
       statement.close()
       connection.close()
