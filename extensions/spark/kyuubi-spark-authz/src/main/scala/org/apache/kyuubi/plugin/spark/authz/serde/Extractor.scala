@@ -17,6 +17,12 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
+/**
+ * Base trait for an field extractor
+ */
 trait Extractor {
+  /**
+   * the key string of this extractor
+   */
   def key: String = getClass.getSimpleName
 }

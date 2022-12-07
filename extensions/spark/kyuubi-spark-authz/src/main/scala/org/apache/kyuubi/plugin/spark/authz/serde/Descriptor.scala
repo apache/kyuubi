@@ -49,11 +49,18 @@ sealed trait Descriptor {
   def fieldName: String
 
   /**
-   * The extractor/getter classname for the field
+   * The key that points the [[Extractor]] to for the field, which extracts key information
+   * we want to represents a table, column list, etc.
    */
   def fieldExtractor: String
 
-  def getValue(v: AnyRef): AnyRef
+  /**
+   * Apply the field [[Extractor]] to the field value to extract key information we want to
+   * represents a table, column list, etc.
+   * @param v
+   * @return
+   */
+  def extract(v: AnyRef): AnyRef
 
   final def error(v: AnyRef, e: Throwable): String = {
     val resourceName = getClass.getSimpleName.stripSuffix("Desc")
@@ -63,34 +70,52 @@ sealed trait Descriptor {
   }
 }
 
+/**
+ * Column Descriptor
+ *
+ * @param fieldName the field name or method name of this column field
+ * @param fieldExtractor the key of a [[ColumnExtractor]] instance
+ */
 case class ColumnDesc(
     fieldName: String,
     fieldExtractor: String) extends Descriptor {
-
-  override def getValue(v: AnyRef): Seq[String] = {
+  override def extract(v: AnyRef): Seq[String] = {
     val columnsVal = invoke(v, fieldName)
     val columnExtractor = columnExtractors(fieldExtractor)
     columnExtractor(columnsVal)
   }
 }
 
+/**
+ * Database Descriptor
+ *
+ * @param fieldName the field name or method name of this database field
+ * @param fieldExtractor the key of a [[DatabaseExtractor]] instance
+ * @param isInput read or write
+ */
 case class DatabaseDesc(
     fieldName: String,
     fieldExtractor: String,
     isInput: Boolean = false) extends Descriptor {
-  override def getValue(v: AnyRef): String = {
+  override def extract(v: AnyRef): String = {
     val databaseVal = invoke(v, fieldName)
     val databaseExtractor = dbExtractors(fieldExtractor)
     databaseExtractor(databaseVal)
   }
 }
 
+/**
+ * Function Type Descriptor
+ *
+ * @param fieldName the field name or method name of this function type field
+ * @param fieldExtractor the key of a [[FunctionTypeExtractor]] instance
+ * @param skipTypes which kinds of functions are skipped checking
+ */
 case class FunctionTypeDesc(
     fieldName: String,
     fieldExtractor: String,
     skipTypes: Seq[String]) extends Descriptor {
-
-  override def getValue(v: AnyRef): FunctionType = {
+  override def extract(v: AnyRef): FunctionType = {
     getValue(v, SparkSession.active)
   }
 
@@ -105,52 +130,88 @@ case class FunctionTypeDesc(
   }
 }
 
+/**
+ * Function Descriptor
+ *
+ * @param fieldName the field name or method name of this function field
+ * @param fieldExtractor the key of a [[FunctionExtractor]] instance
+ * @param databaseDesc which kinds of functions are skipped checking
+ * @param functionTypeDesc indicates the function type if necessary
+ * @param isInput read or write
+ */
 case class FunctionDesc(
     fieldName: String,
     fieldExtractor: String,
     databaseDesc: Option[DatabaseDesc] = None,
     functionTypeDesc: Option[FunctionTypeDesc] = None,
     isInput: Boolean = false) extends Descriptor {
-  override def getValue(v: AnyRef): Function = {
+  override def extract(v: AnyRef): Function = {
     val functionVal = invoke(v, fieldName)
     val functionExtractor = functionExtractors(fieldExtractor)
     var function = functionExtractor(functionVal)
     if (function.database.isEmpty) {
-      function = function.copy(database = databaseDesc.map(_.getValue(v)))
+      function = function.copy(database = databaseDesc.map(_.extract(v)))
     }
     function
   }
 }
 
+/**
+ * Query Descriptor which represents one or more query fields of a command
+ *
+ * @param fieldName the field name or method name of this query field
+ * @param fieldExtractor the key of a [[QueryExtractor]] instance
+ *                       The default value is [[LogicalPlanQueryExtractor]] which
+ *                       return the original plan directly.
+ */
 case class QueryDesc(
     fieldName: String,
     fieldExtractor: String = "LogicalPlanQueryExtractor") extends Descriptor {
-  override def getValue(v: AnyRef): LogicalPlan = {
+  override def extract(v: AnyRef): LogicalPlan = {
     val queryVal = invoke(v, fieldName)
     val queryExtractor = queryExtractors(fieldExtractor)
     queryExtractor(queryVal)
   }
 }
 
+/**
+ * Table Type Descriptor
+ *
+ * @param fieldName the field name or method name of this table type field
+ * @param fieldExtractor the key of a [[TableTypeExtractor]] instance
+ * @param skipTypes which kinds of table or view are skipped checking
+ */
 case class TableTypeDesc(
     fieldName: String,
     fieldExtractor: String,
     skipTypes: Seq[String]) extends Descriptor {
-  override def getValue(v: AnyRef): TableType = {
-    getValue(v, SparkSession.active)
+  override def extract(v: AnyRef): TableType = {
+    extract(v, SparkSession.active)
   }
 
-  def getValue(v: AnyRef, spark: SparkSession): TableType = {
+  def extract(v: AnyRef, spark: SparkSession): TableType = {
     val tableTypeVal = invoke(v, fieldName)
     val tableTypeExtractor = tableTypeExtractors(fieldExtractor)
     tableTypeExtractor(tableTypeVal, spark)
   }
 
   def skip(v: AnyRef): Boolean = {
-    skipTypes.exists(skipType => getValue(v) == TableType.withName(skipType))
+    skipTypes.exists(skipType => extract(v) == TableType.withName(skipType))
   }
 }
 
+/**
+ * Table Descriptor
+ *
+ * @param fieldName the field name or method name of this table field
+ * @param fieldExtractor the key of a [[TableExtractor]] instance
+ * @param columnDesc optional [[ColumnDesc]] instance if columns field are specified
+ * @param actionTypeDesc optional [[ActionTypeDesc]] indicates the action type
+ * @param tableTypeDesc optional [[TableTypeDesc]] indicates the table type
+ * @param isInput read or write
+ * @param setCurrentDatabaseIfMissing whether to use current database if the database
+ *                                    field is missing
+ */
 case class TableDesc(
     fieldName: String,
     fieldExtractor: String,
@@ -159,22 +220,29 @@ case class TableDesc(
     tableTypeDesc: Option[TableTypeDesc] = None,
     isInput: Boolean = false,
     setCurrentDatabaseIfMissing: Boolean = false) extends Descriptor {
-  override def getValue(v: AnyRef): Option[Table] = {
-    getValue(v, SparkSession.active)
+  override def extract(v: AnyRef): Option[Table] = {
+    extract(v, SparkSession.active)
   }
 
-  def getValue(v: AnyRef, spark: SparkSession): Option[Table] = {
+  def extract(v: AnyRef, spark: SparkSession): Option[Table] = {
     val tableVal = invoke(v, fieldName)
     val tableExtractor = tableExtractors(fieldExtractor)
     tableExtractor(spark, tableVal)
   }
 }
 
+/**
+ * Action Type Descriptor
+ *
+ * @param fieldName the field name or method name of this action type field
+ * @param fieldExtractor the key of a [[ActionTypeExtractor]] instance
+ * @param actionType the explicitly given action type which take precedence over extracting
+ */
 case class ActionTypeDesc(
     fieldName: String,
     fieldExtractor: String,
     actionType: Option[String] = None) extends Descriptor {
-  override def getValue(v: AnyRef): PrivilegeObjectActionType = {
+  override def extract(v: AnyRef): PrivilegeObjectActionType = {
     actionType.map(PrivilegeObjectActionType.withName).getOrElse {
       val actionTypeVal = invoke(v, fieldName)
       val extractor = actionTypeExtractors(fieldExtractor)

@@ -198,7 +198,7 @@ object PrivilegesBuilder {
 
     def getTablePriv(tableDesc: TableDesc): Seq[PrivilegeObject] = {
       try {
-        val maybeTable = tableDesc.getValue(plan, spark)
+        val maybeTable = tableDesc.extract(plan, spark)
         maybeTable match {
           case Some(table) =>
             // TODO Use strings instead of ti for general purpose.
@@ -209,8 +209,8 @@ object PrivilegesBuilder {
             if (tableDesc.tableTypeDesc.exists(_.skip(plan))) {
               Nil
             } else {
-              val actionType = tableDesc.actionTypeDesc.map(_.getValue(plan)).getOrElse(OTHER)
-              val columnNames = tableDesc.columnDesc.map(_.getValue(plan)).getOrElse(Nil)
+              val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
+              val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
               Seq(tablePrivileges(identifier, columnNames, table.owner, actionType))
             }
           case None => Nil
@@ -227,7 +227,7 @@ object PrivilegesBuilder {
         val desc = DB_COMMAND_SPECS(classname)
         desc.databaseDescs.foreach { databaseDesc =>
           try {
-            val database = databaseDesc.getValue(plan)
+            val database = databaseDesc.extract(plan)
             if (databaseDesc.isInput) {
               inputObjs += databasePrivileges(database)
             } else {
@@ -251,7 +251,7 @@ object PrivilegesBuilder {
         }
         spec.queryDescs.foreach { qd =>
           try {
-            buildQuery(qd.getValue(plan), inputObjs)
+            buildQuery(qd.extract(plan), inputObjs)
           } catch {
             case e: Exception =>
               LOG.warn(qd.error(plan, e))
@@ -263,7 +263,7 @@ object PrivilegesBuilder {
         val spec = FUNCTION_COMMAND_SPECS(classname)
         spec.functionDescs.foreach { fd =>
           try {
-            val function = fd.getValue(plan)
+            val function = fd.extract(plan)
             if (!fd.functionTypeDesc.exists(_.skip(plan, spark))) {
               if (fd.isInput) {
                 inputObjs += functionPrivileges(function)
