@@ -122,6 +122,10 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       assert(appInfo.exists(_.id.startsWith("application_")))
     }
 
+    val metadata = session.sessionManager.getBatchMetadata(session.handle.identifier.toString)
+    assert(metadata.state === "RUNNING")
+    assert(metadata.engineId.startsWith("application_"))
+
     val killResponse = yarnOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(killResponse._1)
     assert(killResponse._2 startsWith "Succeeded to terminate:")
