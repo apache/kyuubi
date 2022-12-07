@@ -37,6 +37,8 @@ public class Engine {
 
   private Long createTime;
   private String url;
+  private String host;
+  private int port;
 
   public Engine() {}
 
@@ -50,7 +52,9 @@ public class Engine {
       String namespace,
       Map<String, String> attributes,
       Long createTime,
-      String url) {
+      String url,
+      String host,
+      int port) {
     this.version = version;
     this.user = user;
     this.engineType = engineType;
@@ -61,6 +65,8 @@ public class Engine {
     this.attributes = attributes;
     this.createTime = createTime;
     this.url = url;
+    this.host = host;
+    this.port = port;
   }
 
   public String getVersion() {
@@ -138,16 +144,28 @@ public class Engine {
     this.createTime = createTime;
   }
 
-  public void setShareLevel(String sharelevel) {
-    this.sharelevel = sharelevel;
-  }
-
   public String getUrl() {
     return url;
   }
 
   public void setUrl(String url) {
     this.url = url;
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public void setPort(int port) {
+    this.port = port;
   }
 
   @Override
@@ -164,7 +182,9 @@ public class Engine {
         && Objects.equals(getNamespace(), that.getNamespace())
         && Objects.equals(getAttributes(), that.getAttributes())
         && Objects.equals(getCreateTime(), that.getCreateTime())
-        && Objects.equals(getUrl(), that.getUrl());
+        && Objects.equals(getUrl(), that.getUrl())
+        && Objects.equals(getHost(), that.getHost())
+        && Objects.equals(getPort(), that.getPort());
   }
 
   @Override
@@ -179,7 +199,9 @@ public class Engine {
         getNamespace(),
         getAttributes(),
         getCreateTime(),
-        getUrl());
+        getUrl(),
+        getHost(),
+        getPort());
   }
 
   @Override

@@ -133,9 +133,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
         }
     }
-
     val engineMgr = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager].applicationManager
-
     engineNodes.map(node =>
       new Engine(
         engine.getVersion,
@@ -147,7 +145,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.namespace,
         node.attributes.asJava,
         node.createTime,
-        engineMgr.getApplicationInfo(None, node.engineRefId.get).get.url.getOrElse("")))
+        engineMgr.getApplicationInfo(None, node.engineRefId.orNull).map(_.url.orNull).orNull,
+        node.host,
+        node.port))
+
   }
 
   @ApiResponse(
@@ -255,6 +256,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       null,
       null,
       Collections.emptyMap(),
+      null,
+      null,
       null,
       null)
   }

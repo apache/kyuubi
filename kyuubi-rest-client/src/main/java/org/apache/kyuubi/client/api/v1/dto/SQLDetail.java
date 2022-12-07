@@ -26,7 +26,7 @@ public class SQLDetail {
   private Long createTime;
   private Long completeTime;
   private String statement;
-  private String engineName;
+  private String engineId;
   private String engineType;
   private String engineShareLevel;
   private String exception;
@@ -38,7 +38,7 @@ public class SQLDetail {
       Long createTime,
       Long completeTime,
       String statement,
-      String engineName,
+      String engineId,
       String engineType,
       String engineShareLevel,
       String exception) {
@@ -48,7 +48,7 @@ public class SQLDetail {
     this.createTime = createTime;
     this.completeTime = completeTime;
     this.statement = statement;
-    this.engineName = engineName;
+    this.engineId = engineId;
     this.engineType = engineType;
     this.engineShareLevel = engineShareLevel;
     this.exception = exception;
@@ -102,12 +102,12 @@ public class SQLDetail {
     this.statement = statement;
   }
 
-  public String getEngineName() {
-    return engineName;
+  public String getEngineId() {
+    return engineId;
   }
 
-  public void setEngineName(String engineName) {
-    this.engineName = engineName;
+  public void setEngineId(String engineName) {
+    this.engineId = engineName;
   }
 
   public String getEngineType() {
@@ -145,7 +145,7 @@ public class SQLDetail {
         && Objects.equals(createTime, that.createTime)
         && Objects.equals(completeTime, that.completeTime)
         && Objects.equals(statement, that.statement)
-        && Objects.equals(engineName, that.engineName)
+        && Objects.equals(engineId, that.engineId)
         && Objects.equals(engineType, that.engineType)
         && Objects.equals(engineShareLevel, that.engineShareLevel)
         && Objects.equals(exception, that.exception);
@@ -160,7 +160,7 @@ public class SQLDetail {
         createTime,
         completeTime,
         statement,
-        engineName,
+        engineId,
         engineType,
         engineShareLevel,
         exception);
