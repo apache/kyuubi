@@ -120,6 +120,49 @@ private[authz] object AuthZUtils {
     getFieldVal[Option[CatalogTable]](plan, "catalogTable")
   }
 
+  def hasIcebergMetadataTable(plan: LogicalPlan): Boolean = {
+    if (!hasResolvedDatasourceV2Table(plan)) {
+      false
+    } else {
+      val table = getFieldVal[Table](plan, "table")
+      if (table.getClass.getName == "org.apache.iceberg.spark.source.SparkTable") {
+        val icebergTable = getFieldValOpt[Table](table, "icebergTable")
+        if (icebergTable.isEmpty) {
+          false
+        } else {
+          icebergTable.get.getClass.getName match {
+            case "org.apache.iceberg.AllDataFilesTable"
+                | "org.apache.iceberg.AllDeleteFilesTable"
+                | "org.apache.iceberg.AllEntriesTable"
+                | "org.apache.iceberg.AllFilesTable"
+                | "org.apache.iceberg.AllManifestsTable"
+                | "org.apache.iceberg.BaseFilesTable"
+                | "org.apache.iceberg.DataFilesTable"
+                | "org.apache.iceberg.DeleteFilesTable"
+                | "org.apache.iceberg.FilesTable"
+                | "org.apache.iceberg.HistoryTable"
+                | "org.apache.iceberg.ManifestEntriesTable"
+                | "org.apache.iceberg.ManifestsTable"
+                | "org.apache.iceberg.PartitionsTable"
+                | "org.apache.iceberg.SnapshotsTable" => true
+            case _ => false
+          }
+        }
+      } else {
+        false
+      }
+    }
+  }
+
+  def getIcebergIdentifier(plan: LogicalPlan): Identifier = {
+    val identifier = getFieldVal[Option[Identifier]](plan, "identifier").get
+    val strings = identifier.namespace()
+    val tableName = strings(strings.length - 1)
+    val a = new Array[String](strings.length - 1)
+    strings.copyToArray(a, 0, strings.length - 1)
+    Identifier.of(a, tableName)
+  }
+
   def hasResolvedDatasourceV2Table(plan: LogicalPlan): Boolean = {
     plan.nodeName == "DataSourceV2Relation" && plan.resolved
   }

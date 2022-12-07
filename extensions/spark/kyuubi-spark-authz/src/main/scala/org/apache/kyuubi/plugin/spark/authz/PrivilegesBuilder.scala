@@ -159,6 +159,10 @@ object PrivilegesBuilder {
           mergeProjection(t, plan)
         }
 
+      case icebergMetadataTable if hasIcebergMetadataTable(icebergMetadataTable) =>
+        val icebergTableIdent = getIcebergIdentifier(icebergMetadataTable)
+        privilegeObjects += v2TablePrivileges(icebergTableIdent)
+
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
         if (tableIdent.isDefined) {

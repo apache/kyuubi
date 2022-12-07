@@ -170,4 +170,25 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         })
     }
   }
+
+  test("KYUUBI #3924 - checks source table for Iceberg metadata table") {
+    assume(isSparkV32OrGreater)
+
+    val table = "ice_tbl"
+    val select = s"SELECT * FROM $catalogV2.$namespace1.$table.history"
+
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
+      doAs(
+        "admin",
+        assert(Try {
+          sql(s"CREATE TABLE $catalogV2.$namespace1.$table (key int, value int) USING iceberg")
+        }.isSuccess))
+
+      doAs(
+        "anonymous", {
+          val e = intercept[AccessControlException](sql(select).collect())
+          assert(e.getMessage === errorMessage("select", s"$namespace1/$table"))
+        })
+    }
+  }
 }
