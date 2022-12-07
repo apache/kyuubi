@@ -239,16 +239,6 @@ object TableCommands {
     UpdateTable.copy(classname = cmd)
   }
 
-  val DeleteFromIcebergTable = {
-    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable"
-    UpdateTable.copy(cmd)
-  }
-
-  val UpdateIcebergTable = {
-    val cmd = "org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable"
-    UpdateTable.copy(cmd)
-  }
-
   val OverwriteByExpression = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.OverwriteByExpression"
     val actionTypeDesc = ActionTypeDesc(null, null, Some("INSERT_OVERWRITE"))
@@ -415,6 +405,7 @@ object TableCommands {
     val queryDesc = QueryDesc("sourceTable")
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
+
   val ShowColumns = {
     val cmd = "org.apache.spark.sql.execution.command.ShowColumnsCommand"
     val tableDesc = tableNameDesc.copy(isInput = true)
@@ -573,7 +564,6 @@ object TableCommands {
     CreateView,
     CreateTempViewUsing,
     DeleteFromTable,
-    DeleteFromIcebergTable,
     DescribeColumn,
     DescribeTable,
     DropTable,
@@ -590,8 +580,6 @@ object TableCommands {
     InsertIntoHiveTable,
     LoadData,
     MergeIntoTable,
-    MergeIntoTable.copy(classname =
-      "org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable"),
     OverwriteByExpression,
     OverwritePartitionsDynamic,
     RepairTable,
@@ -608,6 +596,5 @@ object TableCommands {
     ShowTablePropertiesV2,
     TruncateTable,
     TruncateTableV2,
-    UpdateTable,
-    UpdateIcebergTable)
+    UpdateTable)
 }

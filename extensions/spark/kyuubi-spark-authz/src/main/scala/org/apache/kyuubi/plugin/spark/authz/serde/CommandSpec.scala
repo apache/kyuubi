@@ -45,7 +45,7 @@ trait CommandSpec {
 case class DatabaseCommandSpec(
     classname: String,
     databaseDescs: Seq[DatabaseDesc],
-    opType: String = "QUERY") extends CommandSpec
+    opType: String = "QUERY") extends CommandSpec {}
 
 /**
  * A specification describe a function command

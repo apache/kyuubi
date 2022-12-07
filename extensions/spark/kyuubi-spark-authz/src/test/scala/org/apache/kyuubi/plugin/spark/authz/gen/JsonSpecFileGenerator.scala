@@ -20,10 +20,10 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import org.apache.kyuubi.plugin.spark.authz.serde.mapper
+import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
 
 /**
- * Generates the defaut command specs to src/main/resources dir.
+ * Generates the default command specs to src/main/resources dir.
  *
  * Usage:
  * mvn scala:run -DmainClass=this class -pl :kyuubi-spark-authz_2.12
@@ -32,11 +32,11 @@ object JsonSpecFileGenerator {
 
   def main(args: Array[String]): Unit = {
     write(DatabaseCommands.data, "database")
-    write(TableCommands.data, "table")
+    write(TableCommands.data ++ IcebergCommands.data, "table")
     write(FunctionCommands.data, "function")
   }
 
-  def write(data: Any, filename: String): Unit = {
+  def write[T <: CommandSpec](data: Array[T], filename: String): Unit = {
     val pluginHome = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       .split("target").head
     val writer = {
@@ -44,7 +44,7 @@ object JsonSpecFileGenerator {
         Paths.get(pluginHome, "src", "main", "resources", s"${filename}_command_spec.json")
       Files.newBufferedWriter(p, StandardCharsets.UTF_8)
     }
-    mapper.writerWithDefaultPrettyPrinter().writeValue(writer, data)
+    mapper.writerWithDefaultPrettyPrinter().writeValue(writer, data.sortBy(_.classname))
     writer.close()
   }
 }

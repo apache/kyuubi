@@ -77,5 +77,5 @@ object FunctionCommands {
     CreateFunction,
     DropFunction,
     DescribeFunction,
-    RefreshFunction)
+    RefreshFunction).sortBy(_.classname)
 }
