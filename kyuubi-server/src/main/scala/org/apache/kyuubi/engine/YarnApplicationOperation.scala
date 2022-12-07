@@ -122,7 +122,8 @@ object YarnApplicationOperation extends Logging {
           case YarnApplicationState.SUBMITTED => ApplicationState.PENDING
           case YarnApplicationState.ACCEPTED => ApplicationState.PENDING
           case YarnApplicationState.RUNNING => ApplicationState.RUNNING
-          case YarnApplicationState.FINISHED => ApplicationState.FINISHED
+          // wait the FinalApplicationStatus to check whether is finished
+          case YarnApplicationState.FINISHED => ApplicationState.RUNNING
           case YarnApplicationState.FAILED => ApplicationState.FAILED
           case YarnApplicationState.KILLED => ApplicationState.KILLED
           case _ =>
