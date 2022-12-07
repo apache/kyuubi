@@ -805,6 +805,19 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         List(
           ("aa", Set("default.table1.a")),
           ("bb", Set("default.table0.b")))))
+
+      val df0 = spark.sql("select a as a0, b as b0 from table0 where a = 2")
+      df0.cache()
+      val df1 = spark.sql("select a, b from table1")
+      val df = df0.join(df1).select(df0("a0").alias("aa"), df1("b").alias("bb"))
+      val optimized = df.queryExecution.optimizedPlan
+      val ret1 = SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
+      assert(ret1 == Lineage(
+        List("default.table0", "default.table1"),
+        List(),
+        List(
+          ("aa", Set("default.table0.a")),
+          ("bb", Set("default.table1.b")))))
     }
   }
 
