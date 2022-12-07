@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.yarn.api.records.YarnApplicationState
+import org.apache.hadoop.yarn.api.records.{FinalApplicationStatus, YarnApplicationState}
 import org.apache.hadoop.yarn.client.api.YarnClient
 
 import org.apache.kyuubi.Logging
@@ -87,7 +87,8 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
         val info = ApplicationInfo(
           id = report.getApplicationId.toString,
           name = report.getName,
-          state = toApplicationState(report.getYarnApplicationState),
+          state =
+            toApplicationState(report.getYarnApplicationState, report.getFinalApplicationStatus),
           url = Option(report.getTrackingUrl),
           error = Option(report.getDiagnostics))
         debug(s"Successfully got application info by $tag: $info")
@@ -110,18 +111,32 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
 }
 
 object YarnApplicationOperation extends Logging {
-  def toApplicationState(state: YarnApplicationState): ApplicationState = state match {
-    case YarnApplicationState.NEW => ApplicationState.PENDING
-    case YarnApplicationState.NEW_SAVING => ApplicationState.PENDING
-    case YarnApplicationState.SUBMITTED => ApplicationState.PENDING
-    case YarnApplicationState.ACCEPTED => ApplicationState.PENDING
-    case YarnApplicationState.RUNNING => ApplicationState.RUNNING
-    case YarnApplicationState.FINISHED => ApplicationState.FINISHED
-    case YarnApplicationState.FAILED => ApplicationState.FAILED
-    case YarnApplicationState.KILLED => ApplicationState.KILLED
-    case _ =>
-      warn(s"The yarn driver state: $state is not supported, " +
-        "mark the application state as UNKNOWN.")
-      ApplicationState.UNKNOWN
+  def toApplicationState(
+      state: YarnApplicationState,
+      finalState: FinalApplicationStatus): ApplicationState = {
+    finalState match {
+      case FinalApplicationStatus.UNDEFINED =>
+        state match {
+          case YarnApplicationState.NEW => ApplicationState.PENDING
+          case YarnApplicationState.NEW_SAVING => ApplicationState.PENDING
+          case YarnApplicationState.SUBMITTED => ApplicationState.PENDING
+          case YarnApplicationState.ACCEPTED => ApplicationState.PENDING
+          case YarnApplicationState.RUNNING => ApplicationState.RUNNING
+          case YarnApplicationState.FINISHED => ApplicationState.FINISHED
+          case YarnApplicationState.FAILED => ApplicationState.FAILED
+          case YarnApplicationState.KILLED => ApplicationState.KILLED
+          case _ =>
+            warn(s"The yarn driver state: $state is not supported, " +
+              "mark the application state as UNKNOWN.")
+            ApplicationState.UNKNOWN
+        }
+      case FinalApplicationStatus.SUCCEEDED => ApplicationState.FINISHED
+      case FinalApplicationStatus.FAILED => ApplicationState.FAILED
+      case FinalApplicationStatus.KILLED => ApplicationState.KILLED
+      case _ =>
+        warn(s"The yarn driver state: $state is not supported, " +
+          "mark the application state as UNKNOWN.")
+        ApplicationState.UNKNOWN
+    }
   }
 }
