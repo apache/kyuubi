@@ -160,7 +160,7 @@ object PrivilegesBuilder {
         }
 
       case icebergMetadataTable if hasIcebergMetadataTable(icebergMetadataTable) =>
-        val icebergTableIdent = getIcebergIdentifier(icebergMetadataTable)
+        val icebergTableIdent = getSourceTableIdentifierForIcebergMetadataTable(icebergMetadataTable)
         privilegeObjects += v2TablePrivileges(icebergTableIdent)
 
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>

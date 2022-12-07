@@ -154,13 +154,13 @@ private[authz] object AuthZUtils {
     }
   }
 
-  def getIcebergIdentifier(plan: LogicalPlan): Identifier = {
-    val identifier = getFieldVal[Option[Identifier]](plan, "identifier").get
-    val strings = identifier.namespace()
-    val tableName = strings(strings.length - 1)
-    val a = new Array[String](strings.length - 1)
-    strings.copyToArray(a, 0, strings.length - 1)
-    Identifier.of(a, tableName)
+  def getSourceTableIdentifierForIcebergMetadataTable(plan: LogicalPlan): Identifier = {
+    val metadataTableIdentifier = getFieldVal[Option[Identifier]](plan, "identifier").get
+    val namespaceWithTable = metadataTableIdentifier.namespace()
+    val tableName = namespaceWithTable(namespaceWithTable.length - 1)
+    val namespace = new Array[String](namespaceWithTable.length - 1)
+    namespaceWithTable.copyToArray(namespace, 0, namespaceWithTable.length - 1)
+    Identifier.of(namespace, tableName)
   }
 
   def hasResolvedDatasourceV2Table(plan: LogicalPlan): Boolean = {
