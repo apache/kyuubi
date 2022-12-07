@@ -1,0 +1,75 @@
+[ {
+  "classname" : "org.apache.spark.sql.execution.command.CreateFunctionCommand",
+  "functionDescs" : [ {
+    "fieldName" : "functionName",
+    "fieldExtractor" : "StringFunctionExtractor",
+    "databaseDesc" : {
+      "fieldName" : "databaseName",
+      "fieldExtractor" : "StringOptionDatabaseExtractor",
+      "isInput" : false
+    },
+    "functionTypeDesc" : {
+      "fieldName" : "isTemp",
+      "fieldExtractor" : "TempMarkerFunctionTypeExtractor",
+      "skipTypes" : [ "TEMP" ]
+    },
+    "isInput" : false
+  } ],
+  "opType" : "CREATEFUNCTION"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.DescribeFunctionCommand",
+  "functionDescs" : [ {
+    "fieldName" : "info",
+    "fieldExtractor" : "ExpressionInfoFunctionExtractor",
+    "databaseDesc" : null,
+    "functionTypeDesc" : {
+      "fieldName" : "info",
+      "fieldExtractor" : "ExpressionInfoFunctionTypeExtractor",
+      "skipTypes" : [ "TEMP", "SYSTEM" ]
+    },
+    "isInput" : true
+  }, {
+    "fieldName" : "functionName",
+    "fieldExtractor" : "FunctionIdentifierFunctionExtractor",
+    "databaseDesc" : null,
+    "functionTypeDesc" : {
+      "fieldName" : "functionName",
+      "fieldExtractor" : "FunctionIdentifierFunctionTypeExtractor",
+      "skipTypes" : [ "TEMP", "SYSTEM" ]
+    },
+    "isInput" : true
+  } ],
+  "opType" : "DESCFUNCTION"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.DropFunctionCommand",
+  "functionDescs" : [ {
+    "fieldName" : "functionName",
+    "fieldExtractor" : "StringFunctionExtractor",
+    "databaseDesc" : {
+      "fieldName" : "databaseName",
+      "fieldExtractor" : "StringOptionDatabaseExtractor",
+      "isInput" : false
+    },
+    "functionTypeDesc" : {
+      "fieldName" : "isTemp",
+      "fieldExtractor" : "TempMarkerFunctionTypeExtractor",
+      "skipTypes" : [ "TEMP" ]
+    },
+    "isInput" : false
+  } ],
+  "opType" : "DROPFUNCTION"
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.RefreshFunctionCommand",
+  "functionDescs" : [ {
+    "fieldName" : "functionName",
+    "fieldExtractor" : "StringFunctionExtractor",
+    "databaseDesc" : {
+      "fieldName" : "databaseName",
+      "fieldExtractor" : "StringOptionDatabaseExtractor",
+      "isInput" : false
+    },
+    "functionTypeDesc" : null,
+    "isInput" : false
+  } ],
+  "opType" : "RELOADFUNCTION"
+} ]

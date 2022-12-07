@@ -47,8 +47,7 @@ object RuleAuthorization {
   def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
     val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
-    val opType = OperationType(plan.nodeName)
-    val (inputs, outputs) = PrivilegesBuilder.build(plan, spark)
+    val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
     val requests = new ArrayBuffer[AccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
       val resource = AccessResource(DATABASE, null)
