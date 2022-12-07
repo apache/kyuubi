@@ -59,7 +59,7 @@ class AdminCtlSuite extends RestClientTestHelper with TestPrematureExit {
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
       user,
-      Array("default"))
+      "default")
 
     withDiscoveryClient(conf) { client =>
       engine.getOrCreate(client)
