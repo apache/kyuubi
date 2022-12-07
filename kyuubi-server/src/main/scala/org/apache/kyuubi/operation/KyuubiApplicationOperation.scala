@@ -46,7 +46,7 @@ abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperat
     }
     val resp = new TGetResultSetMetadataResp
     resp.setSchema(schema)
-    resp.setStatus(okStatusWithHint(Seq.empty))
+    resp.setStatus(okStatusWithHints(Seq.empty))
     resp
   }
 
