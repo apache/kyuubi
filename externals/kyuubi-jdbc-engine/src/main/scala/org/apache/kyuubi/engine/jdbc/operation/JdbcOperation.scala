@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.engine.jdbc.operation
 
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf

@@ -21,7 +21,7 @@ import java.io.IOException
 
 import io.trino.client.Column
 import io.trino.client.StatementClient
-import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils
