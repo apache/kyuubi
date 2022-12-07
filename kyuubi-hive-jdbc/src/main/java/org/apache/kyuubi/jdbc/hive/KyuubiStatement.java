@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
   public static final int DEFAULT_FETCH_SIZE = 1000;
+  public static final String DEFAULT_RESULT_CODEC = "simple";
   private final KyuubiConnection connection;
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
@@ -208,7 +209,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     parseMetadata(metadata, columnNames, columnTypes, columnAttributes);
 
     String resultCodec =
-        properties.getOrDefault("__kyuubi_operation_result_codec__", connection.getResultCodec());
+        properties.getOrDefault("__kyuubi_operation_result_codec__", DEFAULT_RESULT_CODEC);
     LOG.info("kyuubi.operation.result.codec: " + resultCodec);
     switch (resultCodec) {
       case "arrow":
@@ -265,7 +266,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     parseMetadata(metadata, columnNames, columnTypes, columnAttributes);
 
     String resultCodec =
-        properties.getOrDefault("__kyuubi_operation_result_codec__", connection.getResultCodec());
+        properties.getOrDefault("__kyuubi_operation_result_codec__", DEFAULT_RESULT_CODEC);
     LOG.info("kyuubi.operation.result.codec: " + resultCodec);
     switch (resultCodec) {
       case "arrow":
