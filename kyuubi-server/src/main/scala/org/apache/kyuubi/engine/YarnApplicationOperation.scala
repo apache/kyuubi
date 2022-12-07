@@ -87,8 +87,10 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
         val info = ApplicationInfo(
           id = report.getApplicationId.toString,
           name = report.getName,
-          state =
-            toApplicationState(report.getYarnApplicationState, report.getFinalApplicationStatus),
+          state = toApplicationState(
+            report.getApplicationId.toString,
+            report.getYarnApplicationState,
+            report.getFinalApplicationStatus),
           url = Option(report.getTrackingUrl),
           error = Option(report.getDiagnostics))
         debug(s"Successfully got application info by $tag: $info")
@@ -112,32 +114,27 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
 
 object YarnApplicationOperation extends Logging {
   def toApplicationState(
-      state: YarnApplicationState,
-      finalState: FinalApplicationStatus): ApplicationState = {
-    finalState match {
-      case FinalApplicationStatus.UNDEFINED =>
-        state match {
-          case YarnApplicationState.NEW => ApplicationState.PENDING
-          case YarnApplicationState.NEW_SAVING => ApplicationState.PENDING
-          case YarnApplicationState.SUBMITTED => ApplicationState.PENDING
-          case YarnApplicationState.ACCEPTED => ApplicationState.PENDING
-          case YarnApplicationState.RUNNING => ApplicationState.RUNNING
-          // wait the FinalApplicationStatus to check whether is finished
-          case YarnApplicationState.FINISHED => ApplicationState.RUNNING
-          case YarnApplicationState.FAILED => ApplicationState.FAILED
-          case YarnApplicationState.KILLED => ApplicationState.KILLED
-          case _ =>
-            warn(s"The yarn driver state: $state is not supported, " +
-              "mark the application state as UNKNOWN.")
-            ApplicationState.UNKNOWN
-        }
-      case FinalApplicationStatus.SUCCEEDED => ApplicationState.FINISHED
-      case FinalApplicationStatus.FAILED => ApplicationState.FAILED
-      case FinalApplicationStatus.KILLED => ApplicationState.KILLED
-      case _ =>
-        warn(s"The yarn driver state: $state is not supported, " +
-          "mark the application state as UNKNOWN.")
-        ApplicationState.UNKNOWN
+      appId: String,
+      yarnAppState: YarnApplicationState,
+      finalAppStatus: FinalApplicationStatus): ApplicationState = {
+    (yarnAppState, finalAppStatus) match {
+      case (YarnApplicationState.NEW, FinalApplicationStatus.UNDEFINED) |
+          (YarnApplicationState.NEW_SAVING, FinalApplicationStatus.UNDEFINED) |
+          (YarnApplicationState.SUBMITTED, FinalApplicationStatus.UNDEFINED) |
+          (YarnApplicationState.ACCEPTED, FinalApplicationStatus.UNDEFINED) =>
+        ApplicationState.PENDING
+      case (YarnApplicationState.RUNNING, FinalApplicationStatus.UNDEFINED) |
+          (YarnApplicationState.RUNNING, FinalApplicationStatus.SUCCEEDED) =>
+        ApplicationState.RUNNING
+      case (YarnApplicationState.FINISHED, FinalApplicationStatus.SUCCEEDED) =>
+        ApplicationState.FINISHED
+      case (YarnApplicationState.FAILED, FinalApplicationStatus.FAILED) =>
+        ApplicationState.FAILED
+      case (YarnApplicationState.KILLED, FinalApplicationStatus.KILLED) =>
+        ApplicationState.KILLED
+      case (state, finalStatus) => // any other combination is invalid, so FAIL the application.
+        error(s"Unknown YARN state $state for app $appId with final status $finalStatus.")
+        ApplicationState.FAILED
     }
   }
 }
