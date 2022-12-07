@@ -95,7 +95,8 @@ class BatchJobSubmission(
   }
 
   override private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
-    applicationManager.getApplicationInfo(builder.clusterManager(), batchId)
+    // only the ApplicationInfo with non-empty id is valid for the operation
+    applicationManager.getApplicationInfo(builder.clusterManager(), batchId).filter(_.id != null)
   }
 
   private[kyuubi] def killBatchApplication(): KillResponse = {
@@ -200,8 +201,7 @@ class BatchJobSubmission(
       val process = builder.start
       applicationInfo = currentApplicationInfo
       while (!applicationFailed(applicationInfo) && process.isAlive) {
-        if (!appStatusFirstUpdated && applicationInfo.isDefined &&
-          !applicationInfo.exists(_.state == ApplicationState.NOT_FOUND)) {
+        if (!appStatusFirstUpdated && applicationInfo.isDefined) {
           setStateIfNotCanceled(OperationState.RUNNING)
           updateBatchMetadata()
           appStatusFirstUpdated = true
