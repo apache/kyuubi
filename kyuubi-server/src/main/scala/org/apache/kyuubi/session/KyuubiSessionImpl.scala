@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.util.Base64
+
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
@@ -26,7 +28,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
@@ -36,6 +38,7 @@ import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
+import org.apache.kyuubi.util.SignUtils
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -71,10 +74,17 @@ class KyuubiSessionImpl(
 
   private lazy val engineCredentials = renewEngineCredentials()
 
-  lazy val engine: EngineRef =
-    new EngineRef(sessionConf, user, handle.identifier.toString, sessionManager.applicationManager)
+  lazy val engine: EngineRef = new EngineRef(
+    sessionConf,
+    user,
+    sessionManager.groupProvider.primaryGroup(user, optimizedConf.asJava),
+    handle.identifier.toString,
+    sessionManager.applicationManager)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
+
+  private lazy val sessionUserSignBase64: String =
+    SignUtils.signWithPrivateKey(user, sessionManager.signingPrivateKey)
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventBus.post(sessionEvent)
@@ -123,6 +133,16 @@ class KyuubiSessionImpl(
         } else {
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }
+
+      if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
+        openEngineSessionConf = openEngineSessionConf +
+          (SESSION_USER_SIGN_ENABLED.key ->
+            sessionConf.get(SESSION_USER_SIGN_ENABLED).toString) +
+          (KYUUBI_SESSION_SIGN_PUBLICKEY ->
+            Base64.getEncoder.encodeToString(
+              sessionManager.signingPublicKey.getEncoded)) +
+          (KYUUBI_SESSION_USER_SIGN -> sessionUserSignBase64)
+      }
 
       val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
       val retryWait = sessionManager.getConf.get(ENGINE_OPEN_RETRY_WAIT)

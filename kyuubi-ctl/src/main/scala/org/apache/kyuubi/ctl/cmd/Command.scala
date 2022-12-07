@@ -18,8 +18,8 @@ package org.apache.kyuubi.ctl.cmd
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ctl.CliConfig
-import org.apache.kyuubi.ctl.ControlCli
+import org.apache.kyuubi.ctl.cli.ControlCli
+import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 
 abstract class Command[T](cliConfig: CliConfig) extends Logging {

@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.ctl.cmd
 
-import org.apache.kyuubi.ctl.AdminControlCli
-import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.cli.AdminControlCli
+import org.apache.kyuubi.ctl.opt.CliConfig
 
 abstract class AdminCtlCommand[T](cliConfig: CliConfig) extends Command[T](cliConfig) {
   override def info(msg: => Any): Unit = AdminControlCli.printMessage(msg)

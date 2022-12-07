@@ -187,4 +187,35 @@ object ResultSetSchemaConstant {
    * for example with overload functions
    */
   final val SPECIFIC_NAME = "SPECIFIC_NAME"
+
+  /**
+   * Int => KEY_SEQ
+   */
+  final val KEY_SEQ = "KEY_SEQ"
+
+  /**
+   * String => PK_NAME
+   */
+  final val PK_NAME = "PK_NAME"
+
+  /**
+   * String => The types catalog.
+   */
+  final val TYPE_CAT = "TYPE_CAT"
+
+  /**
+   * String => the types schema (may be null).
+   */
+  final val TYPE_SCHEM = "TYPE_SCHEM"
+
+  /**
+   * String => Name of the designated "identifier" column of a typed table.
+   */
+  final val SELF_REFERENCING_COL_NAME = "SELF_REFERENCING_COL_NAME"
+
+  /**
+   * String => Specifies how values in SELF_REFERENCING_COL_NAME are created.
+   */
+  final val REF_GENERATION = "REF_GENERATION"
+
 }

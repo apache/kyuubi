@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`i_item_id` STRING NOT NULL,`i_item_desc` STRING,`i_current_price` DECIMAL(7,2)
+i_item_id STRING NOT NULL,i_item_desc STRING,i_current_price DECIMAL(7,2)

@@ -16,6 +16,6 @@
  */
 package org.apache.kyuubi.ctl.cmd.delete
 
-import org.apache.kyuubi.ctl.CliConfig
+import org.apache.kyuubi.ctl.opt.CliConfig
 
 class DeleteServerCommand(cliConfig: CliConfig) extends DeleteCommand(cliConfig) {}

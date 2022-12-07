@@ -46,6 +46,11 @@ trait DiscoveryClient extends Logging {
   def getData(path: String): Array[Byte]
 
   /**
+   * Set the data under path.
+   */
+  def setData(path: String, data: Array[Byte]): Boolean
+
+  /**
    * Get the paths under given path.
    * @return list of path
    */
@@ -164,6 +169,15 @@ trait DiscoveryClient extends Logging {
       basePath: String,
       initData: String,
       useProtection: Boolean = false): Unit
+
+  /**
+   * Atomically get an Int number and add one
+   * @param path the path of stored data,
+   *             If the path does not exist, it will be created and initialized to 0
+   * @param delta the increase num
+   * @return the stored data under path
+   */
+  def getAndIncrement(path: String, delta: Int = 1): Int
 }
 
 object DiscoveryClient {

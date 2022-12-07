@@ -18,7 +18,6 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.KyuubiSession
 
 /**
@@ -31,6 +30,7 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param serverIP A unique Kyuubi server id, e.g. kyuubi server ip address and port,
  *                 it is useful if has multi-instance Kyuubi Server
  * @param conf session config
+ * @param eventTime the time when the event made
  * @param startTime session create time
  * @param remoteSessionId remote engine session id
  * @param engineId engine id. For engine on yarn, it is applicationId.
@@ -48,6 +48,7 @@ case class KyuubiSessionEvent(
     clientIP: String,
     serverIP: String,
     conf: Map[String, String],
+    eventTime: Long,
     startTime: Long,
     var remoteSessionId: String = "",
     var engineId: String = "",
@@ -61,8 +62,6 @@ case class KyuubiSessionEvent(
 
 object KyuubiSessionEvent {
   def apply(session: KyuubiSession): KyuubiSessionEvent = {
-    assert(KyuubiServer.kyuubiServer != null)
-    val serverIP = KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
     KyuubiSessionEvent(
       session.handle.identifier.toString,
       session.protocol.getValue,
@@ -70,8 +69,9 @@ object KyuubiSessionEvent {
       session.name.getOrElse(""),
       session.user,
       session.ipAddress,
-      serverIP,
+      session.connectionUrl,
       session.conf,
+      System.currentTimeMillis(),
       session.createTime)
   }
 }

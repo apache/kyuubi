@@ -17,7 +17,8 @@
 Quick Start
 ===========
 
-In this section, you will learn how to setup and interact with kyuubi quickly.
+.. note::
+   In this section, you will learn how to setup and interact with kyuubi quickly.
 
 .. toctree::
     :maxdepth: 2

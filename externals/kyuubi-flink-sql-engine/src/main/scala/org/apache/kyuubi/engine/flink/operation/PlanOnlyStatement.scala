@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.flink.operation
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.operations.command._
 
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils.isFlinkVersionAtMost
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil
 import org.apache.kyuubi.operation.{ExecutionMode, ParseMode, PhysicalMode, PlanOnlyMode, UnknownMode}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
@@ -38,6 +39,11 @@ class PlanOnlyStatement(
   private val lineSeparator: String = System.lineSeparator()
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
+  override protected def beforeRun(): Unit = {
+    OperationLog.setCurrentOperationLog(operationLog)
+    super.beforeRun()
+  }
+
   override protected def runInternal(): Unit = {
     try {
       val operation = executor.parseStatement(sessionId, statement)
@@ -46,11 +52,11 @@ class PlanOnlyStatement(
           resultSet = OperationUtils.runSetOperation(setOperation, executor, sessionId)
         case resetOperation: ResetOperation =>
           resultSet = OperationUtils.runResetOperation(resetOperation, executor, sessionId)
-        case addJarOperation: AddJarOperation =>
+        case addJarOperation: AddJarOperation if isFlinkVersionAtMost("1.15") =>
           resultSet = OperationUtils.runAddJarOperation(addJarOperation, executor, sessionId)
         case removeJarOperation: RemoveJarOperation =>
           resultSet = OperationUtils.runRemoveJarOperation(removeJarOperation, executor, sessionId)
-        case showJarsOperation: ShowJarsOperation =>
+        case showJarsOperation: ShowJarsOperation if isFlinkVersionAtMost("1.15") =>
           resultSet = OperationUtils.runShowJarOperation(showJarsOperation, executor, sessionId)
         case _ => explainOperation(statement)
       }

@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`s_acctbal` DOUBLE,`s_name` STRING,`n_name` STRING,`p_partkey` BIGINT,`p_mfgr` STRING,`s_address` STRING,`s_phone` STRING,`s_comment` STRING
+s_acctbal DOUBLE,s_name STRING,n_name STRING,p_partkey BIGINT,p_mfgr STRING,s_address STRING,s_phone STRING,s_comment STRING

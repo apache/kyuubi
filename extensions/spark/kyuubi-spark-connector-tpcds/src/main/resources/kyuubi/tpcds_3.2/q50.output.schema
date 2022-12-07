@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`s_store_name` STRING,`s_company_id` INT,`s_street_number` STRING,`s_street_name` STRING,`s_street_type` STRING,`s_suite_number` STRING,`s_city` STRING,`s_county` STRING,`s_state` STRING,`s_zip` STRING,`30 days` BIGINT,`31-60 days` BIGINT,`61-90 days` BIGINT,`91-120 days` BIGINT,`>120 days` BIGINT
+s_store_name STRING,s_company_id INT,s_street_number STRING,s_street_name STRING,s_street_type STRING,s_suite_number STRING,s_city STRING,s_county STRING,s_state STRING,s_zip STRING,`30 days` BIGINT,`31-60 days` BIGINT,`61-90 days` BIGINT,`91-120 days` BIGINT,`>120 days` BIGINT

@@ -83,7 +83,11 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
           .addLast(new MySQLPacketEncoder)
           .addLast(new MySQLAuthHandler)
           .addLast(new MySQLPacketDecoder)
-          .addLast(new MySQLCommandHandler(serverable.backendService, execPool))
+          .addLast(new MySQLCommandHandler(
+            serverAddr,
+            connectionUrl,
+            serverable.backendService,
+            execPool))
       })
     super.initialize(conf)
   }

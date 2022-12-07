@@ -17,14 +17,11 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
-import org.apache.kyuubi.plugin.spark.authz.v2Commands.CommandType.CommandType
 
 /**
  * Building privilege objects
@@ -69,52 +66,30 @@ object IcebergCommands extends Enumeration {
    * @param operationType    OperationType for converting accessType
    * @param leastVer         minimum Spark version required
    * @param mostVer          maximum Spark version supported
-   * @param commandTypes     Seq of [[CommandType]] hinting privilege building
-   * @param buildInput       input [[PrivilegeObject]] for privilege check
-   * @param buildOutput      output [[PrivilegeObject]] for privilege check
    * @param outputActionType [[PrivilegeObjectActionType]] for output [[PrivilegeObject]]
+   * @param resolveOutputTableOwner Whether to resolve table owner for output [[PrivilegeObject]]
    */
   case class CmdPrivilegeBuilder(
       operationType: OperationType = QUERY,
       leastVer: Option[String] = None,
       mostVer: Option[String] = None,
-      commandTypes: Seq[CommandType] = Seq.empty,
-      buildInput: (LogicalPlan, ArrayBuffer[PrivilegeObject], Seq[CommandType]) => Unit =
-        v2Commands.defaultBuildInput,
-      buildOutput: (
-          LogicalPlan,
-          ArrayBuffer[PrivilegeObject],
-          Seq[CommandType],
-          PrivilegeObjectActionType) => Unit = v2Commands.defaultBuildOutput,
-      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER)
-    extends super.Val {
-
-    def buildPrivileges(
-        plan: LogicalPlan,
-        inputObjs: ArrayBuffer[PrivilegeObject],
-        outputObjs: ArrayBuffer[PrivilegeObject]): Unit = {
-      this.buildInput(plan, inputObjs, commandTypes)
-      this.buildOutput(plan, outputObjs, commandTypes, outputActionType)
-    }
-  }
+      outputActionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER,
+      resolveOutputTableOwner: Boolean = true)
+    extends super.Val
 
   // dml commands
 
   val DeleteFromIcebergTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_DROPPARTS,
     leastVer = Some("3.2"),
-    commandTypes = Seq(v2Commands.CommandType.HasTableAsIdentifierOption),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   val UpdateIcebergTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
     operationType = ALTERTABLE_ADDPARTS,
     leastVer = Some("3.2"),
-    commandTypes = Seq(v2Commands.CommandType.HasTableAsIdentifierOption),
     outputActionType = PrivilegeObjectActionType.UPDATE)
 
   val UnresolvedMergeIntoIcebergTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder()
 
-  val MergeIntoIcebergTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder(
-    buildInput = v2Commands.MergeIntoTable.buildInput,
-    buildOutput = v2Commands.MergeIntoTable.buildOutput)
+  val MergeIntoIcebergTable: CmdPrivilegeBuilder = CmdPrivilegeBuilder()
 }

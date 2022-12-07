@@ -18,10 +18,11 @@ package org.apache.kyuubi.ctl.cmd.submit
 
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.client.util.{BatchUtils, JsonUtils}
-import org.apache.kyuubi.ctl.{BatchOpts, CliConfig, ControlCliException, LogOpts}
+import org.apache.kyuubi.ctl.ControlCliException
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.cmd.create.CreateBatchCommand
 import org.apache.kyuubi.ctl.cmd.log.LogBatchCommand
+import org.apache.kyuubi.ctl.opt.{BatchOpts, CliConfig, LogOpts}
 import org.apache.kyuubi.ctl.util.{CtlUtils, Render, Validator}
 
 class SubmitBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig) {

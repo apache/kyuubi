@@ -72,7 +72,7 @@ trait ForcedMaxOutputRowsBase extends Rule[LogicalPlan] {
   protected def canInsertLimit(p: LogicalPlan, maxOutputRowsOpt: Option[Int]): Boolean = {
     maxOutputRowsOpt match {
       case Some(forcedMaxOutputRows) => canInsertLimitInner(p) &&
-          !p.maxRows.exists(_ <= forcedMaxOutputRows)
+        !p.maxRows.exists(_ <= forcedMaxOutputRows)
       case None => false
     }
   }

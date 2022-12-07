@@ -23,7 +23,6 @@ import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
-import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -37,7 +36,7 @@ import org.apache.kyuubi.engine.jdbc.JdbcProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
-import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryPaths}
+import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
@@ -52,6 +51,7 @@ import org.apache.kyuubi.operation.log.OperationLog
 private[kyuubi] class EngineRef(
     conf: KyuubiConf,
     user: String,
+    primaryGroup: String,
     engineRefId: String,
     engineManager: KyuubiApplicationManager)
   extends Logging {
@@ -72,11 +72,20 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
 
+  private val enginePoolBalancePolicy: String = conf.get(ENGINE_POOL_BALANCE_POLICY)
+
   // In case the multi kyuubi instances have the small gap of timeout, here we add
   // a small amount of time for timeout
   private val LOCK_TIMEOUT_SPAN_FACTOR = if (Utils.isTesting) 0.5 else 0.1
 
   private var builder: ProcBuilder = _
+
+  // Launcher of the engine
+  private[kyuubi] val appUser: String = shareLevel match {
+    case SERVER => Utils.currentUser
+    case GROUP => primaryGroup
+    case _ => user
+  }
 
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
@@ -87,26 +96,21 @@ private[kyuubi] class EngineRef(
         warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
           s"system threshold $poolThreshold")
       }
-      // TODO: Currently, we use random policy, and later we can add a sequential policy,
-      //  such as AtomicInteger % poolSize.
-      s"$clientPoolName-${Random.nextInt(poolSize)}"
-    case _ => "default" // [KYUUBI #1293]
-  }
-
-  // Launcher of the engine
-  private[kyuubi] val appUser: String = shareLevel match {
-    case SERVER => Utils.currentUser
-    case GROUP =>
-      val clientUGI = UserGroupInformation.createRemoteUser(user)
-      // Similar to `clientUGI.getPrimaryGroupName` (avoid IOE) to get the Primary GroupName of
-      // the client user mapping to
-      clientUGI.getGroupNames.headOption match {
-        case Some(primaryGroup) => primaryGroup
-        case None =>
-          warn(s"There is no primary group for $user, use the client user name as group directly")
-          user
+      val seqNum = enginePoolBalancePolicy match {
+        case "POLLING" =>
+          val snPath =
+            DiscoveryPaths.makePath(
+              s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType",
+              "seq_num",
+              Array(appUser, clientPoolName))
+          DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+            client.getAndIncrement(snPath)
+          }
+        case "RANDOM" =>
+          Random.nextInt(poolSize)
       }
-    case _ => user
+      s"$clientPoolName-${seqNum % poolSize}"
+    case _ => "default" // [KYUUBI #1293]
   }
 
   /**

@@ -15,21 +15,19 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
         <version>1.7.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-spark-sql-engine_2.12</artifactId>
-    <name>Kyuubi Project Engine Spark SQL</name>
     <packaging>jar</packaging>
+    <name>Kyuubi Project Engine Spark SQL</name>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
@@ -124,7 +122,7 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+            <artifactId>${hive.jdbc.artifact}</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
@@ -198,8 +196,6 @@
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -208,7 +204,12 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
+                            <include>com.google.android:annotations</include>
+                            <include>com.google.api.grpc:proto-google-common-protos</include>
+                            <include>com.google.code.gson:gson</include>
+                            <include>com.google.errorprone:error_prone_annotations</include>
                             <include>com.google.guava:*</include>
+                            <include>com.google.j2objc:j2objc-annotations</include>
                             <include>com.google.protobuf:*</include>
                             <include>io.etcd:*</include>
                             <include>io.grpc:*</include>
@@ -216,21 +217,24 @@
                             <include>io.perfmark:perfmark-api</include>
                             <include>io.vertx:*</include>
                             <include>net.jodah:failsafe</include>
-                            <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-events_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
-                            <include>org.apache.zookeeper:zookeeper</include>
                             <include>org.apache.hive:hive-service-rpc</include>
+                            <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
+                            <include>org.apache.kyuubi:kyuubi-events_${scala.binary.version}</include>
+                            <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
                             <include>org.apache.thrift:*</include>
+                            <include>org.apache.zookeeper:zookeeper</include>
+                            <include>org.checkerframework:checker-qual</include>
+                            <include>org.codehaus.mojo:animal-sniffer-annotations</include>
                         </includes>
                     </artifactSet>
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>
                             <excludes>
+                                <exclude>**/*.proto</exclude>
                                 <exclude>META-INF/*.SF</exclude>
                                 <exclude>META-INF/*.DSA</exclude>
                                 <exclude>META-INF/*.RSA</exclude>
@@ -289,11 +293,15 @@
                             </includes>
                         </relocation>
                         <relocation>
-                            <pattern>com.google</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.com.google</shadedPattern>
+                            <pattern>io.etcd</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.etcd</shadedPattern>
                             <includes>
-                                <include>com.google.**</include>
+                                <include>io.etcd.**</include>
                             </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.grpc</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.grpc</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>io.netty</pattern>
@@ -301,6 +309,10 @@
                             <includes>
                                 <include>io.netty.**</include>
                             </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.perfmark</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.perfmark</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>io.vertx</pattern>
@@ -317,20 +329,123 @@
                             </includes>
                         </relocation>
                         <relocation>
-                            <pattern>io.perfmark</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.io.perfmark</shadedPattern>
+                            <pattern>android.annotation</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.android.annotation</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.common</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.common</shadedPattern>
                             <includes>
-                                <include>io.perfmark.**</include>
+                                <include>com.google.common.**</include>
                             </includes>
                         </relocation>
+                        <relocation>
+                            <pattern>com.google.thirdparty</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.thirdparty</shadedPattern>
+                            <includes>
+                                <include>com.google.thirdparty.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.protobuf</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.protobuf</shadedPattern>
+                            <includes>
+                                <include>com.google.protobuf.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.codehaus.mojo.animal_sniffer</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.codehaus.mojo.animal_sniffer</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.j2objc.annotations</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.j2objc.annotations</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.errorprone.annotations</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.errorprone.annotations</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.checkerframework</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.checkerframework</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.gson</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.gson</shadedPattern>
+                        </relocation>
+                        <!--
+                          For `com.google.api.grpc:proto-google-common-protos`, do not directly define pattern
+                          as `common.google`, otherwise, otherwise, the relocation result may be uncertain due
+                          to the change of rule order.
+                        -->
+                        <relocation>
+                            <pattern>com.google.api</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.api</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.cloud</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.cloud</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.geo</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.geo</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.logging</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.logging</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.longrunning</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.longrunning</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.rpc</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.rpc</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.type</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.type</shadedPattern>
+                        </relocation>
                     </relocations>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
+                    </transformers>
                 </configuration>
                 <executions>
                     <execution>
-                        <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>rename-native-library</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <target>
+                                <echo message="unpacking netty jar"></echo>
+                                <unzip dest="${project.build.directory}/unpacked/" src="${project.build.directory}/${project.artifactId}-${project.version}.jar"></unzip>
+                                <echo message="renaming netty native libraries"></echo>
+                                <move includeemptydirs="false" todir="${project.build.directory}/unpacked/META-INF/native">
+                                    <fileset dir="${project.build.directory}/unpacked/META-INF/native"></fileset>
+                                    <mapper from="libnetty_transport_native_epoll_(aarch_64.so|x86_64.so)" to="liborg_apache_kyuubi_shade_netty_transport_native_epoll_\1" type="regexp"></mapper>
+                                </move>
+                                <echo message="deleting META-INF/native-image folder"></echo>
+                                <delete dir="${project.build.directory}/unpacked/META-INF/native-image"></delete>
+                                <echo message="repackaging netty jar"></echo>
+                                <jar basedir="${project.build.directory}/unpacked" destfile="${project.build.directory}/${project.artifactId}-${project.version}.jar"></jar>
+                            </target>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -341,13 +456,15 @@
                 <executions>
                     <execution>
                         <id>prepare-test-jar</id>
-                        <phase>test-compile</phase>
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <phase>test-compile</phase>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
 </project>

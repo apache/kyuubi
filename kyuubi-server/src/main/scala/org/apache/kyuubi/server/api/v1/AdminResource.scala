@@ -17,9 +17,11 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.util.Collections
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import io.swagger.v3.oas.annotations.media.Content
@@ -50,7 +52,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @POST
   @Path("refresh/hadoop_conf")
   def refreshFrontendHadoopConf(): Response = {
-    val userName = fe.getUserName(Map.empty[String, String])
+    val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive refresh Kyuubi server hadoop conf request from $userName/$ipAddress")
     if (!userName.equals(administrator)) {
@@ -74,7 +76,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
-    val userName = fe.getUserName(hs2ProxyUser)
+    val userName = fe.getSessionUser(hs2ProxyUser)
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = getEngineSpace(engine)
 
@@ -109,7 +111,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
-    val userName = fe.getUserName(hs2ProxyUser)
+    val userName = fe.getSessionUser(hs2ProxyUser)
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
     val engineSpace = getEngineSpace(engine)
 
@@ -135,7 +137,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         engine.getEngineType,
         engine.getSharelevel,
         node.namespace.split("/").last,
-        node.instance))
+        node.instance,
+        node.namespace,
+        node.attributes.asJava))
   }
 
   private def getEngine(
@@ -161,7 +165,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       normalizedEngineType,
       engineShareLevel,
       engineSubdomain,
-      null)
+      null,
+      null,
+      Collections.emptyMap())
   }
 
   private def getEngineSpace(engine: Engine): String = {

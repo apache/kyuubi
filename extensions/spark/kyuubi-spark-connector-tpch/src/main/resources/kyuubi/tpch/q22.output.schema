@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`cntrycode` STRING,`numcust` BIGINT NOT NULL,`totacctbal` DOUBLE
+cntrycode STRING,numcust BIGINT NOT NULL,totacctbal DOUBLE

@@ -80,11 +80,11 @@ class GetTables(
           Column.physical(TABLE_NAME, DataTypes.STRING),
           Column.physical(TABLE_TYPE, DataTypes.STRING),
           Column.physical(REMARKS, DataTypes.STRING),
-          Column.physical("TYPE_CAT", DataTypes.STRING),
-          Column.physical("TYPE_SCHEM", DataTypes.STRING),
-          Column.physical("TYPE_NAME", DataTypes.STRING),
-          Column.physical("SELF_REFERENCING_COL_NAME", DataTypes.STRING),
-          Column.physical("REF_GENERATION", DataTypes.STRING))
+          Column.physical(TYPE_CAT, DataTypes.STRING),
+          Column.physical(TYPE_SCHEM, DataTypes.STRING),
+          Column.physical(TYPE_NAME, DataTypes.STRING),
+          Column.physical(SELF_REFERENCING_COL_NAME, DataTypes.STRING),
+          Column.physical(REF_GENERATION, DataTypes.STRING))
         .data(tables)
         .build
     } catch onError()

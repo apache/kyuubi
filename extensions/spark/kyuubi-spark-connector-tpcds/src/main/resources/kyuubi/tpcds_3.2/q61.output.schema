@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`promotions` DECIMAL(17,2),`total` DECIMAL(17,2),`((CAST(promotions AS DECIMAL(15,4)) / CAST(total AS DECIMAL(15,4))) * 100)` DECIMAL(38,19)
+promotions DECIMAL(17,2),total DECIMAL(17,2),`((CAST(promotions AS DECIMAL(15,4)) / CAST(total AS DECIMAL(15,4))) * 100)` DECIMAL(38,19)

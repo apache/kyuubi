@@ -31,6 +31,7 @@ import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.types._
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.SemanticVersion
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.schema.SchemaHelper.TIMESTAMP_NTZ
@@ -92,14 +93,12 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       .add("c17", "struct<X: string>", nullable = true, "17")
 
     // since spark3.3.0
-    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
-      (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 3)) {
+    if (SPARK_ENGINE_VERSION >= "3.3") {
       schema = schema.add("c18", "interval day", nullable = true, "18")
         .add("c19", "interval year", nullable = true, "19")
     }
     // since spark3.4.0
-    if (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 > 3 ||
-      (SPARK_ENGINE_MAJOR_MINOR_VERSION._1 == 3 && SPARK_ENGINE_MAJOR_MINOR_VERSION._2 >= 4)) {
+    if (SPARK_ENGINE_VERSION >= "3.4") {
       schema = schema.add("c20", "timestamp_ntz", nullable = true, "20")
     }
 
@@ -331,6 +330,53 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
       assertResult(Seq(0L, 1L))(idSeq4)
+    }
+  }
+
+  test("test fetch orientation with incremental collect mode") {
+    val sql = "SELECT id FROM range(2)"
+
+    withSessionConf(Map(KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true"))()() {
+      withSessionHandle { (client, handle) =>
+        val req = new TExecuteStatementReq()
+        req.setSessionHandle(handle)
+        req.setStatement(sql)
+        val tExecuteStatementResp = client.ExecuteStatement(req)
+        val opHandle = tExecuteStatementResp.getOperationHandle
+        waitForOperationToComplete(client, opHandle)
+
+        // fetch next from before first row
+        val tFetchResultsReq1 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
+        val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq1)
+        assert(tFetchResultsResp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0)
+          .getI64Val.getValues.asScala.toSeq
+        assertResult(Seq(0L))(idSeq1)
+
+        // fetch next from first row
+        val tFetchResultsReq2 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
+        val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
+        assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0)
+          .getI64Val.getValues.asScala.toSeq
+        assertResult(Seq(1L))(idSeq2)
+
+        // fetch prior from second row, expected got first row
+        val tFetchResultsReq3 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_PRIOR, 1)
+        val tFetchResultsResp3 = client.FetchResults(tFetchResultsReq3)
+        assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0)
+          .getI64Val.getValues.asScala.toSeq
+        assertResult(Seq(0L))(idSeq3)
+
+        // fetch first
+        val tFetchResultsReq4 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_FIRST, 3)
+        val tFetchResultsResp4 = client.FetchResults(tFetchResultsReq4)
+        assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0)
+          .getI64Val.getValues.asScala.toSeq
+        assertResult(Seq(0L, 1L))(idSeq4)
+      }
     }
   }
 

@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`ss_customer_sk` BIGINT,`sumsales` DECIMAL(28,2)
+ss_customer_sk BIGINT,sumsales DECIMAL(28,2)

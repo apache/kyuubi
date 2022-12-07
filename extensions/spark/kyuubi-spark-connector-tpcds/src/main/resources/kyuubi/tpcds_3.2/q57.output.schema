@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`cc_name` STRING,`d_year` INT,`d_moy` INT,`avg_monthly_sales` DECIMAL(21,6),`sum_sales` DECIMAL(17,2),`psum` DECIMAL(17,2),`nsum` DECIMAL(17,2)
+cc_name STRING,d_year INT,d_moy INT,avg_monthly_sales DECIMAL(21,6),sum_sales DECIMAL(17,2),psum DECIMAL(17,2),nsum DECIMAL(17,2)

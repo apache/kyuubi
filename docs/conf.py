@@ -33,6 +33,7 @@ import os
 import sys
 import shlex
 import subprocess
+import datetime
 
 sys.path.insert(0, os.path.abspath('.'))
 
@@ -55,24 +56,12 @@ source_parsers = {
 
 project = 'Kyuubi'
 
-copyright = '''
-Licensed to the Apache Software Foundation (ASF) under one or more
-contributor license agreements.  See the NOTICE file distributed with
-this work for additional information regarding copyright ownership.
-The ASF licenses this file to You under the Apache License, Version 2.0
-(the "License"); you may not use this file except in compliance with
-the License.  You may obtain a copy of the License at
+year = datetime.datetime.now().strftime("%Y")
 
-   http://www.apache.org/licenses/LICENSE-2.0
+copyright = year + ' The Apache Software Foundation, Licensed under the Apache License, Version 2.0'
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-'''
 
-author = 'Kent Yao'
+author = 'Apache Kyuubi Community'
 
 # The full version, including alpha/beta/rc tags
 release = subprocess.getoutput("cd .. && build/mvn help:evaluate -Dexpression=project.version|grep -v Using|grep -v INFO|grep -v WARNING|tail -n 1").split('\n')[-1]
@@ -89,6 +78,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'recommonmark',
     'sphinx_markdown_tables',
+    'sphinx_togglebutton',
     'notfound.extension',
 ]
 
@@ -117,13 +107,16 @@ html_theme_options = {
     "repository_branch": "master",
     "path_to_docs": "docs",
     "logo_only": True,
-    "home_page_in_toc": True,
+    "home_page_in_toc": False,
+    "show_navbar_depth": 1,
     "show_toc_level": 2,
     "announcement": "&#129418; Welcome to Kyuubi’s online documentation &#x2728;, v" + release,
+    "toc_title": "",
+    "extra_navbar": "Version " + release,
 }
 
-html_logo = 'imgs/kyuubi_logo.png'
-html_favicon = 'imgs/kyuubi_logo_red.png'
+html_logo = 'imgs/logo.png'
+html_favicon = 'imgs/logo_red_short.png'
 html_title = 'Apache Kyuubi'
 
 pygments_style = 'sphinx'

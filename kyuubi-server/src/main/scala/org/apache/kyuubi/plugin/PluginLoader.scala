@@ -38,7 +38,21 @@ private[kyuubi] object PluginLoader {
         throw new KyuubiException(
           s"Class ${advisorClass.get} is not a child of '${classOf[SessionConfAdvisor].getName}'.")
       case NonFatal(e) =>
-        throw new IllegalArgumentException(s"Error while instantiating '${advisorClass.get}':", e)
+        throw new IllegalArgumentException(s"Error while instantiating '${advisorClass.get}': ", e)
+    }
+  }
+
+  def loadGroupProvider(conf: KyuubiConf): GroupProvider = {
+    val groupProviderClass = conf.get(KyuubiConf.GROUP_PROVIDER)
+    try {
+      Class.forName(groupProviderClass).getConstructor().newInstance()
+        .asInstanceOf[GroupProvider]
+    } catch {
+      case _: ClassCastException =>
+        throw new KyuubiException(
+          s"Class $groupProviderClass is not a child of '${classOf[GroupProvider].getName}'.")
+      case NonFatal(e) =>
+        throw new IllegalArgumentException(s"Error while instantiating '$groupProviderClass': ", e)
     }
   }
 }

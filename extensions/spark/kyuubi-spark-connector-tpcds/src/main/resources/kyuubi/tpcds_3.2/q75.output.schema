@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`prev_year` INT,`year` INT,`i_brand_id` INT,`i_class_id` INT,`i_category_id` INT,`i_manufact_id` INT,`prev_yr_cnt` BIGINT,`curr_yr_cnt` BIGINT,`sales_cnt_diff` BIGINT,`sales_amt_diff` DECIMAL(19,2)
+prev_year INT,year INT,i_brand_id INT,i_class_id INT,i_category_id INT,i_manufact_id INT,prev_yr_cnt BIGINT,curr_yr_cnt BIGINT,sales_cnt_diff BIGINT,sales_amt_diff DECIMAL(19,2)

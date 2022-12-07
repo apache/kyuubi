@@ -18,13 +18,14 @@
 package org.apache.kyuubi.engine
 
 import io.fabric8.kubernetes.api.model.{Pod, PodList}
-import io.fabric8.kubernetes.client.{Config, DefaultKubernetesClient, KubernetesClient, KubernetesClientException}
+import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.KUBERNETES_CONTEXT
 import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, PENDING, RUNNING}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.SPARK_APP_ID_LABEL
+import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
@@ -33,24 +34,18 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private var jpsOperation: JpsApplicationOperation = _
 
   override def initialize(conf: KyuubiConf): Unit = {
-    info("Start Initialize Kubernetes Client.")
-    val contextOpt = conf.get(KUBERNETES_CONTEXT)
-    if (contextOpt.isEmpty) {
-      warn("Skip Initialize Kubernetes Client, because of Context not set.")
-      return
-    }
     jpsOperation = new JpsApplicationOperation
     jpsOperation.initialize(conf)
-    kubernetesClient =
-      try {
-        val client = new DefaultKubernetesClient(Config.autoConfigure(contextOpt.get))
+
+    info("Start initializing Kubernetes Client.")
+    kubernetesClient = KubernetesUtils.buildKubernetesClient(conf) match {
+      case Some(client) =>
         info(s"Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
         client
-      } catch {
-        case e: KubernetesClientException =>
-          error("Fail to init KubernetesClient for KubernetesApplicationOperation", e)
-          null
-      }
+      case None =>
+        warn("Fail to init Kubernetes Client for Kubernetes Application Operation")
+        null
+    }
   }
 
   override def isSupported(clusterManager: Option[String]): Boolean = {
@@ -91,8 +86,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         if (podList.size() != 0) {
           val pod = podList.get(0)
           val info = ApplicationInfo(
-            // Can't get appId, get Pod UID instead.
-            id = pod.getMetadata.getUid,
+            // spark pods always tag label `spark-app-selector:<spark-app-id>`
+            id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
             name = pod.getMetadata.getName,
             state = KubernetesApplicationOperation.toApplicationState(pod.getStatus.getPhase),
             error = Option(pod.getStatus.getReason))
@@ -135,6 +130,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
 object KubernetesApplicationOperation extends Logging {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
+  val SPARK_APP_ID_LABEL = "spark-app-selector"
 
   def toApplicationState(state: String): ApplicationState = state match {
     // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go#L2396

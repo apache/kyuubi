@@ -47,3 +47,22 @@ kyuubi.authentication.jdbc.user = bowenliang123
 kyuubi.authentication.jdbc.password = bowenliang123@kyuubi
 kyuubi.authentication.jdbc.query = SELECT 1 FROM auth_table WHERE user=${user} AND passwd=MD5(CONCAT(salt,${password}))
 ```
+
+## Authentication with In-memory Database
+
+Used with auto created in-memory database, JDBC authentication could be applied for token validation without starting up a dedicated database service or setting up a custom plugin. 
+
+Consider authentication for a pair of a username and a token which contacted with an `expire_time` in 'yyyyMMddHHmm' format and a MD5 signature generated with sequence of `expire_time`, `username` and a secret key. With the following example, an H2 in-memory database will be auto crated with Kyuubi Server and used for authentication with its system function `HASH` and checking token expire time with `NOW()`.
+
+```properties
+kyuubi.authentication=JDBC
+kyuubi.authentication.jdbc.driver.class = org.h2.Driver
+kyuubi.authentication.jdbc.url = jdbc:h2:mem:
+kyuubi.authentication.jdbc.user = no_user
+kyuubi.authentication.jdbc.query = SELECT 1 FROM ( \
+  SELECT ${user} as username, 'secret_key' as secret_key, \
+  SUBSTRING(${password}, 0, 12) as expire_time, \
+  SUBSTRING(${password}, 13) as signed \
+  ) WHERE signed = RAWTOHEX(HASH('MD5', CONCAT(secret_key, username, expire_time))) \
+  AND PARSEDATETIME(expire_time,'yyyyMMddHHmm') > NOW()
+```

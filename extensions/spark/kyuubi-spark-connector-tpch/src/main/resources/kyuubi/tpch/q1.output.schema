@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`l_returnflag` STRING,`l_linestatus` STRING,`sum_qty` DOUBLE,`sum_base_price` DOUBLE,`sum_disc_price` DOUBLE,`sum_charge` DOUBLE,`avg_qty` DOUBLE,`avg_price` DOUBLE,`avg_disc` DOUBLE,`count_order` BIGINT NOT NULL
+l_returnflag STRING,l_linestatus STRING,sum_qty DOUBLE,sum_base_price DOUBLE,sum_disc_price DOUBLE,sum_charge DOUBLE,avg_qty DOUBLE,avg_price DOUBLE,avg_disc DOUBLE,count_order BIGINT NOT NULL

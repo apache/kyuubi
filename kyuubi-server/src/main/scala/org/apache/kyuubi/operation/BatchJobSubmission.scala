@@ -77,7 +77,7 @@ class BatchJobSubmission(
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
     Option(batchType).map(_.toUpperCase(Locale.ROOT)) match {
-      case Some("SPARK") =>
+      case Some("SPARK") | Some("PYSPARK") =>
         new SparkBatchProcessBuilder(
           session.user,
           session.sessionConf,
@@ -196,7 +196,7 @@ class BatchJobSubmission(
   private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
     try {
-      info(s"Submitting $batchType batch[$batchId] job: $builder")
+      info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
       applicationInfo = currentApplicationInfo
       while (!applicationFailed(applicationInfo) && process.isAlive) {

@@ -85,7 +85,7 @@ class DorisDialect extends JdbcDialect {
 
     if (tTypes.nonEmpty) {
       filters += s"(${tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
-        .mkString(" OR ")})"
+          .mkString(" OR ")})"
     }
 
     if (filters.nonEmpty) {

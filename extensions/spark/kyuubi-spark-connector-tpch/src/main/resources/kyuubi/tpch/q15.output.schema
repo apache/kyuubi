@@ -15,4 +15,4 @@
  * limitations under the License.
  */
 
-`s_suppkey` BIGINT,`s_name` STRING,`s_address` STRING,`s_phone` STRING,`total_revenue` DOUBLE
+s_suppkey BIGINT,s_name STRING,s_address STRING,s_phone STRING,total_revenue DOUBLE

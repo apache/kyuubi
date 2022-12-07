@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.plugin.lineage.events
 
-import org.apache.kyuubi.Utils
-import org.apache.kyuubi.events.KyuubiEvent
+import org.apache.spark.scheduler.SparkListenerEvent
 
 case class ColumnLineage(column: String, originalColumns: Set[String])
 
@@ -36,7 +35,7 @@ class Lineage(
   override def equals(other: Any): Boolean = other match {
     case otherLineage: Lineage =>
       otherLineage.inputTables == inputTables && otherLineage.outputTables == outputTables &&
-        otherLineage.columnLineage == columnLineage
+      otherLineage.columnLineage == columnLineage
     case _ => false
   }
 
@@ -66,8 +65,4 @@ case class OperationLineageEvent(
     executionId: Long,
     eventTime: Long,
     lineage: Option[Lineage],
-    exception: Option[Throwable]) extends KyuubiEvent {
-
-  override def partitions: Seq[(String, String)] =
-    ("day", Utils.getDateFromTimestamp(eventTime)) :: Nil
-}
+    exception: Option[Throwable]) extends SparkListenerEvent

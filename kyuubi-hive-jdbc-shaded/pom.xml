@@ -15,20 +15,18 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
         <version>1.7.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
-    <name>Kyuubi Project Hive JDBC Shaded Client</name>
     <packaging>jar</packaging>
+    <name>Kyuubi Project Hive JDBC Shaded Client</name>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>
@@ -47,8 +45,6 @@
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
 
         <plugins>
             <plugin>
@@ -75,13 +71,19 @@
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>
                                 <exclude>META-INF/maven/**</exclude>
+                                <exclude>META-INF/native-image/**</exclude>
                                 <exclude>LICENSE.txt</exclude>
                                 <exclude>NOTICE.txt</exclude>
                                 <exclude>mozilla/**</exclude>
+                                <exclude>arrow-git.properties</exclude>
                             </excludes>
                         </filter>
                     </filters>
                     <relocations>
+                        <relocation>
+                            <pattern>codegen</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.codegen</shadedPattern>
+                        </relocation>
                         <relocation>
                             <pattern>com.facebook</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.facebook</shadedPattern>
@@ -91,12 +93,20 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.google</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>org.apache.commons.codec</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.codec</shadedPattern>
+                            <pattern>com.fasterxml.jackson</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.fasterxml.jackson</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>org.apache.commons.lang3</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.lang3</shadedPattern>
+                            <pattern>io.netty</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.io.netty</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.arrow</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.arrow</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>org.apache.curator</pattern>
@@ -126,10 +136,15 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
+                            </transformers>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -143,10 +158,10 @@
                 <executions>
                     <execution>
                         <id>compile</id>
-                        <phase>package</phase>
                         <goals>
                             <goal>attach-artifact</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <artifacts>
                                 <artifact>
@@ -187,5 +202,7 @@
                 </configuration>
             </plugin>
         </plugins>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
 </project>

@@ -171,7 +171,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       catalogName: String,
       schemaName: String,
       tableName: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    val op = new GetPrimaryKeys(session, catalogName, schemaName, tableName)
+    addOperation(op)
   }
 
   override def newGetCrossReferenceOperation(

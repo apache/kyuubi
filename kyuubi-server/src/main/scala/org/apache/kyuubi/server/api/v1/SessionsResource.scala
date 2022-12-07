@@ -32,6 +32,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
@@ -140,15 +141,19 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): dto.SessionHandle = {
-    val userName = fe.getUserName(request.getConfigs.asScala.toMap)
+    val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
     val ipAddress = fe.getIpAddress
     val handle = fe.be.openSession(
       TProtocolVersion.findByValue(request.getProtocolVersion),
       userName,
       request.getPassword,
       ipAddress,
-      request.getConfigs.asScala.toMap)
-    new dto.SessionHandle(handle.identifier)
+      (request.getConfigs.asScala ++ Map(
+        KYUUBI_CLIENT_IP_KEY -> ipAddress,
+        KYUUBI_SERVER_IP_KEY -> fe.host,
+        KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
+        KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).toMap)
+    new dto.SessionHandle(handle.identifier, fe.connectionUrl)
   }
 
   @ApiResponse(

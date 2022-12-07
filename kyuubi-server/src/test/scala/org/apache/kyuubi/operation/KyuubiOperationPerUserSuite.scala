@@ -298,7 +298,7 @@ class KyuubiOperationPerUserSuite
         // force kill engine without shutdown hook
         exitReq.setStatement("java.lang.Runtime.getRuntime().halt(-1)")
         exitReq.setSessionHandle(handle)
-        exitReq.setRunAsync(true)
+        exitReq.setRunAsync(false)
         client.ExecuteStatement(exitReq)
       }
       withSessionHandle { (client, handle) =>
@@ -314,4 +314,21 @@ class KyuubiOperationPerUserSuite
     }
   }
 
+  test("transfer connection url when opening connection") {
+    withJdbcStatement() { _ =>
+      val session =
+        server.backendService.sessionManager.allSessions().head.asInstanceOf[KyuubiSessionImpl]
+      assert(session.connectionUrl == server.frontendServices.head.connectionUrl)
+    }
+  }
+
+  test("remove spark.kyuubi.engine.credentials") {
+    withJdbcStatement() { statement =>
+      val result = statement.executeQuery("set spark.kyuubi.engine.credentials")
+      assert(result.next())
+      assert(result.getString(1) === "spark.kyuubi.engine.credentials")
+      assert(result.getString(2).isEmpty)
+      assert(!result.next())
+    }
+  }
 }

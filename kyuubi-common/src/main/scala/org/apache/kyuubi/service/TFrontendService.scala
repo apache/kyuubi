@@ -32,7 +32,7 @@ import org.apache.thrift.transport.TTransport
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
@@ -136,15 +136,23 @@ abstract class TFrontendService(name: String)
     }
   }
 
-  protected def getUserName(req: TOpenSessionReq): String = {
+  /**
+   * Get the real user and the session user.
+   * The real user is the user used for session authentication.
+   * The session user is the proxy user if proxy user is provided, otherwise is the real user.
+   */
+  protected def getRealUserAndSessionUser(req: TOpenSessionReq): (String, String) = {
     val realUser: String =
       ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
-    if (req.getConfiguration == null) {
-      realUser
-    } else {
-      getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
-    }
+    val sessionUser =
+      if (req.getConfiguration == null) {
+        realUser
+      } else {
+        getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
+      }
+    realUser -> sessionUser
   }
+
   protected def getIpAddress: String = {
     authFactory.getIpAddress.orNull
   }
@@ -157,13 +165,17 @@ abstract class TFrontendService(name: String)
   protected def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
-    val userName = getUserName(req)
+    val (realUser, sessionUser) = getRealUserAndSessionUser(req)
     val ipAddress = getIpAddress
-    val configuration = Map(KYUUBI_CLIENT_IP_KEY -> ipAddress) ++
-      Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
+    val configuration =
+      Map(KYUUBI_CLIENT_IP_KEY -> ipAddress, KYUUBI_SERVER_IP_KEY -> serverAddr.getHostAddress) ++
+        Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
+        Map(
+          KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl,
+          KYUUBI_SESSION_REAL_USER_KEY -> realUser)
     val sessionHandle = be.openSession(
       protocol,
-      userName,
+      sessionUser,
       req.getPassword,
       ipAddress,
       configuration)

@@ -23,7 +23,7 @@
 ### Get DataGrip And Install
 Please go to [Download DataGrip](https://www.jetbrains.com/datagrip/download) to get and install an appropriate version for yourself.
 ### Get Kyuubi Started
-[Get kyuubi server started](../../quick_start.md) before you try DataGrip with kyuubi.
+[Get kyuubi server started](../../quick_start/quick_start.html) before you try DataGrip with kyuubi.
 
 For debugging purpose, you can use `tail -f` or `tailf` to track the server log.
 ## Configurations
