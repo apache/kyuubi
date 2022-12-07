@@ -28,7 +28,8 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{BatchTestHelper, RestClientTestHelper, Utils}
-import org.apache.kyuubi.ctl.TestPrematureExit
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ctl.{CtlConf, TestPrematureExit}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.KyuubiSessionManager
 
@@ -36,8 +37,17 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
 
   val basePath: String = Utils.getCodeSourceLocation(getClass)
   val batchFile: String = s"${basePath}/batch.yaml"
-  val longRunningBatchFile: String = s"${basePath}/long-batch.yaml"
-  def genBatchFile(sparkPISlice: Int, batchFile: String): Unit = {
+
+  override protected val otherConfigs: Map[String, String] = {
+    Map(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL.key -> "100")
+  }
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+
+    System.setProperty("kyuubi.ctl.rest.base.url", baseUri.toString)
+    System.setProperty("kyuubi.ctl.rest.spnego.host", "localhost")
+
     val batch_basic = s"""apiVersion: v1
                          |username: ${ldapUser}
                          |request:
@@ -46,7 +56,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
                          |  resource: ${sparkBatchTestResource.get}
                          |  className: $sparkBatchTestMainClass
                          |  args:
-                         |   - $sparkPISlice
+                         |   - 1
                          |   - x1
                          |   - x2
                          |   - true
@@ -59,14 +69,6 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
                          |options:
                          |  verbose: true""".stripMargin
     Files.write(Paths.get(batchFile), batch_basic.getBytes(StandardCharsets.UTF_8))
-  }
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    System.setProperty("kyuubi.ctl.rest.base.url", baseUri.toString)
-    System.setProperty("kyuubi.ctl.rest.spnego.host", "localhost")
-    genBatchFile(1, batchFile)
-    genBatchFile(10000, longRunningBatchFile)
   }
 
   override def afterEach(): Unit = {
@@ -233,27 +235,16 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       "submit",
       "batch",
       "-f",
-      longRunningBatchFile,
+      batchFile,
       "--password",
       ldapUserPasswd,
       "--waitCompletion",
-      "false")
+      "false",
+      "--conf",
+      s"${CtlConf.CTL_BATCH_LOG_QUERY_INTERVAL.key}=100")
     val result = testPrematureExitForControlCli(submitArgs, "")
     assert(result.contains(s"/bin/spark-submit"))
     assert(!result.contains("ShutdownHookManager: Shutdown hook called"))
-    val batchIdRegex = "SPARK batch\\[([\\S]+)\\]".r
-    val batchId = batchIdRegex.findFirstMatchIn(result).get.group(0)
-      .stripPrefix("SPARK batch[")
-      .stripSuffix("]")
-    val deleteArgs = Array(
-      "delete",
-      "batch",
-      batchId,
-      "--username",
-      ldapUser,
-      "--password",
-      ldapUserPasswd)
-    assert(testPrematureExitForControlCli(deleteArgs, "").contains("Succeeded to terminate"))
   }
 
   test("list batch test") {
