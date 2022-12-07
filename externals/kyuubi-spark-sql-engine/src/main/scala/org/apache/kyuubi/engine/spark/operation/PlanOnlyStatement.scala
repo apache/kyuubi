@@ -19,8 +19,6 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
-import org.apache.spark.sql.execution.SimpleMode
-import org.apache.spark.sql.execution.command.ExplainCommand
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 
@@ -120,7 +118,7 @@ class PlanOnlyStatement(
         val physical = spark.sessionState.planner.plan(ReturnAnswer(optimized)).next()
         iter = new IterableFetchIterator(Seq(Row(physical.toString())))
       case ExecutionMode =>
-        val executed = ExplainCommand(plan, SimpleMode).run(spark).map(x =>
+        val executed = spark.sql(s"explain formatted $statement").collect.map(x =>
           Row(x.getString(0).replaceFirst("== Physical Plan ==\n", "")))
         iter = new IterableFetchIterator(executed)
       case UnknownMode => throw unknownModeError(mode)

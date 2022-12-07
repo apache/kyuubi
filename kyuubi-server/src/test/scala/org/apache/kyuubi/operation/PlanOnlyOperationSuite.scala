@@ -75,8 +75,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
       Map.empty) {
       withJdbcStatement() { statement =>
         val operationPlan = getOperationPlanWithStatement(statement)
-        assert(operationPlan.startsWith("*(1) Project") &&
-          operationPlan.contains("*(1) Scan OneRowRelation"))
+        assert(operationPlan.startsWith("* Project (2)") &&
+          operationPlan.contains("* Scan OneRowRelation (1)"))
       }
     }
   }
@@ -207,9 +207,10 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         statement.execute("create database if not exists db1")
         statement.execute("use db1")
         statement.executeQuery("create table tmp_test(test_col string) using parquet")
-        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=physical")
+        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}" +
+          s"=${PhysicalMode.name}")
         statement.executeQuery("drop table tmp_test")
-        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=none")
+        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${NoneMode.name}")
         val result = statement.executeQuery("desc table tmp_test")
         assert(result.next())
         assert(result.getString(1).contains("test_col"))
@@ -223,9 +224,10 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         statement.execute("create database if not exists db1")
         statement.execute("use db1")
         statement.executeQuery("create table tmp_test(test_col string) using parquet")
-        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=execution")
+        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}" +
+          s"=${ExecutionMode.name}")
         statement.executeQuery("drop table tmp_test")
-        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=none")
+        statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${NoneMode.name}")
         val result = statement.executeQuery("desc table tmp_test")
         assert(result.next())
         assert(result.getString(1).contains("test_col"))
