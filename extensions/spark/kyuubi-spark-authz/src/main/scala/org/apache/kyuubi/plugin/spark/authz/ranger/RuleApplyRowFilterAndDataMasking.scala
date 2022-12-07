@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
-import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType}
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.{getFilterExpr, getMaskingExpr}
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
