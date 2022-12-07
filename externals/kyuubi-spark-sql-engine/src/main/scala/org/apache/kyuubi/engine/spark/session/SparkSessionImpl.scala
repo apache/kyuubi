@@ -39,8 +39,6 @@ class SparkSessionImpl(
     val spark: SparkSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  protected var resultCodec: String = null
-
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
       spark.conf.set(key, value)
@@ -101,13 +99,5 @@ class SparkSessionImpl(
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closeILoop(handle)
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closePythonProcess(
       handle)
-  }
-
-  def setResultCodec(codec: String): Unit = {
-    resultCodec = codec
-  }
-
-  def getResultCodec(): Option[String] = {
-    Option(resultCodec)
   }
 }
