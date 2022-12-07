@@ -79,7 +79,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
         case "close" => fe.be.closeOperation(operationHandle)
         case _ => throw KyuubiSQLException(s"Invalid action ${request.getAction}")
       }
-      Response.ok().build()
+      Response.ok("Apply an action for an operation successfully.").build()
     } catch {
       case NonFatal(e) =>
         val errorMsg =
@@ -285,7 +285,6 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
     description =
       "query operation event list")
   @POST
-  @Path("operations")
   def queryOperationEventList(
       @QueryParam("sessionHandle") @DefaultValue("") sessionHandleStr: String,
       @QueryParam("type") @DefaultValue("") TypeStr: String,

@@ -158,7 +158,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @GET
   @Path("servers")
   def listServers(): Seq[Server] = {
-    val serverSpace = fe.getConf.get(HA_NAMESPACE)
+    val serverSpace = DiscoveryPaths.makePath(null, fe.getConf.get(HA_NAMESPACE))
     val serverNodes = ListBuffer[ServiceNodeInfo]()
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       info(s"Listing server nodes for $serverSpace")
@@ -205,7 +205,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       mediaType = MediaType.APPLICATION_JSON)),
     description = "get the Kyuubi server hadoop conf")
   @GET
-  @Path("get_hadoop_conf")
+  @Path("get/hadoop_conf")
   def getFrontendHadoopConf(): Seq[HadoopConfData] = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress

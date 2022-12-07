@@ -26,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
+import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.operation.log.SeekableBufferedReader
 
 object ServerLog extends Logging {
@@ -46,7 +46,7 @@ object ServerLog extends Logging {
 
   def createServerLog(conf: KyuubiConf): ServerLog = {
     try {
-      val logPath = conf.get(ENGINE_EVENT_JSON_LOG_PATH)
+      val logPath = conf.get(SERVER_EVENT_JSON_LOG_PATH)
       val logFile = Paths.get(logPath)
       info(s"Creating server log $logFile")
       new ServerLog(logFile)
