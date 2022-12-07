@@ -154,27 +154,31 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
-    description = "list kyuubi servers")
-  @GET
+    description = "list  all live kyuubi servers")
+  @POST
   @Path("servers")
-  def listServers(): Seq[Server] = {
+  def listServers(@QueryParam("host") @DefaultValue("") host: String): Seq[Server] = {
+    val ServerSeq = Seq[Server]()
     val serverSpace = DiscoveryPaths.makePath(null, fe.getConf.get(HA_NAMESPACE))
     val serverNodes = ListBuffer[ServiceNodeInfo]()
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       info(s"Listing server nodes for $serverSpace")
       serverNodes ++= discoveryClient.getServiceNodesInfo(serverSpace)
       serverNodes.map(node =>
-        new Server(
-          node.nodeName,
-          node.namespace,
-          node.instance,
-          node.host,
-          node.port,
-          node.createTime,
-          OSUtils.memoryTotal(),
-          OSUtils.cpuTotal(),
-          "Running"))
+        if (host.equalsIgnoreCase("") || node.host.equalsIgnoreCase(host)) {
+          ServerSeq :+ new Server(
+            node.nodeName,
+            node.namespace,
+            node.instance,
+            node.host,
+            node.port,
+            node.createTime,
+            OSUtils.memoryTotal(),
+            OSUtils.cpuTotal(),
+            "Running")
+        })
     }
+    ServerSeq
   }
 
   @ApiResponse(
@@ -210,6 +214,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Receive get Kyuubi server hadoop conf request from $userName/$ipAddress")
+    info(s"the admin is $administrator")
     if (!userName.equals(administrator)) {
       throw new NotAllowedException(
         s"$userName is not allowed to get the Kyuubi server hadoop conf")
