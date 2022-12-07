@@ -790,16 +790,19 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     }
 
     // parse kyuubi hint
-    metadataResp
-        .getStatus()
-        .getInfoMessages()
-        .forEach(
-            line -> {
-              String[] keyValue = line.split("=");
-              String key = keyValue[0];
-              String value = keyValue[1];
-              properties.put(key, value);
-            });
+    List<String> infoMessages = metadataResp.getStatus().getInfoMessages();
+    if (infoMessages != null) {
+      metadataResp
+          .getStatus()
+          .getInfoMessages()
+          .forEach(
+              line -> {
+                String[] keyValue = line.split("=");
+                String key = keyValue[0];
+                String value = keyValue[1];
+                properties.put(key, value);
+              });
+    }
 
     // parse metadata
     List<TColumnDesc> columns = schema.getColumns();
