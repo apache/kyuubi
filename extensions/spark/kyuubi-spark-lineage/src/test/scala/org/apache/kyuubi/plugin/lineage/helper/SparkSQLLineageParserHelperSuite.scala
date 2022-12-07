@@ -29,7 +29,7 @@ import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRel
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.plugin.lineage.events.Lineage
+import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
 
 class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite

@@ -17,6 +17,7 @@
 
 package org.apache.spark.kyuubi.lineage
 
+import org.apache.kyuubi.plugin.lineage.LineageDispatcherType
 import org.apache.spark.internal.config.ConfigBuilder
 
 object LineageConf {
@@ -27,5 +28,13 @@ object LineageConf {
       .version("1.8.0")
       .booleanConf
       .createWithDefault(false)
+
+  val DISPATCHERS = ConfigBuilder("spark.kyuubi.plugin.lineage.dispatchers")
+    .stringConf
+    .toSequence
+    .checkValue(
+      _.toSet.subsetOf(LineageDispatcherType.values.map(_.toString)),
+      "Unsupported lineage dispatchers")
+    .createWithDefault(Seq(LineageDispatcherType.SPARK_EVENT.toString))
 
 }
