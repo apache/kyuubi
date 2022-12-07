@@ -208,8 +208,8 @@ abstract class SparkOperation(session: Session)
 
   protected def arrowEnabled(): Boolean = {
     resultCodec().equalsIgnoreCase("arrow") &&
-      // TODO: (fchen) make all operation support arrow
-      getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
+    // TODO: (fchen) make all operation support arrow
+    getClass.getCanonicalName == classOf[ExecuteStatement].getCanonicalName
   }
 
   protected def resultCodec(): String = {
