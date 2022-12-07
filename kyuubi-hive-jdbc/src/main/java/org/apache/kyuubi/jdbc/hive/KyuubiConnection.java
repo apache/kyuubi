@@ -111,7 +111,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private String engineUrl = "";
 
   private boolean isBeeLineMode;
-  private ThreadLocal<String> resultCodec = new ThreadLocal<>();
+  private String resultCodec = "simple";
 
   /** Get all direct HiveServer2 URLs from a ZooKeeper based HiveServer2 URL */
   public static List<JdbcConnectionParams> getAllUrls(String zookeeperBasedHS2Url)
@@ -147,7 +147,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
     port = connParams.getPort();
 
-    resultCodec.set(
+    resultCodec =
         connParams
             .getSessionVars()
             .getOrDefault(
@@ -158,7 +158,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
                         "kyuubi.operation.result.codec",
                         connParams
                             .getHiveConfs()
-                            .getOrDefault("kyuubi.operation.result.codec", "simple"))));
+                            .getOrDefault("kyuubi.operation.result.codec", "simple")));
 
     setupTimeout();
 
@@ -1382,10 +1382,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   String getResultCodec() {
-    return resultCodec.get();
-  }
-
-  void setOperationResultCodec(String codec) {
-    this.resultCodec.set(codec);
+    return resultCodec;
   }
 }

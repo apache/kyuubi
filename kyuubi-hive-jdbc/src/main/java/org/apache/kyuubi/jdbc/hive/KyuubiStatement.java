@@ -26,7 +26,6 @@ import org.apache.kyuubi.jdbc.hive.adapter.SQLStatement;
 import org.apache.kyuubi.jdbc.hive.cli.FetchType;
 import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
-import org.apache.kyuubi.jdbc.hive.common.HiveDecimal;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
