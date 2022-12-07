@@ -200,7 +200,8 @@ class BatchJobSubmission(
       val process = builder.start
       applicationInfo = currentApplicationInfo
       while (!applicationFailed(applicationInfo) && process.isAlive) {
-        if (!appStatusFirstUpdated && applicationInfo.isDefined) {
+        if (!appStatusFirstUpdated && applicationInfo.isDefined &&
+          !applicationInfo.exists(_.state == ApplicationState.NOT_FOUND)) {
           setStateIfNotCanceled(OperationState.RUNNING)
           updateBatchMetadata()
           appStatusFirstUpdated = true
