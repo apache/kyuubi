@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.dialect
 
+import org.apache.spark.sql.dialect.KyuubiHiveDialect._
+import org.apache.spark.sql.types._
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -24,12 +26,19 @@ class KyuubiHiveDialectSuite extends AnyFunSuite {
 // scalastyle:on
 
   test("[KYUUBI #3489] Kyuubi Hive dialect: can handle jdbc url") {
-    assert(KyuubiHiveDialect.canHandle("jdbc:hive2://"))
-    assert(KyuubiHiveDialect.canHandle("jdbc:kyuubi://"))
+    assert(canHandle("jdbc:hive2://"))
+    assert(canHandle("jdbc:kyuubi://"))
   }
 
   test("[KYUUBI #3489] Kyuubi Hive dialect: quoteIdentifier") {
-    assertResult("`id`")(KyuubiHiveDialect.quoteIdentifier("id"))
-    assertResult("`table`.`id`")(KyuubiHiveDialect.quoteIdentifier("table.id"))
+    assertResult("`id`")(quoteIdentifier("id"))
+    assertResult("`table`.`id`")(quoteIdentifier("table.id"))
+  }
+
+  test("[KYUUBI #3489] Kyuubi Hive dialect: quoteIdentifier") {
+    assertResult("DOUBLE")(getJDBCType(DoubleType).get.databaseTypeDefinition)
+    assertResult("FLOAT")(getJDBCType(FloatType).get.databaseTypeDefinition)
+    assertResult("STRING")(getJDBCType(StringType).get.databaseTypeDefinition)
+    assertResult("BOOLEAN")(getJDBCType(BooleanType).get.databaseTypeDefinition)
   }
 }
