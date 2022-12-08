@@ -57,7 +57,7 @@ abstract class AbstractSession(
 
   override lazy val name: Option[String] = normalizedConf.get(SESSION_NAME.key)
 
-  final private val opHandleSet = new java.util.HashSet[OperationHandle]
+  final protected val opHandleSet = new java.util.HashSet[OperationHandle]
 
   private def acquire(userAccess: Boolean): Unit = synchronized {
     if (userAccess) {

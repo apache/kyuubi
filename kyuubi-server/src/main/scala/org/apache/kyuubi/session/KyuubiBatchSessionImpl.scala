@@ -113,6 +113,11 @@ class KyuubiBatchSessionImpl(
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
 
+    // have to add batchJobSubmissionOp into session opHandleSet here, to update the batch metadata
+    // on openSession failure(may be open session for recovery), otherwise, the batch metadata state
+    // might lose control.
+    opHandleSet.add(batchJobSubmissionOp.getHandle)
+
     if (recoveryMetadata.isEmpty) {
       val metaData = Metadata(
         identifier = handle.identifier.toString,
