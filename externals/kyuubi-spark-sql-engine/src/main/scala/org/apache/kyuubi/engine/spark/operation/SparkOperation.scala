@@ -213,6 +213,7 @@ abstract class SparkOperation(session: Session)
   }
 
   protected def resultCodec(): String = {
+    // TODO: respect the config of the operation ExecuteStatement, if it was set.
     spark.conf.get("kyuubi.operation.result.codec", "simple")
   }
 
