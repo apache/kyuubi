@@ -38,11 +38,11 @@ object AccessRequest {
       opType: OperationType,
       accessType: AccessType): AccessRequest = {
     val userName = user.getShortUserName
-    val groups = getUserGroups(user)
+    val userGroups = getUserGroups(user)
     val req = new AccessRequest(accessType)
     req.setResource(resource)
     req.setUser(userName)
-    req.setUserGroups(groups)
+    req.setUserGroups(userGroups)
     req.setAction(opType.toString)
     try {
       val getRoles = SparkRangerAdminPlugin.getClass.getMethod(
@@ -50,7 +50,7 @@ object AccessRequest {
         classOf[String],
         classOf[java.util.Set[String]])
       getRoles.setAccessible(true)
-      val roles = getRoles.invoke(SparkRangerAdminPlugin, userName, groups)
+      val roles = getRoles.invoke(SparkRangerAdminPlugin, userName, userGroups)
       val setRoles = req.getClass.getMethod("setUserRoles", classOf[java.util.Set[String]])
       setRoles.setAccessible(true)
       setRoles.invoke(req, roles)
@@ -105,12 +105,7 @@ object AccessRequest {
   }
 
   private def getUserGroups(user: UserGroupInformation): util.Set[String] = {
-    val enableOverrideUserGroupFromUserStore = SparkRangerAdminPlugin.getRangerConf.getBoolean(
-      s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}" +
-        ".enable.override.usergroup.from.userstore",
-      false);
-
-    if (enableOverrideUserGroupFromUserStore) {
+    if (SparkRangerAdminPlugin.useUserGroupsFromUserStoreEnabled) {
       getUserGroupsFromUserStore(user)
         .getOrElse(getUserGroupsFromUgi(user))
     } else {
