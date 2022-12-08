@@ -30,6 +30,7 @@ import org.apache.kyuubi.events.{EventBus, KyuubiServerInfoEvent, ServerEventHan
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{AuthTypes, ServiceDiscovery}
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
+import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataDatasource
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf
 import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable, ServiceState}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
@@ -136,6 +137,11 @@ class KyuubiServer(name: String) extends Serverable(name) {
 
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
+    }
+    // initialize meta source
+    if (conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName)
+      .contains(FrontendProtocols.REST)) {
+      new JDBCMetadataDatasource().initialize(conf)
     }
     super.initialize(conf)
   }

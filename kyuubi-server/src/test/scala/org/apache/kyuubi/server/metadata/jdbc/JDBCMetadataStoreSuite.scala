@@ -35,6 +35,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     .set(s"$METADATA_STORE_JDBC_DATASOURCE_PREFIX.connectionTimeout", "3000")
     .set(s"$METADATA_STORE_JDBC_DATASOURCE_PREFIX.maximumPoolSize", "99")
     .set(s"$METADATA_STORE_JDBC_DATASOURCE_PREFIX.idleTimeout", "60000")
+  new JDBCMetadataDatasource().initialize(conf)
   private val jdbcMetadataStore = new JDBCMetadataStore(conf)
 
   override def afterAll(): Unit = {
@@ -51,9 +52,9 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
   }
 
   test("test jdbc datasource properties") {
-    assert(jdbcMetadataStore.hikariDataSource.getConnectionTimeout == 3000)
-    assert(jdbcMetadataStore.hikariDataSource.getMaximumPoolSize == 99)
-    assert(jdbcMetadataStore.hikariDataSource.getIdleTimeout == 60000)
+    assert(JDBCMetadataDatasource.hikariDataSource.get.getConnectionTimeout == 3000)
+    assert(JDBCMetadataDatasource.hikariDataSource.get.getMaximumPoolSize == 99)
+    assert(JDBCMetadataDatasource.hikariDataSource.get.getIdleTimeout == 60000)
   }
 
   test("jdbc metadata store") {

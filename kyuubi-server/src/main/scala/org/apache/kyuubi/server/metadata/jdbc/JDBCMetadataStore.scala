@@ -26,8 +26,6 @@ import scala.collection.mutable.ListBuffer
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.google.common.annotations.VisibleForTesting
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -42,13 +40,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   import JDBCMetadataStore._
 
   private val dbType = DatabaseType.withName(conf.get(METADATA_STORE_JDBC_DATABASE_TYPE))
-  private val driverClassOpt = conf.get(METADATA_STORE_JDBC_DRIVER)
-  private val driverClass = dbType match {
-    case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
-    case MYSQL => driverClassOpt.getOrElse("com.mysql.jdbc.Driver")
-    case CUSTOM => driverClassOpt.getOrElse(
-        throw new IllegalArgumentException("No jdbc driver defined"))
-  }
 
   private val databaseAdaptor = dbType match {
     case DERBY => new DerbyDatabaseDialect
@@ -56,17 +47,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     case CUSTOM => new GenericDatabaseDialect
   }
 
-  private val datasourceProperties =
-    JDBCMetadataStoreConf.getMetadataStoreJDBCDataSourceProperties(conf)
-  private val hikariConfig = new HikariConfig(datasourceProperties)
-  hikariConfig.setDriverClassName(driverClass)
-  hikariConfig.setJdbcUrl(conf.get(METADATA_STORE_JDBC_URL))
-  hikariConfig.setUsername(conf.get(METADATA_STORE_JDBC_USER))
-  hikariConfig.setPassword(conf.get(METADATA_STORE_JDBC_PASSWORD))
-  hikariConfig.setPoolName("jdbc-metadata-store-pool")
-
-  @VisibleForTesting
-  private[kyuubi] val hikariDataSource = new HikariDataSource(hikariConfig)
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   private val terminalStates =
@@ -104,7 +84,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   }
 
   override def close(): Unit = {
-    hikariDataSource.close()
   }
 
   override def insertMetadata(metadata: Metadata): Unit = {
@@ -440,7 +419,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   private def withConnection[T](autoCommit: Boolean = true)(f: Connection => T): T = {
     var connection: Connection = null
     try {
-      connection = hikariDataSource.getConnection
+      connection = JDBCMetadataDatasource.hikariDataSource.get.getConnection
       connection.setAutoCommit(autoCommit)
       f(connection)
     } catch {
