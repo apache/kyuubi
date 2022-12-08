@@ -28,15 +28,16 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
 
 object AccessRequest {
   def apply(
-      resource: AccessResource,
-      user: UserGroupInformation,
-      opType: OperationType,
-      accessType: AccessType): AccessRequest = {
+             resource: AccessResource,
+             user: UserGroupInformation,
+             opType: OperationType,
+             accessType: AccessType): AccessRequest = {
     val userName = user.getShortUserName
     val userGroups = getUserGroups(user)
     val req = new AccessRequest(accessType)
@@ -81,23 +82,11 @@ object AccessRequest {
 
   private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[util.Set[String]] = {
     try {
-      val getUserStoreEnricher = SparkRangerAdminPlugin.getClass.getMethod(
-        "getUserStoreEnricher")
-      getUserStoreEnricher.setAccessible(true)
-      val storeEnricher = getUserStoreEnricher.invoke(SparkRangerAdminPlugin)
-
-      val getRangerUserStore = storeEnricher.getClass.getMethod("getRangerUserStore")
-      getRangerUserStore.setAccessible(true)
-      val userStore = getRangerUserStore.invoke(storeEnricher)
-
-      val getUserGroupMapping = userStore.getClass.getMethod("getUserGroupMapping")
-      getUserGroupMapping.setAccessible(true)
-
-      val userGroupMappingMap: mutable.Map[String, util.Set[String]] =
-        mapAsScalaMap(getUserGroupMapping.invoke(userStore)
-          .asInstanceOf[util.HashMap[String, util.Set[String]]])
-
-      userGroupMappingMap.get(user.getShortUserName)
+      val storeEnricher = AuthZUtils.invoke(SparkRangerAdminPlugin, "getUserStoreEnricher")
+      val userStore = AuthZUtils.invoke(storeEnricher, "getRangerUserStore")
+      val userGroupMapping = AuthZUtils.invoke(userStore, "getUserGroupMapping")
+        .asInstanceOf[util.HashMap[String, util.Set[String]]]
+      Some(userGroupMapping.get(user.getShortUserName))
     } catch {
       case _: NoSuchMethodException =>
         None
