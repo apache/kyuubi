@@ -80,7 +80,7 @@ class KyuubiSessionImpl(
     sessionManager.groupProvider.primaryGroup(user, optimizedConf.asJava),
     handle.identifier.toString,
     sessionManager.applicationManager)
-  private[kyuubi] val launchEngineOp = sessionManager.operationManager
+  private[kyuubi] lazy val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
   private lazy val sessionUserSignBase64: String =
