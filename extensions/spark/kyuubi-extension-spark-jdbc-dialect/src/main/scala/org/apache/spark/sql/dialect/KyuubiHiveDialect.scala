@@ -37,9 +37,13 @@ object KyuubiHiveDialect extends JdbcDialect {
   }
 
   override def getJDBCType(dt: DataType): Option[JdbcType] = dt match {
-    // JdbcUtils.getCommonJDBCType is mapping DoubleType to "DOUBLE PRECISION"
-    // which is alias for DOUBLE, only available starting with Hive 2.2.0
-    // overriding to "DOUBLE" for better compatibility
+
+    // "INTEGER" is synonym for INT since Hive 2.2.0
+    // fallback to "INT" for better compatibility
+    case IntegerType => Option(JdbcType("INT", java.sql.Types.INTEGER))
+
+    // "DOUBLE PRECISION" alias for "DOUBLE", only available starting with Hive 2.2.0
+    // fallback to "DOUBLE" for better compatibility
     case DoubleType => Option(JdbcType("DOUBLE", java.sql.Types.DOUBLE))
 
     // adapt to Hive data type definition

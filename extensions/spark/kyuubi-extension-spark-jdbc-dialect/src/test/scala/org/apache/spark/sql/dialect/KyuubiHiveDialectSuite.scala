@@ -39,6 +39,7 @@ class KyuubiHiveDialectSuite extends AnyFunSuite {
     def getJdbcTypeDefinition(dt: DataType): String = {
       getJDBCType(dt).get.databaseTypeDefinition
     }
+    assertResult("INT")(getJdbcTypeDefinition(IntegerType))
     assertResult("DOUBLE")(getJdbcTypeDefinition(DoubleType))
     assertResult("FLOAT")(getJdbcTypeDefinition(FloatType))
     assertResult("TINYINT")(getJdbcTypeDefinition(ByteType))
