@@ -33,14 +33,9 @@
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </File>
-        <RollingFile name="audit" fileName="target/rest-audit.log"
-                     filePattern="target/rest-audit-%d{yyyy-MM-dd}-%i.log">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
-            <Policies>
-                <SizeBasedTriggeringPolicy size="19500KB" />
-            </Policies>
-            <DefaultRolloverStrategy max="10"/>
-        </RollingFile>
+        <File name="audit" fileName="target/rest-audit.log">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %t %p %c{1}: %m%n"/>
+        </File>
     </Appenders>
     <Loggers>
         <Root level="INFO">
