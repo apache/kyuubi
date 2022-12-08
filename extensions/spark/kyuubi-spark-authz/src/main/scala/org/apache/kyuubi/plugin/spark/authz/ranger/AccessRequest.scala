@@ -38,7 +38,7 @@ object AccessRequest {
       opType: OperationType,
       accessType: AccessType): AccessRequest = {
     val userName = user.getShortUserName
-    val groups = getUserGroups(user, userName)
+    val groups = getUserGroups(user)
     val req = new AccessRequest(accessType)
     req.setResource(resource)
     req.setUser(userName)
@@ -75,13 +75,17 @@ object AccessRequest {
     req
   }
 
-  private def getUserGroups(user: UserGroupInformation, userName: String): util.Set[String] = {
+  private def getUserGroups(user: UserGroupInformation) = {
     val enableOverrideUserGroupFromUserStore = SparkRangerAdminPlugin.getRangerConf.getBoolean(
       s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}" +
         ".enable.override.usergroup.from.userstore",
       false);
     if (!enableOverrideUserGroupFromUserStore) {
-      user.getGroupNames.toSet.asJava
+      def getUserGroupsFromUGI = {
+        user.getGroupNames.toSet.asJava
+      }
+
+      getUserGroupsFromUGI
     }
 
     try {
@@ -102,7 +106,7 @@ object AccessRequest {
           mapAsScalaMap(getUserGroupMapping.invoke(userStore)
             .asInstanceOf[util.HashMap[String, util.Set[String]]])
 
-        userGroupMappingMap.get(userName).orNull
+        userGroupMappingMap.get(user.getShortUserName).orNull
       }
 
       if (userGroupsFromUserStore != null) userGroupsFromUserStore
