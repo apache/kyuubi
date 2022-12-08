@@ -76,8 +76,8 @@ object AccessRequest {
   }
 
   private def getUserGroups(user: UserGroupInformation, userName: String): util.Set[String] = {
-    val enableOverrideUserGroupFromUserStore = SparkRangerAdminPlugin.getConfig.getBoolean(
-      s"ranger.plugin.${SparkRangerAdminPlugin.getConfig.getServiceType}" +
+    val enableOverrideUserGroupFromUserStore = SparkRangerAdminPlugin.getRangerConf.getBoolean(
+      s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}" +
         ".enable.override.usergroup.from.userstore",
       false);
     if (!enableOverrideUserGroupFromUserStore) {
