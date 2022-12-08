@@ -30,7 +30,6 @@ import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
-import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle, OperationStatus}
 import org.apache.kyuubi.server.api.ApiRequestContext
 

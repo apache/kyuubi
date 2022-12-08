@@ -97,13 +97,26 @@ class SparkTBinaryFrontendService(
     Map(
       KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
       KYUUBI_ENGINE_URL -> sc.uiWebUrl.get,
-      KYUUBI_ENGINE_SUBMIT_TIME_KEY -> sc.startTime.toString)
+      KYUUBI_ENGINE_SUBMIT_TIME_KEY -> sc.startTime.toString,
+      KYUUBI_ENGINE_MEMORY -> (sc.getConf.get(SPARK_ENGINE_DRIVER_MEMORY).toLong +
+        sc.getConf.get(SPARK_ENGINE_EXECUTOR_INSTANCE).toLong *
+        sc.getConf.get(SPARK_ENGINE_EXECUTOR_MEMORY).toLong).toString,
+      KYUUBI_ENGINE_CPU -> (sc.getConf.get(SPARK_ENGINE_DRIVER_CORES).toLong +
+        sc.getConf.get(SPARK_ENGINE_EXECUTOR_INSTANCE).toLong *
+        sc.getConf.get(SPARK_ENGINE_EXECUTOR_CORES).toLong).toString)
   }
 }
 
 object SparkTBinaryFrontendService extends Logging {
 
   val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
+  final val SPARK_ENGINE_DRIVER_MEMORY = "spark.driver.memory"
+  final val SPARK_ENGINE_EXECUTOR_MEMORY = "spark.executor.memory"
+
+  final val SPARK_ENGINE_EXECUTOR_CORES = "spark.executor.cores"
+  final val SPARK_ENGINE_DRIVER_CORES = "spark.driver.cores"
+
+  final val SPARK_ENGINE_EXECUTOR_INSTANCE = "spark.executor.instances"
 
   private[spark] def renewDelegationToken(sc: SparkContext, delegationToken: String): Unit = {
     val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)

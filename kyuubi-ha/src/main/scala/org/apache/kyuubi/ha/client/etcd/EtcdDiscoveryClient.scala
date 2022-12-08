@@ -214,9 +214,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val attributes =
           p.split(";").map(_.split("=", 2)).filter(_.size == 2).map(kv => (kv.head, kv.last)).toMap
         info(s"Get service instance:$instance and version:$version under $namespace")
-        // TODO:  implement
-        val createTime = 0L
-        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes, createTime)
+        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
       }
     } catch {
       case _: Exception if silent => Nil

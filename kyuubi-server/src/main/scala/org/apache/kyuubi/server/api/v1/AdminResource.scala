@@ -33,7 +33,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.{Engine, HadoopConfData, Server, ServerLog}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_SUBMIT_TIME_KEY, KYUUBI_ENGINE_URL, KYUUBI_SERVER_SUBMIT_TIME_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
@@ -146,7 +146,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME_KEY).orNull.toLong,
         node.attributes.get(KYUUBI_ENGINE_URL).orNull,
         node.host,
-        node.port))
+        node.port,
+        node.engineRefId.orNull,
+        "Running",
+        node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull.toLong,
+        node.attributes.get(KYUUBI_ENGINE_CPU).orNull.toInt))
 
   }
 
@@ -255,6 +259,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       null,
       null,
       Collections.emptyMap(),
+      null,
+      null,
+      null,
+      null,
       null,
       null,
       null,

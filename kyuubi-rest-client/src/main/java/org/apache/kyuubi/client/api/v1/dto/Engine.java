@@ -39,6 +39,13 @@ public class Engine {
   private String host;
   private int port;
 
+  private String id;
+  private String status;
+
+  private Long memoryTotal;
+
+  private int cpuTotal;
+
   public Engine() {}
 
   public Engine(
@@ -53,7 +60,11 @@ public class Engine {
       Long createTime,
       String url,
       String host,
-      int port) {
+      int port,
+      String id,
+      String status,
+      Long memoryTotal,
+      int cpuTotal) {
     this.version = version;
     this.user = user;
     this.engineType = engineType;
@@ -66,6 +77,26 @@ public class Engine {
     this.url = url;
     this.host = host;
     this.port = port;
+    this.id = id;
+    this.status = status;
+    this.memoryTotal = memoryTotal;
+    this.cpuTotal = cpuTotal;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
   }
 
   public String getVersion() {
@@ -96,8 +127,8 @@ public class Engine {
     return sharelevel;
   }
 
-  public void setsharelevel(String shareLevel) {
-    this.sharelevel = shareLevel;
+  public void setsharelevel(String sharelevel) {
+    this.sharelevel = sharelevel;
   }
 
   public String getSubdomain() {
@@ -167,6 +198,22 @@ public class Engine {
     this.port = port;
   }
 
+  public Long getMemoryTotal() {
+    return memoryTotal;
+  }
+
+  public void setMemoryTotal(Long memoryTotal) {
+    this.memoryTotal = memoryTotal;
+  }
+
+  public int getCpuTotal() {
+    return cpuTotal;
+  }
+
+  public void setCpuTotal(int cpuTotal) {
+    this.cpuTotal = cpuTotal;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -183,7 +230,10 @@ public class Engine {
         && Objects.equals(getCreateTime(), that.getCreateTime())
         && Objects.equals(getUrl(), that.getUrl())
         && Objects.equals(getHost(), that.getHost())
-        && Objects.equals(getPort(), that.getPort());
+        && Objects.equals(getPort(), that.getPort())
+        && Objects.equals(getStatus(), that.getStatus())
+        && Objects.equals(getCpuTotal(), that.getCpuTotal())
+        && Objects.equals(getMemoryTotal(), that.getMemoryTotal());
   }
 
   @Override
@@ -200,7 +250,11 @@ public class Engine {
         getCreateTime(),
         getUrl(),
         getHost(),
-        getPort());
+        getPort(),
+        getId(),
+        getStatus(),
+        getCpuTotal(),
+        getMemoryTotal());
   }
 
   @Override

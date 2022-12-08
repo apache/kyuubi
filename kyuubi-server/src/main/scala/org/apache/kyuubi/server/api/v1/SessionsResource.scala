@@ -33,7 +33,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_CLIENT_IP_KEY, KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
-import org.apache.kyuubi.events.{KyuubiEvent, KyuubiOperationEvent, KyuubiSessionEvent}
+import org.apache.kyuubi.events.{KyuubiEvent, KyuubiSessionEvent}
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
