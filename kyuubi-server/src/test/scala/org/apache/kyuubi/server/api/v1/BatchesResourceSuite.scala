@@ -436,7 +436,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     assert(session1.createTime === batchMetadata.createTime)
     assert(session2.createTime === batchMetadata2.createTime)
 
-    eventually(timeout(5.seconds)) {
+    eventually(timeout(10.seconds)) {
       assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
         session1.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
       assert(session1.batchJobSubmissionOp.builder.processLaunched)

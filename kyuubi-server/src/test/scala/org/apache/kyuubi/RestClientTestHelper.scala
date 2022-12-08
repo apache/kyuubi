@@ -56,6 +56,7 @@ trait RestClientTestHelper extends RestFrontendTestHelper with KerberizedTestHel
       .set(
         KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
+      .set(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL, 100L)
   }
 
 }
