@@ -45,15 +45,12 @@ object AccessRequest {
     req.setUserGroups(userGroups)
     req.setAction(opType.toString)
     try {
-      val getRoles = SparkRangerAdminPlugin.getClass.getMethod(
+      val roles = invoke(
+        SparkRangerAdminPlugin,
         "getRolesFromUserAndGroups",
-        classOf[String],
-        classOf[java.util.Set[String]])
-      getRoles.setAccessible(true)
-      val roles = getRoles.invoke(SparkRangerAdminPlugin, userName, userGroups)
-      val setRoles = req.getClass.getMethod("setUserRoles", classOf[java.util.Set[String]])
-      setRoles.setAccessible(true)
-      setRoles.invoke(req, roles)
+        (classOf[String], userName),
+        (classOf[java.util.Set[String]], userGroups))
+      invoke(req, "setUserRoles", (classOf[java.util.Set[String]], roles))
     } catch {
       case _: NoSuchMethodException =>
     }
@@ -63,12 +60,8 @@ object AccessRequest {
       case _ => req.setAccessType(accessType.toString.toLowerCase)
     }
     try {
-      val getClusterName = SparkRangerAdminPlugin.getClass.getMethod("getClusterName")
-      getClusterName.setAccessible(true)
-      val clusterName = getClusterName.invoke(SparkRangerAdminPlugin)
-      val setClusterName = req.getClass.getMethod("setClusterName", classOf[String])
-      setClusterName.setAccessible(true)
-      setClusterName.invoke(req, clusterName)
+      val clusterName = invoke(SparkRangerAdminPlugin, "getClusterName").asInstanceOf[String]
+      invoke(req, "setClusterName", (classOf[String], clusterName))
     } catch {
       case _: NoSuchMethodException =>
     }
