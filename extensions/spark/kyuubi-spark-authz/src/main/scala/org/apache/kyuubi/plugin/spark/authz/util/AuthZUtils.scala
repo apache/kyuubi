@@ -68,6 +68,20 @@ private[authz] object AuthZUtils {
     method.invoke(obj, values: _*)
   }
 
+  def invokeWithCast[T](
+      obj: AnyRef,
+      methodName: String,
+      args: (Class[_], AnyRef)*): T = {
+    Try {
+      invoke(obj, methodName, args: _*)
+    } match {
+      case Success(value) => value.asInstanceOf[T]
+      case Failure(e) =>
+        val candidates = obj.getClass.getMethods.map(_.getName).mkString("[", ",", "]")
+        throw new RuntimeException(s"$methodName not in ${obj.getClass} $candidates", e)
+    }
+  }
+
   def invokeStatic(
       obj: Class[_],
       methodName: String,

@@ -27,7 +27,7 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.invoke
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{invoke, invokeWithCast}
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
 
@@ -60,7 +60,7 @@ object AccessRequest {
       case _ => req.setAccessType(accessType.toString.toLowerCase)
     }
     try {
-      val clusterName = invoke(SparkRangerAdminPlugin, "getClusterName").asInstanceOf[String]
+      val clusterName = invokeWithCast[String](SparkRangerAdminPlugin, "getClusterName")
       invoke(req, "setClusterName", (classOf[String], clusterName))
     } catch {
       case _: NoSuchMethodException =>
@@ -76,8 +76,8 @@ object AccessRequest {
     try {
       val storeEnricher = invoke(SparkRangerAdminPlugin, "getUserStoreEnricher")
       val userStore = invoke(storeEnricher, "getRangerUserStore")
-      val userGroupMapping = invoke(userStore, "getUserGroupMapping")
-        .asInstanceOf[util.HashMap[String, util.Set[String]]]
+      val userGroupMapping =
+        invokeWithCast[util.HashMap[String, util.Set[String]]](userStore, "getUserGroupMapping")
       Some(userGroupMapping.get(user.getShortUserName))
     } catch {
       case _: NoSuchMethodException =>
