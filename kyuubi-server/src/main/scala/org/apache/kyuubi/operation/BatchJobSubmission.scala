@@ -155,27 +155,6 @@ class BatchJobSubmission(
   }
 
   override protected def runInternal(): Unit = session.handleSessionException {
-    if (session.recoveryMetadata.isEmpty) {
-      val metaData = Metadata(
-        identifier = batchId,
-        sessionType = session.sessionType,
-        realUser = session.realUser,
-        username = session.user,
-        ipAddress = session.ipAddress,
-        kyuubiInstance = session.connectionUrl,
-        state = OperationState.PENDING.toString,
-        resource = resource,
-        className = className,
-        requestName = batchName,
-        requestConf = session.normalizedConf,
-        requestArgs = batchArgs,
-        createTime = session.createTime,
-        engineType = batchType,
-        clusterManager = builder.clusterManager())
-
-      session.sessionManager.insertMetadata(metaData)
-    }
-
     val asyncOperation: Runnable = () => {
       try {
         if (recoveryMetadata.exists(_.peerInstanceClosed)) {

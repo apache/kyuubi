@@ -31,6 +31,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.{CONN_OPEN, CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
 
@@ -42,7 +43,7 @@ class KyuubiBatchSessionImpl(
     override val sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
     batchRequest: BatchRequest,
-    val recoveryMetadata: Option[Metadata] = None)
+    recoveryMetadata: Option[Metadata] = None)
   extends KyuubiSession(
     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
     user,
@@ -110,6 +111,27 @@ class KyuubiBatchSessionImpl(
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
+    }
+
+    if (recoveryMetadata.isEmpty) {
+      val metaData = Metadata(
+        identifier = handle.identifier.toString,
+        sessionType = sessionType,
+        realUser = realUser,
+        username = user,
+        ipAddress = ipAddress,
+        kyuubiInstance = connectionUrl,
+        state = OperationState.PENDING.toString,
+        resource = batchRequest.getResource,
+        className = batchRequest.getClassName,
+        requestName = batchRequest.getName,
+        requestConf = normalizedConf,
+        requestArgs = batchRequest.getArgs.asScala,
+        createTime = createTime,
+        engineType = batchRequest.getBatchType,
+        clusterManager = batchJobSubmissionOp.builder.clusterManager())
+
+      sessionManager.insertMetadata(metaData)
     }
 
     checkSessionAccessPathURIs()
