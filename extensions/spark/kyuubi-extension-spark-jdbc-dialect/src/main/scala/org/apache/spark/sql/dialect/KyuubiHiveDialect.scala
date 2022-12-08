@@ -21,7 +21,7 @@ import java.util.Locale
 
 import org.apache.spark.sql.execution.datasources.jdbc.JdbcUtils
 import org.apache.spark.sql.jdbc.{JdbcDialect, JdbcType}
-import org.apache.spark.sql.types.{BooleanType, DataType, DoubleType, FloatType, StringType}
+import org.apache.spark.sql.types.{BinaryType, BooleanType, DataType, DoubleType, FloatType, StringType}
 
 object KyuubiHiveDialect extends JdbcDialect {
 
@@ -46,6 +46,7 @@ object KyuubiHiveDialect extends JdbcDialect {
     case FloatType => Option(JdbcType("FLOAT", java.sql.Types.FLOAT))
     case StringType => Option(JdbcType("STRING", java.sql.Types.CLOB))
     case BooleanType => Option(JdbcType("BOOLEAN", java.sql.Types.BIT))
+    case BinaryType => Option(JdbcType("BINARY", java.sql.Types.BLOB))
 
     case _ => JdbcUtils.getCommonJDBCType(dt)
   }
