@@ -73,6 +73,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-api</artifactId>
         </dependency>
@@ -490,6 +495,15 @@
         </resources>
 
         <plugins>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <configuration>
+                    <visitor>true</visitor>
+                    <sourceDirectory>${project.basedir}/src/main/antlr4</sourceDirectory>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
