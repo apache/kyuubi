@@ -110,11 +110,11 @@ object AccessRequest {
         ".enable.override.usergroup.from.userstore",
       false);
 
-    if (!enableOverrideUserGroupFromUserStore) {
-      getUserGroupsFromUgi(user)
-    } else {
+    if (enableOverrideUserGroupFromUserStore) {
       getUserGroupsFromUserStore(user)
         .getOrElse(getUserGroupsFromUgi(user))
+    } else {
+      getUserGroupsFromUgi(user)
     }
   }
 
