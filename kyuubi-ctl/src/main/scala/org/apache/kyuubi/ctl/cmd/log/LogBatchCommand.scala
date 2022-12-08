@@ -83,7 +83,7 @@ class LogBatchCommand(
           if (!done) {
             if (!Option(log).exists(_.getRowCount > 0)) {
               Option(batch).foreach { batch =>
-                 info(s"Batch report for ${batch.getId} (state: ${batch.getState})")
+                info(s"Batch report for ${batch.getId} (state: ${batch.getState})")
               }
             }
             Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))
