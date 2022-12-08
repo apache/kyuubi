@@ -115,7 +115,7 @@ class KyuubiBatchSessionImpl(
 
     checkSessionAccessPathURIs()
 
-    // we should call super.open before running batch job submission operation
+    // create the operation root directory before running batch job submission operation
     super.open()
 
     if (recoveryMetadata.isEmpty) {
