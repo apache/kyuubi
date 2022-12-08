@@ -28,6 +28,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SERVER_SUBMIT_TIME_KEY
 import org.apache.kyuubi.events.{EventBus, KyuubiServerInfoEvent, ServerEventHandlerRegister}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{AuthTypes, ServiceDiscovery}
@@ -92,6 +93,7 @@ object KyuubiServer extends Logging {
       s" ${Properties.javaVersion}")
     SignalRegister.registerLogger(logger)
     val conf = new KyuubiConf().loadFileDefaults()
+    conf.set(KYUUBI_SERVER_SUBMIT_TIME_KEY, System.currentTimeMillis())
     UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
     startServer(conf)
   }

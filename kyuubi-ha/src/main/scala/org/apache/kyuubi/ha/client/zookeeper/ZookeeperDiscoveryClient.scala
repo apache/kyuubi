@@ -207,9 +207,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val attributes =
           p.split(";").map(_.split("=", 2)).filter(_.size == 2).map(kv => (kv.head, kv.last)).toMap
         info(s"Get service instance:$instance and version:$version under $namespace")
-        val stat = zkClient.checkExists().forPath(path)
-        val createTime = stat.getCtime
-        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes, createTime)
+        ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
       }
     } catch {
       case _: Exception if silent => Nil
@@ -362,7 +360,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val createMode =
       if (external) CreateMode.PERSISTENT_SEQUENTIAL
       else CreateMode.EPHEMERAL_SEQUENTIAL
-    val znodeData =
+    var znodeData =
       if (conf.get(HA_ZK_PUBLISH_CONFIGS) && session.isEmpty) {
         addConfsToPublish(conf, instance)
       } else {

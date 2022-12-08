@@ -27,6 +27,7 @@ object KyuubiReservedKeys {
   final val KYUUBI_ENGINE_NAME = "kyuubi.engine.name"
   final val KYUUBI_ENGINE_URL = "kyuubi.engine.url"
   final val KYUUBI_ENGINE_SUBMIT_TIME_KEY = "kyuubi.engine.submit.time"
+  final val KYUUBI_SERVER_SUBMIT_TIME_KEY = "kyuubi.server.submit.time"
   final val KYUUBI_ENGINE_CREDENTIALS_KEY = "kyuubi.engine.credentials"
   final val KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID =
     "kyuubi.session.engine.launch.handle.guid"
@@ -36,4 +37,5 @@ object KyuubiReservedKeys {
   final val KYUUBI_OPERATION_GET_CURRENT_CATALOG = "kyuubi.operation.get.current.catalog"
   final val KYUUBI_OPERATION_SET_CURRENT_DATABASE = "kyuubi.operation.set.current.database"
   final val KYUUBI_OPERATION_GET_CURRENT_DATABASE = "kyuubi.operation.get.current.database"
+
 }

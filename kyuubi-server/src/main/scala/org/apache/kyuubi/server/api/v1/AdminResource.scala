@@ -33,13 +33,13 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.{Engine, HadoopConfData, Server, ServerLog}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_SUBMIT_TIME_KEY, KYUUBI_ENGINE_URL, KYUUBI_SERVER_SUBMIT_TIME_KEY}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.KyuubiServer.getServerLogRowSet
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.OSUtils
 
 @Tag(name = "Admin")
@@ -133,7 +133,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
         }
     }
-    val engineMgr = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager].applicationManager
     engineNodes.map(node =>
       new Engine(
         engine.getVersion,
@@ -144,8 +143,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.instance,
         node.namespace,
         node.attributes.asJava,
-        node.createTime,
-        engineMgr.getApplicationInfo(None, node.engineRefId.orNull).map(_.url.orNull).orNull,
+        node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME_KEY).orNull.toLong,
+        node.attributes.get(KYUUBI_ENGINE_URL).orNull,
         node.host,
         node.port))
 
@@ -173,7 +172,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
             node.instance,
             node.host,
             node.port,
-            node.createTime,
+            node.attributes.get(KYUUBI_SERVER_SUBMIT_TIME_KEY).orNull.toLong,
             OSUtils.memoryTotal(),
             OSUtils.cpuTotal(),
             "Running")

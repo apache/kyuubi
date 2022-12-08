@@ -94,7 +94,10 @@ class SparkTBinaryFrontendService(
   }
 
   override def attributes: Map[String, String] = {
-    Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
+    Map(
+      KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
+      KYUUBI_ENGINE_URL -> sc.uiWebUrl.get,
+      KYUUBI_ENGINE_SUBMIT_TIME_KEY -> sc.startTime.toString)
   }
 }
 
