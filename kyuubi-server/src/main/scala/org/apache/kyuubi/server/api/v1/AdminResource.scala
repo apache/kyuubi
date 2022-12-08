@@ -265,8 +265,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       null,
       null,
       null,
-      null,
-      null)
+      0,
+      0)
   }
 
   private def getEngineSpace(engine: Engine): String = {

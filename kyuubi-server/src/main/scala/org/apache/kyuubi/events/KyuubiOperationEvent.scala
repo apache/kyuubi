@@ -91,7 +91,6 @@ object KyuubiOperationEvent {
       session.user,
       session.asInstanceOf[KyuubiSessionImpl].client.engineId.orNull,
       Option(session.sessionManager.getConf).map(_.get(ENGINE_TYPE)).orNull,
-      Option(session.sessionManager.getConf)
-        .map(_.get(ENGINE_SHARE_LEVEL)).orNull)
+      Option(session.sessionManager.getConf).map(_.get(ENGINE_SHARE_LEVEL)).orNull)
   }
 }
