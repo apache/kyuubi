@@ -46,7 +46,7 @@ object SignUtils {
   def signWithPrivateKey(
       plainText: String,
       privateKey: PrivateKey,
-      algorithm: String = "SHA256withECDSA"): String = {
+      algorithm: String = "SHA256withECDSA"): String = synchronized {
     val privateSignature = Signature.getInstance(algorithm)
     privateSignature.initSign(privateKey)
     privateSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
@@ -57,14 +57,22 @@ object SignUtils {
   def verifySignWithECDSA(
       plainText: String,
       signatureBase64: String,
-      publicKeyBase64: String): Boolean = {
-    val publicKeyBytes = Base64.getDecoder.decode(publicKeyBase64)
-    val publicKey: PublicKey = KeyFactory.getInstance(KEYPAIR_ALGORITHM_EC)
-      .generatePublic(new X509EncodedKeySpec(publicKeyBytes)).asInstanceOf[ECPublicKey]
-    val signatureBytes = Base64.getDecoder.decode(signatureBase64)
-    val publicSignature = Signature.getInstance("SHA256withECDSA")
-    publicSignature.initVerify(publicKey)
-    publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
-    publicSignature.verify(signatureBytes)
+      publicKeyBase64: String): Boolean = synchronized {
+    try {
+      val publicKeyBytes = Base64.getDecoder.decode(publicKeyBase64)
+      val publicKey: PublicKey = KeyFactory.getInstance(KEYPAIR_ALGORITHM_EC)
+        .generatePublic(new X509EncodedKeySpec(publicKeyBytes)).asInstanceOf[ECPublicKey]
+      val signatureBytes = Base64.getDecoder.decode(signatureBase64)
+      val publicSignature = Signature.getInstance("SHA256withECDSA")
+      publicSignature.initVerify(publicKey)
+      publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
+      publicSignature.verify(signatureBytes)
+    } catch {
+      case e: Exception =>
+        throw new IllegalArgumentException(
+          s"signature verification failed: publicKeyBase64:$publicKeyBase64" +
+            s", signatureBase64:$signatureBase64, plainText:$plainText",
+          e)
+    }
   }
 }
