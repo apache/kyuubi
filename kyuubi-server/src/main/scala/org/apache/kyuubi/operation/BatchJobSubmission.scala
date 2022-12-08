@@ -114,6 +114,13 @@ class BatchJobSubmission(
         0L
       }
 
+    if (isTerminalState(state)) {
+      if (applicationInfo.isEmpty) {
+        applicationInfo =
+          Option(ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND))
+      }
+    }
+
     applicationInfo.foreach { status =>
       val metadataToUpdate = Metadata(
         identifier = batchId,
