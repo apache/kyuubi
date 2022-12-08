@@ -45,7 +45,6 @@ class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
       lastKnownVersion: Long): ServicePolicies = {
     policies
   }
-
 }
 
 /**
@@ -65,5 +64,4 @@ trait RangerClientHelper {
    */
   def getServicePoliciesIfUpdated(
       lastKnownVersion: Long): ServicePolicies
-
 }
