@@ -52,7 +52,7 @@ object CtlUtils {
             s"${cliConfig.zkOpts.version}_" +
             s"${engineShareLevel}_${engineType}",
           cliConfig.engineOpts.user,
-          Array(engineSubdomain))
+          engineSubdomain)
     }
   }
 
