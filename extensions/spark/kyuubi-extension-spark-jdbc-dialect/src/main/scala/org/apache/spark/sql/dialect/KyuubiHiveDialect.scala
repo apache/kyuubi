@@ -21,7 +21,7 @@ import java.util.Locale
 
 import org.apache.spark.sql.execution.datasources.jdbc.JdbcUtils
 import org.apache.spark.sql.jdbc.{JdbcDialect, JdbcType}
-import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StringType}
+import org.apache.spark.sql.types.{BooleanType, DataType, DoubleType, FloatType, StringType}
 
 object KyuubiHiveDialect extends JdbcDialect {
 
@@ -41,7 +41,9 @@ object KyuubiHiveDialect extends JdbcDialect {
     // which is alias for DOUBLE, only available starting with Hive 2.2.0
     // overriding to "DOUBLE" for better compatibility
     case DoubleType => Option(JdbcType("DOUBLE", java.sql.Types.DOUBLE))
+    case FloatType => Option(JdbcType("FLOAT", java.sql.Types.FLOAT))
     case StringType => Option(JdbcType("STRING", java.sql.Types.CLOB))
+    case BooleanType => Option(JdbcType("BOOLEAN", java.sql.Types.BIT))
     case _ => JdbcUtils.getCommonJDBCType(dt)
   }
 
