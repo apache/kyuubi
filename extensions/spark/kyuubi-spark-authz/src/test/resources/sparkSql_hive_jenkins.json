@@ -1021,55 +1021,6 @@
     },
     {
       "service": "hive_jenkins",
-      "name": "row_filter_with_user_attr",
-      "policyType": 2,
-      "policyPriority": 0,
-      "description": "",
-      "isAuditEnabled": true,
-      "resources": {
-        "database": {
-          "values": [
-            "default"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        },
-        "table": {
-          "values": [
-            "src_group_row_filter"
-          ],
-          "isExcludes": false,
-          "isRecursive": false
-        }
-      },
-      "policyItems": [],
-      "denyPolicyItems": [],
-      "allowExceptions": [],
-      "denyExceptions": [],
-      "dataMaskPolicyItems": [],
-      "rowFilterPolicyItems": [
-        {
-          "rowFilterInfo": {
-            "filterExpr": "city == '${{USER.city}}'"
-          },
-          "accesses": [
-            {
-              "type": "select",
-              "isAllowed": true
-            }
-          ],
-          "users": [],
-          "groups": ["group_b"],
-          "conditions": [],
-          "delegateAdmin": false
-        }
-      ],"id": 33,
-      "guid": "e1caa15f-3280-4435-8dbd-f5c664ab9f0f",
-      "isEnabled": true,
-      "version": 1
-    },
-    {
-      "service": "hive_jenkins",
       "name": "src_value4_sf4",
       "policyType": 1,
       "policyPriority": 0,

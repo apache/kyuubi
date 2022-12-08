@@ -39,19 +39,4 @@
     <value>target/tmp</value>
   </property>
 
-  <property>
-    <name>ranger.plugin.spark.enable.override.usergroup.from.userstore</name>
-    <value>true</value>
-  </property>
-
-  <property>
-    <name>ranger.plugin.spark.enable.implicit.userstore.enricher</name>
-    <value>true</value>
-  </property>
-
-  <property>
-    <name>ranger.plugin.hive.policy.cache.dir</name>
-    <value>target/tmp</value>
-  </property>
-
 </configuration>
