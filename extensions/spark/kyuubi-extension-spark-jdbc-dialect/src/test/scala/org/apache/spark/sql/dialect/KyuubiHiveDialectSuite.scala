@@ -35,7 +35,7 @@ class KyuubiHiveDialectSuite extends AnyFunSuite {
     assertResult("`table`.`id`")(quoteIdentifier("table.id"))
   }
 
-  test("[KYUUBI #3489] Kyuubi Hive dialect: quoteIdentifier") {
+  test("KYUUBI #3942 adapt to Hive data type definitions") {
     assertResult("DOUBLE")(getJDBCType(DoubleType).get.databaseTypeDefinition)
     assertResult("FLOAT")(getJDBCType(FloatType).get.databaseTypeDefinition)
     assertResult("STRING")(getJDBCType(StringType).get.databaseTypeDefinition)
