@@ -94,11 +94,11 @@ class KyuubiSyncThriftClient private (
               remoteEngineBroken = false
             } catch {
               case e: Throwable =>
-                warn(s"The engine alive probe fails", e)
+                warn(s"The engine[$engineId] alive probe fails", e)
                 val now = System.currentTimeMillis()
                 if (now - engineLastAlive > engineAliveTimeout) {
-                  error("Mark the engine not alive with no recent alive probe success:" +
-                    s" ${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms")
+                  error(s"Mark the engine[$engineId] not alive with no recent alive probe" +
+                    s" success: ${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms")
                   remoteEngineBroken = true
                 }
             }
