@@ -40,5 +40,6 @@ class KyuubiHiveDialectSuite extends AnyFunSuite {
     assertResult("FLOAT")(getJDBCType(FloatType).get.databaseTypeDefinition)
     assertResult("STRING")(getJDBCType(StringType).get.databaseTypeDefinition)
     assertResult("BOOLEAN")(getJDBCType(BooleanType).get.databaseTypeDefinition)
+    assertResult("BINARY")(getJDBCType(BinaryType).get.databaseTypeDefinition)
   }
 }
