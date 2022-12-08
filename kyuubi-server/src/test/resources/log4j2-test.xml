@@ -33,7 +33,7 @@
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </File>
-        <RollingFile name="auditLog" fileName="target/rest-audit.log"
+        <RollingFile name="audit" fileName="target/rest-audit.log"
                      filePattern="target/rest-audit-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
             <Policies>
@@ -48,7 +48,7 @@
             <AppenderRef ref="file"/>
         </Root>
         <Logger name="org.apache.kyuubi.server.http.authentication.AuthenticationAuditLogger" additivity="false">
-            <AppenderRef ref="auditLog" />
+            <AppenderRef ref="audit" />
         </Logger>
     </Loggers>
 </Configuration>
