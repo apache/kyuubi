@@ -41,9 +41,12 @@ object KyuubiHiveDialect extends JdbcDialect {
     // which is alias for DOUBLE, only available starting with Hive 2.2.0
     // overriding to "DOUBLE" for better compatibility
     case DoubleType => Option(JdbcType("DOUBLE", java.sql.Types.DOUBLE))
+
+    // adapt to Hive data type definition
     case FloatType => Option(JdbcType("FLOAT", java.sql.Types.FLOAT))
     case StringType => Option(JdbcType("STRING", java.sql.Types.CLOB))
     case BooleanType => Option(JdbcType("BOOLEAN", java.sql.Types.BIT))
+
     case _ => JdbcUtils.getCommonJDBCType(dt)
   }
 
