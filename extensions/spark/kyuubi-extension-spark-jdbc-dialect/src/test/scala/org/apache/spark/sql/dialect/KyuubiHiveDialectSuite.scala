@@ -38,8 +38,9 @@ class KyuubiHiveDialectSuite extends AnyFunSuite {
   test("KYUUBI #3942 adapt to Hive data type definitions") {
     assertResult("DOUBLE")(getJDBCType(DoubleType).get.databaseTypeDefinition)
     assertResult("FLOAT")(getJDBCType(FloatType).get.databaseTypeDefinition)
-    assertResult("STRING")(getJDBCType(StringType).get.databaseTypeDefinition)
+    assertResult("TINYINT")(getJDBCType(ByteType).get.databaseTypeDefinition)
     assertResult("BOOLEAN")(getJDBCType(BooleanType).get.databaseTypeDefinition)
+    assertResult("STRING")(getJDBCType(StringType).get.databaseTypeDefinition)
     assertResult("BINARY")(getJDBCType(BinaryType).get.databaseTypeDefinition)
   }
 }
