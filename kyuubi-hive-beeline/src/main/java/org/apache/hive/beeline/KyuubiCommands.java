@@ -17,11 +17,12 @@
 
 package org.apache.hive.beeline;
 
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
+
 import java.io.*;
 import java.sql.*;
 import java.util.*;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
-import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
@@ -423,31 +424,25 @@ public class KyuubiCommands extends Commands {
         getProperty(
             props,
             new String[] {
-              JdbcConnectionParams.PROPERTY_URL, "javax.jdo.option.ConnectionURL", "ConnectionURL",
+              PROPERTY_URL, "javax.jdo.option.ConnectionURL", "ConnectionURL",
             });
     String driver =
         getProperty(
             props,
             new String[] {
-              JdbcConnectionParams.PROPERTY_DRIVER,
-              "javax.jdo.option.ConnectionDriverName",
-              "ConnectionDriverName",
+              PROPERTY_DRIVER, "javax.jdo.option.ConnectionDriverName", "ConnectionDriverName",
             });
     String username =
         getProperty(
             props,
             new String[] {
-              JdbcConnectionParams.AUTH_USER,
-              "javax.jdo.option.ConnectionUserName",
-              "ConnectionUserName",
+              AUTH_USER, "javax.jdo.option.ConnectionUserName", "ConnectionUserName",
             });
     String password =
         getProperty(
             props,
             new String[] {
-              JdbcConnectionParams.AUTH_PASSWD,
-              "javax.jdo.option.ConnectionPassword",
-              "ConnectionPassword",
+              AUTH_PASSWD, "javax.jdo.option.ConnectionPassword", "ConnectionPassword",
             });
 
     if (url == null || url.length() == 0) {
@@ -459,28 +454,29 @@ public class KyuubiCommands extends Commands {
       }
     }
 
-    String auth = getProperty(props, new String[] {JdbcConnectionParams.AUTH_TYPE});
+    String auth = getProperty(props, new String[] {AUTH_TYPE});
     if (auth == null) {
       auth = beeLine.getOpts().getAuthType();
       if (auth != null) {
-        props.setProperty(JdbcConnectionParams.AUTH_TYPE, auth);
+        props.setProperty(AUTH_TYPE, auth);
       }
     }
 
     beeLine.info("Connecting to " + url);
-    if (Utils.parsePropertyFromUrl(url, JdbcConnectionParams.AUTH_PRINCIPAL) == null) {
+    if (Utils.parsePropertyFromUrl(url, AUTH_PRINCIPAL) == null
+        || Utils.parsePropertyFromUrl(url, AUTH_KYUUBI_SERVER_PRINCIPAL) == null) {
       String urlForPrompt = url.substring(0, url.contains(";") ? url.indexOf(';') : url.length());
       if (username == null) {
         username = beeLine.getConsoleReader().readLine("Enter username for " + urlForPrompt + ": ");
       }
-      props.setProperty(JdbcConnectionParams.AUTH_USER, username);
+      props.setProperty(AUTH_USER, username);
       if (password == null) {
         password =
             beeLine
                 .getConsoleReader()
                 .readLine("Enter password for " + urlForPrompt + ": ", new Character('*'));
       }
-      props.setProperty(JdbcConnectionParams.AUTH_PASSWD, password);
+      props.setProperty(AUTH_PASSWD, password);
     }
 
     try {
