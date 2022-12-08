@@ -106,27 +106,29 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
 
     val authorization = httpRequest.getHeader(AUTHORIZATION_HEADER)
     val matchedHandler = getMatchedHandler(authorization).orNull
+    HTTP_CLIENT_IP_ADDRESS.set(httpRequest.getRemoteAddr)
+    HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
+      httpRequest.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
 
     if (matchedHandler == null) {
       debug(s"No auth scheme matched for url: ${httpRequest.getRequestURL}")
       httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
+      AuthenticationAuditLogger.audit(httpRequest, httpResponse)
       httpResponse.sendError(
         HttpServletResponse.SC_UNAUTHORIZED,
         s"No auth scheme matched for $authorization")
     } else {
-      HTTP_CLIENT_IP_ADDRESS.set(httpRequest.getRemoteAddr)
-      HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
-        httpRequest.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
       try {
         val authUser = matchedHandler.authenticate(httpRequest, httpResponse)
         if (authUser != null) {
           HTTP_CLIENT_USER_NAME.set(authUser)
           doFilter(filterChain, httpRequest, httpResponse)
         }
+        AuthenticationAuditLogger.audit(httpRequest, httpResponse)
       } catch {
         case e: AuthenticationException =>
           httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN)
-          auditHttpRequest(httpRequest, httpResponse)
+          AuthenticationAuditLogger.audit(httpRequest, httpResponse)
           HTTP_CLIENT_USER_NAME.remove()
           HTTP_CLIENT_IP_ADDRESS.remove()
           HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
@@ -162,7 +164,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   }
 }
 
-object AuthenticationFilter extends Logging {
+object AuthenticationFilter {
   final val HTTP_CLIENT_IP_ADDRESS = new ThreadLocal[String]() {
     override protected def initialValue: String = null
   }
@@ -178,15 +180,4 @@ object AuthenticationFilter extends Logging {
   def getUserProxyHeaderIpAddress: String = HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()
 
   def getUserName: String = HTTP_CLIENT_USER_NAME.get
-
-  def auditHttpRequest(request: HttpServletRequest, response: HttpServletResponse): Unit = {
-    info(Array(
-      s"user=${HTTP_CLIENT_USER_NAME.get()}",
-      s"ip=${request.getRemoteAddr}",
-      s"proxyIp=${HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()}",
-      s"method=${request.getMethod}",
-      s"uri=${request.getRequestURI}",
-      s"protocol=${request.getProtocol}",
-      s"status=${response.getStatus}").mkString("\t"))
-  }
 }
