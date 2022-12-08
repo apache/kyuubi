@@ -18,13 +18,10 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.io.InputStreamReader
-import java.util
-
-import scala.collection.JavaConverters._
 
 import com.google.gson.GsonBuilder
 import org.apache.ranger.admin.client.RangerAdminRESTClient
-import org.apache.ranger.plugin.util.{RangerUserStore, ServicePolicies}
+import org.apache.ranger.plugin.util.ServicePolicies
 
 class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
 
