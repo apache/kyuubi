@@ -35,7 +35,7 @@
         </File>
         <RollingFile name="auditLog" fileName="target/rest-audit.log"
                      filePattern="target/rest-audit-%d{yyyy-MM-dd}-%i.log">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} %t %p %c{1}: %m%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="19500KB" />
             </Policies>
