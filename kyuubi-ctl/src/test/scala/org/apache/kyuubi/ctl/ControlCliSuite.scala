@@ -143,8 +143,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         10000,
         Some("version"),
         None,
-        Map.empty,
-        System.currentTimeMillis()))
+        Map.empty))
     val renderedInfo = Render.renderServiceNodesInfo(title, nodes)
     // scalastyle:off
     val expected = {
@@ -194,8 +193,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
           10000,
           Some(KYUUBI_VERSION),
           None,
-          Map.empty,
-          System.currentTimeMillis()),
+          Map.empty),
         ServiceNodeInfo(
           s"/$newNamespace",
           "",
@@ -203,8 +201,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
           10001,
           Some(KYUUBI_VERSION),
           None,
-          Map.empty,
-          System.currentTimeMillis()))
+          Map.empty))
 
       testPrematureExitForControlCli(
         args,
@@ -279,8 +276,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
           10000,
           Some(KYUUBI_VERSION),
           None,
-          Map.empty,
-          System.currentTimeMillis()),
+          Map.empty),
         ServiceNodeInfo(
           s"/$uniqueNamespace",
           "",
@@ -288,8 +284,7 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
           10001,
           Some(KYUUBI_VERSION),
           None,
-          Map.empty,
-          System.currentTimeMillis()))
+          Map.empty))
 
       testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
     }
