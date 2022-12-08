@@ -21,7 +21,6 @@ import java.util
 import java.util.Date
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPolicyEngine}
