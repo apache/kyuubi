@@ -411,6 +411,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
   }
 
   test("operation metadata hint - __kyuubi_operation_result_codec__") {
+    assume(!httpMode)
     withSessionHandle { (client, handle) =>
       def checkStatusAndResultSetCodecHint(
           sql: String,
