@@ -49,23 +49,6 @@ class RangerLocalClient extends RangerAdminRESTClient with RangerClientHelper {
     policies
   }
 
-  override def getUserStoreIfUpdated(
-      lastKnownUserStoreVersion: Long,
-      lastActivationTimeInMillis: Long): RangerUserStore = {
-    val userGroupsMapping = new util.HashMap[String, util.Set[String]]()
-    userGroupsMapping.put("bob", Set("group_a", "group_b").asJava)
-    val groupAttrMapping = new util.HashMap[String, util.Map[String, String]]()
-    val userAttrMapping = new util.HashMap[String, util.Map[String, String]]()
-    val userAttr1 = new util.HashMap[String, String]()
-    userAttr1.put("city", "guangzhou")
-    userAttrMapping.put("bob", userAttr1)
-
-    val userStore = new RangerUserStore()
-    userStore.setUserGroupMapping(userGroupsMapping)
-    userStore.setGroupAttrMapping(groupAttrMapping)
-    userStore.setUserAttrMapping(userAttrMapping)
-    userStore
-  }
 }
 
 /**
@@ -85,12 +68,5 @@ trait RangerClientHelper {
    */
   def getServicePoliciesIfUpdated(
       lastKnownVersion: Long): ServicePolicies
-
-  /**
-   * Apache ranger 2.1.0+
-   */
-  def getUserStoreIfUpdated(
-      lastKnownUserStoreVersion: Long,
-      lastActivationTimeInMillis: Long): RangerUserStore
 
 }
