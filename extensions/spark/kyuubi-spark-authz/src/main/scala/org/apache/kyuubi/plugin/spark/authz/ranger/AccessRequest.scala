@@ -33,10 +33,10 @@ case class AccessRequest private (accessType: AccessType) extends RangerAccessRe
 
 object AccessRequest {
   def apply(
-             resource: AccessResource,
-             user: UserGroupInformation,
-             opType: OperationType,
-             accessType: AccessType): AccessRequest = {
+      resource: AccessResource,
+      user: UserGroupInformation,
+      opType: OperationType,
+      accessType: AccessType): AccessRequest = {
     val userName = user.getShortUserName
     val userGroups = getUserGroups(user)
     val req = new AccessRequest(accessType)
