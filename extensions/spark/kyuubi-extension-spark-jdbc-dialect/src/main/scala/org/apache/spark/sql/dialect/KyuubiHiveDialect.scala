@@ -19,7 +19,9 @@ package org.apache.spark.sql.dialect
 
 import java.util.Locale
 
-import org.apache.spark.sql.jdbc.JdbcDialect
+import org.apache.spark.sql.execution.datasources.jdbc.JdbcUtils
+import org.apache.spark.sql.jdbc.{JdbcDialect, JdbcType}
+import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StringType}
 
 object KyuubiHiveDialect extends JdbcDialect {
 
@@ -32,6 +34,15 @@ object KyuubiHiveDialect extends JdbcDialect {
 
   override def quoteIdentifier(colName: String): String = {
     colName.split('.').map(part => s"`$part`").mkString(".")
+  }
+
+  override def getJDBCType(dt: DataType): Option[JdbcType] = dt match {
+    // JdbcUtils.getCommonJDBCType is mapping DoubleType to "DOUBLE PRECISION"
+    // which is alias for DOUBLE, only available starting with Hive 2.2.0
+    // overriding to "DOUBLE" for better compatibility
+    case DoubleType => Option(JdbcType("DOUBLE", java.sql.Types.DOUBLE))
+    case StringType => Option(JdbcType("STRING", java.sql.Types.CLOB))
+    case _ => JdbcUtils.getCommonJDBCType(dt)
   }
 
 }
