@@ -27,7 +27,7 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.invoke
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
 
@@ -81,9 +81,9 @@ object AccessRequest {
 
   private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[util.Set[String]] = {
     try {
-      val storeEnricher = AuthZUtils.invoke(SparkRangerAdminPlugin, "getUserStoreEnricher")
-      val userStore = AuthZUtils.invoke(storeEnricher, "getRangerUserStore")
-      val userGroupMapping = AuthZUtils.invoke(userStore, "getUserGroupMapping")
+      val storeEnricher = invoke(SparkRangerAdminPlugin, "getUserStoreEnricher")
+      val userStore = invoke(storeEnricher, "getRangerUserStore")
+      val userGroupMapping = invoke(userStore, "getUserGroupMapping")
         .asInstanceOf[util.HashMap[String, util.Set[String]]]
       Some(userGroupMapping.get(user.getShortUserName))
     } catch {
