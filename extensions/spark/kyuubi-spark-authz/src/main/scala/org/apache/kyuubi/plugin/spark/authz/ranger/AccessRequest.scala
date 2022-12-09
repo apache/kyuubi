@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.util
+import java.util.{Set => JSet}
 import java.util.Date
 
 import scala.collection.JavaConverters._
@@ -45,12 +46,12 @@ object AccessRequest {
     req.setUserGroups(userGroups)
     req.setAction(opType.toString)
     try {
-      val roles = invokeAs[java.util.Set[String]](
+      val roles = invokeAs[JSet[String]](
         SparkRangerAdminPlugin,
         "getRolesFromUserAndGroups",
         (classOf[String], userName),
-        (classOf[java.util.Set[String]], userGroups))
-      invoke(req, "setUserRoles", (classOf[java.util.Set[String]], roles))
+        (classOf[JSet[String]], userGroups))
+      invoke(req, "setUserRoles", (classOf[JSet[String]], roles))
     } catch {
       case _: Exception =>
     }
