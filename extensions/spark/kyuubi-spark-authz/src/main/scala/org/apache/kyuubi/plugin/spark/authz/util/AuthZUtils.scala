@@ -68,7 +68,7 @@ private[authz] object AuthZUtils {
     method.invoke(obj, values: _*)
   }
 
-  def invokeWithCast[T](
+  def invokeAs[T](
       obj: AnyRef,
       methodName: String,
       args: (Class[_], AnyRef)*): T = {
