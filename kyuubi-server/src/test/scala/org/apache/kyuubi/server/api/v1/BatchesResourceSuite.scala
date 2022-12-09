@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.net.InetAddress
+import java.nio.file.Paths
 import java.util.{Base64, UUID}
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -49,7 +50,9 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
     .set(
       KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
       classOf[UserDefinedEngineSecuritySecretProvider].getName)
-    .set(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST, Seq(sparkBatchTestResource.get))
+    .set(
+      KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST,
+      Seq(Paths.get(sparkBatchTestResource.get).getParent.toString))
 
   override def afterEach(): Unit = {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -220,7 +223,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       Map.empty,
       newBatchRequest(
         "spark",
-        "",
+        sparkBatchTestResource.get,
         "",
         ""))
     sessionManager.openSession(
@@ -242,7 +245,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       Map.empty,
       newBatchRequest(
         "spark",
-        "",
+        sparkBatchTestResource.get,
         "",
         ""))
     sessionManager.openBatchSession(
@@ -252,7 +255,7 @@ class BatchesResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper wi
       Map.empty,
       newBatchRequest(
         "spark",
-        "",
+        sparkBatchTestResource.get,
         "",
         ""))
 
