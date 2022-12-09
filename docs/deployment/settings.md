@@ -607,6 +607,10 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
 <!-- Extra logging related to initialization of Log4j.
  Set to debug or trace if log4j initialization is failing. -->
 <Configuration status="INFO">
+    <Properties>
+        <Property name="restAuditLogPath">rest-audit.log</Property>
+        <Property name="restAuditLogFilePattern">rest-audit-%d{yyyy-MM-dd}-%i.log</Property>
+    </Properties>
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n"/>
@@ -614,6 +618,14 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </Console>
+        <RollingFile name="restAudit" fileName="${sys:restAuditLogPath}"
+                     filePattern="${sys:restAuditLogFilePattern}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="51200KB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
     </Appenders>
     <Loggers>
         <Root level="INFO">
@@ -629,6 +641,9 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
         -->
         <Logger name="org.apache.hive.beeline.KyuubiBeeLine" level="error" additivity="false">
             <AppenderRef ref="stdout"/>
+        </Logger>
+        <Logger name="org.apache.kyuubi.server.http.authentication.AuthenticationAuditLogger" additivity="false">
+            <AppenderRef ref="restAudit" />
         </Logger>
     </Loggers>
 </Configuration>
