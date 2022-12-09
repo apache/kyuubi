@@ -36,23 +36,26 @@ object KyuubiHiveDialect extends JdbcDialect {
     colName.split('.').map(part => s"`$part`").mkString(".")
   }
 
+  /**
+   * Adapt to Hive data type definitions
+   * in https://cwiki.apache.org/confluence/display/hive/languagemanual+types .
+   *
+   * @param dt DataType in Spark SQL
+   * @return JdbcType with type definition adapted to Hive
+   */
   override def getJDBCType(dt: DataType): Option[JdbcType] = dt match {
-
-    // "INTEGER" is synonym for INT since Hive 2.2.0
+    // [HIVE-14950] "INTEGER" is synonym for INT since Hive 2.2.0
     // fallback to "INT" for better compatibility
     case IntegerType => Option(JdbcType("INT", java.sql.Types.INTEGER))
-
-    // "DOUBLE PRECISION" alias for "DOUBLE", only available starting with Hive 2.2.0
+    // [HIVE-13556] "DOUBLE PRECISION" is alias for "DOUBLE" since Hive 2.2.0
     // fallback to "DOUBLE" for better compatibility
     case DoubleType => Option(JdbcType("DOUBLE", java.sql.Types.DOUBLE))
-
     // adapt to Hive data type definition
     case FloatType => Option(JdbcType("FLOAT", java.sql.Types.FLOAT))
     case ByteType => Option(JdbcType("TINYINT", java.sql.Types.TINYINT))
     case BooleanType => Option(JdbcType("BOOLEAN", java.sql.Types.BIT))
     case StringType => Option(JdbcType("STRING", java.sql.Types.CLOB))
     case BinaryType => Option(JdbcType("BINARY", java.sql.Types.BLOB))
-
     case _ => JdbcUtils.getCommonJDBCType(dt)
   }
 
