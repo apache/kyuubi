@@ -139,7 +139,7 @@ class KyuubiBatchSessionImpl(
 
     checkSessionAccessPathURIs()
 
-    // we should call super.open before running batch job submission operation
+    // create the operation root directory before running batch job submission operation
     super.open()
 
     runOperation(batchJobSubmissionOp)
@@ -147,6 +147,7 @@ class KyuubiBatchSessionImpl(
 
   override def close(): Unit = {
     super.close()
+    batchJobSubmissionOp.close()
     waitMetadataRequestsRetryCompletion()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)

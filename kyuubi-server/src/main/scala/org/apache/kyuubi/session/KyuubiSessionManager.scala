@@ -136,8 +136,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSessionImpl): SessionHandle = {
     val user = batchSession.user
     val ipAddress = batchSession.ipAddress
+    val handle = batchSession.handle
     try {
-      val handle = batchSession.handle
       batchSession.open()
       setSession(handle, batchSession)
       info(s"$user's batch session with $handle is opened, current opening sessions" +
@@ -149,14 +149,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           batchSession.close()
         } catch {
           case t: Throwable =>
-            warn(s"Error closing batch session for $user client ip: $ipAddress", t)
+            warn(s"Error closing batch session[$handle] for $user client ip: $ipAddress", t)
         }
         MetricsSystem.tracing { ms =>
           ms.incCount(CONN_FAIL)
           ms.incCount(MetricRegistry.name(CONN_FAIL, user))
         }
         throw KyuubiSQLException(
-          s"Error opening batch session for $user client ip $ipAddress, due to ${e.getMessage}",
+          s"Error opening batch session[$handle] for $user client ip $ipAddress," +
+            s" due to ${e.getMessage}",
           e)
     }
   }
