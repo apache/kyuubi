@@ -106,29 +106,34 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
 
     val authorization = httpRequest.getHeader(AUTHORIZATION_HEADER)
     val matchedHandler = getMatchedHandler(authorization).orNull
+    HTTP_CLIENT_IP_ADDRESS.set(httpRequest.getRemoteAddr)
+    HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
+      httpRequest.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
 
     if (matchedHandler == null) {
       debug(s"No auth scheme matched for url: ${httpRequest.getRequestURL}")
       httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
+      AuthenticationAuditLogger.audit(httpRequest, httpResponse)
       httpResponse.sendError(
         HttpServletResponse.SC_UNAUTHORIZED,
         s"No auth scheme matched for $authorization")
     } else {
-      HTTP_CLIENT_IP_ADDRESS.set(httpRequest.getRemoteAddr)
-      HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
-        httpRequest.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
+      HTTP_AUTH_TYPE.set(matchedHandler.authScheme.toString)
       try {
         val authUser = matchedHandler.authenticate(httpRequest, httpResponse)
         if (authUser != null) {
           HTTP_CLIENT_USER_NAME.set(authUser)
           doFilter(filterChain, httpRequest, httpResponse)
         }
+        AuthenticationAuditLogger.audit(httpRequest, httpResponse)
       } catch {
         case e: AuthenticationException =>
+          httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN)
+          AuthenticationAuditLogger.audit(httpRequest, httpResponse)
           HTTP_CLIENT_USER_NAME.remove()
           HTTP_CLIENT_IP_ADDRESS.remove()
           HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
-          httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN)
+          HTTP_AUTH_TYPE.remove()
           httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage)
       }
     }
@@ -171,10 +176,15 @@ object AuthenticationFilter {
   final val HTTP_CLIENT_USER_NAME = new ThreadLocal[String]() {
     override protected def initialValue: String = null
   }
+  final val HTTP_AUTH_TYPE = new ThreadLocal[String]() {
+    override protected def initialValue(): String = null
+  }
 
   def getUserIpAddress: String = HTTP_CLIENT_IP_ADDRESS.get
 
   def getUserProxyHeaderIpAddress: String = HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()
 
   def getUserName: String = HTTP_CLIENT_USER_NAME.get
+
+  def getAuthType: String = HTTP_AUTH_TYPE.get()
 }
