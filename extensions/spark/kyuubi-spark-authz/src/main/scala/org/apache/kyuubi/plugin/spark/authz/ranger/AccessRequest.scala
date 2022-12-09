@@ -45,7 +45,7 @@ object AccessRequest {
     req.setUserGroups(userGroups)
     req.setAction(opType.toString)
     try {
-      val roles = invoke(
+      val roles = invokeAs[java.util.Set[String]](
         SparkRangerAdminPlugin,
         "getRolesFromUserAndGroups",
         (classOf[String], userName),
