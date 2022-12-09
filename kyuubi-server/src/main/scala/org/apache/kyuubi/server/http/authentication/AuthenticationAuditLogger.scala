@@ -23,14 +23,14 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter.{HTTP_AUTH_TYPE, HTTP_CLIENT_IP_ADDRESS, HTTP_CLIENT_USER_NAME, HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS}
 
 object AuthenticationAuditLogger extends Logging {
-  private final val AUDIT_BUFFER = new ThreadLocal[StringBuilder]() {
+  final private val AUDIT_BUFFER = new ThreadLocal[StringBuilder]() {
     override protected def initialValue: StringBuilder = new StringBuilder()
   }
 
   def audit(request: HttpServletRequest, response: HttpServletResponse): Unit = {
     val sb = AUDIT_BUFFER.get()
     sb.setLength(0)
-    sb.append(s"user=${HTTP_CLIENT_USER_NAME.get()}(auth: ${HTTP_AUTH_TYPE.get()})").append("\t")
+    sb.append(s"user=${HTTP_CLIENT_USER_NAME.get()}(auth:${HTTP_AUTH_TYPE.get()})").append("\t")
     sb.append(s"ip=${HTTP_CLIENT_IP_ADDRESS.get()}").append("\t")
     sb.append(s"proxyIp=${HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()}").append("\t")
     sb.append(s"method=${request.getMethod}").append("\t")
