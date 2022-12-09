@@ -24,7 +24,6 @@ import scala.collection.JavaConverters._
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.Utils
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.KyuubiApplicationManager
@@ -114,17 +113,6 @@ class KyuubiBatchSessionImpl(
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
 
-    try {
-      checkSessionAccessPathURIs()
-      // create the operation root directory before running batch job submission operation
-      super.open()
-    } catch {
-      case e: Throwable if recoveryMetadata.isDefined =>
-        error(s"Error opening recovered batch session $handle", e)
-        Utils.tryLogNonFatalError(batchJobSubmissionOp.close())
-        throw e
-    }
-
     if (recoveryMetadata.isEmpty) {
       val metaData = Metadata(
         identifier = handle.identifier.toString,
@@ -146,11 +134,17 @@ class KyuubiBatchSessionImpl(
       sessionManager.insertMetadata(metaData)
     }
 
+    checkSessionAccessPathURIs()
+
+    // create the operation root directory before running batch job submission operation
+    super.open()
+
     runOperation(batchJobSubmissionOp)
   }
 
   override def close(): Unit = {
     super.close()
+    batchJobSubmissionOp.close()
     waitMetadataRequestsRetryCompletion()
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)

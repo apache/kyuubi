@@ -285,6 +285,12 @@ class BatchJobSubmission(
       }
 
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
+
+      if (!builder.processLaunched) {
+        setState(OperationState.CANCELED)
+        updateBatchMetadata()
+      }
+
       // fast fail
       if (isTerminalState(state)) {
         killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
