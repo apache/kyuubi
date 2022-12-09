@@ -17,8 +17,9 @@
 
 package org.apache.spark.kyuubi.lineage
 
-import org.apache.kyuubi.plugin.lineage.LineageDispatcherType
 import org.apache.spark.internal.config.ConfigBuilder
+
+import org.apache.kyuubi.plugin.lineage.LineageDispatcherType
 
 object LineageConf {
 
