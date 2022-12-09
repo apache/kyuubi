@@ -287,8 +287,13 @@ class BatchJobSubmission(
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
 
       if (!builder.processLaunched) {
+        builder.close()
+        if (recoveryMetadata.isDefined) {
+          killMessage = killBatchApplication()
+        }
         setState(OperationState.CANCELED)
         updateBatchMetadata()
+        return
       }
 
       // fast fail
