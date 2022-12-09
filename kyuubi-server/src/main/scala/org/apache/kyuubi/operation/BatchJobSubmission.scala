@@ -331,13 +331,7 @@ class BatchJobSubmission(
     throw new IllegalStateException("Use close instead.")
   }
 
-  override def isTimedOut: Boolean = {
-    if (!OperationState.isTerminal(state)) {
-      false
-    } else {
-      super.isTimedOut
-    }
-  }
+  override def isTimedOut: Boolean = false
 }
 
 object BatchJobSubmission {

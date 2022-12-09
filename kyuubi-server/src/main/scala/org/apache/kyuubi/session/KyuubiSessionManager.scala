@@ -277,4 +277,18 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
     }
   }
+
+  private val batchSessionTimeout = conf.get(BATCH_SESSION_IDLE_TIMEOUT)
+  private val interactiveSessionTimeout = conf.get(SESSION_IDLE_TIMEOUT)
+  override protected def checkSessionTimeout(
+      current: Long,
+      session: Session,
+      timeout: Long): Unit = {
+    session match {
+      case _: KyuubiBatchSessionImpl =>
+        super.checkSessionTimeout(current, session, batchSessionTimeout)
+      case _ =>
+        super.checkSessionTimeout(current, session, interactiveSessionTimeout)
+    }
+  }
 }

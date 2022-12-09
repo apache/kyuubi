@@ -288,6 +288,19 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     ThreadUtils.shutdown(execPool, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
   }
 
+  protected def checkSessionTimeout(current: Long, session: Session, timeout: Long): Unit = {
+    if (session.lastAccessTime + timeout <= current && session.getNoOperationTime > timeout) {
+      try {
+        closeSession(session.handle)
+      } catch {
+        case e: KyuubiSQLException =>
+          warn(s"Error closing idle session ${session.handle}", e)
+      }
+    } else {
+      session.closeExpiredOperations()
+    }
+  }
+
   private def startTimeoutChecker(): Unit = {
     val interval = conf.get(SESSION_CHECK_INTERVAL)
     val timeout = conf.get(SESSION_IDLE_TIMEOUT)
@@ -297,17 +310,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
         val current = System.currentTimeMillis
         if (!shutdown) {
           for (session <- handleToSession.values().asScala) {
-            if (session.lastAccessTime + timeout <= current &&
-              session.getNoOperationTime > timeout) {
-              try {
-                closeSession(session.handle)
-              } catch {
-                case e: KyuubiSQLException =>
-                  warn(s"Error closing idle session ${session.handle}", e)
-              }
-            } else {
-              session.closeExpiredOperations()
-            }
+            checkSessionTimeout(current, session, timeout)
           }
         }
       }
