@@ -61,6 +61,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val operation = findDriverPodByTag(tag)
         val podList = operation.list().getItems
         if (podList.size() != 0) {
+          if (podList.get(0).getStatus.getPhase.equalsIgnoreCase("Terminated")) {
+            return (false, s"Target Pod ${podList.get(0).getMetadata.getName} is Terminated")
+          }
           (
             operation.delete(),
             s"Operation of deleted appId: " + s"${podList.get(0).getMetadata.getName} is completed")
