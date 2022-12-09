@@ -69,16 +69,16 @@ object AccessRequest {
     req
   }
 
-  private def getUserGroupsFromUgi(user: UserGroupInformation): util.Set[String] = {
+  private def getUserGroupsFromUgi(user: UserGroupInformation): JSet[String] = {
     user.getGroupNames.toSet.asJava
   }
 
-  private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[util.Set[String]] = {
+  private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] = {
     try {
       val storeEnricher = invoke(SparkRangerAdminPlugin, "getUserStoreEnricher")
       val userStore = invoke(storeEnricher, "getRangerUserStore")
       val userGroupMapping =
-        invokeAs[util.HashMap[String, util.Set[String]]](userStore, "getUserGroupMapping")
+        invokeAs[util.HashMap[String, JSet[String]]](userStore, "getUserGroupMapping")
       Some(userGroupMapping.get(user.getShortUserName))
     } catch {
       case _: NoSuchMethodException =>
@@ -86,7 +86,7 @@ object AccessRequest {
     }
   }
 
-  private def getUserGroups(user: UserGroupInformation): util.Set[String] = {
+  private def getUserGroups(user: UserGroupInformation): JSet[String] = {
     if (SparkRangerAdminPlugin.useUserGroupsFromUserStoreEnabled) {
       getUserGroupsFromUserStore(user)
         .getOrElse(getUserGroupsFromUgi(user))
