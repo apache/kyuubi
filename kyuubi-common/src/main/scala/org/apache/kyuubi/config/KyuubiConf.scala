@@ -2132,6 +2132,33 @@ object KyuubiConf {
       .intConf
       .createOptional
 
+  val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.batch.limit.connections.per.user")
+      .doc("Maximum kyuubi server batch connections per user." +
+        " Any user exceeding this limit will not be allowed to connect.")
+      .version("1.7.0")
+      .serverOnly
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.batch.limit.connections.per.ipaddress")
+      .doc("Maximum kyuubi server batch connections per ipaddress." +
+        " Any user exceeding this limit will not be allowed to connect.")
+      .version("1.7.0")
+      .serverOnly
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER_IPADDRESS: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.batch.limit.connections.per.user.ipaddress")
+      .doc("Maximum kyuubi server batch connections per user:ipaddress combination." +
+        " Any user-ipaddress exceeding this limit will not be allowed to connect.")
+      .version("1.7.0")
+      .serverOnly
+      .intConf
+      .createOptional
+
   val SESSION_PROGRESS_ENABLE: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.progress.enabled")
       .doc("Whether to enable the operation progress. When true," +

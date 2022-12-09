@@ -60,6 +60,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   lazy val groupProvider: GroupProvider = PluginLoader.loadGroupProvider(conf)
 
   private var limiter: Option[SessionLimiter] = None
+  private var batchLimiter: Option[SessionLimiter] = None
   lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
 
   override def initialize(conf: KyuubiConf): Unit = {
@@ -114,7 +115,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     try {
       super.closeSession(sessionHandle)
     } finally {
-      limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+      session match {
+        case _: KyuubiBatchSessionImpl =>
+          batchLimiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+        case _ =>
+          limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+      }
     }
   }
 
@@ -140,6 +146,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSessionImpl): SessionHandle = {
     val user = batchSession.user
     val ipAddress = batchSession.ipAddress
+    batchLimiter.foreach(_.increment(UserIpAddress(user, ipAddress)))
     val handle = batchSession.handle
     try {
       batchSession.open()
@@ -273,8 +280,20 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
-    if (userLimit > 0 || ipAddressLimit > 0 || userIpAddressLimit > 0) {
-      limiter = Some(SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
-    }
+    limiter = applySessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit)
+
+    val userBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
+    val ipAddressBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
+    val userIpAddressBatchLimit =
+      conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
+    batchLimiter = applySessionLimiter(userBatchLimit, ipAddressBatchLimit, userIpAddressBatchLimit)
+  }
+
+  private def applySessionLimiter(
+      userLimit: Int,
+      ipAddressLimit: Int,
+      userIpAddressLimit: Int): Option[SessionLimiter] = {
+    Seq(userLimit, ipAddressLimit, userIpAddressLimit).find(_ > 0).map(_ =>
+      SessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit))
   }
 }
