@@ -52,7 +52,7 @@ object AccessRequest {
         (classOf[java.util.Set[String]], userGroups))
       invoke(req, "setUserRoles", (classOf[java.util.Set[String]], roles))
     } catch {
-      case _: NoSuchMethodException =>
+      case _: Exception =>
     }
     req.setAccessTime(new Date())
     accessType match {
@@ -63,7 +63,7 @@ object AccessRequest {
       val clusterName = invokeAs[String](SparkRangerAdminPlugin, "getClusterName")
       invoke(req, "setClusterName", (classOf[String], clusterName))
     } catch {
-      case _: NoSuchMethodException =>
+      case _: Exception =>
     }
     req
   }
