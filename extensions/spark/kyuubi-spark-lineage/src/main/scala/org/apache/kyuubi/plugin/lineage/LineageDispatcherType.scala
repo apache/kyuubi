@@ -17,27 +17,8 @@
 
 package org.apache.kyuubi.plugin.lineage
 
-import org.apache.spark.sql.execution.QueryExecution
+object LineageDispatcherType extends Enumeration {
+  type LineageDispatcherType = Value
 
-import org.apache.kyuubi.plugin.lineage.dispatcher.{KyuubiEventDispatcher, SparkEventDispatcher}
-
-trait LineageDispatcher {
-
-  def send(qe: QueryExecution, lineage: Option[Lineage]): Unit
-
-  def onFailure(qe: QueryExecution, exception: Exception): Unit = {}
-
-}
-
-object LineageDispatcher {
-
-  def apply(dispatcherType: String): LineageDispatcher = {
-    LineageDispatcherType.withName(dispatcherType) match {
-      case LineageDispatcherType.SPARK_EVENT => new SparkEventDispatcher()
-      case LineageDispatcherType.KYUUBI_EVENT => new KyuubiEventDispatcher()
-      case _ => throw new UnsupportedOperationException(
-          s"Unsupported lineage dispatcher: $dispatcherType.")
-    }
-  }
-
+  val SPARK_EVENT, KYUUBI_EVENT = Value
 }
