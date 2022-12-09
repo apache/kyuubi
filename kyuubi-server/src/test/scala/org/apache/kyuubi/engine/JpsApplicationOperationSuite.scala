@@ -52,17 +52,21 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
       }
     }.start()
 
-    val desc1 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
-    assert(desc1.id != null)
-    assert(desc1.name != null)
-    assert(desc1.state == ApplicationState.RUNNING)
+    eventually(Timeout(10.seconds)) {
+      val desc1 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
+      assert(desc1.id != null)
+      assert(desc1.name != null)
+      assert(desc1.state == ApplicationState.RUNNING)
+    }
 
     jps.killApplicationByTag("sun.tools.jstat.Jstat")
 
-    val desc2 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
-    assert(desc2.id == null)
-    assert(desc2.name == null)
-    assert(desc2.state == ApplicationState.NOT_FOUND)
+    eventually(Timeout(10.seconds)) {
+      val desc2 = jps.getApplicationInfoByTag("sun.tools.jstat.Jstat")
+      assert(desc2.id == null)
+      assert(desc2.name == null)
+      assert(desc2.state == ApplicationState.NOT_FOUND)
+    }
   }
 
   test("JpsApplicationOperation with spark local mode") {
