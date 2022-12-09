@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.util
-import java.util.{Set => JSet}
+import java.util.{HashMap => JHashMap, Set => JSet}
 import java.util.Date
 
 import scala.collection.JavaConverters._
@@ -78,7 +77,7 @@ object AccessRequest {
       val storeEnricher = invoke(SparkRangerAdminPlugin, "getUserStoreEnricher")
       val userStore = invoke(storeEnricher, "getRangerUserStore")
       val userGroupMapping =
-        invokeAs[util.HashMap[String, JSet[String]]](userStore, "getUserGroupMapping")
+        invokeAs[JHashMap[String, JSet[String]]](userStore, "getUserGroupMapping")
       Some(userGroupMapping.get(user.getShortUserName))
     } catch {
       case _: NoSuchMethodException =>
