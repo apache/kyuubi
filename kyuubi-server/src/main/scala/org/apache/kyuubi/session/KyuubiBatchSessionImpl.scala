@@ -120,6 +120,7 @@ class KyuubiBatchSessionImpl(
       super.open()
     } catch {
       case e: Throwable if recoveryMetadata.isDefined =>
+        error(s"Error opening recovered batch session $handle", e)
         Utils.tryLogNonFatalError(batchJobSubmissionOp.close())
         throw e
     }
