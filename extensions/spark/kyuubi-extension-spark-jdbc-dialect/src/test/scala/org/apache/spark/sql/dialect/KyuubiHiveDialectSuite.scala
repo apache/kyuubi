@@ -46,5 +46,6 @@ class KyuubiHiveDialectSuite extends AnyFunSuite {
     assertResult("BOOLEAN")(getJdbcTypeDefinition(BooleanType))
     assertResult("STRING")(getJdbcTypeDefinition(StringType))
     assertResult("BINARY")(getJdbcTypeDefinition(BinaryType))
+    assertResult("DATE")(getJdbcTypeDefinition(DateType))
   }
 }
