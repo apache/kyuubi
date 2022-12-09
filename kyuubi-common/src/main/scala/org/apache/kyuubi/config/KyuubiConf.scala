@@ -294,13 +294,6 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofHours(3).toMillis)
 
-  val BATCH_OPERATION_IDLE_TIMEOUT: ConfigEntry[Long] =
-    buildConf("kyuubi.batch.operation.idle.timeout")
-      .doc("Batch operation will be closed when it's not accessed for this duration of time")
-      .version("1.7.0")
-      .timeConf
-      .createWithDefault(Duration.ofMinutes(10).toMillis)
-
   val CREDENTIALS_RENEWAL_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.credentials.renewal.interval")
       .doc("How often Kyuubi renews one user's delegation tokens")

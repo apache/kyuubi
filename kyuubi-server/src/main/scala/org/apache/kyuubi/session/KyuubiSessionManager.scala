@@ -278,8 +278,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  private val batchSessionTimeout = conf.get(BATCH_SESSION_IDLE_TIMEOUT)
-  private val interactiveSessionTimeout = conf.get(SESSION_IDLE_TIMEOUT)
+  private lazy val batchSessionTimeout = conf.get(BATCH_SESSION_IDLE_TIMEOUT)
   override protected def checkSessionTimeout(
       current: Long,
       session: Session,
@@ -287,8 +286,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     session match {
       case _: KyuubiBatchSessionImpl =>
         super.checkSessionTimeout(current, session, batchSessionTimeout)
-      case _ =>
-        super.checkSessionTimeout(current, session, interactiveSessionTimeout)
+      case _ => super.checkSessionTimeout(current, session, timeout)
     }
   }
 }

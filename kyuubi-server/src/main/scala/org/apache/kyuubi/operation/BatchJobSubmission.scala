@@ -61,10 +61,6 @@ class BatchJobSubmission(
   extends KyuubiApplicationOperation(session) {
   import BatchJobSubmission._
 
-  override protected val operationTimeout: Long = {
-    session.sessionManager.getConf.get(KyuubiConf.BATCH_OPERATION_IDLE_TIMEOUT)
-  }
-
   override def shouldRunAsync: Boolean = true
 
   private val _operationLog = OperationLog.createOperationLog(session, getHandle)
@@ -322,7 +318,6 @@ class BatchJobSubmission(
         } else if (!isTerminalState(state)) {
           // failed to kill, the kill message is enough
         }
-        session.close()
       }
     }
   }
