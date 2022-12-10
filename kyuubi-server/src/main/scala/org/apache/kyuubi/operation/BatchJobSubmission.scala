@@ -254,7 +254,7 @@ class BatchJobSubmission(
       while (applicationInfo.isDefined && !applicationTerminated(applicationInfo)) {
         Thread.sleep(applicationCheckInterval)
         val newApplicationStatus = currentApplicationInfo
-        if (newApplicationStatus != applicationInfo) {
+        if (newApplicationStatus.map(_.state) != applicationInfo.map(_.state)) {
           applicationInfo = newApplicationStatus
           info(s"Batch report for $batchId, $applicationInfo")
         }
