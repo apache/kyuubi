@@ -132,5 +132,22 @@ class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("Spark session timezone format") {
+    withJdbcStatement() { statement =>
+      val setUTCResultSet = statement.executeQuery("set spark.sql.session.timeZone=UTC")
+      assert(setUTCResultSet.next())
+      val utcResultSet = statement.executeQuery("select from_utc_timestamp(from_unixtime(" +
+        "1670404535000/1000,'yyyy-MM-dd HH:mm:ss'),'GMT+08:00')")
+      assert(utcResultSet.next())
+      assert(utcResultSet.getString(1) == "2022-12-07 17:15:35.0")
+      val setGMT8ResultSet = statement.executeQuery("set spark.sql.session.timeZone=GMT+8")
+      assert(setGMT8ResultSet.next())
+      val gmt8ResultSet = statement.executeQuery("select from_utc_timestamp(from_unixtime(" +
+        "1670404535000/1000,'yyyy-MM-dd HH:mm:ss'),'GMT+08:00')")
+      assert(gmt8ResultSet.next())
+      assert(gmt8ResultSet.getString(1) == "2022-12-08 01:15:35.0")
+    }
+  }
+
   override protected def jdbcUrl: String = getJdbcUrl
 }

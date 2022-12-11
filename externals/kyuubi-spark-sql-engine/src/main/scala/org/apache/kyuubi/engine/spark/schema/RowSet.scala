@@ -240,7 +240,7 @@ object RowSet {
         formatLocalDate(ld)
 
       case (t: Timestamp, TimestampType) =>
-        formatTimestamp(t)
+        formatTimestamp(t, Option(timeZone))
 
       case (t: LocalDateTime, ntz) if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) =>
         formatLocalDateTime(t)
