@@ -1453,6 +1453,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
+  val OPERATION_STATUS_UPDATE_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.operation.status.update.interval")
+      .internal
+      .doc("Interval(ms) for updating the same status for a query.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
   val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.interrupt.on.cancel")
       .doc("When true, all running tasks will be interrupted if one cancels a query. " +
