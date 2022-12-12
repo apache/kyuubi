@@ -305,32 +305,25 @@ class BatchJobSubmission(
         return
       }
 
-      if (state == OperationState.INITIALIZED) {
-        builder.close()
-        if (recoveryMetadata.nonEmpty) {
-          killMessage = killBatchApplication()
-        }
-        if (!isTerminalState(state)) {
-          setState(OperationState.CANCELED)
-        }
-        updateBatchMetadata()
-        return
-      }
-
       try {
         killMessage = killBatchApplication()
         builder.close()
       } finally {
-        if (killMessage._1 && !isTerminalState(state)) {
-          // kill success and we can change state safely
-          // note that, the batch operation state should never be closed
+        if (state == OperationState.INITIALIZED) {
           setState(OperationState.CANCELED)
           updateBatchMetadata()
-        } else if (killMessage._1) {
-          // we can not change state safely
-          killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
-        } else if (!isTerminalState(state)) {
-          // failed to kill, the kill message is enough
+        } else {
+          if (killMessage._1 && !isTerminalState(state)) {
+            // kill success and we can change state safely
+            // note that, the batch operation state should never be closed
+            setState(OperationState.CANCELED)
+            updateBatchMetadata()
+          } else if (killMessage._1) {
+            // we can not change state safely
+            killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
+          } else if (!isTerminalState(state)) {
+            // failed to kill, the kill message is enough
+          }
         }
       }
     }
