@@ -51,7 +51,7 @@ object TableExtractor {
   def getOwner(v: AnyRef): Option[String] = {
     // org.apache.spark.sql.connector.catalog.Table
     val table = invoke(v, "table")
-    val properties = invoke(table, "properties").asInstanceOf[JMap[String, String]].asScala
+    val properties = invokeAs[JMap[String, String]](table, "properties").asScala
     properties.get("owner")
   }
 }
@@ -102,8 +102,8 @@ class ResolvedTableTableExtractor extends TableExtractor {
  */
 class IdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val namespace = invoke(v1, "namespace").asInstanceOf[Array[String]]
-    val table = invoke(v1, "name").asInstanceOf[String]
+    val namespace = invokeAs[Array[String]](v1, "namespace")
+    val table = invokeAs[String](v1, "name")
     Some(Table(Some(quote(namespace)), table, None))
   }
 }
@@ -118,7 +118,7 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
     if (v2Relation.isEmpty) {
       None
     } else {
-      val maybeIdentifier = invoke(v2Relation.get, "identifier").asInstanceOf[Option[AnyRef]]
+      val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation.get, "identifier")
       maybeIdentifier.flatMap { id =>
         val maybeTable = new IdentifierTableExtractor().apply(spark, id)
         val maybeOwner = TableExtractor.getOwner(v2Relation.get)
@@ -133,7 +133,7 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
  */
 class LogicalRelationTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val maybeCatalogTable = invoke(v1, "catalogTable").asInstanceOf[Option[AnyRef]]
+    val maybeCatalogTable = invokeAs[Option[AnyRef]](v1, "catalogTable")
     maybeCatalogTable.flatMap { ct =>
       new CatalogTableTableExtractor().apply(spark, ct)
     }

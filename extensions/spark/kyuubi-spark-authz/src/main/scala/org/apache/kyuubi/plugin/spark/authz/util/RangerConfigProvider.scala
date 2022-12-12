@@ -36,7 +36,7 @@ trait RangerConfigProvider {
   def getRangerConf: Configuration = {
     try {
       // for Ranger 2.1+
-      invoke(this, "getConfig").asInstanceOf[Configuration]
+      invokeAs[Configuration](this, "getConfig")
     } catch {
       case _: NoSuchMethodException =>
         // for Ranger 2.0 and below
