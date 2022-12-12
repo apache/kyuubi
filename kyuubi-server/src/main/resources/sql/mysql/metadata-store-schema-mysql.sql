@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS metadata(
     real_user varchar(255) NOT NULL COMMENT 'the real user',
     user_name varchar(255) NOT NULL COMMENT 'the user name, might be a proxy user',
     ip_address varchar(128) COMMENT 'the client ip address',
-    kyuubi_instance varchar(255) NOT NULL COMMENT 'the kyuubi instance that creates this',
+    kyuubi_instance varchar(1024) NOT NULL COMMENT 'the kyuubi instance that creates this',
     state varchar(128) NOT NULL COMMENT 'the session state',
     resource varchar(1024) COMMENT 'the main resource',
     class_name varchar(1024) COMMENT 'the main class name',
@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS metadata(
     engine_error mediumtext COMMENT 'the engine application diagnose',
     end_time bigint COMMENT 'the metadata end time',
     peer_instance_closed boolean default '0' COMMENT 'closed by peer kyuubi instance',
-    INDEX kyuubi_instance_index(kyuubi_instance),
     UNIQUE INDEX unique_identifier_index(identifier),
     INDEX user_name_index(user_name),
     INDEX engine_type_index(engine_type)

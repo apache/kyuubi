@@ -9,7 +9,7 @@ CREATE TABLE metadata(
     real_user varchar(255) NOT NULL, -- the real user
     user_name varchar(255) NOT NULL, -- the user name, might be a proxy user
     ip_address varchar(128), -- the client ip address
-    kyuubi_instance varchar(255) NOT NULL, -- the kyuubi instance that creates this
+    kyuubi_instance varchar(1024) NOT NULL, -- the kyuubi instance that creates this
     state varchar(128) NOT NULL, -- the session state
     resource varchar(1024), -- the main resource
     class_name varchar(1024), -- the main class name
@@ -27,8 +27,6 @@ CREATE TABLE metadata(
     end_time bigint,  -- the metadata end time
     peer_instance_closed boolean default FALSE -- closed by peer kyuubi instance
 );
-
-CREATE INDEX metadata_kyuubi_instance_index ON metadata(kyuubi_instance);
 
 CREATE UNIQUE INDEX metadata_unique_identifier_index ON metadata(identifier);
 
