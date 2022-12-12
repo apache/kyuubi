@@ -26,11 +26,19 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 
 class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   test("check rebalance exists") {
-    def check(df: DataFrame, expectedRebalanceNum: Int = 1): Unit = {
-      assert(
-        df.queryExecution.analyzed.collect {
-          case r: RebalancePartitions => r
-        }.size == expectedRebalanceNum)
+    def check(df: => DataFrame, expectedRebalanceNum: Int = 1): Unit = {
+      withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
+        assert(
+          df.queryExecution.analyzed.collect {
+            case r: RebalancePartitions => r
+          }.size == expectedRebalanceNum)
+      }
+      withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "false") {
+        assert(
+          df.queryExecution.analyzed.collect {
+            case r: RebalancePartitions => r
+          }.isEmpty)
+      }
     }
 
     // It's better to set config explicitly in case of we change the default value.
@@ -91,7 +99,9 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
         }.isEmpty)
     }
 
-    withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true") {
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
       // test no write command
       check(sql("SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)"))
       check(sql("SELECT count(*) FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)"))
@@ -144,7 +154,8 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
 
     withSQLConf(
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
-      KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM.key -> "2") {
+      KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM.key -> "2",
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
       Seq("USING PARQUET", "").foreach { storage =>
         withTable("tmp1") {
           sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
@@ -162,7 +173,8 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   test("OptimizedCreateHiveTableAsSelectCommand") {
     withSQLConf(
       HiveUtils.CONVERT_METASTORE_PARQUET.key -> "true",
-      HiveUtils.CONVERT_METASTORE_CTAS.key -> "true") {
+      HiveUtils.CONVERT_METASTORE_CTAS.key -> "true",
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
       withTable("t") {
         val df = sql(s"CREATE TABLE t STORED AS parquet AS SELECT 1 as a")
         val ctas = df.queryExecution.analyzed.collect {
