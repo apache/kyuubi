@@ -1189,6 +1189,11 @@ object KyuubiConf {
     .version("1.2.0")
     .fallbackConf(SESSION_TIMEOUT)
 
+  val BATCH_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.batch.session.idle.timeout")
+    .doc("Batch session idle timeout, it will be closed when it's not accessed for this duration")
+    .version("1.6.2")
+    .fallbackConf(SESSION_IDLE_TIMEOUT)
+
   val ENGINE_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.session.engine.check.interval")
     .doc("The check interval for engine timeout")
     .version("1.0.0")
