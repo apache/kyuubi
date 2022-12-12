@@ -62,7 +62,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val podList = operation.list().getItems
         if (podList.size() != 0) {
           toApplicationState(podList.get(0).getStatus.getPhase) match {
-            case FAILED || UNKNOWN =>
+            case FAILED | UNKNOWN =>
               (
                 false,
                 s"Target Pod ${podList.get(0).getMetadata.getName} is in FAILED or UNKNOWN status")
