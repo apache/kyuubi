@@ -305,10 +305,12 @@ class BatchJobSubmission(
         return
       }
 
-      // the builder might not be launched for recovery mode
-      if (recoveryMetadata.isEmpty && !builder.processLaunched) {
+      if (getBackgroundHandle == null) {
         builder.close()
-        if (isTerminalState(state)) {
+        if (recoveryMetadata.nonEmpty) {
+          killMessage = killBatchApplication()
+        }
+        if (!isTerminalState(state)) {
           setState(OperationState.CANCELED)
         }
         updateBatchMetadata()
