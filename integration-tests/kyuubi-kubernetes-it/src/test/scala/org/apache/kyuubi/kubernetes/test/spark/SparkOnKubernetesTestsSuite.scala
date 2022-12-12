@@ -183,6 +183,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
         s" invalid. must conform https://kubernetes.io/docs/concepts/overview/" +
         "working-with-objects/names/#dns-subdomain-names and the value length <= 237")
     }
+    // clean test conf
+    conf.unset(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)
   }
 
   test("Spark Cluster Mode On Kubernetes Kyuubi KubernetesApplicationOperation Suite") {
@@ -223,6 +225,5 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
 
     val failKillResponse = k8sOperation.killApplicationByTag(sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
-    assert(failKillResponse._2 === ApplicationOperation.NOT_FOUND)
   }
 }
