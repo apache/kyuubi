@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.net.InetAddress
 import java.time.Instant
 import java.util.{Locale, UUID}
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
@@ -201,6 +202,11 @@ object SparkSQLEngine extends Logging {
       _sparkConf.setIfMissing(
         "spark.kubernetes.executor.podNamePrefix",
         generateExecutorPodNamePrefixForK8s(user))
+
+      if (!isOnK8sClusterMode) {
+        // set driver host to ip instead of kyuubi pod name
+        _sparkConf.set("spark.driver.host", InetAddress.getLocalHost.getHostAddress)
+      }
     }
 
     // Set web ui port 0 to avoid port conflicts during non-k8s cluster mode
