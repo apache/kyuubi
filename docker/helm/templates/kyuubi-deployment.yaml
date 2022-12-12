@@ -75,8 +75,9 @@ spec:
             failureThreshold: {{ .Values.probe.readiness.failureThreshold }}
             successThreshold: {{ .Values.probe.readiness.successThreshold }}
           {{- end }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.resources }}
+          resources:  {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: kyuubi-defaults
               mountPath: {{ .Values.server.conf.mountPath }}
