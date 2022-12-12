@@ -20,11 +20,7 @@ package org.apache.kyuubi.ha.client
 import org.apache.curator.utils.ZKPaths
 
 object DiscoveryPaths {
-  def makePath(parent: String, firstChild: String): String = {
-    ZKPaths.makePath(parent, firstChild)
-  }
-
-  def makePath(parent: String, firstChild: String, restChildren: Array[String]): String = {
+  def makePath(parent: String, firstChild: String, restChildren: String*): String = {
     ZKPaths.makePath(parent, firstChild, restChildren: _*)
   }
 }

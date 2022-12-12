@@ -515,6 +515,13 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
 
+  val FRONTEND_REST_MAX_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.rest.max.worker.threads")
+      .doc("Maximum number of threads in the of frontend worker thread pool for the rest " +
+        "frontend service")
+      .version("1.6.2")
+      .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
+
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.worker.keepalive.time")
       .doc("(deprecated) Keep-alive time (in milliseconds) for an idle worker thread")

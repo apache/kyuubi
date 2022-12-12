@@ -399,7 +399,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         List("col1" -> Set("v2_catalog.db.tb.col1"), "col2" -> Set("v2_catalog.db.tb.col1"))))
 
       val sql3 =
-        "select col1 as col2, 'col2' as col2, 'col2', col3 as col2 " +
+        "select col1 as col2, 'col2' as col2, 'col2', first(col3) as col2 " +
           "from v2_catalog.db.tb group by col1"
       val ret3 = exectractLineage(sql3)
       assert(ret3 == Lineage(
@@ -640,8 +640,10 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           |FROM test_db.test_order_item
           |WHERE 1 = 1 AND is_valid_order = 1
           |GROUP BY
-          |channel_id, sub_channel_id, country_name
+          |stat_date, channel_id, sub_channel_id, user_type, country_name
           |) a
+          |GROUP BY
+          |stat_date, channel_id, sub_channel_id, user_type, country_name
           |""".stripMargin
       val ret0 = exectractLineage(sql0)
       assert(ret0 == Lineage(
@@ -725,7 +727,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("a", Set("test_db0.test_table0.__count__")),
         ("b", Set()))))
 
-    val sql2 = """select every(count(key) == 1) as a, 1 as b from test_db0.test_table0"""
+    val sql2 = """select every(key == 1) as a, 1 as b from test_db0.test_table0"""
     val ret2 = exectractLineage(sql2)
     assert(ret2 == Lineage(
       List("test_db0.test_table0"),
@@ -734,7 +736,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("a", Set("test_db0.test_table0.key")),
         ("b", Set()))))
 
-    val sql3 = """select every(count(*) == 1) as a, 1 as b from test_db0.test_table0"""
+    val sql3 = """select count(*) as a, 1 as b from test_db0.test_table0"""
     val ret3 = exectractLineage(sql3)
     assert(ret3 == Lineage(
       List("test_db0.test_table0"),
@@ -762,7 +764,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("b", Set()))))
 
     val sql6 =
-      """select every(count(value) + sum(key) == 1) as a,
+      """select count(value) + sum(key) as a,
         | 1 as b from test_db0.test_table0""".stripMargin
     val ret6 = exectractLineage(sql6)
     assert(ret6 == Lineage(
@@ -772,7 +774,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("a", Set("test_db0.test_table0.value", "test_db0.test_table0.key")),
         ("b", Set()))))
 
-    val sql7 = """select every(count(*) + sum(key) == 1) as a, 1 as b from test_db0.test_table0"""
+    val sql7 = """select count(*) + sum(key) as a, 1 as b from test_db0.test_table0"""
     val ret7 = exectractLineage(sql7)
     assert(ret7 == Lineage(
       List("test_db0.test_table0"),
@@ -781,6 +783,42 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         ("a", Set("test_db0.test_table0.__count__", "test_db0.test_table0.key")),
         ("b", Set()))))
 
+  }
+
+  test("colums lineage extract - catch table") {
+    val ddls =
+      """
+        |create table table0(a int, b string, c string)
+        |create table table1(a int, b string, c string)
+        |""".stripMargin
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withTable("table0", "table1") { _ =>
+      spark.sql("cache table t0_cached select a as a0, b as b0 from table0 where a = 1 ")
+      val sql0 =
+        """
+          |select b.a as aa, t0_cached.b0 as bb from t0_cached join table1 b on b.a = t0_cached.a0
+          |""".stripMargin
+      val ret0 = exectractLineage(sql0)
+      assert(ret0 == Lineage(
+        List("default.table1", "default.table0"),
+        List(),
+        List(
+          ("aa", Set("default.table1.a")),
+          ("bb", Set("default.table0.b")))))
+
+      val df0 = spark.sql("select a as a0, b as b0 from table0 where a = 2")
+      df0.cache()
+      val df1 = spark.sql("select a, b from table1")
+      val df = df0.join(df1).select(df0("a0").alias("aa"), df1("b").alias("bb"))
+      val optimized = df.queryExecution.optimizedPlan
+      val ret1 = SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
+      assert(ret1 == Lineage(
+        List("default.table0", "default.table1"),
+        List(),
+        List(
+          ("aa", Set("default.table0.a")),
+          ("bb", Set("default.table1.b")))))
+    }
   }
 
   test("columns lineage extract - subquery sql") {
@@ -936,8 +974,8 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
 
   private def exectractLineage(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
-    val analyzed = spark.sessionState.analyzer.execute(parsed)
-    val optimized = spark.sessionState.optimizer.execute(analyzed)
+    val qe = spark.sessionState.executePlan(parsed)
+    val optimized = qe.optimizedPlan
     SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
   }
 

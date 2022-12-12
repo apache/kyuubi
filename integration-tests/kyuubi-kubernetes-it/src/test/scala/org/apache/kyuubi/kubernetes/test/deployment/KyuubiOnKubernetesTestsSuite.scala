@@ -78,12 +78,21 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
   override protected def connectionConf: Map[String, String] = {
     super.connectionConf ++ Map(
       "spark.submit.deployMode" -> "client",
-      "kyuubi.frontend.connection.url.use.hostname" -> "false")
+      "kyuubi.frontend.connection.url.use.hostname" -> "false",
+      "spark.kubernetes.executor.label.kyuubi-it-test" -> "client")
   }
 
   override protected def jdbcUrl: String = getJdbcUrl(connectionConf)
 
-  override protected lazy val user: String = "client"
+  override protected lazy val user: String = "kyuubi_user"
+
+  test("[KYUUBI #3385] Set executor pod name prefix if missing in spark on k8s case") {
+    miniKubernetesClient.pods().withLabel(
+      "spark.kubernetes.executor.label.kyuubi-it-test",
+      "client").list().getItems.forEach(pod => {
+      assert(pod.getMetadata.getName.contains("kyuubi-user"))
+    })
+  }
 }
 
 /**
