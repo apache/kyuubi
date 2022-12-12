@@ -105,6 +105,8 @@ class BatchJobSubmission(
 
   private val applicationCheckInterval =
     session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_CHECK_INTERVAL)
+  private val applicationStarvationTimeout =
+    session.sessionConf.get(KyuubiConf.BATCH_APPLICATION_STARVATION_TIMEOUT)
 
   private def updateBatchMetadata(): Unit = {
     val endTime =
@@ -203,15 +205,25 @@ class BatchJobSubmission(
 
   private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
+    var lastStarvationCheckTime = createTime
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
       applicationInfo = currentApplicationInfo
       while (!applicationFailed(applicationInfo) && process.isAlive) {
-        if (!appStatusFirstUpdated && applicationInfo.isDefined) {
-          setStateIfNotCanceled(OperationState.RUNNING)
-          updateBatchMetadata()
-          appStatusFirstUpdated = true
+        if (!appStatusFirstUpdated) {
+          if (applicationInfo.isDefined) {
+            setStateIfNotCanceled(OperationState.RUNNING)
+            updateBatchMetadata()
+            appStatusFirstUpdated = true
+          } else {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastStarvationCheckTime > applicationStarvationTimeout) {
+              lastStarvationCheckTime = currentTime
+              warn(s"Batch[$batchId] has not started, check the Kyuubi server to ensure" +
+                s" that batch jobs can be submitted.")
+            }
+          }
         }
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
         applicationInfo = currentApplicationInfo
@@ -254,7 +266,7 @@ class BatchJobSubmission(
       while (applicationInfo.isDefined && !applicationTerminated(applicationInfo)) {
         Thread.sleep(applicationCheckInterval)
         val newApplicationStatus = currentApplicationInfo
-        if (newApplicationStatus != applicationInfo) {
+        if (newApplicationStatus.map(_.state) != applicationInfo.map(_.state)) {
           applicationInfo = newApplicationStatus
           info(s"Batch report for $batchId, $applicationInfo")
         }
