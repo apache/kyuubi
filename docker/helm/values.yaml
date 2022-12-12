@@ -27,6 +27,8 @@ image:
   pullPolicy: Always
   tag: ~
 
+imagePullSecrets: []
+
 # ServiceAccount used for Kyuubi create/list/delete pod in kubernetes
 serviceAccount:
   name: default
