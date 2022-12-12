@@ -45,6 +45,12 @@ spec:
         - name: kyuubi-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.env }}
+          env: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
           ports:
             - name: frontend-port
               containerPort: {{ .Values.server.bind.port }}
@@ -74,11 +80,6 @@ spec:
           volumeMounts:
             - name: kyuubi-defaults
               mountPath: {{ .Values.server.conf.mountPath }}
-          env:
-            {{- range $key, $val := .Values.environments }}
-            - name: {{ $key }}
-              value: {{ $val | quote }}
-            {{- end }}
       volumes:
         - name: kyuubi-defaults
           configMap:
