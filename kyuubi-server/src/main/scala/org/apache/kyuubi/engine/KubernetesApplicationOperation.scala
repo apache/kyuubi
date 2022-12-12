@@ -23,8 +23,8 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, PENDING, RUNNING}
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.SPARK_APP_ID_LABEL
+import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, PENDING, RUNNING, UNKNOWN}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationState, SPARK_APP_ID_LABEL}
 import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
@@ -61,15 +61,19 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val operation = findDriverPodByTag(tag)
         val podList = operation.list().getItems
         if (podList.size() != 0) {
-          if (podList.get(0).getStatus.getPhase.equalsIgnoreCase("Terminated")) {
-            return (false, s"Target Pod ${podList.get(0).getMetadata.getName} is Terminated")
+          toApplicationState(podList.get(0).getStatus.getPhase) match {
+            case FAILED || UNKNOWN =>
+              (
+                false,
+                s"Target Pod ${podList.get(0).getMetadata.getName} is in FAILED or UNKNOWN status")
+            case _ =>
+              (
+                operation.delete(),
+                s"Operation of deleted appId: ${podList.get(0).getMetadata.getName} is completed")
           }
-          (
-            operation.delete(),
-            s"Operation of deleted appId: " + s"${podList.get(0).getMetadata.getName} is completed")
         } else {
           // client mode
-          return jpsOperation.killApplicationByTag(tag)
+          jpsOperation.killApplicationByTag(tag)
         }
       } catch {
         case e: Exception =>
