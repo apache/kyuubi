@@ -18,7 +18,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: kyuubi-svc
+  name: {{ .Release.Name }}
   labels:
     app: {{ template "kyuubi.name" . }}
   {{- with .Values.service.annotations }}

@@ -18,7 +18,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kyuubi-server
+  name: {{ .Release.Name }}
   labels:
     app: {{ template "kyuubi.name" . }}
     release: {{ .Release.Name }}
@@ -84,4 +84,4 @@ spec:
       volumes:
         - name: kyuubi-defaults
           configMap:
-            name: kyuubi-defaults
+            name: {{ .Release.Name }}-kyuubi-defaults
