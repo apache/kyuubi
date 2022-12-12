@@ -305,7 +305,7 @@ class BatchJobSubmission(
         return
       }
 
-      if (getBackgroundHandle == null) {
+      if (state == OperationState.INITIALIZED) {
         builder.close()
         if (recoveryMetadata.nonEmpty) {
           killMessage = killBatchApplication()
