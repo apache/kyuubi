@@ -296,9 +296,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
         val current = System.currentTimeMillis
         if (!shutdown) {
           for (session <- handleToSession.values().asScala) {
-            val sessionIdleTimeout = session.sessionIdleTimeoutThreshold
-            if (session.lastAccessTime + sessionIdleTimeout <= current &&
-              session.getNoOperationTime > sessionIdleTimeout) {
+            if (session.lastAccessTime + session.sessionIdleTimeoutThreshold <= current &&
+              session.getNoOperationTime > session.sessionIdleTimeoutThreshold) {
               try {
                 closeSession(session.handle)
               } catch {

@@ -68,9 +68,8 @@ class KyuubiBatchSessionImpl(
     }
   }
 
-  override def sessionIdleTimeoutThreshold: Long = {
+  override val sessionIdleTimeoutThreshold: Long =
     sessionManager.getConf.get(KyuubiConf.BATCH_SESSION_IDLE_TIMEOUT)
-  }
 
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] = {
