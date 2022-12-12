@@ -280,7 +280,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
     val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
-    val userWhiteList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_WHITE_LIST)
+    val userWhiteList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST)
     limiter = applySessionLimiter(userLimit, ipAddressLimit, userIpAddressLimit, userWhiteList)
 
     val userBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
