@@ -55,7 +55,9 @@ spec:
               port: {{ .Values.server.bind.port }}
             initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probe.liveness.timeoutSeconds }}
             failureThreshold: {{ .Values.probe.liveness.failureThreshold }}
+            successThreshold: {{ .Values.probe.liveness.successThreshold }}
           {{- end }}
           {{- if .Values.probe.readiness.enabled }}
           readinessProbe:
@@ -63,7 +65,9 @@ spec:
               port: {{ .Values.server.bind.port }}
             initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probe.readiness.timeoutSeconds }}
             failureThreshold: {{ .Values.probe.readiness.failureThreshold }}
+            successThreshold: {{ .Values.probe.readiness.successThreshold }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

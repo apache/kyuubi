@@ -38,12 +38,16 @@ probe:
     enabled: true
     initialDelaySeconds: 30
     periodSeconds: 10
+    timeoutSeconds: 2
     failureThreshold: 10
+    successThreshold: 1
   readiness:
     enabled: true
     initialDelaySeconds: 30
     periodSeconds: 10
+    timeoutSeconds: 2
     failureThreshold: 10
+    successThreshold: 1
 
 server:
   bind:
