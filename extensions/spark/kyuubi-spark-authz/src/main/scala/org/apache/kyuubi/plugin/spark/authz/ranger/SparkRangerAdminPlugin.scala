@@ -65,8 +65,8 @@ object SparkRangerAdminPlugin extends Logging {
    * 2. set cache path for UserStore in `ranger.plugin.hive.policy.cache.dir`
    * 3. at least one condition of policies containing scripts, e.g. {{USER.attr}} in row-filter
    */
-  def useUserGroupsFromUserStoreEnabled: Boolean = getRangerConf.getBoolean(
-    s"ranger.plugin.$getServiceType.use.usergroups.from.userstore.enabled",
+  def useUserGroupsFromUserStoreEnabled: Boolean = getRangerConf(defaultBasePlugin).getBoolean(
+    s"ranger.plugin.$serviceType.use.usergroups.from.userstore.enabled",
     false)
 
   def getFilterExpr(req: AccessRequest): Option[String] = {
