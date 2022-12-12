@@ -18,7 +18,6 @@
 package org.apache.kyuubi.plugin.spark.authz.util
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.ranger.authorization.hadoop.config.RangerConfiguration
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
