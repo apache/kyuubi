@@ -97,7 +97,7 @@ class SessionLimiterSuite extends KyuubiFunSuite {
       .foreach(c => assert(c.get() == 0))
   }
 
-  test("test session limiter with user white list") {
+  test("test session limiter with user unlimitted list") {
     val user = "user001"
     val ipAddress = "127.0.0.1"
     val userLimit = 30

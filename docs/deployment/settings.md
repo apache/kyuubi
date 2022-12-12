@@ -461,7 +461,7 @@ kyuubi.server.info.provider|ENGINE|The server information provider name, some cl
 kyuubi.server.limit.connections.per.ipaddress|&lt;undefined&gt;|Maximum kyuubi server connections per ipaddress. Any user exceeding this limit will not be allowed to connect.|int|1.6.0
 kyuubi.server.limit.connections.per.user|&lt;undefined&gt;|Maximum kyuubi server connections per user. Any user exceeding this limit will not be allowed to connect.|int|1.6.0
 kyuubi.server.limit.connections.per.user.ipaddress|&lt;undefined&gt;|Maximum kyuubi server connections per user:ipaddress combination. Any user-ipaddress exceeding this limit will not be allowed to connect.|int|1.6.0
-kyuubi.server.limit.connections.user.white.list||The maximin connections of the user in the white list will not be limited.|seq|1.7.0
+kyuubi.server.limit.connections.user.unlimited.list||The maximin connections of the user in the white list will not be limited.|seq|1.7.0
 kyuubi.server.name|&lt;undefined&gt;|The name of Kyuubi Server.|string|1.5.0
 kyuubi.server.redaction.regex|&lt;undefined&gt;|Regex to decide which Kyuubi contain sensitive information. When this regex matches a property key or value, the value is redacted from the various logs.||1.6.0
 
