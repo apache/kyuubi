@@ -18,7 +18,7 @@
 
 # Auxiliary Optimization Rules
 
-Kyuubi provides SQL extension out of box. Due to the version compatibility with Apache Spark, currently we only support Apache Spark branch-3.1 (i.e 3.1.1 and 3.1.2).
+Kyuubi provides SQL extension out of box. Due to the version compatibility with Apache Spark, currently we support Apache Spark branch-3.1 and later.
 And don't worry, Kyuubi will support the new Apache Spark version in the future. Thanks to the adaptive query execution framework (AQE), Kyuubi can do these optimizations.
 
 ## Features
