@@ -404,7 +404,8 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
 
       assert(metaData.allTablesAreSelectable)
       assert(metaData.getClientInfoProperties.next)
-      assert(metaData.getDriverName === "Kyuubi Project Hive JDBC Shaded Client")
+      assert(metaData.getDriverName === "Kyuubi Project Hive JDBC Client" ||
+        metaData.getDriverName === "Kyuubi Project Hive JDBC Shaded Client")
       assert(metaData.getDriverVersion === KYUUBI_VERSION)
       assert(
         metaData.getIdentifierQuoteString === " ",

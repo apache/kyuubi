@@ -51,6 +51,24 @@ object SparkRangerAdminPlugin extends Logging {
     s"ranger.plugin.$serviceType.authorize.in.single.call",
     false)
 
+  /**
+   * This configuration controls whether to override user's usergroups
+   * by the mapping fetched from Ranger's UserStore.
+   *
+   * It relies on Ranger's UserStore is a feature supported since Ranger 2.1.
+   *
+   * If true, user bound usergroups will be looked up in in Ranger's UserStore
+   * and the usergroups of AccessRequest is overriden.
+   *
+   * Please make sure configs in Ranger set properly:
+   * 1. set `ranger.plugin.spark.enable.implicit.userstore.enricher` to true
+   * 2. set cache path for UserStore in `ranger.plugin.hive.policy.cache.dir`
+   * 3. at least one condition of policies containing scripts, e.g. {{USER.attr}} in row-filter
+   */
+  def useUserGroupsFromUserStoreEnabled: Boolean = getRangerConf.getBoolean(
+    s"ranger.plugin.$getServiceType.use.usergroups.from.userstore.enabled",
+    false)
+
   def getFilterExpr(req: AccessRequest): Option[String] = {
     val result = getOrCreate().evalRowFilterPolicies(req, null)
     Option(result)

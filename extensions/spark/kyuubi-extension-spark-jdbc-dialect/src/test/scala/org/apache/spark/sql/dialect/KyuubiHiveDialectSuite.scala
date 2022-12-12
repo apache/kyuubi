@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.dialect
 
+import org.apache.spark.sql.dialect.KyuubiHiveDialect._
+import org.apache.spark.sql.types._
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -24,12 +26,26 @@ class KyuubiHiveDialectSuite extends AnyFunSuite {
 // scalastyle:on
 
   test("[KYUUBI #3489] Kyuubi Hive dialect: can handle jdbc url") {
-    assert(KyuubiHiveDialect.canHandle("jdbc:hive2://"))
-    assert(KyuubiHiveDialect.canHandle("jdbc:kyuubi://"))
+    assert(canHandle("jdbc:hive2://"))
+    assert(canHandle("jdbc:kyuubi://"))
   }
 
   test("[KYUUBI #3489] Kyuubi Hive dialect: quoteIdentifier") {
-    assertResult("`id`")(KyuubiHiveDialect.quoteIdentifier("id"))
-    assertResult("`table`.`id`")(KyuubiHiveDialect.quoteIdentifier("table.id"))
+    assertResult("`id`")(quoteIdentifier("id"))
+    assertResult("`table`.`id`")(quoteIdentifier("table.id"))
+  }
+
+  test("KYUUBI #3942 adapt to Hive data type definitions") {
+    def getJdbcTypeDefinition(dt: DataType): String = {
+      getJDBCType(dt).get.databaseTypeDefinition
+    }
+    assertResult("INT")(getJdbcTypeDefinition(IntegerType))
+    assertResult("DOUBLE")(getJdbcTypeDefinition(DoubleType))
+    assertResult("FLOAT")(getJdbcTypeDefinition(FloatType))
+    assertResult("TINYINT")(getJdbcTypeDefinition(ByteType))
+    assertResult("BOOLEAN")(getJdbcTypeDefinition(BooleanType))
+    assertResult("STRING")(getJdbcTypeDefinition(StringType))
+    assertResult("BINARY")(getJdbcTypeDefinition(BinaryType))
+    assertResult("DATE")(getJdbcTypeDefinition(DateType))
   }
 }

@@ -24,7 +24,7 @@ import java.time.chrono.IsoChronology
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
-import java.util.{Date, Locale}
+import java.util.{Date, Locale, TimeZone}
 import java.util.concurrent.TimeUnit
 
 import scala.language.implicitConversions
@@ -77,8 +77,14 @@ private[kyuubi] object RowSetUtils {
       .getOrElse(timestampFormatter.format(i))
   }
 
-  def formatTimestamp(t: Timestamp): String = {
-    legacyTimestampFormatter.format(t)
+  def formatTimestamp(t: Timestamp, timeZone: Option[ZoneId] = None): String = {
+    timeZone.map(zoneId => {
+      FastDateFormat.getInstance(
+        legacyTimestampFormatter.getPattern,
+        TimeZone.getTimeZone(zoneId),
+        legacyTimestampFormatter.getLocale)
+        .format(t)
+    }).getOrElse(legacyTimestampFormatter.format(t))
   }
 
   implicit def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {

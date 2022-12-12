@@ -301,6 +301,7 @@ kyuubi.frontend.protocols|THRIFT_BINARY|A comma separated list for all frontend 
 kyuubi.frontend.proxy.http.client.ip.header|X-Real-IP|The http header to record the real client ip address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. Note that, because the header value can be specified to any ip address, so it will not be used for authentication.|string|1.6.0
 kyuubi.frontend.rest.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the REST frontend service.|string|1.4.0
 kyuubi.frontend.rest.bind.port|10099|Port of the machine on which to run the REST frontend service.|int|1.4.0
+kyuubi.frontend.rest.max.worker.threads|999|Maximum number of threads in the of frontend worker thread pool for the rest frontend service|int|1.6.2
 kyuubi.frontend.ssl.keystore.algorithm|&lt;undefined&gt;|SSL certificate keystore algorithm.|string|1.7.0
 kyuubi.frontend.ssl.keystore.password|&lt;undefined&gt;|SSL certificate keystore password.|string|1.7.0
 kyuubi.frontend.ssl.keystore.path|&lt;undefined&gt;|SSL certificate keystore location.|string|1.7.0
@@ -606,6 +607,10 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
 <!-- Extra logging related to initialization of Log4j.
  Set to debug or trace if log4j initialization is failing. -->
 <Configuration status="INFO">
+    <Properties>
+        <Property name="restAuditLogPath">rest-audit.log</Property>
+        <Property name="restAuditLogFilePattern">rest-audit-%d{yyyy-MM-dd}-%i.log</Property>
+    </Properties>
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n"/>
@@ -613,6 +618,14 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </Console>
+        <RollingFile name="restAudit" fileName="${sys:restAuditLogPath}"
+                     filePattern="${sys:restAuditLogFilePattern}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="51200KB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
     </Appenders>
     <Loggers>
         <Root level="INFO">
@@ -628,6 +641,9 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
         -->
         <Logger name="org.apache.hive.beeline.KyuubiBeeLine" level="error" additivity="false">
             <AppenderRef ref="stdout"/>
+        </Logger>
+        <Logger name="org.apache.kyuubi.server.http.authentication.AuthenticationAuditLogger" additivity="false">
+            <AppenderRef ref="restAudit" />
         </Logger>
     </Loggers>
 </Configuration>

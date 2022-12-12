@@ -95,7 +95,8 @@ class BatchJobSubmission(
   }
 
   override private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo] = {
-    applicationManager.getApplicationInfo(builder.clusterManager(), batchId)
+    // only the ApplicationInfo with non-empty id is valid for the operation
+    applicationManager.getApplicationInfo(builder.clusterManager(), batchId).filter(_.id != null)
   }
 
   private[kyuubi] def killBatchApplication(): KillResponse = {
@@ -112,6 +113,13 @@ class BatchJobSubmission(
       } else {
         0L
       }
+
+    if (isTerminalState(state)) {
+      if (applicationInfo.isEmpty) {
+        applicationInfo =
+          Option(ApplicationInfo(id = null, name = null, state = ApplicationState.NOT_FOUND))
+      }
+    }
 
     applicationInfo.foreach { status =>
       val metadataToUpdate = Metadata(
@@ -277,6 +285,17 @@ class BatchJobSubmission(
       }
 
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
+
+      if (!builder.processLaunched) {
+        builder.close()
+        if (recoveryMetadata.isDefined) {
+          killMessage = killBatchApplication()
+        }
+        setState(OperationState.CANCELED)
+        updateBatchMetadata()
+        return
+      }
+
       // fast fail
       if (isTerminalState(state)) {
         killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
