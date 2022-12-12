@@ -1036,6 +1036,13 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT5S")
 
+  val BATCH_APPLICATION_STARVATION_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.application.starvation.timeout")
+      .doc("Threshold above which to warn batch application may be starved.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(3).toMillis)
+
   val BATCH_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.batch.conf.ignore.list")
       .doc("A comma separated list of ignored keys for batch conf. If the batch conf contains" +
