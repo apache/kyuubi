@@ -310,6 +310,8 @@ class BatchJobSubmission(
         builder.close()
       } finally {
         if (state == OperationState.INITIALIZED) {
+          // if state is INITIALIZED, it means that the batch submission has not started to run, set
+          // the state to CANCELED manually and regardless of kill result
           setState(OperationState.CANCELED)
           updateBatchMetadata()
         } else {
