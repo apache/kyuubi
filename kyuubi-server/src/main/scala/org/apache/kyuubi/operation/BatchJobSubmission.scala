@@ -366,6 +366,8 @@ class BatchJobSubmission(
   override def cancel(): Unit = {
     throw new IllegalStateException("Use close instead.")
   }
+
+  override def isTimedOut: Boolean = false
 }
 
 object BatchJobSubmission {

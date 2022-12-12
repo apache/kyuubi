@@ -289,15 +289,14 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   private def startTimeoutChecker(): Unit = {
     val interval = conf.get(SESSION_CHECK_INTERVAL)
-    val timeout = conf.get(SESSION_IDLE_TIMEOUT)
 
     val checkTask = new Runnable {
       override def run(): Unit = {
         val current = System.currentTimeMillis
         if (!shutdown) {
           for (session <- handleToSession.values().asScala) {
-            if (session.lastAccessTime + timeout <= current &&
-              session.getNoOperationTime > timeout) {
+            if (session.lastAccessTime + session.sessionIdleTimeoutThreshold <= current &&
+              session.getNoOperationTime > session.sessionIdleTimeoutThreshold) {
               try {
                 closeSession(session.handle)
               } catch {
