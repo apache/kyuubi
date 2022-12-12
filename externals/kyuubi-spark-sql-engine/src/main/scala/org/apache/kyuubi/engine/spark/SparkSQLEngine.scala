@@ -202,7 +202,7 @@ object SparkSQLEngine extends Logging {
       _sparkConf.setIfMissing(
         "spark.kubernetes.executor.podNamePrefix",
         generateExecutorPodNamePrefixForK8s(user))
-       
+
       if (!isOnK8sClusterMode) {
         // set driver host to ip instead of kyuubi pod name
         _sparkConf.set("spark.driver.host", InetAddress.getLocalHost.getHostAddress)
