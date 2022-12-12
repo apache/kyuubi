@@ -101,20 +101,20 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
   }
 }
 
-class SessionLimiterWithUserWhitelistImpl(
+class SessionLimiterWithUnlimitedUsersImpl(
     userLimit: Int,
     ipAddressLimit: Int,
     userIpAddressLimit: Int,
-    userWhitelist: Set[String])
+    unlimitedUsers: Set[String])
   extends SessionLimiterImpl(userLimit, ipAddressLimit, userIpAddressLimit) {
   override def increment(userIpAddress: UserIpAddress): Unit = {
-    if (!userWhitelist.contains(userIpAddress.user)) {
+    if (!unlimitedUsers.contains(userIpAddress.user)) {
       super.increment(userIpAddress)
     }
   }
 
   override def decrement(userIpAddress: UserIpAddress): Unit = {
-    if (!userWhitelist.contains(userIpAddress.user)) {
+    if (!unlimitedUsers.contains(userIpAddress.user)) {
       super.decrement(userIpAddress)
     }
   }
@@ -127,7 +127,7 @@ object SessionLimiter {
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
       userWhiteList: Set[String] = Set.empty): SessionLimiter = {
-    new SessionLimiterWithUserWhitelistImpl(
+    new SessionLimiterWithUnlimitedUsersImpl(
       userLimit,
       ipAddressLimit,
       userIpAddressLimit,
