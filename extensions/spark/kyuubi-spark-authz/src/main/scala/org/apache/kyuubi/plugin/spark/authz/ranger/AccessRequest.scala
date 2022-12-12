@@ -52,7 +52,7 @@ object AccessRequest {
         classOf[String],
         classOf[java.util.Set[String]])
       getRoles.setAccessible(true)
-      val roles = getRoles.invoke(SparkRangerAdminPlugin, userName, userGroups)
+      val roles = getRoles.invoke(SparkRangerAdminPlugin.getOrCreate(), userName, userGroups)
       val setRoles = req.getClass.getMethod("setUserRoles", classOf[java.util.Set[String]])
       setRoles.setAccessible(true)
       setRoles.invoke(req, roles)
