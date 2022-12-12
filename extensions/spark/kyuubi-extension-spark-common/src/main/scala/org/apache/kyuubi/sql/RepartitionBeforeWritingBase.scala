@@ -138,7 +138,7 @@ trait RepartitionBeforeWriteHelper extends Rule[LogicalPlan] {
 
     // 1. make sure AQE is enabled, otherwise it is no meaning to add a shuffle
     // 2. make sure it does not break the semantics of original plan
-    // 3. try to reduce the performance regression if add a shuffle
-    conf.getConf(SQLConf.ADAPTIVE_EXECUTION_ENABLED) && canInsert(plan) && hasBenefit(plan)
+    // 3. try to avoid adding a shuffle if it has potential performance regression
+    conf.adaptiveExecutionEnabled && canInsert(plan) && hasBenefit(plan)
   }
 }
