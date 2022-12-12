@@ -25,8 +25,7 @@ replicaCount: 2
 image:
   repository: apache/kyuubi
   pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "master-snapshot"
+  tag: ~
 
 # ServiceAccount used for Kyuubi create/list/delete pod in kubernetes
 serviceAccount:
