@@ -87,6 +87,7 @@ kubectl create rolebinding kyuubi-role --role=edit --serviceAccount=<your namesp
 ```
 
 See more related details in [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) and [Configure Service Accounts for Pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/).
+
 ## Config
 
 You can configure Kyuubi the old-fashioned way by placing kyuubi-default.conf inside the image. Kyuubi do not recommend using this way on Kubernetes.
