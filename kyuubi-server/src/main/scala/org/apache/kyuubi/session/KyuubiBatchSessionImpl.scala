@@ -59,6 +59,18 @@ class KyuubiBatchSessionImpl(
 
   override def createTime: Long = recoveryMetadata.map(_.createTime).getOrElse(super.createTime)
 
+  override def getNoOperationTime: Long = {
+    if (batchJobSubmissionOp != null && !OperationState.isTerminal(
+        batchJobSubmissionOp.getStatus.state)) {
+      0L
+    } else {
+      super.getNoOperationTime
+    }
+  }
+
+  override val sessionIdleTimeoutThreshold: Long =
+    sessionManager.getConf.get(KyuubiConf.BATCH_SESSION_IDLE_TIMEOUT)
+
   // TODO: Support batch conf advisor
   override val normalizedConf: Map[String, String] = {
     sessionConf.getBatchConf(batchRequest.getBatchType) ++

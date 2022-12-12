@@ -17,11 +17,10 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import java.util
+import java.util.{HashMap => JHashMap, Set => JSet}
 import java.util.Date
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPolicyEngine}
@@ -29,6 +28,7 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin.getOrCreate
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{invoke, invokeAs}
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
 
@@ -47,17 +47,14 @@ object AccessRequest {
     req.setUserGroups(userGroups)
     req.setAction(opType.toString)
     try {
-      val getRoles = plugin.getClass.getMethod(
+      val roles = invokeAs[JSet[String]](
+        SparkRangerAdminPlugin,
         "getRolesFromUserAndGroups",
-        classOf[String],
-        classOf[java.util.Set[String]])
-      getRoles.setAccessible(true)
-      val roles = getRoles.invoke(plugin, userName, userGroups)
-      val setRoles = req.getClass.getMethod("setUserRoles", classOf[java.util.Set[String]])
-      setRoles.setAccessible(true)
-      setRoles.invoke(req, roles)
+        (classOf[String], userName),
+        (classOf[JSet[String]], userGroups))
+      invoke(req, "setUserRoles", (classOf[JSet[String]], roles))
     } catch {
-      case _: NoSuchMethodException =>
+      case _: Exception =>
     }
     req.setAccessTime(new Date())
     accessType match {
@@ -65,48 +62,32 @@ object AccessRequest {
       case _ => req.setAccessType(accessType.toString.toLowerCase)
     }
     try {
-      val getClusterName = plugin.getClass.getMethod("getClusterName")
-      getClusterName.setAccessible(true)
-      val clusterName = getClusterName.invoke(plugin)
-      val setClusterName = req.getClass.getMethod("setClusterName", classOf[String])
-      setClusterName.setAccessible(true)
-      setClusterName.invoke(req, clusterName)
+      val clusterName = invokeAs[String](SparkRangerAdminPlugin, "getClusterName")
+      invoke(req, "setClusterName", (classOf[String], clusterName))
     } catch {
-      case _: NoSuchMethodException =>
+      case _: Exception =>
     }
     req
   }
 
-  private def getUserGroupsFromUgi(user: UserGroupInformation): util.Set[String] = {
+  private def getUserGroupsFromUgi(user: UserGroupInformation): JSet[String] = {
     user.getGroupNames.toSet.asJava
   }
 
-  private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[util.Set[String]] = {
+  private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] = {
     try {
-      val getUserStoreEnricher = SparkRangerAdminPlugin.getClass.getMethod(
-        "getUserStoreEnricher")
-      getUserStoreEnricher.setAccessible(true)
-      val storeEnricher = getUserStoreEnricher.invoke(SparkRangerAdminPlugin)
-
-      val getRangerUserStore = storeEnricher.getClass.getMethod("getRangerUserStore")
-      getRangerUserStore.setAccessible(true)
-      val userStore = getRangerUserStore.invoke(storeEnricher)
-
-      val getUserGroupMapping = userStore.getClass.getMethod("getUserGroupMapping")
-      getUserGroupMapping.setAccessible(true)
-
-      val userGroupMappingMap: mutable.Map[String, util.Set[String]] =
-        mapAsScalaMap(getUserGroupMapping.invoke(userStore)
-          .asInstanceOf[util.HashMap[String, util.Set[String]]])
-
-      userGroupMappingMap.get(user.getShortUserName)
+      val storeEnricher = invoke(SparkRangerAdminPlugin, "getUserStoreEnricher")
+      val userStore = invoke(storeEnricher, "getRangerUserStore")
+      val userGroupMapping =
+        invokeAs[JHashMap[String, JSet[String]]](userStore, "getUserGroupMapping")
+      Some(userGroupMapping.get(user.getShortUserName))
     } catch {
       case _: NoSuchMethodException =>
         None
     }
   }
 
-  private def getUserGroups(user: UserGroupInformation): util.Set[String] = {
+  private def getUserGroups(user: UserGroupInformation): JSet[String] = {
     if (SparkRangerAdminPlugin.useUserGroupsFromUserStoreEnabled) {
       getUserGroupsFromUserStore(user)
         .getOrElse(getUserGroupsFromUgi(user))

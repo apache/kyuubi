@@ -43,6 +43,9 @@ public class JdbcConnectionParams {
   public static final String AUTH_SIMPLE = "noSasl";
   public static final String AUTH_USER = "user";
   public static final String AUTH_PRINCIPAL = "principal";
+  // kyuubiServerPrincipal is alias to principal. And principal will take precedence
+  // over kyuubiServerPrincipal when both are set.
+  public static final String AUTH_KYUUBI_SERVER_PRINCIPAL = "kyuubiServerPrincipal";
   public static final String AUTH_KYUUBI_CLIENT_PRINCIPAL = "kyuubiClientPrincipal";
   public static final String AUTH_KYUUBI_CLIENT_KEYTAB = "kyuubiClientKeytab";
   public static final String AUTH_PASSWD = "password";

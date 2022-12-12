@@ -171,7 +171,9 @@ kyuubi.backend.server.exec.pool.wait.queue.size|100|Size of the wait queue for t
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
 kyuubi.batch.application.check.interval|PT5S|The interval to check batch job application information.|duration|1.6.0
+kyuubi.batch.application.starvation.timeout|PT3M|Threshold above which to warn batch application may be starved.|duration|1.7.0
 kyuubi.batch.conf.ignore.list||A comma separated list of ignored keys for batch conf. If the batch conf contains any of them, the key and the corresponding value will be removed silently during batch job submission. Note that this rule is for server-side protection defined via administrators to prevent some essential configs from tampering. You can also pre-define some config for batch job submission with prefix: kyuubi.batchConf.[batchType]. For example, you can pre-define `spark.master` for spark batch job with key `kyuubi.batchConf.spark.spark.master`.|seq|1.6.0
+kyuubi.batch.session.idle.timeout|PT6H|Batch session idle timeout, it will be closed when it's not accessed for this duration|duration|1.6.2
 
 
 ### Credentials
@@ -452,10 +454,14 @@ kyuubi.operation.status.polling.timeout|PT5S|Timeout(ms) for long polling asynch
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+kyuubi.server.batch.limit.connections.per.ipaddress|&lt;undefined&gt;|Maximum kyuubi server batch connections per ipaddress. Any user exceeding this limit will not be allowed to connect.|int|1.7.0
+kyuubi.server.batch.limit.connections.per.user|&lt;undefined&gt;|Maximum kyuubi server batch connections per user. Any user exceeding this limit will not be allowed to connect.|int|1.7.0
+kyuubi.server.batch.limit.connections.per.user.ipaddress|&lt;undefined&gt;|Maximum kyuubi server batch connections per user:ipaddress combination. Any user-ipaddress exceeding this limit will not be allowed to connect.|int|1.7.0
 kyuubi.server.info.provider|ENGINE|The server information provider name, some clients may rely on this information to check the server compatibilities and functionalities. <li>SERVER: Return Kyuubi server information.</li> <li>ENGINE: Return Kyuubi engine information.</li>|string|1.6.1
 kyuubi.server.limit.connections.per.ipaddress|&lt;undefined&gt;|Maximum kyuubi server connections per ipaddress. Any user exceeding this limit will not be allowed to connect.|int|1.6.0
 kyuubi.server.limit.connections.per.user|&lt;undefined&gt;|Maximum kyuubi server connections per user. Any user exceeding this limit will not be allowed to connect.|int|1.6.0
 kyuubi.server.limit.connections.per.user.ipaddress|&lt;undefined&gt;|Maximum kyuubi server connections per user:ipaddress combination. Any user-ipaddress exceeding this limit will not be allowed to connect.|int|1.6.0
+kyuubi.server.limit.connections.user.white.list||The maximin connections of the user in the white list will not be limited.|seq|1.7.0
 kyuubi.server.name|&lt;undefined&gt;|The name of Kyuubi Server.|string|1.5.0
 kyuubi.server.redaction.regex|&lt;undefined&gt;|Regex to decide which Kyuubi contain sensitive information. When this regex matches a property key or value, the value is redacted from the various logs.||1.6.0
 

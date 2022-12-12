@@ -1189,6 +1189,11 @@ object KyuubiConf {
     .version("1.2.0")
     .fallbackConf(SESSION_TIMEOUT)
 
+  val BATCH_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.batch.session.idle.timeout")
+    .doc("Batch session idle timeout, it will be closed when it's not accessed for this duration")
+    .version("1.6.2")
+    .fallbackConf(SESSION_IDLE_TIMEOUT)
+
   val ENGINE_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.session.engine.check.interval")
     .doc("The check interval for engine timeout")
     .version("1.0.0")
@@ -1286,6 +1291,13 @@ object KyuubiConf {
       .version("1.6.0")
       .timeConf
       .createWithDefaultString("PT5S")
+
+  val BATCH_APPLICATION_STARVATION_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.application.starvation.timeout")
+      .doc("Threshold above which to warn batch application may be starved.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(3).toMillis)
 
   val BATCH_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.batch.conf.ignore.list")
@@ -1450,6 +1462,14 @@ object KyuubiConf {
     buildConf("kyuubi.operation.status.polling.timeout")
       .doc("Timeout(ms) for long polling asynchronous running sql query's status")
       .version("1.0.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
+  val OPERATION_STATUS_UPDATE_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.operation.status.update.interval")
+      .internal
+      .doc("Interval(ms) for updating the same status for a query.")
+      .version("1.7.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
@@ -2128,6 +2148,42 @@ object KyuubiConf {
       .doc("Maximum kyuubi server connections per user:ipaddress combination." +
         " Any user-ipaddress exceeding this limit will not be allowed to connect.")
       .version("1.6.0")
+      .serverOnly
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_CONNECTIONS_USER_WHITE_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.server.limit.connections.user.white.list")
+      .doc("The maximin connections of the user in the white list will not be limited.")
+      .version("1.7.0")
+      .serverOnly
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
+  val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.batch.limit.connections.per.user")
+      .doc("Maximum kyuubi server batch connections per user." +
+        " Any user exceeding this limit will not be allowed to connect.")
+      .version("1.7.0")
+      .serverOnly
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.batch.limit.connections.per.ipaddress")
+      .doc("Maximum kyuubi server batch connections per ipaddress." +
+        " Any user exceeding this limit will not be allowed to connect.")
+      .version("1.7.0")
+      .serverOnly
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER_IPADDRESS: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.batch.limit.connections.per.user.ipaddress")
+      .doc("Maximum kyuubi server batch connections per user:ipaddress combination." +
+        " Any user-ipaddress exceeding this limit will not be allowed to connect.")
+      .version("1.7.0")
       .serverOnly
       .intConf
       .createOptional

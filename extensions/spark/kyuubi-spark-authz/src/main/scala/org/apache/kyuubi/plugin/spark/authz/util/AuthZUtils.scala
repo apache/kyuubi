@@ -63,10 +63,23 @@ private[authz] object AuthZUtils {
       obj: AnyRef,
       methodName: String,
       args: (Class[_], AnyRef)*): AnyRef = {
-    val (types, values) = args.unzip
-    val method = obj.getClass.getMethod(methodName, types: _*)
-    method.setAccessible(true)
-    method.invoke(obj, values: _*)
+    try {
+      val (types, values) = args.unzip
+      val method = obj.getClass.getMethod(methodName, types: _*)
+      method.setAccessible(true)
+      method.invoke(obj, values: _*)
+    } catch {
+      case e: NoSuchMethodException =>
+        val candidates = obj.getClass.getMethods.map(_.getName).mkString("[", ",", "]")
+        throw new RuntimeException(s"$methodName not in ${obj.getClass} $candidates", e)
+    }
+  }
+
+  def invokeAs[T](
+      obj: AnyRef,
+      methodName: String,
+      args: (Class[_], AnyRef)*): T = {
+    invoke(obj, methodName, args: _*).asInstanceOf[T]
   }
 
   def invokeStatic(

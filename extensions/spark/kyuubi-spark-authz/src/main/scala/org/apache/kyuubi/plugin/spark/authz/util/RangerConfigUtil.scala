@@ -38,10 +38,13 @@ object RangerConfigUtil {
   def getRangerConf(plugin: RangerBasePlugin): Configuration = {
     if (isRanger21orGreater) {
       // for Ranger 2.1+
-      invoke(plugin, "getConfig").asInstanceOf[Configuration]
+      invokeAs[Configuration](this, "getConfig")
     } else {
       // for Ranger 2.0 and below
-      invokeStatic(classOf[RangerConfiguration], "getInstance").asInstanceOf[Configuration]
+      invokeStatic(
+        Class.forName("org.apache.ranger.authorization.hadoop.config.RangerConfiguration"),
+        "getInstance")
+        .asInstanceOf[Configuration]
     }
   }
 }
