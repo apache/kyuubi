@@ -72,6 +72,22 @@ You can deploy single-node Kyuubi through `${KYUUBI_HOME}/docker/kyuubi-pod.yaml
 
 Also, you can use `${KYUUBI_HOME}/docker/kyuubi-service.yaml` to deploy Kyuubi Service.
 
+### [Optional] ServiceAccount
+
+According to [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/), we need to give kyuubi server the corresponding kubernetes privileges for `created/list/delete` engine pods in kubernetes.
+
+You should create your serviceAccount ( or reuse account with the appropriate privileges ) and set your serviceAccountName for kyuubi pod, which you can find template in `${KYUUBI_HOME}/docker/kyuubi-deployment.yaml` or `${KYUUBI_HOME}/docker/kyuubi-pod.yaml`.
+
+For example, you can create serviceAccount by following command:
+
+```shell
+kubectl create serviceAccount kyuubi -n <your namespace>
+
+kubectl create rolebinding kyuubi-role --role=edit --serviceAccount=<your namespace>:kyuubi --namespace=<your namespace>
+```
+
+See more related details in [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) and [Configure Service Accounts for Pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/).
+
 ## Config
 
 You can configure Kyuubi the old-fashioned way by placing kyuubi-default.conf inside the image. Kyuubi do not recommend using this way on Kubernetes.
