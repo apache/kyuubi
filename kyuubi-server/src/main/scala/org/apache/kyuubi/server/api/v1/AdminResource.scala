@@ -28,6 +28,7 @@ import scala.util.control.NonFatal
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto.{Engine, HadoopConfData, Server, ServerLog}
@@ -114,7 +115,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
-    val userName = if (hs2ProxyUser.isEmpty) "" else fe.getSessionUser(hs2ProxyUser)
+    val userName = if (StringUtils.isEmpty(hs2ProxyUser)) "" else fe.getSessionUser(hs2ProxyUser)
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
     val engineSpace = getEngineSpace(engine)
 
@@ -162,7 +163,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @POST
   @Path("servers")
   def listServers(@QueryParam("host") @DefaultValue("") host: String): Seq[Server] = {
-    val ServerSeq = Seq[Server]()
+    val ServerSeq = ListBuffer[Server]()
     val serverSpace = DiscoveryPaths.makePath(null, fe.getConf.get(HA_NAMESPACE))
     val serverNodes = ListBuffer[ServiceNodeInfo]()
     withDiscoveryClient(fe.getConf) { discoveryClient =>
@@ -171,7 +172,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       serverNodes.map(node => {
         info(s"judge server nodes:$node " + host.equalsIgnoreCase("").toString)
         if (host.equalsIgnoreCase("") || node.host.equalsIgnoreCase(host)) {
-          ServerSeq :+ new Server(
+          ServerSeq += new Server(
             node.nodeName,
             node.namespace,
             node.instance,
