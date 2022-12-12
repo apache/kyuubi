@@ -37,7 +37,7 @@ object RangerConfigUtil {
   def getRangerConf(plugin: RangerBasePlugin): Configuration = {
     if (isRanger21orGreater) {
       // for Ranger 2.1+
-      invokeAs[Configuration](this, "getConfig")
+      invokeAs[Configuration](plugin, "getConfig")
     } else {
       // for Ranger 2.0 and below
       invokeStatic(
