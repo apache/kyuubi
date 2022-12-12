@@ -170,6 +170,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       serverNodes ++= discoveryClient.getServiceNodesInfo(serverSpace)
       serverNodes.map(node =>
         if (host.equalsIgnoreCase("") || node.host.equalsIgnoreCase(host)) {
+          info(s"adding server nodes for $node")
           ServerSeq :+ new Server(
             node.nodeName,
             node.namespace,
