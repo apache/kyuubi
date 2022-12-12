@@ -25,18 +25,102 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, watch, computed } from 'vue'
   import { useStore } from '@/pinia/layout'
   import { storeToRefs } from 'pinia'
   import { useRoute } from 'vue-router'
-  import { MENUS } from './types'
   import cMenu from '@/components/menu/index.vue'
+  import { useI18n } from 'vue-i18n'
+  const { t, locale } = useI18n()
 
-  const menus = reactive(MENUS)
+  const menus: any = ref([])
   const store = useStore()
   const { isCollapse } = storeToRefs(store)
   const router = useRoute()
-  const activePath = ref(router.path)
+  const activeMenuMap: any = {
+    '/session/sql-statistics': '/session/session-statistics'
+  }
+  const activePath = computed(() => {
+    return activeMenuMap[router.path] || router.path
+  })
+
+  const initMenus = () => {
+    menus.value = [
+      {
+        label: t('overview'),
+        icon: 'Odometer',
+        router: '/overview'
+      },
+      {
+        label: 'Session Management',
+        icon: 'List',
+        children: [
+          {
+            label: 'Session Statistics',
+            icon: 'VideoPlay',
+            router: '/session/session-statistics'
+          },
+          {
+            label: 'Operation',
+            icon: 'Operation',
+            router: '/session/operation'
+          }
+        ]
+      },
+      {
+        label: 'Workload',
+        icon: 'List',
+        children: [
+          {
+            label: 'Analysis',
+            icon: 'VideoPlay',
+            router: '/workload/analysis'
+          },
+          {
+            label: 'Queue',
+            icon: 'Select',
+            router: '/workload/queue'
+          },
+          {
+            label: 'Session',
+            icon: 'Select',
+            router: '/workload/session'
+          },
+          {
+            label: 'Query',
+            icon: 'Select',
+            router: '/workload/query'
+          }
+        ]
+      },
+      {
+        label: 'Operation',
+        icon: 'List',
+        children: [
+          {
+            label: 'Running Jobs',
+            icon: 'VideoPlay',
+            router: '/operation/runningJobs'
+          },
+          {
+            label: 'Completed Jobs',
+            icon: 'Select',
+            router: '/operation/completedJobs'
+          }
+        ]
+      },
+      {
+        label: 'Contact Us',
+        icon: 'PhoneFilled',
+        router: '/contact'
+      }
+    ]
+  }
+
+  watch(locale, () => {
+    initMenus()
+  })
+  initMenus()
 </script>
 
 <style lang="scss" scoped>

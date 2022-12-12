@@ -16,5 +16,36 @@
  */
 
 export default {
-  test: 'test'
+  test: 'test',
+  overview: 'Overview',
+  user: 'User',
+  client_ip: 'Client IP',
+  server_ip: 'Server IP',
+  session_id: 'Session ID',
+  session_name: 'Session Name',
+  running_operations: 'Running Operations',
+  error_operations: 'Error Operations',
+  total_operations: 'Total Operations',
+  start_time: 'Start Time',
+  finish_time: 'Finish Time',
+  duration: 'Duration(hour:min:sec)',
+  operation: 'Operation',
+  statement_id: 'Statement ID',
+  create_time: 'Create Time',
+  statement: 'Statement',
+  engine_id: 'Engine ID',
+  engine_type: 'Engine Type',
+  engine_share_level: 'Engine Share Level',
+  failure_reason: 'Failure Reason',
+  operation_id: 'Operation ID',
+  type: 'Type',
+  state: 'State',
+  confirm: 'Confirm',
+  cancel: 'Cancel',
+  cancel_confirm: 'Cancel?',
+  delete: 'Delete',
+  delete_confirm: 'Delete?',
+  delete_success: 'Delete success',
+  close: 'Close',
+  close_confirm: 'Close?'
 }

@@ -33,5 +33,15 @@ export default defineConfig({
         replacement: 'vue-i18n/dist/vue-i18n.cjs.js'
       }
     ]
+  },
+  server: {
+    // 设置代理
+    proxy: {
+      '/api': {
+        target: 'http://10.252.125.84:30029/api',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   }
 })

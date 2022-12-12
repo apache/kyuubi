@@ -15,40 +15,22 @@
  * limitations under the License.
  */
 
-import { createRouter, createWebHistory } from 'vue-router'
-import overviewRoutes from './overview'
-import sessionRoutes from './session'
-import workloadRoutes from './workload'
-import operationRoutes from './operation'
-import contactRoutes from './contact'
-
 const routes = [
   {
-    path: '/',
-    name: 'main',
-    redirect: {
-      name: 'layout'
-    }
+    path: '/session/session-statistics',
+    name: 'session-statistics',
+    component: () => import('@/views/session/session-statistics/index.vue')
   },
   {
-    path: '/layout',
-    name: 'layout',
-    component: () => import('@/views/layout/index.vue'),
-    redirect: 'overview',
-    children: [
-      ...overviewRoutes,
-      ...sessionRoutes,
-      ...workloadRoutes,
-      ...operationRoutes,
-      ...contactRoutes
-    ]
+    path: '/session/sql-statistics',
+    name: 'sql-statistics',
+    component: () => import('@/views/session/sql-statistics/index.vue')
   },
-  { path: '/:catchAll(.*)', redirect: '/' }
+  {
+    path: '/session/operation',
+    name: 'operation',
+    component: () => import('@/views/session/operation/index.vue')
+  }
 ]
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes
-})
-
-export default router
+export default routes
