@@ -168,9 +168,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     withDiscoveryClient(fe.getConf) { discoveryClient =>
       info(s"Listing server nodes for $serverSpace")
       serverNodes ++= discoveryClient.getServiceNodesInfo(serverSpace)
-      serverNodes.map(node =>
+      serverNodes.map(node => {
+        info(s"judge server nodes:$node " + host.equalsIgnoreCase("").toString)
         if (host.equalsIgnoreCase("") || node.host.equalsIgnoreCase(host)) {
-          info(s"adding server nodes for $node")
           ServerSeq :+ new Server(
             node.nodeName,
             node.namespace,
@@ -181,7 +181,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
             OSUtils.memoryTotal(),
             OSUtils.cpuTotal(),
             "Running")
-        })
+        }
+      })
     }
     ServerSeq
   }
