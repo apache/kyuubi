@@ -799,9 +799,13 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
           .forEach(
               line -> {
                 String[] keyValue = line.split("=");
-                String key = keyValue[0];
-                String value = keyValue[1];
-                properties.put(key, value);
+                if (keyValue.length == 2) {
+                  String key = keyValue[0];
+                  String value = keyValue[1];
+                  properties.put(key, value);
+                } else {
+                  LOG.warn("found unknown kyuubi metadata hint: " + line);
+                }
               });
     }
 
