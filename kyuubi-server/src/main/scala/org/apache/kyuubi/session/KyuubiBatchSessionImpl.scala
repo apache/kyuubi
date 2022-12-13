@@ -101,6 +101,7 @@ class KyuubiBatchSessionImpl(
   }
 
   private val sessionEvent = KyuubiSessionEvent(this)
+  recoveryMetadata.map(metadata => sessionEvent.engineId = metadata.engineId)
   EventBus.post(sessionEvent)
 
   override def getSessionEvent: Option[KyuubiSessionEvent] = {
@@ -119,7 +120,7 @@ class KyuubiBatchSessionImpl(
     }
   }
 
-  override def open(): Unit = {
+  override def open(): Unit = handleSessionException {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
@@ -152,6 +153,11 @@ class KyuubiBatchSessionImpl(
     super.open()
 
     runOperation(batchJobSubmissionOp)
+  }
+
+  private[kyuubi] def onEngineOpened(): Unit = {
+    sessionEvent.openedTime = System.currentTimeMillis()
+    EventBus.post(sessionEvent)
   }
 
   override def close(): Unit = {

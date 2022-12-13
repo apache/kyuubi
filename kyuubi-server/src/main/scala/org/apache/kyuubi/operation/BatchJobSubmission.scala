@@ -29,10 +29,11 @@ import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
+import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState}
+import org.apache.kyuubi.operation.OperationState.{CANCELED, OperationState, RUNNING}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.KyuubiBatchSessionImpl
@@ -60,6 +61,7 @@ class BatchJobSubmission(
     recoveryMetadata: Option[Metadata])
   extends KyuubiApplicationOperation(session) {
   import BatchJobSubmission._
+  EventBus.post(KyuubiOperationEvent(this))
 
   override def shouldRunAsync: Boolean = true
 
@@ -143,6 +145,13 @@ class BatchJobSubmission(
   private def setStateIfNotCanceled(newState: OperationState): Unit = state.synchronized {
     if (state != CANCELED) {
       setState(newState)
+      applicationInfo.filter(_.id != null).foreach { ai =>
+        session.getSessionEvent.foreach(_.engineId = ai.id)
+      }
+      if (newState == RUNNING) {
+        session.onEngineOpened()
+      }
+      EventBus.post(KyuubiOperationEvent(this))
     }
   }
 

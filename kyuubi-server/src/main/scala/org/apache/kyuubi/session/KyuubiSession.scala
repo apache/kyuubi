@@ -20,6 +20,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
 import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.SessionType.SessionType
 
 abstract class KyuubiSession(
@@ -48,6 +49,14 @@ abstract class KyuubiSession(
       case t: Throwable =>
         getSessionEvent.foreach(_.exception = Some(t))
         throw t
+    }
+  }
+
+  override protected def runOperation(operation: Operation): OperationHandle = {
+    try {
+      super.runOperation(operation)
+    } finally {
+      getSessionEvent.map(_.totalOperations += 1)
     }
   }
 }

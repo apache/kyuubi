@@ -105,7 +105,7 @@ class KyuubiSessionImpl(
 
   private var _engineSessionHandle: SessionHandle = _
 
-  override def open(): Unit = {
+  override def open(): Unit = handleSessionException {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
@@ -186,7 +186,6 @@ class KyuubiSessionImpl(
   override protected def runOperation(operation: Operation): OperationHandle = {
     if (operation != launchEngineOp) {
       waitForEngineLaunched()
-      sessionEvent.totalOperations += 1
     }
     super.runOperation(operation)
   }
