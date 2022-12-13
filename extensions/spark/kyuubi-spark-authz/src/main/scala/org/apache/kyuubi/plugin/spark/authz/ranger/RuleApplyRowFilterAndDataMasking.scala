@@ -55,8 +55,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         if (table.isEmpty) {
           logicalRelation
         } else {
-          val catalog = new CatalogTableCatalogExtractor().apply(table)
-          applyFilterAndMasking(logicalRelation, table.get.identifier, spark, catalog = catalog)
+          applyFilterAndMasking(logicalRelation, table.get.identifier, spark)
         }
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdentifier = getDatasourceV2Identifier(datasourceV2Relation)
