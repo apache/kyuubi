@@ -197,7 +197,7 @@ object DiscoveryClient {
     } else {
       val strings = instance.split(":")
       val host: String = strings(0)
-      val port: Int = if (strings.length == 1) null else strings(1).toInt
+      val port: Int = if (strings.length == 1) 0 else strings(1).toInt
       (host, port)
     }
   }
