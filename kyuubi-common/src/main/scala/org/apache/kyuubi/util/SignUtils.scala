@@ -46,7 +46,7 @@ object SignUtils {
   def signWithPrivateKey(
       plainText: String,
       privateKey: PrivateKey,
-      algorithm: String = "SHA256withECDSA"): String = synchronized {
+      algorithm: String = "SHA256withECDSA"): String = {
     val privateSignature = Signature.getInstance(algorithm)
     privateSignature.initSign(privateKey)
     privateSignature.update(plainText.getBytes(StandardCharsets.UTF_8))
@@ -57,7 +57,7 @@ object SignUtils {
   def verifySignWithECDSA(
       plainText: String,
       signatureBase64: String,
-      publicKeyBase64: String): Boolean = synchronized {
+      publicKeyBase64: String): Boolean = {
     try {
       val publicKeyBytes = Base64.getDecoder.decode(publicKeyBase64)
       val publicKey: PublicKey = KeyFactory.getInstance(KEYPAIR_ALGORITHM_EC)
