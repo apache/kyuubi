@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.LinkedHashMap
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
 
@@ -142,7 +143,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
             val accessType = req.getAccessType
             val accessRes = req.getResource.asInstanceOf[AccessResource]
             val resourceStr = accessRes.getCatalog match {
-              case "" =>
+              case _ if StringUtils.isBlank(_) =>
                 accessRes.getAsString
               case catalogName =>
                 s"$catalogName/${accessRes.getAsString}"
