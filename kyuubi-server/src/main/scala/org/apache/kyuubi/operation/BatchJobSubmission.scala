@@ -298,16 +298,6 @@ class BatchJobSubmission(
 
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
 
-      if (!builder.processLaunched) {
-        builder.close()
-        if (recoveryMetadata.isDefined) {
-          killMessage = killBatchApplication()
-        }
-        setState(OperationState.CANCELED)
-        updateBatchMetadata()
-        return
-      }
-
       // fast fail
       if (isTerminalState(state)) {
         killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
@@ -319,16 +309,23 @@ class BatchJobSubmission(
         killMessage = killBatchApplication()
         builder.close()
       } finally {
-        if (killMessage._1 && !isTerminalState(state)) {
-          // kill success and we can change state safely
-          // note that, the batch operation state should never be closed
+        if (state == OperationState.INITIALIZED) {
+          // if state is INITIALIZED, it means that the batch submission has not started to run, set
+          // the state to CANCELED manually and regardless of kill result
           setState(OperationState.CANCELED)
           updateBatchMetadata()
-        } else if (killMessage._1) {
-          // we can not change state safely
-          killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
-        } else if (!isTerminalState(state)) {
-          // failed to kill, the kill message is enough
+        } else {
+          if (killMessage._1 && !isTerminalState(state)) {
+            // kill success and we can change state safely
+            // note that, the batch operation state should never be closed
+            setState(OperationState.CANCELED)
+            updateBatchMetadata()
+          } else if (killMessage._1) {
+            // we can not change state safely
+            killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
+          } else if (!isTerminalState(state)) {
+            // failed to kill, the kill message is enough
+          }
         }
       }
     }
