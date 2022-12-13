@@ -62,10 +62,10 @@ object TableExtractor {
 class TableIdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val identifier = v1.asInstanceOf[TableIdentifier]
-    val table = spark.sessionState.catalog.getTableMetadata(identifier)
     val owner =
       try {
-        Option(table.owner).filter(_.nonEmpty)
+        val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
+        Option(catalogTable.owner).filter(_.nonEmpty)
       } catch {
         case _: Exception => None
       }
