@@ -796,6 +796,8 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       metadataResp
           .getStatus()
           .getInfoMessages()
+          .stream()
+          .filter(hint -> Utils.isKyuubiOperationHint(hint))
           .forEach(
               line -> {
                 String[] keyValue = line.split("=");
@@ -803,8 +805,6 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
                   String key = keyValue[0];
                   String value = keyValue[1];
                   properties.put(key, value);
-                } else {
-                  LOG.warn("found unknown kyuubi metadata hint: " + line);
                 }
               });
     }
