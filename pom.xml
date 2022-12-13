@@ -128,7 +128,7 @@
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
         <etcd.version>0.7.3</etcd.version>
-        <delta.version>2.1.1</delta.version>
+        <delta.version>2.2.0</delta.version>
         <failsafe.verion>2.4.4</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flink.version>1.15.2</flink.version>
