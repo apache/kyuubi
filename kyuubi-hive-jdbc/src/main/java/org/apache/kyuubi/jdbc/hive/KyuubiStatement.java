@@ -800,12 +800,11 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
           .filter(hint -> Utils.isKyuubiOperationHint(hint))
           .forEach(
               line -> {
-                String[] keyValue = line.split("=");
-                if (keyValue.length == 2) {
-                  String key = keyValue[0];
-                  String value = keyValue[1];
-                  properties.put(key, value);
-                }
+                String[] keyValue = line.toLowerCase(Locale.ROOT).split("=");
+                assert keyValue.length == 2 : "Illegal Kyuubi operation hint found!";
+                String key = keyValue[0];
+                String value = keyValue[1];
+                properties.put(key, value);
               });
     }
 
