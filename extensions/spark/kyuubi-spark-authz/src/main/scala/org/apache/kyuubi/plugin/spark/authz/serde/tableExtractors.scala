@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import java.util.{Map => JMap, ServiceLoader}
+import java.util.{ServiceLoader, Map => JMap}
 
 import scala.collection.JavaConverters._
 
@@ -25,6 +25,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.connector.catalog.{CatalogPlugin, TableCatalog}
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
@@ -92,10 +93,11 @@ class CatalogTableTableExtractor extends TableExtractor {
  */
 class ResolvedTableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val catalog = new CatalogTableCatalogExtractor().apply(spark, v1)
     val identifier = invoke(v1, "identifier")
     val maybeTable = new IdentifierTableExtractor().apply(spark, identifier)
     val maybeOwner = TableExtractor.getOwner(v1)
-    maybeTable.map(_.copy(owner = maybeOwner))
+    maybeTable.map(_.copy(owner = maybeOwner, catalog = catalog))
   }
 }
 
@@ -121,11 +123,12 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
     if (v2Relation.isEmpty) {
       None
     } else {
+      val maybeCatalog = new CatalogCatalogPluginExtractor().apply(spark, plan)
       val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation.get, "identifier")
       maybeIdentifier.flatMap { id =>
         val maybeTable = new IdentifierTableExtractor().apply(spark, id)
         val maybeOwner = TableExtractor.getOwner(v2Relation.get)
-        maybeTable.map(_.copy(owner = maybeOwner))
+        maybeTable.map(_.copy(owner = maybeOwner, catalog = maybeCatalog))
       }
     }
   }
