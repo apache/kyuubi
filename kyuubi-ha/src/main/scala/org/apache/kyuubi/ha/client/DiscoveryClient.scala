@@ -196,7 +196,9 @@ object DiscoveryClient {
         maybeInfos("hive.server2.thrift.port").toInt)
     } else {
       val strings = instance.split(":")
-      (strings(0), strings(1).toInt)
+      val host = strings(0)
+      val port = if (strings.length == 1) strings(0).toInt else strings(1).toInt
+      (host, port)
     }
   }
 }

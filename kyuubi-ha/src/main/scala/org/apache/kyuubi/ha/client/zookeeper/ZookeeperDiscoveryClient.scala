@@ -201,6 +201,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       hosts.asScala.takeRight(size).map { p =>
         val path = ZKPaths.makePath(namespace, p)
         val instance = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+        info(s"Get service instance:$instance")
         val (host, port) = DiscoveryClient.parseInstanceHostPort(instance)
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
         val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
