@@ -31,7 +31,15 @@ imagePullSecrets: []
 
 # ServiceAccount used for Kyuubi create/list/delete pod in kubernetes
 serviceAccount:
-  name: default
+  create: true
+  name: ~
+
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["create", "list", "delete"]
 
 probe:
   liveness:

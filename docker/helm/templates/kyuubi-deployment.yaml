@@ -38,9 +38,7 @@ spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.serviceAccount }}
-      serviceAccountName: {{ .Values.serviceAccount.name }}
-      {{- end}}
+      serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
       containers:
         - name: kyuubi-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
