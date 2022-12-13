@@ -38,9 +38,8 @@ object PrivilegesBuilder {
 
   final private val LOG = LoggerFactory.getLogger(getClass)
 
-  def databasePrivileges(db: String): PrivilegeObject = {
-    // todo: fill catalog
-    PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db, catalog = None)
+  def databasePrivileges(db: Database): PrivilegeObject = {
+    PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER,, db.database, db, catalog = db.catalog)
   }
 
   private def tablePrivileges(

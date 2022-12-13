@@ -97,10 +97,11 @@ case class DatabaseDesc(
     fieldName: String,
     fieldExtractor: String,
     isInput: Boolean = false) extends Descriptor {
-  override def extract(v: AnyRef): String = {
+  override def extract(v: AnyRef): Database = {
     val databaseVal = invoke(v, fieldName)
     val databaseExtractor = dbExtractors(fieldExtractor)
-    databaseExtractor(databaseVal)
+    // todo: fill catalog
+    Database(databaseExtractor(databaseVal), catalog = None)
   }
 }
 
