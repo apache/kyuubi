@@ -62,15 +62,15 @@ object TableExtractor {
 class TableIdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val identifier = v1.asInstanceOf[TableIdentifier]
+    val table = spark.sessionState.catalog.getTableMetadata(identifier)
     val owner =
       try {
-        val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
-        Option(catalogTable.owner).filter(_.nonEmpty)
+        Option(table.owner).filter(_.nonEmpty)
       } catch {
         case _: Exception => None
       }
-    // todo: fill catalog
-    Some(Table(identifier.database, identifier.table, owner, catalog = None))
+    val catalog = new CatalogTableCatalogExtractor().apply(table)
+    Some(Table(identifier.database, identifier.table, owner, catalog = catalog))
   }
 }
 
