@@ -108,7 +108,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
     description = "list alive kyuubi engines")
-  @GET
+  @POST
   @Path("engine")
   def listEngines(
       @QueryParam("type") engineType: String,
@@ -116,9 +116,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
     val userName = if (StringUtils.isEmpty(hs2ProxyUser)) "" else fe.getSessionUser(hs2ProxyUser)
+    info(s"Listing userName $userName")
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
     val engineSpace = getEngineSpace(engine)
-
     val engineNodes = ListBuffer[ServiceNodeInfo]()
     Option(subdomain).filter(_.nonEmpty) match {
       case Some(_) =>
