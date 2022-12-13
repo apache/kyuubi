@@ -49,13 +49,15 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
-        applyFilterAndMasking(hiveTableRelation, table.identifier, spark)
+        // todo: fill catalog
+        applyFilterAndMasking(hiveTableRelation, table.identifier, spark, catalog = None)
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         val table = getDatasourceTable(logicalRelation)
         if (table.isEmpty) {
           logicalRelation
         } else {
-          applyFilterAndMasking(logicalRelation, table.get.identifier, spark)
+          // todo: fill catalog
+          applyFilterAndMasking(logicalRelation, table.get.identifier, spark, catalog = None)
         }
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdentifier = getDatasourceV2Identifier(datasourceV2Relation)
@@ -66,7 +68,8 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         }
       case permanentView: PermanentViewMarker =>
         val viewIdent = permanentView.catalogTable.identifier
-        applyFilterAndMasking(permanentView, viewIdent, spark)
+        // todo: fill catalog
+        applyFilterAndMasking(permanentView, viewIdent, spark, catalog = None)
       case other => apply(other)
     }
   }
@@ -75,27 +78,35 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       plan: LogicalPlan,
       identifier: Identifier,
       spark: SparkSession): LogicalPlan = {
-    applyFilterAndMasking(plan, getTableIdentifierFromV2Identifier(identifier), spark)
+    // todo: fill catalog
+    applyFilterAndMasking(
+      plan,
+      getTableIdentifierFromV2Identifier(identifier),
+      spark,
+      catalog = None)
   }
 
   private def applyFilterAndMasking(
       plan: LogicalPlan,
       identifier: TableIdentifier,
-      spark: SparkSession): LogicalPlan = {
+      spark: SparkSession,
+      catalog: Option[String] = None): LogicalPlan = {
     val ugi = getAuthzUgi(spark.sparkContext)
     val opType = operationType(plan)
     val parse = spark.sessionState.sqlParser.parseExpression _
-    // todo: fill catalog
-    val are =
-      AccessResource(ObjectType.TABLE, null, identifier.database.orNull, identifier.table, null)
+    val are = AccessResource(
+      ObjectType.TABLE,
+      catalog.orNull,
+      identifier.database.orNull,
+      identifier.table,
+      null)
     val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
     val filterExprStr = SparkRangerAdminPlugin.getFilterExpr(art)
     val newOutput = plan.output.map { attr =>
-      // todo: fill catalog
       val are =
         AccessResource(
           ObjectType.COLUMN,
-          null,
+          catalog.orNull,
           identifier.database.orNull,
           identifier.table,
           attr.name)
