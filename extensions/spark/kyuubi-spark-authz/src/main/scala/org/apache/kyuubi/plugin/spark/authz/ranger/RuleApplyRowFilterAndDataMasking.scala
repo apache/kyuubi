@@ -64,7 +64,8 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
         if (tableIdentifier.isEmpty) {
           datasourceV2Relation
         } else {
-          applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
+          val catalog = new DataSourceV2RelationCatalogExtractor().apply(datasourceV2Relation)
+          applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark, catalog = catalog)
         }
       case permanentView: PermanentViewMarker =>
         val table = permanentView.catalogTable
@@ -78,13 +79,13 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
   private def applyFilterAndMasking(
       plan: LogicalPlan,
       identifier: Identifier,
-      spark: SparkSession): LogicalPlan = {
-    // todo: fill catalog
+      spark: SparkSession,
+      catalog: Option[String] = None): LogicalPlan = {
     applyFilterAndMasking(
       plan,
       getTableIdentifierFromV2Identifier(identifier),
       spark,
-      catalog = None)
+      catalog = catalog)
   }
 
   private def applyFilterAndMasking(
