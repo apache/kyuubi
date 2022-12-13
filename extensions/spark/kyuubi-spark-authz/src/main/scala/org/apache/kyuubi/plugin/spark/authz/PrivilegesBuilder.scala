@@ -195,7 +195,6 @@ object PrivilegesBuilder {
         privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)), catalog = None)
 
       case permanentViewMarker: PermanentViewMarker =>
-        // todo: fill catalog
         mergeProjection(permanentViewMarker.catalogTable, plan)
 
       case p =>
