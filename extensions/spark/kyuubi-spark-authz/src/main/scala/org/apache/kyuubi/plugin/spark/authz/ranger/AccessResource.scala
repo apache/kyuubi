@@ -27,6 +27,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
 class AccessResource private (val objectType: ObjectType) extends RangerAccessResourceImpl {
   implicit def asString(obj: Object): String = if (obj != null) obj.asInstanceOf[String] else null
+  def getCatalog: String = getValue("catalog")
   def getDatabase: String = getValue("database")
   def getTable: String = getValue("table")
   def getColumn: String = getValue("column")
@@ -43,32 +44,48 @@ object AccessResource {
       firstLevelResource: String,
       secondLevelResource: String,
       thirdLevelResource: String,
+      fourthLevelResource: String,
       owner: Option[String] = None): AccessResource = {
     val resource = new AccessResource(objectType)
 
     resource.objectType match {
-      case DATABASE => resource.setValue("database", firstLevelResource)
+      case DATABASE =>
+        resource.setValue("catalog", firstLevelResource)
+        resource.setValue("database", secondLevelResource)
       case FUNCTION =>
-        resource.setValue("database", Option(firstLevelResource).getOrElse(""))
-        resource.setValue("udf", secondLevelResource)
+        resource.setValue("catalog", firstLevelResource)
+        resource.setValue("database", Option(secondLevelResource).getOrElse(""))
+        resource.setValue("udf", thirdLevelResource)
       case COLUMN =>
-        resource.setValue("database", firstLevelResource)
-        resource.setValue("table", secondLevelResource)
-        resource.setValue("column", thirdLevelResource)
+        resource.setValue("catalog", firstLevelResource)
+        resource.setValue("database", secondLevelResource)
+        resource.setValue("table", thirdLevelResource)
+        resource.setValue("column", fourthLevelResource)
       case TABLE | VIEW => // fixme spark have added index support
-        resource.setValue("database", firstLevelResource)
-        resource.setValue("table", secondLevelResource)
+        resource.setValue("catalog", firstLevelResource)
+        resource.setValue("database", secondLevelResource)
+        resource.setValue("table", thirdLevelResource)
     }
     resource.setServiceDef(SparkRangerAdminPlugin.getServiceDef)
     owner.foreach(resource.setOwnerUser)
     resource
   }
 
-  def apply(objectType: ObjectType, firstLevelResource: String): AccessResource = {
-    apply(objectType, firstLevelResource, null, null)
+  def apply(
+      objectType: ObjectType,
+      firstLevelResource: String,
+      secondLevelResource: String): AccessResource = {
+    apply(objectType, firstLevelResource, secondLevelResource, null, null)
   }
 
   def apply(obj: PrivilegeObject, opType: OperationType): AccessResource = {
-    apply(ObjectType(obj, opType), obj.dbname, obj.objectName, obj.columns.mkString(","), obj.owner)
+    // todo: fill catalog
+    apply(
+      ObjectType(obj, opType),
+      null,
+      obj.dbname,
+      obj.objectName,
+      obj.columns.mkString(","),
+      obj.owner)
   }
 }

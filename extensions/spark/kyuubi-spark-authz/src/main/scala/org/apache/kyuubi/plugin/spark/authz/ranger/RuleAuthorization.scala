@@ -50,7 +50,7 @@ object RuleAuthorization {
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
     val requests = new ArrayBuffer[AccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
-      val resource = AccessResource(DATABASE, null)
+      val resource = AccessResource(DATABASE, null, null)
       requests += AccessRequest(resource, ugi, opType, AccessType.USE)
     }
 
@@ -73,9 +73,11 @@ object RuleAuthorization {
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
           resource.getColumns.map { col =>
+            // todo: fill catalog
             val cr =
               AccessResource(
                 COLUMN,
+                null,
                 resource.getDatabase,
                 resource.getTable,
                 col,

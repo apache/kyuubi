@@ -29,7 +29,8 @@ class SparkRangerAdminPluginSuite extends AnyFunSuite {
 
   test("get filter expression") {
     val bob = UserGroupInformation.createRemoteUser("bob")
-    val are = AccessResource(ObjectType.TABLE, "default", "src", null)
+    // todo: fill catalog
+    val are = AccessResource(ObjectType.TABLE, null, "default", "src", null)
     def buildAccessRequest(ugi: UserGroupInformation): AccessRequest = {
       AccessRequest(are, ugi, OperationType.QUERY, AccessType.SELECT)
     }
@@ -45,7 +46,8 @@ class SparkRangerAdminPluginSuite extends AnyFunSuite {
   test("get data masker") {
     val bob = UserGroupInformation.createRemoteUser("bob")
     def buildAccessRequest(ugi: UserGroupInformation, column: String): AccessRequest = {
-      val are = AccessResource(ObjectType.COLUMN, "default", "src", column)
+      // todo: fill catalog
+      val are = AccessResource(ObjectType.COLUMN, null, "default", "src", column)
       AccessRequest(are, ugi, OperationType.QUERY, AccessType.SELECT)
     }
     assert(getMaskingExpr(buildAccessRequest(bob, "value1")).get === "md5(cast(value1 as string))")
