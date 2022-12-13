@@ -31,4 +31,5 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 case class Table(
     database: Option[String],
     table: String,
-    owner: Option[String])
+    owner: Option[String],
+    catalog: Option[String])

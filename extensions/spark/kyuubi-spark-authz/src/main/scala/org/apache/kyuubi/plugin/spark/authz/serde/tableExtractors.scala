@@ -69,7 +69,8 @@ class TableIdentifierTableExtractor extends TableExtractor {
       } catch {
         case _: Exception => None
       }
-    Some(Table(identifier.database, identifier.table, owner))
+    // todo: fill catalog
+    Some(Table(identifier.database, identifier.table, owner, catalog = None))
   }
 }
 
@@ -81,7 +82,8 @@ class CatalogTableTableExtractor extends TableExtractor {
     val catalogTable = v1.asInstanceOf[CatalogTable]
     val identifier = catalogTable.identifier
     val owner = Option(catalogTable.owner).filter(_.nonEmpty)
-    Some(Table(identifier.database, identifier.table, owner))
+    // todo: fill catalog
+    Some(Table(identifier.database, identifier.table, owner, catalog = None))
   }
 }
 
@@ -104,7 +106,8 @@ class IdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val namespace = invokeAs[Array[String]](v1, "namespace")
     val table = invokeAs[String](v1, "name")
-    Some(Table(Some(quote(namespace)), table, None))
+    // todo: fill catalog
+    Some(Table(Some(quote(namespace)), table, None, catalog = None))
   }
 }
 
