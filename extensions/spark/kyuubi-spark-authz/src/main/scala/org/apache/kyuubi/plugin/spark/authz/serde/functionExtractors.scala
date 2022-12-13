@@ -38,7 +38,6 @@ object FunctionExtractor {
 
 class StringFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
-    // todo: fill catalog
     Function(None, v1.asInstanceOf[String], catalog = None)
   }
 }
@@ -46,7 +45,6 @@ class StringFunctionExtractor extends FunctionExtractor {
 class FunctionIdentifierFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val identifier = v1.asInstanceOf[FunctionIdentifier]
-    // todo: fill catalog
     Function(identifier.database, identifier.funcName, catalog = None)
   }
 }
@@ -54,7 +52,6 @@ class FunctionIdentifierFunctionExtractor extends FunctionExtractor {
 class ExpressionInfoFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val info = v1.asInstanceOf[ExpressionInfo]
-    // todo: fill catalog
     Function(Option(info.getDb), info.getName, catalog = None)
   }
 }
