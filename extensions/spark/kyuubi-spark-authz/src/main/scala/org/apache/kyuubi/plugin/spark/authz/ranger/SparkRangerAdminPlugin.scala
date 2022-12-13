@@ -122,10 +122,16 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
   def verify(
       requests: Seq[RangerAccessRequest],
       auditHandler: SparkRangerAuditHandler): Unit = {
-    if (requests.nonEmpty) {
-      val results = SparkRangerAdminPlugin.isAccessAllowed(requests.asJava, auditHandler)
-      if (results != null) {
-        val indices = results.asScala.zipWithIndex.filter { case (result, idx) =>
+    val requestsByCatalog = requests
+      .groupBy(req => req.getResource.asInstanceOf[AccessResource].getCatalog)
+    val results = requestsByCatalog.map {
+      // todo use corresponding ranger base plugin
+      //  by catalog name of resource from [KYUUBI #3594]
+      case (catalog, requests) =>
+        SparkRangerAdminPlugin.isAccessAllowed(requests.asJava, auditHandler)
+    }.flatten(_.asScala)
+    if (results.nonEmpty) {
+      val indices = results.zipWithIndex.filter { case (result, idx) =>
           result != null && !result.getIsAllowed
         }.map(_._2)
         if (indices.nonEmpty) {
@@ -134,9 +140,15 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
             indices.foldLeft(LinkedHashMap.empty[String, ArrayBuffer[String]])((m, idx) => {
               val req = requests(idx)
               val accessType = req.getAccessType
-              val resource = req.getResource.getAsString
+              val accessRes = req.getResource.asInstanceOf[AccessResource]
+              val resourceStr = accessRes.getCatalog match {
+                case "" =>
+                  accessRes.getAsString
+                case catalogName =>
+                  s"$catalogName/${accessRes.getAsString}"
+              }
               m.getOrElseUpdate(accessType, ArrayBuffer.empty[String])
-                .append(resource)
+                .append(resourceStr)
               m
             })
           val errorMsg = accessTypeToResource
