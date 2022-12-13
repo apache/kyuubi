@@ -232,8 +232,7 @@ object PrivilegesBuilder {
             } else {
               val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
               val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
-              // todo: fill catalog
-              Seq(tablePrivileges(identifier, columnNames, table.owner, None, actionType))
+              Seq(tablePrivileges(identifier, columnNames, table.owner, table.catalog, actionType))
             }
           case None => Nil
         }
