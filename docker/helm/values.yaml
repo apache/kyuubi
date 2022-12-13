@@ -80,3 +80,10 @@ resources: {}
   # requests:
   #   cpu: 2
   #   memory: 4Gi
+
+# Constrain Kyuubi server pods to specific nodes
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+securityContext: {}
