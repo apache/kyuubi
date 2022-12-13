@@ -85,7 +85,7 @@ class SessionSigningSuite extends WithKyuubiServer with HiveJDBCTestHelper {
              |""".stripMargin)
         assert(rs2.next())
 
-        // to skip scala result starts with "res0: String = "
+        // skipping prefix "res0: String = " of returned scala result
         val publicKeyStr = rs1.getString(1).substring(15)
         val sessionUserSign = rs2.getString(1).substring(15)
 
