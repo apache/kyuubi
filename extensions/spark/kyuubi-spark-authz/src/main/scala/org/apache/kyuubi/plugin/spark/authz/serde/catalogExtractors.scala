@@ -24,11 +24,10 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.invokeAs
 
 trait CatalogExtractor extends ((SparkSession, AnyRef) => Option[String]) with Extractor
 
-
 class CatalogCatalogPluginExtractor extends CatalogExtractor {
   override def apply(spark: SparkSession, v2: AnyRef): Option[String] = {
     val maybeCatalog = invokeAs[Option[CatalogPlugin]](v2, "catalog")
-     maybeCatalog match {
+    maybeCatalog match {
       case None => None
       case Some(catalogPlugin) => Some(catalogPlugin.name())
     }
