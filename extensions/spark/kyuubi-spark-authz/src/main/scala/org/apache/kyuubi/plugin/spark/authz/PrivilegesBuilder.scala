@@ -42,9 +42,8 @@ object PrivilegesBuilder {
     PrivilegeObject(
       DATABASE,
       PrivilegeObjectActionType.OTHER,
-      db.catalog,
       db.database,
-      db,
+      db.database,
       catalog = db.catalog)
   }
 
@@ -119,9 +118,9 @@ object PrivilegesBuilder {
 
     def mergeProjection(
         table: CatalogTable,
-        plan: LogicalPlan,
-        catalog: Option[String] = None): Unit = {
+        plan: LogicalPlan): Unit = {
       val tableOwner = extractTableOwner(table)
+      val catalog = new CatalogTableCatalogExtractor().apply(table)
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table.identifier,
@@ -138,14 +137,14 @@ object PrivilegesBuilder {
     def mergeProjectionV2Table(
         table: Identifier,
         plan: LogicalPlan,
-        catalog: Option[String],
         owner: Option[String] = None): Unit = {
+      val maybeCatalog = new DataSourceV2RelationCatalogExtractor().apply(plan)
       if (projectionList.isEmpty) {
-        privilegeObjects += v2TablePrivileges(table, catalog, plan.output.map(_.name), owner)
+        privilegeObjects += v2TablePrivileges(table, maybeCatalog, plan.output.map(_.name), owner)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += v2TablePrivileges(table, catalog, cols, owner)
+        privilegeObjects += v2TablePrivileges(table, maybeCatalog, cols, owner)
       }
     }
 
@@ -174,19 +173,16 @@ object PrivilegesBuilder {
         buildQuery(s.child, privilegeObjects, projectionList, cols)
 
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
-        // todo: fill catalog
-        mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation, catalog = None)
+        mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation)
 
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         getDatasourceTable(logicalRelation).foreach { t =>
-          // todo: fill catalog
-          mergeProjection(t, plan, catalog = None)
+          mergeProjection(t, plan)
         }
 
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
         if (tableIdent.isDefined) {
-          // todo: fill catalog
           mergeProjectionV2Table(
             tableIdent.get,
             plan,
@@ -201,7 +197,7 @@ object PrivilegesBuilder {
 
       case permanentViewMarker: PermanentViewMarker =>
         // todo: fill catalog
-        mergeProjection(permanentViewMarker.catalogTable, plan, catalog = None)
+        mergeProjection(permanentViewMarker.catalogTable, plan)
 
       case p =>
         for (child <- p.children) {
