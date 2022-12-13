@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, TableCatalog}
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.invokeAs

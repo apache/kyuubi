@@ -25,7 +25,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.connector.catalog.{CatalogPlugin, TableCatalog}
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
