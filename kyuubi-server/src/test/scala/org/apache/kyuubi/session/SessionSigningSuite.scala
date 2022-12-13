@@ -90,5 +90,4 @@ class SessionSigningSuite extends WithKyuubiServer with HiveJDBCTestHelper {
       }
     }
   }
-
 }
