@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.session
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_SIGN
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.util.SignUtils
 
@@ -68,16 +70,22 @@ class SessionSigningSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   test("KYUUBI #3839 session user sign - check session user sign") {
     withSessionConf()()() {
       withJdbcStatement() { statement =>
-        val rs1 = statement.executeQuery(s"SET $KYUUBI_SESSION_SIGN_PUBLICKEY")
+        val value = s"SET ${OPERATION_LANGUAGE.key}=scala"
+        statement.executeQuery(value)
+
+        val rs1 = statement.executeQuery(
+          "spark.sparkContext.getLocalProperty(\"kyuubi.session.sign.publickey\")")
         assert(rs1.next())
-        assert(rs1.getString("value").nonEmpty)
-
-        val rs2 = statement.executeQuery(s"SET $KYUUBI_SESSION_USER_SIGN")
+        val rs2 = statement.executeQuery(
+          s"spark.sparkContext.getLocalProperty(\"kyuubi.session.user.sign\")")
         assert(rs2.next())
-        assert(rs2.getString("value").nonEmpty)
 
-        val publicKeyStr = rs1.getString("value")
-        val sessionUserSign = rs2.getString("value")
+        // to skip scala result starts with "res0: String = "
+        val publicKeyStr = rs1.getString(1).substring(15)
+        val sessionUserSign = rs2.getString(1).substring(15)
+
+        assert(StringUtils.isNotBlank(publicKeyStr))
+        assert(StringUtils.isNotBlank(sessionUserSign))
         assert(SignUtils.verifySignWithECDSA(user, sessionUserSign, publicKeyStr))
       }
     }
