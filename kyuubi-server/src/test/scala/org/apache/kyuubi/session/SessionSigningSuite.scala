@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_SIGN
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.util.SignUtils
 
@@ -74,10 +74,15 @@ class SessionSigningSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         statement.executeQuery(value)
 
         val rs1 = statement.executeQuery(
-          "spark.sparkContext.getLocalProperty(\"kyuubi.session.sign.publickey\")")
+          s"""
+             |spark.sparkContext.getLocalProperty("$KYUUBI_SESSION_SIGN_PUBLICKEY")
+             |""".stripMargin)
         assert(rs1.next())
+
         val rs2 = statement.executeQuery(
-          s"spark.sparkContext.getLocalProperty(\"kyuubi.session.user.sign\")")
+          s"""
+             |spark.sparkContext.getLocalProperty("$KYUUBI_SESSION_USER_SIGN")
+             |""".stripMargin)
         assert(rs2.next())
 
         // to skip scala result starts with "res0: String = "
