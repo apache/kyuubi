@@ -142,11 +142,10 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
             val req = requests(idx)
             val accessType = req.getAccessType
             val accessRes = req.getResource.asInstanceOf[AccessResource]
-            val resourceStr = accessRes.getCatalog match {
-              case _ if StringUtils.isBlank(_) =>
-                accessRes.getAsString
-              case catalogName =>
-                s"$catalogName/${accessRes.getAsString}"
+            val resourceStr = if (StringUtils.isBlank(accessRes.getCatalog)) {
+              accessRes.getAsString
+            } else {
+              s"${accessRes.getCatalog}/${accessRes.getAsString}"
             }
             m.getOrElseUpdate(accessType, ArrayBuffer.empty[String])
               .append(resourceStr)
