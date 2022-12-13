@@ -152,8 +152,9 @@ case class FunctionDesc(
     var function = functionExtractor(functionVal)
     if (function.database.isEmpty) {
       databaseDesc.map(_.extract(v)) match {
-        case Some(maybeDatabase) =>
-          function.copy(database = Some(maybeDatabase.database), catalog = maybeDatabase.catalog)
+        case Some(database) =>
+          function =
+            function.copy(database = Some(database.database), catalog = database.catalog)
         case _ =>
       }
     }
