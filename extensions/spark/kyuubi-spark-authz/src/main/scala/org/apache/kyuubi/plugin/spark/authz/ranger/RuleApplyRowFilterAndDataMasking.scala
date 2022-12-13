@@ -80,7 +80,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       plan: LogicalPlan,
       identifier: Identifier,
       spark: SparkSession,
-      catalog: Option[String] = None): LogicalPlan = {
+      catalog: Option[String]): LogicalPlan = {
     applyFilterAndMasking(
       plan,
       getTableIdentifierFromV2Identifier(identifier),
