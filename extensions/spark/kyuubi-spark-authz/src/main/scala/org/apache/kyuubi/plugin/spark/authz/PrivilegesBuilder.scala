@@ -117,8 +117,10 @@ object PrivilegesBuilder {
       projectionList: Seq[NamedExpression] = Nil,
       conditionList: Seq[NamedExpression] = Nil): Unit = {
 
-    def mergeProjection(table: CatalogTable, plan: LogicalPlan,
-                        catalog: Option[String] = None): Unit = {
+    def mergeProjection(
+        table: CatalogTable,
+        plan: LogicalPlan,
+        catalog: Option[String] = None): Unit = {
       val tableOwner = extractTableOwner(table)
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
