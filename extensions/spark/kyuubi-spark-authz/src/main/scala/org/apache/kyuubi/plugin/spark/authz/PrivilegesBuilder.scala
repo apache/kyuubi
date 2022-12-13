@@ -120,17 +120,15 @@ object PrivilegesBuilder {
         table: CatalogTable,
         plan: LogicalPlan): Unit = {
       val tableOwner = extractTableOwner(table)
-      val catalog = new CatalogTableCatalogExtractor().apply(table)
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table.identifier,
           table.schema.fieldNames,
-          tableOwner,
-          catalog)
+          tableOwner)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivileges(table.identifier, cols, tableOwner, catalog)
+        privilegeObjects += tablePrivileges(table.identifier, cols, tableOwner)
       }
     }
 
@@ -192,7 +190,7 @@ object PrivilegesBuilder {
       case u if u.nodeName == "UnresolvedRelation" =>
         val parts = invokeAs[String](u, "tableName").split("\\.")
         val db = quote(parts.init)
-        privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)), catalog = None)
+        privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
 
       case permanentViewMarker: PermanentViewMarker =>
         mergeProjection(permanentViewMarker.catalogTable, plan)

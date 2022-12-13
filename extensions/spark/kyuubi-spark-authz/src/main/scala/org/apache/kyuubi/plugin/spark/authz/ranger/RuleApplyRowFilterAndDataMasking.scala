@@ -49,8 +49,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
-        val catalog = new CatalogTableCatalogExtractor().apply(table)
-        applyFilterAndMasking(hiveTableRelation, table.identifier, spark, catalog = catalog)
+        applyFilterAndMasking(hiveTableRelation, table.identifier, spark, catalog = None)
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         val table = getDatasourceTable(logicalRelation)
         if (table.isEmpty) {

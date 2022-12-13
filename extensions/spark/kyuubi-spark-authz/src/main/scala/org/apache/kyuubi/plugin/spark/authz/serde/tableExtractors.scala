@@ -69,8 +69,7 @@ class TableIdentifierTableExtractor extends TableExtractor {
       } catch {
         case _: Exception => None
       }
-    val catalog = new CatalogTableCatalogExtractor().apply(table)
-    Some(Table(identifier.database, identifier.table, owner, catalog = catalog))
+    Some(Table(identifier.database, identifier.table, owner, catalog = None))
   }
 }
 
@@ -92,11 +91,10 @@ class CatalogTableTableExtractor extends TableExtractor {
  */
 class ResolvedTableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalog = new ResolvedTableCatalogExtractor().apply(v1)
     val identifier = invoke(v1, "identifier")
     val maybeTable = new IdentifierTableExtractor().apply(spark, identifier)
     val maybeOwner = TableExtractor.getOwner(v1)
-    maybeTable.map(_.copy(owner = maybeOwner, catalog = catalog))
+    maybeTable.map(_.copy(owner = maybeOwner, catalog = None))
   }
 }
 
