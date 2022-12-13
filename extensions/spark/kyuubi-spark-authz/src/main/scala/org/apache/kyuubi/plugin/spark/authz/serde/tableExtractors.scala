@@ -93,7 +93,7 @@ class CatalogTableTableExtractor extends TableExtractor {
  */
 class ResolvedTableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalog = new CatalogTableCatalogExtractor().apply(spark, v1)
+    val catalog = new ResolvedTableCatalogExtractor().apply(v1)
     val identifier = invoke(v1, "identifier")
     val maybeTable = new IdentifierTableExtractor().apply(spark, identifier)
     val maybeOwner = TableExtractor.getOwner(v1)
@@ -123,7 +123,7 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
     if (v2Relation.isEmpty) {
       None
     } else {
-      val maybeCatalog = new CatalogCatalogPluginExtractor().apply(spark, plan)
+      val maybeCatalog = new DataSourceV2RelationCatalogExtractor().apply(plan)
       val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation.get, "identifier")
       maybeIdentifier.flatMap { id =>
         val maybeTable = new IdentifierTableExtractor().apply(spark, id)

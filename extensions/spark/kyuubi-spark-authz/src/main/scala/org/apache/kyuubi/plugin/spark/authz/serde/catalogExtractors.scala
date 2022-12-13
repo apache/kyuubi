@@ -17,15 +17,14 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, TableCatalog}
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.invokeAs
 
-trait CatalogExtractor extends ((SparkSession, AnyRef) => Option[String]) with Extractor
+trait CatalogExtractor extends ((AnyRef) => Option[String]) with Extractor
 
-class CatalogCatalogPluginExtractor extends CatalogExtractor {
-  override def apply(spark: SparkSession, v2: AnyRef): Option[String] = {
+class DataSourceV2RelationCatalogExtractor extends CatalogExtractor {
+  override def apply(v2: AnyRef): Option[String] = {
     val maybeCatalog = invokeAs[Option[CatalogPlugin]](v2, "catalog")
     maybeCatalog match {
       case None => None
@@ -34,9 +33,9 @@ class CatalogCatalogPluginExtractor extends CatalogExtractor {
   }
 }
 
-class CatalogTableCatalogExtractor extends CatalogExtractor {
-  override def apply(spark: SparkSession, v1: AnyRef): Option[String] = {
-    val catalog = invokeAs[TableCatalog](spark, "catalog")
+class ResolvedTableCatalogExtractor extends CatalogExtractor {
+  override def apply(v1: AnyRef): Option[String] = {
+    val catalog = invokeAs[TableCatalog](v1, "catalog")
     Some(catalog.name())
   }
 }
