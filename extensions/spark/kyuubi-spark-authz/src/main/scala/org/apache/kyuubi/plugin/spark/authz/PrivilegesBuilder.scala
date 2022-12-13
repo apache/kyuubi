@@ -39,7 +39,13 @@ object PrivilegesBuilder {
   final private val LOG = LoggerFactory.getLogger(getClass)
 
   def databasePrivileges(db: Database): PrivilegeObject = {
-    PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER,, db.database, db, catalog = db.catalog)
+    PrivilegeObject(
+      DATABASE,
+      PrivilegeObjectActionType.OTHER,
+      db.catalog,
+      db.database,
+      db,
+      catalog = db.catalog)
   }
 
   private def tablePrivileges(
@@ -60,6 +66,7 @@ object PrivilegesBuilder {
 
   private def v2TablePrivileges(
       table: Identifier,
+      catalog: Option[String] = None,
       columns: Seq[String] = Nil,
       owner: Option[String] = None,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
@@ -70,8 +77,7 @@ object PrivilegesBuilder {
       table.name(),
       columns,
       owner,
-      catalog = None // todo: fill catalog
-    )
+      catalog = catalog)
   }
   private def functionPrivileges(
       function: Function): PrivilegeObject = {
@@ -128,13 +134,14 @@ object PrivilegesBuilder {
     def mergeProjectionV2Table(
         table: Identifier,
         plan: LogicalPlan,
+        catalog: Option[String],
         owner: Option[String] = None): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name), owner)
+        privilegeObjects += v2TablePrivileges(table, catalog, plan.output.map(_.name), owner)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += v2TablePrivileges(table, cols, owner)
+        privilegeObjects += v2TablePrivileges(table, catalog, cols, owner)
       }
     }
 
@@ -173,6 +180,7 @@ object PrivilegesBuilder {
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
         if (tableIdent.isDefined) {
+          // todo: fill catalog
           mergeProjectionV2Table(
             tableIdent.get,
             plan,
