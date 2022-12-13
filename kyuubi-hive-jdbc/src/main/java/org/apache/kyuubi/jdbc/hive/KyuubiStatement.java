@@ -793,10 +793,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     // parse kyuubi hint
     List<String> infoMessages = metadataResp.getStatus().getInfoMessages();
     if (infoMessages != null) {
-      metadataResp
-          .getStatus()
-          .getInfoMessages()
-          .stream()
+      metadataResp.getStatus().getInfoMessages().stream()
           .filter(hint -> Utils.isKyuubiOperationHint(hint))
           .forEach(
               line -> {
