@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType}
-import org.apache.kyuubi.plugin.spark.authz.serde._
+import org.apache.kyuubi.plugin.spark.authz.serde.{CatalogTableCatalogExtractor, _}
 import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
@@ -49,15 +49,15 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       case p: RowFilterAndDataMaskingMarker => p
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
         val table = getHiveTable(hiveTableRelation)
-        // todo: fill catalog
-        applyFilterAndMasking(hiveTableRelation, table.identifier, spark, catalog = None)
+        val catalog = new CatalogTableCatalogExtractor().apply(table)
+        applyFilterAndMasking(hiveTableRelation, table.identifier, spark, catalog = catalog)
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         val table = getDatasourceTable(logicalRelation)
         if (table.isEmpty) {
           logicalRelation
         } else {
-          // todo: fill catalog
-          applyFilterAndMasking(logicalRelation, table.get.identifier, spark, catalog = None)
+          val catalog = new CatalogTableCatalogExtractor().apply(table)
+          applyFilterAndMasking(logicalRelation, table.get.identifier, spark, catalog = catalog)
         }
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdentifier = getDatasourceV2Identifier(datasourceV2Relation)
@@ -67,9 +67,10 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
           applyFilterAndMasking(datasourceV2Relation, tableIdentifier.get, spark)
         }
       case permanentView: PermanentViewMarker =>
-        val viewIdent = permanentView.catalogTable.identifier
-        // todo: fill catalog
-        applyFilterAndMasking(permanentView, viewIdent, spark, catalog = None)
+        val table = permanentView.catalogTable
+        val viewIdent = table.identifier
+        val catalog = new CatalogTableCatalogExtractor().apply(table)
+        applyFilterAndMasking(permanentView, viewIdent, spark, catalog = catalog)
       case other => apply(other)
     }
   }
