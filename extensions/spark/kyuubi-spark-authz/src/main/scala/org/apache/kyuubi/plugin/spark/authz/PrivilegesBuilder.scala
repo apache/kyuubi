@@ -39,7 +39,8 @@ object PrivilegesBuilder {
   final private val LOG = LoggerFactory.getLogger(getClass)
 
   def databasePrivileges(db: String): PrivilegeObject = {
-    PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db)
+    // todo: fill catalog
+    PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db, catalog = None)
   }
 
   private def tablePrivileges(
@@ -47,7 +48,15 @@ object PrivilegesBuilder {
       columns: Seq[String] = Nil,
       owner: Option[String] = None,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns, owner)
+    // todo: fill catalog
+    PrivilegeObject(
+      TABLE_OR_VIEW,
+      actionType,
+      table.database.orNull,
+      table.table,
+      catalog = None,
+      columns,
+      owner)
   }
 
   private def v2TablePrivileges(
@@ -60,6 +69,7 @@ object PrivilegesBuilder {
       actionType,
       quote(table.namespace()),
       table.name(),
+      catalog = None, // todo: fill catalog
       columns,
       owner)
   }
@@ -69,7 +79,8 @@ object PrivilegesBuilder {
       FUNCTION,
       PrivilegeObjectActionType.OTHER,
       function.database.orNull,
-      function.functionName)
+      function.functionName,
+      catalog = function.catalog)
   }
 
   private def collectLeaves(expr: Expression): Seq[NamedExpression] = {

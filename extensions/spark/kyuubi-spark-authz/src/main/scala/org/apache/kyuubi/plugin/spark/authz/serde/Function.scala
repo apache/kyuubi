@@ -25,4 +25,4 @@ package org.apache.kyuubi.plugin.spark.authz.serde
  * @param database
  * @param functionName
  */
-case class Function(database: Option[String], functionName: String)
+case class Function(database: Option[String], functionName: String, catalog: Option[String])
