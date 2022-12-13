@@ -192,8 +192,7 @@ object PrivilegesBuilder {
       case u if u.nodeName == "UnresolvedRelation" =>
         val parts = invokeAs[String](u, "tableName").split("\\.")
         val db = quote(parts.init)
-        // todo: fill catalog
-        privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
+        privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)), catalog = None)
 
       case permanentViewMarker: PermanentViewMarker =>
         // todo: fill catalog
