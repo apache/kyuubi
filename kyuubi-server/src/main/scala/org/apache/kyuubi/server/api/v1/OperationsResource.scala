@@ -21,6 +21,7 @@ import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
@@ -287,26 +288,24 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
   @POST
   def queryOperationEventList(
       @QueryParam("sessionHandle") @DefaultValue("") sessionHandleStr: String,
-      @QueryParam("type") @DefaultValue("") TypeStr: String,
-      @QueryParam("state") @DefaultValue("") StateStr: String): Seq[KyuubiOperationEvent] = {
+      @QueryParam("type") @DefaultValue("") typeStr: String,
+      @QueryParam("state") @DefaultValue("") stateStr: String): Seq[KyuubiOperationEvent] = {
     try {
-      val KyuubiOperationEventSeq = Seq[KyuubiOperationEvent]()
+      val KyuubiOperationEvents = ListBuffer[KyuubiOperationEvent]()
       fe.be.sessionManager.allSessions()
         .map { session =>
           session.allOperations().map { operationHandle =>
             val operation = fe.be.sessionManager.operationManager.getOperation(operationHandle)
             val kyuubiOperationEvent = KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
-            if (kyuubiOperationEvent.sessionId.equalsIgnoreCase(sessionHandleStr)
-              || kyuubiOperationEvent.operationType.equalsIgnoreCase(TypeStr)
-              || kyuubiOperationEvent.state.equalsIgnoreCase(StateStr)
-              || (sessionHandleStr.equalsIgnoreCase("")
-                && TypeStr.equalsIgnoreCase("")
-                && StateStr.equalsIgnoreCase(""))) {
-              KyuubiOperationEventSeq :+ kyuubiOperationEvent
-            }
+            KyuubiOperationEvents += kyuubiOperationEvent
           }
         }
-      KyuubiOperationEventSeq
+      KyuubiOperationEvents
+        .filter(
+          sessionHandleStr.equalsIgnoreCase("") || _.sessionId.equalsIgnoreCase(sessionHandleStr))
+        .filter(typeStr.equalsIgnoreCase("") || _.operationType.equalsIgnoreCase(typeStr))
+        .filter(stateStr.equalsIgnoreCase("") || _.state.equalsIgnoreCase(stateStr))
+
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error querying operation event list"

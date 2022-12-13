@@ -21,6 +21,7 @@ import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
@@ -88,15 +89,21 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[KyuubiEvent]))),
-    description = "get all session info")
-  @GET
-  @Path("allSessionInfo")
-  def getAllSessionInfo(): Seq[KyuubiSessionEvent] = {
+    description = "get session info")
+  @POST
+  @Path("sessionInfo")
+  def getSessionInfo(
+      @QueryParam("user") @DefaultValue("") user: String,
+      @QueryParam("serverIP") @DefaultValue("") serverIP: String): Seq[KyuubiSessionEvent] = {
     try {
+      val kyuubiSessionEvents = ListBuffer[KyuubiSessionEvent]()
       sessionManager.allSessions().map { session =>
-        sessionManager.getSession(session.handle.identifier.toString)
+        kyuubiSessionEvents += sessionManager.getSession(session.handle.identifier.toString)
           .asInstanceOf[KyuubiSession].getSessionEvent.get
-      }.toSeq
+      }
+      kyuubiSessionEvents
+        .filter(serverIP.equalsIgnoreCase("") || _.serverIP.equalsIgnoreCase(serverIP))
+        .filter(user.equalsIgnoreCase("") || _.user.equalsIgnoreCase(user))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting all session info"

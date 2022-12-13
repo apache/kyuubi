@@ -163,7 +163,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @POST
   @Path("servers")
   def listServers(@QueryParam("host") @DefaultValue("") host: String): Seq[Server] = {
-    val ServerSeq = ListBuffer[Server]()
+    val Servers = ListBuffer[Server]()
     val serverSpace = DiscoveryPaths.makePath(null, fe.getConf.get(HA_NAMESPACE))
     val serverNodes = ListBuffer[ServiceNodeInfo]()
     withDiscoveryClient(fe.getConf) { discoveryClient =>
@@ -172,7 +172,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       serverNodes.map(node => {
         info(s"judge server nodes:$node " + host.equalsIgnoreCase("").toString)
         if (host.equalsIgnoreCase("") || node.host.equalsIgnoreCase(host)) {
-          ServerSeq += new Server(
+          Servers += new Server(
             node.nodeName,
             node.namespace,
             node.instance,
@@ -185,7 +185,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         }
       })
     }
-    ServerSeq
+    Servers
   }
 
   @ApiResponse(
