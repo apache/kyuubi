@@ -82,8 +82,8 @@ class CatalogTableTableExtractor extends TableExtractor {
     val catalogTable = v1.asInstanceOf[CatalogTable]
     val identifier = catalogTable.identifier
     val owner = Option(catalogTable.owner).filter(_.nonEmpty)
-    // todo: fill catalog
-    Some(Table(identifier.database, identifier.table, owner, catalog = None))
+    val catalog = new ResolvedTableCatalogExtractor().apply(v1)
+    Some(Table(identifier.database, identifier.table, owner, catalog = catalog))
   }
 }
 
@@ -107,7 +107,6 @@ class IdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val namespace = invokeAs[Array[String]](v1, "namespace")
     val table = invokeAs[String](v1, "name")
-    // todo: fill catalog
     Some(Table(Some(quote(namespace)), table, None, catalog = None))
   }
 }
