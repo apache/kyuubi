@@ -56,6 +56,9 @@ public class Utils {
   public static final String HIVE_SERVER2_RETRY_TRUE = "true";
   public static final String HIVE_SERVER2_RETRY_FALSE = "false";
 
+  public static final Pattern KYUUBI_OPERATION_HINT_PATTERN =
+      Pattern.compile("^__kyuubi_operation_result_(.*)__=(.*)", Pattern.CASE_INSENSITIVE);
+
   static String getMatchedUrlPrefix(String uri) throws JdbcUriParseException {
     for (String urlPrefix : URL_PREFIX_LIST) {
       if (uri.startsWith(urlPrefix)) {
@@ -469,5 +472,9 @@ public class Utils {
       LOG.warn("Could not retrieve canonical hostname for " + hostName, exception);
       return hostName;
     }
+  }
+
+  public static boolean isKyuubiOperationHint(String hint) {
+    return KYUUBI_OPERATION_HINT_PATTERN.matcher(hint).matches();
   }
 }

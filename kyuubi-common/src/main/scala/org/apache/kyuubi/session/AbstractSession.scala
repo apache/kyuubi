@@ -225,7 +225,7 @@ abstract class AbstractSession(
   }
 
   override def getResultSetMetadata(
-      operationHandle: OperationHandle): TTableSchema = withAcquireRelease() {
+      operationHandle: OperationHandle): TGetResultSetMetadataResp = withAcquireRelease() {
     sessionManager.operationManager.getOperationResultSetSchema(operationHandle)
   }
 

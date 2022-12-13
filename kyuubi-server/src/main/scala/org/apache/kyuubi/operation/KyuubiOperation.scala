@@ -141,7 +141,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     }
   }
 
-  override def getResultSetSchema: TTableSchema = {
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
     if (_remoteOpHandle == null) {
       val tColumnDesc = new TColumnDesc()
       tColumnDesc.setColumnName("Result")
@@ -151,7 +151,10 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
       tColumnDesc.setPosition(0)
       val schema = new TTableSchema()
       schema.addToColumns(tColumnDesc)
-      schema
+      val resp = new TGetResultSetMetadataResp
+      resp.setSchema(schema)
+      resp.setStatus(OK_STATUS)
+      resp
     } else {
       client.getResultSetMetadata(_remoteOpHandle)
     }

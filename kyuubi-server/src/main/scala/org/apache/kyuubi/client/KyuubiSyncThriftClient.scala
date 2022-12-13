@@ -384,11 +384,11 @@ class KyuubiSyncThriftClient private (
     }
   }
 
-  def getResultSetMetadata(operationHandle: TOperationHandle): TTableSchema = {
+  def getResultSetMetadata(operationHandle: TOperationHandle): TGetResultSetMetadataResp = {
     val req = new TGetResultSetMetadataReq(operationHandle)
     val resp = withLockAcquiredAsyncRequest(GetResultSetMetadata(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
-    resp.getSchema
+    resp
   }
 
   def fetchResults(

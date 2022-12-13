@@ -225,4 +225,7 @@ class ExecuteStatement(
       df
     }
   }
+
+  override def getResultSetMetadataHints(): Seq[String] =
+    Seq(s"__kyuubi_operation_result_codec__=$resultCodec")
 }

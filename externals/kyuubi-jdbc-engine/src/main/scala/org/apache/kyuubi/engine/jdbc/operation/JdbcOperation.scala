@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.engine.jdbc.operation
 
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -100,9 +100,13 @@ abstract class JdbcOperation(session: Session) extends AbstractOperation(session
       getProtocolVersion)
   }
 
-  override def getResultSetSchema: TTableSchema = {
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
     val schemaHelper = dialect.getSchemaHelper()
-    schemaHelper.toTTTableSchema(schema.columns)
+    val tTableSchema = schemaHelper.toTTTableSchema(schema.columns)
+    val resp = new TGetResultSetMetadataResp
+    resp.setSchema(tTableSchema)
+    resp.setStatus(OK_STATUS)
+    resp
   }
 
   override def shouldRunAsync: Boolean = false

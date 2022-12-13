@@ -126,8 +126,8 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     operation.close()
   }
 
-  final def getOperationResultSetSchema(opHandle: OperationHandle): TTableSchema = {
-    getOperation(opHandle).getResultSetSchema
+  final def getOperationResultSetSchema(opHandle: OperationHandle): TGetResultSetMetadataResp = {
+    getOperation(opHandle).getResultSetMetadata
   }
 
   final def getOperationNextRowSet(

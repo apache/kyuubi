@@ -94,7 +94,7 @@ trait BackendService {
   def getOperationStatus(operationHandle: OperationHandle): OperationStatus
   def cancelOperation(operationHandle: OperationHandle): Unit
   def closeOperation(operationHandle: OperationHandle): Unit
-  def getResultSetMetadata(operationHandle: OperationHandle): TTableSchema
+  def getResultSetMetadata(operationHandle: OperationHandle): TGetResultSetMetadataResp
   def fetchResults(
       operationHandle: OperationHandle,
       orientation: FetchOrientation,
