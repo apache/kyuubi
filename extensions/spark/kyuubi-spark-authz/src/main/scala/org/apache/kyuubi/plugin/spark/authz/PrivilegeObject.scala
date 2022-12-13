@@ -37,12 +37,13 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType.PrivilegeObjectT
  * @param dbname database name
  * @param objectName object name - database, table, or function
  * @param columns column list if any
+ * @param catalog catalog name if any
  */
 case class PrivilegeObject(
     privilegeObjectType: PrivilegeObjectType,
     actionType: PrivilegeObjectActionType,
     dbname: String,
     objectName: String,
-    catalog: Option[String],
     @Nonnull columns: Seq[String] = Nil,
-    owner: Option[String] = None)
+    owner: Option[String] = None,
+    catalog: Option[String])

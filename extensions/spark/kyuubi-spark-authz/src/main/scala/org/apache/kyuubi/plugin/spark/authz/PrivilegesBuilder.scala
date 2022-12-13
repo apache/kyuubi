@@ -54,9 +54,9 @@ object PrivilegesBuilder {
       actionType,
       table.database.orNull,
       table.table,
-      catalog = None,
       columns,
-      owner)
+      owner,
+      catalog = None)
   }
 
   private def v2TablePrivileges(
@@ -69,9 +69,10 @@ object PrivilegesBuilder {
       actionType,
       quote(table.namespace()),
       table.name(),
-      catalog = None, // todo: fill catalog
       columns,
-      owner)
+      owner,
+      catalog = None // todo: fill catalog
+    )
   }
   private def functionPrivileges(
       function: Function): PrivilegeObject = {
