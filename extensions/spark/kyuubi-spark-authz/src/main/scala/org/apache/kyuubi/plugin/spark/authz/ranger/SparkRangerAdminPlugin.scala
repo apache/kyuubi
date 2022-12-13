@@ -132,32 +132,31 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
     }.flatten(_.asScala)
     if (results.nonEmpty) {
       val indices = results.zipWithIndex.filter { case (result, idx) =>
-          result != null && !result.getIsAllowed
-        }.map(_._2)
-        if (indices.nonEmpty) {
-          val user = requests.head.getUser
-          val accessTypeToResource =
-            indices.foldLeft(LinkedHashMap.empty[String, ArrayBuffer[String]])((m, idx) => {
-              val req = requests(idx)
-              val accessType = req.getAccessType
-              val accessRes = req.getResource.asInstanceOf[AccessResource]
-              val resourceStr = accessRes.getCatalog match {
-                case "" =>
-                  accessRes.getAsString
-                case catalogName =>
-                  s"$catalogName/${accessRes.getAsString}"
-              }
-              m.getOrElseUpdate(accessType, ArrayBuffer.empty[String])
-                .append(resourceStr)
-              m
-            })
-          val errorMsg = accessTypeToResource
-            .map { case (accessType, resources) =>
-              s"[$accessType] ${resources.mkString("privilege on [", ",", "]")}"
-            }.mkString(", ")
-          throw new AccessControlException(
-            s"Permission denied: user [$user] does not have $errorMsg")
-        }
+        result != null && !result.getIsAllowed
+      }.map(_._2)
+      if (indices.nonEmpty) {
+        val user = requests.head.getUser
+        val accessTypeToResource =
+          indices.foldLeft(LinkedHashMap.empty[String, ArrayBuffer[String]])((m, idx) => {
+            val req = requests(idx)
+            val accessType = req.getAccessType
+            val accessRes = req.getResource.asInstanceOf[AccessResource]
+            val resourceStr = accessRes.getCatalog match {
+              case "" =>
+                accessRes.getAsString
+              case catalogName =>
+                s"$catalogName/${accessRes.getAsString}"
+            }
+            m.getOrElseUpdate(accessType, ArrayBuffer.empty[String])
+              .append(resourceStr)
+            m
+          })
+        val errorMsg = accessTypeToResource
+          .map { case (accessType, resources) =>
+            s"[$accessType] ${resources.mkString("privilege on [", ",", "]")}"
+          }.mkString(", ")
+        throw new AccessControlException(
+          s"Permission denied: user [$user] does not have $errorMsg")
       }
     }
   }
