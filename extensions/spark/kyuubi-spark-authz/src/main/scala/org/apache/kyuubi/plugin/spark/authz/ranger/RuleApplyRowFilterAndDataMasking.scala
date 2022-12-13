@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Identifier
 
 import org.apache.kyuubi.plugin.spark.authz.{IcebergCommands, ObjectType}
-import org.apache.kyuubi.plugin.spark.authz.serde.{CatalogTableCatalogExtractor, _}
+import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.{PermanentViewMarker, RowFilterAndDataMaskingMarker}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
@@ -68,8 +68,7 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
       case permanentView: PermanentViewMarker =>
         val table = permanentView.catalogTable
         val viewIdent = table.identifier
-        val catalog = new CatalogTableCatalogExtractor().apply(table)
-        applyFilterAndMasking(permanentView, viewIdent, spark, catalog = catalog)
+        applyFilterAndMasking(permanentView, viewIdent, spark, catalog = None)
       case other => apply(other)
     }
   }
