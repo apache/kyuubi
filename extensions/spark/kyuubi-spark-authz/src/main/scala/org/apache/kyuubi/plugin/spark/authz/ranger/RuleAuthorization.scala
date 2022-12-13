@@ -73,11 +73,10 @@ object RuleAuthorization {
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
           resource.getColumns.map { col =>
-            // todo: fill catalog
             val cr =
               AccessResource(
                 COLUMN,
-                null,
+                resource.getCatalog,
                 resource.getDatabase,
                 resource.getTable,
                 col,

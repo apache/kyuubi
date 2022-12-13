@@ -52,8 +52,8 @@ object PrivilegesBuilder {
       table: TableIdentifier,
       columns: Seq[String] = Nil,
       owner: Option[String] = None,
+      catalog: Option[String] = None,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    // todo: fill catalog
     PrivilegeObject(
       TABLE_OR_VIEW,
       actionType,
@@ -61,7 +61,7 @@ object PrivilegesBuilder {
       table.table,
       columns,
       owner,
-      catalog = None)
+      catalog = catalog)
   }
 
   private def v2TablePrivileges(
@@ -117,17 +117,19 @@ object PrivilegesBuilder {
       projectionList: Seq[NamedExpression] = Nil,
       conditionList: Seq[NamedExpression] = Nil): Unit = {
 
-    def mergeProjection(table: CatalogTable, plan: LogicalPlan): Unit = {
+    def mergeProjection(table: CatalogTable, plan: LogicalPlan,
+                        catalog: Option[String] = None): Unit = {
       val tableOwner = extractTableOwner(table)
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
           table.identifier,
           table.schema.fieldNames,
-          tableOwner)
+          tableOwner,
+          catalog)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivileges(table.identifier, cols, tableOwner)
+        privilegeObjects += tablePrivileges(table.identifier, cols, tableOwner, catalog)
       }
     }
 
@@ -170,11 +172,13 @@ object PrivilegesBuilder {
         buildQuery(s.child, privilegeObjects, projectionList, cols)
 
       case hiveTableRelation if hasResolvedHiveTable(hiveTableRelation) =>
-        mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation)
+        // todo: fill catalog
+        mergeProjection(getHiveTable(hiveTableRelation), hiveTableRelation, catalog = None)
 
       case logicalRelation if hasResolvedDatasourceTable(logicalRelation) =>
         getDatasourceTable(logicalRelation).foreach { t =>
-          mergeProjection(t, plan)
+          // todo: fill catalog
+          mergeProjection(t, plan, catalog = None)
         }
 
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
@@ -190,10 +194,12 @@ object PrivilegesBuilder {
       case u if u.nodeName == "UnresolvedRelation" =>
         val parts = invokeAs[String](u, "tableName").split("\\.")
         val db = quote(parts.init)
+        // todo: fill catalog
         privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
 
       case permanentViewMarker: PermanentViewMarker =>
-        mergeProjection(permanentViewMarker.catalogTable, plan)
+        // todo: fill catalog
+        mergeProjection(permanentViewMarker.catalogTable, plan, catalog = None)
 
       case p =>
         for (child <- p.children) {
@@ -229,7 +235,8 @@ object PrivilegesBuilder {
             } else {
               val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
               val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
-              Seq(tablePrivileges(identifier, columnNames, table.owner, actionType))
+              // todo: fill catalog
+              Seq(tablePrivileges(identifier, columnNames, table.owner, None, actionType))
             }
           case None => Nil
         }
