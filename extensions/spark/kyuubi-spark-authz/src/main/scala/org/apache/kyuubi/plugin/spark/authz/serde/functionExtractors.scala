@@ -38,20 +38,20 @@ object FunctionExtractor {
 
 class StringFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
-    Function(None, v1.asInstanceOf[String], catalog = None)
+    Function(None, v1.asInstanceOf[String])
   }
 }
 
 class FunctionIdentifierFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val identifier = v1.asInstanceOf[FunctionIdentifier]
-    Function(identifier.database, identifier.funcName, catalog = None)
+    Function(identifier.database, identifier.funcName)
   }
 }
 
 class ExpressionInfoFunctionExtractor extends FunctionExtractor {
   override def apply(v1: AnyRef): Function = {
     val info = v1.asInstanceOf[ExpressionInfo]
-    Function(Option(info.getDb), info.getName, catalog = None)
+    Function(Option(info.getDb), info.getName)
   }
 }
