@@ -25,10 +25,14 @@ trait CatalogExtractor extends ((AnyRef) => Option[String]) with Extractor
 
 class DataSourceV2RelationCatalogExtractor extends CatalogExtractor {
   override def apply(v2: AnyRef): Option[String] = {
-    val maybeCatalog = invokeAs[Option[CatalogPlugin]](v2, "catalog")
-    maybeCatalog match {
-      case None => None
-      case Some(catalogPlugin) => Some(catalogPlugin.name())
+    try {
+      val maybeCatalog = invokeAs[Option[CatalogPlugin]](v2, "catalog")
+      maybeCatalog match {
+        case None => None
+        case Some(catalogPlugin) => Some(catalogPlugin.name())
+      }
+    } catch {
+      case _: Exception => None
     }
   }
 }
