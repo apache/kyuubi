@@ -1646,10 +1646,12 @@ object KyuubiConf {
     .createWithDefault(-1)
 
   val ENGINE_POOL_BALANCE_POLICY: ConfigEntry[String] =
-    buildConf("kyuubi.engine.pool.balance.policy")
-      .doc("The balance policy of queries in engine pool.<ul>" +
-        " <li>RANDOM - Randomly use the engine in the pool</li>" +
-        " <li>POLLING - Polling use the engine in the pool</li> </ul>")
+    buildConf("kyuubi.engine.pool.selectPolicy")
+      .doc("The select policy of an engine from the corresponding engine pool engine for " +
+        "a session. <ul>" +
+        "<li>RANDOM - Randomly use the engine in the pool</li>" +
+        "<li>POLLING - Polling use the engine in the pool</li>" +
+        "</ul>")
       .version("1.7.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
