@@ -25,7 +25,8 @@ import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
-class AccessResource private (val objectType: ObjectType) extends RangerAccessResourceImpl {
+class AccessResource private (val objectType: ObjectType, val catalog: Option[String])
+  extends RangerAccessResourceImpl {
   implicit def asString(obj: Object): String = if (obj != null) obj.asInstanceOf[String] else null
   def getCatalog: String = getValue("catalog")
   def getDatabase: String = getValue("database")
@@ -46,23 +47,19 @@ object AccessResource {
       thirdLevelResource: String,
       fourthLevelResource: String,
       owner: Option[String] = None): AccessResource = {
-    val resource = new AccessResource(objectType)
+    val resource = new AccessResource(objectType, Some(firstLevelResource))
 
     resource.objectType match {
       case DATABASE =>
-        resource.setValue("catalog", firstLevelResource)
         resource.setValue("database", secondLevelResource)
       case FUNCTION =>
-        resource.setValue("catalog", firstLevelResource)
         resource.setValue("database", Option(secondLevelResource).getOrElse(""))
         resource.setValue("udf", thirdLevelResource)
       case COLUMN =>
-        resource.setValue("catalog", firstLevelResource)
         resource.setValue("database", secondLevelResource)
         resource.setValue("table", thirdLevelResource)
         resource.setValue("column", fourthLevelResource)
       case TABLE | VIEW => // fixme spark have added index support
-        resource.setValue("catalog", firstLevelResource)
         resource.setValue("database", secondLevelResource)
         resource.setValue("table", thirdLevelResource)
     }
