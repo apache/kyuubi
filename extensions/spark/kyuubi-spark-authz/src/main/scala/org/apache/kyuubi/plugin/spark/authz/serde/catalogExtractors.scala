@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
-import org.apache.spark.sql.connector.catalog.{CatalogPlugin, TableCatalog}
+import org.apache.spark.sql.connector.catalog.CatalogPlugin
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.invokeAs
 
@@ -34,20 +34,6 @@ class DataSourceV2RelationCatalogExtractor extends CatalogExtractor {
     } catch {
       case _: Exception => None
     }
-  }
-}
-
-class ResolvedTableCatalogExtractor extends CatalogExtractor {
-  override def apply(v1: AnyRef): Option[String] = {
-    val catalog = invokeAs[TableCatalog](v1, "catalog")
-    Some(catalog.name())
-  }
-}
-
-class CatalogTableCatalogExtractor extends CatalogExtractor {
-  override def apply(v1: AnyRef): Option[String] = {
-    val catalogAndNamespaces = invokeAs[Seq[String]](v1, "viewCatalogAndNamespace")
-    catalogAndNamespaces.headOption
   }
 }
 
