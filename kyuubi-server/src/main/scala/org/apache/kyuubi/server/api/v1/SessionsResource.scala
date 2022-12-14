@@ -91,8 +91,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[KyuubiEvent]))),
     description = "get session info")
   @POST
-  @Path("sessionInfo")
-  def getSessionInfo(
+  @Path("listSessionInfo")
+  def listSessionInfo(
       @QueryParam("user") @DefaultValue("") user: String,
       @QueryParam("serverIP") @DefaultValue("") serverIP: String): Seq[KyuubiSessionEvent] = {
     try {

@@ -136,10 +136,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
     info(s"engineNodes size is " + engineNodes.size)
     engineNodes.map(node => {
-      info(node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME_KEY).orNull.toLong)
-      info(node.attributes.get(KYUUBI_ENGINE_URL).orNull)
-      info(node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull.toLong)
-      info(node.attributes.get(KYUUBI_ENGINE_CPU).orNull.toInt)
+      info(s"init engine" + node.toString)
+      info(s"time " + node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME_KEY).orNull.toLong)
+      info(s"url " + node.attributes.get(KYUUBI_ENGINE_URL).orNull)
+      info(s"mem " + node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull.toLong)
+      info(s"cpu " + node.attributes.get(KYUUBI_ENGINE_CPU).orNull.toInt)
       new Engine(
         engine.getVersion,
         engine.getUser,

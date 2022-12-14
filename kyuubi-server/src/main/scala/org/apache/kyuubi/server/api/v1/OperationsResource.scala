@@ -286,7 +286,8 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
     description =
       "query operation event list")
   @POST
-  def queryOperationEventList(
+  @Path("listOperation")
+  def listOperation(
       @QueryParam("sessionHandle") @DefaultValue("") sessionHandleStr: String,
       @QueryParam("type") @DefaultValue("") typeStr: String,
       @QueryParam("state") @DefaultValue("") stateStr: String): Seq[KyuubiOperationEvent] = {
