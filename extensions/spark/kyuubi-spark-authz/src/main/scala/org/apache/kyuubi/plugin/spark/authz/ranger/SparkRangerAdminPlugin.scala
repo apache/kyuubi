@@ -129,7 +129,12 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
       // todo use corresponding ranger base plugin
       //  by catalog name of resource from [KYUUBI #3594]
       case (catalog, requests) =>
-        SparkRangerAdminPlugin.isAccessAllowed(requests.asJava, auditHandler)
+        val requestsWithoutCatalog = requests.map(req => {
+          val accessResource = req.getResource.asInstanceOf[AccessResource]
+          accessResource.setValue("catalog", null)
+          req
+        })
+        SparkRangerAdminPlugin.isAccessAllowed(requestsWithoutCatalog.asJava, auditHandler)
     }.flatten(_.asScala)
     if (results.nonEmpty) {
       val indices = results.zipWithIndex.filter { case (result, idx) =>
