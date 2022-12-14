@@ -21,7 +21,11 @@ kind: RoleBinding
 metadata:
   name: {{ .Release.Name }}
   labels:
-    app: {{ template "kyuubi.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccount.name | default .Release.Name }}
