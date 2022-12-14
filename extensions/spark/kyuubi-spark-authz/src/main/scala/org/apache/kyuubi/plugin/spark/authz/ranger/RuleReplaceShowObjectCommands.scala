@@ -104,7 +104,6 @@ case class FilteredShowFunctionsCommand(delegated: RunnableCommand)
       return true
     }
 
-    // todo: fill catalog
     val resource = AccessResource(ObjectType.FUNCTION, null, items(0), items(1), null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWFUNCTIONS, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
@@ -126,7 +125,6 @@ case class FilteredShowColumnsCommand(delegated: RunnableCommand)
   }
 
   override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
-    // todo: fill catalog
     val resource =
       AccessResource(ObjectType.COLUMN, null, r.getString(0), r.getString(1), r.getString(2))
     val request = AccessRequest(resource, ugi, OperationType.SHOWCOLUMNS, AccessType.USE)
