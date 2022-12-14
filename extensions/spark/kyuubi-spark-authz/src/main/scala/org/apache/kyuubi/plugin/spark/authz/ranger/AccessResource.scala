@@ -28,7 +28,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 class AccessResource private (val objectType: ObjectType, val catalog: Option[String])
   extends RangerAccessResourceImpl {
   implicit def asString(obj: Object): String = if (obj != null) obj.asInstanceOf[String] else null
-  def getCatalog: String = getValue("catalog")
+  def getCatalog: String = catalog.orNull
   def getDatabase: String = getValue("database")
   def getTable: String = getValue("table")
   def getColumn: String = getValue("column")

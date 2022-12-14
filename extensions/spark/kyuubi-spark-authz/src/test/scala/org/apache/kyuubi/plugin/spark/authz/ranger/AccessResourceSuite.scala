@@ -26,6 +26,7 @@ class AccessResourceSuite extends AnyFunSuite {
 // scalastyle:on
   test("generate spark ranger resources") {
     val resource = AccessResource(DATABASE, "my_db_name", null)
+    assert(resource.getCatalog === null)
     assert(resource.getDatabase === "my_db_name")
     assert(resource.getTable === null)
     assert(resource.getColumn === null)
@@ -53,6 +54,54 @@ class AccessResourceSuite extends AnyFunSuite {
     assert(resource3.getColumns.isEmpty)
 
     val resource4 = AccessResource(COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2")
+    assert(resource4.getDatabase === "my_db_name")
+    assert(resource4.getTable === "my_table_name")
+    assert(resource4.getColumn === "my_col_1,my_col_2")
+    assert(resource4.getColumns === Seq("my_col_1", "my_col_2"))
+  }
+
+  test("KYUUBI #3605: generate spark ranger resources with catalog") {
+    val resource = AccessResource(DATABASE, "my_db_name", null, null, catalog = Some("my_cat"))
+    assert(resource.getCatalog === "my_cat")
+    assert(resource.getDatabase === "my_db_name")
+    assert(resource.getTable === null)
+    assert(resource.getColumn === null)
+    assert(resource.getColumns.isEmpty)
+
+    val resource1 = AccessResource(
+      DATABASE,
+      null,
+      "my_table_name",
+      "my_col_1,my_col_2",
+      Some("Bob"),
+      catalog = Some("my_cat"))
+    assert(resource1.getCatalog === "my_cat")
+    assert(resource1.getDatabase === null)
+    assert(resource1.getTable === null)
+    assert(resource1.getColumn === null)
+    assert(resource1.getColumns.isEmpty)
+    assert(resource1.getOwnerUser === "Bob")
+
+    val resource2 = AccessResource(FUNCTION, "my_db_name", "my_func_name", null,
+      catalog = Some("my_cat"))
+    assert(resource2.getCatalog === "my_cat")
+    assert(resource2.getDatabase === "my_db_name")
+    assert(resource2.getTable === null)
+    assert(resource2.getValue("udf") === "my_func_name")
+    assert(resource1.getColumn === null)
+    assert(resource1.getColumns.isEmpty)
+
+    val resource3 = AccessResource(TABLE, "my_db_name", "my_table_name", "my_col_1,my_col_2",
+      catalog = Some("my_cat"))
+    assert(resource3.getCatalog === "my_cat")
+    assert(resource3.getDatabase === "my_db_name")
+    assert(resource3.getTable === "my_table_name")
+    assert(resource3.getColumn === null)
+    assert(resource3.getColumns.isEmpty)
+
+    val resource4 = AccessResource(COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2",
+      catalog = Some("my_cat"))
+    assert(resource4.getCatalog === "my_cat")
     assert(resource4.getDatabase === "my_db_name")
     assert(resource4.getTable === "my_table_name")
     assert(resource4.getColumn === "my_col_1,my_col_2")
