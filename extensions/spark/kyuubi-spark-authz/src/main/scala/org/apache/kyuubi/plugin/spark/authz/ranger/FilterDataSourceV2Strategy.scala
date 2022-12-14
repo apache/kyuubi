@@ -25,7 +25,9 @@ import org.apache.kyuubi.plugin.spark.authz.util.ObjectFilterPlaceHolder
 class FilterDataSourceV2Strategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowNamespaces" =>
-      spark.sessionState.planner.plan(child).map(FilteredShowNamespaceExec).toSeq
+      spark.sessionState.planner.plan(child).map(planerPlan => {
+        FilteredShowNamespaceExec(planerPlan, child)
+      }).toSeq
 
     case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowTables" =>
       spark.sessionState.planner.plan(child).map(FilteredShowTablesExec).toSeq

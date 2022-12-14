@@ -20,10 +20,13 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
+import org.apache.kyuubi.plugin.spark.authz.serde.ResolvedNamespaceCatalogExtractor
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.invoke
 
 trait FilteredShowObjectsExec extends LeafExecNode {
   def delegated: SparkPlan
@@ -41,12 +44,13 @@ trait FilteredShowObjectsExec extends LeafExecNode {
   protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean
 }
 
-case class FilteredShowNamespaceExec(delegated: SparkPlan) extends FilteredShowObjectsExec {
+case class FilteredShowNamespaceExec(delegated: SparkPlan, logicalPlan: LogicalPlan)
+  extends FilteredShowObjectsExec {
 
   override protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
-    // todo: fill catalog
-    val resource = AccessResource(ObjectType.DATABASE, null, database, null, null)
+    val catalog = new ResolvedNamespaceCatalogExtractor().apply(invoke(logicalPlan, "namespace"))
+    val resource = AccessResource(ObjectType.DATABASE, catalog.orNull, database, null, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed

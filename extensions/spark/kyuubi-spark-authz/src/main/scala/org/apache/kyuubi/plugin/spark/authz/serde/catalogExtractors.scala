@@ -50,3 +50,9 @@ class CatalogTableCatalogExtractor extends CatalogExtractor {
     catalogAndNamespaces.headOption
   }
 }
+
+class ResolvedNamespaceCatalogExtractor extends CatalogExtractor {
+  override def apply(v2: AnyRef): Option[String] = {
+      Some(invokeAs[CatalogPlugin](v2, "catalog").name())
+  }
+}
