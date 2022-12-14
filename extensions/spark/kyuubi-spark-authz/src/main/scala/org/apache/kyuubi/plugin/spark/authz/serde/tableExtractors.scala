@@ -81,8 +81,7 @@ class CatalogTableTableExtractor extends TableExtractor {
     val catalogTable = v1.asInstanceOf[CatalogTable]
     val identifier = catalogTable.identifier
     val owner = Option(catalogTable.owner).filter(_.nonEmpty)
-    val catalog = new ResolvedTableCatalogExtractor().apply(v1)
-    Some(Table(identifier.database, identifier.table, owner, catalog = catalog))
+    Some(Table(identifier.database, identifier.table, owner, catalog = None))
   }
 }
 
