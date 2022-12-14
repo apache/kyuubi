@@ -100,8 +100,7 @@ case class DatabaseDesc(
   override def extract(v: AnyRef): Database = {
     val databaseVal = invoke(v, fieldName)
     val databaseExtractor = dbExtractors(fieldExtractor)
-    // todo: fill catalog
-    Database(databaseExtractor(databaseVal), catalog = None)
+    databaseExtractor(databaseVal)
   }
 }
 

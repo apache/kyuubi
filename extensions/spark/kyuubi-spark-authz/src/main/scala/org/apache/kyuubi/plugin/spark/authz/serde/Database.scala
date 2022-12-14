@@ -25,4 +25,4 @@ package org.apache.kyuubi.plugin.spark.authz.serde
  * @param database
  * @param catalog
  */
-case class Database(database: String, catalog: Option[String])
+case class Database(database: String, catalog: Option[String] = None)
