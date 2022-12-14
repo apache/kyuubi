@@ -299,7 +299,7 @@ kyuubi.frontend.mysql.max.worker.threads|999|Maximum number of threads in the co
 kyuubi.frontend.mysql.min.worker.threads|9|Minimum number of threads in the command execution thread pool for the MySQL frontend service|int|1.4.0
 kyuubi.frontend.mysql.netty.worker.threads|&lt;undefined&gt;|Number of thread in the netty worker event loop of MySQL frontend service. Use min(cpu_cores, 8) in default.|int|1.4.0
 kyuubi.frontend.mysql.worker.keepalive.time|PT1M|Time(ms) that an idle async thread of the command execution thread pool will wait for a new task to arrive before terminating in MySQL frontend service|duration|1.4.0
-kyuubi.frontend.protocols|THRIFT_BINARY|A comma separated list for all frontend protocols <ul> <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li> <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li> <li>REST - Kyuubi defined REST API(experimental).</li>  <li>MYSQL - MySQL compatible text protocol(experimental).</li> </ul>|seq|1.4.0
+kyuubi.frontend.protocols|THRIFT_BINARY|A comma separated list for all frontend protocols <ul> <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li> <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li> <li>REST - Kyuubi defined REST API(experimental).</li>  <li>MYSQL - MySQL compatible text protocol(experimental).</li>  <li>TRINO - Trino compatible http protocol(experimental).</li> </ul>|seq|1.4.0
 kyuubi.frontend.proxy.http.client.ip.header|X-Real-IP|The http header to record the real client ip address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. Note that, because the header value can be specified to any ip address, so it will not be used for authentication.|string|1.6.0
 kyuubi.frontend.rest.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the REST frontend service.|string|1.4.0
 kyuubi.frontend.rest.bind.port|10099|Port of the machine on which to run the REST frontend service.|int|1.4.0
@@ -338,6 +338,9 @@ kyuubi.frontend.thrift.max.message.size|104857600|Maximum message size in bytes 
 kyuubi.frontend.thrift.max.worker.threads|999|Maximum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.4.0
 kyuubi.frontend.thrift.min.worker.threads|9|Minimum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.4.0
 kyuubi.frontend.thrift.worker.keepalive.time|PT1M|Keep-alive time (in milliseconds) for an idle worker thread|duration|1.4.0
+kyuubi.frontend.trino.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the TRINO frontend service.|string|1.7.0
+kyuubi.frontend.trino.bind.port|10999|Port of the machine on which to run the TRINO frontend service.|int|1.7.0
+kyuubi.frontend.trino.max.worker.threads|999|Maximum number of threads in the of frontend worker thread pool for the trino frontend service|int|1.7.0
 kyuubi.frontend.worker.keepalive.time|PT1M|(deprecated) Keep-alive time (in milliseconds) for an idle worker thread|duration|1.0.0
 
 

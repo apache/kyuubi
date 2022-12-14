@@ -362,7 +362,7 @@ object KyuubiConf {
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
-    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL = Value
+    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL, TRINO = Value
   }
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
@@ -373,6 +373,7 @@ object KyuubiConf {
         " <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li>" +
         " <li>REST - Kyuubi defined REST API(experimental).</li> " +
         " <li>MYSQL - MySQL compatible text protocol(experimental).</li> " +
+        " <li>TRINO - Trino compatible http protocol(experimental).</li> " +
         "</ul>")
       .version("1.4.0")
       .stringConf
@@ -927,6 +928,28 @@ object KyuubiConf {
         " for a new task to arrive before terminating in MySQL frontend service")
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
+
+  val FRONTEND_TRINO_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.frontend.trino.bind.host")
+      .doc("Hostname or IP of the machine on which to run the TRINO frontend service.")
+      .version("1.7.0")
+      .serverOnly
+      .fallbackConf(FRONTEND_BIND_HOST)
+
+  val FRONTEND_TRINO_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.trino.bind.port")
+    .doc("Port of the machine on which to run the TRINO frontend service.")
+    .version("1.7.0")
+    .serverOnly
+    .intConf
+    .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+    .createWithDefault(10999)
+
+  val FRONTEND_TRINO_MAX_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.trino.max.worker.threads")
+      .doc("Maximum number of threads in the of frontend worker thread pool for the trino " +
+        "frontend service")
+      .version("1.7.0")
+      .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
 
   val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.context")

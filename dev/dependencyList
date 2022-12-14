@@ -65,6 +65,7 @@ jackson-annotations/2.14.1//jackson-annotations-2.14.1.jar
 jackson-core/2.14.1//jackson-core-2.14.1.jar
 jackson-databind/2.14.1//jackson-databind-2.14.1.jar
 jackson-dataformat-yaml/2.14.1//jackson-dataformat-yaml-2.14.1.jar
+jackson-datatype-jdk8/2.12.3//jackson-datatype-jdk8-2.12.3.jar
 jackson-datatype-jsr310/2.14.1//jackson-datatype-jsr310-2.14.1.jar
 jackson-jaxrs-base/2.14.1//jackson-jaxrs-base-2.14.1.jar
 jackson-jaxrs-json-provider/2.14.1//jackson-jaxrs-json-provider-2.14.1.jar
@@ -148,6 +149,7 @@ netty-transport-native-epoll/4.1.84.Final/linux-aarch_64/netty-transport-native-
 netty-transport-native-epoll/4.1.84.Final/linux-x86_64/netty-transport-native-epoll-4.1.84.Final-linux-x86_64.jar
 netty-transport-native-unix-common/4.1.84.Final//netty-transport-native-unix-common-4.1.84.Final.jar
 netty-transport/4.1.84.Final//netty-transport-4.1.84.Final.jar
+okhttp-urlconnection/3.14.9//okhttp-urlconnection-3.14.9.jar
 okhttp/3.12.12//okhttp-3.12.12.jar
 okio/1.15.0//okio-1.15.0.jar
 osgi-resource-locator/1.0.3//osgi-resource-locator-1.0.3.jar
@@ -174,6 +176,8 @@ swagger-integration/2.2.1//swagger-integration-2.2.1.jar
 swagger-jaxrs2/2.2.1//swagger-jaxrs2-2.2.1.jar
 swagger-models/2.2.1//swagger-models-2.2.1.jar
 swagger-ui/4.9.1//swagger-ui-4.9.1.jar
+trino-client/363//trino-client-363.jar
+units/1.6//units-1.6.jar
 vertx-core/4.3.2//vertx-core-4.3.2.jar
 vertx-grpc/4.3.2//vertx-grpc-4.3.2.jar
 zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar
