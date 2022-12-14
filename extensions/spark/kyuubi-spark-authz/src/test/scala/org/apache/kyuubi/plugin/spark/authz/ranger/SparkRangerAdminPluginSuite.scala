@@ -29,7 +29,6 @@ class SparkRangerAdminPluginSuite extends AnyFunSuite {
 
   test("get filter expression") {
     val bob = UserGroupInformation.createRemoteUser("bob")
-    // todo: fill catalog
     val are = AccessResource(ObjectType.TABLE, null, "default", "src", null)
     def buildAccessRequest(ugi: UserGroupInformation): AccessRequest = {
       AccessRequest(are, ugi, OperationType.QUERY, AccessType.SELECT)
@@ -46,7 +45,6 @@ class SparkRangerAdminPluginSuite extends AnyFunSuite {
   test("get data masker") {
     val bob = UserGroupInformation.createRemoteUser("bob")
     def buildAccessRequest(ugi: UserGroupInformation, column: String): AccessRequest = {
-      // todo: fill catalog
       val are = AccessResource(ObjectType.COLUMN, null, "default", "src", column)
       AccessRequest(are, ugi, OperationType.QUERY, AccessType.SELECT)
     }
