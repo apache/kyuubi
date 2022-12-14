@@ -55,7 +55,6 @@ case class FilteredShowTablesCommand(delegated: RunnableCommand)
     val table = r.getString(1)
     val isTemp = r.getBoolean(2)
     val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
-    // todo: fill catalog
     val resource = AccessResource(objectType, null, database, table, null)
     val accessType = if (isExtended) AccessType.SELECT else AccessType.USE
     val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, accessType)
@@ -69,7 +68,6 @@ case class FilteredShowDatabasesCommand(delegated: RunnableCommand)
 
   override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
-    // todo: fill catalog
     val resource = AccessResource(ObjectType.DATABASE, null, database, null, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
