@@ -15,23 +15,12 @@
 # limitations under the License.
 #
 
-apiVersion: v1
-kind: Service
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
   name: {{ .Release.Name }}
   labels:
     app: {{ template "kyuubi.name" . }}
-  {{- with .Values.service.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  ports:
-    - name: http
-      nodePort: {{ .Values.service.port }}
-      port: {{ .Values.server.bind.port }}
-      protocol: TCP
-  type: {{ .Values.service.type }}
-  selector:
-    app: {{ template "kyuubi.name" . }}
-    release: {{ .Release.Name }}
+rules: {{- toYaml .Values.rbac.rules | nindent 2 }}
+{{- end }}
