@@ -82,8 +82,8 @@ class AccessResourceSuite extends AnyFunSuite {
     assert(resource1.getColumns.isEmpty)
     assert(resource1.getOwnerUser === "Bob")
 
-    val resource2 = AccessResource(FUNCTION, "my_db_name", "my_func_name", null,
-      catalog = Some("my_cat"))
+    val resource2 =
+      AccessResource(FUNCTION, "my_db_name", "my_func_name", null, catalog = Some("my_cat"))
     assert(resource2.getCatalog === "my_cat")
     assert(resource2.getDatabase === "my_db_name")
     assert(resource2.getTable === null)
@@ -91,7 +91,11 @@ class AccessResourceSuite extends AnyFunSuite {
     assert(resource1.getColumn === null)
     assert(resource1.getColumns.isEmpty)
 
-    val resource3 = AccessResource(TABLE, "my_db_name", "my_table_name", "my_col_1,my_col_2",
+    val resource3 = AccessResource(
+      TABLE,
+      "my_db_name",
+      "my_table_name",
+      "my_col_1,my_col_2",
       catalog = Some("my_cat"))
     assert(resource3.getCatalog === "my_cat")
     assert(resource3.getDatabase === "my_db_name")
@@ -99,7 +103,11 @@ class AccessResourceSuite extends AnyFunSuite {
     assert(resource3.getColumn === null)
     assert(resource3.getColumns.isEmpty)
 
-    val resource4 = AccessResource(COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2",
+    val resource4 = AccessResource(
+      COLUMN,
+      "my_db_name",
+      "my_table_name",
+      "my_col_1,my_col_2",
       catalog = Some("my_cat"))
     assert(resource4.getCatalog === "my_cat")
     assert(resource4.getDatabase === "my_db_name")
