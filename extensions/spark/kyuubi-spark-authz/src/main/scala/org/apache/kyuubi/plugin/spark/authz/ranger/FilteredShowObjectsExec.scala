@@ -50,7 +50,7 @@ case class FilteredShowNamespaceExec(delegated: SparkPlan, logicalPlan: LogicalP
   override protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
     val catalog = new ResolvedNamespaceCatalogExtractor().apply(invoke(logicalPlan, "namespace"))
-    val resource = AccessResource(ObjectType.DATABASE, catalog.orNull, database, null, null)
+    val resource = AccessResource(ObjectType.DATABASE, database, null, null, catalog)
     val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
@@ -65,7 +65,7 @@ case class FilteredShowTablesExec(delegated: SparkPlan, logicalPlan: LogicalPlan
     val isTemp = r.getBoolean(2)
     val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
     val catalog = new ResolvedNamespaceCatalogExtractor().apply(invoke(logicalPlan, "namespace"))
-    val resource = AccessResource(objectType, catalog.orNull, database, table, null)
+    val resource = AccessResource(objectType, database, table, null, catalog)
     val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed

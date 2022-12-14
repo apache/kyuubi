@@ -95,20 +95,20 @@ class RuleApplyRowFilterAndDataMasking(spark: SparkSession) extends Rule[Logical
     val parse = spark.sessionState.sqlParser.parseExpression _
     val are = AccessResource(
       ObjectType.TABLE,
-      catalog.orNull,
       identifier.database.orNull,
       identifier.table,
-      null)
+      null,
+      catalog)
     val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
     val filterExprStr = SparkRangerAdminPlugin.getFilterExpr(art)
     val newOutput = plan.output.map { attr =>
       val are =
         AccessResource(
           ObjectType.COLUMN,
-          catalog.orNull,
           identifier.database.orNull,
           identifier.table,
-          attr.name)
+          attr.name,
+          catalog = catalog)
       val art = AccessRequest(are, ugi, opType, AccessType.SELECT)
       val maskExprStr = SparkRangerAdminPlugin.getMaskingExpr(art)
       if (maskExprStr.isEmpty) {

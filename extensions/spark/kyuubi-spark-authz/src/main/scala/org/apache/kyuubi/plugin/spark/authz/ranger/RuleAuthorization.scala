@@ -76,11 +76,11 @@ object RuleAuthorization {
             val cr =
               AccessResource(
                 COLUMN,
-                resource.getCatalog,
                 resource.getDatabase,
                 resource.getTable,
                 col,
-                Option(resource.getOwnerUser))
+                Option(resource.getOwnerUser),
+                catalog = Some(resource.getCatalog))
             AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
           }
         case _ => Seq(request)

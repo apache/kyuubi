@@ -45,23 +45,23 @@ object AccessResource {
       firstLevelResource: String,
       secondLevelResource: String,
       thirdLevelResource: String,
-      fourthLevelResource: String,
-      owner: Option[String] = None): AccessResource = {
-    val resource = new AccessResource(objectType, Some(firstLevelResource))
+      owner: Option[String] = None,
+      catalog: Option[String] = None): AccessResource = {
+    val resource = new AccessResource(objectType, catalog)
 
     resource.objectType match {
       case DATABASE =>
-        resource.setValue("database", secondLevelResource)
+        resource.setValue("database", firstLevelResource)
       case FUNCTION =>
-        resource.setValue("database", Option(secondLevelResource).getOrElse(""))
-        resource.setValue("udf", thirdLevelResource)
+        resource.setValue("database", Option(firstLevelResource).getOrElse(""))
+        resource.setValue("udf", secondLevelResource)
       case COLUMN =>
-        resource.setValue("database", secondLevelResource)
-        resource.setValue("table", thirdLevelResource)
-        resource.setValue("column", fourthLevelResource)
+        resource.setValue("database", firstLevelResource)
+        resource.setValue("table", secondLevelResource)
+        resource.setValue("column", thirdLevelResource)
       case TABLE | VIEW => // fixme spark have added index support
-        resource.setValue("database", secondLevelResource)
-        resource.setValue("table", thirdLevelResource)
+        resource.setValue("database", firstLevelResource)
+        resource.setValue("table", secondLevelResource)
     }
     resource.setServiceDef(SparkRangerAdminPlugin.getServiceDef)
     owner.foreach(resource.setOwnerUser)
@@ -72,16 +72,16 @@ object AccessResource {
       objectType: ObjectType,
       firstLevelResource: String,
       secondLevelResource: String): AccessResource = {
-    apply(objectType, firstLevelResource, secondLevelResource, null, null)
+    apply(objectType, firstLevelResource, secondLevelResource, null)
   }
 
   def apply(obj: PrivilegeObject, opType: OperationType): AccessResource = {
     apply(
       ObjectType(obj, opType),
-      obj.catalog.orNull,
       obj.dbname,
       obj.objectName,
       obj.columns.mkString(","),
-      obj.owner)
+      obj.owner,
+      obj.catalog)
   }
 }

@@ -55,7 +55,7 @@ case class FilteredShowTablesCommand(delegated: RunnableCommand)
     val table = r.getString(1)
     val isTemp = r.getBoolean(2)
     val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
-    val resource = AccessResource(objectType, null, database, table, null)
+    val resource = AccessResource(objectType, database, table, null)
     val accessType = if (isExtended) AccessType.SELECT else AccessType.USE
     val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, accessType)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
@@ -68,7 +68,7 @@ case class FilteredShowDatabasesCommand(delegated: RunnableCommand)
 
   override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
-    val resource = AccessResource(ObjectType.DATABASE, null, database, null, null)
+    val resource = AccessResource(ObjectType.DATABASE, database, null, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
@@ -102,7 +102,7 @@ case class FilteredShowFunctionsCommand(delegated: RunnableCommand)
       return true
     }
 
-    val resource = AccessResource(ObjectType.FUNCTION, null, items(0), items(1), null)
+    val resource = AccessResource(ObjectType.FUNCTION, items(0), items(1), null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWFUNCTIONS, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
@@ -124,7 +124,7 @@ case class FilteredShowColumnsCommand(delegated: RunnableCommand)
 
   override protected def isAllowed(r: Row, ugi: UserGroupInformation): Boolean = {
     val resource =
-      AccessResource(ObjectType.COLUMN, null, r.getString(0), r.getString(1), r.getString(2))
+      AccessResource(ObjectType.COLUMN, r.getString(0), r.getString(1), r.getString(2))
     val request = AccessRequest(resource, ugi, OperationType.SHOWCOLUMNS, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed
