@@ -233,7 +233,6 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         assert(result.getString(1).contains("test_col"))
       }
     }
-
   }
 
   private def getOperationPlanWithStatement(statement: Statement): String = {
