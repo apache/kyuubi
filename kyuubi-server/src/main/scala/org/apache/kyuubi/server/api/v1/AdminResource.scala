@@ -116,7 +116,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
     val userName = if (StringUtils.isEmpty(hs2ProxyUser)) "" else fe.getSessionUser(hs2ProxyUser)
-    info(s"Listing userName $userName")
     val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
     val engineSpace = getEngineSpace(engine)
     val engineNodes = ListBuffer[ServiceNodeInfo]()

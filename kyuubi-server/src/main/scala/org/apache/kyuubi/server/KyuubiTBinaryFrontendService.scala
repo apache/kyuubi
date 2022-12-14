@@ -40,7 +40,7 @@ final class KyuubiTBinaryFrontendService(
   extends TBinaryFrontendService("KyuubiTBinaryFrontend") {
 
   override def attributes: Map[String, String] = {
-    Map(KYUUBI_SERVER_SUBMIT_TIME_KEY -> startTime.toString)
+    Map(KYUUBI_SERVER_SUBMIT_TIME_KEY -> getStartTime.toString)
   }
 
   override protected def hadoopConf: Configuration = KyuubiServer.getHadoopConf()

@@ -94,6 +94,16 @@ class SparkTBinaryFrontendService(
   }
 
   override def attributes: Map[String, String] = {
+    warn(s"spark attributes :" + KyuubiSparkUtil.engineId)
+    warn(s"spark attributes :" + sc.uiWebUrl.get)
+    warn(s"spark attributes :" + sc.startTime.toString)
+    warn(s"spark attributes :" + (sc.getConf.get(SPARK_ENGINE_DRIVER_MEMORY).toLong +
+      sc.getConf.get(SPARK_ENGINE_EXECUTOR_INSTANCE).toLong *
+      sc.getConf.get(SPARK_ENGINE_EXECUTOR_MEMORY).toLong).toString)
+    warn(s"spark attributes :" + (sc.getConf.get(SPARK_ENGINE_DRIVER_CORES).toLong +
+      sc.getConf.get(SPARK_ENGINE_EXECUTOR_INSTANCE).toLong *
+      sc.getConf.get(SPARK_ENGINE_EXECUTOR_CORES).toLong).toString)
+
     Map(
       KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
       KYUUBI_ENGINE_URL -> sc.uiWebUrl.get,
@@ -104,6 +114,7 @@ class SparkTBinaryFrontendService(
       KYUUBI_ENGINE_CPU -> (sc.getConf.get(SPARK_ENGINE_DRIVER_CORES).toLong +
         sc.getConf.get(SPARK_ENGINE_EXECUTOR_INSTANCE).toLong *
         sc.getConf.get(SPARK_ENGINE_EXECUTOR_CORES).toLong).toString)
+
   }
 }
 
