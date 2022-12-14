@@ -57,14 +57,15 @@ case class FilteredShowNamespaceExec(delegated: SparkPlan, logicalPlan: LogicalP
   }
 }
 
-case class FilteredShowTablesExec(delegated: SparkPlan) extends FilteredShowObjectsExec {
+case class FilteredShowTablesExec(delegated: SparkPlan, logicalPlan: LogicalPlan)
+  extends FilteredShowObjectsExec {
   override protected def isAllowed(r: InternalRow, ugi: UserGroupInformation): Boolean = {
     val database = r.getString(0)
     val table = r.getString(1)
     val isTemp = r.getBoolean(2)
     val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
-    // todo: fill catalog
-    val resource = AccessResource(objectType, null, database, table, null)
+    val catalog = new ResolvedNamespaceCatalogExtractor().apply(invoke(logicalPlan, "namespace"))
+    val resource = AccessResource(objectType, catalog.orNull, database, table, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, AccessType.USE)
     val result = SparkRangerAdminPlugin.isAccessAllowed(request)
     result != null && result.getIsAllowed

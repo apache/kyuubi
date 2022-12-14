@@ -30,7 +30,9 @@ class FilterDataSourceV2Strategy(spark: SparkSession) extends Strategy {
       }).toSeq
 
     case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowTables" =>
-      spark.sessionState.planner.plan(child).map(FilteredShowTablesExec).toSeq
+      spark.sessionState.planner.plan(child).map(planerPlan => {
+        FilteredShowTablesExec(planerPlan, child)
+      }).toSeq
     case _ => Nil
   }
 }
