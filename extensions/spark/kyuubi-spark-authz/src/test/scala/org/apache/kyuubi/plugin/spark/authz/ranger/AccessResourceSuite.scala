@@ -75,18 +75,11 @@ class AccessResourceSuite extends AnyFunSuite {
     assert(resource.getColumns.isEmpty)
 
     val resource1 =
-      AccessResource(
-        DATABASE,
-        null,
-        "my_table_name",
-        "my_col_1,my_col_2",
-        Some("Bob"),
-        catalog = catalog)
+      AccessResource(COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2", catalog = catalog)
     assert(resource.catalog.get === "my_cat")
-    assert(resource1.getDatabase === null)
-    assert(resource1.getTable === null)
-    assert(resource1.getColumn === null)
-    assert(resource1.getColumns.isEmpty)
-    assert(resource1.getOwnerUser === "Bob")
+    assert(resource1.getDatabase === "my_db_name")
+    assert(resource1.getTable === "my_table_name")
+    assert(resource1.getColumn === "my_col_1,my_col_2")
+    assert(resource1.getColumns === Seq("my_col_1", "my_col_2"))
   }
 }
