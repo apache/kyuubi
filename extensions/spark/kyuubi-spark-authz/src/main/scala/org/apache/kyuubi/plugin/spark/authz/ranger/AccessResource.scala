@@ -75,15 +75,13 @@ object AccessResource {
 
   def apply(
       obj: PrivilegeObject,
-      opType: OperationType,
-      catalog: Option[String] = None): AccessResource = {
-    // todo: fill catalog
+      opType: OperationType): AccessResource = {
     apply(
       ObjectType(obj, opType),
       obj.dbname,
       obj.objectName,
       obj.columns.mkString(","),
       obj.owner,
-      catalog = None)
+      obj.catalog)
   }
 }
