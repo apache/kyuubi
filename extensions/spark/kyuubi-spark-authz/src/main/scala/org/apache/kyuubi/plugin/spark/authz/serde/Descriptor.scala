@@ -263,7 +263,6 @@ case class ActionTypeDesc(
   }
 }
 
-
 /**
  * Catalog Descriptor
  *
@@ -271,13 +270,11 @@ case class ActionTypeDesc(
  * @param fieldExtractor the key of a [[CatalogExtractor]] instance
  */
 case class CatalogDesc(
-  fieldName: String = "catalog",
-  fieldExtractor: String = "CatalogPluginCatalogExtractor") extends Descriptor {
+    fieldName: String = "catalog",
+    fieldExtractor: String = "CatalogPluginCatalogExtractor") extends Descriptor {
   override def extract(v: AnyRef): Option[String] = {
     val catalogVal = invoke(v, fieldName)
     val extractor = catalogExtractors(fieldExtractor)
     extractor(catalogVal)
   }
 }
-
-

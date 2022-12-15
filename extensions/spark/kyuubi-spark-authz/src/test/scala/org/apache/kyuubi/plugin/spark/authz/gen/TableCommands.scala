@@ -198,21 +198,27 @@ object TableCommands {
   val CreateTableV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateTable"
     val tableDesc = TableDesc(
-      "tableName", "IdentifierTableExtractor", catalogDesc = Some(CatalogDesc()))
+      "tableName",
+      "IdentifierTableExtractor",
+      catalogDesc = Some(CatalogDesc()))
     TableCommandSpec(cmd, Seq(tableDesc, resolvedDbObjectNameDesc), "CREATETABLE")
   }
 
   val CreateV2Table = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateV2Table"
     val tableDesc = TableDesc(
-      "tableName", "IdentifierTableExtractor", catalogDesc = Some(CatalogDesc()))
+      "tableName",
+      "IdentifierTableExtractor",
+      catalogDesc = Some(CatalogDesc()))
     TableCommandSpec(cmd, Seq(tableDesc), "CREATETABLE")
   }
 
   val CreateTableAsSelectV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect"
     val tableDesc = TableDesc(
-      "tableName", "IdentifierTableExtractor", catalogDesc = Some(CatalogDesc()))
+      "tableName",
+      "IdentifierTableExtractor",
+      catalogDesc = Some(CatalogDesc()))
     TableCommandSpec(
       cmd,
       Seq(tableDesc, resolvedDbObjectNameDesc.copy(fieldName = "left")),

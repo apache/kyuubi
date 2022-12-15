@@ -77,7 +77,7 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
           val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
           var table: Table = null
           spec.tableDescs.find { d =>
-            Try (table = d.extract(plan, spark).get).isSuccess
+            Try(table = d.extract(plan, spark).get).isSuccess
           }
           withClue(str) {
             assert(table.catalog === Some(catalogV2))
