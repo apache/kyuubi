@@ -69,7 +69,7 @@ object AccessResource {
   def apply(
       objectType: ObjectType,
       firstLevelResource: String,
-      catalog: Option[String] = None): AccessResource = {
+      catalog: Option[String]): AccessResource = {
     apply(objectType, firstLevelResource, null, null, catalog = catalog)
   }
 

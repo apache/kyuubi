@@ -25,7 +25,7 @@ import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 class AccessResourceSuite extends AnyFunSuite {
 // scalastyle:on
   test("generate spark ranger resources") {
-    val resource = AccessResource(DATABASE, "my_db_name")
+    val resource = AccessResource(DATABASE, "my_db_name", None)
     assert(resource.catalog.isEmpty)
     assert(resource.getDatabase === "my_db_name")
     assert(resource.getTable === null)
