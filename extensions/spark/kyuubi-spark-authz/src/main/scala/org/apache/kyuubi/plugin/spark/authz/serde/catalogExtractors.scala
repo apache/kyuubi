@@ -23,11 +23,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
-trait DatabaseExtractor extends (AnyRef => String) with Extractor
+trait CatalogExtractor extends (AnyRef => Option[String]) with Extractor
 
-object DatabaseExtractor {
-  val dbExtractors: Map[String, DatabaseExtractor] = {
-    ServiceLoader.load(classOf[DatabaseExtractor])
+object CatalogExtractor {
+  val catalogExtractors: Map[String, CatalogExtractor] = {
+    ServiceLoader.load(classOf[CatalogExtractor])
       .iterator()
       .asScala
       .map(e => (e.key, e))
@@ -36,54 +36,10 @@ object DatabaseExtractor {
 }
 
 /**
- * String
+ * CatalogPlugin ->
  */
-class StringDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    v1.asInstanceOf[String]
-  }
-}
-
-/**
- * Option[String]
- */
-class StringOptionDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    v1.asInstanceOf[Option[String]].orNull
-  }
-}
-
-/**
- * Seq[String]
- */
-class StringSeqDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    quote(v1.asInstanceOf[Seq[String]])
-  }
-}
-
-/**
- * Option[Seq[String]]
- */
-class StringSeqOptionDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    v1.asInstanceOf[Option[Seq[String]]].map(quote).orNull
-  }
-}
-
-/**
- * org.apache.spark.sql.catalyst.analysis.ResolvedNamespace
- */
-class ResolvedNamespaceDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    val namespace = getFieldVal[Seq[String]](v1, "namespace")
-    quote(namespace)
-  }
-}
-
-class ResolvedDBObjectNameDatabaseExtractor extends DatabaseExtractor {
-  override def apply(v1: AnyRef): String = {
-    val namespace = getFieldVal[Seq[String]](v1, "nameParts")
-    quote(namespace)
+class CatalogPluginCatalogExtractor extends CatalogExtractor {
+  override def apply(v1: AnyRef): Option[String] = {
+    Option(invokeAs[String](v1, "name"))
   }
 }

@@ -22,13 +22,13 @@ package org.apache.kyuubi.plugin.spark.authz.serde
  *
  * Represents a table identity with owner
  *
- * TODO(kent yao): How about adding a catalog name field here
- *
+ * @param catalog catalog name or None
  * @param database database name or None
  * @param table table name
  * @param owner table owner if any, otherwise None
  */
 case class Table(
+    catalog: Option[String],
     database: Option[String],
     table: String,
     owner: Option[String])

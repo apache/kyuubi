@@ -69,7 +69,7 @@ class TableIdentifierTableExtractor extends TableExtractor {
       } catch {
         case _: Exception => None
       }
-    Some(Table(identifier.database, identifier.table, owner))
+    Some(Table(None, identifier.database, identifier.table, owner))
   }
 }
 
@@ -81,7 +81,7 @@ class CatalogTableTableExtractor extends TableExtractor {
     val catalogTable = v1.asInstanceOf[CatalogTable]
     val identifier = catalogTable.identifier
     val owner = Option(catalogTable.owner).filter(_.nonEmpty)
-    Some(Table(identifier.database, identifier.table, owner))
+    Some(Table(None, identifier.database, identifier.table, owner))
   }
 }
 
@@ -104,7 +104,7 @@ class IdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val namespace = invokeAs[Array[String]](v1, "namespace")
     val table = invokeAs[String](v1, "name")
-    Some(Table(Some(quote(namespace)), table, None))
+    Some(Table(None, Some(quote(namespace)), table, None))
   }
 }
 
@@ -137,5 +137,19 @@ class LogicalRelationTableExtractor extends TableExtractor {
     maybeCatalogTable.flatMap { ct =>
       new CatalogTableTableExtractor().apply(spark, ct)
     }
+  }
+}
+
+/**
+ * ResolvedDbObjectName ->
+ */
+class ResolvedDbObjectNameTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val catalog = invoke(v1, "catalog")
+    val catalogName = invokeAs[String](catalog, "name")
+    val nameParts = invokeAs[Seq[String]](v1, "nameParts")
+    val namespace = nameParts.init.toArray
+    val table = nameParts.last
+    Some(Table(Some(catalogName), Some(quote(namespace)), table, None))
   }
 }

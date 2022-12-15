@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeObjectActionType
 import org.apache.kyuubi.plugin.spark.authz.serde.ActionTypeExtractor.actionTypeExtractors
+import org.apache.kyuubi.plugin.spark.authz.serde.CatalogExtractor.catalogExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.ColumnExtractor.columnExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.DatabaseExtractor.dbExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.functionExtractors
@@ -208,6 +209,8 @@ case class TableTypeDesc(
  * @param columnDesc optional [[ColumnDesc]] instance if columns field are specified
  * @param actionTypeDesc optional [[ActionTypeDesc]] indicates the action type
  * @param tableTypeDesc optional [[TableTypeDesc]] indicates the table type
+ * @param catalogDesc optional [[CatalogDesc]] instance if a catalog field is specified,
+ *                    the catalog will respect the one resolved from `fieldExtractor` first
  * @param isInput read or write
  * @param setCurrentDatabaseIfMissing whether to use current database if the database
  *                                    field is missing
@@ -218,6 +221,7 @@ case class TableDesc(
     columnDesc: Option[ColumnDesc] = None,
     actionTypeDesc: Option[ActionTypeDesc] = None,
     tableTypeDesc: Option[TableTypeDesc] = None,
+    catalogDesc: Option[CatalogDesc] = None,
     isInput: Boolean = false,
     setCurrentDatabaseIfMissing: Boolean = false) extends Descriptor {
   override def extract(v: AnyRef): Option[Table] = {
@@ -227,7 +231,15 @@ case class TableDesc(
   def extract(v: AnyRef, spark: SparkSession): Option[Table] = {
     val tableVal = invoke(v, fieldName)
     val tableExtractor = tableExtractors(fieldExtractor)
-    tableExtractor(spark, tableVal)
+    val maybeTable = tableExtractor(spark, tableVal)
+    maybeTable.map { t =>
+      if (t.catalog.isEmpty && catalogDesc.nonEmpty) {
+        val newCatalog = catalogDesc.get.extract(v)
+        t.copy(catalog = newCatalog)
+      } else {
+        t
+      }
+    }
   }
 }
 
@@ -250,3 +262,22 @@ case class ActionTypeDesc(
     }
   }
 }
+
+
+/**
+ * Catalog Descriptor
+ *
+ * @param fieldName the field name or method name of this catalog field
+ * @param fieldExtractor the key of a [[CatalogExtractor]] instance
+ */
+case class CatalogDesc(
+  fieldName: String = "catalog",
+  fieldExtractor: String = "CatalogPluginCatalogExtractor") extends Descriptor {
+  override def extract(v: AnyRef): Option[String] = {
+    val catalogVal = invoke(v, fieldName)
+    val extractor = catalogExtractors(fieldExtractor)
+    extractor(catalogVal)
+  }
+}
+
+

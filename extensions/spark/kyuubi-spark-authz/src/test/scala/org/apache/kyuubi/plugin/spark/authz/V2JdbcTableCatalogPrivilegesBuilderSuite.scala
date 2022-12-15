@@ -22,6 +22,8 @@ import scala.util.Try
 
 import org.scalatest.Outcome
 
+import org.apache.kyuubi.plugin.spark.authz.serde.{Table, TABLE_COMMAND_SPECS}
+
 class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "in-memory"
 
@@ -59,5 +61,32 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
   override def withFixture(test: NoArgTest): Outcome = {
     assume(isSparkV31OrGreater)
     test()
+  }
+
+  test("Extracting table info with ResolvedDbObjectNameTableExtractor") {
+    val ns1 = "testns1"
+    val tbl = "testtbl"
+    withDatabase(s"$ns1") { ns =>
+      sql(s"CREATE NAMESPACE $ns")
+      withTable(s"$catalogV2.$ns1.$tbl") { t =>
+        Seq(
+          s"CREATE TABLE IF NOT EXISTS $t(key int)",
+          s"CREATE TABLE IF NOT EXISTS $t as SELECT 1",
+          s"REPLACE TABLE $t as SELECT 1").foreach { str =>
+          val plan = executePlan(str).analyzed
+          val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
+          var table: Table = null
+          spec.tableDescs.find { d =>
+            Try (table = d.extract(plan, spark).get).isSuccess
+          }
+          withClue(str) {
+            assert(table.catalog === Some(catalogV2))
+            assert(table.database === Some(ns1))
+            assert(table.table === tbl)
+            assert(table.owner.isEmpty)
+          }
+        }
+      }
+    }
   }
 }
