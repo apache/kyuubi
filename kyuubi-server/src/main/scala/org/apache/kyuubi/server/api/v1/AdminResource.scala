@@ -68,6 +68,26 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
+    description = "refresh the Kyuubi server conf")
+  @POST
+  @Path("refresh/server_conf")
+  def refreshServerConf(): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive refresh Kyuubi server conf request from $userName/$ipAddress")
+    if (!userName.equals(administrator)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to refresh the Kyuubi server conf")
+    }
+    info(s"Reloading the Kyuubi server conf")
+    KyuubiServer.reloadServerConf()
+    Response.ok(s"Refresh the server conf successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
     description = "delete kyuubi engine")
   @DELETE
   @Path("engine")

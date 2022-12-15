@@ -105,6 +105,10 @@ object KyuubiServer extends Logging {
     val _hadoopConf = KyuubiHadoopUtils.newHadoopConf(new KyuubiConf().loadFileDefaults())
     hadoopConf = _hadoopConf
   }
+
+  private[kyuubi] def reloadServerConf(): Unit = synchronized {
+    kyuubiServer.conf.loadFileDefaults()
+  }
 }
 
 class KyuubiServer(name: String) extends Serverable(name) {

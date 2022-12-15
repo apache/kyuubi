@@ -67,6 +67,15 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
     args = Array(
       "refresh",
       "config",
+      "serverConf")
+    val opArgs2 = new AdminControlCliArguments(args)
+    assert(opArgs2.cliConfig.action === ControlAction.REFRESH)
+    assert(opArgs2.cliConfig.resource === ControlObject.CONFIG)
+    assert(opArgs2.cliConfig.adminConfigOpts.configType === "serverConf")
+
+    args = Array(
+      "refresh",
+      "config",
       "--hostUrl",
       "https://kyuubi.test.com",
       "otherConf")
@@ -137,7 +146,7 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |	Refresh the resource.
          |Command: refresh config [<configType>]
          |	Refresh the config with specified type.
-         |  <configType>             The valid config type can be one of the following: hadoopConf.
+         |  <configType>             The valid config type can be one of the following: hadoopConf, serverConf.
          |
          |  -h, --help               Show help message and exit.""".stripMargin
     // scalastyle:on
