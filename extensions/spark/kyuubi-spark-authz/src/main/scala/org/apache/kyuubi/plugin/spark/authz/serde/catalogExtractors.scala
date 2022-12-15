@@ -17,18 +17,29 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
+import java.util.ServiceLoader
+
+import scala.collection.JavaConverters._
+
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
+
+trait CatalogExtractor extends (AnyRef => Option[String]) with Extractor
+
+object CatalogExtractor {
+  val catalogExtractors: Map[String, CatalogExtractor] = {
+    ServiceLoader.load(classOf[CatalogExtractor])
+      .iterator()
+      .asScala
+      .map(e => (e.key, e))
+      .toMap
+  }
+}
+
 /**
- * :: Developer API ::
- *
- * Represents a table identity with owner
- *
- * @param catalog catalog name or None
- * @param database database name or None
- * @param table table name
- * @param owner table owner if any, otherwise None
+ * CatalogPlugin ->
  */
-case class Table(
-    catalog: Option[String],
-    database: Option[String],
-    table: String,
-    owner: Option[String])
+class CatalogPluginCatalogExtractor extends CatalogExtractor {
+  override def apply(v1: AnyRef): Option[String] = {
+    Option(invokeAs[String](v1, "name"))
+  }
+}
