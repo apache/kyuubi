@@ -155,6 +155,6 @@ class ResolvedDbObjectNameTableExtractor extends TableExtractor {
     val nameParts = invokeAs[Seq[String]](v1, "nameParts")
     val namespace = nameParts.init.toArray
     val table = nameParts.last
-    Some(Table(catalog = Some(catalogName), Some(quote(namespace)), table, None))
+    Some(Table(Some(catalogName), Some(quote(namespace)), table, None))
   }
 }
