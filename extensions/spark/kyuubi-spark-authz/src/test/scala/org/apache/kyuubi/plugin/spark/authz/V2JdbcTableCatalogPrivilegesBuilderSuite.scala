@@ -115,6 +115,7 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
       }
     }
   }
+
   test("Extracting table info with DataSourceV2RelationTableExtractor") {
     val ns1 = "testns1"
     val tbl = "testtbl"
