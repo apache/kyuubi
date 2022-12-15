@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class Engine {
 
@@ -42,9 +43,9 @@ public class Engine {
   private String id;
   private String status;
 
-  private Long memoryTotal;
+  private String memoryTotal;
 
-  private int cpuTotal;
+  private String cpuTotal;
 
   public Engine() {}
 
@@ -63,8 +64,8 @@ public class Engine {
       int port,
       String id,
       String status,
-      Long memoryTotal,
-      int cpuTotal) {
+      String memoryTotal,
+      String cpuTotal) {
     this.version = version;
     this.user = user;
     this.engineType = engineType;
@@ -198,19 +199,19 @@ public class Engine {
     this.port = port;
   }
 
-  public Long getMemoryTotal() {
+  public String getMemoryTotal() {
     return memoryTotal;
   }
 
-  public void setMemoryTotal(Long memoryTotal) {
+  public void setMemoryTotal(String memoryTotal) {
     this.memoryTotal = memoryTotal;
   }
 
-  public int getCpuTotal() {
+  public String getCpuTotal() {
     return cpuTotal;
   }
 
-  public void setCpuTotal(int cpuTotal) {
+  public void setCpuTotal(String cpuTotal) {
     this.cpuTotal = cpuTotal;
   }
 
