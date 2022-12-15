@@ -56,6 +56,7 @@ object RuleAuthorization {
 
     def addAccessRequest(objects: Seq[PrivilegeObject], isInput: Boolean): Unit = {
       objects.foreach { obj =>
+        // todo: fill catalog
         val resource = AccessResource(obj, opType)
         val accessType = ranger.AccessType(obj, opType, isInput)
         if (accessType != AccessType.NONE && !requests.exists(o =>
@@ -79,7 +80,8 @@ object RuleAuthorization {
                 resource.getDatabase,
                 resource.getTable,
                 col,
-                Option(resource.getOwnerUser))
+                Option(resource.getOwnerUser),
+                resource.catalog)
             AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
           }
         case _ => Seq(request)
