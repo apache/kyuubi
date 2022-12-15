@@ -43,6 +43,8 @@ object KyuubiSparkSQLCommonExtension {
     extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
 
     extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)
+
+    extensions.injectPostHocResolutionRule(session => MarkNumOutputColumnsRule(session))
     extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
   }
 }
