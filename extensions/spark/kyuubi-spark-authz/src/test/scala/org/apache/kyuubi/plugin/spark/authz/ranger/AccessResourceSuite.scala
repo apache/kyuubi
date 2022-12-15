@@ -64,7 +64,7 @@ class AccessResourceSuite extends AnyFunSuite {
     assert(resource4.getColumns === Seq("my_col_1", "my_col_2"))
   }
 
-  test("generate spark ranger resources with catalog") {
+  test("KYUUBI #3605: generate spark ranger resources with catalog") {
     val catalog = Some("my_cat")
 
     val resource = AccessResource(DATABASE, "my_db_name", null, null, catalog = catalog)
@@ -88,26 +88,5 @@ class AccessResourceSuite extends AnyFunSuite {
     assert(resource1.getColumn === null)
     assert(resource1.getColumns.isEmpty)
     assert(resource1.getOwnerUser === "Bob")
-
-    val resource2 = AccessResource(FUNCTION, "my_db_name", "my_func_name", null, catalog = catalog)
-    assert(resource2.getDatabase === "my_db_name")
-    assert(resource2.getTable === null)
-    assert(resource2.getValue("udf") === "my_func_name")
-    assert(resource1.getColumn === null)
-    assert(resource1.getColumns.isEmpty)
-
-    val resource3 =
-      AccessResource(TABLE, "my_db_name", "my_table_name", "my_col_1,my_col_2", catalog = catalog)
-    assert(resource3.getDatabase === "my_db_name")
-    assert(resource3.getTable === "my_table_name")
-    assert(resource3.getColumn === null)
-    assert(resource3.getColumns.isEmpty)
-
-    val resource4 =
-      AccessResource(COLUMN, "my_db_name", "my_table_name", "my_col_1,my_col_2", catalog = catalog)
-    assert(resource4.getDatabase === "my_db_name")
-    assert(resource4.getTable === "my_table_name")
-    assert(resource4.getColumn === "my_col_1,my_col_2")
-    assert(resource4.getColumns === Seq("my_col_1", "my_col_2"))
   }
 }
