@@ -148,7 +148,7 @@
   const getSessionList = () => {
     loading.value = true
     getAllSessions()
-      .then((data) => {
+      .then((data: any) => {
         tableData.value = data || []
       })
       .finally(() => {

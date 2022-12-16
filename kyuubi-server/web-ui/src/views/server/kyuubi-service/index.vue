@@ -44,20 +44,26 @@
         </template>
       </el-table-column>
       <el-table-column prop="status" :label="$t('status')" min-width="20%" />
-      <el-table-column fixed="right" :label="$t('operation')" width="120">
+      <el-table-column fixed="right" :label="$t('operation')" width="160">
         <template #default>
           <el-space wrap>
             <el-tooltip
               effect="dark"
-              :content="$t('log')"
+              :content="$t('view_config')"
               placement="top"
             >
+              <el-button type="primary" icon="Setting" circle />
+            </el-tooltip>
+            <el-tooltip effect="dark" :content="$t('log')" placement="top">
               <el-button
                 type="primary"
                 icon="Tickets"
                 circle
                 @click="openLogDialog"
               />
+            </el-tooltip>
+            <el-tooltip effect="dark" :content="$t('engines')" placement="top">
+              <el-button type="primary" icon="MessageBox" circle />
             </el-tooltip>
           </el-space>
         </template>

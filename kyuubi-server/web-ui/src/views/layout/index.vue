@@ -54,7 +54,7 @@
     height: 100%;
 
     .el-container {
-      min-height: 100vh;
+      height: 100vh;
 
       ::v-deep(.el-aside) {
         width: auto;
@@ -70,6 +70,11 @@
         border-bottom: 1px solid #f0f0f0;
         background: #fff;
         box-shadow: 0 1px 4px rgb(0 21 41 / 8%);
+      }
+
+      .el-main {
+        height: calc(100% - 64px);
+        overflow: auto;
       }
     }
   }

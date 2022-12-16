@@ -41,6 +41,8 @@ export default {
   cpu: 'CPU',
   memory: 'Memory',
   log: 'Log',
+  view_config: 'View Configuration',
+  engines: 'Engines',
   status: 'Status',
   type: 'Type',
   state: 'State',

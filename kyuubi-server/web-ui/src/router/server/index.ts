@@ -24,7 +24,7 @@ const routes = [
   {
     path: '/server/engine',
     name: 'server-engine',
-    component: () => import('@/views/session/sql-statistics/index.vue')
+    component: () => import('@/views/server/engine/index.vue')
   }
 ]
 
