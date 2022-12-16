@@ -95,7 +95,7 @@ Kyuubi can deploy its engines on different kinds of Cluster Managers, such as, H
 The figure below shows our vision for the Kyuubi Ecosystem. Some of them have been realized, some in development,
 and others would not be possible without your help.
 
-![](./docs/imgs/kyuubi_ecosystem.png)
+![](./docs/imgs/kyuubi_ecosystem.drawio.png)
 
 
 
