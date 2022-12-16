@@ -95,16 +95,19 @@ class SparkTBinaryFrontendService(
 
   override def attributes: Map[String, String] = {
 
+    val settings = sc.getConf.getAll.toMap
+    val memory = sc.getExecutorMemoryStatus.size + "*" +
+      settings.get(SPARK_ENGINE_EXECUTOR_MEMORY).orNull
+
+    val cores = sc.getExecutorMemoryStatus.size + "*" +
+      settings.get(SPARK_ENGINE_EXECUTOR_CORES).orNull
+
     Map(
       KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
-      KYUUBI_ENGINE_URL -> sc.uiWebUrl.get,
+      KYUUBI_ENGINE_URL -> sc.uiWebUrl.get.replace("//", ""),
       KYUUBI_ENGINE_SUBMIT_TIME_KEY -> sc.startTime.toString,
-      KYUUBI_ENGINE_MEMORY -> (
-        sc.getConf.get(SPARK_ENGINE_EXECUTOR_INSTANCE) + "*" +
-          sc.getConf.get(SPARK_ENGINE_EXECUTOR_MEMORY)),
-      KYUUBI_ENGINE_CPU -> (
-        sc.getConf.get(SPARK_ENGINE_EXECUTOR_INSTANCE) + "*" +
-          sc.getConf.get(SPARK_ENGINE_EXECUTOR_CORES)))
+      KYUUBI_ENGINE_MEMORY -> memory,
+      KYUUBI_ENGINE_CPU -> cores)
 
   }
 }
@@ -119,6 +122,7 @@ object SparkTBinaryFrontendService extends Logging {
   final val SPARK_ENGINE_DRIVER_CORES = "spark.driver.cores"
 
   final val SPARK_ENGINE_EXECUTOR_INSTANCE = "spark.executor.instances"
+  final val SPARK_ENGINE_EXECUTOR_MAX_INSTANCE = "spark.dynamicAllocation.maxExecutors"
 
   private[spark] def renewDelegationToken(sc: SparkContext, delegationToken: String): Unit = {
     val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)
