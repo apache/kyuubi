@@ -134,8 +134,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         }
     }
     info(s"engineNodes size is " + engineNodes.size)
+    val engines = ListBuffer[Engine]()
     engineNodes.map(node => {
-      new Engine(
+      engines += new Engine(
         engine.getVersion,
         engine.getUser,
         engine.getEngineType,
@@ -153,7 +154,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull,
         node.attributes.get(KYUUBI_ENGINE_CPU).orNull)
     })
-
+    engines
   }
 
   @ApiResponse(
