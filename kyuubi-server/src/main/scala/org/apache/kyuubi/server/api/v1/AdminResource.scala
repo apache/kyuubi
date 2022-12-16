@@ -106,7 +106,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[Engine]))),
     description = "list alive kyuubi engines")
   @POST
   @Path("engine")
@@ -133,13 +134,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
         }
     }
-    info(s"engineNodes size is " + engineNodes.size)
     val engines = ListBuffer[Engine]()
     engineNodes.map(node => {
-      info(s"engine  is " + engine.getVersion)
-      info(s"engine  is " + engine.getUser)
-      info(s"engine  is " + engine.getEngineType)
-      info(s"engine  is " + engine.getSharelevel)
+      info(s"node  is " + node.toString)
       engines += new Engine(
         engine.getVersion,
         engine.getUser,
