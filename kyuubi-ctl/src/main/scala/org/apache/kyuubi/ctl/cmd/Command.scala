@@ -57,11 +57,13 @@ abstract class Command[T](cliConfig: CliConfig) extends Logging {
   private def useDefaultPropertyValueIfMissing(): CliConfig = {
     var arguments: CliConfig = cliConfig.copy()
     if (cliConfig.zkOpts.zkQuorum == null) {
-      conf.getOption(HA_ADDRESSES.key).foreach { v =>
-        if (verbose) {
-          super.info(s"Zookeeper quorum is not specified, use value from default conf:$v")
-        }
-        arguments = arguments.copy(zkOpts = arguments.zkOpts.copy(zkQuorum = v))
+      Seq(HA_ADDRESSES.key, HA_ZK_QUORUM.key).map(conf.getOption).find(_.isDefined) match {
+        case Some(Some(quorum)) =>
+          if (verbose) {
+            super.info(s"Zookeeper quorum is not specified, use value from default conf:$quorum")
+          }
+          arguments = arguments.copy(zkOpts = arguments.zkOpts.copy(zkQuorum = quorum))
+        case _ =>
       }
     }
 
