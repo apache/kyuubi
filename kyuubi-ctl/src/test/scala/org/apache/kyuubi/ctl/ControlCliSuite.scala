@@ -23,7 +23,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ctl.cli.{ControlCli, ControlCliArguments}
 import org.apache.kyuubi.ctl.util.{CtlUtils, Render}
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE, HA_ZK_QUORUM}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.{DiscoveryClientProvider, ServiceNodeInfo}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
@@ -226,27 +226,6 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       s"/${namespace}_${KYUUBI_VERSION}_USER_SPARK_SQL/$user/default")
   }
 
-  test("test fallback to zk quorum config") {
-    val args = Array("list", "server")
-//    testPrematureExitForControlCliArgs(args,
-//      "Zookeeper quorum is not specified and no default value to load")
-
-    conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-
-    new ControlCliArguments(args)
-
-    withDiscoveryClient(conf) { framework =>
-      framework.createAndGetServiceNode(conf, namespace, "localhost:10000")
-
-      val expectedNodes = Seq(
-        ServiceNodeInfo(s"/$namespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None)
-      )
-
-      testPrematureExitForControlCliArgs(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
-    }
-
-  }
-
   test("test list zk service nodes info") {
     val uniqueNamespace = getUniqueNamespace()
     conf
@@ -273,7 +252,6 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
 
       testPrematureExitForControlCli(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
-      new ControlCliArguments(args)
     }
   }
 
