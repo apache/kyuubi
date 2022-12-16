@@ -136,6 +136,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     info(s"engineNodes size is " + engineNodes.size)
     val engines = ListBuffer[Engine]()
     engineNodes.map(node => {
+      info(s"engine  is " + engine.getVersion)
+      info(s"engine  is " + engine.getUser)
+      info(s"engine  is " + engine.getEngineType)
+      info(s"engine  is " + engine.getSharelevel)
       engines += new Engine(
         engine.getVersion,
         engine.getUser,
