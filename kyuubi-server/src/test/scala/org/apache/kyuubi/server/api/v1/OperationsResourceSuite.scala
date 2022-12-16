@@ -136,7 +136,13 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
     val op =
       if (statement.nonEmpty) {
-        fe.be.executeStatement(sessionHandle, statement, Map.empty, runAsync = true, 3000)
+        fe.be.executeStatement(
+          sessionHandle,
+          statement,
+          Map.empty,
+          runAsync = true,
+          3000,
+          fe.frontendProtocol)
       } else {
         fe.be.getCatalogs(sessionHandle)
       }

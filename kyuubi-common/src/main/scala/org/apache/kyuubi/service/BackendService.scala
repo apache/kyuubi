@@ -19,6 +19,7 @@ package org.apache.kyuubi.service
 
 import org.apache.hive.service.rpc.thrift._
 
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
@@ -50,7 +51,8 @@ trait BackendService {
       statement: String,
       confOverlay: Map[String, String],
       runAsync: Boolean,
-      queryTimeout: Long): OperationHandle
+      queryTimeout: Long,
+      frontendProtocol: FrontendProtocol): OperationHandle
 
   def getTypeInfo(sessionHandle: SessionHandle): OperationHandle
   def getCatalogs(sessionHandle: SessionHandle): OperationHandle

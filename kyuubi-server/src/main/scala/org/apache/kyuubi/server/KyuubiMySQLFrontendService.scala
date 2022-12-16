@@ -29,6 +29,7 @@ import io.netty.handler.logging.{LoggingHandler, LogLevel}
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.{FrontendProtocol, MYSQL}
 import org.apache.kyuubi.server.mysql._
 import org.apache.kyuubi.server.mysql.NettyUtils._
 import org.apache.kyuubi.server.mysql.authentication.MySQLAuthHandler
@@ -49,6 +50,8 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
   private var bindFuture: ChannelFuture = _
 
   @volatile protected var isStarted = false
+
+  override def frontendProtocol: FrontendProtocol = MYSQL
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val minThreads = conf.get(FRONTEND_MYSQL_MIN_WORKER_THREADS)
@@ -87,6 +90,7 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
             serverAddr,
             connectionUrl,
             serverable.backendService,
+            frontendProtocol,
             execPool))
       })
     super.initialize(conf)

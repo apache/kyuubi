@@ -30,6 +30,7 @@ import org.apache.thrift.transport.{TServerSocket, TSSLTransportFactory}
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.{FrontendProtocol, THRIFT_BINARY}
 import org.apache.kyuubi.util.NamedThreadFactory
 
 /**
@@ -53,6 +54,8 @@ abstract class TBinaryFrontendService(name: String)
   protected var server: Option[TServer] = None
   private var _actualPort: Int = _
   override protected lazy val actualPort: Int = _actualPort
+
+  override def frontendProtocol: FrontendProtocol = THRIFT_BINARY
 
   // Removed OOM hook since Kyuubi #1800 to respect the hive server2 #2383
 

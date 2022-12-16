@@ -24,6 +24,7 @@ import scala.concurrent.CancellationException
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TGetResultSetMetadataResp, TProtocolVersion, TRowSet}
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.SessionHandle
@@ -58,12 +59,14 @@ abstract class AbstractBackendService(name: String)
       statement: String,
       confOverlay: Map[String, String],
       runAsync: Boolean,
-      queryTimeout: Long): OperationHandle = {
+      queryTimeout: Long,
+      frontendProtocol: FrontendProtocol): OperationHandle = {
     sessionManager.getSession(sessionHandle).executeStatement(
       statement,
       confOverlay,
       runAsync,
-      queryTimeout)
+      queryTimeout,
+      frontendProtocol)
   }
 
   override def getTypeInfo(sessionHandle: SessionHandle): OperationHandle = {

@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_TRINO_BIND_HOST, FRONTEND_TRINO_BIND_PORT, FRONTEND_TRINO_MAX_WORKER_THREADS}
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.{FrontendProtocol, TRINO}
 import org.apache.kyuubi.server.trino.api.v1.ApiRootResource
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
@@ -36,6 +37,8 @@ class KyuubiTrinoFrontendService(override val serverable: Serverable)
   private var server: JettyServer = _
 
   private val isStarted = new AtomicBoolean(false)
+
+  override def frontendProtocol: FrontendProtocol = TRINO
 
   lazy val host: String = conf.get(FRONTEND_TRINO_BIND_HOST)
     .getOrElse {

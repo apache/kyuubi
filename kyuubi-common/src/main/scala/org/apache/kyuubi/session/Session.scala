@@ -19,6 +19,7 @@ package org.apache.kyuubi.session
 
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TGetResultSetMetadataResp, TProtocolVersion, TRowSet}
 
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationHandle
 
@@ -51,7 +52,8 @@ trait Session {
       statement: String,
       confOverlay: Map[String, String],
       runAsync: Boolean,
-      queryTimeout: Long): OperationHandle
+      queryTimeout: Long,
+      frontendProtocol: FrontendProtocol): OperationHandle
 
   def getTableTypes: OperationHandle
   def getTypeInfo: OperationHandle

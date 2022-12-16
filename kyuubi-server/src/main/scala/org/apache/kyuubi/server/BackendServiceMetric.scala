@@ -19,6 +19,7 @@ package org.apache.kyuubi.server
 
 import org.apache.hive.service.rpc.thrift._
 
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -57,9 +58,16 @@ trait BackendServiceMetric extends BackendService {
       statement: String,
       confOverlay: Map[String, String],
       runAsync: Boolean,
-      queryTimeout: Long): OperationHandle = {
+      queryTimeout: Long,
+      frontendProtocol: FrontendProtocol): OperationHandle = {
     MetricsSystem.timerTracing(MetricsConstants.BS_EXECUTE_STATEMENT) {
-      super.executeStatement(sessionHandle, statement, confOverlay, runAsync, queryTimeout)
+      super.executeStatement(
+        sessionHandle,
+        statement,
+        confOverlay,
+        runAsync,
+        queryTimeout,
+        frontendProtocol)
     }
   }
 

@@ -23,6 +23,7 @@ import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -125,7 +126,8 @@ abstract class AbstractSession(
       statement: String,
       confOverlay: Map[String, String],
       runAsync: Boolean,
-      queryTimeout: Long): OperationHandle = withAcquireRelease() {
+      queryTimeout: Long,
+      frontendProtocol: FrontendProtocol): OperationHandle = withAcquireRelease() {
     val operation = sessionManager.operationManager
       .newExecuteStatementOperation(this, statement, confOverlay, runAsync, queryTimeout)
     runOperation(operation)

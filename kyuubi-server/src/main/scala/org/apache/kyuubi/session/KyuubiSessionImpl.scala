@@ -28,6 +28,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.{FrontendProtocol, TRINO}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
@@ -40,6 +41,7 @@ import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
 import org.apache.kyuubi.sql.parser.KyuubiParser
 import org.apache.kyuubi.sql.plan.command.RunnableCommand
+import org.apache.kyuubi.sql.plan.translate.trino.TrinoTranslatorNode
 import org.apache.kyuubi.util.SignUtils
 
 class KyuubiSessionImpl(
@@ -256,7 +258,8 @@ class KyuubiSessionImpl(
       statement: String,
       confOverlay: Map[String, String],
       runAsync: Boolean,
-      queryTimeout: Long): OperationHandle = {
+      queryTimeout: Long,
+      frontendProtocol: FrontendProtocol): OperationHandle = {
     val kyuubiNode = parser.parsePlan(statement)
     kyuubiNode match {
       case command: RunnableCommand =>
@@ -265,8 +268,12 @@ class KyuubiSessionImpl(
           runAsync,
           command)
         runOperation(operation)
+      case translateNode: TrinoTranslatorNode if frontendProtocol == TRINO =>
+        val operation = translateNode.translate(this)
+        sessionManager.operationManager.addOperation(operation)
+        runOperation(operation)
       case _ =>
-        super.executeStatement(statement, confOverlay, runAsync, queryTimeout)
+        super.executeStatement(statement, confOverlay, runAsync, queryTimeout, frontendProtocol)
     }
 
   }

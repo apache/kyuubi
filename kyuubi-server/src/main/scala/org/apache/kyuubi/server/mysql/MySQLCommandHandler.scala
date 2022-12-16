@@ -28,6 +28,7 @@ import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
@@ -45,6 +46,7 @@ class MySQLCommandHandler(
     serverAddr: InetAddress,
     connectionUrl: String,
     be: BackendService,
+    frontendProtocol: FrontendProtocol,
     execPool: ThreadPoolExecutor)
   extends SimpleChannelInboundHandler[MySQLCommandPacket] with Logging {
 
@@ -189,7 +191,8 @@ class MySQLCommandHandler(
         sql,
         confOverlay = Map.empty,
         runAsync = false,
-        queryTimeout = 0)
+        queryTimeout = 0,
+        frontendProtocol)
       val opStatus = be.getOperationStatus(opHandle)
       if (opStatus.state != FINISHED) {
         throw opStatus.exception

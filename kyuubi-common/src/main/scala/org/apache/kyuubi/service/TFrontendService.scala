@@ -249,7 +249,8 @@ abstract class TFrontendService(name: String)
         statement,
         confOverlay.asScala.toMap,
         runAsync,
-        queryTimeout)
+        queryTimeout,
+        frontendProtocol)
       val tOperationHandle = operationHandle.toTOperationHandle
       tOperationHandle.setOperationType(TOperationType.EXECUTE_STATEMENT)
       resp.setOperationHandle(tOperationHandle)

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.service
 
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
+
 /**
  * A [[FrontendService]] in Kyuubi architecture is responsible for taking requests from clients
  */
@@ -46,4 +48,9 @@ trait FrontendService {
    * Attributes map for [[FrontendService]] to expose
    */
   def attributes: Map[String, String] = Map.empty
+
+  /**
+   * Frontend protocol of the [[FrontendService]].
+   */
+  def frontendProtocol: FrontendProtocol
 }

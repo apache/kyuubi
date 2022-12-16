@@ -185,7 +185,8 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         request.getStatement,
         Map.empty,
         request.isRunAsync,
-        request.getQueryTimeout)
+        request.getQueryTimeout,
+        fe.frontendProtocol)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error executing statement"
