@@ -19,8 +19,8 @@
 <template>
   <el-card :body-style="{ padding: '10px 14px' }">
     <header>
-      <el-breadcrumb v-if="sessionId" separator="/">
-        <el-breadcrumb-item :to="{ path: '/session/operation' }"
+      <el-breadcrumb v-if="sessionId && sessionId !== 'all'" separator="/">
+        <el-breadcrumb-item :to="{ path: '/session/operation/all' }"
           >Operation</el-breadcrumb-item
         >
         <el-breadcrumb-item>{{ sessionId }}</el-breadcrumb-item>
@@ -119,7 +119,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { getAllOperations, cancelOperation } from '@/api/session'
   import { format } from 'date-fns'
@@ -133,7 +133,7 @@
   const sessionId = ref()
   const route = useRoute()
   const { t } = useI18n()
-  sessionId.value = route.query.sessionId
+  sessionId.value = route.params.sessionId
 
   const handleOperate = (
     operationId: string,
@@ -150,7 +150,7 @@
   }
 
   const getOperationList = () => {
-    if (sessionId.value) {
+    if (sessionId.value !== 'all') {
       loading.value = true
       getAllOperations(sessionId.value as string)
         .then((res: any) => {
@@ -159,10 +159,23 @@
         .finally(() => {
           loading.value = false
         })
+    } else {
+      // mock api: get all opertaions
+      tableData.value = []
     }
   }
-
   getOperationList()
+
+  watch(
+    () => route.path,
+    (toPath: string) => {
+      const path = '/session/operation/'
+      if (toPath.indexOf(path) > -1) {
+        sessionId.value = toPath.replaceAll(path, '')
+        getOperationList()
+      }
+    }
+  )
 </script>
 <style lang="scss" scoped>
   header {

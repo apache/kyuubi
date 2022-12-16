@@ -27,7 +27,7 @@ const routes = [
     component: () => import('@/views/session/sql-statistics/index.vue')
   },
   {
-    path: '/session/operation',
+    path: '/session/operation/:sessionId',
     name: 'operation',
     component: () => import('@/views/session/operation/index.vue')
   }

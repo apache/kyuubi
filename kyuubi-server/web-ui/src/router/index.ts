@@ -18,9 +18,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import overviewRoutes from './overview'
 import sessionRoutes from './session'
-import workloadRoutes from './workload'
-import operationRoutes from './operation'
-import contactRoutes from './contact'
+import serverRoutes from './server'
+import runSqlRoutes from './run-sql'
 
 const routes = [
   {
@@ -38,9 +37,8 @@ const routes = [
     children: [
       ...overviewRoutes,
       ...sessionRoutes,
-      ...workloadRoutes,
-      ...operationRoutes,
-      ...contactRoutes
+      ...serverRoutes,
+      ...runSqlRoutes
     ]
   },
   { path: '/:catchAll(.*)', redirect: '/' }

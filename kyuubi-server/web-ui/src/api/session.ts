@@ -19,8 +19,8 @@ import request from '@/utils/request'
 
 export function getAllSessions() {
   return request({
-    url: 'api/v1/sessions/allSessionInfo',
-    method: 'get'
+    url: 'api/v1/sessions/listSessionInfo',
+    method: 'post'
   })
 }
 

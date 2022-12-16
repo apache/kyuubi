@@ -15,12 +15,18 @@
  * limitations under the License.
  */
 
-const routes = [
-  {
-    path: '/contact',
-    name: 'contact',
-    component: () => import('@/views/contact/index.vue')
-  }
-]
+import request from '@/utils/request'
 
-export default routes
+export function getAllServers() {
+  return request({
+    url: 'api/v1/admin/servers',
+    method: 'post'
+  })
+}
+
+export function getLog() {
+  return request({
+    url: 'api/v1/admin/server/log',
+    method: 'post'
+  })
+}

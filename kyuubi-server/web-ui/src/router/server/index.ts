@@ -17,14 +17,14 @@
 
 const routes = [
   {
-    path: '/operation/runningJobs',
-    name: 'operation-runningJobs',
-    component: () => import('@/views/operation/runningJobs/index.vue')
+    path: '/server/kyuubi-service',
+    name: 'server-kyuubi-service',
+    component: () => import('@/views/server/kyuubi-service/index.vue')
   },
   {
-    path: '/operation/completedJobs',
-    name: 'operation-completedJobs',
-    component: () => import('@/views/operation/completedJobs/index.vue')
+    path: '/server/engine',
+    name: 'server-engine',
+    component: () => import('@/views/session/sql-statistics/index.vue')
   }
 ]
 

@@ -135,10 +135,7 @@
 
   const openOperationPage = (sessionId: string) => {
     router.push({
-      path: '/session/operation',
-      query: {
-        sessionId
-      }
+      path: `/session/operation/${sessionId}`
     })
   }
 
