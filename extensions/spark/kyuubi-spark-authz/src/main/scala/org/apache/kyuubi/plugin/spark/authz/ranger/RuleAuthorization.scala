@@ -50,7 +50,7 @@ object RuleAuthorization {
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
     val requests = new ArrayBuffer[AccessRequest]()
     if (inputs.isEmpty && opType == OperationType.SHOWDATABASES) {
-      val resource = AccessResource(DATABASE, null)
+      val resource = AccessResource(DATABASE, null, None)
       requests += AccessRequest(resource, ugi, opType, AccessType.USE)
     }
 
@@ -79,7 +79,8 @@ object RuleAuthorization {
                 resource.getDatabase,
                 resource.getTable,
                 col,
-                Option(resource.getOwnerUser))
+                Option(resource.getOwnerUser),
+                resource.catalog)
             AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
           }
         case _ => Seq(request)
