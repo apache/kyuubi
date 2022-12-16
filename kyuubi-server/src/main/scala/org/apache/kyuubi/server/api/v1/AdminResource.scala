@@ -116,45 +116,56 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
-    val userName = if (StringUtils.isEmpty(hs2ProxyUser)) "" else fe.getSessionUser(hs2ProxyUser)
-    val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
-    val engineSpace = getEngineSpace(engine)
-    val engineNodes = ListBuffer[ServiceNodeInfo]()
-    Option(subdomain).filter(_.nonEmpty) match {
-      case Some(_) =>
-        withDiscoveryClient(fe.getConf) { discoveryClient =>
-          info(s"Listing engine nodes for $engineSpace")
-          engineNodes ++= discoveryClient.getServiceNodesInfo(engineSpace)
-        }
-      case None =>
-        withDiscoveryClient(fe.getConf) { discoveryClient =>
-          discoveryClient.getChildren(engineSpace).map { child =>
-            info(s"Listing engine nodes for $engineSpace/$child")
-            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
-          }
-        }
-    }
     val engines = ListBuffer[Engine]()
-    engineNodes.map(node => {
-      info(s"node  is " + node.toString)
-      engines += new Engine(
-        engine.getVersion,
-        engine.getUser,
-        engine.getEngineType,
-        engine.getSharelevel,
-        node.namespace.split("/").last,
-        node.instance,
-        node.namespace,
-        node.attributes.asJava,
-        node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME_KEY).orNull.toLong,
-        node.attributes.get(KYUUBI_ENGINE_URL).orNull,
-        node.host,
-        node.port,
-        node.engineRefId.orNull,
-        "Running",
-        node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull,
-        node.attributes.get(KYUUBI_ENGINE_CPU).orNull)
-    })
+    try {
+      val userName = if (StringUtils.isEmpty(hs2ProxyUser)) "" else fe.getSessionUser(hs2ProxyUser)
+      val engine = getEngine(userName, engineType, shareLevel, subdomain, "")
+      val engineSpace = getEngineSpace(engine)
+      val engineNodes = ListBuffer[ServiceNodeInfo]()
+      Option(subdomain).filter(_.nonEmpty) match {
+        case Some(_) =>
+          withDiscoveryClient(fe.getConf) { discoveryClient =>
+            info(s"Listing engine nodes for $engineSpace")
+            engineNodes ++= discoveryClient.getServiceNodesInfo(engineSpace)
+          }
+        case None =>
+          withDiscoveryClient(fe.getConf) { discoveryClient =>
+            discoveryClient.getChildren(engineSpace).map { child =>
+              info(s"Listing engine nodes for $engineSpace/$child")
+              engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+            }
+          }
+      }
+      engineNodes.map(node => {
+        info(s"node  is " + node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME_KEY).orNull.toLong)
+        info(s"node  is " + node.attributes.get(KYUUBI_ENGINE_URL).orNull)
+        info(s"node  is " + node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull)
+        info(s"node  is " + node.attributes.get(KYUUBI_ENGINE_CPU).orNull)
+
+        engines += new Engine(
+          engine.getVersion,
+          engine.getUser,
+          engine.getEngineType,
+          engine.getSharelevel,
+          node.namespace.split("/").last,
+          node.instance,
+          node.namespace,
+          node.attributes.asJava,
+          node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME_KEY).orNull.toLong,
+          node.attributes.get(KYUUBI_ENGINE_URL).orNull,
+          node.host,
+          node.port,
+          node.engineRefId.orNull,
+          "Running",
+          node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull,
+          node.attributes.get(KYUUBI_ENGINE_CPU).orNull)
+      })
+    } catch {
+      case NonFatal(e) =>
+        val errorMsg = s"Error getting engines"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
+    }
     engines
   }
 
