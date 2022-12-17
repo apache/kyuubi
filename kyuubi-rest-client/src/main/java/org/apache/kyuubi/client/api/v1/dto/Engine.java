@@ -34,7 +34,7 @@ public class Engine {
   private String namespace;
   private Map<String, String> attributes;
 
-  private Long createTime;
+  private String createTime;
   private String url;
   private String host;
   private int port;
@@ -55,7 +55,7 @@ public class Engine {
       String instance,
       String namespace,
       Map<String, String> attributes,
-      Long createTime,
+      String createTime,
       String url,
       String host,
       int port,
@@ -145,11 +145,11 @@ public class Engine {
     this.attributes = attributes;
   }
 
-  public Long getCreateTime() {
+  public String getCreateTime() {
     return createTime;
   }
 
-  public void setCreateTime(Long createTime) {
+  public void setCreateTime(String createTime) {
     this.createTime = createTime;
   }
 

@@ -137,7 +137,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           }
       }
       engineNodes.map(node => {
-        info(s"node  is " + node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME_KEY).orNull.toLong)
+        info(s"node  is " + node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME).orNull)
         info(s"node  is " + node.attributes.get(KYUUBI_ENGINE_URL).orNull)
         info(s"node  is " + node.attributes.get(KYUUBI_ENGINE_MEMORY).orNull)
         info(s"node  is " + node.attributes.get(KYUUBI_ENGINE_CPU).orNull)
@@ -151,7 +151,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
           node.instance,
           node.namespace,
           node.attributes.asJava,
-          node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME_KEY).orNull.toLong,
+          node.attributes.get(KYUUBI_ENGINE_SUBMIT_TIME).orNull,
           node.attributes.get(KYUUBI_ENGINE_URL).orNull,
           node.host,
           node.port,
@@ -192,7 +192,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
             node.instance,
             node.host,
             node.port,
-            node.attributes.get(KYUUBI_SERVER_SUBMIT_TIME_KEY).orNull.toLong,
+            node.attributes.get(KYUUBI_SERVER_SUBMIT_TIME).orNull.toLong,
             OSUtils.memoryTotal(),
             OSUtils.cpuTotal(),
             "Running")
