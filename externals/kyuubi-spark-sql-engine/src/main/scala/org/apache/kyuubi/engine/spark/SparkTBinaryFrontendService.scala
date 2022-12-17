@@ -105,7 +105,7 @@ class SparkTBinaryFrontendService(
     Map(
       KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId,
       KYUUBI_ENGINE_URL -> sc.uiWebUrl.get.replace("//", ""),
-      KYUUBI_ENGINE_SUBMIT_TIME_KEY -> sc.startTime.toString,
+      KYUUBI_ENGINE_SUBMIT_TIME -> sc.startTime.toString,
       KYUUBI_ENGINE_MEMORY -> memory,
       KYUUBI_ENGINE_CPU -> cores)
 
