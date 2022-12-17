@@ -212,7 +212,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
         val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
         val attributes =
-          p.split(";").map(_.split("=", 2)).filter(_.size == 2).map(kv => (kv.head, kv.last)).toMap
+          p.split(";").map(_.split("=")).filter(_.size == 2).map(kv => (kv.head, kv.last)).toMap
         info(s"Get service instance:$instance and version:$version under $namespace")
         ServiceNodeInfo(namespace, p, host, port, version, engineRefId, attributes)
       }
