@@ -33,7 +33,7 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
 import org.apache.kyuubi.events.EventBus
@@ -255,7 +255,7 @@ object SparkSQLEngine extends Logging {
 
   def main(args: Array[String]): Unit = {
     val startedTime = System.currentTimeMillis()
-    val submitTime = kyuubiConf.getOption(KYUUBI_ENGINE_SUBMIT_TIME_KEY) match {
+    val submitTime = kyuubiConf.getOption(KYUUBI_ENGINE_SUBMIT_TIME) match {
       case Some(t) => t.toLong
       case _ => startedTime
     }
