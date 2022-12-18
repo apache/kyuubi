@@ -67,6 +67,16 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+.search-box {
+  > :last-child {
+    margin-right: 0!important;
+  }
+}
+
+.table-container {
+  margin-top: 8px;
+}
+
 #app {
   background: #eee;
   min-height: 100vh;

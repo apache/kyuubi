@@ -25,18 +25,72 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, watch, computed } from 'vue'
   import { useStore } from '@/pinia/layout'
   import { storeToRefs } from 'pinia'
   import { useRoute } from 'vue-router'
-  import { MENUS } from './types'
   import cMenu from '@/components/menu/index.vue'
+  import { useI18n } from 'vue-i18n'
+  const { t, locale } = useI18n()
 
-  const menus = reactive(MENUS)
+  const menus: any = ref([])
   const store = useStore()
   const { isCollapse } = storeToRefs(store)
   const router = useRoute()
-  const activePath = ref(router.path)
+  const activeMenuMap: any = {
+    '/session/sql-statistics': '/session/session-statistics'
+  }
+  const activePath = computed(() => {
+    return activeMenuMap[router.path] || router.path
+  })
+
+  const initMenus = () => {
+    menus.value = [
+      {
+        label: t('overview'),
+        icon: 'Odometer',
+        router: '/overview'
+      },
+      {
+        label: 'Session Management',
+        icon: 'List',
+        children: [
+          {
+            label: 'Session Statistics',
+            router: '/session/session-statistics'
+          },
+          {
+            label: 'Operation',
+            router: '/session/operation/all'
+          }
+        ]
+      },
+      {
+        label: 'Server Management',
+        icon: 'Coin',
+        children: [
+          {
+            label: 'Kyuubi Server Management',
+            router: '/server/kyuubi-service'
+          },
+          {
+            label: 'Engine Management',
+            router: '/server/engine'
+          }
+        ]
+      },
+      {
+        label: 'Run Sql',
+        icon: 'VideoPlay',
+        router: '/run-sql'
+      }
+    ]
+  }
+
+  watch(locale, () => {
+    initMenus()
+  })
+  initMenus()
 </script>
 
 <style lang="scss" scoped>

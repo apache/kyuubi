@@ -44,6 +44,21 @@
       value: 3
     }
   ])
+    
+  window.addEventListener(
+    'message',
+    function (event: any) {
+      console.log(event)
+      const data = event.data
+      if (data && data.fromUdp) {
+        console.log(data)
+
+        // 发送回给udp
+        window.opener.postMessage('datahub', '*')
+      }
+    },
+    false
+  )
 </script>
 
 <style scoped></style>

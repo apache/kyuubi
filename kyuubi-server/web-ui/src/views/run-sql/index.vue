@@ -17,13 +17,7 @@
 -->
 
 <template>
-  <main>Running jobs page</main>
+  <main>Run sql page</main>
 </template>
-
-<script lang="ts">
-  export default {
-    name: 'OperationRunningJobsIndex'
-  }
-</script>
 
 <style scoped></style>

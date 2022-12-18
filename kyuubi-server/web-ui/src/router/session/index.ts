@@ -17,9 +17,19 @@
 
 const routes = [
   {
-    path: '/contact',
-    name: 'contact',
-    component: () => import('@/views/contact/index.vue')
+    path: '/session/session-statistics',
+    name: 'session-statistics',
+    component: () => import('@/views/session/session-statistics/index.vue')
+  },
+  {
+    path: '/session/sql-statistics',
+    name: 'sql-statistics',
+    component: () => import('@/views/session/sql-statistics/index.vue')
+  },
+  {
+    path: '/session/operation/:sessionId',
+    name: 'operation',
+    component: () => import('@/views/session/operation/index.vue')
   }
 ]
 

@@ -15,46 +15,18 @@
  * limitations under the License.
  */
 
-$--colors: (
-  'primary': (
-    'base': #242e42,
-  ),
-  'success': (
-    'base': #21ba45,
-  ),
-  'warning': (
-    'base': #f2711c,
-  ),
-  'danger': (
-    'base': #db2828,
-  ),
-  'error': (
-    'base': #db2828,
-  ),
-  'info': (
-    'base': #2f9688,
-  ),
-);
+import request from '@/utils/request'
 
-$--menus: (
-  'item-height': 46px,
-  'icon-width': 12px,
-  'text-color': 'rgba(255, 255, 255, .75)',
-  'hover-text-color': '#fff',
-  'hover-bg-color': '#1890ff',
-  'bg-color': '#001529',
-  'active-color': '#1890ff',
-);
+export function getAllServers() {
+  return request({
+    url: 'api/v1/admin/servers',
+    method: 'post'
+  })
+}
 
-$--card: (
-  padding: 14px
-);
-
-@forward 'element-plus/theme-chalk/src/common/var.scss' with (
-    // do not use same name, it will override.
-    $colors: $--colors,
-    $menu: $--menus,
-    $card: $--card
-  );
-
-@use "element-plus/theme-chalk/src/index.scss" as *;
+export function getLog() {
+  return request({
+    url: 'api/v1/admin/server/log',
+    method: 'post'
+  })
+}

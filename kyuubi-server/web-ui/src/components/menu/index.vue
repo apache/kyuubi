@@ -56,24 +56,22 @@
   </el-menu>
 </template>
 
-<script lang="ts">
-  export default {
-    name: 'MenuIndex',
-    props: {
-      isCollapse: {
-        type: Boolean,
-        required: true
-      },
-      menus: {
-        type: Array,
-        default: () => []
-      },
-      activePath: {
-        type: String,
-        default: '/overview'
-      }
+<script lang="ts" setup>
+  import { PropType } from 'vue'
+  defineProps({
+    isCollapse: {
+      type: Boolean,
+      required: true
+    },
+    menus: {
+      type: Array as PropType<any[]>,
+      default: () => []
+    },
+    activePath: {
+      type: String,
+      default: '/overview'
     }
-  }
+  })
 </script>
 
 <style lang="scss" scoped>
