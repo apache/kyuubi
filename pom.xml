@@ -169,6 +169,7 @@
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.19.0</log4j.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
+        <phoenix.version>5.2.5-HBase-2.x</phoenix.version>
         <netty.version>4.1.84.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -1496,6 +1497,12 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.aliyun.phoenix</groupId>
+                <artifactId>ali-phoenix-shaded-thin-client</artifactId>
+                <version>${phoenix.version}</version>
             </dependency>
 
             <!-- flink -->
