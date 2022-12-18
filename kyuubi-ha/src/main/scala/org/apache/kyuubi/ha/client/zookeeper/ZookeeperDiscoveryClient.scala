@@ -17,31 +17,33 @@
 
 package org.apache.kyuubi.ha.client.zookeeper
 
+import java.io.IOException
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+
+import scala.collection.JavaConverters._
+
 import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.atomic.{AtomicValue, DistributedAtomicInteger}
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.framework.recipes.nodes.PersistentNode
-import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
+import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
 import org.apache.curator.retry.RetryForever
 import org.apache.curator.utils.ZKPaths
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_ZK_NODE_TIMEOUT, HA_ZK_PUBLISH_CONFIGS}
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.{buildZookeeperClient, getGracefulStopThreadDelay}
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient.connectionChecker
-import org.apache.kyuubi.ha.client.{DiscoveryClient, ServiceDiscovery, ServiceNodeInfo}
-import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiSQLException, Logging}
+import org.apache.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException.NodeExistsException
-import org.apache.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
 
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import scala.collection.JavaConverters._
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_ZK_NODE_TIMEOUT, HA_ZK_PUBLISH_CONFIGS}
+import org.apache.kyuubi.ha.client.{DiscoveryClient, ServiceDiscovery, ServiceNodeInfo}
+import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.{buildZookeeperClient, getGracefulStopThreadDelay}
+import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient.connectionChecker
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
@@ -194,8 +196,6 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       sizeOpt: Option[Int] = None,
       silent: Boolean = false): Seq[ServiceNodeInfo] = {
     try {
-      /kyuubi-lab_1.7.0-SNAPSHOT_USER_SPARK_SQL/hdfs
-      /kyuubi-lab_1.7.0-SNAPSHOT_USER_SPARK_SQL/hdfs/default/serviceUri=172.17.91.141:35523;version=1.7.0-SNAPSHOT;kyuubi.engine.submit.time=1671278879987;kyuubi.engine.url=http:spark-f74ec5851ffb25c3-driver-svc.kyuubi-lab.svc:4045;kyuubi.engine.id=spark-c114da38da794bc1a0acebe4cf0f631b;kyuubi.engine.cpu=8*10;kyuubi.engine.memory=8*12g;refId=d1c4cfed-7f58-47dd-84df-ad60c16bd9a5;sequence=0000000009 on ZooKeeper for KyuubiServer uri: 172.17.91.141:35523
       val hosts = zkClient.getChildren.forPath(namespace)
       val size = sizeOpt.getOrElse(hosts.size())
       hosts.asScala.takeRight(size).map { p =>
