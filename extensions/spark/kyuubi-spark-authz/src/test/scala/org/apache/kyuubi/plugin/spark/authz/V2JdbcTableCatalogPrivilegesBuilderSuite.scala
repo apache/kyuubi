@@ -22,7 +22,7 @@ import scala.util.Try
 
 import org.scalatest.Outcome
 
-import org.apache.kyuubi.plugin.spark.authz.serde.{Table, TABLE_COMMAND_SPECS}
+import org.apache.kyuubi.plugin.spark.authz.serde._
 
 class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
   override protected val catalogImpl: String = "in-memory"
@@ -87,6 +87,21 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
           }
         }
       }
+    }
+  }
+
+  test("Extracting table info with ResolvedNamespaceDatabaseExtractor") {
+    val ns1 = "testns1"
+    val createDbSql = s"CREATE DATABASE IF NOT EXISTS $catalogV2.$ns1"
+    val plan = executePlan(createDbSql).analyzed
+    val spec = DB_COMMAND_SPECS(plan.getClass.getName)
+    var db: Database = null
+    spec.databaseDescs.find { d =>
+      Try(db = d.extract(plan)).isSuccess
+    }
+    withClue(createDbSql) {
+      assert(db.catalog === Some(catalogV2))
+      assert(db.database === ns1)
     }
   }
 }

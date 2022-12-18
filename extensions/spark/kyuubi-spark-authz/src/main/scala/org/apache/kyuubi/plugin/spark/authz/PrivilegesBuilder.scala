@@ -228,9 +228,9 @@ object PrivilegesBuilder {
           try {
             val database = databaseDesc.extract(plan)
             if (databaseDesc.isInput) {
-              inputObjs += databasePrivileges(database)
+              inputObjs += databasePrivileges(database.database)
             } else {
-              outputObjs += databasePrivileges(database)
+              outputObjs += databasePrivileges(database.database)
             }
           } catch {
             case e: Exception =>
