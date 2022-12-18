@@ -131,8 +131,18 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         case None =>
           withDiscoveryClient(fe.getConf) { discoveryClient =>
             discoveryClient.getChildren(engineSpace).map { child =>
-              info(s"Listing engine nodes for $engineSpace/$child")
-              engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+              {
+                if (StringUtils.isNotEmpty(hs2ProxyUser)) {
+                  info(s"Listing engine nodes for $engineSpace/$child")
+                  engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+                } else {
+                  discoveryClient.getChildren(s"$engineSpace/$child").map(restChild => {
+                    info(s"Listing engine nodes for $engineSpace/$child/$restChild")
+                    engineNodes ++= discoveryClient
+                      .getServiceNodesInfo(s"$engineSpace/$child/$restChild")
+                  })
+                }
+              }
             }
           }
       }
