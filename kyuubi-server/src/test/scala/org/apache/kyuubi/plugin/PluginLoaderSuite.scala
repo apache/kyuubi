@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.session.{FileSessionConfAdvisor, HadoopGroupProvider}
+import org.apache.kyuubi.session.{FileSessionConfAdvisor, HadoopGroupProvider, LDAPGroupProvider}
 
 class PluginLoaderSuite extends KyuubiFunSuite {
 
@@ -91,6 +91,16 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
     val groupProvider = PluginLoader.loadGroupProvider(conf)
     assert(groupProvider.isInstanceOf[HadoopGroupProvider])
+    val user = "somebody"
+    assert(groupProvider.primaryGroup(user, Map.empty[String, String].asJava) === user)
+    assert(groupProvider.groups(user, Map.empty[String, String].asJava) === Array(user))
+  }
+
+  test("LDAPGroupProvider") {
+    val conf = new KyuubiConf(false)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "ldap")
+    val groupProvider = PluginLoader.loadGroupProvider(conf)
+    assert(groupProvider.isInstanceOf[LDAPGroupProvider])
     val user = "somebody"
     assert(groupProvider.primaryGroup(user, Map.empty[String, String].asJava) === user)
     assert(groupProvider.groups(user, Map.empty[String, String].asJava) === Array(user))
