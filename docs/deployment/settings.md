@@ -497,7 +497,15 @@ kyuubi.session.engine.trino.connection.url|&lt;undefined&gt;|The server url that
 kyuubi.session.engine.trino.main.resource|&lt;undefined&gt;|The package used to create Trino engine remote job. If it is undefined, Kyuubi will use the default|string|1.5.0
 kyuubi.session.engine.trino.showProgress|true|When true, show the progress bar and final info in the trino engine log.|boolean|1.6.0
 kyuubi.session.engine.trino.showProgress.debug|false|When true, show the progress debug info in the trino engine log.|boolean|1.6.0
-kyuubi.session.group.provider|hadoop|A group provider plugin for Kyuubi Server. This plugin can provide primary group and groups information for different user or session configs. This config value should be a class which is a child of 'org.apache.kyuubi.plugin.GroupProvider' which has zero-arg constructor. Kyuubi provides the following built-in implementations: <li>hadoop: delegate the user group mapping to hadoop UserGroupInformation.</li>|string|1.7.0
+kyuubi.session.group.ldap.based.dn|&lt;undefined&gt;|LDAP base DN.|string|1.0.0
+kyuubi.session.group.ldap.bind.dn|&lt;undefined&gt;|LDAP bind DN used to connect ldap server.|string|1.0.0
+kyuubi.session.group.ldap.bind.password|&lt;undefined&gt;|LDAP bind password connect ldap server with bind DN.|string|1.0.0
+kyuubi.session.group.ldap.group.member.attr|member|LDAP group member attribute|string|1.0.0
+kyuubi.session.group.ldap.group.name.attr|cn|LDAP group name attribute|string|1.0.0
+kyuubi.session.group.ldap.group.search.filter|(objectClass=groupOfNames)|LDAP group search filter, if version of ldap > 2.0, it can use default value, else it may be set (objectClass=group)|string|1.0.0
+kyuubi.session.group.ldap.url|&lt;undefined&gt;|SPACE character separated LDAP connection URL(s).|string|1.0.0
+kyuubi.session.group.ldap.user.search.filter|(&(objectClass=person)(cn={0}))|LDAP user search filter, if version of ldap > 2.0, it can use default value, else it may be set (&(objectClass=user)(sAMAccountName={0}))|string|1.0.0
+kyuubi.session.group.provider|hadoop|A group provider plugin for Kyuubi Server. This plugin can provide primary group and groups information for different user or session configs. This config value should be a class which is a child of 'org.apache.kyuubi.plugin.GroupProvider' which has zero-arg constructor. Kyuubi provides the following built-in implementations: <li>hadoop: delegate the user group mapping to hadoop UserGroupInformation.</li> <li>ldap: delegate the user group mapping to ldap.</li>|string|1.7.0
 kyuubi.session.idle.timeout|PT6H|session idle timeout, it will be closed when it's not accessed for this duration|duration|1.2.0
 kyuubi.session.local.dir.allow.list||The local dir list that are allowed to access by the kyuubi session application. User might set some parameters such as `spark.files` and it will upload some local files when launching the kyuubi engine, if the local dir allow list is defined, kyuubi will check whether the path to upload is in the allow list. Note that, if it is empty, there is no limitation for that and please use absolute path list.|seq|1.6.0
 kyuubi.session.name|&lt;undefined&gt;|A human readable name of session and we use empty string by default. This name will be recorded in event. Note that, we only apply this value from session conf.|string|1.4.0
