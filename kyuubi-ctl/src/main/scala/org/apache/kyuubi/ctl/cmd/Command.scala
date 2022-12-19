@@ -57,8 +57,8 @@ abstract class Command[T](cliConfig: CliConfig) extends Logging {
   private def useDefaultPropertyValueIfMissing(): CliConfig = {
     var arguments: CliConfig = cliConfig.copy()
     if (cliConfig.zkOpts.zkQuorum == null) {
-      val quorum = conf.getOption(HA_ADDRESSES.key).
-        getOrElse(conf.getOption(HA_ZK_QUORUM.key).orNull)
+      val quorum =
+        conf.getOption(HA_ADDRESSES.key).getOrElse(conf.getOption(HA_ZK_QUORUM.key).orNull)
       arguments = arguments.copy(zkOpts = arguments.zkOpts.copy(zkQuorum = quorum))
       if (verbose) {
         super.info(s"Zookeeper quorum is not specified, use value from default conf: $quorum")
