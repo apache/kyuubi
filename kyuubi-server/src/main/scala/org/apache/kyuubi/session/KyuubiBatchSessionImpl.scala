@@ -157,8 +157,10 @@ class KyuubiBatchSessionImpl(
   }
 
   private[kyuubi] def onEngineOpened(): Unit = {
-    sessionEvent.openedTime = System.currentTimeMillis()
-    EventBus.post(sessionEvent)
+    if (sessionEvent.openedTime <= 0) {
+      sessionEvent.openedTime = System.currentTimeMillis()
+      EventBus.post(sessionEvent)
+    }
   }
 
   override def close(): Unit = {
