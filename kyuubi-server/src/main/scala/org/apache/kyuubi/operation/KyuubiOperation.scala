@@ -57,7 +57,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     case e: Throwable =>
       state.synchronized {
         if (isTerminalState(state)) {
-          warn(s"Ignore exception in terminal state with $statementId: $e")
+          warn(s"Ignore exception in terminal state with $statementId", e)
         } else {
           val errorType = e.getClass.getSimpleName
           MetricsSystem.tracing(_.incCount(
