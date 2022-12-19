@@ -90,9 +90,9 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
     }
   }
 
-  test("Extracting table info with ResolvedNamespaceDatabaseExtractor") {
+  test("Extracting database info with ResolvedDBObjectNameDatabaseExtractor") {
     val ns1 = "testns1"
-    val createDbSql = s"CREATE DATABASE IF NOT EXISTS $catalogV2.$ns1"
+    val createDbSql = s"CREATE NAMESPACE IF NOT EXISTS $catalogV2.$ns1"
     val plan = executePlan(createDbSql).analyzed
     val spec = DB_COMMAND_SPECS(plan.getClass.getName)
     var db: Database = null
@@ -102,6 +102,24 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
     withClue(createDbSql) {
       assert(db.catalog === Some(catalogV2))
       assert(db.database === ns1)
+    }
+  }
+
+  test("Extracting database info with ResolvedNamespaceDatabaseExtractor") {
+    val ns1 = "testns1"
+    withDatabase(s"$ns1") { ns =>
+      sql(s"CREATE NAMESPACE $ns")
+      val sql1 = s"DROP NAMESPACE IF EXISTS $catalogV2.$ns1"
+      val plan = executePlan(sql1).analyzed
+      val spec = DB_COMMAND_SPECS(plan.getClass.getName)
+      var db: Database = null
+      spec.databaseDescs.find { d =>
+        Try(db = d.extract(plan)).isSuccess
+      }
+      withClue(sql1) {
+        assert(db.catalog === Some(catalogV2))
+        assert(db.database === ns1)
+      }
     }
   }
 }
