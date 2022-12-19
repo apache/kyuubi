@@ -38,6 +38,8 @@ import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
+import org.apache.kyuubi.sql.parser.KyuubiParser
+import org.apache.kyuubi.sql.plan.command.RunnableCommand
 import org.apache.kyuubi.util.SignUtils
 
 class KyuubiSessionImpl(
@@ -47,7 +49,8 @@ class KyuubiSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
-    sessionConf: KyuubiConf)
+    sessionConf: KyuubiConf,
+    parser: KyuubiParser)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override val sessionType: SessionType = SessionType.SQL
@@ -247,5 +250,24 @@ class KyuubiSessionImpl(
         }
       case unknown => throw new IllegalArgumentException(s"Unknown server info provider $unknown")
     }
+  }
+
+  override def executeStatement(
+      statement: String,
+      confOverlay: Map[String, String],
+      runAsync: Boolean,
+      queryTimeout: Long): OperationHandle = {
+    val kyuubiNode = parser.parsePlan(statement)
+    kyuubiNode match {
+      case command: RunnableCommand =>
+        val operation = sessionManager.operationManager.newExecuteOnServerOperation(
+          this,
+          runAsync,
+          command)
+        runOperation(operation)
+      case _ =>
+        super.executeStatement(statement, confOverlay, runAsync, queryTimeout)
+    }
+
   }
 }

@@ -18,30 +18,39 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kyuubi-server
+  name: {{ .Release.Name }}
   labels:
-    app: {{ template "kyuubi.name" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "kyuubi.name" . }}
-      release: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ template "kyuubi.name" . }}
-        release: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
-      {{- if .Values.serviceAccount }}
-      serviceAccountName: {{ .Values.serviceAccount.name }}
-      {{- end}}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
       containers:
         - name: kyuubi-server
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.env }}
+          env: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
           ports:
             - name: frontend-port
               containerPort: {{ .Values.server.bind.port }}
@@ -52,7 +61,9 @@ spec:
               port: {{ .Values.server.bind.port }}
             initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probe.liveness.timeoutSeconds }}
             failureThreshold: {{ .Values.probe.liveness.failureThreshold }}
+            successThreshold: {{ .Values.probe.liveness.successThreshold }}
           {{- end }}
           {{- if .Values.probe.readiness.enabled }}
           readinessProbe:
@@ -60,19 +71,29 @@ spec:
               port: {{ .Values.server.bind.port }}
             initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probe.readiness.timeoutSeconds }}
             failureThreshold: {{ .Values.probe.readiness.failureThreshold }}
+            successThreshold: {{ .Values.probe.readiness.successThreshold }}
           {{- end }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.resources }}
+          resources:  {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: kyuubi-defaults
               mountPath: {{ .Values.server.conf.mountPath }}
-          env:
-            {{- range $key, $val := .Values.environments }}
-            - name: {{ $key }}
-              value: {{ $val | quote }}
-            {{- end }}
       volumes:
         - name: kyuubi-defaults
           configMap:
-            name: kyuubi-defaults
+            name: {{ .Release.Name }}-kyuubi-defaults
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.securityContext }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}

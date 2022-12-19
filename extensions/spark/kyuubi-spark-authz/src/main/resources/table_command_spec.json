@@ -1,0 +1,1289 @@
+[ {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.AddColumns",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_ADDCOLS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.AddPartitions",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_ADDPARTS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterColumn",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_ADDCOLS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterTable",
+  "tableDescs" : [ {
+    "fieldName" : "ident",
+    "fieldExtractor" : "IdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.AppendData",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "INSERT"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CacheTable",
+  "tableDescs" : [ ],
+  "opType" : "CREATEVIEW",
+  "queryDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CacheTableAsSelect",
+  "tableDescs" : [ ],
+  "opType" : "CREATEVIEW",
+  "queryDescs" : [ {
+    "fieldName" : "plan",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommentOnTable",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTable",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : {
+      "fieldName" : "catalog",
+      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+    },
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : {
+      "fieldName" : "catalog",
+      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+    },
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "left",
+    "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE_AS_SELECT",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateV2Table",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : {
+      "fieldName" : "catalog",
+      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+    },
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromTable",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropColumns",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_ADDCOLS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropPartitions",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_DROPPARTS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropTable",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "DROPTABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable",
+  "tableDescs" : [ {
+    "fieldName" : "targetTable",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "sourceTable",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoTable",
+  "tableDescs" : [ {
+    "fieldName" : "targetTable",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "sourceTable",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.OverwriteByExpression",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "INSERT_OVERWRITE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.OverwritePartitionsDynamic",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "INSERT_OVERWRITE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.RefreshTable",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.RenameColumn",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_RENAMECOL",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.RenamePartitions",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_RENAMEPART",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.RepairTable",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "MSCK",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceColumns",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_REPLACECOLS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTable",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : {
+      "fieldName" : "catalog",
+      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+    },
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "IdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : {
+      "fieldName" : "catalog",
+      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+    },
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "left",
+    "fieldExtractor" : "ResolvedDbObjectNameTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE_AS_SELECT",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowCreateTable",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "SHOW_CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowTableProperties",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "SHOW_TBLPROPERTIES",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.TruncatePartition",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_DROPPARTS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.TruncateTable",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "TRUNCATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateTable",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "colsToAdd",
+      "fieldExtractor" : "StructFieldSeqColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_ADDCOLS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableAddPartitionCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "partitionSpecsAndLocs",
+      "fieldExtractor" : "PartitionLocsSeqColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_ADDPARTS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableChangeColumnCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "columnName",
+      "fieldExtractor" : "StringColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_REPLACECOLS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableDropPartitionCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "specs",
+      "fieldExtractor" : "PartitionSeqColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_DROPPARTS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableRecoverPartitionsCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "MSCK",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableRenameCommand",
+  "tableDescs" : [ {
+    "fieldName" : "oldName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "DELETE"
+    },
+    "tableTypeDesc" : {
+      "fieldName" : "oldName",
+      "fieldExtractor" : "TableIdentifierTableTypeExtractor",
+      "skipTypes" : [ "TEMP_VIEW" ]
+    },
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "newName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : {
+      "fieldName" : "oldName",
+      "fieldExtractor" : "TableIdentifierTableTypeExtractor",
+      "skipTypes" : [ "TEMP_VIEW" ]
+    },
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_RENAME",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableRenamePartitionCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "oldPartition",
+      "fieldExtractor" : "PartitionColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_RENAMEPART",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableSerDePropertiesCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "partSpec",
+      "fieldExtractor" : "PartitionOptionColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_SERDEPROPERTIES",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableSetLocationCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "partitionSpec",
+      "fieldExtractor" : "PartitionOptionColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_LOCATION",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableSetPropertiesCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterTableUnsetPropertiesCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AlterViewAsCommand",
+  "tableDescs" : [ {
+    "fieldName" : "name",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : {
+      "fieldName" : "name",
+      "fieldExtractor" : "TableIdentifierTableTypeExtractor",
+      "skipTypes" : [ "TEMP_VIEW" ]
+    },
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ALTERVIEW_AS",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AnalyzeColumnCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "columnNames",
+      "fieldExtractor" : "StringSeqColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  }, {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "columnNames",
+      "fieldExtractor" : "StringSeqOptionColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ANALYZE_TABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AnalyzePartitionCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "partitionSpec",
+      "fieldExtractor" : "PartitionColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ANALYZE_TABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AnalyzeTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ANALYZE_TABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "ANALYZE_TABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.CacheTableCommand",
+  "tableDescs" : [ ],
+  "opType" : "CREATEVIEW",
+  "queryDescs" : [ {
+    "fieldName" : "plan",
+    "fieldExtractor" : "LogicalPlanOptionQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE_AS_SELECT",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.CreateTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.CreateTableLikeCommand",
+  "tableDescs" : [ {
+    "fieldName" : "targetTable",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : true
+  }, {
+    "fieldName" : "sourceTable",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : true
+  } ],
+  "opType" : "CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.CreateViewCommand",
+  "tableDescs" : [ {
+    "fieldName" : "name",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : {
+      "fieldName" : "viewType",
+      "fieldExtractor" : "ViewTypeTableTypeExtractor",
+      "skipTypes" : [ "TEMP_VIEW", "GLOBAL_TEMP_VIEW" ]
+    },
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATEVIEW",
+  "queryDescs" : [ {
+    "fieldName" : "plan",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  }, {
+    "fieldName" : "child",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.DescribeColumnCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "colNameParts",
+      "fieldExtractor" : "StringSeqLastColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "DESCTABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.DescribeTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "partitionSpec",
+      "fieldExtractor" : "PartitionColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : true
+  } ],
+  "opType" : "DESCTABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.DropTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : {
+      "fieldName" : "tableName",
+      "fieldExtractor" : "TableIdentifierTableTypeExtractor",
+      "skipTypes" : [ "TEMP_VIEW" ]
+    },
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "DROPTABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.LoadDataCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "partition",
+      "fieldExtractor" : "PartitionOptionColumnExtractor"
+    },
+    "actionTypeDesc" : {
+      "fieldName" : "isOverwrite",
+      "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
+      "actionType" : null
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "LOAD",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.RefreshTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.RepairTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "MSCK",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.ShowColumnsCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "SHOWCOLUMNS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.ShowCreateTableAsSerdeCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "SHOW_CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.ShowCreateTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "SHOW_CREATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.ShowPartitionsCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "spec",
+      "fieldExtractor" : "PartitionOptionColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "SHOWPARTITIONS",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.ShowTablePropertiesCommand",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "SHOW_TBLPROPERTIES",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.TruncateTableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableName",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "partitionSpec",
+      "fieldExtractor" : "PartitionOptionColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "TRUNCATETABLE",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.CreateTempViewUsing",
+  "tableDescs" : [ ],
+  "opType" : "CREATEVIEW",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoDataSourceCommand",
+  "tableDescs" : [ {
+    "fieldName" : "logicalRelation",
+    "fieldExtractor" : "LogicalRelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : "overwrite",
+      "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
+      "actionType" : null
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoHiveDirCommand",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.RefreshTable",
+  "tableDescs" : [ {
+    "fieldName" : "tableIdent",
+    "fieldExtractor" : "TableIdentifierTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : true,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand",
+  "tableDescs" : [ ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableDesc",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "outputColumnNames",
+      "fieldExtractor" : "StringSeqColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE_AS_SELECT",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveTable",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "outputColumnNames",
+      "fieldExtractor" : "StringSeqColumnExtractor"
+    },
+    "actionTypeDesc" : {
+      "fieldName" : "overwrite",
+      "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",
+      "actionType" : null
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+}, {
+  "classname" : "org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableDesc",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : {
+      "fieldName" : "outputColumnNames",
+      "fieldExtractor" : "StringSeqColumnExtractor"
+    },
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false
+  } ],
+  "opType" : "CREATETABLE_AS_SELECT",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor"
+  } ]
+} ]

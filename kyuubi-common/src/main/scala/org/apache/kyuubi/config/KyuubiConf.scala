@@ -362,7 +362,7 @@ object KyuubiConf {
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
-    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL = Value
+    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL, TRINO = Value
   }
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
@@ -373,6 +373,7 @@ object KyuubiConf {
         " <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li>" +
         " <li>REST - Kyuubi defined REST API(experimental).</li> " +
         " <li>MYSQL - MySQL compatible text protocol(experimental).</li> " +
+        " <li>TRINO - Trino compatible http protocol(experimental).</li> " +
         "</ul>")
       .version("1.4.0")
       .stringConf
@@ -513,6 +514,13 @@ object KyuubiConf {
       .doc("Maximum number of threads in the of frontend worker thread pool for the thrift " +
         "frontend service")
       .version("1.4.0")
+      .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
+
+  val FRONTEND_REST_MAX_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.rest.max.worker.threads")
+      .doc("Maximum number of threads in the of frontend worker thread pool for the rest " +
+        "frontend service")
+      .version("1.6.2")
       .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
 
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
@@ -921,6 +929,28 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
+  val FRONTEND_TRINO_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.frontend.trino.bind.host")
+      .doc("Hostname or IP of the machine on which to run the TRINO frontend service.")
+      .version("1.7.0")
+      .serverOnly
+      .fallbackConf(FRONTEND_BIND_HOST)
+
+  val FRONTEND_TRINO_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.trino.bind.port")
+    .doc("Port of the machine on which to run the TRINO frontend service.")
+    .version("1.7.0")
+    .serverOnly
+    .intConf
+    .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+    .createWithDefault(10999)
+
+  val FRONTEND_TRINO_MAX_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.trino.max.worker.threads")
+      .doc("Maximum number of threads in the of frontend worker thread pool for the trino " +
+        "frontend service")
+      .version("1.7.0")
+      .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
+
   val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.context")
       .doc("The desired context from your kubernetes config file used to configure the K8S " +
@@ -1182,6 +1212,11 @@ object KyuubiConf {
     .version("1.2.0")
     .fallbackConf(SESSION_TIMEOUT)
 
+  val BATCH_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.batch.session.idle.timeout")
+    .doc("Batch session idle timeout, it will be closed when it's not accessed for this duration")
+    .version("1.6.2")
+    .fallbackConf(SESSION_IDLE_TIMEOUT)
+
   val ENGINE_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.session.engine.check.interval")
     .doc("The check interval for engine timeout")
     .version("1.0.0")
@@ -1279,6 +1314,13 @@ object KyuubiConf {
       .version("1.6.0")
       .timeConf
       .createWithDefaultString("PT5S")
+
+  val BATCH_APPLICATION_STARVATION_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.application.starvation.timeout")
+      .doc("Threshold above which to warn batch application may be starved.")
+      .version("1.7.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(3).toMillis)
 
   val BATCH_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.batch.conf.ignore.list")
@@ -1443,6 +1485,14 @@ object KyuubiConf {
     buildConf("kyuubi.operation.status.polling.timeout")
       .doc("Timeout(ms) for long polling asynchronous running sql query's status")
       .version("1.0.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
+
+  val OPERATION_STATUS_UPDATE_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.operation.status.update.interval")
+      .internal
+      .doc("Interval(ms) for updating the same status for a query.")
+      .version("1.7.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
@@ -1619,10 +1669,12 @@ object KyuubiConf {
     .createWithDefault(-1)
 
   val ENGINE_POOL_BALANCE_POLICY: ConfigEntry[String] =
-    buildConf("kyuubi.engine.pool.balance.policy")
-      .doc("The balance policy of queries in engine pool.<ul>" +
-        " <li>RANDOM - Randomly use the engine in the pool</li>" +
-        " <li>POLLING - Polling use the engine in the pool</li> </ul>")
+    buildConf("kyuubi.engine.pool.selectPolicy")
+      .doc("The select policy of an engine from the corresponding engine pool engine for " +
+        "a session. <ul>" +
+        "<li>RANDOM - Randomly use the engine in the pool</li>" +
+        "<li>POLLING - Polling use the engine in the pool</li>" +
+        "</ul>")
       .version("1.7.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
@@ -2181,6 +2233,42 @@ object KyuubiConf {
       .doc("Maximum kyuubi server connections per user:ipaddress combination." +
         " Any user-ipaddress exceeding this limit will not be allowed to connect.")
       .version("1.6.0")
+      .serverOnly
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.server.limit.connections.user.unlimited.list")
+      .doc("The maximin connections of the user in the white list will not be limited.")
+      .version("1.7.0")
+      .serverOnly
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
+  val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.batch.limit.connections.per.user")
+      .doc("Maximum kyuubi server batch connections per user." +
+        " Any user exceeding this limit will not be allowed to connect.")
+      .version("1.7.0")
+      .serverOnly
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.batch.limit.connections.per.ipaddress")
+      .doc("Maximum kyuubi server batch connections per ipaddress." +
+        " Any user exceeding this limit will not be allowed to connect.")
+      .version("1.7.0")
+      .serverOnly
+      .intConf
+      .createOptional
+
+  val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER_IPADDRESS: OptionalConfigEntry[Int] =
+    buildConf("kyuubi.server.batch.limit.connections.per.user.ipaddress")
+      .doc("Maximum kyuubi server batch connections per user:ipaddress combination." +
+        " Any user-ipaddress exceeding this limit will not be allowed to connect.")
+      .version("1.7.0")
       .serverOnly
       .intConf
       .createOptional

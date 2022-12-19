@@ -22,7 +22,7 @@ import java.util.{ArrayList => JArrayList}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
+import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
 import org.apache.kyuubi.engine.ApplicationInfo
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -33,7 +33,7 @@ abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperat
 
   private[kyuubi] def currentApplicationInfo: Option[ApplicationInfo]
 
-  override def getResultSetSchema: TTableSchema = {
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
     val schema = new TTableSchema()
     Seq("key", "value").zipWithIndex.foreach { case (colName, position) =>
       val tColumnDesc = new TColumnDesc()
@@ -44,7 +44,10 @@ abstract class KyuubiApplicationOperation(session: Session) extends KyuubiOperat
       tColumnDesc.setPosition(position)
       schema.addToColumns(tColumnDesc)
     }
-    schema
+    val resp = new TGetResultSetMetadataResp
+    resp.setSchema(schema)
+    resp.setStatus(okStatusWithHints(Seq.empty))
+    resp
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {

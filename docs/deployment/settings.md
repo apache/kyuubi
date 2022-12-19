@@ -171,7 +171,9 @@ kyuubi.backend.server.exec.pool.wait.queue.size|100|Size of the wait queue for t
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
 kyuubi.batch.application.check.interval|PT5S|The interval to check batch job application information.|duration|1.6.0
+kyuubi.batch.application.starvation.timeout|PT3M|Threshold above which to warn batch application may be starved.|duration|1.7.0
 kyuubi.batch.conf.ignore.list||A comma separated list of ignored keys for batch conf. If the batch conf contains any of them, the key and the corresponding value will be removed silently during batch job submission. Note that this rule is for server-side protection defined via administrators to prevent some essential configs from tampering. You can also pre-define some config for batch job submission with prefix: kyuubi.batchConf.[batchType]. For example, you can pre-define `spark.master` for spark batch job with key `kyuubi.batchConf.spark.spark.master`.|seq|1.6.0
+kyuubi.batch.session.idle.timeout|PT6H|Batch session idle timeout, it will be closed when it's not accessed for this duration|duration|1.6.2
 
 
 ### Credentials
@@ -244,8 +246,8 @@ kyuubi.engine.jdbc.memory|1g|The heap memory for the jdbc query engine|string|1.
 kyuubi.engine.jdbc.type|&lt;undefined&gt;|The short name of jdbc type|string|1.6.0
 kyuubi.engine.operation.convert.catalog.database.enabled|true|When set to true, The engine converts the JDBC methods of set/get Catalog and set/get Schema to the implementation of different engines|boolean|1.6.0
 kyuubi.engine.operation.log.dir.root|engine_operation_logs|Root directory for query operation log at engine-side.|string|1.4.0
-kyuubi.engine.pool.balance.policy|RANDOM|The balance policy of queries in engine pool.<ul> <li>RANDOM - Randomly use the engine in the pool</li> <li>POLLING - Polling use the engine in the pool</li> </ul>|string|1.7.0
 kyuubi.engine.pool.name|engine-pool|The name of engine pool.|string|1.5.0
+kyuubi.engine.pool.selectPolicy|RANDOM|The select policy of an engine from the corresponding engine pool engine for a session. <ul><li>RANDOM - Randomly use the engine in the pool</li><li>POLLING - Polling use the engine in the pool</li></ul>|string|1.7.0
 kyuubi.engine.pool.size|-1|The size of engine pool. Note that, if the size is less than 1, the engine pool will not be enabled; otherwise, the size of the engine pool will be min(this, kyuubi.engine.pool.size.threshold).|int|1.4.0
 kyuubi.engine.pool.size.threshold|9|This parameter is introduced as a server-side parameter, and controls the upper limit of the engine pool.|int|1.4.0
 kyuubi.engine.session.initialize.sql||SemiColon-separated list of SQL statements to be initialized in the newly created engine session before queries. This configuration can not be used in JDBC url due to the limitation of Beeline/JDBC driver.|seq|1.3.0
@@ -297,10 +299,11 @@ kyuubi.frontend.mysql.max.worker.threads|999|Maximum number of threads in the co
 kyuubi.frontend.mysql.min.worker.threads|9|Minimum number of threads in the command execution thread pool for the MySQL frontend service|int|1.4.0
 kyuubi.frontend.mysql.netty.worker.threads|&lt;undefined&gt;|Number of thread in the netty worker event loop of MySQL frontend service. Use min(cpu_cores, 8) in default.|int|1.4.0
 kyuubi.frontend.mysql.worker.keepalive.time|PT1M|Time(ms) that an idle async thread of the command execution thread pool will wait for a new task to arrive before terminating in MySQL frontend service|duration|1.4.0
-kyuubi.frontend.protocols|THRIFT_BINARY|A comma separated list for all frontend protocols <ul> <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li> <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li> <li>REST - Kyuubi defined REST API(experimental).</li>  <li>MYSQL - MySQL compatible text protocol(experimental).</li> </ul>|seq|1.4.0
+kyuubi.frontend.protocols|THRIFT_BINARY|A comma separated list for all frontend protocols <ul> <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li> <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li> <li>REST - Kyuubi defined REST API(experimental).</li>  <li>MYSQL - MySQL compatible text protocol(experimental).</li>  <li>TRINO - Trino compatible http protocol(experimental).</li> </ul>|seq|1.4.0
 kyuubi.frontend.proxy.http.client.ip.header|X-Real-IP|The http header to record the real client ip address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. Note that, because the header value can be specified to any ip address, so it will not be used for authentication.|string|1.6.0
 kyuubi.frontend.rest.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the REST frontend service.|string|1.4.0
 kyuubi.frontend.rest.bind.port|10099|Port of the machine on which to run the REST frontend service.|int|1.4.0
+kyuubi.frontend.rest.max.worker.threads|999|Maximum number of threads in the of frontend worker thread pool for the rest frontend service|int|1.6.2
 kyuubi.frontend.ssl.keystore.algorithm|&lt;undefined&gt;|SSL certificate keystore algorithm.|string|1.7.0
 kyuubi.frontend.ssl.keystore.password|&lt;undefined&gt;|SSL certificate keystore password.|string|1.7.0
 kyuubi.frontend.ssl.keystore.path|&lt;undefined&gt;|SSL certificate keystore location.|string|1.7.0
@@ -335,6 +338,9 @@ kyuubi.frontend.thrift.max.message.size|104857600|Maximum message size in bytes 
 kyuubi.frontend.thrift.max.worker.threads|999|Maximum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.4.0
 kyuubi.frontend.thrift.min.worker.threads|9|Minimum number of threads in the of frontend worker thread pool for the thrift frontend service|int|1.4.0
 kyuubi.frontend.thrift.worker.keepalive.time|PT1M|Keep-alive time (in milliseconds) for an idle worker thread|duration|1.4.0
+kyuubi.frontend.trino.bind.host|&lt;undefined&gt;|Hostname or IP of the machine on which to run the TRINO frontend service.|string|1.7.0
+kyuubi.frontend.trino.bind.port|10999|Port of the machine on which to run the TRINO frontend service.|int|1.7.0
+kyuubi.frontend.trino.max.worker.threads|999|Maximum number of threads in the of frontend worker thread pool for the trino frontend service|int|1.7.0
 kyuubi.frontend.worker.keepalive.time|PT1M|(deprecated) Keep-alive time (in milliseconds) for an idle worker thread|duration|1.0.0
 
 
@@ -451,10 +457,14 @@ kyuubi.operation.status.polling.timeout|PT5S|Timeout(ms) for long polling asynch
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
+kyuubi.server.batch.limit.connections.per.ipaddress|&lt;undefined&gt;|Maximum kyuubi server batch connections per ipaddress. Any user exceeding this limit will not be allowed to connect.|int|1.7.0
+kyuubi.server.batch.limit.connections.per.user|&lt;undefined&gt;|Maximum kyuubi server batch connections per user. Any user exceeding this limit will not be allowed to connect.|int|1.7.0
+kyuubi.server.batch.limit.connections.per.user.ipaddress|&lt;undefined&gt;|Maximum kyuubi server batch connections per user:ipaddress combination. Any user-ipaddress exceeding this limit will not be allowed to connect.|int|1.7.0
 kyuubi.server.info.provider|ENGINE|The server information provider name, some clients may rely on this information to check the server compatibilities and functionalities. <li>SERVER: Return Kyuubi server information.</li> <li>ENGINE: Return Kyuubi engine information.</li>|string|1.6.1
 kyuubi.server.limit.connections.per.ipaddress|&lt;undefined&gt;|Maximum kyuubi server connections per ipaddress. Any user exceeding this limit will not be allowed to connect.|int|1.6.0
 kyuubi.server.limit.connections.per.user|&lt;undefined&gt;|Maximum kyuubi server connections per user. Any user exceeding this limit will not be allowed to connect.|int|1.6.0
 kyuubi.server.limit.connections.per.user.ipaddress|&lt;undefined&gt;|Maximum kyuubi server connections per user:ipaddress combination. Any user-ipaddress exceeding this limit will not be allowed to connect.|int|1.6.0
+kyuubi.server.limit.connections.user.unlimited.list||The maximin connections of the user in the white list will not be limited.|seq|1.7.0
 kyuubi.server.name|&lt;undefined&gt;|The name of Kyuubi Server.|string|1.5.0
 kyuubi.server.redaction.regex|&lt;undefined&gt;|Regex to decide which Kyuubi contain sensitive information. When this regex matches a property key or value, the value is redacted from the various logs.||1.6.0
 
@@ -614,6 +624,10 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
 <!-- Extra logging related to initialization of Log4j.
  Set to debug or trace if log4j initialization is failing. -->
 <Configuration status="INFO">
+    <Properties>
+        <Property name="restAuditLogPath">rest-audit.log</Property>
+        <Property name="restAuditLogFilePattern">rest-audit-%d{yyyy-MM-dd}-%i.log</Property>
+    </Properties>
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c: %m%n"/>
@@ -621,6 +635,14 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
                 <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
             </Filters>
         </Console>
+        <RollingFile name="restAudit" fileName="${sys:restAuditLogPath}"
+                     filePattern="${sys:restAuditLogFilePattern}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="51200KB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
     </Appenders>
     <Loggers>
         <Root level="INFO">
@@ -636,6 +658,9 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
         -->
         <Logger name="org.apache.hive.beeline.KyuubiBeeLine" level="error" additivity="false">
             <AppenderRef ref="stdout"/>
+        </Logger>
+        <Logger name="org.apache.kyuubi.server.http.authentication.AuthenticationAuditLogger" additivity="false">
+            <AppenderRef ref="restAudit" />
         </Logger>
     </Loggers>
 </Configuration>

@@ -111,7 +111,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private String engineUrl = "";
 
   private boolean isBeeLineMode;
-  private String resultCodec = "simple";
 
   /** Get all direct HiveServer2 URLs from a ZooKeeper based HiveServer2 URL */
   public static List<JdbcConnectionParams> getAllUrls(String zookeeperBasedHS2Url)
@@ -135,6 +134,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
     jdbcUriString = connParams.getJdbcUriString();
     sessConfMap = connParams.getSessionVars();
+
+    if (!sessConfMap.containsKey(AUTH_PRINCIPAL)
+        && sessConfMap.containsKey(AUTH_KYUUBI_SERVER_PRINCIPAL)) {
+      sessConfMap.put(AUTH_PRINCIPAL, sessConfMap.get(AUTH_KYUUBI_SERVER_PRINCIPAL));
+    }
+
     // JDBC URL: jdbc:hive2://<host>:<port>/dbName;sess_var_list?hive_conf_list#hive_var_list
     // each list: <key1>=<val1>;<key2>=<val2> and so on
     // sess_var_list -> sessConfMap
@@ -146,19 +151,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       host = connParams.getHost();
     }
     port = connParams.getPort();
-
-    resultCodec =
-        connParams
-            .getSessionVars()
-            .getOrDefault(
-                "kyuubi.operation.result.codec",
-                connParams
-                    .getHiveVars()
-                    .getOrDefault(
-                        "kyuubi.operation.result.codec",
-                        connParams
-                            .getHiveConfs()
-                            .getOrDefault("kyuubi.operation.result.codec", "simple")));
 
     setupTimeout();
 
@@ -1379,9 +1371,5 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   public String getEngineUrl() {
     return engineUrl;
-  }
-
-  String getResultCodec() {
-    return resultCodec;
   }
 }

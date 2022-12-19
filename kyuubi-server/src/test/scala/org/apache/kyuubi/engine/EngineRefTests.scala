@@ -73,7 +73,7 @@ trait EngineRefTests extends KyuubiFunSuite {
         DiscoveryPaths.makePath(
           s"kyuubi_${KYUUBI_VERSION}_${CONNECTION}_${engineType}",
           user,
-          Array(id)))
+          id))
       assert(engine.defaultEngineName === s"kyuubi_${CONNECTION}_${engineType}_${user}_$id")
     }
   }
@@ -87,7 +87,7 @@ trait EngineRefTests extends KyuubiFunSuite {
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${USER}_$FLINK_SQL",
         user,
-        Array("default")))
+        "default"))
     assert(appName.defaultEngineName === s"kyuubi_${USER}_${FLINK_SQL}_${user}_default_$id")
 
     Seq(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN, KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN).foreach {
@@ -99,7 +99,7 @@ trait EngineRefTests extends KyuubiFunSuite {
           DiscoveryPaths.makePath(
             s"kyuubi_${KYUUBI_VERSION}_${USER}_${FLINK_SQL}",
             user,
-            Array("abc")))
+            "abc"))
         assert(appName2.defaultEngineName === s"kyuubi_${USER}_${FLINK_SQL}_${user}_abc_$id")
     }
   }
@@ -114,7 +114,7 @@ trait EngineRefTests extends KyuubiFunSuite {
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
         primaryGroupName,
-        Array("default")))
+        "default"))
     assert(engineRef.defaultEngineName ===
       s"kyuubi_GROUP_SPARK_SQL_${primaryGroupName}_default_$id")
 
@@ -127,7 +127,7 @@ trait EngineRefTests extends KyuubiFunSuite {
           DiscoveryPaths.makePath(
             s"kyuubi_${KYUUBI_VERSION}_${GROUP}_${SPARK_SQL}",
             primaryGroupName,
-            Array("abc")))
+            "abc"))
         assert(engineRef2.defaultEngineName ===
           s"kyuubi_${GROUP}_${SPARK_SQL}_${primaryGroupName}_abc_$id")
     }
@@ -142,7 +142,7 @@ trait EngineRefTests extends KyuubiFunSuite {
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER}_${FLINK_SQL}",
         user,
-        Array("default")))
+        "default"))
     assert(appName.defaultEngineName === s"kyuubi_${SERVER}_${FLINK_SQL}_${user}_default_$id")
 
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
@@ -151,7 +151,7 @@ trait EngineRefTests extends KyuubiFunSuite {
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER}_${FLINK_SQL}",
         user,
-        Array("abc")))
+        "abc"))
     assert(appName2.defaultEngineName === s"kyuubi_${SERVER}_${FLINK_SQL}_${user}_abc_$id")
   }
 

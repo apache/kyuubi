@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetResultSetMetadataReq, TOpenSessionReq, TStatusCode}
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -407,6 +407,42 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
         assert(result.next())
         assert(result.getInt(1) === 1)
       }
+    }
+  }
+
+  test("operation metadata hint - __kyuubi_operation_result_codec__") {
+    assume(!httpMode)
+    withSessionHandle { (client, handle) =>
+      def checkStatusAndResultSetCodecHint(
+          sql: String,
+          expectedCodec: String): Unit = {
+        val stmtReq = new TExecuteStatementReq()
+        stmtReq.setSessionHandle(handle)
+        stmtReq.setStatement(sql)
+        val tExecuteStatementResp = client.ExecuteStatement(stmtReq)
+        val opHandle = tExecuteStatementResp.getOperationHandle
+        waitForOperationToComplete(client, opHandle)
+        val metaReq = new TGetResultSetMetadataReq(opHandle)
+        val resp = client.GetResultSetMetadata(metaReq)
+        assert(resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
+        val expectedResultSetCodecHint = s"__kyuubi_operation_result_codec__=$expectedCodec"
+        assert(resp.getStatus.getInfoMessages.contains(expectedResultSetCodecHint))
+      }
+      checkStatusAndResultSetCodecHint(
+        sql = "SELECT 1",
+        expectedCodec = "simple")
+      checkStatusAndResultSetCodecHint(
+        sql = "set kyuubi.operation.result.codec=arrow",
+        expectedCodec = "arrow")
+      checkStatusAndResultSetCodecHint(
+        sql = "SELECT 1",
+        expectedCodec = "arrow")
+      checkStatusAndResultSetCodecHint(
+        sql = "set kyuubi.operation.result.codec=simple",
+        expectedCodec = "simple")
+      checkStatusAndResultSetCodecHint(
+        sql = "set kyuubi.operation.result.codec",
+        expectedCodec = "simple")
     }
   }
 }

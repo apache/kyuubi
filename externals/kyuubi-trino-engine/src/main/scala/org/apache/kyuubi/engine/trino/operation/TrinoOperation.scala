@@ -21,8 +21,7 @@ import java.io.IOException
 
 import io.trino.client.Column
 import io.trino.client.StatementClient
-import org.apache.hive.service.rpc.thrift.TRowSet
-import org.apache.hive.service.rpc.thrift.TTableSchema
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils
@@ -47,7 +46,13 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
 
   protected var iter: FetchIterator[List[Any]] = _
 
-  override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(schema)
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
+    val tTableSchema = SchemaHelper.toTTableSchema(schema)
+    val resp = new TGetResultSetMetadataResp
+    resp.setSchema(tTableSchema)
+    resp.setStatus(OK_STATUS)
+    resp
+  }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)

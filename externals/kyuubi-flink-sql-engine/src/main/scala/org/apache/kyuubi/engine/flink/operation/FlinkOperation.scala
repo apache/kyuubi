@@ -23,7 +23,7 @@ import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
 import org.apache.flink.table.client.gateway.Executor
 import org.apache.flink.table.client.gateway.context.SessionContext
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.engine.flink.result.ResultSet
@@ -74,12 +74,15 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
     }
   }
 
-  override def getResultSetSchema: TTableSchema = {
+  override def getResultSetMetadata: TGetResultSetMetadataResp = {
     val tTableSchema = new TTableSchema()
     resultSet.getColumns.asScala.zipWithIndex.foreach { case (f, i) =>
       tTableSchema.addToColumns(RowSet.toTColumnDesc(f, i))
     }
-    tTableSchema
+    val resp = new TGetResultSetMetadataResp
+    resp.setSchema(tTableSchema)
+    resp.setStatus(OK_STATUS)
+    resp
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {

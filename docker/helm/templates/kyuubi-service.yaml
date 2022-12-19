@@ -18,9 +18,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: kyuubi-svc
+  name: {{ .Release.Name }}
   labels:
-    app: {{ template "kyuubi.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
   {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -33,5 +37,5 @@ spec:
       protocol: TCP
   type: {{ .Values.service.type }}
   selector:
-    app: {{ template "kyuubi.name" . }}
-    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
