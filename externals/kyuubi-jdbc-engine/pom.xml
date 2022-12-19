@@ -72,8 +72,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.aliyun.phoenix</groupId>
-            <artifactId>ali-phoenix-shaded-thin-client</artifactId>
+            <groupId>org.apache.phoenix</groupId>
+            <artifactId>phoenix-queryserver-client</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>
