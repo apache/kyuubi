@@ -332,8 +332,7 @@ object KyuubiConf {
       .createWithDefault(Seq(FrontendProtocols.THRIFT_BINARY.toString))
 
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("kyuubi.frontend.bind.host")
-    .doc("(deprecated) Hostname or IP of the machine on which to run the thrift frontend service " +
-      "via binary protocol.")
+    .doc("Hostname or IP of the machine on which to run the frontend services.")
     .version("1.0.0")
     .stringConf
     .createOptional
