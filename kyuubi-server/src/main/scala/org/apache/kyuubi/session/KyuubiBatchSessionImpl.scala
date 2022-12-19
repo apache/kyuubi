@@ -77,13 +77,14 @@ class KyuubiBatchSessionImpl(
       sessionManager.validateBatchConf(batchRequest.getConf.asScala.toMap)
   }
 
-  override lazy val name: Option[String] = Option(batchRequest.getName)
+  override lazy val name: Option[String] = Option(batchRequest.getName).orElse(
+    normalizedConf.get(KyuubiConf.SESSION_NAME.key))
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
       this,
       batchRequest.getBatchType,
-      batchRequest.getName,
+      name.orNull,
       batchRequest.getResource,
       batchRequest.getClassName,
       normalizedConf,
@@ -139,7 +140,7 @@ class KyuubiBatchSessionImpl(
         state = OperationState.PENDING.toString,
         resource = batchRequest.getResource,
         className = batchRequest.getClassName,
-        requestName = batchRequest.getName,
+        requestName = name.orNull,
         requestConf = normalizedConf,
         requestArgs = batchRequest.getArgs.asScala,
         createTime = createTime,
