@@ -77,11 +77,14 @@ class KyuubiBatchSessionImpl(
       sessionManager.validateBatchConf(batchRequest.getConf.asScala.toMap)
   }
 
+  override lazy val name: Option[String] = Option(batchRequest.getName).orElse(
+    normalizedConf.get(KyuubiConf.SESSION_NAME.key))
+
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
       this,
       batchRequest.getBatchType,
-      batchRequest.getName,
+      name.orNull,
       batchRequest.getResource,
       batchRequest.getClassName,
       normalizedConf,
@@ -101,6 +104,7 @@ class KyuubiBatchSessionImpl(
   }
 
   private val sessionEvent = KyuubiSessionEvent(this)
+  recoveryMetadata.map(metadata => sessionEvent.engineId = metadata.engineId)
   EventBus.post(sessionEvent)
 
   override def getSessionEvent: Option[KyuubiSessionEvent] = {
@@ -119,7 +123,7 @@ class KyuubiBatchSessionImpl(
     }
   }
 
-  override def open(): Unit = {
+  override def open(): Unit = handleSessionException {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
@@ -136,7 +140,7 @@ class KyuubiBatchSessionImpl(
         state = OperationState.PENDING.toString,
         resource = batchRequest.getResource,
         className = batchRequest.getClassName,
-        requestName = batchRequest.getName,
+        requestName = name.orNull,
         requestConf = normalizedConf,
         requestArgs = batchRequest.getArgs.asScala,
         createTime = createTime,
@@ -152,6 +156,14 @@ class KyuubiBatchSessionImpl(
     super.open()
 
     runOperation(batchJobSubmissionOp)
+    sessionEvent.totalOperations += 1
+  }
+
+  private[kyuubi] def onEngineOpened(): Unit = {
+    if (sessionEvent.openedTime <= 0) {
+      sessionEvent.openedTime = System.currentTimeMillis()
+      EventBus.post(sessionEvent)
+    }
   }
 
   override def close(): Unit = {

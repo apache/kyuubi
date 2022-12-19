@@ -35,8 +35,10 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
+import org.apache.kyuubi.session.{KyuubiSessionManager, SessionType}
 
-class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper {
+class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper
+  with BatchTestHelper {
 
   private val engineLogRoot = "file://" + Utils.createTempDir().toString
   private val serverLogRoot = "file://" + Utils.createTempDir().toString
@@ -116,6 +118,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getString("remoteSessionId") == "")
         assert(res.getLong("startTime") > 0)
         assert(res.getInt("totalOperations") == 0)
+        assert(res.getString("sessionType") === SessionType.SQL.toString)
         assert(res.next())
         assert(res.getInt("totalOperations") == 0)
         assert(res.getString("sessionId") == sid)
@@ -123,8 +126,33 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getLong("openedTime") > 0)
         assert(res.next())
         assert(res.getInt("totalOperations") == 1)
+        assert(res.getString("sessionType") === SessionType.SQL.toString)
         assert(res.getLong("endTime") > 0)
         assert(!res.next())
+      }
+    }
+
+    val batchRequest = newSparkBatchRequest()
+    val sessionMgr = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val batchSessionHandle = sessionMgr.openBatchSession(
+      Utils.currentUser,
+      "kyuubi",
+      "127.0.0.1",
+      Map.empty,
+      batchRequest)
+    withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery(
+          s"SELECT * FROM `json`.`$serverSessionEventPath` " +
+            s"where sessionName = '${sparkBatchTestAppName}' order by totalOperations")
+        assert(res.next())
+        assert(res.getString("user") == Utils.currentUser)
+        assert(res.getString("sessionName") == sparkBatchTestAppName)
+        assert(res.getString("sessionId") === batchSessionHandle.identifier.toString)
+        assert(res.getString("remoteSessionId") == "")
+        assert(res.getLong("startTime") > 0)
+        assert(res.getInt("totalOperations") == 0)
+        assert(res.getString("sessionType") === SessionType.BATCH.toString)
       }
     }
   }
