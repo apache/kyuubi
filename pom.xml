@@ -165,7 +165,7 @@
         <jline.version>0.9.94</jline.version>
         <junit.version>4.13.1</junit.version>
         <kubernetes-client.version>5.12.1</kubernetes-client.version>
-        <kudu.version>1.16.0</kudu.version>
+        <kudu.version>1.15.0</kudu.version>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.19.0</log4j.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
@@ -227,7 +227,7 @@
         <maven.plugin.jacoco.version>0.8.7</maven.plugin.jacoco.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
-        <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
+        <maven.plugin.shade.version>3.4.1</maven.plugin.shade.version>
         <maven.plugin.silencer.version>1.7.10</maven.plugin.silencer.version>
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
