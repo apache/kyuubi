@@ -186,6 +186,7 @@ class KyuubiSessionImpl(
   override protected def runOperation(operation: Operation): OperationHandle = {
     if (operation != launchEngineOp) {
       waitForEngineLaunched()
+      sessionEvent.totalOperations += 1
     }
     super.runOperation(operation)
   }

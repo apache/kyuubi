@@ -153,6 +153,7 @@ class KyuubiBatchSessionImpl(
     super.open()
 
     runOperation(batchJobSubmissionOp)
+    sessionEvent.totalOperations += 1
   }
 
   private[kyuubi] def onEngineOpened(): Unit = {
