@@ -645,10 +645,4 @@ private[kyuubi] object TFrontendService {
 
     def getSessionHandle: SessionHandle = sessionHandle
   }
-
-  def okStatusWithHint(hint: Seq[String]): TStatus = {
-    val ok = new TStatus(TStatusCode.SUCCESS_STATUS)
-    ok.setInfoMessages(hint.asJava)
-    ok
-  }
 }
