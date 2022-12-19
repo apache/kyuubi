@@ -92,14 +92,14 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
 
   test("Extracting database info with ResolvedDBObjectNameDatabaseExtractor") {
     val ns1 = "testns1"
-    val createDbSql = s"CREATE NAMESPACE IF NOT EXISTS $catalogV2.$ns1"
-    val plan = executePlan(createDbSql).analyzed
+    val sql1 = s"CREATE NAMESPACE IF NOT EXISTS $catalogV2.$ns1"
+    val plan = executePlan(sql1).analyzed
     val spec = DB_COMMAND_SPECS(plan.getClass.getName)
     var db: Database = null
     spec.databaseDescs.find { d =>
       Try(db = d.extract(plan)).isSuccess
     }
-    withClue(createDbSql) {
+    withClue(sql1) {
       assert(db.catalog === Some(catalogV2))
       assert(db.database === ns1)
     }
