@@ -132,14 +132,13 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       }
     }
 
-    val batchConf = Map(KyuubiConf.SESSION_NAME.key -> sparkBatchTestAppName)
-    val batchRequest = newSparkBatchRequest(batchConf)
+    val batchRequest = newSparkBatchRequest()
     val sessionMgr = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
     val batchSessionHandle = sessionMgr.openBatchSession(
       Utils.currentUser,
       "kyuubi",
       "127.0.0.1",
-      batchConf,
+      Map.empty,
       batchRequest)
     withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
       withJdbcStatement() { statement =>
