@@ -22,6 +22,7 @@
 * In Kyuubi 1.7, `kyuubi.ha.zookeeper.engine.auth.type` does not fallback to `kyuubi.ha.zookeeper.auth.type`.  
   When Kyuubi engine does Kerberos authentication with Zookeeper, user needs to explicitly set `kyuubi.ha.zookeeper.engine.auth.type` to `KERBEROS`.
 * Since Kyuubi 1.7, Kyuubi returns engine's information for `GetInfo` request instead of server. To restore the previous behavior, set `kyuubi.server.info.provider` to `SERVER`.
+* Since Kyuubi 1.7, Kyuubi session type `SQL` is refactored to `INTERACTIVE`, because Kyuubi supports not only `SQL` session, but also `SCALA` and `PYTHON` sessions.
 
 ## Upgrading from Kyuubi 1.6.0 to 1.6.1
 * Since Kyuubi 1.6.1, `kyuubi.ha.zookeeper.engine.auth.type` does not fallback to `kyuubi.ha.zookeeper.auth.type`.  
