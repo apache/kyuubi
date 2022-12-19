@@ -76,10 +76,10 @@ class StringSeqOptionDatabaseExtractor extends DatabaseExtractor {
  */
 class ResolvedNamespaceDatabaseExtractor extends DatabaseExtractor {
   override def apply(v1: AnyRef): Database = {
-    val catalog = invoke(v1, "catalog")
-    val catalogName = invokeAs[String](catalog, "name")
+    val catalogVal = invoke(v1, "catalog")
+    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
     val namespace = getFieldVal[Seq[String]](v1, "namespace")
-    Database(Some(catalogName), quote(namespace))
+    Database(catalog, quote(namespace))
   }
 }
 
