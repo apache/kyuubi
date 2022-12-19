@@ -237,4 +237,5 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
     ok.setInfoMessages(hints.asJava)
     ok
   }
+
 }
