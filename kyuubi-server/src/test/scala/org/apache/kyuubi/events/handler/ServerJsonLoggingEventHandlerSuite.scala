@@ -35,7 +35,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
-import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.session.{KyuubiSessionManager, SessionType}
 
 class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper
   with BatchTestHelper {
@@ -118,7 +118,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getString("remoteSessionId") == "")
         assert(res.getLong("startTime") > 0)
         assert(res.getInt("totalOperations") == 0)
-        assert(res.getString("sessionType") === "SQL")
+        assert(res.getString("sessionType") === SessionType.SQL.toString)
         assert(res.next())
         assert(res.getInt("totalOperations") == 0)
         assert(res.getString("sessionId") == sid)
@@ -126,7 +126,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getLong("openedTime") > 0)
         assert(res.next())
         assert(res.getInt("totalOperations") == 1)
-        assert(res.getString("sessionType") === "SQL")
+        assert(res.getString("sessionType") === SessionType.SQL.toString)
         assert(res.getLong("endTime") > 0)
         assert(!res.next())
       }
@@ -152,7 +152,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getString("remoteSessionId") == "")
         assert(res.getLong("startTime") > 0)
         assert(res.getInt("totalOperations") == 0)
-        assert(res.getString("sessionType") === "BATCH")
+        assert(res.getString("sessionType") === SessionType.BATCH.toString)
       }
     }
   }
