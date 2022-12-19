@@ -150,11 +150,11 @@ class LogicalRelationTableExtractor extends TableExtractor {
  */
 class ResolvedDbObjectNameTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalog = invoke(v1, "catalog")
-    val catalogName = invokeAs[String](catalog, "name")
+    val catalogVal = invoke(v1, "catalog")
+    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
     val nameParts = invokeAs[Seq[String]](v1, "nameParts")
     val namespace = nameParts.init.toArray
     val table = nameParts.last
-    Some(Table(Some(catalogName), Some(quote(namespace)), table, None))
+    Some(Table(catalog, Some(quote(namespace)), table, None))
   }
 }
