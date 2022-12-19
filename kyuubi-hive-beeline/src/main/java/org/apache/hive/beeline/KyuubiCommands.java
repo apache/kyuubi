@@ -45,7 +45,7 @@ public class KyuubiCommands extends Commands {
 
   /** Extract and clean up the first command in the input. */
   private String getFirstCmd(String cmd, int length) {
-    return cmd.substring(length);
+    return cmd.substring(length).trim();
   }
 
   private String[] tokenizeCmd(String cmd) {
