@@ -15,25 +15,29 @@
  * limitations under the License.
  */
 
-import request from '@/utils/request'
+import { ref, Ref } from 'vue'
 
-export function getAllServers() {
-  return request({
-    url: 'api/v1/admin/servers',
-    method: 'post'
-  })
-}
+export function useTable() {
+  const tableData: Ref<any[]> = ref([])
+  const loading = ref(false)
+  const searchParam = ref()
 
-export function getServerLog() {
-  return request({
-    url: 'api/v1/admin/server/log',
-    method: 'post'
-  })
-}
+  const getList = (func: Function, data?: any) => {
+    loading.value = true
+    func(data)
+      .then((res: any[]) => {
+        tableData.value = res || []
+      })
+      .catch(() => (tableData.value = []))
+      .finally(() => {
+        loading.value = false
+      })
+  }
 
-export function getAllEngines() {
-  return request({
-    url: 'api/v1/admin/engine',
-    method: 'post'
-  })
+  return {
+    tableData,
+    loading,
+    searchParam,
+    getList
+  }
 }
