@@ -419,7 +419,10 @@ class KyuubiSyncThriftClient private (
         warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
       }
     } catch {
-      case e: Exception => warn(s"$req failed on engine side", e)
+      case e: Exception =>
+        warn(s"$req failed on engine side", e)
+        // catch exception in HadoopCredentialsManager.sendCredentialsIfNeeded
+        throw e
     }
   }
 }
