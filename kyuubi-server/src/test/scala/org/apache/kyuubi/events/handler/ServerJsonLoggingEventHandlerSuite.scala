@@ -20,12 +20,15 @@ package org.apache.kyuubi.events.handler
 import java.net.InetAddress
 import java.nio.file.Paths
 import java.util.UUID
+
 import scala.collection.JavaConverters._
 import scala.util.matching.Regex
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TStatusCode}
+
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -153,7 +156,6 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getString("sessionType") === "BATCH")
       }
     }
-
   }
 
   test("engine session id is not same with server session id") {

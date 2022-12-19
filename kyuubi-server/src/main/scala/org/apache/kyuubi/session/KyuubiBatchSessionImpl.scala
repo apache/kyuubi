@@ -26,6 +26,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.SESSION_NAME
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
@@ -76,6 +77,9 @@ class KyuubiBatchSessionImpl(
     sessionConf.getBatchConf(batchRequest.getBatchType) ++
       sessionManager.validateBatchConf(batchRequest.getConf.asScala.toMap)
   }
+
+  override val name: Option[String] =
+    Option(batchRequest.getName).orElse(normalizedConf.get(SESSION_NAME.key))
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
