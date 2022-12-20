@@ -3,7 +3,8 @@
   "databaseDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : null
   } ],
   "opType" : "ALTERDATABASE"
 }, {
@@ -11,11 +12,16 @@
   "databaseDescs" : [ {
     "fieldName" : "name",
     "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : null
   }, {
     "fieldName" : "namespace",
     "fieldExtractor" : "StringSeqDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : {
+      "fieldName" : "catalog",
+      "fieldExtractor" : "CatalogPluginCatalogExtractor"
+    }
   } ],
   "opType" : "CREATEDATABASE"
 }, {
@@ -23,7 +29,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : true
+    "isInput" : true,
+    "catalogDesc" : null
   } ],
   "opType" : "DESCDATABASE"
 }, {
@@ -31,7 +38,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : null
   } ],
   "opType" : "DROPDATABASE"
 }, {
@@ -39,11 +47,13 @@
   "databaseDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
-    "isInput" : true
+    "isInput" : true,
+    "catalogDesc" : null
   }, {
     "fieldName" : "namespace",
     "fieldExtractor" : "StringSeqOptionDatabaseExtractor",
-    "isInput" : true
+    "isInput" : true,
+    "catalogDesc" : null
   } ],
   "opType" : "SWITCHDATABASE"
 }, {
@@ -51,7 +61,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : null
   } ],
   "opType" : "ALTERDATABASE_LOCATION"
 }, {
@@ -59,7 +70,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : null
   } ],
   "opType" : "ALTERDATABASE"
 }, {
@@ -67,7 +79,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : null
   } ],
   "opType" : "ALTERDATABASE"
 }, {
@@ -75,7 +88,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : null
   } ],
   "opType" : "ALTERDATABASE_LOCATION"
 }, {
@@ -83,7 +97,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringOptionDatabaseExtractor",
-    "isInput" : true
+    "isInput" : true,
+    "catalogDesc" : null
   } ],
   "opType" : "ANALYZE_TABLE"
 }, {
@@ -91,7 +106,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : null
   } ],
   "opType" : "CREATEDATABASE"
 }, {
@@ -99,7 +115,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : true
+    "isInput" : true,
+    "catalogDesc" : null
   } ],
   "opType" : "DESCDATABASE"
 }, {
@@ -107,7 +124,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : false
+    "isInput" : false,
+    "catalogDesc" : null
   } ],
   "opType" : "DROPDATABASE"
 }, {
@@ -115,7 +133,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : true
+    "isInput" : true,
+    "catalogDesc" : null
   } ],
   "opType" : "SWITCHDATABASE"
 }, {
@@ -123,7 +142,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "StringSeqDatabaseExtractor",
-    "isInput" : true
+    "isInput" : true,
+    "catalogDesc" : null
   } ],
   "opType" : "SWITCHDATABASE"
 } ]
