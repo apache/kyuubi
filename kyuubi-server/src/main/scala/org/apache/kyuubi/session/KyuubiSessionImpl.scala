@@ -182,8 +182,10 @@ class KyuubiSessionImpl(
               _client.closeSession()
             } catch {
               case e: Throwable =>
-                warn("Error on closing broken client of engine " +
-                  s"[${engine.defaultEngineName} $host:$port]", e)
+                warn(
+                  "Error on closing broken client of engine " +
+                    s"[${engine.defaultEngineName} $host:$port]",
+                  e)
             }
           }
         }
