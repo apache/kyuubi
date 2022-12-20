@@ -90,7 +90,13 @@ object DatabaseCommands {
     val databaseDesc1 =
       DatabaseDesc("child", "ResolvedDBObjectNameDatabaseExtractor", isInput = true)
     val databaseDesc2 =
-      DatabaseDesc("namespace", "StringSeqOptionDatabaseExtractor", isInput = true)
+      DatabaseDesc(
+        "namespace",
+        "StringSeqOptionDatabaseExtractor",
+        catalogDesc = Some(CatalogDesc(
+          fieldName = "catalogName",
+          fieldExtractor = "StringOptionCatalogExtractor")),
+        isInput = true)
     DatabaseCommandSpec(cmd, Seq(databaseDesc1, databaseDesc2), "SWITCHDATABASE")
   }
 

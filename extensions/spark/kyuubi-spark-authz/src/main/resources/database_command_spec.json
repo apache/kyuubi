@@ -3,8 +3,8 @@
   "databaseDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : false,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : false
   } ],
   "opType" : "ALTERDATABASE"
 }, {
@@ -12,16 +12,16 @@
   "databaseDescs" : [ {
     "fieldName" : "name",
     "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
-    "isInput" : false,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : false
   }, {
     "fieldName" : "namespace",
     "fieldExtractor" : "StringSeqDatabaseExtractor",
-    "isInput" : false,
     "catalogDesc" : {
       "fieldName" : "catalog",
       "fieldExtractor" : "CatalogPluginCatalogExtractor"
-    }
+    },
+    "isInput" : false
   } ],
   "opType" : "CREATEDATABASE"
 }, {
@@ -29,8 +29,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : true,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : true
   } ],
   "opType" : "DESCDATABASE"
 }, {
@@ -38,8 +38,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : false,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : false
   } ],
   "opType" : "DROPDATABASE"
 }, {
@@ -47,13 +47,16 @@
   "databaseDescs" : [ {
     "fieldName" : "child",
     "fieldExtractor" : "ResolvedDBObjectNameDatabaseExtractor",
-    "isInput" : true,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : true
   }, {
     "fieldName" : "namespace",
     "fieldExtractor" : "StringSeqOptionDatabaseExtractor",
-    "isInput" : true,
-    "catalogDesc" : null
+    "catalogDesc" : {
+      "fieldName" : "catalogName",
+      "fieldExtractor" : "StringOptionCatalogExtractor"
+    },
+    "isInput" : true
   } ],
   "opType" : "SWITCHDATABASE"
 }, {
@@ -61,8 +64,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : false,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : false
   } ],
   "opType" : "ALTERDATABASE_LOCATION"
 }, {
@@ -70,8 +73,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "ResolvedNamespaceDatabaseExtractor",
-    "isInput" : false,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : false
   } ],
   "opType" : "ALTERDATABASE"
 }, {
@@ -79,8 +82,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : false,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : false
   } ],
   "opType" : "ALTERDATABASE"
 }, {
@@ -88,8 +91,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : false,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : false
   } ],
   "opType" : "ALTERDATABASE_LOCATION"
 }, {
@@ -97,8 +100,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringOptionDatabaseExtractor",
-    "isInput" : true,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : true
   } ],
   "opType" : "ANALYZE_TABLE"
 }, {
@@ -106,8 +109,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : false,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : false
   } ],
   "opType" : "CREATEDATABASE"
 }, {
@@ -115,8 +118,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : true,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : true
   } ],
   "opType" : "DESCDATABASE"
 }, {
@@ -124,8 +127,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : false,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : false
   } ],
   "opType" : "DROPDATABASE"
 }, {
@@ -133,8 +136,8 @@
   "databaseDescs" : [ {
     "fieldName" : "databaseName",
     "fieldExtractor" : "StringDatabaseExtractor",
-    "isInput" : true,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : true
   } ],
   "opType" : "SWITCHDATABASE"
 }, {
@@ -142,8 +145,8 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "StringSeqDatabaseExtractor",
-    "isInput" : true,
-    "catalogDesc" : null
+    "catalogDesc" : null,
+    "isInput" : true
   } ],
   "opType" : "SWITCHDATABASE"
 } ]

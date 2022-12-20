@@ -6,8 +6,8 @@
     "databaseDesc" : {
       "fieldName" : "databaseName",
       "fieldExtractor" : "StringOptionDatabaseExtractor",
-      "isInput" : false,
-      "catalogDesc" : null
+      "catalogDesc" : null,
+      "isInput" : false
     },
     "functionTypeDesc" : {
       "fieldName" : "isTemp",
@@ -49,8 +49,8 @@
     "databaseDesc" : {
       "fieldName" : "databaseName",
       "fieldExtractor" : "StringOptionDatabaseExtractor",
-      "isInput" : false,
-      "catalogDesc" : null
+      "catalogDesc" : null,
+      "isInput" : false
     },
     "functionTypeDesc" : {
       "fieldName" : "isTemp",
@@ -68,8 +68,8 @@
     "databaseDesc" : {
       "fieldName" : "databaseName",
       "fieldExtractor" : "StringOptionDatabaseExtractor",
-      "isInput" : false,
-      "catalogDesc" : null
+      "catalogDesc" : null,
+      "isInput" : false
     },
     "functionTypeDesc" : null,
     "isInput" : false
