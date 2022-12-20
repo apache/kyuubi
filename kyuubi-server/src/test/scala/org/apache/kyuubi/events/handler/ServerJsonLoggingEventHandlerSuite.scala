@@ -118,7 +118,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getString("remoteSessionId") == "")
         assert(res.getLong("startTime") > 0)
         assert(res.getInt("totalOperations") == 0)
-        assert(res.getString("sessionType") === SessionType.SQL.toString)
+        assert(res.getString("sessionType") === SessionType.INTERACTIVE.toString)
         assert(res.next())
         assert(res.getInt("totalOperations") == 0)
         assert(res.getString("sessionId") == sid)
@@ -126,7 +126,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
         assert(res.getLong("openedTime") > 0)
         assert(res.next())
         assert(res.getInt("totalOperations") == 1)
-        assert(res.getString("sessionType") === SessionType.SQL.toString)
+        assert(res.getString("sessionType") === SessionType.INTERACTIVE.toString)
         assert(res.getLong("endTime") > 0)
         assert(!res.next())
       }
