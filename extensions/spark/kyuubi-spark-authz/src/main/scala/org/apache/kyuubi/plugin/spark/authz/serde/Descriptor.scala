@@ -97,8 +97,8 @@ case class ColumnDesc(
 case class DatabaseDesc(
     fieldName: String,
     fieldExtractor: String,
-    isInput: Boolean = false,
-    catalogDesc: Option[CatalogDesc] = None) extends Descriptor {
+    catalogDesc: Option[CatalogDesc] = None,
+    isInput: Boolean = false) extends Descriptor {
   override def extract(v: AnyRef): Database = {
     val databaseVal = invoke(v, fieldName)
     val databaseExtractor = dbExtractors(fieldExtractor)
