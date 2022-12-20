@@ -26,18 +26,23 @@
       </el-breadcrumb>
     </header>
   </el-card>
-  <el-card v-loading="sessionPropertiesLoading" class="table-container">
+  <el-card
+    v-loading="sessionPropertiesLoading"
+    class="table-container session-properties-container"
+  >
     <template #header>
       <div class="card-header">
         <span>Session Properties</span>
       </div>
     </template>
-    <div
-      v-for="(p, key) in sessionProperties"
-      :key="key"
-      class="session-property"
-      ><el-tag>{{ `${key} : ${p}` }}</el-tag></div
-    >
+    <div class="main">
+      <div
+        v-for="(p, key) in sessionProperties"
+        :key="key"
+        class="session-property"
+        ><el-tag>{{ `${key} : ${p}` }}</el-tag></div
+      >
+    </div>
   </el-card>
   <el-card class="table-container">
     <template #header>
@@ -120,7 +125,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue'
+  import { Ref, ref } from 'vue'
   import { getSession, getSqlDetails } from '@/api/session'
   import { useRoute, useRouter, Router } from 'vue-router'
   import { format } from 'date-fns'
@@ -128,7 +133,7 @@
 
   const route = useRoute()
   const router: Router = useRouter()
-  const sessionProperties = ref({})
+  const sessionProperties: Ref<any> = ref({})
   const sessionPropertiesLoading = ref(false)
   const sqlDetails = ref([])
   const sqlDetailsLoading = ref(false)
@@ -178,7 +183,18 @@
       line-height: 32px;
     }
   }
-  .session-property {
-    margin-bottom: 6px;
+
+  .session-properties-container {
+    max-height: 400px;
+    overflow: auto;
+
+    .main {
+      display: flex;
+      flex-wrap: wrap;
+      .session-property {
+        margin-bottom: 6px;
+        margin-right: 6px;
+      }
+    }
   }
 </style>
