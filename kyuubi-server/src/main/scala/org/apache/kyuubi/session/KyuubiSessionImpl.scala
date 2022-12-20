@@ -177,6 +177,17 @@ class KyuubiSessionImpl(
             throw e
         } finally {
           attempt += 1
+          if (shouldRetry && _client != null) {
+            try {
+              _client.closeSession()
+            } catch {
+              case e: Throwable =>
+                warn(
+                  "Error on closing broken client of engine " +
+                    s"[${engine.defaultEngineName} $host:$port]",
+                  e)
+            }
+          }
         }
       }
       sessionEvent.openedTime = System.currentTimeMillis()
