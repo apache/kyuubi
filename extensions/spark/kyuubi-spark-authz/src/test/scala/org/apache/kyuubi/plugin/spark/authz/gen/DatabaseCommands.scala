@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
-import org.apache.kyuubi.plugin.spark.authz.serde.{DatabaseCommandSpec, DatabaseDesc}
+import org.apache.kyuubi.plugin.spark.authz.serde.{CatalogDesc, DatabaseCommandSpec, DatabaseDesc}
 
 object DatabaseCommands {
 
@@ -51,7 +51,8 @@ object DatabaseCommands {
 
   val CreateNamespace = {
     val databaseDesc1 = DatabaseDesc("name", "ResolvedDBObjectNameDatabaseExtractor")
-    val databaseDesc2 = DatabaseDesc("namespace", "StringSeqDatabaseExtractor")
+    val databaseDesc2 =
+      DatabaseDesc("namespace", "StringSeqDatabaseExtractor", catalogDesc = Some(CatalogDesc()))
     DatabaseCommandSpec(
       "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
       Seq(databaseDesc1, databaseDesc2),
