@@ -177,9 +177,9 @@ class KyuubiSessionImpl(
             throw e
         } finally {
           attempt += 1
-          if (shouldRetry) {
+          if (shouldRetry && _client != null) {
             try {
-              if (_client != null) _client.closeSession()
+              _client.closeSession()
             } catch {
               case e: Throwable =>
                 error("Close _client session failed", e)
