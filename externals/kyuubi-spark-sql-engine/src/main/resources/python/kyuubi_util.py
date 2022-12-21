@@ -76,7 +76,9 @@ def get_spark_session(uuid=None) -> "SparkSession":
             SparkSession.builder.master("dummy").appName("kyuubi-python").getOrCreate()
         )
     else:
-        session = gateway.jvm.org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager.getSparkSession(
-            uuid
+        session = (
+            gateway.jvm.org.apache.kyuubi.engine.spark.SparkSQLEngine.getSparkSession(
+                uuid
+            )
         )
         return SparkSession(sparkContext=sc, jsparkSession=session)
