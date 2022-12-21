@@ -36,6 +36,8 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/conf: {{ include (print $.Template.BasePath "/kyuubi-configmap.yaml") . | sha256sum }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}
@@ -79,12 +81,12 @@ spec:
           resources:  {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: kyuubi-defaults
-              mountPath: {{ .Values.server.conf.mountPath }}
+            - name: conf
+              mountPath: {{ .Values.server.confDir }}
       volumes:
-        - name: kyuubi-defaults
+        - name: conf
           configMap:
-            name: {{ .Release.Name }}-kyuubi-defaults
+            name: {{ .Release.Name }}
       {{- with .Values.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
