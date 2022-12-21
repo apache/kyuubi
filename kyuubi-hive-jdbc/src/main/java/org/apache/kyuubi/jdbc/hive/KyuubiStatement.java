@@ -460,6 +460,14 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     return resultSet;
   }
 
+  public ResultSet executePython(String code) throws SQLException {
+    if (!executeWithConfOverlay(
+        code, Collections.singletonMap("kyuubi.operation.language", "PYTHON"))) {
+      throw new KyuubiSQLException("The query did not generate a result set!");
+    }
+    return resultSet;
+  }
+
   public void executeSetCurrentCatalog(String sql, String catalog) throws SQLException {
     if (executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.set.current.catalog", catalog))) {

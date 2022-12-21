@@ -85,9 +85,13 @@ class ExecutePython(
       val ename = response.map(_.content.getEname()).getOrElse("")
       val evalue = response.map(_.content.getEvalue()).getOrElse("")
       val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
-      iter =
-        new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
-      setState(OperationState.FINISHED)
+      if (PythonResponse.ERROR_STATUS.equalsIgnoreCase(status)) {
+        throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
+      } else if (!isTerminalState(state)) {
+        iter =
+          new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
+        setState(OperationState.FINISHED)
+      }
     } catch {
       onError(cancel = true)
     } finally {
@@ -359,6 +363,10 @@ object ExecutePython extends Logging {
 case class PythonResponse(
     msg_type: String,
     content: PythonResponseContent)
+
+object PythonResponse {
+  final val ERROR_STATUS = "error"
+}
 
 case class PythonResponseContent(
     data: Map[String, String],

@@ -24,6 +24,7 @@ import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiStatement}
+import org.apache.kyuubi.jdbc.hive.KyuubiSQLException
 import org.apache.kyuubi.tags.IcebergTest
 
 @IcebergTest
@@ -127,16 +128,18 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
     val statement = connection.createStatement().asInstanceOf[KyuubiStatement]
     statement.setQueryTimeout(5)
     try {
-      statement.executeQuery("set kyuubi.operation.language=python")
-      val code =
+      var code =
         """
           |import time
-          |time.sleep(50)
+          |time.sleep(10)
           |""".stripMargin
-      val e = intercept[SQLTimeoutException] {
-        statement.executeQuery(code)
+      var e = intercept[SQLTimeoutException] {
+        statement.executePython(code)
       }.getMessage
       assert(e.contains("Query timed out"))
+      code = "bad_code"
+      e = intercept[KyuubiSQLException](statement.executePython(code)).getMessage
+      assert(e.contains("Interpret error"))
     } finally {
       statement.close()
       connection.close()
