@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark.session
 
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.atomic.AtomicReference
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
@@ -42,7 +43,10 @@ import org.apache.kyuubi.util.ThreadUtils
 class SparkSQLSessionManager private (name: String, spark: SparkSession)
   extends SessionManager(name) {
 
-  def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
+  def this(spark: SparkSession) = {
+    this(classOf[SparkSQLSessionManager].getSimpleName, spark)
+    SparkSQLSessionManager.setSessionManager(this)
+  }
 
   val operationManager = new SparkSQLOperationManager()
 
@@ -176,4 +180,19 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   override protected def isServer: Boolean = false
+}
+
+object SparkSQLSessionManager {
+  private val sessionManager = new AtomicReference[SparkSQLSessionManager]
+
+  private def setSessionManager(manager: SparkSQLSessionManager): Unit = {
+    sessionManager.set(manager)
+  }
+
+  def getSparkSession(uuid: String): SparkSession = {
+    sessionManager.get()
+      .getSession(SessionHandle.fromUUID(uuid))
+      .asInstanceOf[SparkSessionImpl]
+      .spark
+  }
 }

@@ -90,6 +90,32 @@ class PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
+  test("binding python/sql spark session") {
+    checkPythonRuntimeAndVersion()
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.executeQuery("SET kyuubi.operation.language=python")
+      val setPy =
+        """
+          |spark.sql("set hello=kyuubi").show()
+          |""".stripMargin
+      val output =
+        """|+-----+------+
+           ||  key| value|
+           |+-----+------+
+           ||hello|kyuubi|
+           |+-----+------+""".stripMargin
+      val resultSet = statement.executeQuery(setPy)
+      assert(resultSet.next())
+      assert(resultSet.getString("output") === output)
+      assert(resultSet.getString("status") === "ok")
+
+      val resultSetSql = statement.executeQuery("set hello")
+      assert(resultSetSql.next())
+      assert(resultSetSql.getString("key") === "hello")
+      assert(resultSetSql.getString("value") === "kyuubi")
+    })
+  }
+
   private def runPySparkTest(
       pyCode: String,
       output: String): Unit = {

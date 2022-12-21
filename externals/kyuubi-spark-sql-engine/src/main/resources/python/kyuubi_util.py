@@ -70,9 +70,13 @@ def _get_exist_spark_context(self, jconf):
     )
 
 
-def get_spark_session() -> "SparkSession":
+def get_spark_session(uuid=None) -> "SparkSession":
     SparkContext._initialize_context = _get_exist_spark_context
     gateway = connect_to_exist_gateway()
     SparkContext._ensure_initialized(gateway=gateway)
-    spark = SparkSession.builder.master("local").appName("test").getOrCreate()
-    return spark
+    if uuid is None:
+        return SparkSession.builder.master("dummy").appName("kyuubi-python").getOrCreate()
+    else:
+        session = SparkContext._jvm.org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager.getSparkSession(uuid)
+        sc = SparkContext.getOrCreate()
+        return SparkSession(sparkContext=sc, jsparkSession=session)
