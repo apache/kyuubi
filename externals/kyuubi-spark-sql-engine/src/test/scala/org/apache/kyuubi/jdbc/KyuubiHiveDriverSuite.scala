@@ -121,6 +121,25 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
     }
   }
 
+  test("executePython support timeout") {
+    val driver = new KyuubiHiveDriver()
+    val properties = new Properties()
+    properties.put("hivevar:kyuubi.operation.language", "python")
+    val connection = driver.connect(getJdbcUrl, new Properties())
+    val statement = connection.createStatement().asInstanceOf[KyuubiStatement]
+    statement.setQueryTimeout(5)
+    try {
+      val code = """spark.sql("select java_method('java.lang.Thread', 'sleep', 500000L)")"""
+      val e = intercept[SQLTimeoutException] {
+        statement.executeQuery(code)
+      }.getMessage
+      assert(e.contains("Query timed out"))
+    } finally {
+      statement.close()
+      connection.close()
+    }
+  }
+
   test("wrapable KyuubiConnection") {
     val driver = new KyuubiHiveDriver()
     val connection = driver.connect(getJdbcUrl, new Properties())
