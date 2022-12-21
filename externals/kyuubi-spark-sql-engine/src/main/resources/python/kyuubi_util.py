@@ -61,6 +61,7 @@ def connect_to_exist_gateway() -> "JavaGateway":
 
     return gateway
 
+
 def get_spark_session(uuid=None) -> "SparkSession":
     gateway = connect_to_exist_gateway()
     jjsc = gateway.jvm.JavaSparkContext(
@@ -71,7 +72,11 @@ def get_spark_session(uuid=None) -> "SparkSession":
     sc = SparkContext(conf=conf, gateway=gateway, jsc=jjsc)
     if uuid is None:
         # note that in this mode, all the python's spark sessions share the root spark session.
-        return SparkSession.builder.master("dummy").appName("kyuubi-python").getOrCreate()
+        return (
+            SparkSession.builder.master("dummy").appName("kyuubi-python").getOrCreate()
+        )
     else:
-        session = gateway.jvm.org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager.getSparkSession(uuid)
+        session = gateway.jvm.org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager.getSparkSession(
+            uuid
+        )
         return SparkSession(sparkContext=sc, jsparkSession=session)
