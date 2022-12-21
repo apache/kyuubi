@@ -90,6 +90,8 @@ class ExecutePython(
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
+    } finally {
+      shutdownTimeoutMonitor()
     }
   }
 
