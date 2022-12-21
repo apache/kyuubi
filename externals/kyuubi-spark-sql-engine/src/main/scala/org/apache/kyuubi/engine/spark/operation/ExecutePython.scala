@@ -80,17 +80,17 @@ class ExecutePython(
       setState(OperationState.RUNNING)
       info(diagnostics)
       val response = worker.runCode(statement)
-      val output = response.map(_.content.getOutput()).getOrElse("")
       val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
-      val ename = response.map(_.content.getEname()).getOrElse("")
-      val evalue = response.map(_.content.getEvalue()).getOrElse("")
-      val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
-      if (PythonResponse.ERROR_STATUS.equalsIgnoreCase(status)) {
-        throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
-      } else if (!isTerminalState(state)) {
+      if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
+        val output = response.map(_.content.getOutput()).getOrElse("")
+        val ename = response.map(_.content.getEname()).getOrElse("")
+        val evalue = response.map(_.content.getEvalue()).getOrElse("")
+        val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
         iter =
           new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
         setState(OperationState.FINISHED)
+      } else {
+        throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
       }
     } catch {
       onError(cancel = true)
@@ -365,7 +365,7 @@ case class PythonResponse(
     content: PythonResponseContent)
 
 object PythonResponse {
-  final val ERROR_STATUS = "error"
+  final val OK_STATUS = "ok"
 }
 
 case class PythonResponseContent(
