@@ -19,6 +19,7 @@ import os
 
 from py4j.clientserver import ClientServer, JavaParameters, PythonParameters
 from py4j.java_gateway import java_import, JavaGateway, GatewayParameters
+from pyspark.conf import SparkConf
 from pyspark.context import SparkContext
 from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
@@ -60,23 +61,17 @@ def connect_to_exist_gateway() -> "JavaGateway":
 
     return gateway
 
-
-def _get_exist_spark_context(self, jconf):
-    """
-    Initialize SparkContext in function to allow subclass specific initialization
-    """
-    return self._jvm.JavaSparkContext(
-        self._jvm.org.apache.spark.SparkContext.getOrCreate(jconf)
-    )
-
-
 def get_spark_session(uuid=None) -> "SparkSession":
-    SparkContext._initialize_context = _get_exist_spark_context
     gateway = connect_to_exist_gateway()
-    SparkContext._ensure_initialized(gateway=gateway)
+    jjsc = gateway.jvm.JavaSparkContext(
+        gateway.jvm.org.apache.spark.SparkContext.getOrCreate()
+    )
     if uuid is None:
+        # note that in this mode, all the python's spark sessions share the root spark session.
         return SparkSession.builder.master("dummy").appName("kyuubi-python").getOrCreate()
     else:
-        session = SparkContext._jvm.org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager.getSparkSession(uuid)
-        sc = SparkContext.getOrCreate()
+        session = gateway.jvm.org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager.getSparkSession(uuid)
+        conf = SparkConf()
+        conf.setMaster("dummy").setAppName("kyuubi-python")
+        sc = SparkContext(conf=conf, gateway=gateway, jsc=jjsc)
         return SparkSession(sparkContext=sc, jsparkSession=session)
