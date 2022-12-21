@@ -21,6 +21,7 @@ import java.io.{BufferedReader, File, FilenameFilter, FileOutputStream, InputStr
 import java.lang.ProcessBuilder.Redirect
 import java.net.URI
 import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.ws.rs.core.UriBuilder
 
@@ -34,17 +35,19 @@ import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.operation.ArrayFetchIterator
+import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class ExecutePython(
     session: Session,
     override val statement: String,
+    override val shouldRunAsync: Boolean,
+    queryTimeout: Long,
     worker: SessionPythonWorker) extends SparkOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
@@ -64,11 +67,17 @@ class ExecutePython(
 
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(operationLog)
-    super.beforeRun()
+    setState(OperationState.PENDING)
+    setHasResultSet(true)
   }
 
-  override protected def runInternal(): Unit = withLocalProperties {
+  override protected def afterRun(): Unit = {
+    OperationLog.removeCurrentOperationLog()
+  }
+
+  private def executePython(): Unit = withLocalProperties {
     try {
+      setState(OperationState.RUNNING)
       info(diagnostics)
       val response = worker.runCode(statement)
       val output = response.map(_.content.getOutput()).getOrElse("")
@@ -78,8 +87,36 @@ class ExecutePython(
       val traceback = response.map(_.content.getTraceback()).getOrElse(Array.empty)
       iter =
         new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, Row(traceback: _*))))
+      setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
+    }
+  }
+
+  override protected def runInternal(): Unit = withLocalProperties {
+    addTimeoutMonitor(queryTimeout)
+    if (shouldRunAsync) {
+      val asyncOperation = new Runnable {
+        override def run(): Unit = {
+          OperationLog.setCurrentOperationLog(operationLog)
+          executePython()
+        }
+      }
+
+      try {
+        val sparkSQLSessionManager = session.sessionManager
+        val backgroundHandle = sparkSQLSessionManager.submitBackgroundOperation(asyncOperation)
+        setBackgroundHandle(backgroundHandle)
+      } catch {
+        case rejected: RejectedExecutionException =>
+          setState(OperationState.ERROR)
+          val ke =
+            KyuubiSQLException("Error submitting python in background", rejected)
+          setOperationException(ke)
+          throw ke
+      }
+    } else {
+      executePython()
     }
   }
 
