@@ -19,10 +19,14 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.io.PrintWriter
 import java.nio.file.Files
+import java.sql.SQLTimeoutException
+import java.util.Properties
 
 import scala.sys.process._
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.jdbc.KyuubiHiveDriver
+import org.apache.kyuubi.jdbc.hive.{KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.tags.PySparkTest
 
@@ -60,6 +64,30 @@ class PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
          ||  1|
          |+---+""".stripMargin
     runPySparkTest(code, output)
+  }
+
+  test("executePython support timeout") {
+    val driver = new KyuubiHiveDriver()
+    val connection = driver.connect(getJdbcUrl, new Properties())
+    val statement = connection.createStatement().asInstanceOf[KyuubiStatement]
+    statement.setQueryTimeout(5)
+    try {
+      var code =
+        """
+          |import time
+          |time.sleep(10)
+          |""".stripMargin
+      var e = intercept[SQLTimeoutException] {
+        statement.executePython(code)
+      }.getMessage
+      assert(e.contains("Query timed out"))
+      code = "bad_code"
+      e = intercept[KyuubiSQLException](statement.executePython(code)).getMessage
+      assert(e.contains("Interpret error"))
+    } finally {
+      statement.close()
+      connection.close()
+    }
   }
 
   private def runPySparkTest(
