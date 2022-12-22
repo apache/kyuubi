@@ -146,7 +146,13 @@ class KyuubiSessionImpl(
 
   override protected def runOperation(operation: Operation): OperationHandle = {
     if (operation != launchEngineOp) {
-      waitForEngineLaunched()
+      try {
+        waitForEngineLaunched()
+      } catch {
+        case t: Throwable =>
+          operation.close()
+          throw t
+      }
       sessionEvent.totalOperations += 1
     }
     super.runOperation(operation)
