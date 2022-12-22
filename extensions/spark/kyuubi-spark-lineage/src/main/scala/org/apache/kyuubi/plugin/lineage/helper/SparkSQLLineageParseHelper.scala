@@ -23,6 +23,7 @@ import scala.util.{Failure, Success, Try}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.{PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
@@ -33,7 +34,7 @@ import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, TableC
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
+import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 
 import org.apache.kyuubi.plugin.lineage.events.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.isSparkVersionAtMost
@@ -193,7 +194,8 @@ trait LineageParser {
           k.withName(s"$view.${k.name}") -> v
         }
 
-      case p if p.nodeName == "CreateViewCommand" =>
+      case p if p.nodeName == "CreateViewCommand"
+        && getPlanField[ViewType]("viewType", plan) == PersistedView =>
         val view = getPlanField[TableIdentifier]("name", plan).unquotedString
         val outputCols =
           getPlanField[Seq[(String, Option[String])]]("userSpecifiedColumns", plan).map(_._1)
@@ -203,6 +205,7 @@ trait LineageParser {
           } else {
             getPlanField[LogicalPlan]("plan", plan)
           }
+
         extractColumnsLineage(query, parentColumnsLineage).zipWithIndex.map {
           case ((k, v), i) if outputCols.nonEmpty => k.withName(s"$view.${outputCols(i)}") -> v
           case ((k, v), _) => k.withName(s"$view.${k.name}") -> v
@@ -323,6 +326,10 @@ trait LineageParser {
         val tableName = p.name
         joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(tableName))
 
+      case p: DataSourceV2Relation =>
+        val tableName = p.name
+        joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(tableName))
+
       case p: LocalRelation =>
         joinRelationColumnLineage(parentColumnsLineage, p.output, Seq(LOCAL_TABLE_IDENTIFIER))
 
@@ -400,6 +407,7 @@ case class SparkSQLLineageParseHelper(sparkSession: SparkSession) extends Lineag
     Try(parse(plan)).recover {
       case e: Exception =>
         logWarning(s"Extract Statement[$executionId] columns lineage failed.", e)
+        e.printStackTrace
         throw e
     }.toOption
   }

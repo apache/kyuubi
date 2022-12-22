@@ -93,6 +93,27 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
+  test("columns lineage extract - DataSourceV2Relation") {
+    val ddls =
+      """
+        |create table v2_catalog.db.tb(col1 string, col2 string, col3 string)
+        |""".stripMargin
+
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withView("test_view") { _ =>
+      val result = exectractLineage(
+        "create view test_view(a, b, c) as" +
+          " select col1 as a, col2 as b, col3 as c from v2_catalog.db.tb")
+      assert(result == Lineage(
+        List("v2_catalog.db.tb"),
+        List("default.test_view"),
+        List(
+          ("default.test_view.a", Set("v2_catalog.db.tb.col1")),
+          ("default.test_view.b", Set("v2_catalog.db.tb.col2")),
+          ("default.test_view.c", Set("v2_catalog.db.tb.col3")))))
+    }
+  }
+
   test("columns lineage extract - CreateViewCommand") {
     withView("createviewcommand", "createviewcommand1", "createviewcommand2") { _ =>
       val ret0 = exectractLineage(
@@ -976,6 +997,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val qe = spark.sessionState.executePlan(parsed)
     val optimized = qe.optimizedPlan
+    println(optimized)
     SparkSQLLineageParseHelper(spark).transformToLineage(0, optimized).get
   }
 
