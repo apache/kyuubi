@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.serde
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -283,8 +284,8 @@ case class CatalogDesc(
     fieldName: String = "catalog",
     fieldExtractor: String = "CatalogPluginCatalogExtractor") extends Descriptor {
   override def extract(v: AnyRef): Option[String] = {
-    val catalogVal = invoke(v, fieldName)
+    val catalogVal = if (StringUtils.isBlank(fieldName)) v else invoke(v, fieldName)
     val extractor = catalogExtractors(fieldExtractor)
-    extractor(catalogVal)
+    extractor(catalogVal, SparkSession.active)
   }
 }
