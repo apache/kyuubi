@@ -233,11 +233,14 @@ case class TableDesc(
     val tableExtractor = tableExtractors(fieldExtractor)
     val maybeTable = tableExtractor(spark, tableVal)
     maybeTable.map { t =>
-      if (t.catalog.isEmpty && catalogDesc.nonEmpty) {
+      if (t.catalog.nonEmpty) {
+        t
+      } else if (catalogDesc.nonEmpty) {
         val newCatalog = catalogDesc.get.extract(v)
         t.copy(catalog = newCatalog)
       } else {
-        t
+        val currentCatalog = CurrentCatalogExtractor.currentCatalog
+        t.copy(catalog = currentCatalog)
       }
     }
   }
