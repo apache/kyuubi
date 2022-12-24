@@ -105,8 +105,11 @@ case class DatabaseDesc(
     val databaseExtractor = dbExtractors(fieldExtractor)
     val db = databaseExtractor(databaseVal)
     if (db.catalog.isEmpty && catalogDesc.nonEmpty) {
-      val newCatalog = catalogDesc.get.extract(v)
-      db.copy(catalog = newCatalog)
+      var maybeCatalog = catalogDesc.get.extract(v)
+      if (maybeCatalog.isEmpty) {
+        maybeCatalog = new CurrentCatalogExtractor().apply(v)
+      }
+      db.copy(catalog = maybeCatalog)
     } else {
       db
     }
