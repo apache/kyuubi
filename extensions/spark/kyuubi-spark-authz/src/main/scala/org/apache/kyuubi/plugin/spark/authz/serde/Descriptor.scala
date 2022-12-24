@@ -26,7 +26,6 @@ import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType.PrivilegeO
 import org.apache.kyuubi.plugin.spark.authz.serde.ActionTypeExtractor.actionTypeExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.CatalogExtractor.catalogExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.ColumnExtractor.columnExtractors
-import org.apache.kyuubi.plugin.spark.authz.serde.CurrentCatalogExtractor.currentCatalog
 import org.apache.kyuubi.plugin.spark.authz.serde.DatabaseExtractor.dbExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.functionExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType.FunctionType
@@ -234,13 +233,11 @@ case class TableDesc(
     val tableExtractor = tableExtractors(fieldExtractor)
     val maybeTable = tableExtractor(spark, tableVal)
     maybeTable.map { t =>
-      if (t.catalog.nonEmpty) {
-        t
-      } else if (catalogDesc.nonEmpty) {
+      if (t.catalog.isEmpty && catalogDesc.nonEmpty) {
         val newCatalog = catalogDesc.get.extract(v)
         t.copy(catalog = newCatalog)
       } else {
-        t.copy(catalog = currentCatalog)
+        t
       }
     }
   }

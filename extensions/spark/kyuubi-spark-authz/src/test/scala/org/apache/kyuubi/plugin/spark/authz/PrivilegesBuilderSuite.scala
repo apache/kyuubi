@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import scala.reflect.io.File
+import scala.util.Try
 
 import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -26,6 +27,8 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+
+import org.apache.kyuubi.plugin.spark.authz.serde.{Table, TABLE_COMMAND_SPECS}
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -694,7 +697,16 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("DescribeColumnCommand") {
-    val plan = sql(s"DESC TABLE $reusedTable key").queryExecution.analyzed
+    val sql1 = s"DESC TABLE $reusedTable key"
+    val plan = sql(sql1).queryExecution.analyzed
+    val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
+    var table: Table = null
+    spec.tableDescs.find { d => Try(table = d.extract(plan, spark).get).isSuccess }
+    withClue(sql1) {
+      assert(table.catalog === Some("spark_catalog"))
+      assert(table.database === Some(reusedDb))
+      assert(table.table === reusedTableShort)
+    }
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === DESCTABLE)
     assert(in.size === 1)
