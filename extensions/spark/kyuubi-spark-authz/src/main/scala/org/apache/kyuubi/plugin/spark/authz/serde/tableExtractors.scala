@@ -106,10 +106,9 @@ class ResolvedTableTableExtractor extends TableExtractor {
  */
 class IdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val catalog = new CurrentCatalogExtractor().apply(spark, v1)
     val namespace = invokeAs[Array[String]](v1, "namespace")
     val table = invokeAs[String](v1, "name")
-    Some(Table(catalog, Some(quote(namespace)), table, None))
+    Some(Table(None, Some(quote(namespace)), table, None))
   }
 }
 
