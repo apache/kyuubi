@@ -99,7 +99,7 @@ object KyuubiSQLConf {
 
   val REBALANCE_BEFORE_ZORDER =
     buildConf("spark.sql.optimizer.rebalanceBeforeZorder.enabled")
-      .doc("when true, we do a rebalance before zorder in case data skew. " +
+      .doc("When true, we do a rebalance before zorder in case data skew. " +
         "Note that, if the insertion is dynamic partition we will use the partition " +
         "columns to rebalance. Note that, this config only affects with Spark 3.3.x")
       .version("1.6.0")
