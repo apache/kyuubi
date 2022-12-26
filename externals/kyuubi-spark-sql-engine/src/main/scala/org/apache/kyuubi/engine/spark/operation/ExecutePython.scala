@@ -197,6 +197,9 @@ case class SessionPythonWorker(
    * @return the python response
    */
   def runCode(code: String, internal: Boolean = false): Option[PythonResponse] = withLockRequired {
+    if (!workerProcess.isAlive) {
+      throw KyuubiSQLException("Python worker process has been exited, please check the error log.")
+    }
     val input = ExecutePython.toJson(Map("code" -> code, "cmd" -> "run_code"))
     // scalastyle:off println
     stdin.println(input)
@@ -337,7 +340,7 @@ object ExecutePython extends Logging {
     val stderrThread = new Thread("process stderr thread") {
       override def run(): Unit = {
         val lines = scala.io.Source.fromInputStream(process.getErrorStream).getLines()
-        lines.foreach(logger.error)
+        lines.filter(_.trim.nonEmpty).foreach(logger.error)
       }
     }
     stderrThread.setDaemon(true)
