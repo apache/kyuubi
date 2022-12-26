@@ -37,6 +37,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -122,6 +123,40 @@ class ExecutePython(
       }
     } else {
       executePython()
+    }
+  }
+
+  override def setSparkLocalProperty: (String, String) => Unit =
+    (key: String, value: String) => {
+      val valueStr = if (value == null) "None" else s"'$value'"
+      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', $valueStr)")
+      ()
+    }
+
+  override protected def withLocalProperties[T](f: => T): T = {
+    try {
+      worker.runCode("spark.sparkContext.setJobGroup" +
+        s"('$statementId', '$redactedStatement', $forceCancel)")
+      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
+      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
+      schedulerPool match {
+        case Some(pool) =>
+          setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
+        case None =>
+      }
+      if (isSessionUserSignEnabled) {
+        setSessionUserSign()
+      }
+
+      f
+    } finally {
+      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, "")
+      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, "")
+      setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, "")
+      worker.runCode("spark.sparkContext.clearJobGroup()")
+      if (isSessionUserSignEnabled) {
+        clearSessionUserSign()
+      }
     }
   }
 }
