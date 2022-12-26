@@ -175,8 +175,11 @@ case class SessionPythonWorker(
     stdin.println(input)
     // scalastyle:on
     stdin.flush()
-    Option(stdout.readLine())
-      .map(ExecutePython.fromJson[PythonResponse](_))
+    val output = stdout.readLine()
+    // scalastyle:off println
+    println(s"$input -> $output")
+    // scalastyle:on
+    Option(output).map(ExecutePython.fromJson[PythonResponse](_))
   }
 
   def close(): Unit = {
