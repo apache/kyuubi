@@ -275,6 +275,6 @@ case class CatalogDesc(
   override def extract(v: AnyRef): Option[String] = {
     val catalogVal = invoke(v, fieldName)
     val extractor = catalogExtractors(fieldExtractor)
-    extractor(SparkSession.active, catalogVal)
+    extractor(catalogVal)
   }
 }
