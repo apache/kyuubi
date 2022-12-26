@@ -23,6 +23,7 @@ import java.net.URI
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
 import javax.ws.rs.core.UriBuilder
 
 import scala.collection.JavaConverters._
@@ -172,8 +173,16 @@ case class SessionPythonWorker(
   private val stdin: PrintWriter = new PrintWriter(workerProcess.getOutputStream)
   private val stdout: BufferedReader =
     new BufferedReader(new InputStreamReader(workerProcess.getInputStream), 1)
+  private val lock = new ReentrantLock()
 
-  def runCode(code: String): Option[PythonResponse] = {
+  private def withLockRequired[T](block: => T): T = {
+    try {
+      lock.lock()
+      block
+    } finally lock.unlock()
+  }
+
+  def runCode(code: String): Option[PythonResponse] = withLockRequired {
     val input = ExecutePython.toJson(Map("code" -> code, "cmd" -> "run_code"))
     // scalastyle:off println
     stdin.println(input)
@@ -186,7 +195,7 @@ case class SessionPythonWorker(
     Option(output).map(ExecutePython.fromJson[PythonResponse](_))
   }
 
-  def close(): Unit = {
+  def close(): Unit = withLockRequired {
     val exitCmd = ExecutePython.toJson(Map("cmd" -> "exit_worker"))
     // scalastyle:off println
     stdin.println(exitCmd)
