@@ -31,7 +31,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
-
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
 abstract class PrivilegesBuilderSuite extends AnyFunSuite
