@@ -77,6 +77,7 @@ class PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
         statement.executePython(code)
       }.getMessage
       assert(e.contains("Query timed out"))
+      statement.setQueryTimeout(20)
       code = "bad_code"
       e = intercept[KyuubiSQLException](statement.executePython(code)).getMessage
       assert(e.contains("Interpret error"))
