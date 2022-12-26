@@ -195,7 +195,7 @@ case class SessionPythonWorker(
     Option(output).map(ExecutePython.fromJson[PythonResponse](_))
   }
 
-  def close(): Unit = withLockRequired {
+  def close(): Unit = {
     val exitCmd = ExecutePython.toJson(Map("cmd" -> "exit_worker"))
     // scalastyle:off println
     stdin.println(exitCmd)
