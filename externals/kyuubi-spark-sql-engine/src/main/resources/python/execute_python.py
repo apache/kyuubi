@@ -240,7 +240,9 @@ def execute_request(content):
 
 
 # get or create spark session
-spark_session = kyuubi_util.get_spark_session()
+spark_session = kyuubi_util.get_spark_session(
+    os.environ.get("KYUUBI_SPARK_SESSION_UUID")
+)
 global_dict["spark"] = spark_session
 
 

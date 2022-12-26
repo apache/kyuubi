@@ -90,6 +90,50 @@ class PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
+  test("binding python/sql spark session") {
+    checkPythonRuntimeAndVersion()
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.executeQuery("SET kyuubi.operation.language=PYTHON")
+
+      // set hello=kyuubi in python
+      val set1 =
+        """
+          |spark.sql("set hello=kyuubi").show()
+          |""".stripMargin
+      val output1 =
+        """|+-----+------+
+           ||  key| value|
+           |+-----+------+
+           ||hello|kyuubi|
+           |+-----+------+""".stripMargin
+      val resultSet1 = statement.executeQuery(set1)
+      assert(resultSet1.next())
+      assert(resultSet1.getString("status") === "ok")
+      assert(resultSet1.getString("output") === output1)
+
+      val set2 =
+        """
+          |spark.sql("SET kyuubi.operation.language=SQL").show(truncate = False)
+          |""".stripMargin
+      val output2 =
+        """|+-------------------------+-----+
+           ||key                      |value|
+           |+-------------------------+-----+
+           ||kyuubi.operation.language|SQL  |
+           |+-------------------------+-----+""".stripMargin
+      val resultSet2 = statement.executeQuery(set2)
+      assert(resultSet2.next())
+      assert(resultSet2.getString("status") === "ok")
+      assert(resultSet2.getString("output") === output2)
+
+      // get hello value in sql
+      val resultSet3 = statement.executeQuery("set hello")
+      assert(resultSet3.next())
+      assert(resultSet3.getString("key") === "hello")
+      assert(resultSet3.getString("value") === "kyuubi")
+    })
+  }
+
   private def runPySparkTest(
       pyCode: String,
       output: String): Unit = {

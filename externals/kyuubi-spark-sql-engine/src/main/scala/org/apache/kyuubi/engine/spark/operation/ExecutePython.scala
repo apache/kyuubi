@@ -243,6 +243,7 @@ object ExecutePython extends Logging {
           "SPARK_HOME",
           getSparkPythonHomeFromArchive(spark, session).getOrElse(defaultSparkHome)))
     }
+    env.put("KYUUBI_SPARK_SESSION_UUID", session.handle.identifier.toString)
     env.put("PYTHON_GATEWAY_CONNECTION_INFO", KyuubiPythonGatewayServer.CONNECTION_FILE_PATH)
     logger.info(
       s"""

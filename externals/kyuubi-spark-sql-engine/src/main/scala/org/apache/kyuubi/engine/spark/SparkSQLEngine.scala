@@ -39,10 +39,12 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
+import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
 
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
@@ -165,6 +167,22 @@ object SparkSQLEngine extends Logging {
 
   SignalRegister.registerLogger(logger)
   setupConf()
+
+  /**
+   * get the SparkSession by the session identifier, it was used for the initial PySpark session
+   * now, see
+   * externals/kyuubi-spark-sql-engine/src/main/resources/python/kyuubi_util.py::get_spark_session
+   * for details
+   */
+  def getSparkSession(uuid: String): SparkSession = {
+    assert(currentEngine.isDefined)
+    currentEngine.get
+      .backendService
+      .sessionManager
+      .getSession(SessionHandle.fromUUID(uuid))
+      .asInstanceOf[SparkSessionImpl]
+      .spark
+  }
 
   def setupConf(): Unit = {
     _sparkConf = new SparkConf()
