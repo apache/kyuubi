@@ -105,10 +105,7 @@ case class DatabaseDesc(
     val databaseExtractor = dbExtractors(fieldExtractor)
     val db = databaseExtractor(databaseVal)
     if (db.catalog.isEmpty && catalogDesc.nonEmpty) {
-      var maybeCatalog = catalogDesc.get.extract(v)
-      if (maybeCatalog.isEmpty) {
-        maybeCatalog = new CurrentCatalogExtractor().apply(v)
-      }
+      val maybeCatalog = catalogDesc.get.extract(v)
       db.copy(catalog = maybeCatalog)
     } else {
       db
@@ -289,6 +286,6 @@ case class CatalogDesc(
   override def extract(v: AnyRef): Option[String] = {
     val catalogVal = if (StringUtils.isBlank(fieldName)) v else invoke(v, fieldName)
     val extractor = catalogExtractors(fieldExtractor)
-    extractor(catalogVal, SparkSession.active)
+    extractor(catalogVal)
   }
 }

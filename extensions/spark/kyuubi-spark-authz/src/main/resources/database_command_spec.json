@@ -145,10 +145,7 @@
   "databaseDescs" : [ {
     "fieldName" : "namespace",
     "fieldExtractor" : "StringSeqDatabaseExtractor",
-    "catalogDesc" : {
-      "fieldName" : "",
-      "fieldExtractor" : "CurrentCatalogExtractor"
-    },
+    "catalogDesc" : null,
     "isInput" : true
   } ],
   "opType" : "SWITCHDATABASE"

@@ -17,4 +17,3 @@
 
 org.apache.kyuubi.plugin.spark.authz.serde.CatalogPluginCatalogExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.StringOptionCatalogExtractor
-org.apache.kyuubi.plugin.spark.authz.serde.CurrentCatalogExtractor

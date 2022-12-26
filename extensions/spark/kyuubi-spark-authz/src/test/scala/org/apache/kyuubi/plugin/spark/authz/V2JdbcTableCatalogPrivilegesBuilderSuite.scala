@@ -136,20 +136,9 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
       Try(db = d.extract(plan1)).isSuccess
     }
     withClue(sql1) {
-      assert(db.catalog === Some("spark_catalog"))
+      assert(db.catalog === None)
       assert(db.database === ns1)
     }
-
-    sql(s"USE $catalogV2")
-    val plan2 = executePlan(sql1).analyzed
-    spec.databaseDescs.find { d =>
-      Try(db = d.extract(plan2)).isSuccess
-    }
-    withClue(sql1) {
-      assert(db.catalog === Some(catalogV2))
-      assert(db.database === ns1)
-    }
-    sql(s"USE spark_catalog")
   }
 
 }

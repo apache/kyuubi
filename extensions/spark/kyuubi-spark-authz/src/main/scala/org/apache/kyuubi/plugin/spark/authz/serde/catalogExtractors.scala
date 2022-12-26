@@ -21,11 +21,9 @@ import java.util.ServiceLoader
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.SparkSession
-
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
-trait CatalogExtractor extends ((AnyRef, SparkSession) => Option[String]) with Extractor
+trait CatalogExtractor extends (AnyRef => Option[String]) with Extractor
 
 object CatalogExtractor {
   val catalogExtractors: Map[String, CatalogExtractor] = {
@@ -41,7 +39,7 @@ object CatalogExtractor {
  * CatalogPlugin ->
  */
 class CatalogPluginCatalogExtractor extends CatalogExtractor {
-  override def apply(v1: AnyRef, spark: SparkSession = SparkSession.active): Option[String] = {
+  override def apply(v1: AnyRef): Option[String] = {
     Option(invokeAs[String](v1, "name"))
   }
 }
@@ -50,14 +48,7 @@ class CatalogPluginCatalogExtractor extends CatalogExtractor {
  * Option[String]
  */
 class StringOptionCatalogExtractor extends CatalogExtractor {
-  override def apply(v1: AnyRef, spark: SparkSession = SparkSession.active): Option[String] = {
+  override def apply(v1: AnyRef): Option[String] = {
     v1.asInstanceOf[Option[String]]
-  }
-}
-
-class CurrentCatalogExtractor extends CatalogExtractor {
-  override def apply(v1: AnyRef, spark: SparkSession = SparkSession.active): Option[String] = {
-    val catalogPlugin = spark.sessionState.catalogManager.currentCatalog
-    new CatalogPluginCatalogExtractor().apply(catalogPlugin)
   }
 }
