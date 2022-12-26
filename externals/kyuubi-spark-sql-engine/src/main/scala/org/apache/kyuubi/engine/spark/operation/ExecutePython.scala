@@ -136,7 +136,8 @@ class ExecutePython(
 
   override protected def withLocalProperties[T](f: => T): T = {
     try {
-      val jobDesc = redactedStatement.replaceAll("\\'", "\\\\'").replaceAll("\\s", " ").trim
+      // to prevent the transferred set job group python code broken
+      val jobDesc = s"Python statement: $statementId"
       // for python, the boolean value is capitalized
       val pythonForceCancel = forceCancel.toString.capitalize
       worker.runCode("spark.sparkContext.setJobGroup" +
