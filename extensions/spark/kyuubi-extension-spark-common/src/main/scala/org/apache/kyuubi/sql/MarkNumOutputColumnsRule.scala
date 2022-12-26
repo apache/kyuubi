@@ -28,7 +28,7 @@ case class MarkNumOutputColumnsRule(session: SparkSession)
   import MarkNumOutputColumnsRule._
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    if (!conf.getConf(KyuubiSQLConf.MARK_NUM_OUTPUT_COLUMNS)) {
+    if (!conf.getConf(KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION)) {
       return plan
     }
     if (session.conf.getOption(OUTPUT_NUM_COLUMNS).isDefined) {

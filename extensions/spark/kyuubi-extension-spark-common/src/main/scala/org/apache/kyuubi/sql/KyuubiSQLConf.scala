@@ -184,13 +184,6 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(false)
 
-  val MARK_NUM_OUTPUT_COLUMNS =
-    buildConf("spark.sql.optimizer.markNumOutputColumns.enabled")
-      .doc("When true, inject the number of output columns of current plan if it is for writing.")
-      .version("1.7.0")
-      .booleanConf
-      .createWithDefault(true)
-
   val FINAL_STAGE_CONFIG_ISOLATION_WRITE_ONLY =
     buildConf("spark.sql.optimizer.finalStageConfigIsolationWriteOnly.enabled")
       .doc("When true, only enable final stage isolation for writing.")

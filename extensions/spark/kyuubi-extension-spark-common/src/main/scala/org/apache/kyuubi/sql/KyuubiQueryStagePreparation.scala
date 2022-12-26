@@ -63,7 +63,6 @@ case class FinalStageConfigIsolation(session: SparkSession) extends Rule[SparkPl
       // Note: we should still do clean up previous config for non-final stage to avoid such case:
       // the first statement is write, but the second statement is query.
       if (conf.getConf(FINAL_STAGE_CONFIG_ISOLATION_WRITE_ONLY) &&
-        conf.getConf(KyuubiSQLConf.MARK_NUM_OUTPUT_COLUMNS) &&
         !MarkNumOutputColumnsRule.isWrite(session, plan)) {
         return plan
       }
