@@ -124,13 +124,6 @@ class ExecutePython(
       executePython()
     }
   }
-
-  override def setSparkLocalProperty: (String, String) => Unit =
-    (key: String, value: String) => {
-      val valueStr = if (value == null) "None" else s"'$value'"
-      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', $valueStr)")
-      ()
-    }
 }
 
 case class SessionPythonWorker(
