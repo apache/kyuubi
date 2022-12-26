@@ -30,7 +30,6 @@ import scala.collection.JavaConverters._
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.lang3.StringUtils
-import org.apache.commons.text.StringEscapeUtils
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.{Row, SparkSession}
@@ -136,12 +135,11 @@ class ExecutePython(
 
   override protected def withLocalProperties[T](f: => T): T = {
     try {
-      val escapedStatement = redactedStatement.replaceAll("\\'", "\\\\'")
-        .replaceAll("\\n", "\\\\n")
+      val jobDesc = redactedStatement.replaceAll("\\'", "\\\\'").replaceAll("\\s*", " ").trim
       // for python, the boolean value is capitalized
       val pythonForceCancel = forceCancel.toString.capitalize
       worker.runCode("spark.sparkContext.setJobGroup" +
-        s"('$statementId', '$escapedStatement', $pythonForceCancel)")
+        s"('$statementId', '$jobDesc', $pythonForceCancel)")
       setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
