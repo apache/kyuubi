@@ -45,16 +45,3 @@ class CatalogPluginCatalogExtractor extends CatalogExtractor {
     Option(invokeAs[String](v1, "name"))
   }
 }
-
-class CurrentCatalogExtractor extends CatalogExtractor {
-  override def apply(spark: SparkSession, v1: AnyRef = null): Option[String] = {
-    val catalogPlugin = spark.sessionState.catalogManager.currentCatalog
-    new CatalogPluginCatalogExtractor().apply(spark, catalogPlugin)
-  }
-}
-
-object CurrentCatalogExtractor {
-  val currentCatalog: Option[String] = {
-    new CurrentCatalogExtractor().apply(SparkSession.active)
-  }
-}
