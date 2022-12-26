@@ -57,7 +57,7 @@ object TableExtractor {
 }
 
 /**
- * TableIdentifier ->
+ * org.apache.spark.sql.catalyst.TableIdentifier
  */
 class TableIdentifierTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
@@ -75,7 +75,7 @@ class TableIdentifierTableExtractor extends TableExtractor {
 }
 
 /**
- * CatalogTable ->
+ * org.apache.spark.sql.catalyst.catalog.CatalogTable
  */
 class CatalogTableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
@@ -113,7 +113,7 @@ class IdentifierTableExtractor extends TableExtractor {
 }
 
 /**
- * DataSourceV2Relation ->
+ * org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
  */
 class DataSourceV2RelationTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
@@ -148,7 +148,7 @@ class LogicalRelationTableExtractor extends TableExtractor {
 }
 
 /**
- * ResolvedDbObjectName ->
+ * org.apache.spark.sql.catalyst.analysis.ResolvedDbObjectName
  */
 class ResolvedDbObjectNameTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
