@@ -19,6 +19,7 @@ package org.apache.spark.kyuubi
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 
+import com.databricks.client.spark.arrow.ArrowDataRetrievers
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TOperationHandle}
 import org.scalatest.time.SpanSugar._
 

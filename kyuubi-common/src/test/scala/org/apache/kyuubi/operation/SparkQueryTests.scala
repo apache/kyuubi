@@ -410,12 +410,12 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
     }
   }
 
-  test("operation metadata hint - __kyuubi_operation_result_codec__") {
+  test("operation metadata hint - __kyuubi_operation_result_format__") {
     assume(!httpMode)
     withSessionHandle { (client, handle) =>
-      def checkStatusAndResultSetCodecHint(
+      def checkStatusAndResultSetFormatHint(
           sql: String,
-          expectedCodec: String): Unit = {
+          expectedFormat: String): Unit = {
         val stmtReq = new TExecuteStatementReq()
         stmtReq.setSessionHandle(handle)
         stmtReq.setStatement(sql)
@@ -425,24 +425,24 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
         val metaReq = new TGetResultSetMetadataReq(opHandle)
         val resp = client.GetResultSetMetadata(metaReq)
         assert(resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
-        val expectedResultSetCodecHint = s"__kyuubi_operation_result_codec__=$expectedCodec"
-        assert(resp.getStatus.getInfoMessages.contains(expectedResultSetCodecHint))
+        val expectedResultSetForamtHint = s"__kyuubi_operation_result_format__=$expectedFormat"
+        assert(resp.getStatus.getInfoMessages.contains(expectedResultSetForamtHint))
       }
-      checkStatusAndResultSetCodecHint(
+      checkStatusAndResultSetFormatHint(
         sql = "SELECT 1",
-        expectedCodec = "simple")
-      checkStatusAndResultSetCodecHint(
-        sql = "set kyuubi.operation.result.codec=arrow",
-        expectedCodec = "arrow")
-      checkStatusAndResultSetCodecHint(
+        expectedFormat = "thrift")
+      checkStatusAndResultSetFormatHint(
+        sql = "set kyuubi.operation.result.format=arrow",
+        expectedFormat = "arrow")
+      checkStatusAndResultSetFormatHint(
         sql = "SELECT 1",
-        expectedCodec = "arrow")
-      checkStatusAndResultSetCodecHint(
-        sql = "set kyuubi.operation.result.codec=simple",
-        expectedCodec = "simple")
-      checkStatusAndResultSetCodecHint(
-        sql = "set kyuubi.operation.result.codec",
-        expectedCodec = "simple")
+        expectedFormat = "arrow")
+      checkStatusAndResultSetFormatHint(
+        sql = "set kyuubi.operation.result.format=thrift",
+        expectedFormat = "thrift")
+      checkStatusAndResultSetFormatHint(
+        sql = "set kyuubi.operation.result.format",
+        expectedFormat = "thrift")
     }
   }
 }
