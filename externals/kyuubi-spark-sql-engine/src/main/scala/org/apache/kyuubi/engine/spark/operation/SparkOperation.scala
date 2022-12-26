@@ -62,8 +62,11 @@ abstract class SparkOperation(session: Session)
   override def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
       setState(targetState)
+      // scalastyle:off println
+      println(s"before cleaning up: " + statement)
       Option(getBackgroundHandle).foreach(_.cancel(true))
       if (!spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
+      println(s"after cleaning up: " + statement)
     }
   }
 
