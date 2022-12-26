@@ -155,7 +155,8 @@ class ExecutePython(
       setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, "")
       setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, "")
       setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, "")
-      worker.runCode("spark.sparkContext.clearJobGroup()")
+      // using cancelJobGroup for pyspark, see details in pyspark/context.py
+      worker.runCode(s"spark.sparkContext.cancelJobGroup('$statementId')")
       if (isSessionUserSignEnabled) {
         clearSessionUserSign()
       }
