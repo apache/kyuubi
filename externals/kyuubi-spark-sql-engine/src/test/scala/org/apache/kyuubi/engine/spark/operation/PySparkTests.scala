@@ -72,11 +72,7 @@ class PySparkTests extends WithSparkSQLEngine with HiveJDBCTestHelper {
     val statement = connection.createStatement().asInstanceOf[KyuubiStatement]
     statement.setQueryTimeout(5)
     try {
-      var code =
-        """
-          |import time
-          |time.sleep(10)
-          |""".stripMargin
+      var code = "spark.sql(\"select java_method('java.lang.Thread', 'sleep', 10000L)\").show()"
       var e = intercept[SQLTimeoutException] {
         statement.executePython(code)
       }.getMessage
