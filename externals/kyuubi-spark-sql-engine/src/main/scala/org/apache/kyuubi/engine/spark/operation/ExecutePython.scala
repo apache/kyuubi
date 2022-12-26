@@ -99,7 +99,7 @@ class ExecutePython(
     }
   }
 
-  override protected def runInternal(): Unit = withLocalProperties {
+  override protected def runInternal(): Unit = {
     addTimeoutMonitor(queryTimeout)
     if (shouldRunAsync) {
       val asyncOperation = new Runnable {
