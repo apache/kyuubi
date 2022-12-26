@@ -135,8 +135,10 @@ class ExecutePython(
 
   override protected def withLocalProperties[T](f: => T): T = {
     try {
+      // for python, the boolean value is capitalized
+      val pythonForceCancel = forceCancel.toString.capitalize
       worker.runCode("spark.sparkContext.setJobGroup" +
-        s"('$statementId', '$redactedStatement', $forceCancel)")
+        s"('$statementId', '${redactedStatement.replaceAll("\\'", "\\\\'")}', $pythonForceCancel)")
       setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
