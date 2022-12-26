@@ -135,7 +135,7 @@ class ExecutePython(
 
   override protected def withLocalProperties[T](f: => T): T = {
     try {
-      val jobDesc = redactedStatement.replaceAll("\\'", "\\\\'").replaceAll("\\s*", " ").trim
+      val jobDesc = redactedStatement.replaceAll("\\'", "\\\\'").replaceAll("\\s", " ").trim
       // for python, the boolean value is capitalized
       val pythonForceCancel = forceCancel.toString.capitalize
       worker.runCode("spark.sparkContext.setJobGroup" +
