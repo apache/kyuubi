@@ -91,7 +91,7 @@ class CatalogTableTableExtractor extends TableExtractor {
 class ResolvedTableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val catalogVal = invoke(v1, "catalog")
-    val catalog = new CatalogPluginCatalogExtractor().apply(spark, catalogVal)
+    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
     val identifier = invoke(v1, "identifier")
     val maybeTable = new IdentifierTableExtractor().apply(spark, identifier)
     val maybeOwner = TableExtractor.getOwner(v1)
@@ -122,7 +122,7 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
       case Some(v2Relation) =>
         val maybeCatalogPlugin = invokeAs[Option[AnyRef]](v2Relation, "catalog")
         val maybeCatalog = maybeCatalogPlugin.flatMap(catalogPlugin =>
-          new CatalogPluginCatalogExtractor().apply(spark, catalogPlugin))
+          new CatalogPluginCatalogExtractor().apply(catalogPlugin))
         val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation, "identifier")
         maybeIdentifier.flatMap { id =>
           val maybeTable = new IdentifierTableExtractor().apply(spark, id)
@@ -151,7 +151,7 @@ class LogicalRelationTableExtractor extends TableExtractor {
 class ResolvedDbObjectNameTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val catalogVal = invoke(v1, "catalog")
-    val catalog = new CatalogPluginCatalogExtractor().apply(spark, catalogVal)
+    val catalog = new CatalogPluginCatalogExtractor().apply(catalogVal)
     val nameParts = invokeAs[Seq[String]](v1, "nameParts")
     val namespace = nameParts.init.toArray
     val table = nameParts.last

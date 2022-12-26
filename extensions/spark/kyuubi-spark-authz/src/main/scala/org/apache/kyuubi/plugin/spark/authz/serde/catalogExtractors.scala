@@ -21,8 +21,6 @@ import java.util.ServiceLoader
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.SparkSession
-
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait CatalogExtractor extends (AnyRef => Option[String]) with Extractor
