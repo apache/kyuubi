@@ -629,4 +629,22 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assert(db.database === ns1)
     }
   }
+
+  test("SetCatalogAndNamespace") {
+    val ns1 = "testns1"
+    withDatabase(s"$ns1") { ns =>
+      sql(s"CREATE NAMESPACE $catalogV2.$ns")
+      val sql1 = s"USE $catalogV2.$ns"
+      val plan1 = executePlan(sql1).analyzed
+      val spec = DB_COMMAND_SPECS(plan1.getClass.getName)
+      var db: Database = null
+      spec.databaseDescs.find { d =>
+        Try(db = d.extract(plan1)).isSuccess
+      }
+      withClue(sql1) {
+        assert(db.catalog === Some(catalogV2))
+        assert(db.database === ns)
+      }
+    }
+  }
 }
