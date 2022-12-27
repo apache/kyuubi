@@ -135,7 +135,7 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
       }
     }
   }
-  
+
   test("Extracting database info with ResolvedDBObjectNameDatabaseExtractor") {
     val ns1 = "testns1"
 
