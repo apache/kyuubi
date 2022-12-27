@@ -171,19 +171,4 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
       }
     }
   }
-
-  test("Extracting database info with StringSeqDatabaseExtractor") {
-    val ns1 = "testns1"
-    val sql1 = s"USE NAMESPACE $ns1"
-    val plan1 = executePlan(sql1).analyzed
-    val spec = DB_COMMAND_SPECS(plan1.getClass.getName)
-    var db: Database = null
-    spec.databaseDescs.find { d =>
-      Try(db = d.extract(plan1)).isSuccess
-    }
-    withClue(sql1) {
-      assert(db.catalog === None)
-      assert(db.database === ns1)
-    }
-  }
 }

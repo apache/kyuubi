@@ -17,11 +17,14 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import scala.util.Try
+
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.execution.QueryExecution
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.plugin.spark.authz.serde.{Database, DB_COMMAND_SPECS}
 
 abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
@@ -609,6 +612,21 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       checkV2TableOwner(po)
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.ALTER)
+    }
+  }
+
+  test("SetNamespaceCommand") {
+    val ns1 = "testns1"
+    val sql1 = s"USE NAMESPACE $ns1"
+    val plan1 = executePlan(sql1).analyzed
+    val spec = DB_COMMAND_SPECS(plan1.getClass.getName)
+    var db: Database = null
+    spec.databaseDescs.find { d =>
+      Try(db = d.extract(plan1)).isSuccess
+    }
+    withClue(sql1) {
+      assert(db.catalog === None)
+      assert(db.database === ns1)
     }
   }
 }
