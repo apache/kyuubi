@@ -130,7 +130,7 @@ class ExecutePython(
   override def setSparkLocalProperty: (String, String) => Unit =
     (key: String, value: String) => {
       val valueStr = if (value == null) "None" else s"'$value'"
-      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', $valueStr)")
+      worker.runCode(s"spark.sparkContext.setLocalProperty('$key', $valueStr)", internal = true)
       ()
     }
 
@@ -141,7 +141,7 @@ class ExecutePython(
       // for python, the boolean value is capitalized
       val pythonForceCancel = forceCancel.toString.capitalize
       worker.runCode("spark.sparkContext.setJobGroup" +
-        s"('$statementId', '$jobDesc', $pythonForceCancel)")
+        s"('$statementId', '$jobDesc', $pythonForceCancel)", internal = true)
       setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
@@ -159,7 +159,7 @@ class ExecutePython(
       setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, "")
       setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, "")
       // using cancelJobGroup for pyspark, see details in pyspark/context.py
-      worker.runCode(s"spark.sparkContext.cancelJobGroup('$statementId')")
+      worker.runCode(s"spark.sparkContext.cancelJobGroup('$statementId')", internal = true)
       if (isSessionUserSignEnabled) {
         clearSessionUserSign()
       }
@@ -183,14 +183,29 @@ case class SessionPythonWorker(
     } finally lock.unlock()
   }
 
-  def runCode(code: String): Option[PythonResponse] = withLockRequired {
+  /**
+   * Run the python code and return the response. This method maybe invoked internally,
+   * such as setJobGroup and cancelJobGroup, if the internal python is not formatted correct,
+   * it might impact the code correctness and even cause result out of sequence. To prevent that,
+   * please make sure the internal python code simple and set internal flay, to be aware of the
+   * internal python code failure.
+   *
+   * @param code the python code
+   * @param internal whether is an internal invoke
+   * @return the python response
+   */
+  def runCode(code: String, internal: Boolean = false): Option[PythonResponse] = withLockRequired {
     val input = ExecutePython.toJson(Map("code" -> code, "cmd" -> "run_code"))
     // scalastyle:off println
     stdin.println(input)
     // scalastyle:on
     stdin.flush()
-    Option(stdout.readLine())
-      .map(ExecutePython.fromJson[PythonResponse](_))
+    val pythonResponse = Option(stdout.readLine()).map(ExecutePython.fromJson[PythonResponse](_))
+    // throw exception if internal python code fail
+    if (internal && pythonResponse.map(_.content.status) != Some(PythonResponse.OK_STATUS)) {
+      throw KyuubiSQLException(s"Internal python code $code failure: $pythonResponse")
+    }
+    pythonResponse
   }
 
   def close(): Unit = {
