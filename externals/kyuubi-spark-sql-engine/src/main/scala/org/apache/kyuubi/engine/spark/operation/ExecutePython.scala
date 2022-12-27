@@ -198,7 +198,8 @@ case class SessionPythonWorker(
    */
   def runCode(code: String, internal: Boolean = false): Option[PythonResponse] = withLockRequired {
     if (!workerProcess.isAlive) {
-      throw KyuubiSQLException("Python worker process has been exited, please check the error log.")
+      throw KyuubiSQLException("Python worker process has been exited, please check the error log" +
+        " and re-create the session to run python code.")
     }
     val input = ExecutePython.toJson(Map("code" -> code, "cmd" -> "run_code"))
     // scalastyle:off println
