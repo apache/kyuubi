@@ -29,7 +29,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.google.common.annotations.VisibleForTesting
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
-import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataStore
@@ -78,11 +78,14 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   private def initSchema(): Unit = {
     val classLoader = Utils.getContextOrKyuubiClassLoader
+    val kyuubiShortVersion = KYUUBI_VERSION.split("-").head
     val initSchemaStream: Option[InputStream] = dbType match {
       case DERBY =>
-        Option(classLoader.getResourceAsStream("sql/derby/metadata-store-schema-derby.sql"))
+        Option(classLoader
+          .getResourceAsStream(s"sql/derby/metadata-store-schema-${kyuubiShortVersion}.derby.sql"))
       case MYSQL =>
-        Option(classLoader.getResourceAsStream("sql/mysql/metadata-store-schema-mysql.sql"))
+        Option(classLoader
+          .getResourceAsStream(s"sql/mysql/metadata-store-schema-${kyuubiShortVersion}.mysql.sql"))
       case CUSTOM => None
     }
     initSchemaStream.foreach { inputStream =>
