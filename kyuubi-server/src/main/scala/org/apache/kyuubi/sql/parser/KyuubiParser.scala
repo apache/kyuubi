@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.sql.parser
 
+import java.lang.{Long => JLong}
+import java.nio.CharBuffer
+
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
@@ -26,7 +29,7 @@ import org.apache.kyuubi.sql.plan.KyuubiTreeNode
 
 class KyuubiParser {
 
-  val astBuilder = new KyuubiAstBuilder
+  lazy val astBuilder = new KyuubiAstBuilder
 
   def parsePlan(sqlText: String): KyuubiTreeNode = parse(sqlText) { parser =>
     astBuilder.visit(parser.singleStatement) match {
@@ -57,6 +60,76 @@ class KyuubiParser {
         // Try Again.
         parser.getInterpreter.setPredictionMode(PredictionMode.LL)
         toResult(parser)
+    }
+  }
+}
+object KyuubiParser {
+  val U16_CHAR_PATTERN = """\\u([a-fA-F0-9]{4})(?s).*""".r
+  val U32_CHAR_PATTERN = """\\U([a-fA-F0-9]{8})(?s).*""".r
+  val OCTAL_CHAR_PATTERN = """\\([01][0-7]{2})(?s).*""".r
+  val ESCAPED_CHAR_PATTERN = """\\((?s).)(?s).*""".r
+
+  /** Unescape backslash-escaped string enclosed by quotes. */
+  def unescapeSQLString(b: String): String = {
+    val sb = new StringBuilder(b.length())
+
+    def appendEscapedChar(n: Char): Unit = {
+      n match {
+        case '0' => sb.append('\u0000')
+        case '\'' => sb.append('\'')
+        case '"' => sb.append('\"')
+        case 'b' => sb.append('\b')
+        case 'n' => sb.append('\n')
+        case 'r' => sb.append('\r')
+        case 't' => sb.append('\t')
+        case 'Z' => sb.append('\u001A')
+        case '\\' => sb.append('\\')
+        // The following 2 lines are exactly what MySQL does TODO: why do we do this?
+        case '%' => sb.append("\\%")
+        case '_' => sb.append("\\_")
+        case _ => sb.append(n)
+      }
+    }
+
+    if (b.startsWith("r") || b.startsWith("R")) {
+      b.substring(2, b.length - 1)
+    } else {
+      // Skip the first and last quotations enclosing the string literal.
+      val charBuffer = CharBuffer.wrap(b, 1, b.length - 1)
+
+      while (charBuffer.remaining() > 0) {
+        charBuffer match {
+          case U16_CHAR_PATTERN(cp) =>
+            // \u0000 style 16-bit unicode character literals.
+            sb.append(Integer.parseInt(cp, 16).toChar)
+            charBuffer.position(charBuffer.position() + 6)
+          case U32_CHAR_PATTERN(cp) =>
+            // \U00000000 style 32-bit unicode character literals.
+            // Use Long to treat codePoint as unsigned in the range of 32-bit.
+            val codePoint = JLong.parseLong(cp, 16)
+            if (codePoint < 0x10000) {
+              sb.append((codePoint & 0xFFFF).toChar)
+            } else {
+              val highSurrogate = (codePoint - 0x10000) / 0x400 + 0xD800
+              val lowSurrogate = (codePoint - 0x10000) % 0x400 + 0xDC00
+              sb.append(highSurrogate.toChar)
+              sb.append(lowSurrogate.toChar)
+            }
+            charBuffer.position(charBuffer.position() + 10)
+          case OCTAL_CHAR_PATTERN(cp) =>
+            // \000 style character literals.
+            sb.append(Integer.parseInt(cp, 8).toChar)
+            charBuffer.position(charBuffer.position() + 4)
+          case ESCAPED_CHAR_PATTERN(c) =>
+            // escaped character literals.
+            appendEscapedChar(c.charAt(0))
+            charBuffer.position(charBuffer.position() + 2)
+          case _ =>
+            // non-escaped character literals.
+            sb.append(charBuffer.get())
+        }
+      }
+      sb.toString()
     }
   }
 }
