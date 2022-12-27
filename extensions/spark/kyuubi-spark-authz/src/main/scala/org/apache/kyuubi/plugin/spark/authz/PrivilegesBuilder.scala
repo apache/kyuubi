@@ -43,14 +43,23 @@ object PrivilegesBuilder {
   }
 
   private def tablePrivileges(
+      catalog: Option[String],
       table: TableIdentifier,
       columns: Seq[String] = Nil,
       owner: Option[String] = None,
       actionType: PrivilegeObjectActionType = PrivilegeObjectActionType.OTHER): PrivilegeObject = {
-    PrivilegeObject(TABLE_OR_VIEW, actionType, table.database.orNull, table.table, columns, owner)
+    PrivilegeObject(
+      TABLE_OR_VIEW,
+      actionType,
+      table.database.orNull,
+      table.table,
+      columns,
+      owner,
+      catalog = catalog)
   }
 
   private def v2TablePrivileges(
+      catalog: Option[String],
       table: Identifier,
       columns: Seq[String] = Nil,
       owner: Option[String] = None,
@@ -61,7 +70,8 @@ object PrivilegesBuilder {
       quote(table.namespace()),
       table.name(),
       columns,
-      owner)
+      owner,
+      catalog = catalog)
   }
   private def functionPrivileges(
       function: Function): PrivilegeObject = {
@@ -104,26 +114,28 @@ object PrivilegesBuilder {
       val tableOwner = extractTableOwner(table)
       if (projectionList.isEmpty) {
         privilegeObjects += tablePrivileges(
+          None,
           table.identifier,
           table.schema.fieldNames,
           tableOwner)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += tablePrivileges(table.identifier, cols, tableOwner)
+        privilegeObjects += tablePrivileges(None, table.identifier, cols, tableOwner)
       }
     }
 
     def mergeProjectionV2Table(
+        catalog: Option[String],
         table: Identifier,
         plan: LogicalPlan,
         owner: Option[String] = None): Unit = {
       if (projectionList.isEmpty) {
-        privilegeObjects += v2TablePrivileges(table, plan.output.map(_.name), owner)
+        privilegeObjects += v2TablePrivileges(catalog, table, plan.output.map(_.name), owner)
       } else {
         val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
           .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += v2TablePrivileges(table, cols, owner)
+        privilegeObjects += v2TablePrivileges(catalog, table, cols, owner)
       }
     }
 
@@ -162,7 +174,9 @@ object PrivilegesBuilder {
       case datasourceV2Relation if hasResolvedDatasourceV2Table(datasourceV2Relation) =>
         val tableIdent = getDatasourceV2Identifier(datasourceV2Relation)
         if (tableIdent.isDefined) {
+          val catalog = getDatasourceV2Catalog(datasourceV2Relation)
           mergeProjectionV2Table(
+            catalog,
             tableIdent.get,
             plan,
             getDatasourceV2TableOwner(datasourceV2Relation))
@@ -171,7 +185,7 @@ object PrivilegesBuilder {
       case u if u.nodeName == "UnresolvedRelation" =>
         val parts = invokeAs[String](u, "tableName").split("\\.")
         val db = quote(parts.init)
-        privilegeObjects += tablePrivileges(TableIdentifier(parts.last, Some(db)))
+        privilegeObjects += tablePrivileges(None, TableIdentifier(parts.last, Some(db)))
 
       case permanentViewMarker: PermanentViewMarker =>
         mergeProjection(permanentViewMarker.catalogTable, plan)
@@ -210,7 +224,7 @@ object PrivilegesBuilder {
             } else {
               val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
               val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
-              Seq(tablePrivileges(identifier, columnNames, table.owner, actionType))
+              Seq(tablePrivileges(table.catalog, identifier, columnNames, table.owner, actionType))
             }
           case None => Nil
         }

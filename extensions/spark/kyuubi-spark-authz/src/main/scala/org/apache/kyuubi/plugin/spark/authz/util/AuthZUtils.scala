@@ -36,6 +36,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, Table, TableCatalog}
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.serde.CatalogDesc
 import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
 
 private[authz] object AuthZUtils {
@@ -139,6 +140,11 @@ private[authz] object AuthZUtils {
 
   def getDatasourceV2Identifier(plan: LogicalPlan): Option[Identifier] = {
     getFieldVal[Option[Identifier]](plan, "identifier")
+  }
+
+  def getDatasourceV2Catalog(plan: LogicalPlan): Option[String] = {
+    CatalogDesc(fieldName = "catalog", fieldExtractor = "CatalogPluginCatalogExtractor")
+      .extract(plan)
   }
 
   def getDatasourceV2TableOwner(plan: LogicalPlan): Option[String] = {
