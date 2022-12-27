@@ -20,7 +20,7 @@ package org.apache.kyuubi.server.metadata.api
 import org.apache.kyuubi.session.SessionType.SessionType
 
 /**
- * The metadata to store. It including three parts:
+ * The metadata store. It includes three parts:
  * 1. session related metadata.
  * 2. request related metadata.
  * 3. engine related metadata.
