@@ -21,7 +21,7 @@ import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.ParseCancellationException
 
-import org.apache.kyuubi.sql.{KyuubiSqlBaseLexer, KyuubiSqlBaseParser}
+import org.apache.kyuubi.sql.{KyuubiSqlBaseLexer, KyuubiTrinoBaseParser}
 import org.apache.kyuubi.sql.parser.{PostProcessor, UpperCaseCharStream}
 import org.apache.kyuubi.sql.plan.KyuubiTreeNode
 
@@ -35,13 +35,13 @@ class KyuubiTrinoParser {
     }
   }
 
-  protected def parse[T](command: String)(toResult: KyuubiSqlBaseParser => T): T = {
+  protected def parse[T](command: String)(toResult: KyuubiTrinoBaseParser => T): T = {
     val lexer = new KyuubiSqlBaseLexer(
       new UpperCaseCharStream(CharStreams.fromString(command)))
     lexer.removeErrorListeners()
 
     val tokenStream = new CommonTokenStream(lexer)
-    val parser = new KyuubiSqlBaseParser(tokenStream)
+    val parser = new KyuubiTrinoBaseParser(tokenStream)
     parser.addParseListener(PostProcessor)
     parser.removeErrorListeners()
 
