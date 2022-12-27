@@ -90,6 +90,52 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
     }
   }
 
+  test("Extracting table info with ResolvedTableTableExtractor") {
+    val ns1 = "testns1"
+    val tbl = "testtbl"
+    withDatabase(s"$ns1") { ns =>
+      sql(s"CREATE NAMESPACE $ns")
+      withTable(s"$catalogV2.$ns1.$tbl") { t =>
+        sql(s"CREATE TABLE IF NOT EXISTS $t(key int)")
+        val sql1 = s"SHOW CREATE TABLE $t"
+        val plan = executePlan(sql1).analyzed
+        val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
+        var table: Table = null
+        spec.tableDescs.find { d =>
+          Try(table = d.extract(plan, spark).get).isSuccess
+        }
+        withClue(sql1) {
+          assert(table.catalog === Some(catalogV2))
+          assert(table.database === Some(ns1))
+          assert(table.table === tbl)
+          assert(table.owner.isEmpty)
+        }
+      }
+    }
+  }
+
+  test("Extracting table info with DataSourceV2RelationTableExtractor") {
+    val ns1 = "testns1"
+    val tbl = "testtbl"
+    withDatabase(s"$ns1") { ns =>
+      sql(s"CREATE NAMESPACE $ns")
+      withTable(s"$catalogV2.$ns1.$tbl") { t =>
+        sql(s"CREATE TABLE IF NOT EXISTS $t(key int)")
+        val sql1 = s"INSERT INTO TABLE $t VALUES(1)"
+        val plan = executePlan(sql1).analyzed
+        val spec = TABLE_COMMAND_SPECS(plan.getClass.getName)
+        var table: Table = null
+        spec.tableDescs.find { d => Try(table = d.extract(plan, spark).get).isSuccess }
+        withClue(sql1) {
+          assert(table.catalog === Some(catalogV2))
+          assert(table.database === Some(ns1))
+          assert(table.table === tbl)
+          assert(table.owner.isEmpty)
+        }
+      }
+    }
+  }
+  
   test("Extracting database info with ResolvedDBObjectNameDatabaseExtractor") {
     val ns1 = "testns1"
 
@@ -140,5 +186,4 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
       assert(db.database === ns1)
     }
   }
-
 }

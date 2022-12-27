@@ -27,7 +27,7 @@ import org.apache.kyuubi.ctl.opt.CliConfig
 private[ctl] object Validator {
 
   def validateZkArguments(cliConfig: CliConfig): Unit = {
-    if (cliConfig.zkOpts.zkQuorum == null) {
+    if (cliConfig.zkOpts.zkQuorum == null || cliConfig.zkOpts.zkQuorum.isEmpty) {
       fail("Zookeeper quorum is not specified and no default value to load")
     }
     if (cliConfig.zkOpts.namespace == null) {

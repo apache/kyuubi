@@ -53,7 +53,7 @@ class KyuubiSessionImpl(
     parser: KyuubiParser)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  override val sessionType: SessionType = SessionType.SQL
+  override val sessionType: SessionType = SessionType.INTERACTIVE
 
   private[kyuubi] val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
@@ -108,7 +108,7 @@ class KyuubiSessionImpl(
 
   private var _engineSessionHandle: SessionHandle = _
 
-  override def open(): Unit = {
+  override def open(): Unit = handleSessionException {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
@@ -177,6 +177,17 @@ class KyuubiSessionImpl(
             throw e
         } finally {
           attempt += 1
+          if (shouldRetry && _client != null) {
+            try {
+              _client.closeSession()
+            } catch {
+              case e: Throwable =>
+                warn(
+                  "Error on closing broken client of engine " +
+                    s"[${engine.defaultEngineName} $host:$port]",
+                  e)
+            }
+          }
         }
       }
       sessionEvent.openedTime = System.currentTimeMillis()
@@ -188,7 +199,13 @@ class KyuubiSessionImpl(
 
   override protected def runOperation(operation: Operation): OperationHandle = {
     if (operation != launchEngineOp) {
-      waitForEngineLaunched()
+      try {
+        waitForEngineLaunched()
+      } catch {
+        case t: Throwable =>
+          operation.close()
+          throw t
+      }
       sessionEvent.totalOperations += 1
     }
     super.runOperation(operation)
