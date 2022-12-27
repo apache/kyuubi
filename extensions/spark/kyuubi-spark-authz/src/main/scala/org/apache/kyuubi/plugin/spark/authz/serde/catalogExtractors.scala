@@ -36,7 +36,7 @@ object CatalogExtractor {
 }
 
 /**
- * CatalogPlugin ->
+ * org.apache.spark.sql.connector.catalog.CatalogPlugin
  */
 class CatalogPluginCatalogExtractor extends CatalogExtractor {
   override def apply(v1: AnyRef): Option[String] = {
