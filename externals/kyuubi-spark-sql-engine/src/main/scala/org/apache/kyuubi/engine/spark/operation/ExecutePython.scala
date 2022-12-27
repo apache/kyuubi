@@ -140,8 +140,10 @@ class ExecutePython(
       val jobDesc = s"Python statement: $statementId"
       // for python, the boolean value is capitalized
       val pythonForceCancel = forceCancel.toString.capitalize
-      worker.runCode("spark.sparkContext.setJobGroup" +
-        s"('$statementId', '$jobDesc', $pythonForceCancel)", internal = true)
+      worker.runCode(
+        "spark.sparkContext.setJobGroup" +
+          s"('$statementId', '$jobDesc', $pythonForceCancel)",
+        internal = true)
       setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
@@ -191,7 +193,7 @@ case class SessionPythonWorker(
    * internal python code failure.
    *
    * @param code the python code
-   * @param internal whether is an internal invoke
+   * @param internal whether is internal python code
    * @return the python response
    */
   def runCode(code: String, internal: Boolean = false): Option[PythonResponse] = withLockRequired {
