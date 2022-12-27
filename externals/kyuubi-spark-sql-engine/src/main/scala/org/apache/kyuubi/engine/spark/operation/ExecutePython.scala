@@ -352,9 +352,13 @@ object ExecutePython extends Logging {
   def startWatcher(process: Process): Thread = {
     val processWatcherThread = new Thread("process watcher thread") {
       override def run(): Unit = {
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-          logger.error(f"Process has died with $exitCode")
+        try {
+          val exitCode = process.waitFor()
+          if (exitCode != 0) {
+            logger.error(f"Process has died with $exitCode")
+          }
+        } catch {
+          case _: InterruptedException =>
         }
       }
     }
