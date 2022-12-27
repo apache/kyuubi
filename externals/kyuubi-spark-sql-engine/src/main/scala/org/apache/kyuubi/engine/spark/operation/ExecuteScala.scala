@@ -30,8 +30,11 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
+import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -57,6 +60,7 @@ class ExecuteScala(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
+  EventBus.post(SparkOperationEvent(this))
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
       new StructType().add("output", "string")
@@ -153,5 +157,10 @@ class ExecuteScala(
     } else {
       executeScala()
     }
+  }
+
+  override protected def setState(newState: OperationState): Unit = {
+    super.setState(newState)
+    EventBus.post(SparkOperationEvent(this))
   }
 }
