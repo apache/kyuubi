@@ -132,7 +132,7 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
       val resp = EntityUtils.toString(response.getEntity)
 
       // check session section
-      assert(resp.contains("SQL Statistics"))
+      assert(resp.contains("Statement Statistics"))
 
       // check sql stats table id
       assert(resp.contains("sqlstat"))

@@ -155,7 +155,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
                 'aggregated-sqlstat')">
         <h4>
           <span class="collapse-table-arrow arrow-open"></span>
-          <a>SQL Statistics ({numStatement})</a>
+          <a>Statement Statistics ({numStatement})</a>
         </h4>
       </span> ++
         <div class="aggregated-sqlstat collapsible-table">
