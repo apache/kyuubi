@@ -139,7 +139,7 @@ class ExecutePython(
       // to prevent the transferred set job group python code broken
       val jobDesc = s"Python statement: $statementId"
       // for python, the boolean value is capitalized
-      val pythonForceCancel = forceCancel.toString.capitalize
+      val pythonForceCancel = if (forceCancel) "True" else "False"
       worker.runCode(
         "spark.sparkContext.setJobGroup" +
           s"('$statementId', '$jobDesc', $pythonForceCancel)",
@@ -187,9 +187,9 @@ case class SessionPythonWorker(
 
   /**
    * Run the python code and return the response. This method maybe invoked internally,
-   * such as setJobGroup and cancelJobGroup, if the internal python is not formatted correct,
-   * it might impact the code correctness and even cause result out of sequence. To prevent that,
-   * please make sure the internal python code simple and set internal flay, to be aware of the
+   * such as setJobGroup and cancelJobGroup, if the internal python code is not formatted correctly,
+   * it might impact the correctness and even cause result out of sequence. To prevent that,
+   * please make sure the internal python code simple and set internal flag, to be aware of the
    * internal python code failure.
    *
    * @param code the python code
