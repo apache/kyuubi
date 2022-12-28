@@ -56,6 +56,7 @@ class ExecuteScala(
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
+  override protected def supportProgress: Boolean = true
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {

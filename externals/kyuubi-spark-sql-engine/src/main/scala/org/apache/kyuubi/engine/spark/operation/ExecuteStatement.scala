@@ -21,18 +21,16 @@ import java.util.concurrent.RejectedExecutionException
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
-import org.apache.spark.kyuubi.SparkProgressMonitor
 import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, SESSION_PROGRESS_ENABLE}
+import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.events.EventBus
-import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationStatus}
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -46,13 +44,7 @@ class ExecuteStatement(
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
-
-  private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
-    case Some(s) => s.toBoolean
-    case _ => session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
-  }
-
-  EventBus.post(SparkOperationEvent(this))
+  override protected def supportProgress: Boolean = true
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -151,20 +143,6 @@ class ExecuteStatement(
     } else {
       executeStatement()
     }
-  }
-
-  override def getStatus: OperationStatus = {
-    if (progressEnable) {
-      val progressMonitor = new SparkProgressMonitor(spark, statementId)
-      setOperationJobProgress(new TProgressUpdateResp(
-        progressMonitor.headers,
-        progressMonitor.rows,
-        progressMonitor.progressedPercentage,
-        progressMonitor.executionStatus,
-        progressMonitor.footerSummary,
-        startTime))
-    }
-    super.getStatus
   }
 
   def setCompiledStateIfNeeded(): Unit = synchronized {
