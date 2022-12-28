@@ -80,6 +80,7 @@ class ExecuteScala(
       setState(OperationState.RUNNING)
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+      addOperationListener()
       val legacyOutput = repl.getOutput
       if (legacyOutput.nonEmpty) {
         warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")

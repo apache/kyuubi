@@ -80,6 +80,7 @@ class ExecutePython(
     try {
       setState(OperationState.RUNNING)
       info(diagnostics)
+      addOperationListener()
       val response = worker.runCode(statement)
       val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
       if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
