@@ -22,17 +22,20 @@ import java.time.ZoneId
 
 import org.apache.hive.service.rpc.thrift.{TGetResultSetMetadataResp, TRowSet}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
+import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.SESSION_USER_SIGN_ENABLED
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_SPARK_LISTENER_ENABLED, SESSION_USER_SIGN_ENABLED}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
+import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
+import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -59,7 +62,25 @@ abstract class SparkOperation(session: Session)
   override def redactedStatement: String =
     redact(spark.sessionState.conf.stringRedactionPattern, statement)
 
+  protected val operationSparkListenerEnabled =
+    spark.conf.getOption(OPERATION_SPARK_LISTENER_ENABLED.key) match {
+      case Some(s) => s.toBoolean
+      case _ => session.sessionManager.getConf.get(OPERATION_SPARK_LISTENER_ENABLED)
+    }
+
+  protected val operationListener: Option[SQLOperationListener] =
+    if (operationSparkListenerEnabled) {
+      Some(new SQLOperationListener(this, spark))
+    } else {
+      None
+    }
+
+  protected def addOperationListener(): Unit = {
+    operationListener.foreach(spark.sparkContext.addSparkListener(_))
+  }
+
   override def cleanup(targetState: OperationState): Unit = state.synchronized {
+    operationListener.foreach(_.cleanup())
     if (!isTerminalState(state)) {
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))
@@ -77,6 +98,14 @@ abstract class SparkOperation(session: Session)
   protected val isSessionUserSignEnabled: Boolean = spark.sparkContext.getConf.getBoolean(
     s"spark.${SESSION_USER_SIGN_ENABLED.key}",
     SESSION_USER_SIGN_ENABLED.defaultVal.get)
+
+  EventBus.post(SparkOperationEvent(this))
+
+  override protected def setState(newState: OperationState): Unit = {
+    super.setState(newState)
+    EventBus.post(
+      SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+  }
 
   protected def setSparkLocalProperty: (String, String) => Unit =
     spark.sparkContext.setLocalProperty

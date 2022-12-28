@@ -22,7 +22,7 @@ import java.util.concurrent.RejectedExecutionException
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProgressUpdateResp
-import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
+import org.apache.spark.kyuubi.SparkProgressMonitor
 import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.sql.types._
@@ -33,7 +33,6 @@ import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationStatus}
-import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -47,19 +46,6 @@ class ExecuteStatement(
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
-
-  private val operationSparkListenerEnabled =
-    spark.conf.getOption(OPERATION_SPARK_LISTENER_ENABLED.key) match {
-      case Some(s) => s.toBoolean
-      case _ => session.sessionManager.getConf.get(OPERATION_SPARK_LISTENER_ENABLED)
-    }
-
-  private val operationListener: Option[SQLOperationListener] =
-    if (operationSparkListenerEnabled) {
-      Some(new SQLOperationListener(this, spark))
-    } else {
-      None
-    }
 
   private val progressEnable = spark.conf.getOption(SESSION_PROGRESS_ENABLE.key) match {
     case Some(s) => s.toBoolean
@@ -91,7 +77,7 @@ class ExecuteStatement(
       setState(OperationState.RUNNING)
       info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      operationListener.foreach(spark.sparkContext.addSparkListener(_))
+      addOperationListener()
       result = spark.sql(statement)
 
       iter =
@@ -165,17 +151,6 @@ class ExecuteStatement(
     } else {
       executeStatement()
     }
-  }
-
-  override def cleanup(targetState: OperationState): Unit = {
-    operationListener.foreach(_.cleanup())
-    super.cleanup(targetState)
-  }
-
-  override def setState(newState: OperationState): Unit = {
-    super.setState(newState)
-    EventBus.post(
-      SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
   }
 
   override def getStatus: OperationStatus = {
