@@ -77,8 +77,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("engine")
   def deleteEngine(
-      @QueryParam("enginetype") engineType: String,
-      @QueryParam("sharelevel") shareLevel: String,
+      @QueryParam("engineType") engineType: String,
+      @QueryParam("shareLevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
     val userName = fe.getSessionUser(hs2ProxyUser)
@@ -112,8 +112,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @POST
   @Path("engine")
   def listEngines(
-      @QueryParam("enginetype") engineType: String,
-      @QueryParam("sharelevel") shareLevel: String,
+      @QueryParam("engineType") engineType: String,
+      @QueryParam("shareLevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
     val engines = ListBuffer[Engine]()
