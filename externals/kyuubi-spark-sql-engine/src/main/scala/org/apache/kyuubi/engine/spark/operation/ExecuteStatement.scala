@@ -159,7 +159,7 @@ class ExecuteStatement(
         } else {
           0L
         }
-      super.setState(OperationState.COMPILED)
+      setState(OperationState.COMPILED, postEvent = false)
       if (lastAccessCompiledTime > 0L) {
         lastAccessTime = lastAccessCompiledTime
       }
