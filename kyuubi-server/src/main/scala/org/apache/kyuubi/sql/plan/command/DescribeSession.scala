@@ -40,7 +40,7 @@ case class DescribeSession() extends RunnableCommand {
       val values = new ListBuffer[String]()
       values += session.handle.identifier.toString
       values += session.user
-      values += session.asInstanceOf[KyuubiSession].sessionType.toString
+      values += session.sessionType.toString
       Row(values.toList)
     }
     iter = new IterableFetchIterator(rows)
