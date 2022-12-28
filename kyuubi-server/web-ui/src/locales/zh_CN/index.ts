@@ -36,6 +36,7 @@ export default {
   engine_id: 'Engine ID',
   engine_type: 'Engine Type',
   engine_share_level: 'Engine Share Level',
+  share_level: 'Share Level',
   failure_reason: '失败原因',
   operation_id: '操作ID',
   cpu: 'CPU',

@@ -111,19 +111,17 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue'
   import { format } from 'date-fns'
   import { secondTransfer } from '@/utils'
   import { getAllSessions, deleteSession } from '@/api/session'
   import { Router, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
+  import { useTable } from '@/views/common/use-table'
 
   const router: Router = useRouter()
-  const searchParam = ref()
-  const tableData: any = ref([])
-  const loading = ref(false)
   const { t } = useI18n()
+  const { tableData, loading, searchParam, getList: _getList } = useTable()
 
   const handleSessionJump = (sessionId: string) => {
     router.push({
@@ -137,7 +135,7 @@
   const handleDeleteSession = (sessionId: string) => {
     deleteSession(sessionId).then(() => {
       // need add delete success or failed logic after api support
-      getSessionList()
+      getList()
       ElMessage({
         message: t('delete_success'),
         type: 'success'
@@ -145,17 +143,11 @@
     })
   }
 
-  const getSessionList = () => {
-    loading.value = true
-    getAllSessions()
-      .then((data: any) => {
-        tableData.value = data || []
-      })
-      .finally(() => {
-        loading.value = false
-      })
+  const getList = () => {
+    _getList(getAllSessions)
   }
-  getSessionList()
+
+  getList()
 </script>
 
 <style scoped lang="scss">

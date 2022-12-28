@@ -73,27 +73,15 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue'
   import { format } from 'date-fns'
   import { getAllServers } from '@/api/server'
-
-  const searchParam = ref()
-  const tableData: any = ref([])
-  const loading = ref(false)
+  import { useTable } from '@/views/common/use-table'
 
   const openLogDialog = () => {}
 
-  const getServerList = () => {
-    loading.value = true
-    getAllServers()
-      .then((data) => {
-        tableData.value = data || []
-      })
-      .finally(() => {
-        loading.value = false
-      })
-  }
-  getServerList()
+  const { tableData, loading, searchParam, getList } = useTable()
+
+  getList(getAllServers)
 </script>
 
 <style scoped lang="scss">
