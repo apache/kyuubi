@@ -365,7 +365,15 @@ private class StatementStatsPagedTable(
         {event.sessionUser}
       </td>
       <td>
-        {event.sessionId}/{event.statementId}
+        {
+      <a href={
+        "%s/kyuubi/session/?id=%s".format(
+          UIUtils.prependBaseUri(request, parent.basePath),
+          event.sessionId)
+      }>
+          {event.sessionId}/{event.statementId}
+        </a>
+    }
       </td>
       <td >
         {formatDate(event.createTime)}
