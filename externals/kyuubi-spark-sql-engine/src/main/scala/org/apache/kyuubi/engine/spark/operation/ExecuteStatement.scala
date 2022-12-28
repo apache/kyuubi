@@ -28,8 +28,6 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_RESULT_MAX_ROWS
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
-import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -159,12 +157,10 @@ class ExecuteStatement(
         } else {
           0L
         }
-      setState(OperationState.COMPILED, postEvent = false)
+      setState(OperationState.COMPILED)
       if (lastAccessCompiledTime > 0L) {
         lastAccessTime = lastAccessCompiledTime
       }
-      EventBus.post(
-        SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
     }
   }
 

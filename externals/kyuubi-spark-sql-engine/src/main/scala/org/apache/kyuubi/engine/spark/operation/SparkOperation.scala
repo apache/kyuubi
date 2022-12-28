@@ -123,14 +123,8 @@ abstract class SparkOperation(session: Session)
   EventBus.post(SparkOperationEvent(this))
 
   override protected def setState(newState: OperationState): Unit = {
-    setState(newState, postEvent = true)
-  }
-
-  protected def setState(newState: OperationState, postEvent: Boolean): Unit = {
     super.setState(newState)
-    if (postEvent) {
-      EventBus.post(SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
-    }
+    EventBus.post(SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
   }
 
   protected def setSparkLocalProperty: (String, String) => Unit =
