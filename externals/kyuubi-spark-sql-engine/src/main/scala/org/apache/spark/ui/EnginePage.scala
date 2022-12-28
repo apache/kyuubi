@@ -361,20 +361,16 @@ private class StatementStatsPagedTable(
   }
 
   override def row(event: SparkOperationEvent): Seq[Node] = {
+    val sessionLink = "%s/%s/session/?id=%s".format(
+      UIUtils.prependBaseUri(request, parent.basePath),
+      parent.prefix,
+      event.sessionId)
     <tr>
       <td>
         {event.sessionUser}
       </td>
       <td>
-        {
-      <a href={
-        "%s/kyuubi/session/?id=%s".format(
-          UIUtils.prependBaseUri(request, parent.basePath),
-          event.sessionId)
-      }>
-          {event.sessionId}
-        </a>
-    }
+        <a href={sessionLink}>{event.sessionId}</a>
       </td>
       <td>
         {event.statementId}
