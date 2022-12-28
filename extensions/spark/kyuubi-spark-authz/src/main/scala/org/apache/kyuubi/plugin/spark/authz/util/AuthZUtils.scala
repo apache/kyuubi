@@ -143,7 +143,7 @@ private[authz] object AuthZUtils {
   }
 
   def getDatasourceV2Catalog(plan: LogicalPlan): Option[String] = {
-    CatalogDesc(fieldName = "catalog", fieldExtractor = "CatalogPluginCatalogExtractor")
+    CatalogDesc(fieldName = "catalog", fieldExtractor = "CatalogPluginOptionCatalogExtractor")
       .extract(plan)
   }
 

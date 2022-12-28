@@ -43,3 +43,16 @@ class CatalogPluginCatalogExtractor extends CatalogExtractor {
     Option(invokeAs[String](v1, "name"))
   }
 }
+
+/**
+ * Option[org.apache.spark.sql.connector.catalog.CatalogPlugin]
+ */
+class CatalogPluginOptionCatalogExtractor extends CatalogExtractor {
+  override def apply(v1: AnyRef): Option[String] = {
+    v1 match {
+      case Some(catalogPlugin: AnyRef) =>
+        new CatalogPluginCatalogExtractor().apply(catalogPlugin)
+      case _ => None
+    }
+  }
+}
