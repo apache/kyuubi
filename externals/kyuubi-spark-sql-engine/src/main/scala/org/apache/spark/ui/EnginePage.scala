@@ -340,7 +340,7 @@ private class StatementStatsPagedTable(
     val sqlTableHeadersAndTooltips: Seq[(String, Boolean, Option[String])] =
       Seq(
         ("User", true, None),
-        ("Statement ID", true, None),
+        ("Session/Statement ID", true, None),
         ("Create Time", true, None),
         ("Finish Time", true, None),
         ("Duration", true, None),
@@ -365,7 +365,7 @@ private class StatementStatsPagedTable(
         {event.sessionUser}
       </td>
       <td>
-        {event.statementId}
+        {event.sessionId}/{event.statementId}
       </td>
       <td >
         {formatDate(event.createTime)}
@@ -475,7 +475,7 @@ private class StatementStatsTableDataSource(
   private def ordering(sortColumn: String, desc: Boolean): Ordering[SparkOperationEvent] = {
     val ordering: Ordering[SparkOperationEvent] = sortColumn match {
       case "User" => Ordering.by(_.sessionUser)
-      case "Statement ID" => Ordering.by(_.statementId)
+      case "Session/Statement ID" => Ordering.by(_.statementId)
       case "Create Time" => Ordering.by(_.createTime)
       case "Finish Time" => Ordering.by(_.completeTime)
       case "Duration" => Ordering.by(_.duration)
