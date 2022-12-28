@@ -23,10 +23,6 @@ import org.apache.kyuubi.sql.plan.KyuubiTreeNode
 // This file contains all Trino JDBC operation nodes which are parsed from statement
 /////////////////////////////////////////////////////////////////////////////////////////
 
-case class PassThrough() extends KyuubiTreeNode {
-  override def name(): String = "Pass Through"
-}
-
 case class TrinoGetSchemas(catalogName: String, schemaPattern: String) extends KyuubiTreeNode {
   override def name(): String = "Get Schemas"
 }

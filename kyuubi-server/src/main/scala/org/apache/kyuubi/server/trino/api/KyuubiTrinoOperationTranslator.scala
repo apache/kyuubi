@@ -45,7 +45,6 @@ class KyuubiTrinoOperationTranslator(backendService: BackendService) {
         backendService.getSchemas(sessionHandle, catalogName, schemaPattern)
       case PassThroughNode() =>
         backendService.executeStatement(sessionHandle, statement, configs, runAsync, queryTimeout)
-      case _ => throw new UnsupportedOperationException()
     }
   }
 }

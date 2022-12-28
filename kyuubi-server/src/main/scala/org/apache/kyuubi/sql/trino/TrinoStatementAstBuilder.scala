@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql.trino
 
 import org.apache.kyuubi.sql.{KyuubiTrinoBaseParser, KyuubiTrinoBaseParserBaseVisitor}
 import org.apache.kyuubi.sql.parser.KyuubiParser
-import org.apache.kyuubi.sql.plan.KyuubiTreeNode
+import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
 
 class TrinoStatementAstBuilder extends KyuubiTrinoBaseParserBaseVisitor[KyuubiTreeNode] {
 
@@ -29,7 +29,7 @@ class TrinoStatementAstBuilder extends KyuubiTrinoBaseParserBaseVisitor[KyuubiTr
   }
 
   override def visitPassThrough(ctx: KyuubiTrinoBaseParser.PassThroughContext): KyuubiTreeNode = {
-    PassThrough()
+    PassThroughNode()
   }
 
   override def visitGetSchemas(ctx: KyuubiTrinoBaseParser.GetSchemasContext): KyuubiTreeNode = {
