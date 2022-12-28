@@ -77,7 +77,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @DELETE
   @Path("engine")
   def deleteEngine(
-      @QueryParam("type") engineType: String,
+      @QueryParam("enginetype") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
@@ -112,7 +112,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @POST
   @Path("engine")
   def listEngines(
-      @QueryParam("type") engineType: String,
+      @QueryParam("enginetype") engineType: String,
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Seq[Engine] = {
