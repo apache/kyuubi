@@ -97,11 +97,18 @@ case class ColumnDesc(
 case class DatabaseDesc(
     fieldName: String,
     fieldExtractor: String,
+    catalogDesc: Option[CatalogDesc] = None,
     isInput: Boolean = false) extends Descriptor {
-  override def extract(v: AnyRef): String = {
+  override def extract(v: AnyRef): Database = {
     val databaseVal = invoke(v, fieldName)
     val databaseExtractor = dbExtractors(fieldExtractor)
-    databaseExtractor(databaseVal)
+    val db = databaseExtractor(databaseVal)
+    if (db.catalog.isEmpty && catalogDesc.nonEmpty) {
+      val maybeCatalog = catalogDesc.get.extract(v)
+      db.copy(catalog = maybeCatalog)
+    } else {
+      db
+    }
   }
 }
 
@@ -151,7 +158,10 @@ case class FunctionDesc(
     val functionExtractor = functionExtractors(fieldExtractor)
     var function = functionExtractor(functionVal)
     if (function.database.isEmpty) {
-      function = function.copy(database = databaseDesc.map(_.extract(v)))
+      val maybeDatabase = databaseDesc.map(_.extract(v))
+      if (maybeDatabase.isDefined) {
+        function = function.copy(database = Some(maybeDatabase.get.database))
+      }
     }
     function
   }
