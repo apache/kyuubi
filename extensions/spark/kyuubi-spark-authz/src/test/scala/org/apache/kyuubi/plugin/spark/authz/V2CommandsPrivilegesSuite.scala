@@ -742,7 +742,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assert(out.size === 0)
   }
 
-  test("DropNameSpace") {
+  test("DropNamespace") {
     assume(isSparkV33OrGreater)
     withDatabase("DropNameSpace") { db =>
       sql(s"CREATE DATABASE $db")
