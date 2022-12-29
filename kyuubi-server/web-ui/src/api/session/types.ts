@@ -15,33 +15,15 @@
  * limitations under the License.
  */
 
-import { defineConfig } from 'vite'
-import Vue from '@vitejs/plugin-vue'
-import path from 'path'
+interface ISessionSearch {
+  user: string | null
+  serverIP: string | null
+}
 
-export default defineConfig({
-  plugins: [Vue()],
-  resolve: {
-    alias: [
-      {
-        find: '@',
-        replacement: path.resolve(__dirname, 'src')
-      },
-      // resolve warning of vue-i18n
-      {
-        find: 'vue-i18n',
-        replacement: 'vue-i18n/dist/vue-i18n.cjs.js'
-      }
-    ]
-  },
-  server: {
-    // 设置代理
-    proxy: {
-      '/api': {
-        target: 'http://10.250.86.113:30029/api',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
-  }
-})
+interface IOperationSearch {
+  sessionHandle: string | null
+  operationType: string | null
+  state: string | null
+}
+
+export { ISessionSearch, IOperationSearch }

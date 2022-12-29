@@ -47,6 +47,7 @@ export default {
   status: 'Status',
   type: 'Type',
   state: 'State',
+  subdomain: 'Subdomain',
   confirm: 'Confirm',
   cancel: 'Cancel',
   cancel_confirm: 'Cancel?',
