@@ -116,7 +116,8 @@
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
         <arrow.version>10.0.1</arrow.version>
-        <antlr4.version>4.8</antlr4.version>
+        <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
+        <antlr4.version>4.9.3</antlr4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.2.8</codahale.metrics.version>
