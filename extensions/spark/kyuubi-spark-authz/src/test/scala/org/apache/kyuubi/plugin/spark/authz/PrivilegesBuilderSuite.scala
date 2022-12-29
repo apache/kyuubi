@@ -770,7 +770,11 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = in.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    assert(po.catalog === sparkCatalogVal)
+    if (isSparkV31OrGreater) {
+      assert(po.catalog === sparkCatalogVal)
+    } else {
+      assert(po.catalog.isEmpty)
+    }
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedDb)
     assert(po.columns.isEmpty)
