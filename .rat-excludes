@@ -50,3 +50,7 @@ build/scala-*/**
 **/metadata-store-schema*.sql
 **/pnpm-lock.yaml
 **/node_modules/**
+**/web/**
+**/node/**
+**/web-ui/**
+

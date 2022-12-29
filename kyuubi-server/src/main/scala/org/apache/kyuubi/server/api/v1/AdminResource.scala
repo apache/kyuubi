@@ -109,7 +109,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[Engine]))),
     description = "list alive kyuubi engines")
-  @POST
+  @GET
   @Path("engine")
   def listEngines(
       @QueryParam("engineType") engineType: String,
@@ -179,7 +179,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
     description = "list  all live kyuubi servers")
-  @POST
+  @GET
   @Path("servers")
   def listServers(@QueryParam("host") @DefaultValue("") host: String): Seq[Server] = {
     val Servers = ListBuffer[Server]()

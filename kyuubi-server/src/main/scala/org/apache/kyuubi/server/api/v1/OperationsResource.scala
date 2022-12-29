@@ -261,7 +261,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[String]))),
     description =
       "Get the query id of the given operation identifier")
-  @POST
+  @GET
   @Path("{operationHandle}/queryId")
   def getQueryId(
       @PathParam("operationHandle") operationHandleStr: String): String = {
@@ -285,7 +285,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[KyuubiOperationEvent]))),
     description =
       "query operation event list")
-  @POST
+  @GET
   @Path("listOperation")
   def listOperation(
       @QueryParam("sessionHandle") @DefaultValue("") sessionHandleStr: String,
@@ -301,11 +301,11 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
             KyuubiOperationEvents += kyuubiOperationEvent
           }
         }
-      KyuubiOperationEvents
+      (KyuubiOperationEvents
         .filter(
           sessionHandleStr.equalsIgnoreCase("") || _.sessionId.equalsIgnoreCase(sessionHandleStr))
         .filter(typeStr.equalsIgnoreCase("") || _.operationType.equalsIgnoreCase(typeStr))
-        .filter(stateStr.equalsIgnoreCase("") || _.state.equalsIgnoreCase(stateStr))
+        .filter(stateStr.equalsIgnoreCase("") || _.state.equalsIgnoreCase(stateStr)))
 
     } catch {
       case NonFatal(e) =>

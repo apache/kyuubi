@@ -90,21 +90,20 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[KyuubiEvent]))),
     description = "get session info")
-  @POST
+  @GET
   @Path("listSessionInfo")
   def listSessionInfo(
-      @DefaultValue("") @QueryParam("user") user: String,
-      @DefaultValue("") @QueryParam("serverIP") serverIP: String): Seq[KyuubiSessionEvent] = {
+      @QueryParam("user") @DefaultValue("") user: String,
+      @QueryParam("serverIP") @DefaultValue("") serverIP: String): Seq[KyuubiSessionEvent] = {
     try {
       val kyuubiSessionEvents = ListBuffer[KyuubiSessionEvent]()
       sessionManager.allSessions().map { session =>
         kyuubiSessionEvents += sessionManager.getSession(session.handle.identifier.toString)
           .asInstanceOf[KyuubiSession].getSessionEvent.get
       }
-      logger.info("real user and serverIP is", s"$user, $serverIP")
-      kyuubiSessionEvents
+      (kyuubiSessionEvents
         .filter(serverIP.equalsIgnoreCase("") || _.serverIP.equalsIgnoreCase(serverIP))
-        .filter(user.equalsIgnoreCase("") || _.user.equalsIgnoreCase(user))
+        .filter(user.equalsIgnoreCase("") || _.user.equalsIgnoreCase(user)))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting all session info"
@@ -441,7 +440,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[SQLDetail]))),
     description =
       "get sql detail list hosted a specific session binding via an identifier")
-  @POST
+  @GET
   @Path("{sessionHandle}/sqlDetails")
   def getOperations(
       @PathParam("sessionHandle") sessionHandleStr: String): Seq[SQLDetail] = {
@@ -476,7 +475,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[InfoDetail]))),
     description =
       "get all supported info types by Kyuubi session")
-  @POST
+  @GET
   @Path("{sessionHandle}/infoTypes")
   def getSupportedInfoType(
       @PathParam("sessionHandle") sessionHandleStr: String): Seq[InfoDetail] = {
@@ -499,7 +498,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       schema = new Schema(implementation = classOf[KyuubiOperationEvent]))),
     description =
       "get all the operation event hosted a specific session binding via an identifier")
-  @POST
+  @GET
   @Path("{sessionHandle}/operations")
   def getAllOperationEvent(
       @PathParam("sessionHandle") sessionHandleStr: String): Seq[KyuubiOperationEvent] = {
