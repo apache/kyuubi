@@ -38,8 +38,13 @@ object PrivilegesBuilder {
 
   final private val LOG = LoggerFactory.getLogger(getClass)
 
-  def databasePrivileges(db: String): PrivilegeObject = {
-    PrivilegeObject(DATABASE, PrivilegeObjectActionType.OTHER, db, db)
+  def databasePrivileges(db: Database): PrivilegeObject = {
+    PrivilegeObject(
+      DATABASE,
+      PrivilegeObjectActionType.OTHER,
+      db.database,
+      db.database,
+      catalog = db.catalog)
   }
 
   private def tablePrivileges(
@@ -242,9 +247,9 @@ object PrivilegesBuilder {
           try {
             val database = databaseDesc.extract(plan)
             if (databaseDesc.isInput) {
-              inputObjs += databasePrivileges(database.database)
+              inputObjs += databasePrivileges(database)
             } else {
-              outputObjs += databasePrivileges(database.database)
+              outputObjs += databasePrivileges(database)
             }
           } catch {
             case e: Exception =>
