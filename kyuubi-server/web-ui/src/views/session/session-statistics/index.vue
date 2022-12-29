@@ -20,8 +20,17 @@
   <el-card :body-style="{ padding: '10px 14px' }">
     <header>
       <el-space class="search-box">
-        <el-input v-model="searchParam" placeholder="Please input" />
-        <el-button type="primary" icon="Search" />
+        <el-input
+          v-model="searchParam.user"
+          :placeholder="$t('user')"
+          @keyup.enter="getList"
+        />
+        <el-input
+          v-model="searchParam.serverIP"
+          :placeholder="$t('server_ip')"
+          @keyup.enter="getList"
+        />
+        <el-button type="primary" icon="Search" @click="getList" />
       </el-space>
     </header>
   </el-card>
@@ -111,6 +120,7 @@
 </template>
 
 <script lang="ts" setup>
+  import { reactive } from 'vue'
   import { format } from 'date-fns'
   import { secondTransfer } from '@/utils'
   import { getAllSessions, deleteSession } from '@/api/session'
@@ -121,7 +131,11 @@
 
   const router: Router = useRouter()
   const { t } = useI18n()
-  const { tableData, loading, searchParam, getList: _getList } = useTable()
+  const searchParam = reactive({
+    user: null,
+    serverIP: null
+  })
+  const { tableData, loading, getList: _getList } = useTable()
 
   const handleSessionJump = (sessionId: string) => {
     router.push({
@@ -144,7 +158,7 @@
   }
 
   const getList = () => {
-    _getList(getAllSessions)
+    _getList(getAllSessions, searchParam)
   }
 
   getList()

@@ -16,11 +16,13 @@
  */
 
 import request from '@/utils/request'
+import { ISessionSearch, IOperationSearch } from './types'
 
-export function getAllSessions() {
+export function getAllSessions(data: ISessionSearch) {
   return request({
     url: 'api/v1/sessions/listSessionInfo',
-    method: 'post'
+    method: 'post',
+    data
   })
 }
 
@@ -45,10 +47,11 @@ export function getSqlDetails(sessionId: string) {
   })
 }
 
-export function getAllOperations(sessionId: string) {
+export function getAllOperations(data: IOperationSearch) {
   return request({
-    url: `api/v1/sessions/${sessionId}/operations`,
-    method: 'post'
+    url: 'api/v1/operations/listOperation',
+    method: 'post',
+    data
   })
 }
 
@@ -62,5 +65,12 @@ export function cancelOperation(
     url: `api/v1/operations/${operationId}`,
     method: 'put',
     data
+  })
+}
+
+export function getOperationLog(operationId: string) {
+  return request({
+    url: `api/v1/operations/${operationId}/log`,
+    method: 'get'
   })
 }

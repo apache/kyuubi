@@ -20,8 +20,12 @@
   <el-card :body-style="{ padding: '10px 14px' }">
     <header>
       <el-space class="search-box">
-        <el-input v-model="searchParam" placeholder="Please input" />
-        <el-button type="primary" icon="Search" />
+        <el-input
+          v-model="searchParam.host"
+          :placeholder="$t('server_ip')"
+          @keyup.enter="getList"
+        />
+        <el-button type="primary" icon="Search" @click="getList" />
       </el-space>
     </header>
   </el-card>
@@ -44,44 +48,27 @@
         </template>
       </el-table-column>
       <el-table-column prop="status" :label="$t('status')" min-width="20%" />
-      <el-table-column fixed="right" :label="$t('operation')" width="160">
-        <template #default>
-          <el-space wrap>
-            <el-tooltip
-              effect="dark"
-              :content="$t('view_config')"
-              placement="top"
-            >
-              <el-button type="primary" icon="Setting" circle />
-            </el-tooltip>
-            <el-tooltip effect="dark" :content="$t('log')" placement="top">
-              <el-button
-                type="primary"
-                icon="Tickets"
-                circle
-                @click="openLogDialog"
-              />
-            </el-tooltip>
-            <el-tooltip effect="dark" :content="$t('engines')" placement="top">
-              <el-button type="primary" icon="MessageBox" circle />
-            </el-tooltip>
-          </el-space>
-        </template>
-      </el-table-column>
     </el-table>
   </el-card>
 </template>
 
 <script lang="ts" setup>
+  import { reactive } from 'vue'
   import { format } from 'date-fns'
   import { getAllServers } from '@/api/server'
   import { useTable } from '@/views/common/use-table'
 
-  const openLogDialog = () => {}
+  const searchParam = reactive({
+    host: null
+  })
 
-  const { tableData, loading, searchParam, getList } = useTable()
+  const { tableData, loading, getList: _getList } = useTable()
 
-  getList(getAllServers)
+  const getList = () => {
+    _getList(getAllServers, searchParam)
+  }
+
+  getList()
 </script>
 
 <style scoped lang="scss">

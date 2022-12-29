@@ -14,3 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import request from '@/utils/request'
+import { IServerSearch, IEngineSearch } from './types'
+
+export function getAllServers(data: IServerSearch) {
+  return request({
+    url: 'api/v1/admin/servers',
+    method: 'post',
+    data
+  })
+}
+
+export function getServerConf() {
+  return request({
+    url: 'api/v1/admin/get/hadoop_conf',
+    method: 'get'
+  })
+}
+
+export function getServerLog() {
+  return request({
+    url: 'api/v1/admin/server/log',
+    method: 'post'
+  })
+}
+
+export function getAllEngines(data: IEngineSearch) {
+  return request({
+    url: 'api/v1/admin/engine',
+    method: 'post',
+    data
+  })
+}

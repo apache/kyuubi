@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-mutating-props -->
 <!--
 * Licensed to the Apache Software Foundation (ASF) under one
 * or more contributor license agreements.  See the NOTICE file
@@ -18,8 +17,14 @@
 -->
 
 <template>
-  <el-dialog v-model="show" :title="title" :before-close="handleCancel">
-    <span>This is a message</span>
+  <el-dialog
+    v-model="visible"
+    :align-center="true"
+    :title="title"
+    :before-close="handleCancel"
+    class="modal-container"
+  >
+    <slot></slot>
     <template #footer>
       <span class="dialog-footer">
         <el-button
@@ -43,9 +48,9 @@
 </template>
 
 <script lang="ts" setup>
-  import { PropType } from 'vue'
+  import { PropType, computed } from 'vue'
 
-  defineProps({
+  const props = defineProps({
     show: {
       type: Boolean as PropType<boolean>,
       default: false
@@ -86,6 +91,8 @@
 
   const emit = defineEmits(['cancel', 'confirm'])
 
+  const visible = computed(() => props.show)
+
   const handleCancel = () => {
     emit('cancel')
   }
@@ -95,4 +102,11 @@
   }
 </script>
 
-<style scoped></style>
+<style lang="scss">
+  .modal-container {
+    .el-dialog__body {
+      max-height: 60vh;
+      overflow: auto;
+    }
+  }
+</style>
