@@ -54,6 +54,7 @@ class CatalogPluginOptionCatalogExtractor extends CatalogExtractor {
         new CatalogPluginCatalogExtractor().apply(catalogPlugin)
       case _ => None
     }
+  }
 }
 
 /**
