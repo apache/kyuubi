@@ -81,7 +81,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   protected val reusedTableShort: String = reusedTable.split("\\.").last
   protected val reusedPartTable: String = reusedTable + "_part"
   protected val reusedPartTableShort: String = reusedPartTable.split("\\.").last
-  protected val sparkCatalogVal = Some("spark_catalog")
+  protected final val sparkSessionCatalogName: String = "spark_catalog"
 
   override def beforeAll(): Unit = {
     sql(s"CREATE DATABASE IF NOT EXISTS $reusedDb")
@@ -119,7 +119,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     if (isSparkV33OrGreater) {
-      assert(po.catalog === sparkCatalogVal)
+      assert(po.catalog.get === sparkSessionCatalogName)
     } else {
       assert(po.catalog.isEmpty)
     }
@@ -172,7 +172,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
       if (isSparkV33OrGreater) {
-        assert(po.catalog === sparkCatalogVal)
+        assert(po.catalog.get === sparkSessionCatalogName)
       } else {
         assert(po.catalog.isEmpty)
       }
@@ -196,7 +196,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
       if (isSparkV33OrGreater) {
-        assert(po.catalog === sparkCatalogVal)
+        assert(po.catalog.get === sparkSessionCatalogName)
       } else {
         assert(po.catalog.isEmpty)
       }
@@ -771,7 +771,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     if (isSparkV33OrGreater) {
-      assert(po.catalog === sparkCatalogVal)
+      assert(po.catalog.get === sparkSessionCatalogName)
     } else {
       assert(po.catalog.isEmpty)
     }
@@ -1274,7 +1274,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
     if (isSparkV33OrGreater) {
-      assert(po.catalog === sparkCatalogVal)
+      assert(po.catalog.get === sparkSessionCatalogName)
     } else {
       assert(po.catalog.isEmpty)
     }
