@@ -81,6 +81,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   protected val reusedTableShort: String = reusedTable.split("\\.").last
   protected val reusedPartTable: String = reusedTable + "_part"
   protected val reusedPartTableShort: String = reusedPartTable.split("\\.").last
+  protected val sparkCatalogVal = Some("spark_catalog")
 
   override def beforeAll(): Unit = {
     sql(s"CREATE DATABASE IF NOT EXISTS $reusedDb")
@@ -117,6 +118,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+    assert(po.catalog === sparkCatalogVal)
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
@@ -141,6 +143,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
         assert(out.size === 2)
         out.foreach { po =>
           assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+          assert(po.catalog.isEmpty)
           assert(po.dbname equalsIgnoreCase reusedDb)
           assert(Set(oldTableShort, "efg").contains(po.objectName))
           assert(po.columns.isEmpty)
@@ -164,6 +167,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+      assert(po.catalog === sparkCatalogVal)
       assert(po.dbname === "CreateDatabaseCommand")
       assert(po.objectName === "CreateDatabaseCommand")
       assert(po.columns.isEmpty)
@@ -183,6 +187,8 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+      assert(po.catalog === sparkCatalogVal)
+      assert(po.catalog.isEmpty)
       assert(po.dbname === "DropDatabaseCommand")
       assert(po.objectName === "DropDatabaseCommand")
       assert(po.columns.isEmpty)
@@ -200,6 +206,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -217,6 +224,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -249,6 +257,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       outputs.foreach { po =>
         assert(po.actionType === PrivilegeObjectActionType.OTHER)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.catalog.isEmpty)
         assert(po.dbname equalsIgnoreCase reusedDb)
         assert(po.objectName equalsIgnoreCase tableName.split("\\.").last)
         assert(po.columns.isEmpty)
@@ -271,6 +280,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -293,6 +303,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname === reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -314,6 +325,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname === reusedDb)
       assert(po.objectName === reusedTable.split("\\.").last)
       assert(po.columns.isEmpty)
@@ -347,6 +359,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname === (if (isSparkV2) null else "default"))
     assert(po.objectName === "AlterViewAsCommand")
     checkTableOwner(po)
@@ -502,6 +515,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname === (if (isSparkV2) null else "default"))
     assert(po.objectName === "CreateViewCommand")
     assert(po.columns.isEmpty)
@@ -521,6 +535,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname === (if (isSparkV2) null else "default"))
       assert(po.objectName === tableName)
       assert(po.columns.isEmpty)
@@ -567,6 +582,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+    assert(po.catalog.isEmpty)
     val db = if (isSparkV33OrGreater) "default" else null
     assert(po.dbname === db)
     assert(po.objectName === "CreateFunctionCommand")
@@ -598,6 +614,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+    assert(po.catalog.isEmpty)
     val db = if (isSparkV33OrGreater) "default" else null
     assert(po.dbname === db)
     assert(po.objectName === "DropFunctionCommand")
@@ -618,6 +635,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+    assert(po.catalog.isEmpty)
     val db = if (isSparkV33OrGreater) "default" else null
     assert(po.dbname === db)
     assert(po.objectName === "RefreshFunctionCommand")
@@ -646,6 +664,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName === "CreateTableLikeCommand")
       assert(po.columns.isEmpty)
@@ -676,6 +695,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName === "CreateTableLikeCommandWithoutDatabase")
       assert(po.columns.isEmpty)
@@ -701,6 +721,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = in.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po.columns === Seq("key"))
@@ -719,6 +740,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = in.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
     assert(po.columns.isEmpty)
@@ -737,6 +759,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = in.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+    assert(po.catalog === sparkCatalogVal)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedDb)
     assert(po.columns.isEmpty)
@@ -778,6 +801,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === reusedPartTableShort)
     assert(po.columns.head === "pid")
@@ -884,6 +908,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       outputs.foreach { po =>
         assert(po.actionType === PrivilegeObjectActionType.OTHER)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.catalog.isEmpty)
         assert(po.dbname equalsIgnoreCase reusedDb)
         assert(po.objectName equalsIgnoreCase tableName.split("\\.").last)
         assert(po.columns.isEmpty)
@@ -899,6 +924,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = PrivilegesBuilder.build(plan, spark)._1.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedTableShort)
     assert(po.columns.take(2) === Seq("key", "value"))
@@ -974,6 +1000,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     in.foreach { po =>
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName startsWith reusedTableShort.toLowerCase)
       assert(
@@ -1000,6 +1027,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     in.foreach { po =>
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName startsWith reusedTableShort.toLowerCase)
       assert(
@@ -1029,6 +1057,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     in.foreach { po =>
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName startsWith reusedTableShort.toLowerCase)
       assert(
@@ -1057,6 +1086,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     in.foreach { po =>
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName startsWith reusedTableShort.toLowerCase)
       assert(
@@ -1086,6 +1116,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     in.foreach { po =>
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName startsWith reusedTableShort.toLowerCase)
       assert(
@@ -1111,6 +1142,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     in.foreach { po =>
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName startsWith reusedTableShort.toLowerCase)
       assert(
@@ -1136,6 +1168,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     in.foreach { po =>
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname equalsIgnoreCase reusedDb)
       assert(po.objectName startsWith reusedTableShort.toLowerCase)
       assert(
@@ -1179,6 +1212,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === getClass.getSimpleName)
     assert(po.columns.head === "a")
@@ -1198,6 +1232,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName === getClass.getSimpleName)
     assert(po.columns.head === "value")
@@ -1223,6 +1258,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
+    assert(po.catalog.isEmpty)
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
@@ -1251,6 +1287,7 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname === (if (isSparkV2) null else "default"))
     assert(po.objectName === "CreateDataSourceTableAsSelectCommand")
     if (catalogImpl == "hive") {
@@ -1282,6 +1319,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname === "default")
       assert(po.objectName === t)
       assert(po.columns.head === "pid")
@@ -1303,6 +1341,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog.isEmpty)
       assert(po.dbname === "default")
       assert(po.objectName === "CreateTableCommand")
       assert(po.columns.isEmpty)
@@ -1334,6 +1373,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname === "default")
     assert(po.objectName === "CreateHiveTableAsSelectCommand")
     assert(po.columns === Seq("key", "value"))
@@ -1431,6 +1471,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       inputs.foreach { po =>
         assert(po.actionType === PrivilegeObjectActionType.OTHER)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.catalog.isEmpty)
         assert(po.dbname equalsIgnoreCase reusedDb)
         assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
         assert(po.columns === Seq("key", "value"))
@@ -1443,6 +1484,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       outputs.foreach { po =>
         assert(po.actionType === PrivilegeObjectActionType.INSERT)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.catalog.isEmpty)
         assert(po.dbname equalsIgnoreCase "default")
         assert(po.objectName equalsIgnoreCase tableName)
         assert(po.columns.isEmpty)
@@ -1472,6 +1514,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       inputs.foreach { po =>
         assert(po.actionType === PrivilegeObjectActionType.OTHER)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.catalog.isEmpty)
         assert(po.dbname equalsIgnoreCase reusedDb)
         assert(po.objectName equalsIgnoreCase reusedTable.split("\\.").last)
         assert(po.columns === Seq("key", "value"))
@@ -1529,6 +1572,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       outputs.foreach { po =>
         assert(po.actionType === PrivilegeObjectActionType.INSERT)
         assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+        assert(po.catalog.isEmpty)
         assert(po.dbname equalsIgnoreCase "default")
         assert(po.objectName equalsIgnoreCase tableName)
         assert(po.columns === Seq("a", "b"))
@@ -1575,6 +1619,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog.isEmpty)
     assert(po.dbname === "default")
     assert(po.objectName === "OptimizedCreateHiveTableAsSelectCommand")
     assert(po.columns === Seq("a"))

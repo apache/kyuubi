@@ -98,6 +98,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -119,6 +120,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po0 = inputs.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.catalog === None)
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedTableShort)
       assert(po0.columns.take(2) === Seq("key", "value"))
@@ -128,6 +130,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -150,6 +153,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -171,6 +175,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po0 = inputs.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.catalog === None)
       assert(po0.dbname equalsIgnoreCase reusedDb)
       assert(po0.objectName equalsIgnoreCase reusedTableShort)
       assert(po0.columns.take(2) === Seq("key", "value"))
@@ -180,6 +185,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -200,6 +206,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.INSERT)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -221,6 +228,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -240,6 +248,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.UPDATE)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -257,6 +266,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -279,6 +289,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.INSERT_OVERWRITE)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === catalogPartTableShort)
       assert(po.columns.isEmpty)
@@ -303,6 +314,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -324,6 +336,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -345,6 +358,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -367,6 +381,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -387,6 +402,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -408,6 +424,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -434,6 +451,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po0 = inputs.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
       assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po0.catalog === Some(catalogV2))
       assert(po0.dbname === namespace)
       assert(po0.objectName === catalogTableShort)
       assert(po0.columns === Seq("key", "value"))
@@ -443,6 +461,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.UPDATE)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -465,6 +484,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogPartTableShort)
     assert(po.columns.isEmpty)
@@ -485,6 +505,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     val po = outputs.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+    assert(po.catalog === Some(catalogV2))
     assert(po.dbname === namespace)
     assert(po.objectName === catalogTableShort)
     assert(po.columns.isEmpty)
@@ -510,6 +531,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -534,6 +556,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -558,6 +581,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -582,6 +606,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
@@ -606,6 +631,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val po = outputs.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
+      assert(po.catalog === Some(catalogV2))
       assert(po.dbname === namespace)
       assert(po.objectName === table)
       assert(po.columns.isEmpty)
