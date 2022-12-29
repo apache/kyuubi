@@ -18,7 +18,7 @@
 HikariCP/4.0.3//HikariCP-4.0.3.jar
 animal-sniffer-annotations/1.21//animal-sniffer-annotations-1.21.jar
 annotations/4.1.1.4//annotations-4.1.1.4.jar
-antlr4-runtime/4.8//antlr4-runtime-4.8.jar
+antlr4-runtime/4.9.3//antlr4-runtime-4.9.3.jar
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
 automaton/1.11-8//automaton-1.11-8.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
