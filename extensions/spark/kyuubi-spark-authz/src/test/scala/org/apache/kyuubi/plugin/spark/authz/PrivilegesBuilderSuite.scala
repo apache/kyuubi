@@ -32,6 +32,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isSparkVersionAtMost
 
 abstract class PrivilegesBuilderSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -81,7 +82,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   protected val reusedTableShort: String = reusedTable.split("\\.").last
   protected val reusedPartTable: String = reusedTable + "_part"
   protected val reusedPartTableShort: String = reusedPartTable.split("\\.").last
-  protected final val sparkSessionCatalogName: String = "spark_catalog"
 
   override def beforeAll(): Unit = {
     sql(s"CREATE DATABASE IF NOT EXISTS $reusedDb")
@@ -110,19 +110,18 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("AlterDatabasePropertiesCommand") {
+    assume(isSparkVersionAtMost("3.2"))
     val plan = sql("ALTER DATABASE default SET DBPROPERTIES (abc = '123')").queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+    assertResult(plan.getClass.getName)(
+      "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand")
     assert(operationType === ALTERDATABASE)
     assert(in.isEmpty)
     assert(out.size === 1)
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    if (isSparkV33OrGreater) {
-      assert(po.catalog.get === sparkSessionCatalogName)
-    } else {
-      assert(po.catalog.isEmpty)
-    }
+    assert(po.catalog.isEmpty)
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
@@ -162,20 +161,19 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("CreateDatabaseCommand") {
+    assume(isSparkVersionAtMost("3.2"))
     withDatabase("CreateDatabaseCommand") { db =>
       val plan = sql(s"CREATE DATABASE $db").queryExecution.analyzed
       val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+      assertResult(plan.getClass.getName)(
+        "org.apache.spark.sql.execution.command.CreateDatabaseCommand")
       assert(operationType === CREATEDATABASE)
       assert(in.isEmpty)
       assert(out.size === 1)
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-      if (isSparkV33OrGreater) {
-        assert(po.catalog.get === sparkSessionCatalogName)
-      } else {
-        assert(po.catalog.isEmpty)
-      }
+      assert(po.catalog.isEmpty)
       assert(po.dbname === "CreateDatabaseCommand")
       assert(po.objectName === "CreateDatabaseCommand")
       assert(po.columns.isEmpty)
@@ -185,21 +183,20 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("DropDatabaseCommand") {
+    assume(isSparkVersionAtMost("3.2"))
     withDatabase("DropDatabaseCommand") { db =>
       sql(s"CREATE DATABASE $db")
       val plan = sql(s"DROP DATABASE DropDatabaseCommand").queryExecution.analyzed
       val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+      assertResult(plan.getClass.getName)(
+        "org.apache.spark.sql.execution.command.DropDatabaseCommand")
       assert(operationType === DROPDATABASE)
       assert(in.isEmpty)
       assert(out.size === 1)
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-      if (isSparkV33OrGreater) {
-        assert(po.catalog.get === sparkSessionCatalogName)
-      } else {
-        assert(po.catalog.isEmpty)
-      }
+      assert(po.catalog.isEmpty)
       assert(po.dbname === "DropDatabaseCommand")
       assert(po.objectName === "DropDatabaseCommand")
       assert(po.columns.isEmpty)
@@ -763,6 +760,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("DescribeDatabaseCommand") {
+    assume(isSparkVersionAtMost("3.2"))
     val plan = sql(s"DESC DATABASE $reusedDb").queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
     assert(operationType === DESCDATABASE)
@@ -770,11 +768,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = in.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    if (isSparkV33OrGreater) {
-      assert(po.catalog.get === sparkSessionCatalogName)
-    } else {
-      assert(po.catalog.isEmpty)
-    }
+    assert(po.catalog.isEmpty)
     assert(po.dbname equalsIgnoreCase reusedDb)
     assert(po.objectName equalsIgnoreCase reusedDb)
     assert(po.columns.isEmpty)
@@ -1262,22 +1256,20 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
 
   // some hive version does not support set database location
   test("AlterDatabaseSetLocationCommand") {
-    assume(!isSparkV2)
+    assume(isSparkVersionAtMost("3.2"))
     val newLoc = spark.conf.get("spark.sql.warehouse.dir") + "/new_db_location"
     val plan = sql(s"ALTER DATABASE default SET LOCATION '$newLoc'")
       .queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+    assertResult(plan.getClass.getName)(
+      "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand")
     assert(operationType === ALTERDATABASE_LOCATION)
     assert(in.isEmpty)
     assert(out.size === 1)
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    if (isSparkV33OrGreater) {
-      assert(po.catalog.get === sparkSessionCatalogName)
-    } else {
-      assert(po.catalog.isEmpty)
-    }
+    assert(po.catalog.isEmpty)
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
