@@ -93,14 +93,15 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @POST
   @Path("listSessionInfo")
   def listSessionInfo(
-      @QueryParam("user") @DefaultValue("") user: String,
-      @QueryParam("serverIP") @DefaultValue("") serverIP: String): Seq[KyuubiSessionEvent] = {
+      @DefaultValue("") @QueryParam("user") user: String,
+      @DefaultValue("") @QueryParam("serverIP") serverIP: String): Seq[KyuubiSessionEvent] = {
     try {
       val kyuubiSessionEvents = ListBuffer[KyuubiSessionEvent]()
       sessionManager.allSessions().map { session =>
         kyuubiSessionEvents += sessionManager.getSession(session.handle.identifier.toString)
           .asInstanceOf[KyuubiSession].getSessionEvent.get
       }
+      logger.info("real user and serverIP is", s"$user, $serverIP")
       kyuubiSessionEvents
         .filter(serverIP.equalsIgnoreCase("") || _.serverIP.equalsIgnoreCase(serverIP))
         .filter(user.equalsIgnoreCase("") || _.user.equalsIgnoreCase(user))
