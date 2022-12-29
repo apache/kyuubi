@@ -53,6 +53,7 @@ class ExecutePython(
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
+  override protected def supportProgress: Boolean = true
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -80,6 +81,7 @@ class ExecutePython(
     try {
       setState(OperationState.RUNNING)
       info(diagnostics)
+      addOperationListener()
       val response = worker.runCode(statement)
       val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
       if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
@@ -251,6 +253,7 @@ object ExecutePython extends Logging {
   }
 
   def createSessionPythonWorker(spark: SparkSession, session: Session): SessionPythonWorker = {
+    val sessionId = session.handle.identifier.toString
     val pythonExec = StringUtils.firstNonBlank(
       spark.conf.getOption("spark.pyspark.driver.python").orNull,
       spark.conf.getOption("spark.pyspark.python").orNull,
@@ -278,7 +281,7 @@ object ExecutePython extends Logging {
           "SPARK_HOME",
           getSparkPythonHomeFromArchive(spark, session).getOrElse(defaultSparkHome)))
     }
-    env.put("KYUUBI_SPARK_SESSION_UUID", session.handle.identifier.toString)
+    env.put("KYUUBI_SPARK_SESSION_UUID", sessionId)
     env.put("PYTHON_GATEWAY_CONNECTION_INFO", KyuubiPythonGatewayServer.CONNECTION_FILE_PATH)
     logger.info(
       s"""
@@ -288,7 +291,10 @@ object ExecutePython extends Logging {
          |""".stripMargin)
     builder.redirectError(Redirect.PIPE)
     val process = builder.start()
-    SessionPythonWorker(startStderrSteamReader(process), startWatcher(process), process)
+    SessionPythonWorker(
+      startStderrSteamReader(process, sessionId),
+      startWatcher(process, sessionId),
+      process)
   }
 
   def getSparkPythonExecFromArchive(spark: SparkSession, session: Session): Option[String] = {
@@ -337,8 +343,8 @@ object ExecutePython extends Logging {
       }
   }
 
-  private def startStderrSteamReader(process: Process): Thread = {
-    val stderrThread = new Thread("process stderr thread") {
+  private def startStderrSteamReader(process: Process, sessionId: String): Thread = {
+    val stderrThread = new Thread(s"session[$sessionId] process stderr thread") {
       override def run(): Unit = {
         val lines = scala.io.Source.fromInputStream(process.getErrorStream).getLines()
         lines.filter(_.trim.nonEmpty).foreach(logger.error)
@@ -349,12 +355,16 @@ object ExecutePython extends Logging {
     stderrThread
   }
 
-  def startWatcher(process: Process): Thread = {
-    val processWatcherThread = new Thread("process watcher thread") {
+  def startWatcher(process: Process, sessionId: String): Thread = {
+    val processWatcherThread = new Thread(s"session[$sessionId] process watcher thread") {
       override def run(): Unit = {
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-          logger.error(f"Process has died with $exitCode")
+        try {
+          val exitCode = process.waitFor()
+          if (exitCode != 0) {
+            logger.error(f"Process has died with $exitCode")
+          }
+        } catch {
+          case _: InterruptedException => logger.warn("Process has been interrupted")
         }
       }
     }

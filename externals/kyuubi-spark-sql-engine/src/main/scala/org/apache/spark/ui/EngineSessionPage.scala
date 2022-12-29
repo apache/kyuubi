@@ -153,7 +153,7 @@ case class EngineSessionPage(parent: EngineTab)
                 'aggregated-sqlsessionstat')">
         <h4>
           <span class="collapse-table-arrow arrow-open"></span>
-          <a>SQL Statistics</a>
+          <a>Statement Statistics</a>
         </h4>
       </span> ++
         <div class="aggregated-sqlsessionstat collapsible-table">

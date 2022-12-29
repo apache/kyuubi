@@ -35,7 +35,7 @@ create ns kyuubi
 
 #### Get kyuubi started
 ```bash
-helm install kyuubi-helm ${KYUUBI_HOME}/docker/helm -n ${namespace_name}
+helm install kyuubi-helm ${KYUUBI_HOME}/charts/kyuubi -n ${namespace_name}
 ```
 It will print variables and the way to get kyuubi expose ip and port.
 ```bash

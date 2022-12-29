@@ -54,5 +54,13 @@ class CatalogPluginOptionCatalogExtractor extends CatalogExtractor {
         new CatalogPluginCatalogExtractor().apply(catalogPlugin)
       case _ => None
     }
+}
+
+/**
+ * Option[String]
+ */
+class StringOptionCatalogExtractor extends CatalogExtractor {
+  override def apply(v1: AnyRef): Option[String] = {
+    v1.asInstanceOf[Option[String]]
   }
 }
