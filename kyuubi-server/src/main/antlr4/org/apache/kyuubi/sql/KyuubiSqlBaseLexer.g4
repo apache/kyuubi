@@ -43,19 +43,40 @@ lexer grammar KyuubiSqlBaseLexer;
 
 SEMICOLON: ';';
 
+AND: 'AND';
 BQ: '`';
+BY: 'BY';
 COMMA: ',';
 DOT: '.';
 EQ  : '=' | '==';
+NSEQ: '<=>';
+NEQ : '<>';
+NEQJ: '!=';
+LT  : '<';
+LTE : '<=' | '!>';
+GT  : '>';
+GTE : '>=' | '!<';
 LEFT_PAREN: '(';
 RIGHT_PAREN: ')';
+OR: 'OR';
 
 DESC: 'DESC';
 DESCRIBE: 'DESCRIBE';
-SESSION: 'SESSION';
+FROM: 'FROM';
+
+LIKE: 'LIKE';
 
 KYUUBI: 'KYUUBI';
 KYUUBIADMIN: 'KYUUBIADMIN';
+
+ORDER: 'ORDER';
+SELECT: 'SELECT';
+SESSION: 'SESSION';
+SYSTEM_JDBC_SCHEMAS: 'SYSTEM.JDBC.SCHEMAS';
+TABLE_CATALOG: 'TABLE_CATALOG';
+TABLE_SCHEM: 'TABLE_SCHEM';
+
+WHERE: 'WHERE';
 
 BACKQUOTED_IDENTIFIER
     : '`' ( ~'`' | '``' )* '`'
@@ -74,7 +95,9 @@ IDENTIFIER
     ;
 
 STRING
-    : '"' ( '\\'. | '""' | ~('"'| '\\') )* '"'
+    : '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
+    | 'R\'' (~'\'')* '\''
+    | 'R"'(~'"')* '"'
     ;
 
 fragment DIGIT
