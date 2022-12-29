@@ -83,10 +83,16 @@ spec:
           volumeMounts:
             - name: conf
               mountPath: {{ .Values.server.confDir }}
+            {{- with .Values.volumeMounts }}
+              {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
       volumes:
         - name: conf
           configMap:
             name: {{ .Release.Name }}
+        {{- with .Values.volumes }}
+          {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
