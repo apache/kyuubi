@@ -53,6 +53,13 @@ object KyuubiSparkUtil extends Logging {
   }
 
   def engineId: String = globalSparkContext.applicationId
+  def deployMode: String = {
+    if (globalSparkContext.getConf.getBoolean("spark.kubernetes.submitInDriver", false)) {
+      "cluster"
+    } else {
+      globalSparkContext.deployMode
+    }
+  }
 
   lazy val diagnostics: String = {
     val sc = globalSparkContext
@@ -66,7 +73,7 @@ object KyuubiSparkUtil extends Logging {
        |                 application ID: $engineId
        |                 application web UI: $webUrl
        |                 master: ${sc.master}
-       |                 deploy mode: ${sc.deployMode}
+       |                 deploy mode: $deployMode
        |                 version: ${sc.version}
        |           Start time: ${LocalDateTime.ofInstant(Instant.ofEpochMilli(sc.startTime), ZoneId.systemDefault)}
        |           User: ${sc.sparkUser}""".stripMargin
