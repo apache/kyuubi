@@ -183,4 +183,11 @@ object KyuubiSQLConf {
       .version("1.7.0")
       .booleanConf
       .createWithDefault(false)
+
+  val FINAL_STAGE_CONFIG_ISOLATION_WRITE_ONLY =
+    buildConf("spark.sql.optimizer.finalStageConfigIsolationWriteOnly.enabled")
+      .doc("When true, only enable final stage isolation for writing.")
+      .version("1.7.0")
+      .booleanConf
+      .createWithDefault(true)
 }
