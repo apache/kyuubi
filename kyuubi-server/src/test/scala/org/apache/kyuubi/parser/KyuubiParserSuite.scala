@@ -18,7 +18,7 @@
 package org.apache.kyuubi.parser
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.sql.parser.KyuubiParser
+import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.sql.plan.PassThroughNode
 import org.apache.kyuubi.sql.plan.command.DescribeSession
 

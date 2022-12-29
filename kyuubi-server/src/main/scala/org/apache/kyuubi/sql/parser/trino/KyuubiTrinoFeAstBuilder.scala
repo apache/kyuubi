@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.sql.trino
+package org.apache.kyuubi.sql.parser.trino
 
-import org.apache.kyuubi.sql.{KyuubiTrinoBaseParser, KyuubiTrinoBaseParserBaseVisitor}
+import org.apache.kyuubi.sql.{KyuubiTrinoFeBaseParser, KyuubiTrinoFeBaseParserBaseVisitor}
 import org.apache.kyuubi.sql.parser.KyuubiParser
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
+import org.apache.kyuubi.sql.plan.trino.GetSchemas
 
-class TrinoStatementAstBuilder extends KyuubiTrinoBaseParserBaseVisitor[KyuubiTreeNode] {
+class KyuubiTrinoFeAstBuilder extends KyuubiTrinoFeBaseParserBaseVisitor[AnyRef] {
 
   override def visitSingleStatement(
-      ctx: KyuubiTrinoBaseParser.SingleStatementContext): KyuubiTreeNode = {
-    visit(ctx.statement)
+      ctx: KyuubiTrinoFeBaseParser.SingleStatementContext): KyuubiTreeNode = {
+    visit(ctx.statement).asInstanceOf[KyuubiTreeNode]
   }
 
-  override def visitPassThrough(ctx: KyuubiTrinoBaseParser.PassThroughContext): KyuubiTreeNode = {
+  override def visitPassThrough(ctx: KyuubiTrinoFeBaseParser.PassThroughContext): KyuubiTreeNode = {
     PassThroughNode()
   }
 
-  override def visitGetSchemas(ctx: KyuubiTrinoBaseParser.GetSchemasContext): KyuubiTreeNode = {
+  override def visitGetSchemas(ctx: KyuubiTrinoFeBaseParser.GetSchemasContext): KyuubiTreeNode = {
     val catalog = if (ctx.catalog == null) {
       null
     } else {
@@ -44,6 +45,6 @@ class TrinoStatementAstBuilder extends KyuubiTrinoBaseParserBaseVisitor[KyuubiTr
       KyuubiParser.unescapeSQLString(ctx.schema.getText)
     }
 
-    TrinoGetSchemas(catalog, schema)
+    GetSchemas(catalog, schema)
   }
 }

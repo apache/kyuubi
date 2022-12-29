@@ -18,15 +18,16 @@
 package org.apache.kyuubi.parser.trino
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.sql.trino.{KyuubiTrinoParser, TrinoGetSchemas}
+import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
+import org.apache.kyuubi.sql.plan.trino.GetSchemas
 
-class KyuubiTrinoStatementSuite extends KyuubiFunSuite {
-  val parser = new KyuubiTrinoParser()
+class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
+  val parser = new KyuubiTrinoFeParser()
 
   test("get schemas") {
     def check(query: String, catalog: String = null, schema: String = null): Unit = {
       parser.parsePlan(query) match {
-        case TrinoGetSchemas(catalogName, schemaPattern) =>
+        case GetSchemas(catalogName, schemaPattern) =>
           assert(catalogName == catalog)
           assert(schemaPattern == schema)
         case _ => throw new IllegalStateException()

@@ -21,11 +21,12 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.service.BackendService
+import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.PassThroughNode
-import org.apache.kyuubi.sql.trino.{KyuubiTrinoParser, TrinoGetSchemas}
+import org.apache.kyuubi.sql.plan.trino.GetSchemas
 
 class KyuubiTrinoOperationTranslator(backendService: BackendService) {
-  lazy val parser = new KyuubiTrinoParser()
+  lazy val parser = new KyuubiTrinoFeParser()
 
   def transform(
       statement: String,
@@ -41,7 +42,7 @@ class KyuubiTrinoOperationTranslator(backendService: BackendService) {
       ipAddress,
       configs)
     parser.parsePlan(statement) match {
-      case TrinoGetSchemas(catalogName, schemaPattern) =>
+      case GetSchemas(catalogName, schemaPattern) =>
         backendService.getSchemas(sessionHandle, catalogName, schemaPattern)
       case PassThroughNode() =>
         backendService.executeStatement(sessionHandle, statement, configs, runAsync, queryTimeout)

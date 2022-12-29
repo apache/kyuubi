@@ -15,17 +15,14 @@
  * limitations under the License.
  */
 
-parser grammar KyuubiTrinoBaseParser;
+package org.apache.kyuubi.sql.plan.trino
 
-options { tokenVocab = KyuubiSqlBaseLexer; }
+import org.apache.kyuubi.sql.plan.KyuubiTreeNode
 
-singleStatement
-    : statement SEMICOLON* EOF
-    ;
+/////////////////////////////////////////////////////////////////////////////////////////
+// This file contains all Trino JDBC operation nodes which are parsed from statement
+/////////////////////////////////////////////////////////////////////////////////////////
 
-statement
-    : SELECT TABLE_SCHEM COMMA TABLE_CATALOG FROM SYSTEM_JDBC_SCHEMAS
-      (WHERE (TABLE_CATALOG EQ catalog=STRING+)? AND? (TABLE_SCHEM LIKE schema=STRING+)?)?
-      ORDER BY TABLE_CATALOG COMMA TABLE_SCHEM                                                #getSchemas
-    | .*?                                                                                     #passThrough
-    ;
+case class GetSchemas(catalogName: String, schemaPattern: String) extends KyuubiTreeNode {
+  override def name(): String = "Get Schemas"
+}

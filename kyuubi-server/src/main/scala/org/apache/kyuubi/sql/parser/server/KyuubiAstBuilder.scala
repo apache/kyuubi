@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.sql.parser
+package org.apache.kyuubi.sql.parser.server
 
 import org.apache.kyuubi.sql.{KyuubiSqlBaseParser, KyuubiSqlBaseParserBaseVisitor}
 import org.apache.kyuubi.sql.KyuubiSqlBaseParser.SingleStatementContext

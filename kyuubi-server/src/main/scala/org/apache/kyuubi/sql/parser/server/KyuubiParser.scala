@@ -15,33 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.sql.trino
+package org.apache.kyuubi.sql.parser.server
 
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.ParseCancellationException
+import org.antlr.v4.runtime.tree.ParseTree
 
-import org.apache.kyuubi.sql.{KyuubiSqlBaseLexer, KyuubiTrinoBaseParser}
-import org.apache.kyuubi.sql.parser.{PostProcessor, UpperCaseCharStream}
-import org.apache.kyuubi.sql.plan.KyuubiTreeNode
+import org.apache.kyuubi.sql.{KyuubiSqlBaseLexer, KyuubiSqlBaseParser}
+import org.apache.kyuubi.sql.parser.{KyuubiParserBase, PostProcessor, UpperCaseCharStream}
 
-class KyuubiTrinoParser {
+class KyuubiParser extends KyuubiParserBase[KyuubiSqlBaseParser] {
 
-  lazy val astBuilder = new TrinoStatementAstBuilder
+  override lazy val astBuilder = new KyuubiAstBuilder
 
-  def parsePlan(sqlText: String): KyuubiTreeNode = parse(sqlText) { parser =>
-    astBuilder.visit(parser.singleStatement) match {
-      case plan: KyuubiTreeNode => plan
-    }
-  }
-
-  protected def parse[T](command: String)(toResult: KyuubiTrinoBaseParser => T): T = {
+  protected def parse[T](command: String)(toResult: KyuubiSqlBaseParser => T): T = {
     val lexer = new KyuubiSqlBaseLexer(
       new UpperCaseCharStream(CharStreams.fromString(command)))
     lexer.removeErrorListeners()
 
     val tokenStream = new CommonTokenStream(lexer)
-    val parser = new KyuubiTrinoBaseParser(tokenStream)
+    val parser = new KyuubiSqlBaseParser(tokenStream)
     parser.addParseListener(PostProcessor)
     parser.removeErrorListeners()
 
@@ -59,5 +53,9 @@ class KyuubiTrinoParser {
         parser.getInterpreter.setPredictionMode(PredictionMode.LL)
         toResult(parser)
     }
+  }
+
+  override def parseTree(parser: KyuubiSqlBaseParser): ParseTree = {
+    parser.singleStatement()
   }
 }
