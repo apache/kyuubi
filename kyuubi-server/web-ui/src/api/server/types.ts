@@ -15,25 +15,14 @@
  * limitations under the License.
  */
 
-import request from '@/utils/request'
-
-export function getAllServers() {
-  return request({
-    url: 'api/v1/admin/servers',
-    method: 'post'
-  })
+interface IServerSearch {
+  host: string | null
 }
 
-export function getServerLog() {
-  return request({
-    url: 'api/v1/admin/server/log',
-    method: 'post'
-  })
+interface IEngineSearch {
+  enginetype: null | string
+  sharelevel: null | string
+  subdomain: null | string
 }
 
-export function getAllEngines() {
-  return request({
-    url: 'api/v1/admin/engine',
-    method: 'post'
-  })
-}
+export { IServerSearch, IEngineSearch }

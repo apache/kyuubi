@@ -20,8 +20,36 @@
   <el-card :body-style="{ padding: '10px 14px' }">
     <header>
       <el-space class="search-box">
-        <el-input v-model="searchParam" placeholder="Please input" />
-        <el-button type="primary" icon="Search" />
+        <el-select
+          v-model="searchParam.enginetype"
+          :placeholder="$t('engine_type')"
+          @change="getList"
+        >
+          <el-option
+            v-for="item in ['FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC']"
+            :key="item"
+            :label="item"
+            :value="item"
+          />
+        </el-select>
+        <el-select
+          v-model="searchParam.sharelevel"
+          :placeholder="$t('share_level')"
+          @change="getList"
+        >
+          <el-option
+            v-for="item in ['CONNECTION', 'USER', 'GROUP', 'SERVER']"
+            :key="item"
+            :label="item"
+            :value="item"
+          />
+        </el-select>
+        <el-input
+          v-model="searchParam.subdomain"
+          :placeholder="$t('subdomain')"
+          @keyup.enter="getList"
+        />
+        <el-button type="primary" icon="Search" @click="getList" />
       </el-space>
     </header>
   </el-card>
@@ -60,31 +88,30 @@
         min-width="20%"
       />
       <el-table-column prop="status" :label="$t('status')" min-width="20%" />
-      <el-table-column fixed="right" :label="$t('operation')" width="160">
-        <template #default>
-          <el-space wrap>
-            <el-tooltip
-              effect="dark"
-              :content="$t('view_config')"
-              placement="top"
-            >
-              <el-button type="primary" icon="Setting" circle />
-            </el-tooltip>
-          </el-space>
-        </template>
-      </el-table-column>
     </el-table>
   </el-card>
 </template>
 
 <script lang="ts" setup>
+  import { reactive } from 'vue'
   import { format } from 'date-fns'
   import { getAllEngines } from '@/api/server'
+  import { IEngineSearch } from '@/api/server/types'
   import { useTable } from '@/views/common/use-table'
 
-  const { tableData, loading, searchParam, getList } = useTable()
+  const searchParam: IEngineSearch = reactive({
+    enginetype: null,
+    sharelevel: null,
+    subdomain: null
+  })
 
-  getList(getAllEngines)
+  const { tableData, loading, getList: _getList } = useTable()
+
+  const getList = () => {
+    _getList(getAllEngines, searchParam)
+  }
+
+  getList()
 </script>
 
 <style scoped lang="scss">

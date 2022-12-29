@@ -61,7 +61,7 @@
           },
           {
             label: 'Operation',
-            router: '/session/operation/all'
+            router: '/session/operation'
           }
         ]
       },

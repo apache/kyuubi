@@ -19,16 +19,57 @@
 <template>
   <el-card :body-style="{ padding: '10px 14px' }">
     <header>
-      <el-breadcrumb v-if="sessionId && sessionId !== 'all'" separator="/">
-        <el-breadcrumb-item :to="{ path: '/session/operation/all' }"
-          >Operation</el-breadcrumb-item
-        >
-        <el-breadcrumb-item>{{ sessionId }}</el-breadcrumb-item>
-      </el-breadcrumb>
-      <span v-else></span>
       <el-space class="search-box">
-        <el-input v-model="searchParam" placeholder="Please input" />
-        <el-button type="primary" icon="Search" />
+        <el-input
+          v-model="searchParam.sessionHandle"
+          :placeholder="$t('session_id')"
+          style="width: 300px"
+          @keyup.enter="getList"
+        />
+        <el-select
+          v-model="searchParam.operationType"
+          :placeholder="$t('type')"
+          @change="getList"
+        >
+          <el-option
+            v-for="item in [
+              'EXECUTE_STATEMENT',
+              'GET_TYPE_INFO',
+              'GET_CATALOGS',
+              'GET_SCHEMAS',
+              'GET_TABLES',
+              'GET_TABLE_TYPES',
+              'GET_COLUMNS',
+              'GET_FUNCTIONS',
+              'UNKNOWN'
+            ]"
+            :key="item"
+            :label="item"
+            :value="item"
+          />
+        </el-select>
+        <el-select
+          v-model="searchParam.state"
+          :placeholder="$t('state')"
+          @change="getList"
+        >
+          <el-option
+            v-for="item in [
+              'INITIALIZED_STATE',
+              'PENDING_STATE',
+              'RUNNING_STATE',
+              'TIMEDOUT_STATE',
+              'CANCELED_STATE',
+              'CLOSED_STATE',
+              'ERROR_STATE',
+              'UKNOWN_STATE'
+            ]"
+            :key="item"
+            :label="item"
+            :value="item"
+          />
+        </el-select>
+        <el-button type="primary" icon="Search" @click="getList" />
       </el-space>
     </header>
   </el-card>
@@ -72,7 +113,7 @@
             : '-'
         }}</template>
       </el-table-column>
-      <el-table-column fixed="right" :label="$t('operation')" width="120">
+      <el-table-column fixed="right" :label="$t('operation')" width="144">
         <template #default="scope">
           <el-space wrap>
             <el-popconfirm
@@ -111,29 +152,81 @@
                 </span>
               </template>
             </el-popconfirm>
+            <el-tooltip effect="dark" :content="$t('log')" placement="top">
+              <el-button
+                type="primary"
+                icon="Tickets"
+                circle
+                @click="openLogModal(scope.row.statementId)"
+              />
+            </el-tooltip>
           </el-space>
         </template>
       </el-table-column>
     </el-table>
   </el-card>
+  <Modal
+    v-if="logModalVisible"
+    :show="logModalVisible"
+    :title="$t('log')"
+    :cancel-show="false"
+    @cancel="cancelLogModal"
+    @confirm="cancelLogModal"
+  >
+    <div v-loading="logLoading" class="log">{{ log }}</div>
+  </Modal>
 </template>
 
 <script lang="ts" setup>
-  import { ref, watch } from 'vue'
+  import { ref, reactive } from 'vue'
   import { useRoute } from 'vue-router'
-  import { getAllOperations, cancelOperation } from '@/api/session'
+  import {
+    getAllOperations,
+    getOperationLog,
+    cancelOperation
+  } from '@/api/session'
+  import { IOperationSearch } from '@/api/session/types'
   import { format } from 'date-fns'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { secondTransfer } from '@/utils'
+  import { useTable } from '@/views/common/use-table'
+  import Modal from '@/components/modal/index.vue'
 
-  const searchParam = ref()
-  const tableData: any = ref([])
-  const loading = ref(false)
-  const sessionId = ref()
+  const logModalVisible = ref(false)
+  const log = ref()
+  const logLoading = ref(false)
+  const searchParam: IOperationSearch = reactive({
+    sessionHandle: null,
+    operationType: null,
+    state: null
+  })
   const route = useRoute()
   const { t } = useI18n()
-  sessionId.value = route.params.sessionId
+  searchParam.sessionHandle =
+    route.query.sessionId === '' || route.query.sessionId == null
+      ? null
+      : (route.query.sessionId as string)
+  const { tableData, loading, getList: _getList } = useTable()
+
+  const openLogModal = (id: string) => {
+    logModalVisible.value = true
+    logLoading.value = true
+    getOperationLog(id)
+      .then((res: any) => {
+        log.value = Array.isArray(res.logRowSet) ? res.logRowSet.join('\n') : ''
+      })
+      .catch(() => {
+        log.value = ''
+      })
+      .finally(() => {
+        logLoading.value = false
+      })
+  }
+
+  const cancelLogModal = () => {
+    logModalVisible.value = false
+  }
 
   const handleOperate = (
     operationId: string,
@@ -145,44 +238,24 @@
         message: t(`${operation.toLowerCase()}_success`),
         type: 'success'
       })
-      getOperationList()
+      getList()
     })
   }
 
-  const getOperationList = () => {
-    if (sessionId.value !== 'all') {
-      loading.value = true
-      getAllOperations(sessionId.value as string)
-        .then((res: any) => {
-          tableData.value = res || []
-        })
-        .finally(() => {
-          loading.value = false
-        })
-    } else {
-      // mock api: get all opertaions
-      tableData.value = []
-    }
+  const getList = () => {
+    _getList(getAllOperations, searchParam)
   }
-  getOperationList()
 
-  watch(
-    () => route.path,
-    (toPath: string) => {
-      const path = '/session/operation/'
-      if (toPath.indexOf(path) > -1) {
-        sessionId.value = toPath.replaceAll(path, '')
-        getOperationList()
-      }
-    }
-  )
+  getList()
 </script>
 <style lang="scss" scoped>
   header {
     display: flex;
-    justify-content: space-between;
-    .el-breadcrumb {
-      line-height: 32px;
-    }
+    justify-content: flex-end;
+  }
+
+  .log {
+    font-family: monospace;
+    white-space: pre-line;
   }
 </style>

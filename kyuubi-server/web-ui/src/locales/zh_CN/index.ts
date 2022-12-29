@@ -47,6 +47,7 @@ export default {
   status: '状态',
   type: '类型',
   state: '状态',
+  subdomain: 'Subdomain',
   confirm: '确定',
   cancel: '取消',
   cancel_confirm: '确认取消?',
