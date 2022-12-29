@@ -118,7 +118,11 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     val po = out.head
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    assert(po.catalog === sparkCatalogVal)
+    if (isSparkV31OrGreater) {
+      assert(po.catalog === sparkCatalogVal)
+    } else {
+      assert(po.catalog.isEmpty)
+    }
     assert(po.dbname === "default")
     assert(po.objectName === "default")
     assert(po.columns.isEmpty)
@@ -167,7 +171,11 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-      assert(po.catalog === sparkCatalogVal)
+      if (isSparkV31OrGreater) {
+        assert(po.catalog === sparkCatalogVal)
+      } else {
+        assert(po.catalog.isEmpty)
+      }
       assert(po.dbname === "CreateDatabaseCommand")
       assert(po.objectName === "CreateDatabaseCommand")
       assert(po.columns.isEmpty)
@@ -187,8 +195,11 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
       val po = out.head
       assert(po.actionType === PrivilegeObjectActionType.OTHER)
       assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-      assert(po.catalog === sparkCatalogVal)
-      assert(po.catalog.isEmpty)
+      if (isSparkV31OrGreater) {
+        assert(po.catalog === sparkCatalogVal)
+      } else {
+        assert(po.catalog.isEmpty)
+      }
       assert(po.dbname === "DropDatabaseCommand")
       assert(po.objectName === "DropDatabaseCommand")
       assert(po.columns.isEmpty)
